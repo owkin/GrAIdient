@@ -7,36 +7,18 @@
 
 import Metal
 
-public extension UnsafeMutableRawPointer
-{
-    func toArray<T>(to type: T.Type, capacity count: Int) -> [T]
-    {
-        let pointer = bindMemory(to: type, capacity: count)
-        return Array(UnsafeBufferPointer(start: pointer, count: count))
-    }
-}
-
+/// Abstract array of elements that can be sent to the GPU.
 public class MetalBuffer<T>
 {
-    let _nbElems: Int
+    /// Number of elements in the array.
+    public internal(set) var nbElems: Int
+    /// GPU ID where the array will be sent.
+    public internal(set) var deviceID: Int
     
+    /// GPU resource cache.
     var _metal: MTLBuffer? = nil
-    let _deviceID: Int
     
-    var deviceID: Int
-    {
-        get {
-            return _deviceID
-        }
-    }
-    
-    public var nbElems: Int
-    {
-        get {
-            return _nbElems
-        }
-    }
-    
+    /// Get the GPU resource.
     public var metal: MTLBuffer
     {
         get {
@@ -44,43 +26,65 @@ public class MetalBuffer<T>
         }
     }
     
+    ///
+    /// Creates an object to interact with a GPU resource.
+    ///
+    /// - Parameters:
+    ///     - nbElems: The number of elements in the array.
+    ///     - deviceID: GPU ID where the array will be sent.
+    ///
     public init(_ nbElems: Int, deviceID: Int)
     {
-        _deviceID = deviceID
-        _nbElems = nbElems
+        self.deviceID = deviceID
+        self.nbElems = nbElems
     }
 }
 
+///
+/// An array of elements that can be sent to the GPU.
+///
+/// The GPU resource is intended to stay on the GPU itself (limited access with CPU).
+///
 public class MetalPrivateBuffer<T>: MetalBuffer<T>
 {
+    /// Cache toward a shared version.
     var _shared: MetalSharedBuffer<T>? = nil
     
+    /// Get the GPU resource (no access with CPU).
     public override var metal: MTLBuffer
     {
         get {
             if _metal == nil
             {
                 _metal = MetalKernel.get.createBuffer(
-                    _nbElems * MemoryLayout<T>.size,
+                    nbElems * MemoryLayout<T>.size,
                     options: MTLResourceOptions.storageModePrivate,
-                    deviceID: _deviceID)
+                    deviceID: deviceID
+                )
             }
             return _metal!
         }
     }
     
+    /// Get a GPU resource that may be synchorized with CPU.
     public var shared: MetalSharedBuffer<T>
     {
         get {
             if _shared == nil
             {
-                _shared = MetalSharedBuffer<T>(nbElems, deviceID: _deviceID)
+                _shared = MetalSharedBuffer<T>(nbElems, deviceID: deviceID)
             }
             return _shared!
         }
     }
 }
 
+///
+/// An array of elements that can be sent to the GPU.
+///
+/// The GPU resource may be synchronized with CPU (memory is duplicated in the CPU and the GPU
+/// when GPU and CPU hardware are not unified).
+///
 public class MetalSharedBuffer<T>: MetalBuffer<T>
 {
     let _bufferPtr: UnsafeMutableBufferPointer<T>
@@ -100,6 +104,7 @@ public class MetalSharedBuffer<T>: MetalBuffer<T>
         }
     }
     
+    /// Get a GPU resource that may be synchorized with CPU.
     public override var metal: MTLBuffer
     {
         get {
@@ -109,7 +114,8 @@ public class MetalSharedBuffer<T>: MetalBuffer<T>
                 _metal = metalKernel.createBuffer(
                     metalBuffer: self,
                     options: MTLResourceOptions.storageModeManaged,
-                    deviceID: _deviceID)
+                    deviceID: self.deviceID
+                )
             }
             return _metal!
         }
@@ -128,6 +134,13 @@ public class MetalSharedBuffer<T>: MetalBuffer<T>
         }
     }
     
+    ///
+    /// Creates an object to interact with a GPU resource.
+    ///
+    /// - Parameters:
+    ///     - nbElems: The number of elements in the array.
+    ///     - deviceID: GPU ID where the array will be sent.
+    ///
     public override init(_ nbElems: Int, deviceID: Int)
     {
         let byteLength = nbElems * MemoryLayout<T>.size
@@ -150,5 +163,14 @@ public class MetalSharedBuffer<T>: MetalBuffer<T>
     
     deinit {
         free(_memory)
+    }
+}
+
+public extension UnsafeMutableRawPointer
+{
+    func toArray<T>(to type: T.Type, capacity count: Int) -> [T]
+    {
+        let pointer = bindMemory(to: type, capacity: count)
+        return Array(UnsafeBufferPointer(start: pointer, count: count))
     }
 }

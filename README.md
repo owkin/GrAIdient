@@ -1,3 +1,4 @@
 # MAKit
 
-A description of this package.
+Maximal Activation Kit. 
+A deep-learning framework for computer vision interpretability.

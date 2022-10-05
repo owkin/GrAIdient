@@ -9,11 +9,13 @@ import Foundation
 
 import Metal
 
+/// Main class to interact with GPU.
 public class MetalKernel
 {
     static private var _metalKernel: MetalKernel! = nil
     fileprivate let _context: MetalListDevices
     
+    /// Get the main instance.
     public static var get: MetalKernel
     {
         get {
@@ -76,11 +78,28 @@ public class MetalKernel
         }
     }
     
+    ///
+    /// Build the main instance with multiple GPU devices.
+    ///
+    /// - Parameter listDevices: The list of GPU devices.
+    ///
     private init(_ listDevices: [MTLDevice])
     {
         _context = MetalListDevices(listDevices)
     }
     
+    ///
+    /// Build GPU kernels.
+    ///
+    /// This API is especially usefull when Metal compiler cannot be invoked on the source files
+    /// (example: in a Swift package).
+    ///
+    /// - Parameters:
+    ///     - libraryContent: The source file.
+    ///     - kernelNames: The list of kernel functions in the file.
+    ///     - optimalThreadGroupSize:
+    ///         Whether ThreadGroupSize is a multiple of ThreadExecutionWidth.
+    ///
     public func buildKernels(
         libraryContent: String,
         kernelNames: [String],
@@ -93,6 +112,17 @@ public class MetalKernel
         )
     }
     
+    ///
+    /// Build GPU kernels.
+    ///
+    /// This API is especially preferred when Metal compiler can be invoked on the source files.
+    ///
+    /// - Parameters:
+    ///     - libraryURL: The source file.
+    ///     - kernelNames: The list of kernel functions in the file.
+    ///     - optimalThreadGroupSize:
+    ///         Whether ThreadGroupSize is a multiple of ThreadExecutionWidth.
+    ///
     public func buildKernels(
         libraryURL: URL,
         kernelNames: [String],
@@ -105,60 +135,127 @@ public class MetalKernel
         )
     }
     
+    ///
+    /// Get a GPU device.
+    ///
+    /// - Parameter deviceID: The id of the GPU to retrieve.
+    /// - Returns: The GPU device.
+    ///
     public func getDevice(deviceID: Int) -> MTLDevice
     {
         return _context.getDevice(deviceID: deviceID)
     }
     
+    ///
+    /// Get the command queue associated to a GPU device.
+    ///
+    /// - Parameter deviceID: The id of the GPU to retrieve the command queue from.
+    /// - Returns: The command queue.
+    ///
     public func getQueue(deviceID: Int) -> MTLCommandQueue
     {
         return _context.getQueue(deviceID: deviceID)
     }
     
+    ///
+    /// Create a new command to execute on the GPU.
+    ///
+    /// - Parameters:
+    ///     - pipeline: The name of the command to create.
+    ///     - deviceID: The GPU device where to execute the command.
+    /// - Returns: The command.
+    ///
     public func createCommand(_ pipeline: String, deviceID: Int) -> MetalCommand
     {
         return _context.createCommand(pipeline, deviceID: deviceID)
     }
     
-    public func createBuffer<T>(metalBuffer: MetalBuffer<T>,
-                                options: MTLResourceOptions,
-                                deviceID: Int)
-        -> MTLBuffer
+    ///
+    /// Create a buffer on a GPU device that is also accessible on the CPU.
+    ///
+    /// - Parameter metalBuffer: Object responsible for maintaining the buffer on the GPU.
+    /// - Returns: The GPU buffer.
+    ///
+    func createBuffer<T>(_ metalBuffer: MetalSharedBuffer<T>) -> MTLBuffer
     {
-        return _context.createBuffer(
-            metalBuffer: metalBuffer as! MetalSharedBuffer,
-            options: options,
-            deviceID: deviceID)
+        return _context.createBuffer(metalBuffer)
     }
     
-    public func createBuffer(_ byteLength: Int,
-                             options: MTLResourceOptions,
-                             deviceID: Int)
-        -> MTLBuffer
+    ///
+    /// Create a buffer on a GPU device.
+    ///
+    /// - Parameters:
+    ///     - byteLength: Size of the created buffer on the GPU.
+    ///     - options: Option to specify storageMode (managed or private).
+    ///     - deviceID: The GPU device to send the  buffer to.
+    /// - Returns: The GPU buffer.
+    ///
+    func createBuffer(
+        _ byteLength: Int,
+        options: MTLResourceOptions,
+        deviceID: Int) -> MTLBuffer
     {
-        return _context.createBuffer(byteLength,
-                                     options: options,
-                                     deviceID: deviceID)
+        return _context.createBuffer(
+            byteLength,
+            options: options,
+            deviceID: deviceID
+        )
     }
 
+    ///
+    /// Download GPU buffers to the CPU.
+    ///
+    /// This provokes the synchronisation needed by our managed storageMode.
+    /// MetalSharedBuffer maintains a MTLBuffer that may be duplicated on the CPU
+    /// (especially when using external GPU).
+    ///
+    /// - Parameter metalBuffers: The list of shared buffers to download from GPU.
+    ///
     public func download<T>(_ metalBuffers: [MetalSharedBuffer<T>])
     {
         _checkDevice(metalBuffers)
         _context.download(metalBuffers)
     }
     
+    ///
+    /// Download GPU buffers to the CPU.
+    ///
+    /// Force the creation of a MetalSharedBuffer.
+    /// This is a proxy in order to transfer data back to the CPU
+    /// (MetalPrivateBuffer cannot do it by itself because of private storageMode).
+    ///
+    /// - Parameter metalBuffers: The list of private buffers to download from GPU.
+    ///
     public func download<T>(_ metalBuffers: [MetalPrivateBuffer<T>])
     {
         _checkDevice(metalBuffers)
         _context.download(metalBuffers)
     }
     
+    ///
+    /// Upload CPU data to GPU buffers.
+    ///
+    /// This provokes the synchronisation needed by our managed storageMode.
+    /// MetalSharedBuffer maintains a MTLBuffer that may be duplicated on the CPU
+    /// (especially when using external GPU).
+    ///
+    /// - Parameter metalBuffers: The list of shared buffers to upload to the GPU.
+    ///
     public func upload<T>(_ metalBuffers: [MetalSharedBuffer<T>])
     {
         _checkDevice(metalBuffers)
         _context.upload(metalBuffers)
     }
     
+    ///
+    /// Upload CPU data to GPU buffers.
+    ///
+    /// Force the creation of a MetalSharedBuffer.
+    /// This is a proxy in order to transfer data back to the CPU
+    /// (MetalPrivateBuffer cannot do it by itself because of private storageMode).
+    ///
+    /// - Parameter metalBuffers: The list of private buffers to upload to GPU.
+    ///
     public func upload<T>(_ metalBuffers: [MetalPrivateBuffer<T>])
     {
         _checkDevice(metalBuffers)
@@ -181,10 +278,16 @@ public class MetalKernel
     }
 }
 
+/// Allow access to GPU devices.
 private class MetalListDevices
 {
     var _listDevices = [MetalDevice]()
     
+    ///
+    /// Create an instance with access to several GPU devices.
+    ///
+    /// - Parameter listDevices: The list of GPU devices.
+    ///
     init(_ listDevices: [MTLDevice])
     {
         for device in listDevices
@@ -193,6 +296,18 @@ private class MetalListDevices
         }
     }
     
+    ///
+    /// Build GPU kernels.
+    ///
+    /// This API is especially usefull when Metal compiler cannot be invoked on the source files
+    /// (example: in a Swift package).
+    ///
+    /// - Parameters:
+    ///     - libraryContent: The source file.
+    ///     - kernelNames: The list of kernel functions in the file.
+    ///     - optimalThreadGroupSize:
+    ///         Whether ThreadGroupSize is a multiple of ThreadExecutionWidth.
+    ///
     func buildKernels(
         libraryContent: String,
         kernelNames: [String],
@@ -208,6 +323,17 @@ private class MetalListDevices
         }
     }
     
+    ///
+    /// Build GPU kernels.
+    ///
+    /// This API is especially preferred when Metal compiler can be invoked on the source files.
+    ///
+    /// - Parameters:
+    ///     - libraryURL: The source file.
+    ///     - kernelNames: The list of kernel functions in the file.
+    ///     - optimalThreadGroupSize:
+    ///         Whether ThreadGroupSize is a multiple of ThreadExecutionWidth.
+    ///
     func buildKernels(
         libraryURL: URL,
         kernelNames: [String],
@@ -223,59 +349,130 @@ private class MetalListDevices
         }
     }
     
+    ///
+    /// Get a GPU device.
+    ///
+    /// - Parameter deviceID: The id of the GPU to retrieve.
+    /// - Returns: The GPU device.
+    ///
     func getDevice(deviceID: Int) -> MTLDevice
     {
         return _listDevices[deviceID].device
     }
     
+    ///
+    /// Get the command queue associated to a GPU device.
+    ///
+    /// - Parameter deviceID: The id of the GPU to retrieve the command queue from.
+    /// - Returns: The command queue.
+    ///
     func getQueue(deviceID: Int) -> MTLCommandQueue
     {
         return _listDevices[deviceID].queue
     }
     
+    ///
+    /// Create a new command to execute on the GPU.
+    ///
+    /// - Parameters:
+    ///     - pipeline: The name of the command to create.
+    ///     - deviceID: The GPU device where to execute the command.
+    /// - Returns: The command.
+    ///
     func createCommand(_ pipeline: String, deviceID: Int) -> MetalCommand
     {
         return _listDevices[deviceID].createCommand(pipeline)
     }
     
-    func createBuffer<T>(metalBuffer: MetalSharedBuffer<T>,
-                         options: MTLResourceOptions,
-                         deviceID: Int) -> MTLBuffer
+    ///
+    /// Create a buffer on a GPU device that is also accessible on the CPU.
+    ///
+    /// - Parameter metalBuffer: Object responsible for maintaining the buffer on the GPU.
+    /// - Returns: The GPU buffer.
+    ///
+    func createBuffer<T>(_ metalBuffer: MetalSharedBuffer<T>) -> MTLBuffer
+    {
+        return _listDevices[metalBuffer.deviceID].createBuffer(metalBuffer)
+    }
+    
+    ///
+    /// Create a buffer on a GPU device.
+    ///
+    /// - Parameters:
+    ///     - byteLength: Size of the created buffer on the GPU.
+    ///     - options: Option to specify storageMode (managed or private).
+    ///     - deviceID: The GPU device to send the  buffer to.
+    /// - Returns: The GPU buffer.
+    ///
+    func createBuffer(
+        _ byteLength: Int,
+        options: MTLResourceOptions,
+        deviceID: Int) -> MTLBuffer
     {
         return _listDevices[deviceID].createBuffer(
-            metalBuffer: metalBuffer,
-            options: options)
+            byteLength,
+            options: options
+        )
     }
     
-    func createBuffer(_ byteLength: Int,
-                      options: MTLResourceOptions,
-                      deviceID: Int) -> MTLBuffer
-    {
-        return _listDevices[deviceID].createBuffer(byteLength,
-                                                   options: options)
-    }
-    
+    ///
+    /// Download GPU buffers to the CPU.
+    ///
+    /// This provokes the synchronisation needed by our managed storageMode.
+    /// MetalSharedBuffer maintains a MTLBuffer that may be duplicated on the CPU
+    /// (especially when using external GPU).
+    ///
+    /// - Parameter metalBuffers: The list of shared buffers to download from GPU.
+    ///
     func download<T>(_ metalBuffers: [MetalSharedBuffer<T>])
     {
         _listDevices[metalBuffers[0].deviceID].download(metalBuffers)
     }
     
+    ///
+    /// Download GPU buffers to the CPU.
+    ///
+    /// Force the creation of a MetalSharedBuffer.
+    /// This is a proxy in order to transfer data back to the CPU
+    /// (MetalPrivateBuffer cannot do it by itself because of private storageMode).
+    ///
+    /// - Parameter metalBuffers: The list of private buffers to download from GPU.
+    ///
     func download<T>(_ metalBuffers: [MetalPrivateBuffer<T>])
     {
         _listDevices[metalBuffers[0].deviceID].download(metalBuffers)
     }
     
+    ///
+    /// Upload CPU data to GPU buffers.
+    ///
+    /// This provokes the synchronisation needed by our managed storageMode.
+    /// MetalSharedBuffer maintains a MTLBuffer that may be duplicated on the CPU
+    /// (especially when using external GPU).
+    ///
+    /// - Parameter metalBuffers: The list of shared buffers to upload to the GPU.
+    ///
     func upload<T>(_ metalBuffers: [MetalSharedBuffer<T>])
     {
         _listDevices[metalBuffers[0].deviceID].upload(metalBuffers)
     }
     
+    ///
+    /// Upload CPU data to GPU buffers.
+    ///
+    /// Force the creation of a MetalSharedBuffer.
+    /// This is a proxy in order to transfer data back to the CPU
+    /// (MetalPrivateBuffer cannot do it by itself because of private storageMode).
+    ///
+    /// - Parameter metalBuffers: The list of private buffers to upload to GPU.
+    ///
     func upload<T>(_ metalBuffers: [MetalPrivateBuffer<T>])
     {
         _listDevices[metalBuffers[0].deviceID].upload(metalBuffers)
     }
 }
 
+/// Represents a single GPU device.
 private class MetalDevice
 {
     let _device: MTLDevice
@@ -283,6 +480,7 @@ private class MetalDevice
     
     var _pipelines: [String : MTLComputePipelineState] = [:]
     
+    /// Get the GPU device.
     var device: MTLDevice
     {
         get {
@@ -290,6 +488,7 @@ private class MetalDevice
         }
     }
     
+    /// Get the GPU command queue.
     var queue: MTLCommandQueue
     {
         get {
@@ -297,6 +496,11 @@ private class MetalDevice
         }
     }
     
+    ///
+    /// Create an object with an access to one GPU device.
+    ///
+    /// - Parameter device: The GPU device.
+    ///
     init(device: MTLDevice)
     {
         _device = device
@@ -312,6 +516,18 @@ private class MetalDevice
         // TODO: add kernels.
     }
     
+    ///
+    /// Build GPU kernels.
+    ///
+    /// This API is especially usefull when Metal compiler cannot be invoked on the source files
+    /// (example: in a Swift package).
+    ///
+    /// - Parameters:
+    ///     - libraryContent: The source file.
+    ///     - kernelNames: The list of kernel functions in the file.
+    ///     - optimalThreadGroupSize:
+    ///         Whether ThreadGroupSize is a multiple of ThreadExecutionWidth.
+    ///
     func buildKernels(
         libraryContent: String,
         kernelNames: [String],
@@ -328,6 +544,17 @@ private class MetalDevice
         }
     }
     
+    ///
+    /// Build GPU kernels.
+    ///
+    /// This API is especially preferred when Metal compiler can be invoked on the source files.
+    ///
+    /// - Parameters:
+    ///     - libraryURL: The source file.
+    ///     - kernelNames: The list of kernel functions in the file.
+    ///     - optimalThreadGroupSize:
+    ///         Whether ThreadGroupSize is a multiple of ThreadExecutionWidth.
+    ///
     func buildKernels(
         libraryURL: URL,
         kernelNames: [String],
@@ -405,6 +632,14 @@ private class MetalDevice
         }
     }
     
+    ///
+    /// Create a new command to execute on the GPU.
+    ///
+    /// - Parameters:
+    ///     - pipeline: The name of the command to create.
+    ///     - deviceID: The GPU device where to execute the command.
+    /// - Returns: The command.
+    ///
     func createCommand(_ pipeline: String) -> MetalCommand
     {
         if let pipelineTmp = _pipelines[pipeline]
@@ -414,22 +649,45 @@ private class MetalDevice
         fatalError("Could not find pipeline: \(pipeline).")
     }
     
-    func createBuffer<T>(metalBuffer: MetalSharedBuffer<T>,
-                         options: MTLResourceOptions = [])
-        -> MTLBuffer
+    ///
+    /// Create a buffer on a GPU device that is also accessible on the CPU.
+    ///
+    /// - Parameter metalBuffer: Object responsible for maintaining the buffer on the GPU.
+    /// - Returns: The GPU buffer.
+    ///
+    func createBuffer<T>(_ metalBuffer: MetalSharedBuffer<T>) -> MTLBuffer
     {
-        return _device.makeBuffer(bytesNoCopy: metalBuffer.memory,
-                                  length: metalBuffer.allocationSize,
-                                  options: options)!
+        return _device.makeBuffer(
+            bytesNoCopy: metalBuffer.memory,
+            length: metalBuffer.allocationSize,
+            options: MTLResourceOptions.storageModeManaged
+        )!
     }
     
-    func createBuffer(_ byteLength: Int,
-                      options: MTLResourceOptions)
-        -> MTLBuffer
+    ///
+    /// Create a buffer on a GPU device.
+    ///
+    /// - Parameters:
+    ///     - byteLength: Size of the created buffer on the GPU.
+    ///     - options: Option to specify storageMode (managed or private).
+    /// - Returns: The GPU buffer.
+    ///
+    func createBuffer(
+        _ byteLength: Int,
+        options: MTLResourceOptions) -> MTLBuffer
     {
         return _device.makeBuffer(length: byteLength, options: options)!
     }
     
+    ///
+    /// Download GPU buffers to the CPU.
+    ///
+    /// This provokes the synchronisation needed by our managed storageMode.
+    /// MetalSharedBuffer maintains a MTLBuffer that may be duplicated on the CPU
+    /// (especially when using external GPU).
+    ///
+    /// - Parameter metalBuffers: The list of shared buffers to download from GPU.
+    ///
     func download<T>(_ metalBuffers: [MetalSharedBuffer<T>])
     {
         var lastCommand: MTLCommandBuffer! = nil
@@ -438,7 +696,7 @@ private class MetalDevice
             // Buffer for storing encoded commands that are sent to GPU
             let command = _queue.makeCommandBuffer()!
             
-            // Creates the command encoder from the command buffer
+            // Create the command encoder from the command buffer
             let blitEncoder = command.makeBlitCommandEncoder()!
             
             // Command
@@ -463,18 +721,27 @@ private class MetalDevice
         }
     }
     
+    ///
+    /// Download GPU buffers to the CPU.
+    ///
+    /// Force the creation of a MetalSharedBuffer.
+    /// This is a proxy in order to transfer data back to the CPU
+    /// (MetalPrivateBuffer cannot do it by itself because of private storageMode).
+    ///
+    /// - Parameter metalBuffers: The list of private buffers to download from GPU.
+    ///
     func download<T>(_ metalBuffers: [MetalPrivateBuffer<T>])
     {
         var metalSharedBuffers = [MetalSharedBuffer<T>]()
         for metalBuffer in metalBuffers
         {
-            // Buffer for storing encoded commands that are sent to GPU
+            // Buffer for storing encoded commands that are sent to GPU.
             let command = _queue.makeCommandBuffer()!
             
-            // Creates the command encoder from the command buffer
+            // Create the command encoder from the command buffer.
             let blitEncoder = command.makeBlitCommandEncoder()!
             
-            // Command
+            // Command.
             blitEncoder.copy(
                 from: metalBuffer.metal,
                 sourceOffset: 0,
@@ -482,13 +749,13 @@ private class MetalDevice
                 destinationOffset: 0,
                 size: metalBuffer.nbElems * MemoryLayout<T>.size)
             
-            // Finalize configuration
+            // Finalize configuration.
             blitEncoder.endEncoding()
             
-            // Add command buffer to the queue
+            // Add command buffer to the queue.
             command.enqueue()
             
-            // Start job
+            // Start job.
             command.commit()
             
             metalSharedBuffers.append(metalBuffer.shared)
@@ -497,6 +764,15 @@ private class MetalDevice
         download(metalSharedBuffers)
     }
     
+    ///
+    /// Upload CPU data to GPU buffers.
+    ///
+    /// This provokes the synchronisation needed by our managed storageMode.
+    /// MetalSharedBuffer maintains a MTLBuffer that may be duplicated on the CPU
+    /// (especially when using external GPU).
+    ///
+    /// - Parameter metalBuffers: The list of shared buffers to upload to the GPU.
+    ///
     func upload<T>(_ metalBuffers: [MetalSharedBuffer<T>])
     {
         for metalBuffer in metalBuffers
@@ -506,6 +782,15 @@ private class MetalDevice
         }
     }
     
+    ///
+    /// Upload CPU data to GPU buffers.
+    ///
+    /// Force the creation of a MetalSharedBuffer.
+    /// This is a proxy in order to transfer data back to the CPU
+    /// (MetalPrivateBuffer cannot do it by itself because of private storageMode).
+    ///
+    /// - Parameter metalBuffers: The list of private buffers to upload to GPU.
+    ///
     func upload<T>(_ metalBuffers: [MetalPrivateBuffer<T>])
     {
         var metalSharedBuffers = [MetalSharedBuffer<T>]()
@@ -518,13 +803,13 @@ private class MetalDevice
         var lastCommand: MTLCommandBuffer! = nil
         for metalBuffer in metalBuffers
         {
-            // Buffer for storing encoded commands that are sent to GPU
+            // Buffer for storing encoded commands that are sent to GPU.
             let command = _queue.makeCommandBuffer()!
             
-            // Creates the command encoder from the command buffer
+            // Create the command encoder from the command buffer.
             let blitEncoder = command.makeBlitCommandEncoder()!
             
-            // Command
+            // Command.
             blitEncoder.copy(
                 from: metalBuffer.shared.metal,
                 sourceOffset: 0,
@@ -532,13 +817,13 @@ private class MetalDevice
                 destinationOffset: 0,
                 size: metalBuffer.nbElems * MemoryLayout<T>.size)
             
-            // Finalize configuration
+            // Finalize configuration.
             blitEncoder.endEncoding()
             
-            // Add command buffer to the queue
+            // Add command buffer to the queue.
             command.enqueue()
             
-            // Start job
+            // Start job.
             command.commit()
             
             lastCommand = command
@@ -558,6 +843,7 @@ private class MetalDevice
     }
 }
 
+/// A command to run on the GPU
 public class MetalCommand
 {
     var _command: MTLCommandBuffer!
@@ -578,34 +864,62 @@ public class MetalCommand
         }
     }
     
+    ///
+    /// Create a new command on the GPU.
+    ///
+    /// - Parameters:
+    ///     - queue: The command queue.
+    ///     - pipeline: The command to run.
+    ///
     init(queue: MTLCommandQueue, pipeline: MTLComputePipelineState)
     {
         _pipeline = pipeline
         
-        // Buffer for storing encoded commands that are sent to GPU
+        // Buffer for storing encoded commands that are sent to GPU.
         _command = queue.makeCommandBuffer()
         
-        // Creates the command encoder from the command buffer
+        // Create the command encoder from the command buffer.
         autoreleasepool()
         {
             _encoder = _command.makeComputeCommandEncoder()
         }
         
-        // Encodes the pipeline state command
+        // Encodes the pipeline state command.
         _encoder.setComputePipelineState(pipeline)
     }
     
+    ///
+    /// Send data to the command.
+    ///
+    /// - Parameters:
+    ///     - data: The data to send to the command.
+    ///     - index: The index of the placeholder receiving the data in the command definition.
+    ///
     public func setBytes<T>(_ data: [T], atIndex index: Int)
     {
         let byteLength = data.count * MemoryLayout<T>.size
         _encoder.setBytes(data, length: byteLength, index: index)
     }
     
+    ///
+    /// Send a buffer to the command.
+    ///
+    /// - Parameters:
+    ///     - buffer: The buffer to send to the command.
+    ///     - index: The index of the placeholder receiving the buffer in the command definition.
+    ///
     public func setBuffer(_ buffer: MTLBuffer, atIndex index: Int)
     {
         _encoder.setBuffer(buffer, offset: 0, index: index)
     }
     
+    ///
+    /// Send a texture to the command.
+    ///
+    /// - Parameters:
+    ///     - texture: The texture to send to the command.
+    ///     - index: The index of the placeholder receiving the texture in the command definition.
+    ///
     public func setTexture(_ texture: MTLTexture, atIndex index: Int)
     {
         _encoder.setTexture(texture, index: index)
@@ -618,6 +932,7 @@ public class MetalCommand
                                  threadsPerThreadgroup: threadsPerThreadgroup)
     }
     
+    /// Enqueue command and start job.
     public func enqueue()
     {
         // Finalize configuration

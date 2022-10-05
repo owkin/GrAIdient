@@ -27,7 +27,7 @@ public class MetalBuffer<T>
     }
     
     ///
-    /// Creates an object to interact with a GPU resource.
+    /// Create an object to interact with a GPU resource.
     ///
     /// - Parameters:
     ///     - nbElems: The number of elements in the array.
@@ -50,7 +50,7 @@ public class MetalPrivateBuffer<T>: MetalBuffer<T>
     /// Cache toward a shared version.
     var _shared: MetalSharedBuffer<T>? = nil
     
-    /// Get the GPU resource (no access with CPU).
+    /// Build and get the GPU resource (no access with CPU).
     public override var metal: MTLBuffer
     {
         get {
@@ -104,18 +104,14 @@ public class MetalSharedBuffer<T>: MetalBuffer<T>
         }
     }
     
-    /// Get a GPU resource that may be synchorized with CPU.
+    /// Build and get a GPU resource that may be synchorized with CPU.
     public override var metal: MTLBuffer
     {
         get {
             let metalKernel = MetalKernel.get
             if _metal == nil
             {
-                _metal = metalKernel.createBuffer(
-                    metalBuffer: self,
-                    options: MTLResourceOptions.storageModeManaged,
-                    deviceID: self.deviceID
-                )
+                _metal = metalKernel.createBuffer(self)
             }
             return _metal!
         }
@@ -135,7 +131,7 @@ public class MetalSharedBuffer<T>: MetalBuffer<T>
     }
     
     ///
-    /// Creates an object to interact with a GPU resource.
+    /// Create an object to interact with a GPU resource.
     ///
     /// - Parameters:
     ///     - nbElems: The number of elements in the array.

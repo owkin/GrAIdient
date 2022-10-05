@@ -928,8 +928,10 @@ public class MetalCommand
     public func dispatchThreads(threadsPerGrid: MTLSize,
                                 threadsPerThreadgroup: MTLSize)
     {
-        _encoder.dispatchThreads(threadsPerGrid,
-                                 threadsPerThreadgroup: threadsPerThreadgroup)
+        _encoder.dispatchThreads(
+            threadsPerGrid,
+            threadsPerThreadgroup: threadsPerThreadgroup
+        )
     }
     
     /// Enqueue command and start job.

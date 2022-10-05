@@ -108,6 +108,83 @@ public class MAKit
         }
     }
     
+    public class Model
+    {
+        public struct Params
+        {
+            public var context: ModelContext
+            public var hidden = false
+            
+            public init(context: ModelContext)
+            {
+                self.context = context
+            }
+            
+            public init(params: Params)
+            {
+                self.context = params.context
+                self.hidden = params.hidden
+            }
+        }
+        
+        public class Layer
+        {
+            public static func append(registry: [String: Codable.Type])
+            {
+                getCtx.layerRegistries.append(registry)
+            }
+            
+            static func getType(layer: String) -> Codable.Type?
+            {
+                for registry in getCtx.layerRegistries
+                {
+                    if let type = registry[layer]
+                    {
+                        return type
+                    }
+                }
+                return nil
+            }
+        }
+        
+        public class Activation
+        {
+            public static func append(kernel: IActivationKernel)
+            {
+                getCtx.activationKernels.append(kernel)
+            }
+            
+            public static func append(registry: [String: Codable.Type])
+            {
+                getCtx.activationRegistries.append(registry)
+            }
+            
+            static func build(_ name: String) -> ActivationFunction?
+            {
+                for kernel in getCtx.activationKernels.reversed()
+                {
+                    if let activation = kernel.build(name)
+                    {
+                        return activation
+                    }
+                }
+                return nil
+            }
+            
+            static func getType(activation: String) -> Codable.Type?
+            {
+                for registry in getCtx.activationRegistries.reversed()
+                {
+                    if let type = registry[activation]
+                    {
+                        return type
+                    }
+                }
+                return nil
+            }
+        }
+    }
+    
     /// Namespace for run settings.
     public class Loop
     {
@@ -257,6 +334,14 @@ fileprivate class MAKitContext
         case Batch
         case Sample
     }
+    
+    //--------------------------------------------------------------------------
+    // MODEL
+    //--------------------------------------------------------------------------
+    var activationKernels: [IActivationKernel] = [ActivationKernel()]
+    var activationRegistries: [[String: Codable.Type]] = [ACTIVATION_REGISTRY]
+    
+    var layerRegistries: [[String: Codable.Type]] = [LAYER_REGISTRY]
     
     //--------------------------------------------------------------------------
     // LOOP

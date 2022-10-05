@@ -7,8 +7,16 @@
 
 import Foundation
 
+/// A namespace  to execute functions in parallel.
 public class Concurrency
 {
+    ///
+    /// Execute the same functions on multiple elements.
+    ///
+    /// - Parameters:
+    ///     - nbElems: Number of elements to process.
+    ///     - block: The function to execute on the different elements.
+    ///     
     public static func slice(_ nbElems: Int, _ block: (Int) -> ())
     {
         let nbThreads = ProcessInfo.processInfo.activeProcessorCount

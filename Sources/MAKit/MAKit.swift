@@ -7,8 +7,10 @@
 
 import Foundation
 
+/// Get access to some global functions and variables.
 public class MAKit
 {
+    /// Get access to stored variables.
     private static var getCtx: MAKitContext
     {
         get {
@@ -17,8 +19,10 @@ public class MAKit
     }
     private init() {}
     
+    /// Namespace for optimization settings.
     public class Opti
     {
+        /// Get/Set run on CPU.
         public static var CPU: Bool
         {
             get {
@@ -35,6 +39,7 @@ public class MAKit
                 }
             }
         }
+        /// Get/Set run on GPU.
         public static var GPU: Bool
         {
             get {
@@ -52,6 +57,7 @@ public class MAKit
             }
         }
         
+        /// Get/Set GPU names in the desired order (the first in the list is the first to be used).
         public static var gpuNamedPriority: [String]
         {
             get {
@@ -63,8 +69,10 @@ public class MAKit
         }
     }
     
+    /// Namespace for gradient settings.
     public class Gradient
     {
+        /// Get/Set compute the weights gradient per batch.
         public static var batch: Bool
         {
             get {
@@ -81,6 +89,7 @@ public class MAKit
                 }
             }
         }
+        /// Get/Set compute the weights gradient per sample (will use more memory on GPU).
         public static var sample: Bool
         {
             get {
@@ -99,8 +108,10 @@ public class MAKit
         }
     }
     
+    /// Namespace for run settings.
     public class Loop
     {
+        /// Get/Set run the gradient checking algorithm.
         public static var gradientChecking: Bool
         {
             get {
@@ -112,9 +123,11 @@ public class MAKit
         }
     }
     
+    /// Namespace for dump settings.
     public class Dump
     {
-        public static var inputDir: String
+        /// Get/Set the directory where to read data.
+        public static var inputDir: URL
         {
             get {
                 return getCtx.inputDir
@@ -123,7 +136,8 @@ public class MAKit
                 getCtx.inputDir = newValue
             }
         }
-        public static var outputDir: String
+        /// Get/Set the directory where to dump outputs.
+        public static var outputDir: URL
         {
             get {
                 return getCtx.outputDir
@@ -132,7 +146,8 @@ public class MAKit
                 getCtx.outputDir = newValue
             }
         }
-        public static var modeleDir: String
+        /// Get/Set the directory where to read and write models.
+        public static var modeleDir: URL
         {
             get {
                 return getCtx.modeleDir
@@ -143,8 +158,10 @@ public class MAKit
         }
     }
     
+    /// Namespace for time tracking settings.
     public class Time
     {
+        /// Get/Set track time.
         public static var track: Bool
         {
             get {
@@ -155,6 +172,7 @@ public class MAKit
             }
         }
         
+        /// Start trackking time.
         public static func start()
         {
             if track
@@ -163,6 +181,15 @@ public class MAKit
             }
         }
         
+        ///
+        /// Stop tracking time.
+        ///
+        /// Throw an error when time is not being tracked or the output cannot be written.
+        ///
+        /// - Parameters:
+        ///     - id: The id of the function tracked.
+        ///     - description: A short description of the function.
+        ///
         public static func stop(id: String, description: String) throws
         {
             if track
@@ -171,6 +198,15 @@ public class MAKit
             }
         }
         
+        ///
+        /// Dump aggreegated tracked time.
+        ///
+        /// Throw an error when time is not being tracked.
+        ///
+        /// - Parameters:
+        ///     - id: The id of the function tracked.
+        ///     - description: A short description of the function.
+        ///
         public static func dumpStacked() throws
         {
             if track
@@ -185,10 +221,12 @@ public class MAKit
     }
 }
 
+/// A global context with stored variables.
 fileprivate class MAKitContext
 {
     private static let _ctx = MAKitContext()
     
+    /// Access to the context.
     static var get: MAKitContext
     {
         get {
@@ -199,6 +237,7 @@ fileprivate class MAKitContext
     //--------------------------------------------------------------------------
     // OPTI
     //--------------------------------------------------------------------------
+    /// Optimization variable.
     var optim = Optimization.CPU
     enum Optimization
     {
@@ -211,6 +250,7 @@ fileprivate class MAKitContext
     //--------------------------------------------------------------------------
     // GRADIENT
     //--------------------------------------------------------------------------
+    /// Gradient variable.
     var gradient = Gradient.Batch
     enum Gradient
     {
@@ -221,29 +261,42 @@ fileprivate class MAKitContext
     //--------------------------------------------------------------------------
     // LOOP
     //--------------------------------------------------------------------------
+    /// Gradient Checking variable.
     var gc = false
     
     //--------------------------------------------------------------------------
     // DUMP
     //--------------------------------------------------------------------------
-    var inputDir = ""
-    var outputDir = ""
-    var modeleDir = ""
+    /// Dirctory where to read data.
+    var inputDir: URL! = nil
+    /// Directory where to dump outputs.
+    var outputDir: URL! = nil
+    /// Dirctory wheeree to read and write models.
+    var modeleDir: URL! = nil
     
     //--------------------------------------------------------------------------
     // TIME
     //--------------------------------------------------------------------------
+    /// Time tracking variable.
     var trackTime = false
 }
 
-func appendTxtFile(directory: String, name: String, content: String) throws
+///
+/// Dump content to the disk.
+///
+/// Throw an error when it is imposible to write the file.
+///
+/// - Parameters:
+///     - directory: The directory where to write the file.
+///     - name: The file name to dump the content into.
+///     - content: The content to write on the disk.
+///
+func appendTxtFile(directory: URL, name: String, content: String) throws
 {
-    let outputFile = directory + "/" + name + ".txt"
-    if FileManager.default.fileExists(atPath: outputFile)
+    let outputFile = directory.appendingPathComponent("\(name).txt")
+    if FileManager.default.fileExists(atPath: outputFile.path)
     {
-        let fileHandle = try FileHandle(
-            forWritingTo: URL(fileURLWithPath: outputFile)
-        )
+        let fileHandle = try FileHandle(forWritingTo: outputFile)
         fileHandle.seekToEndOfFile()
         fileHandle.write(content.data(using: .utf8)!)
         fileHandle.closeFile()
@@ -251,7 +304,7 @@ func appendTxtFile(directory: String, name: String, content: String) throws
     else
     {
         try content.write(
-            to: URL(fileURLWithPath: outputFile),
+            to: outputFile,
             atomically: true,
             encoding: String.Encoding.utf8
         )

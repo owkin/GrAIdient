@@ -7,10 +7,17 @@
 
 import Foundation
 
+///
+/// A context that goes from a start to an end.
+///
+/// Several start without an end do not create any new transaction.
+/// They are just wrapped in the already existing transaction until it ends.
+///
 class Transaction
 {
     var _nbRunning = 0
     
+    /// Whether the transaction is running or not.
     var isRunning: Bool
     {
         get {
@@ -19,9 +26,12 @@ class Transaction
     }
 }
 
+/// Error occuring during a Time transaction.
 public enum TimeError: Error
 {
+    /// Time  is not being tracked.
     case TrackTime
+    /// No time transaction is running.
     case Transaction
 }
 
@@ -39,15 +49,19 @@ extension TimeError: CustomStringConvertible
     }
 }
 
+/// A tarnsaction to handle time.
 class TimeTransaction: Transaction
 {
+    /// Access the time transaction.
     static let get = TimeTransaction()
     
     var _startTime: DispatchTime? = nil
     var _stopTime: DispatchTime? = nil
     
+    /// The elapsed time for the different functions.
     var _stackedTimes: [String: Double] = [:]
     
+    /// A description showing the elapsed time between `_startTime` and `_stopTime`.
     var elpased: String
     {
         get {
@@ -64,6 +78,7 @@ class TimeTransaction: Transaction
         }
     }
     
+    /// A description showing the elapsed time for the different functions.
     var stacked: [String: String]
     {
         get {
@@ -89,6 +104,7 @@ class TimeTransaction: Transaction
         }
     }
     
+    /// Start the time transaction.
     func start()
     {
         if !isRunning
@@ -98,6 +114,15 @@ class TimeTransaction: Transaction
         }
     }
     
+    ///
+    /// Stop the time transaction.
+    ///
+    /// Throw an error when time is not being tracked.
+    ///
+    /// - parameters:
+    ///     - id: The id of the function tracked.
+    ///     - description: A short description of the function.
+    ///
     func stop(id: String, description: String) throws
     {
         if isRunning
@@ -116,11 +141,17 @@ class TimeTransaction: Transaction
         }
     }
     
+    /// Reset the elapsed time for the different functions.
     private func _resetStack()
     {
         _stackedTimes = [:]
     }
     
+    ///
+    /// Add elapsed time to a function.
+    ///
+    /// - parameter id: The id of the function tracked.
+    ///
     private func _stackIdentifier(id: String)
     {
         let nanoTime = _stopTime!.uptimeNanoseconds -
@@ -136,6 +167,13 @@ class TimeTransaction: Transaction
         }
     }
     
+    ///
+    /// Dump elapsed time.
+    ///
+    /// - parameters:
+    ///     -  id: The id of the function tracked.
+    ///     - description: A short description of the function.
+    ///
     private func _dumpTrack(id: String, description: String) throws
     {
         var content = id + " " + description + "\n"
@@ -147,6 +185,11 @@ class TimeTransaction: Transaction
         )
     }
     
+    ///
+    /// Dump aggreegated tracked time.
+    ///
+    /// Throw an error when time is not being tracked.
+    ///
     func dumpStacked() throws
     {
         var content: String = ""

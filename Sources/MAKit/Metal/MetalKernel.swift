@@ -262,6 +262,11 @@ public class MetalKernel
         _context.upload(metalBuffers)
     }
     
+    ///
+    /// Some sanity checks.
+    ///
+    /// - Parameter metalBuffers: List of buffers to check.
+    ///
     private func _checkDevice<T>(_ metalBuffers: [MetalBuffer<T>])
     {
         if metalBuffers.count == 0
@@ -475,9 +480,12 @@ private class MetalListDevices
 /// Represents a single GPU device.
 private class MetalDevice
 {
+    /// The GPU device.
     let _device: MTLDevice
+    /// The queue associated with the GPU device.
     let _queue: MTLCommandQueue
     
+    /// The different kernel's state available.
     var _pipelines: [String : MTLComputePipelineState] = [:]
     
     /// Get the GPU device.
@@ -571,6 +579,12 @@ private class MetalDevice
         }
     }
     
+    ///
+    /// Build a library from a Metal source code content.
+    ///
+    /// - Parameter content: The source code content.
+    /// - Returns: The library.
+    ///
     private func _buildLibrary(content: String) -> MTLLibrary
     {
         let library: MTLLibrary
@@ -585,6 +599,12 @@ private class MetalDevice
         return library
     }
     
+    ///
+    /// Build a library from a Metal source code file.
+    ///
+    /// - Parameter url: The source code file url.
+    /// - Returns: The library.
+    ///
     private func _buildLibrary(url: URL) -> MTLLibrary
     {
         let library: MTLLibrary
@@ -599,6 +619,17 @@ private class MetalDevice
         return library
     }
     
+    ///
+    /// Build GPU kernels from a Metal library.
+    ///
+    /// This function updates the different kernel's state `_pipelines`.
+    ///
+    /// - Parameters:
+    ///     - name: The name of the kernel to build.
+    ///     - library: The Metal library.
+    ///     - optimalThreadGroupSize:
+    ///         Whether ThreadGroupSize is a multiple of ThreadExecutionWidth.
+    ///
     private func _buildKernel(
         name: String,
         library: MTLLibrary,
@@ -846,10 +877,15 @@ private class MetalDevice
 /// A command to run on the GPU
 public class MetalCommand
 {
+    /// The command to run on the GPU.
     var _command: MTLCommandBuffer!
+    /// The encoder used load parameters in the command.
     var _encoder: MTLComputeCommandEncoder!
+    /// The state of the command.
     var _pipeline: MTLComputePipelineState
     
+    /// For most efficient execution, the threadgroup size should be a multiple of this
+    /// when executing the kernel.
     public var threadExecutionWidth: Int
     {
         get {
@@ -857,6 +893,7 @@ public class MetalCommand
         }
     }
     
+    /// The maximum total number of threads that can be in a single compute threadgroup.
     public var maxThreadsPerThreadgroup: Int
     {
         get {
@@ -925,8 +962,27 @@ public class MetalCommand
         _encoder.setTexture(texture, index: index)
     }
     
-    public func dispatchThreads(threadsPerGrid: MTLSize,
-                                threadsPerThreadgroup: MTLSize)
+    ///
+    /// The grid of threads on the GPU.
+    ///
+    /// A thread group contains multiple threads. The size of a thread group cannot exceed
+    /// `maxThreadsPerThreadgroup`. This upper limit is usually shortened because
+    /// of memory being shared between threads of the same thread group.
+    /// Yet, a high number of threads in a thread group does not mean these many threads
+    /// being executed at "the same time".
+    /// The real concurrency comes from the SIMD groups. A SIMD group typically contains
+    /// `threadExecutionWidth` threads that are executed at "the same time".
+    /// For most efficient execution, the thread group size should be a multiple of
+    /// `threadExecutionWidth`.
+    /// Also note that `maxThreadsPerThreadgroup` is a multiple of the latter.
+    ///
+    /// - Parameters:
+    ///     - threadsPerGrid: The total number of elements in grid.
+    ///     - threadsPerThreadgroup: The number of elements in each thread group.
+    ///
+    public func dispatchThreads(
+        threadsPerGrid: MTLSize,
+        threadsPerThreadgroup: MTLSize)
     {
         _encoder.dispatchThreads(
             threadsPerGrid,

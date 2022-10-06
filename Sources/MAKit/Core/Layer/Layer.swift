@@ -10,7 +10,9 @@ import Foundation
 /// Error occuring during the layer forward or backward propagation.
 public enum LayerError: Error
 {
+    /// Data has not the correct dimensions.
     case DataSize
+    /// Batch size is not coherent.
     case BatchSize
 }
 
@@ -21,14 +23,14 @@ extension LayerError: CustomStringConvertible
         switch self
         {
         case .DataSize:
-            return "The parameters do have the expected number of elements."
+            return "The parameters do not have the expected number of elements."
         case .BatchSize:
             return "Batch size is not coherent with internal state."
         }
     }
 }
 
-/// A layer that wraps multiple operations in one.
+/// A layer that is composed of multiple operations.
 public protocol LayerExtract: Layer
 {
     ///
@@ -36,7 +38,7 @@ public protocol LayerExtract: Layer
     ///
     /// - Parameter inPlace: Whether hard resources should be copied as is.
     ///
-    /// - Returns: A new instance of `Layer`. When `inPlace` is false, `initKernel` is
+    /// - Returns: A new layer. When `inPlace` is false, `initKernel` is
     /// necessary in order to recreate hard resources.
     ///
     func extract(inPlace: Bool) -> Layer
@@ -55,7 +57,7 @@ public protocol LayerResize: Layer
     ///     This dictionary is particularly useful when the different layers cannot access
     ///     their `layerPrev`.
     ///
-    /// - Returns: A new instance of `Layer`. When `inPlace` is false, `initKernel` is
+    /// - Returns: A new layer. When `inPlace` is false, `initKernel` is
     ///  necessary in order to recreate hard resources.
     ///
     func resize(
@@ -87,7 +89,7 @@ open class Layer: Codable
     
     /// GPU device on which model is executed.
     public var deviceID: Int = 0
-    /// Batch size of a model.
+    /// Batch size of data.
     public var batchSize: Int = 0
     /// Running phase of a model: Training or Inference.
     public var phase: Phase? = nil
@@ -130,7 +132,7 @@ open class Layer: Codable
     }
     
     ///
-    /// Create an instance of `Layer`.
+    /// Create a layer.
     ///
     /// - Parameters:
     ///    - layerPrev: Previous layer that has been queued in the `Model`.
@@ -152,9 +154,9 @@ open class Layer: Codable
     }
     
     ///
-    /// Create an instance of Layer by decoding from the given decoder.
+    /// Decode from the disk.
     ///
-    /// This initializer throws an error if reading from the decoder fails, or
+    /// Throw an error if reading from the decoder fails, or
     /// if the data read is corrupted or otherwise invalid.
     ///
     /// - Parameter decoder: The decoder to read data from.
@@ -167,12 +169,12 @@ open class Layer: Codable
     }
     
     ///
-    /// Encode this value into the given encoder.
+    /// Encode to the disk.
     ///
     /// If the value fails to encode anything, `encoder` will encode an empty
     /// keyed container in its place.
     ///
-    /// This function throws an error if any values are invalid for the given
+    /// Throw an error if any values are invalid for the given
     /// encoder's format.
     ///
     /// - Parameter encoder: The encoder to write data to.
@@ -185,7 +187,7 @@ open class Layer: Codable
     }
     
     ///
-    /// Create a new instance of `Layer` with same values as this.
+    /// Create a new layer with same values as this.
     ///
     /// - Parameters:
     ///     - mapping: Dictionary allowing to find the layer associated to some id.
@@ -193,7 +195,7 @@ open class Layer: Codable
     ///     their `layerPrev`.
     ///     - inPlace: Whether hard resources should be copied as is.
     ///
-    /// - Returns: A new instance of `Layer`. When `inPlace` is false, `initKernel` is
+    /// - Returns: A new layer. When `inPlace` is false, `initKernel` is
     /// necessary in order to recreate hard resources.
     ///
     open func copy(
@@ -204,9 +206,9 @@ open class Layer: Codable
     }
     
     ///
-    /// Find the `layerPrev` associated to this `idPrev`.
+    /// Find the `layerPrev` associated to the layer's `idPrev`.
     ///
-    /// - Parameter layers: The potential layers where to find this `idPrev`.
+    /// - Parameter layers: The potential layers where to find the layer's `idPrev`.
     ///
     open func initLinks(_ layers: [Layer])
     {

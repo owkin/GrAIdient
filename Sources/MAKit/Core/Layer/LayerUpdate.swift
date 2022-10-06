@@ -44,15 +44,23 @@ public protocol LayerUpdate: Layer
     func collectWeightsGPU() -> [IWeightBuffers]
 }
 
+/// API for the GPU buffers needed to update the weights.
 public protocol IWeightBuffers
 {
+    /// GPU device where the buffers are sent.
     var deviceID: Int { get }
+    /// Number of elements in the different buffers.
     var nbElems: Int { get }
     
+    /// Weights buffer: the buffer to be update.
     var w: MetalBuffer<Float> { get }
+    /// Gradients buffer.
     var g: MetalBuffer<Float> { get }
+    /// Momentum buffer.
     var m: MetalBuffer<Float> { get }
+    /// Velocity buffer.
     var v: MetalBuffer<Float> { get }
+    /// Velocity normalized buffer.
     var vHat: MetalBuffer<Float> { get }
     
     /// Clean the momentum, preserving the weights.
@@ -61,12 +69,14 @@ public protocol IWeightBuffers
 
 extension IWeightBuffers
 {
+    /// Get the weights as a private buffer.
     var w_p: MetalPrivateBuffer<Float>?
     {
         get {
             return w as? MetalPrivateBuffer<Float>
         }
     }
+    /// Get the weights as a shared buffer.
     var w_s: MetalSharedBuffer<Float>?
     {
         get {
@@ -74,12 +84,14 @@ extension IWeightBuffers
         }
     }
     
+    /// Get the gradient buffer as a private buffer.
     var g_p: MetalPrivateBuffer<Float>?
     {
         get {
             return g as? MetalPrivateBuffer<Float>
         }
     }
+    /// Get the gradient buffer as a shared buffer.
     var g_s: MetalSharedBuffer<Float>?
     {
         get {
@@ -88,9 +100,12 @@ extension IWeightBuffers
     }
 }
 
+/// GPU buffers needed to update the weights.
 class WeightBuffers: IWeightBuffers
 {
+    /// Number of elements in the different buffers.
     let nbElems: Int
+    /// GPU device where the buffers are sent.
     let deviceID: Int
     
     var _w: MetalBuffer<Float>! = nil
@@ -99,6 +114,13 @@ class WeightBuffers: IWeightBuffers
     var _v: MetalBuffer<Float>! = nil
     var _vHat: MetalBuffer<Float>! = nil
     
+    ///
+    /// Create a new container of buffers.
+    ///
+    /// - Parameters:
+    ///     - nbElems: Number of elements in the different buffers.
+    ///     - deviceID: GPU device where the buffers are sent.
+    ///
     init(nbElems: Int,
          deviceID: Int)
     {
@@ -106,6 +128,7 @@ class WeightBuffers: IWeightBuffers
         self.deviceID = deviceID
     }
     
+    /// Weights buffer: the buffer to be update.
     var w: MetalBuffer<Float>
     {
         get {
@@ -117,6 +140,7 @@ class WeightBuffers: IWeightBuffers
         }
     }
     
+    /// Gradients buffer.
     var g: MetalBuffer<Float>
     {
         get {
@@ -128,6 +152,7 @@ class WeightBuffers: IWeightBuffers
         }
     }
     
+    /// Momentum buffer.
     var m: MetalBuffer<Float>
     {
         get {
@@ -139,6 +164,7 @@ class WeightBuffers: IWeightBuffers
         }
     }
     
+    /// Velocity buffer.
     var v: MetalBuffer<Float>
     {
         get {
@@ -150,6 +176,7 @@ class WeightBuffers: IWeightBuffers
         }
     }
     
+    /// Velocity normalized buffer.
     var vHat: MetalBuffer<Float>
     {
         get {

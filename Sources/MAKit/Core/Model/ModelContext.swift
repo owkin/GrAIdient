@@ -8,8 +8,19 @@
 import Foundation
 
 ///
-/// An object that is passed during the creation of the different layers in order for them to be linked to the
-/// `Model` where they belong.
+/// An object that is passed during the creation of the different layers for them to be added in their
+/// `Model` queue.
+///
+/// The main problem adressed by the model context is to be able to edit the very graph of the
+/// deep-learning calls of the model. The basic bricks being the layers, they have to be able to refer to
+/// previous ones. Plus, we want these references to be written to the disk in order to load them later.
+/// Hence the need of an id for each layer.
+/// So now, why not using a global unique id ? This global unique id would be less convenient
+/// with multiple mirrored models in the context of federated learning on multiple GPU at once.
+/// The current solution allows to consider several "threads" of models.
+/// Each thread is composed of models where the id are unique in the given "thread".
+/// But looking at another "thread" of mirrored models, we would find the exact same ids.
+/// As a conclusion, it appears that the id is not unique, but closely related to the model in which it is used.
 ///
 public class ModelContext
 {
@@ -63,7 +74,7 @@ public class ModelContext
     /// - Parameters:
     ///     - layer: The layer to be added to the model.
     ///     - hidden: Whether the layer is hidden inside another layer.
-    ///     
+    ///
     func update(layer: Layer, hidden: Bool)
     {
         if !hidden

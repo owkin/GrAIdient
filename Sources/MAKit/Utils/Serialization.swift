@@ -5,8 +5,10 @@
 // Created by Jean-François Reboud on 05/10/2022.
 //
 
+/// Error occuring while decoding from the disk.
 public enum SerializationError: Error
 {
+    /// Trying to decode a class which has not been registered.
     case TypeNotFound
 }
 
@@ -18,16 +20,23 @@ extension SerializationError: CustomStringConvertible
         {
         case .TypeNotFound:
             return "Type has not been registered anywhere: " +
-                   "use JLearn.Model.*.append APIs."
+                   "use MAKit.Model.*.append APIs."
         }
     }
 }
 
+/// Registry of layer types.
 let LAYER_REGISTRY: [String: Codable.Type] = buildRegistry(
 [
     // TODO: add elements here.
 ])
 
+///
+/// Build a registry of types.
+///
+/// - Parameter listTypes: List of types to register.
+/// - Returns: A dictionary allowing to find the available types when loading from the disk.
+///
 public func buildRegistry(_ listTypes: [Codable.Type]) -> [String: Codable.Type]
 {
     var registry = [String:Codable.Type]()
@@ -38,13 +47,21 @@ public func buildRegistry(_ listTypes: [Codable.Type]) -> [String: Codable.Type]
     return registry
 }
 
+///
+/// Convert a type to a string.
+///
+/// - Parameter type: The type to convert to string.
+/// - Returns: The string describing the type.
+///
 public func getStr(_ type: Codable.Type) -> String
 {
     return String(describing: type)
 }
 
+/// Serialize and deserialize a layer thanks to its string type.
 class LayerContainer: Codable
 {
+    /// The layer to serialize/deserialize.
     let layer: Layer
     
     enum Keys: String, CodingKey
@@ -53,11 +70,24 @@ class LayerContainer: Codable
         case layer
     }
     
+    ///
+    /// Create a serializable container.
+    ///
+    /// - Parameter layer: The layer to wrap.
+    ///
     init(_ layer: Layer)
     {
         self.layer = layer
     }
     
+    ///
+    /// Decode from the disk.
+    ///
+    /// Throw an error if reading from the decoder fails, or
+    /// if the data read is corrupted or otherwise invalid.
+    ///
+    /// - Parameter decoder: The decoder to read data from.
+    ///
     required init(from decoder: Decoder) throws
     {
         let container = try decoder.container(keyedBy: Keys.self)
@@ -74,6 +104,17 @@ class LayerContainer: Codable
         }
     }
     
+    ///
+    /// Encode to the disk.
+    ///
+    /// If the value fails to encode anything, `encoder` will encode an empty
+    /// keyed container in its place.
+    ///
+    /// Throw an error if any values are invalid for the given
+    /// encoder's format.
+    ///
+    /// - Parameter encoder: The encoder to write data to.
+    ///
     func encode(to encoder: Encoder) throws
     {
         var container = encoder.container(keyedBy: Keys.self)
@@ -83,13 +124,16 @@ class LayerContainer: Codable
     }
 }
 
+/// Registry of activation function types.
 let ACTIVATION_REGISTRY: [String: Codable.Type] = buildRegistry(
 [
     // TODO: add elements here.
 ])
 
+/// Serialize and deserialize an activation function thanks to its string type.
 class ActivationContainer: Codable
 {
+    /// The activatoin function to serialize/deserialize.
     let activation: ActivationFunction
     
     enum Keys: String, CodingKey
@@ -98,11 +142,24 @@ class ActivationContainer: Codable
         case activation
     }
     
+    ///
+    /// Create a seerializable container.
+    ///
+    /// - Parameter activation: The activation function to wrap.
+    ///
     required init(_ activation: ActivationFunction)
     {
         self.activation = activation
     }
     
+    ///
+    /// Decode from the disk.
+    ///
+    /// Throw an error if reading from the decoder fails, or
+    /// if the data read is corrupted or otherwise invalid.
+    ///
+    /// - Parameter decoder: The decoder to read data from.
+    ///
     required init(from decoder: Decoder) throws
     {
         let container = try decoder.container(keyedBy: Keys.self)
@@ -121,6 +178,17 @@ class ActivationContainer: Codable
         }
     }
     
+    ///
+    /// Encode to the disk.
+    ///
+    /// If the value fails to encode anything, `encoder` will encode an empty
+    /// keyed container in its place.
+    ///
+    /// Throw an error if any values are invalid for the given
+    /// encoder's format.
+    ///
+    /// - Parameter encoder: The encoder to write data to.
+    ///
     func encode(to encoder: Encoder) throws
     {
         var container = encoder.container(keyedBy: Keys.self)

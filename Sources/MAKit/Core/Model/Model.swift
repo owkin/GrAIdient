@@ -7,10 +7,20 @@
 
 import Foundation
 
+///
+/// A model containing layers with partial chaining information
+/// (`Layer.idPrev` is initialized but not `Layer.layerPrev`).
+///
+/// The interest of this base model is to be decodable from the disk. Hence, the different `Layer.idPrev`
+/// are retrieved and a further call to `Model` allows to update the different `Layer.layerPrev`
+/// thanks to the different `Layer.idPrev`.
+///
 public class BaseModel: Codable
 {
+    /// Name of the model.
     public var name = ""
     
+    /// The different layers composing the model.
     public var layers = [Layer]()
     
     private enum Keys: String, CodingKey
@@ -19,17 +29,35 @@ public class BaseModel: Codable
         case layers
     }
     
+    ///
+    /// Create a model with a name.
+    ///
+    /// - Parameter name: Name of the model.
+    ///
     public init(name: String)
     {
         self.name = name
     }
     
+    ///
+    /// Create a model out of another model.
+    ///
+    /// - Parameter model: The model to get the layers from.
+    ///
     public init(model: BaseModel)
     {
         name = model.name
         layers = model.layers
     }
     
+    ///
+    /// Decode from the disk.
+    ///
+    /// Throw an error if reading from the decoder fails, or
+    /// if the data read is corrupted or ortherwise invalid.
+    ///
+    /// - Parameter decoder: The decoder to read data from.
+    ///
     public required init(from decoder: Decoder) throws
     {
         let container = try decoder.container(keyedBy: Keys.self)
@@ -46,6 +74,17 @@ public class BaseModel: Codable
         self.layers = layers
     }
     
+    ///
+    /// Encode to the disk.
+    ///
+    /// If the value fails to encode anything, `encoder` will encode an empty
+    /// keyed container in its place.
+    ///
+    /// Throw an error if any values are invalid for the given
+    /// encoder's format.
+    ///
+    /// - Parameter encoder: The encoder to write data to.
+    ///
     public func encode(to encoder: Encoder) throws
     {
         var container = encoder.container(keyedBy: Keys.self)
@@ -61,16 +100,32 @@ public class BaseModel: Codable
         try container.encode(listLayerContainer, forKey: .layers)
     }
     
+    ///
+    /// Add a layer to the queue of the model.
+    ///
+    /// - Parameter layer: The layer to add to the model.
+    ///
     func append(_ layer: Layer)
     {
         layers.append(layer)
     }
     
+    ///
+    /// Create a model by copying the inner layers.
+    ///
+    /// - Parameters:
+    ///     - mapping: Dictionary allowing to find the layer associated to some id.
+    ///     This dictionary is particularly useful when the different layers cannot access
+    ///     their `layerPrev`.
+    ///     - inPlace: Whether hard resources should be copied as is.
+    ///
+    /// - Returns: A new model. When `inPlace` is false, `initKernel` is
+    /// necessary in order to recreate hard resources.
+    ///
     func copy(
         mapping: inout Dictionary<Int, Layer>,
         inPlace: Bool) -> BaseModel
     {
-        // inPLace allows to give resources without having to re build them.
         let newModel = BaseModel(name: name)
         var newLayers = [Layer]()
         
@@ -85,13 +140,26 @@ public class BaseModel: Codable
         return newModel
     }
     
+    ///
+    /// Resize the model, creating a new one.
+    ///
+    /// - Parameters:
+    ///     - mapping: Dictionary allowing to find the layer associated to some id.
+    ///     This dictionary is particularly useful when the different layers cannot access
+    ///     their `layerPrev`.
+    ///     - inPlace: Whether hard resources should be copied as is.
+    ///     - imageWidth: New size width.
+    ///     - imageHeight: New size height.
+    ///
+    /// - Returns: A new model. When `inPlace` is false, `initKernel` is
+    ///  necessary in order to recreate hard resources.
+    ///
     func resize(
         mapping: inout Dictionary<Int, Layer>,
         inPlace: Bool,
         imageWidth: Int,
         imageHeight: Int) -> BaseModel
     {
-        // inPLace allows to give resources without having to re build them.
         let newModel = BaseModel(name: name)
         var newLayers = [Layer]()
         
@@ -120,10 +188,15 @@ public class BaseModel: Codable
     }
 }
 
+///
+/// A model containing layers with full chaining information
+/// (`Layer.idPrev` AND `Layer.layerPrev` are initialized).
+///
 public class Model: BaseModel
 {
     // TODO: add elements here.
     
+    /// Get/Set the weights of the different layers.
     public var weights: [[Float]]
     {
         get {
@@ -188,6 +261,7 @@ public class Model: BaseModel
         }
     }
     
+    /// Get/Set the need to compute the gradients of the weights for the different layers.
     public var computeDeltaWeights: Bool
     {
         get {
@@ -211,6 +285,7 @@ public class Model: BaseModel
         }
     }
     
+    /// Get/Set: if true: the gradients of the weights are accumulated in place.
     public var accumulateDeltaWeights: Bool
     {
         get {
@@ -234,6 +309,7 @@ public class Model: BaseModel
         }
     }
     
+    /// Get/Set: whether layer has been visited by the backward pass of its following layer in the queue.
     var dirty: Bool
     {
         get {
@@ -247,6 +323,7 @@ public class Model: BaseModel
         }
     }
     
+    /// Get/Set the GPU ID where the model is sent.
     public var deviceID: Int
     {
         get {
@@ -260,6 +337,7 @@ public class Model: BaseModel
         }
     }
     
+    /// Get/Set the learning mode: Training or Inference.
     public var phase: Phase?
     {
         get {
@@ -273,6 +351,7 @@ public class Model: BaseModel
         }
     }
     
+    /// Get/Set the batch size of data.
     var batchSise: Int
     {
         get {
@@ -286,6 +365,15 @@ public class Model: BaseModel
         }
     }
     
+    ///
+    /// Create a model ouf of a base model with partial chaining information, resolving the chaining
+    /// thanks to `Layer.idPrev`.
+    ///
+    /// - Parameters:
+    ///     - model: The base model with partial chaining information.
+    ///     - modelsPrev: A list of models where layers may appear as `layerPrev` of some layers of
+    ///     model.
+    ///
     public init(model: BaseModel, modelsPrev: [BaseModel])
     {
         super.init(model: model)
@@ -303,6 +391,14 @@ public class Model: BaseModel
         }
     }
     
+    ///
+    /// Create a model ouf of a base model with partial chaining information, resolving the chaining
+    /// thanks to `Layer.idPrev`.
+    ///
+    /// - Parameters:
+    ///     - model: The base model with partial chaining information.
+    ///     - layersPrev: A list of layers that may appear as `layerPrev` of some layers of model.
+    ///
     public init(model: BaseModel, layersPrev: [Layer])
     {
         super.init(model: model)
@@ -314,11 +410,24 @@ public class Model: BaseModel
         }
     }
     
+    ///
+    /// Create a model with a name.
+    ///
+    /// - Parameter name: Name of the model.
+    ///
     public override init(name: String)
     {
         super.init(name: name)
     }
     
+    ///
+    /// Decode from the disk.
+    ///
+    /// Throw an error if reading from the decoder fails, or
+    /// if the data read is corrupted or ortherwise invalid.
+    ///
+    /// - Parameter decoder: The decoder to read data from.
+    ///
     public required init(from decoder: Decoder) throws
     {
         try super.init(from: decoder)
@@ -353,7 +462,8 @@ public class Model: BaseModel
     /// Initialize hard resources.
     ///
     /// Hard resources are the resources that are not dependent on the batch size.
-    /// Example: the weights, the batch normalization layer.
+    /// Example: the batch normalization layer.
+    /// Note that the weights are not initialized here, they have a dedicated API (initWeights).
     ///
     public func initKernel(phase: Phase? = nil, deviceID: Int = 0)
     {
@@ -436,15 +546,35 @@ public class Model: BaseModel
     
     // TODO: add elements here.
     
+    ///
+    /// Reset the state status before the forward.
+    ///
+    /// The batch size may be change during the different steps. Generally speaking, the hypothesis is that
+    /// it is possible to reverse memory for the max batch size during the first step. Some later steps
+    /// (especially the last one) may have a smaller batch size.
+    /// The different layers must also update their dirty state so that we can trace whether every layer
+    /// has been visited by at least one backward during a Training phase.
+    ///
+    /// - Parameter batchSize: The batch size of data.
+    ///
     public func updateKernel(batchSize: Int)
     {
         self.batchSise = batchSize
         self.dirty = true
     }
     
+    ///
+    /// Create a list of copied models (copy their their inner layers).
+    ///
+    /// - Parameters:
+    ///     - models: The different models to copy.
+    ///     - inPlace: Whether hard resources should be copied as is.
+    ///
+    /// - Returns: The list of copied models. When `inPlace` is false, `initKernel` is
+    /// necessary in order to recreate hard resources.
+    ///
     public static func copy(models: [BaseModel], inPlace: Bool) -> [Model]
     {
-        // inPLace allows to give resources without having to re build them.
         var mapping = Dictionary<Int, Layer>()
         
         var newModels = [Model]()
@@ -458,13 +588,24 @@ public class Model: BaseModel
         return newModels
     }
     
+    ///
+    /// Resize a list of models, creating a list of new ones.
+    ///
+    /// - Parameters:
+    ///     - models: The different models to resize.
+    ///     - imageWidth: New size width.
+    ///     - imageHeight: New size height.
+    ///     - inPlace: Whether hard resources should be copied as is.
+    ///
+    /// - Returns: The list of resized models. When `inPlace` is false, `initKernel` is
+    ///  necessary in order to recreate hard resources.
+    ///
     public static func resize(
         models: [BaseModel],
         imageWidth: Int,
         imageHeight: Int,
         inPlace: Bool) -> [Model]
     {
-        // inPLace allows to give resources without having to re build them.
         var mapping = Dictionary<Int, Layer>()
         
         var newModels = [Model]()
@@ -488,7 +629,7 @@ public class Model: BaseModel
     ///
     /// Apply the forward pass of the Gradient Checking.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public func forwardGradients() throws
     {
@@ -511,7 +652,7 @@ public class Model: BaseModel
     ///
     /// Apply the forward pass.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public func forward() throws
     {
@@ -544,7 +685,7 @@ public class Model: BaseModel
     ///
     /// Apply the backward pass.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public func backward() throws
     {
@@ -620,6 +761,17 @@ public class Model: BaseModel
     
     // TODO: add elements here.
     
+    ///
+    /// Average the weights of the different layers of a model that has been trained in similar conditions.
+    ///
+    /// Particularly usefull considering models that are being trained in parallel on several GPU,
+    /// in a federated learning style.
+    ///
+    /// - Parameters:
+    ///     - models: The list of "mirrored" models.
+    ///     - modelCoeffs: A list of coefficients to ponder the average of the weights (especially when
+    ///     the different GPU do not have same capability).
+    ///
     public static func synchronizeWeights(_ models: [Model],
                                           _ modelCoeffs: [Float])
     {
@@ -665,6 +817,13 @@ public class Model: BaseModel
         }
     }
     
+    ///
+    /// Get the chain of layers that go from the "first one" of the model to an endpoint, following the
+    /// `Layer.layerPrev` chaining.
+    ///
+    /// - Parameter endpoint: The final layer of our chain.
+    /// - Returns: The list of layers between the "first one" and `endpoint`.
+    ///
     public func getGraph(_ endpoint: Layer) -> [Layer]
     {
         var layers = [Layer]()

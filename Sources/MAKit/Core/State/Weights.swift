@@ -5,22 +5,31 @@
 // Created by Jean-François Reboud on 05/10/2022.
 //
 
+/// API for the arrays needed to update the weights.
 public protocol IWeightArrays
 {
+    /// Number of elementss in the different arrays.
     var nbElems: Int { get }
     
+    /// Weights array: the array to update.
     var w: [Double] { get set }
+    /// Gradients array.
     var g: [Double] { get set }
+    /// Momentum array.
     var m: [Double] { get set }
+    /// Velocity array.
     var v: [Double] { get set }
+    /// Veclocity normalized array.
     var vHat: [Double] { get set }
     
     /// Clean the momentum, preserving the weights.
     func reset()
 }
 
+/// Arrays needed to update the weights.
 class WeightArrays: IWeightArrays
 {
+    /// Number of elements in the different arrays.
     let nbElems: Int
     
     var _w: [Double] = []
@@ -29,11 +38,17 @@ class WeightArrays: IWeightArrays
     var _v: [Double] = []
     var _vHat: [Double] = []
     
+    ///
+    /// Create a container of arrays.
+    ///
+    /// - Parameter nbElems: Number of elements in the different arrays.
+    ///
     init(_ nbElems: Int)
     {
         self.nbElems = nbElems
     }
     
+    /// Weights array: the array to update.
     var w: [Double]
     {
         get {
@@ -53,6 +68,7 @@ class WeightArrays: IWeightArrays
             _w = newValue
         }
     }
+    /// Gradients array.
     var g: [Double]
     {
         get {
@@ -72,6 +88,7 @@ class WeightArrays: IWeightArrays
             _g = newValue
         }
     }
+    /// Momentum array.
     var m: [Double]
     {
         get {
@@ -91,6 +108,7 @@ class WeightArrays: IWeightArrays
             _m = newValue
         }
     }
+    /// Velocity array.
     var v: [Double]
     {
         get {
@@ -110,6 +128,7 @@ class WeightArrays: IWeightArrays
             _v = newValue
         }
     }
+    /// Veclocity normalized array.
     var vHat: [Double]
     {
         get {
@@ -140,18 +159,9 @@ class WeightArrays: IWeightArrays
     }
 }
 
+/// Arrays needed to update the weights, shaped in grids.
 class WeightGrids: WeightArrays
 {
-    public let width: Int
-    public let height: Int
-    
-    public init(width: Int, height: Int)
-    {
-        self.width = width
-        self.height = height
-        super.init(height * width)
-    }
-    
     //             j  0 ---------->[width-1,0]
     //0           i|
     //             |
@@ -159,6 +169,34 @@ class WeightGrids: WeightArrays
     //             |
     //             |
     //[0,height-1] v               [width-1,height-1]
+    
+    /// The width of the grid shape.
+    public let width: Int
+    /// The height of the grid shape.
+    public let height: Int
+    
+    ///
+    /// Create a container of arrays, shaped in grids.
+    ///
+    /// - Parameters:
+    ///     - width: The width of the grid shape.
+    ///     - height: The height of the grid shape.
+    ///
+    public init(width: Int, height: Int)
+    {
+        self.width = width
+        self.height = height
+        super.init(height * width)
+    }
+
+    ///
+    /// Get the weights with a grid subscript.
+    ///
+    /// - Parameters:
+    ///     - i: The row element.
+    ///     - j: The column element.
+    /// - Returns: The weight retrieved.
+    ///
     func w(_ i: Int, _ j: Int) -> Double
     {
         if i >= 0 && j >= 0 && j < width && i < height
@@ -170,6 +208,14 @@ class WeightGrids: WeightArrays
             fatalError("Indices (\(i), \(j)) out of bound.")
         }
     }
+    ///
+    /// Set the weights with a grid subscript.
+    ///
+    /// - Parameters:
+    ///     - i: The row element.
+    ///     - j: The column element.
+    ///     - val: The value to set.
+    ///
     func w(_ i: Int, _ j: Int, _ val: Double)
     {
         if i >= 0 && j >= 0 && j < width && i < height
@@ -182,6 +228,14 @@ class WeightGrids: WeightArrays
         }
     }
     
+    ///
+    /// Get the gradients with a grid subscript.
+    ///
+    /// - Parameters:
+    ///     - i: The row element.
+    ///     - j: The column element.
+    /// - Returns: The gradient retrieved.
+    ///
     func g(_ i: Int, _ j: Int) -> Double
     {
         if i >= 0 && j >= 0 && j < width && i < height
@@ -193,6 +247,14 @@ class WeightGrids: WeightArrays
             fatalError("Indices (\(i), \(j)) out of bound.")
         }
     }
+    ///
+    /// Set the gradients with a grid subscript.
+    ///
+    /// - Parameters:
+    ///     - i: The row element.
+    ///     - j: The column element.
+    ///     - val: The value to set.
+    ///
     func g(_ i: Int, _ j: Int, _ val: Double)
     {
         if i >= 0 && j >= 0 && j < width && i < height
@@ -205,6 +267,14 @@ class WeightGrids: WeightArrays
         }
     }
     
+    ///
+    /// Get the momentum with a grid subscript.
+    ///
+    /// - Parameters:
+    ///     - i: The row element.
+    ///     - j: The column element.
+    /// - Returns: The momentum retrieved.
+    ///
     func m(_ i: Int, _ j: Int) -> Double
     {
         if i >= 0 && j >= 0 && j < width && i < height
@@ -216,6 +286,14 @@ class WeightGrids: WeightArrays
             fatalError("Indices (\(i), \(j)) out of bound.")
         }
     }
+    ///
+    /// Set the momentum with a grid subscript.
+    ///
+    /// - Parameters:
+    ///     - i: The row element.
+    ///     - j: The column element.
+    ///     - val: The value to set.
+    ///
     func m(_ i: Int, _ j: Int, _ val: Double)
     {
         if i >= 0 && j >= 0 && j < width && i < height
@@ -228,6 +306,14 @@ class WeightGrids: WeightArrays
         }
     }
     
+    ///
+    /// Get the velocity with a grid subscript.
+    ///
+    /// - Parameters:
+    ///     - i: The row element.
+    ///     - j: The column element.
+    /// - Returns: The velocity retrieved.
+    ///
     func v(_ i: Int, _ j: Int) -> Double
     {
         if i >= 0 && j >= 0 && j < width && i < height
@@ -239,6 +325,14 @@ class WeightGrids: WeightArrays
             fatalError("Indices (\(i), \(j)) out of bound.")
         }
     }
+    ///
+    /// Set the velocity with a grid subscript.
+    ///
+    /// - Parameters:
+    ///     - i: The row element.
+    ///     - j: The column element.
+    ///     - val: The value to set.
+    ///
     func v(_ i: Int, _ j: Int, _ val: Double)
     {
         if i >= 0 && j >= 0 && j < width && i < height
@@ -251,6 +345,14 @@ class WeightGrids: WeightArrays
         }
     }
     
+    ///
+    /// Get the velocity normalized with a grid subscript.
+    ///
+    /// - Parameters:
+    ///     - i: The row element.
+    ///     - j: The column element.
+    /// - Returns: The velocity normalized retrieved.
+    ///
     func vHat(_ i: Int, _ j: Int) -> Double
     {
         if i >= 0 && j >= 0 && j < width && i < height
@@ -262,6 +364,14 @@ class WeightGrids: WeightArrays
             fatalError("Indices (\(i), \(j)) out of bound.")
         }
     }
+    ///
+    /// Set the velocity normalized with a grid subscript.
+    ///
+    /// - Parameters:
+    ///     - i: The row element.
+    ///     - j: The column element.
+    ///     - val: The value to set.
+    ///
     func vHat(_ i: Int, _ j: Int, _ val: Double)
     {
         if i >= 0 && j >= 0 && j < width && i < height

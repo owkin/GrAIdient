@@ -187,7 +187,7 @@ open class Layer: Codable
     }
     
     ///
-    /// Create a new layer with same values as this.
+    /// Create a layer with same values as this.
     ///
     /// - Parameters:
     ///     - mapping: Dictionary allowing to find the layer associated to some id.

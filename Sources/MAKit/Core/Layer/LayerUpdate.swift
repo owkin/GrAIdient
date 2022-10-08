@@ -115,14 +115,13 @@ class WeightBuffers: IWeightBuffers
     var _vHat: MetalBuffer<Float>! = nil
     
     ///
-    /// Create a new container of buffers.
+    /// Create a container of buffers.
     ///
     /// - Parameters:
     ///     - nbElems: Number of elements in the different buffers.
     ///     - deviceID: GPU device where the buffers are sent.
     ///
-    init(nbElems: Int,
-         deviceID: Int)
+    init(nbElems: Int, deviceID: Int)
     {
         self.nbElems = nbElems
         self.deviceID = deviceID

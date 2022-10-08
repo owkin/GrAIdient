@@ -194,6 +194,76 @@ public class BaseModel: Codable
 ///
 public class Model: BaseModel
 {
+    var _kernel = OptimizerKernel()
+    
+    /// Get optimizer parameters.
+    public var optimizerParams: MAKit.Optimizer.Params
+    {
+        get {
+            return _kernel.params
+        }
+    }
+    
+    /// Get alpha value in the optimizer.
+    public var alpha: Double
+    {
+        get {
+            return _kernel.algo.alpha
+        }
+    }
+    /// Get alpha percent value in the optimizer.
+    public var alphaPercent: Double
+    {
+        get {
+            return _kernel.algo.alphaPercent
+        }
+    }
+    
+    /// Get lambda value in the optimizer.
+    public var lambda: Double?
+    {
+        get {
+            return _kernel.algo.lambda
+        }
+    }
+    /// Get lambda percent value in the optimizer.
+    public var lambdaPercent: Double?
+    {
+        get {
+            return _kernel.algo.lambdaPercent
+        }
+    }
+    
+    /// Get lower bound value in the optimizer.
+    public var lowerBound: Double?
+    {
+        get {
+            return _kernel.algo.lowerBound
+        }
+    }
+    /// Get lower bound percent value in the optimizer.
+    public var lowerBoundPercent: Double?
+    {
+        get {
+            return _kernel.algo.lowerBoundPercent
+        }
+    }
+    
+    /// Get upper bound  value in the optimizer.
+    public var upperBound: Double?
+    {
+        get {
+            return _kernel.algo.upperBound
+        }
+    }
+    /// Get upper bound percent value in the optimizer.
+    public var upperBoundPercent: Double?
+    {
+        get {
+            return _kernel.algo.upperBoundPercent
+        }
+    }
+    
     // TODO: add elements here.
     
     /// Get/Set the weights of the different layers.
@@ -433,7 +503,15 @@ public class Model: BaseModel
         try super.init(from: decoder)
     }
     
-    // TODO: add elements here.
+    ///
+    /// Set the parameters for the optimizer.
+    ///
+    /// - Parameter params: The parameters to set.
+    ///
+    public func setupOptimizers(params: MAKit.Optimizer.Params)
+    {
+        _kernel.params = params
+    }
     
     ///
     /// Clean state resources.
@@ -464,6 +542,10 @@ public class Model: BaseModel
     /// Hard resources are the resources that are not dependent on the batch size.
     /// Example: the batch normalization layer.
     /// Note that the weights are not initialized here, they have a dedicated API (initWeights).
+    ///
+    /// - Parameters:
+    ///     - phase: Running phase of the model: `Training` or `Inference`.
+    ///     - deviceID: GPU device where the model will be executed.
     ///
     public func initKernel(phase: Phase? = nil, deviceID: Int = 0)
     {
@@ -544,7 +626,25 @@ public class Model: BaseModel
         }
     }
     
-    // TODO: add elements here.
+    ///
+    /// Initialize hard resources and set the parameters for the optimizer.
+    ///
+    /// Hard resources are the resources that are not dependent on the batch size.
+    /// Example: the batch normalization layer.
+    /// Note that the weights are not initialized here, they have a dedicated API (initWeights).
+    ///
+    /// - Parameters:
+    ///     - params: The parameters for the `Optimizer`.
+    ///     - phase: Running phase of the model: `Training` or `Inference`.
+    ///     - deviceID: GPU device where the model will be executed.
+    ///
+    public func initialize(params: MAKit.Optimizer.Params,
+                           phase: Phase,
+                           deviceID: Int = 0)
+    {
+        setupOptimizers(params: params)
+        initKernel(phase: phase, deviceID: deviceID)
+    }
     
     ///
     /// Reset the state status before the forward.
@@ -624,7 +724,17 @@ public class Model: BaseModel
         return newModels
     }
     
-    // TODO: add elements here.
+    /// Notify optimizer that a step has been completed.
+    public func incStep()
+    {
+        _kernel.incStep()
+    }
+    
+    /// Notify optimizer tthat a new epoch has begun.
+    public func incEpoch()
+    {
+        _kernel.incEpoch()
+    }
     
     ///
     /// Apply the forward pass of the Gradient Checking.
@@ -759,7 +869,111 @@ public class Model: BaseModel
         }
     }
     
-    // TODO: add elements here.
+    ///
+    /// Update the weights of a model.
+    ///
+    /// Throw an error when layer has not been visited by any  backward pass.
+    ///
+    /// - Parameters:
+    ///     - gradientNorm: The gradient norm.
+    ///     - layers: The list of layers to consider.
+    ///
+    public func update(gradientNorm: Double? = nil,
+                       layers: [Layer] = []) throws
+    {
+        _checkLayers(layers: layers)
+        
+        let myLayers = layers.count > 0 ? layers : self.layers
+        if MAKit.Opti.GPU
+        {
+            let gNorm: Float? = gradientNorm != nil ?
+                                Float(gradientNorm!) : nil
+            try _kernel.algo.udpateGPU(layers: myLayers,
+                                       gradientNorm: gNorm)
+        }
+        else
+        {
+            try _kernel.algo.udpateCPU(layers: myLayers,
+                                       gradientNorm: gradientNorm)
+        }
+    }
+    
+    ///
+    /// Multiply weights' gradients by a scalar.
+    ///
+    /// Throw an error when layer has not been visited by any backward pass.
+    ///
+    /// - Parameters:
+    ///     - factor: The coefficient to multiply the weights' gradients by.
+    ///     - layers: The list of layers to consider.
+    ///
+    public func multiplyGradient(factor: Double,
+                                 layers: [Layer] = []) throws
+    {
+        _checkLayers(layers: layers)
+        
+        let myLayers = layers.count > 0 ? layers : self.layers
+        if MAKit.Opti.GPU
+        {
+            try _kernel.algo.multiplyGradientGPU(layers: myLayers,
+                                                 factor: Float(factor))
+        }
+        else
+        {
+            try _kernel.algo.multiplyGradientCPU(layers: myLayers,
+                                                 factor: factor)
+        }
+    }
+    
+    ///
+    /// Get gradient norm.
+    ///
+    /// Throw an error when layer has not been visited by any backward pass.
+    ///
+    /// - Parameter layers: The list of layers to consider.
+    /// - Returns: The gradient norm.
+    ///
+    public func getGradientNorm(layers: [Layer] = []) throws -> Double
+    {
+        _checkLayers(layers: layers)
+        
+        let myLayers = layers.count > 0 ? layers : self.layers
+        if MAKit.Opti.GPU
+        {
+            return try Double(_kernel.algo.getGradientNormGPU(myLayers))
+        }
+        else
+        {
+            return try _kernel.algo.getGradientNormCPU(myLayers)
+        }
+    }
+    
+    ///
+    /// Get the weights'  gradients.
+    ///
+    /// Throw an error when layer has not been visited by any backward pass.
+    ///
+    /// - Parameter layers: The list of layers to consider.
+    /// - Returns: The list of weights' gradients.
+    ///
+    public func collectGradients(layers: [Layer]) throws -> [Double]
+    {
+        _checkLayers(layers: layers)
+        
+        if MAKit.Opti.GPU
+        {
+            var gradients = [Double]()
+            for gradient in try _kernel.algo.getGradientsGPU(layers)
+            {
+                gradients.append(Double(gradient))
+            }
+            return gradients
+        }
+        else
+        {
+            return try _kernel.algo.getGradientsCPU(layers)
+        }
+    }
     
     ///
     /// Average the weights of the different layers of a model that has been trained in similar conditions.

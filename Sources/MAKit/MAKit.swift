@@ -235,6 +235,58 @@ public class MAKit
         }
     }
     
+    /// Namespace for optimizer settings.
+    public class Optimizer
+    {
+        /// Optimizer algorithm.
+        public enum Class
+        {
+            case SGD, SGDMomentum
+            case Adam, AMSGrad, AdamRectified
+            case AdaBound, AMSBound
+        }
+        
+        /// Parameters needed to run optimizers.
+        public struct Params
+        {
+            var t: Int = 0
+            public var step: Int = 0
+            public var epoch: Int = 0
+            
+            public var nbLoops: Int = -1
+            
+            public var optimizer: TimeScheduler! = nil
+            public var variables: [String:TimeVariable] = [:]
+            
+            public var gradientClipping: Bool = false
+            public var normThreshold: Double = 1.0
+            
+            public init() {}
+        }
+        
+        /* example:
+         
+        var optimizerParams = MAKit.Optimizer.Params()
+         
+        optimizerParams.batchSize = batchSize
+        optimizerParams.nbSamples = nbSamples
+        optimizerParams.nbLoops = nbLoops
+         
+        optimizerParams.optimizer = ConstEpochsScheduler(
+            MAKit.Optimizer.Class.AdamRectified
+        )
+         
+        optimizerParams.variables =
+        [
+            "alpha": MultEpochsVar(
+                epoch0: 5,
+                epochMul: 2,
+                value: LinearDescending(min: 0.0001, max: 0.005)
+            ),
+            "lambda": ConstEpochsVar(value: ConstVal(0.003))
+        ] */
+    }
+    
     /// Namespace for run settings.
     public class Loop
     {

@@ -87,20 +87,19 @@ public class MetalPrivateBuffer<T>: MetalBuffer<T>
 ///
 public class MetalSharedBuffer<T>: MetalBuffer<T>
 {
-    let _bufferPtr: UnsafeMutableBufferPointer<T>
-    let _memory: UnsafeMutableRawPointer
-    let _allocationSize: Int
+    /// The inner data buffer.
+    public let buffer: UnsafeMutableBufferPointer<T>
     
-    public var buffer: UnsafeMutableBufferPointer<T>
-    {
-        get {
-            return _bufferPtr
-        }
-    }
+    /// Explicit allocated memory pointer.
+    let memory: UnsafeMutableRawPointer
+    /// Byte size allocation.
+    let allocationSize: Int
+    
+    /// Get access to the inner data as an array.
     public var array: [T]
     {
         get {
-            return _memory.toArray(to: T.self, capacity: nbElems)
+            return memory.toArray(to: T.self, capacity: nbElems)
         }
     }
     
@@ -117,19 +116,6 @@ public class MetalSharedBuffer<T>: MetalBuffer<T>
         }
     }
     
-    var allocationSize: Int
-    {
-        get {
-            return _allocationSize
-        }
-    }
-    var memory: UnsafeMutableRawPointer
-    {
-        get {
-            return _memory
-        }
-    }
-    
     ///
     /// Create an object to interact with a GPU resource.
     ///
@@ -140,30 +126,35 @@ public class MetalSharedBuffer<T>: MetalBuffer<T>
     public override init(_ nbElems: Int, deviceID: Int)
     {
         let byteLength = nbElems * MemoryLayout<T>.size
-        
-        var memory: UnsafeMutableRawPointer? = nil
+        var memoryTmp: UnsafeMutableRawPointer? = nil
         let alignment = 0x1000
         
-        let allocationSize = (byteLength + alignment - 1) & (~(alignment - 1))
-        posix_memalign(&memory, alignment, allocationSize)
-        memset(memory, 0, byteLength)
+        allocationSize = (byteLength + alignment - 1) & (~(alignment - 1))
+        posix_memalign(&memoryTmp, alignment, allocationSize)
+        memset(memoryTmp, 0, byteLength)
         
-        _memory = memory!
-        _allocationSize = allocationSize
+        memory = memoryTmp!
+        let pointer = memoryTmp?.bindMemory(to: T.self, capacity: nbElems)
+        buffer = UnsafeMutableBufferPointer(start: pointer, count: nbElems)
         
-        let pointer = memory?.bindMemory(to: T.self, capacity: nbElems)
-        _bufferPtr = UnsafeMutableBufferPointer(start: pointer,
-                                                count: nbElems)
         super.init(nbElems, deviceID: deviceID)
     }
     
     deinit {
-        free(_memory)
+        free(memory)
     }
 }
 
 public extension UnsafeMutableRawPointer
 {
+    ///
+    /// Convert buffer pointer to array.
+    ///
+    /// - Parameters:
+    ///     - to: The type for each elements of the array.
+    ///     - capacity: size of the array.
+    /// - Returns: The converted array.
+    ///
     func toArray<T>(to type: T.Type, capacity count: Int) -> [T]
     {
         let pointer = bindMemory(to: type, capacity: count)

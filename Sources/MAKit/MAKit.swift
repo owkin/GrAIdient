@@ -108,6 +108,133 @@ public class MAKit
         }
     }
     
+    /// Namespace for model settings.
+    public class Model
+    {
+        /// Parameters allowing to discribute model context to the layers.
+        public struct Params
+        {
+            /// The model context in which the layer is being created.
+            public var context: ModelContext
+            /// Whether the layer should be exposed as a layer of the model
+            /// or not (case where the layer is contained in another one).
+            public var hidden = false
+            
+            ///
+            /// Create a parameter to distribute the model context.
+            ///
+            /// - Parameter context: The model context.
+            ///
+            public init(context: ModelContext)
+            {
+                self.context = context
+            }
+            
+            ///
+            /// Create a parameter to distribute the model context.
+            ///
+            /// - Parameter params: A parameter to copy.
+            ///
+            public init(params: Params)
+            {
+                self.context = params.context
+                self.hidden = params.hidden
+            }
+        }
+        
+        /// Namespace for layer settings.
+        public class Layer
+        {
+            ///
+            /// Populate the registry of layers to serialize/deserialize.
+            ///
+            /// - Parameter registry: A dictionary to map serializable layers.
+            ///
+            public static func append(registry: [String: Codable.Type])
+            {
+                getCtx.layerRegistries.append(registry)
+            }
+            
+            ///
+            /// Retrieve the layer type from the registry.
+            ///
+            /// - Parameter layer: The string to look for in the registry.
+            /// - Returns: The layer type associated.
+            ///
+            static func getType(layer: String) -> Codable.Type?
+            {
+                for registry in getCtx.layerRegistries
+                {
+                    if let type = registry[layer]
+                    {
+                        return type
+                    }
+                }
+                return nil
+            }
+        }
+        
+        /// Namespace for activation function settings.
+        public class Activation
+        {
+            ///
+            /// Populate the registry of activation function factories.
+            ///
+            /// - Parameter kernel: A factory to build activation functions..
+            ///
+            public static func append(kernel: IActivationKernel)
+            {
+                getCtx.activationKernels.append(kernel)
+            }
+            
+            ///
+            /// Populate the registry of activation function to serialize/deserialize.
+            ///
+            /// - Parameter registry: A dictionary to map serializable activation functions.
+            ///
+            public static func append(registry: [String: Codable.Type])
+            {
+                getCtx.activationRegistries.append(registry)
+            }
+            
+            ///
+            /// Build the activation function.
+            ///
+            /// - Parameter name: The activation function string to build.
+            /// - Returns: The activation function built.
+            ///
+            static func build(_ name: String) -> ActivationFunction?
+            {
+                for kernel in getCtx.activationKernels.reversed()
+                {
+                    if let activation = kernel.build(name)
+                    {
+                        return activation
+                    }
+                }
+                return nil
+            }
+            
+            ///
+            /// Retrieve the activation function type from the registry.
+            ///
+            /// - Parameter layer: The string to look for in the registry.
+            /// - Returns: The activation function type associated.
+            ///
+            static func getType(activation: String) -> Codable.Type?
+            {
+                for registry in getCtx.activationRegistries.reversed()
+                {
+                    if let type = registry[activation]
+                    {
+                        return type
+                    }
+                }
+                return nil
+            }
+        }
+    }
+    
     /// Namespace for run settings.
     public class Loop
     {
@@ -257,6 +384,17 @@ fileprivate class MAKitContext
         case Batch
         case Sample
     }
+    
+    //--------------------------------------------------------------------------
+    // MODEL
+    //--------------------------------------------------------------------------
+    /// Activation function factories.
+    var activationKernels: [IActivationKernel] = [ActivationKernel()]
+    /// Serializable activation function registry.
+    var activationRegistries: [[String: Codable.Type]] = [ACTIVATION_REGISTRY]
+    
+    /// Serializable layer registry.
+    var layerRegistries: [[String: Codable.Type]] = [LAYER_REGISTRY]
     
     //--------------------------------------------------------------------------
     // LOOP

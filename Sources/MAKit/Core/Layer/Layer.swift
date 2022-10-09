@@ -282,26 +282,26 @@ open class Layer: Codable
     ///
     /// Apply the forward pass of the Gradient Checking in CPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     open func forwardGCCPU() throws {}
     ///
     /// Apply the forward pass of the Gradient Checking in GPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     open func forwardGCGPU() throws {}
     
     ///
     /// Apply the forward pass in the CPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     open func forwardCPU() throws {}
     ///
     /// Apply the forward pass in the GPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     open func forwardGPU() throws {}
     
@@ -310,7 +310,7 @@ open class Layer: Codable
     ///
     /// Apply the backward pass in the GPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     open func backwardGPU() throws {}
 }

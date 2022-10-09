@@ -7,12 +7,16 @@
 
 import MetalKit
 
+/// Abstract part of the implementation of the weight update algorithm.
 class OptimizerImpl
 {
+    /// Object that contains the state of the optimization process.
     let _kernel: OptimizerKernel
     
+    /// List of variables needed during the weight update.
     private var _variables = [OptimizerVariable]()
     
+    /// Get the parameters of the optimizer algorithm.
     var params: MAKit.Optimizer.Params
     {
         get {
@@ -20,12 +24,14 @@ class OptimizerImpl
         }
     }
     
+    /// Get alpha (learning rate) value.
     var alpha: Double
     {
         get {
             return _kernel.getValue(_variables[0])!
         }
     }
+    /// Get alpha (learning rate) percent value.
     var alphaPercent: Double
     {
         get {
@@ -33,12 +39,14 @@ class OptimizerImpl
         }
     }
     
+    /// Get lambda (weight decay) value.
     var lambda: Double?
     {
         get {
             return _kernel.getValue(_variables[1])
         }
     }
+    /// Get lambda (weight decay) percent value.
     var lambdaPercent: Double?
     {
         get {
@@ -46,12 +54,14 @@ class OptimizerImpl
         }
     }
     
+    /// Get lower bound value.
     var lowerBound: Double?
     {
         get {
             return nil
         }
     }
+    /// Get lower bound percent value.
     var lowerBoundPercent: Double?
     {
         get {
@@ -59,12 +69,14 @@ class OptimizerImpl
         }
     }
     
+    /// Get upper bound value.
     var upperBound: Double?
     {
         get {
             return nil
         }
     }
+    /// Get upper bound percent value.
     var upperBoundPercent: Double?
     {
         get {
@@ -72,11 +84,17 @@ class OptimizerImpl
         }
     }
     
+    ///
+    /// Create the implementation of the weight update algorithm.
+    ///
+    /// - Parameter kernel: The state of the optimization process.
+    ///
     init(_ kernel: OptimizerKernel)
     {
         _kernel = kernel
     }
     
+    /// Set default values to the list of internal variables.
     func initVariables()
     {
         _variables =
@@ -93,34 +111,53 @@ class OptimizerImpl
         _kernel.setup(_variables)
     }
     
+    ///
+    /// The weight update function in CPU execution context.
+    ///
+    /// - Parameter weight: The weight arrays to update.
+    ///
     func stepCPU(_ weight: IWeightArrays)
     {
         fatalError("Not implemented.")
     }
     
+    ///
+    /// The weight update function in GPU execution context.
+    ///
+    /// - Parameter weight: The weight buffers to update.
+    ///
     func stepGPU(_ weight: IWeightBuffers)
     {
         fatalError("Not implemented.")
     }
     
+    /// Increment internal time state.
     func incT()
     {
         _kernel.incT()
     }
     
+    /// Increment internal step state.
     func incStep()
     {
         _kernel.incStep()
     }
     
+    /// Increment internal epoch state.
     func incEpoch()
     {
         _kernel.incEpoch()
     }
 }
 
+/// Simple SGD optimizer.
 class SGDOptimizer: OptimizerImpl
 {
+    ///
+    /// The weight update function in CPU execution context.
+    ///
+    /// - Parameter weight: The weight arrays to update.
+    ///
     override func stepCPU(_ weights: IWeightArrays)
     {
         var wVar = weights
@@ -135,6 +172,11 @@ class SGDOptimizer: OptimizerImpl
         }
     }
     
+    ///
+    /// The weight update function in GPU execution context.
+    ///
+    /// - Parameter weight: The weight buffers to update.
+    ///
     override func stepGPU(_ weights: IWeightBuffers)
     {
         let nbElems = weights.nbElems
@@ -161,10 +203,16 @@ class SGDOptimizer: OptimizerImpl
     }
 }
 
+/// SGD with momentum optimizer.
 class SGDMomentumOptimizer: OptimizerImpl
 {
     let _β1 = 0.9
     
+    ///
+    /// The weight update function in CPU execution context.
+    ///
+    /// - Parameter weight: The weight arrays to update.
+    ///
     override func stepCPU(_ weights: IWeightArrays)
     {
         var wVar = weights
@@ -182,6 +230,11 @@ class SGDMomentumOptimizer: OptimizerImpl
         }
     }
     
+    ///
+    /// The weight update function in GPU execution context.
+    ///
+    /// - Parameter weight: The weight buffers to update.
+    ///
     override func stepGPU(_ weights: IWeightBuffers)
     {
         let nbElems = weights.nbElems
@@ -209,12 +262,18 @@ class SGDMomentumOptimizer: OptimizerImpl
     }
 }
 
+/// Adam optimizer.
 class AdamOptimizer: OptimizerImpl
 {
     let _β1 = 0.9
     let _β2 = 0.999
     let _Ɛ = 0.00000001
     
+    ///
+    /// The weight update function in CPU execution context.
+    ///
+    /// - Parameter weight: The weight arrays to update.
+    ///
     override func stepCPU(_ weights: IWeightArrays)
     {
         var wVar = weights
@@ -241,6 +300,11 @@ class AdamOptimizer: OptimizerImpl
         }
     }
     
+    ///
+    /// The weight update function in GPU execution context.
+    ///
+    /// - Parameter weight: The weight buffers to update.
+    ///
     override func stepGPU(_ weights: IWeightBuffers)
     {
         let nbElems = weights.nbElems
@@ -272,12 +336,18 @@ class AdamOptimizer: OptimizerImpl
     }
 }
 
+/// AMSGrad optimizer.
 class AMSGradOptimizer: OptimizerImpl
 {
     let _β1 = 0.9
     let _β2 = 0.999
     let _Ɛ = 0.00000001
     
+    ///
+    /// The weight update function in CPU execution context.
+    ///
+    /// - Parameter weight: The weight arrays to update.
+    ///
     override func stepCPU(_ weights: IWeightArrays)
     {
         var wVar = weights
@@ -306,6 +376,11 @@ class AMSGradOptimizer: OptimizerImpl
         }
     }
     
+    ///
+    /// The weight update function in GPU execution context.
+    ///
+    /// - Parameter weight: The weight buffers to update.
+    ///
     override func stepGPU(_ weights: IWeightBuffers)
     {
         let nbElems = weights.nbElems
@@ -338,12 +413,18 @@ class AMSGradOptimizer: OptimizerImpl
     }
 }
 
+/// Adam rectified optimizer.
 class AdamRectifiedOptimizer: OptimizerImpl
 {
     let _β1 = 0.9
     let _β2 = 0.999
     let _Ɛ = 0.00000001
     
+    ///
+    /// The weight update function in CPU execution context.
+    ///
+    /// - Parameter weight: The weight arrays to update.
+    ///
     override func stepCPU(_ weights: IWeightArrays)
     {
         var wVar = weights
@@ -382,6 +463,11 @@ class AdamRectifiedOptimizer: OptimizerImpl
         }
     }
     
+    ///
+    /// The weight update function in GPU execution context.
+    ///
+    /// - Parameter weight: The weight buffers to update.
+    ///
     override func stepGPU(_ weights: IWeightBuffers)
     {
         let nbElems = weights.nbElems
@@ -413,16 +499,20 @@ class AdamRectifiedOptimizer: OptimizerImpl
     }
 }
 
+/// An optimizer with lower and upper bounds.
 class BoundOptimizer: OptimizerImpl
 {
+    /// List of variables needed during the weight update.
     private var _variables = [OptimizerVariable]()
     
+    /// Get lower bound value.
     override var lowerBound: Double?
     {
         get {
             return _kernel.getValue(_variables[0])
         }
     }
+    /// Get lower bound percent value.
     override var lowerBoundPercent: Double?
     {
         get {
@@ -430,12 +520,14 @@ class BoundOptimizer: OptimizerImpl
         }
     }
     
+    /// Get upper bound value.
     override var upperBound: Double?
     {
         get {
             return _kernel.getValue(_variables[1])
         }
     }
+    /// Get upper bound percent value.
     override var upperBoundPercent: Double?
     {
         get {
@@ -443,6 +535,7 @@ class BoundOptimizer: OptimizerImpl
         }
     }
     
+    /// Set default values to the list of internal variables.
     override func initVariables()
     {
         super.initVariables()
@@ -462,12 +555,18 @@ class BoundOptimizer: OptimizerImpl
     }
 }
 
+/// Ada bound optimizer.
 class AdaBoundOptimizer: BoundOptimizer
 {
     let _β1 = 0.9
     let _β2 = 0.999
     let _Ɛ = 0.00000001
     
+    ///
+    /// The weight update function in CPU execution context.
+    ///
+    /// - Parameter weight: The weight arrays to update.
+    ///
     override func stepCPU(_ weights: IWeightArrays)
     {
         var wVar = weights
@@ -502,6 +601,11 @@ class AdaBoundOptimizer: BoundOptimizer
         }
     }
     
+    ///
+    /// The weight update function in GPU execution context.
+    ///
+    /// - Parameter weight: The weight buffers to update.
+    ///
     override func stepGPU(_ weights: IWeightBuffers)
     {
         let nbElems = weights.nbElems
@@ -537,12 +641,18 @@ class AdaBoundOptimizer: BoundOptimizer
     }
 }
 
+/// AMS bound optimizer.
 class AMSBoundOptimizer: BoundOptimizer
 {
     let _β1 = 0.9
     let _β2 = 0.999
     let _Ɛ = 0.00000001
     
+    ///
+    /// The weight update function in CPU execution context.
+    ///
+    /// - Parameter weight: The weight arrays to update.
+    ///
     override func stepCPU(_ weights: IWeightArrays)
     {
         var wVar = weights
@@ -579,6 +689,11 @@ class AMSBoundOptimizer: BoundOptimizer
         }
     }
     
+    ///
+    /// The weight update function in GPU execution context.
+    ///
+    /// - Parameter weight: The weight buffers to update.
+    ///
     override func stepGPU(_ weights: IWeightBuffers)
     {
         let nbElems = weights.nbElems

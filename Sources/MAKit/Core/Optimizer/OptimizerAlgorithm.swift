@@ -7,8 +7,10 @@
 
 import MetalKit
 
+/// Error occuring on a bad request to a `LayerUpdate`.
 public enum UpdateError: Error
 {
+    /// Layer has not been visited by any backward pass.
     case Dirty
 }
 
@@ -25,16 +27,20 @@ extension UpdateError: CustomStringConvertible
     }
 }
 
+/// Algorithm used to update the weights of a `LayerUpdate`.
 public class OptimizerAlgorithm
 {
+    /// Implementation of the weight update algorithm.
     let _optimizer: OptimizerImpl
     
+    /// Get alpha (learning rate) value.
     var alpha: Double
     {
         get {
             return _optimizer.alpha
         }
     }
+    /// Get alpha (learning rate) percent value.
     var alphaPercent: Double
     {
         get {
@@ -42,12 +48,14 @@ public class OptimizerAlgorithm
         }
     }
     
+    /// Get lambda (weight decay) value.
     var lambda: Double?
     {
         get {
             return _optimizer.lambda
         }
     }
+    /// Get lambda (weight decay) percent value.
     var lambdaPercent: Double?
     {
         get {
@@ -55,12 +63,14 @@ public class OptimizerAlgorithm
         }
     }
     
+    /// Get lower bound value.
     var lowerBound: Double?
     {
         get {
             return _optimizer.lowerBound
         }
     }
+    /// Get lower bound percent value.
     var lowerBoundPercent: Double?
     {
         get {
@@ -68,12 +78,14 @@ public class OptimizerAlgorithm
         }
     }
     
+    /// Get upper bound value.
     var upperBound: Double?
     {
         get {
             return _optimizer.upperBound
         }
     }
+    /// Get upper bound percent value.
     var upperBoundPercent: Double?
     {
         get {
@@ -81,11 +93,25 @@ public class OptimizerAlgorithm
         }
     }
     
+    ///
+    /// Create a new algorithm thanks to the implementation of the weight update algorithm.
+    ///
+    /// - Parameter optimizer: Implementation of the weight update algorithm.
+    ///
     init(_ optimizer: OptimizerImpl)
     {
         _optimizer = optimizer
     }
     
+    ///
+    /// Update the weights of the layers conforming to `LayerUpdate` in the CPU execution context.
+    ///
+    /// Throw an error when layers have not been visited by any backward pass.
+    ///
+    /// - Parameters:
+    ///     - layers: The list of layers that potentially contain weights to update.
+    ///     - gradientNorm: A norm to scale the weights' gradients.
+    ///
     func udpateCPU(layers: [Layer], gradientNorm: Double?) throws
     {
         incT()
@@ -111,6 +137,15 @@ public class OptimizerAlgorithm
         try updateWeightsCPU(layers)
     }
     
+    ///
+    /// Update the weights of the layers conforming to `LayerUpdate` in the GPU execution context.
+    ///
+    /// Throw an error when layers have not been visited by any backward pass.
+    ///
+    /// - Parameters:
+    ///     - layers: The list of layers that potentially contain weights to update.
+    ///     - gradientNorm: A norm to scale the weights' gradients.
+    ///
     func udpateGPU(layers: [Layer], gradientNorm: Float?) throws
     {
         incT()
@@ -136,6 +171,15 @@ public class OptimizerAlgorithm
         try updateWeightsGPU(layers)
     }
     
+    ///
+    /// Multiply the weights' gradients by a scalar in the CPU execution context.
+    ///
+    /// Throw an error when layers have not been visited by any backward pass.
+    ///
+    /// - Parameters:
+    ///     - layers: The list of layers to consider.
+    ///     - factor: The coefficient to multiply the weights' gradients by.
+    ///
     func multiplyGradientCPU(layers: [Layer], factor: Double) throws
     {
         for layer in layers
@@ -162,6 +206,15 @@ public class OptimizerAlgorithm
         }
     }
     
+    ///
+    /// Multiply the weights' gradients by a scalar in the GPU execution context.
+    ///
+    /// Throw an error when layers have not been visited by any backward pass.
+    ///
+    /// - Parameters:
+    ///     - layers: The list of layers to consider.
+    ///     - factor: The coefficient to multiply the weights' gradients by.
+    ///
     func multiplyGradientGPU(layers: [Layer], factor: Float) throws
     {
         for layer in layers
@@ -206,6 +259,14 @@ public class OptimizerAlgorithm
         }
     }
     
+    ///
+    /// Get gradient norm in the CPU execution context.
+    ///
+    /// Throw an error when layers have not been visited by any backward pass.
+    ///
+    /// - Parameter layers: The list of layers to consider.
+    /// - Returns: The gradient norm.
+    ///
     func getGradientNormCPU(_ layers: [Layer]) throws -> Double
     {
         var gradientSquaredNorm: Double = 0.0
@@ -234,6 +295,14 @@ public class OptimizerAlgorithm
         return sqrt(gradientSquaredNorm)
     }
     
+    ///
+    /// Get gradient norm in the GPU execution context.
+    ///
+    /// Throw an error when layers have not been visited by any backward pass.
+    ///
+    /// - Parameter layers: The list of layers to consider.
+    /// - Returns: The gradient norm.
+    ///
     func getGradientNormGPU(_ layers: [Layer]) throws -> Float
     {
         var partialGradSum: Float = 0.0
@@ -281,6 +350,14 @@ public class OptimizerAlgorithm
         return sqrt(partialGradSum)
     }
     
+    ///
+    /// Get the weights'  gradients in the CPU execution context.
+    ///
+    /// Throw an error when layers have not been visited by any backward pass.
+    ///
+    /// - Parameter layers: The list of layers to consider.
+    /// - Returns: The list of weights' gradients.
+    ///
     func getGradientsCPU(_ layers: [Layer]) throws -> [Double]
     {
         var gradients = [Double]()
@@ -309,6 +386,14 @@ public class OptimizerAlgorithm
         return gradients
     }
     
+    ///
+    /// Get the weights'  gradients in the GPU execution context.
+    ///
+    /// Throw an error when layers have not been visited by any backward pass.
+    ///
+    /// - Parameter layers: The list of layers to consider.
+    /// - Returns: The list of weights' gradients.
+    ///
     func getGradientsGPU(_ layers: [Layer]) throws -> [Float]
     {
         var gradients = [Float]()
@@ -355,21 +440,34 @@ public class OptimizerAlgorithm
         return gradients
     }
     
+    /// Increment internal time state.
     func incT()
     {
         _optimizer.incT()
     }
     
+    /// Increment internal step state.
     func incStep()
     {
         _optimizer.incStep()
     }
     
+    /// Increment internal epoch state.
     func incEpoch()
     {
         _optimizer.incEpoch()
     }
     
+    ///
+    /// Clip the weights'  gradients in the CPU execution context.
+    ///
+    /// Throw an error when layers have not been visited by any backward pass.
+    ///
+    /// - Parameters:
+    ///     - layers: The list of layers to consider.
+    ///     - gradientNorm: The norm of the weights' gradients.
+    ///     - normThreshold: The threshold above which we must clip the weights' gradients.
+    ///
     func clipGradientCPU(layers: [Layer],
                          gradientNorm: Double,
                          normThreshold: Double) throws
@@ -399,6 +497,16 @@ public class OptimizerAlgorithm
         }}
     }
     
+    ///
+    /// Clip the weights'  gradients in the GPU execution context.
+    ///
+    /// Throw an error when layers have not been visited by any backward pass.
+    ///
+    /// - Parameters:
+    ///     - layers: The list of layers to consider.
+    ///     - gradientNorm: The norm of the weights' gradients.
+    ///     - normThreshold: The threshold above which we must clip the weights' gradients.
+    ///
     func clipGradientGPU(layers: [Layer],
                          gradientNorm: Float,
                          normThreshold: Double) throws
@@ -448,6 +556,13 @@ public class OptimizerAlgorithm
         }}
     }
     
+    ///
+    /// Update the weights of the layers conforming to `LayerUpdate` in the CPU execution context.
+    ///
+    /// Throw an error when layers have not been visited by any backward pass.
+    ///
+    /// - Parameter layers: The list of layers that potentially contain weights to update
+    ///
     func updateWeightsCPU(_ layers: [Layer]) throws
     {
         for layer in layers
@@ -470,6 +585,13 @@ public class OptimizerAlgorithm
         }
     }
     
+    ///
+    /// Update the weights of the layers conforming to `LayerUpdate` in the GPU execution context.
+    ///
+    /// Throw an error when layers have not been visited by any backward pass.
+    ///
+    /// - Parameter layers: The list of layers that potentially contain weights to update
+    ///
     func updateWeightsGPU(_ layers: [Layer]) throws
     {
         for layer in layers
@@ -492,6 +614,11 @@ public class OptimizerAlgorithm
         }
     }
     
+    ///
+    /// Update the weights  in the CPU execution context.
+    ///
+    /// - Parameter weights: The list of weight arrays to update.
+    ///
     func stepCPU(_ weights: [IWeightArrays])
     {
         for weightsTmp in weights
@@ -500,6 +627,11 @@ public class OptimizerAlgorithm
         }
     }
     
+    ///
+    /// Update the weights  in the GPU execution context.
+    ///
+    /// - Parameter weights: The list of weight buffers to update.
+    ///
     func stepGPU(_ weights: [IWeightBuffers])
     {
         for weightsTmp in weights

@@ -204,14 +204,14 @@ public class Model: BaseModel
         }
     }
     
-    /// Get alpha value in the optimizer.
+    /// Get alpha (learning rate) value in the optimizer.
     public var alpha: Double
     {
         get {
             return _kernel.algo.alpha
         }
     }
-    /// Get alpha percent value in the optimizer.
+    /// Get alpha (learning rate) percent value in the optimizer.
     public var alphaPercent: Double
     {
         get {
@@ -219,14 +219,14 @@ public class Model: BaseModel
         }
     }
     
-    /// Get lambda value in the optimizer.
+    /// Get lambda (weight decay) value in the optimizer.
     public var lambda: Double?
     {
         get {
             return _kernel.algo.lambda
         }
     }
-    /// Get lambda percent value in the optimizer.
+    /// Get lambda (weight decay) percent value in the optimizer.
     public var lambdaPercent: Double?
     {
         get {
@@ -872,11 +872,11 @@ public class Model: BaseModel
     ///
     /// Update the weights of a model.
     ///
-    /// Throw an error when layer has not been visited by any  backward pass.
+    /// Throw an error when layers have not been visited by any  backward pass.
     ///
     /// - Parameters:
-    ///     - gradientNorm: The gradient norm.
-    ///     - layers: The list of layers to consider.
+    ///     - gradientNorm: A norm to scale the weights' gradients.
+    ///     - layers: The list of layers that potentially contain weights to update.
     ///
     public func update(gradientNorm: Double? = nil,
                        layers: [Layer] = []) throws
@@ -901,7 +901,7 @@ public class Model: BaseModel
     ///
     /// Multiply weights' gradients by a scalar.
     ///
-    /// Throw an error when layer has not been visited by any backward pass.
+    /// Throw an error when layers have not been visited by any backward pass.
     ///
     /// - Parameters:
     ///     - factor: The coefficient to multiply the weights' gradients by.
@@ -928,7 +928,7 @@ public class Model: BaseModel
     ///
     /// Get gradient norm.
     ///
-    /// Throw an error when layer has not been visited by any backward pass.
+    /// Throw an error when layers have not been visited by any backward pass.
     ///
     /// - Parameter layers: The list of layers to consider.
     /// - Returns: The gradient norm.
@@ -951,7 +951,7 @@ public class Model: BaseModel
     ///
     /// Get the weights'  gradients.
     ///
-    /// Throw an error when layer has not been visited by any backward pass.
+    /// Throw an error when layers have not been visited by any backward pass.
     ///
     /// - Parameter layers: The list of layers to consider.
     /// - Returns: The list of weights' gradients.

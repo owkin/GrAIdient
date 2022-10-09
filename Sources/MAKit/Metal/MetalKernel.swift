@@ -485,7 +485,7 @@ private class MetalDevice
     /// The queue associated with the GPU device.
     let _queue: MTLCommandQueue
     
-    /// The different kernel's state available.
+    /// The different kernels' state available.
     var _pipelines: [String : MTLComputePipelineState] = [:]
     
     /// Get the GPU device.
@@ -519,9 +519,50 @@ private class MetalDevice
         _initKernels()
     }
     
+    /// Initialize the GPU kernels' state.
     private func _initKernels()
     {
-        // TODO: add kernels.
+        let listKernels =
+        [
+            "Optimizer": [
+                "clipGradients",
+                "multiplyGradients",
+                "weightsSGD",
+                "weightsMomentum",
+                "weightsAdam",
+                "weightsAMSGrad",
+                "weightsAdamRectified",
+                "weightsAdaBound",
+                "weightsAMSBound",
+            ],
+        ]
+        
+        for (libName, kernelNames) in listKernels
+        {
+            let lib = Bundle.module.url(
+                forResource: libName,
+                withExtension: "metal",
+                subdirectory: "Kernel"
+            )!
+            do
+            {
+                let content = try String(contentsOf: lib)
+                let library = _buildLibrary(content: content)
+                
+                for kernelName in kernelNames
+                {
+                    _buildKernel(
+                        name: kernelName,
+                        library: library,
+                        optimalThreadGroupSize: true
+                    )
+                }
+            }
+            catch let error
+            {
+                fatalError("Cannot init \(error.localizedDescription).")
+            }
+        }
     }
     
     ///

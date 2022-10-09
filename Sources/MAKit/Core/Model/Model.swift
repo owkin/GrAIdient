@@ -194,6 +194,7 @@ public class BaseModel: Codable
 ///
 public class Model: BaseModel
 {
+    /// The state of the optimization process.
     var _kernel = OptimizerKernel()
     
     /// Get optimizer parameters.

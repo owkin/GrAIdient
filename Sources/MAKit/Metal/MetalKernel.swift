@@ -12,7 +12,10 @@ import Metal
 /// Main class to interact with GPU.
 public class MetalKernel
 {
+    /// Global state.
     static private var _metalKernel: MetalKernel! = nil
+    
+    /// Access to GPU devices.
     fileprivate let _context: MetalListDevices
     
     /// Get the main instance.
@@ -286,6 +289,7 @@ public class MetalKernel
 /// Allow access to GPU devices.
 private class MetalListDevices
 {
+    /// The list of GPU devices.
     var _listDevices = [MetalDevice]()
     
     ///
@@ -485,7 +489,7 @@ private class MetalDevice
     /// The queue associated with the GPU device.
     let _queue: MTLCommandQueue
     
-    /// The different kernel's state available.
+    /// The different kernels' state available.
     var _pipelines: [String : MTLComputePipelineState] = [:]
     
     /// Get the GPU device.
@@ -512,16 +516,55 @@ private class MetalDevice
     init(device: MTLDevice)
     {
         _device = device
-        
-        // Queue to handle an ordered list of command buffers
         _queue = _device.makeCommandQueue()!
         
         _initKernels()
     }
     
+    /// Initialize the GPU kernels' state.
     private func _initKernels()
     {
-        // TODO: add kernels.
+        let listKernels =
+        [
+            "Optimizer": [
+                "clipGradients",
+                "multiplyGradients",
+                "weightsSGD",
+                "weightsMomentum",
+                "weightsAdam",
+                "weightsAMSGrad",
+                "weightsAdamRectified",
+                "weightsAdaBound",
+                "weightsAMSBound",
+            ],
+        ]
+        
+        for (libName, kernelNames) in listKernels
+        {
+            let lib = Bundle.module.url(
+                forResource: libName,
+                withExtension: "metal",
+                subdirectory: "Kernel"
+            )!
+            do
+            {
+                let content = try String(contentsOf: lib)
+                let library = _buildLibrary(content: content)
+                
+                for kernelName in kernelNames
+                {
+                    _buildKernel(
+                        name: kernelName,
+                        library: library,
+                        optimalThreadGroupSize: true
+                    )
+                }
+            }
+            catch let error
+            {
+                fatalError("Cannot init \(error.localizedDescription).")
+            }
+        }
     }
     
     ///
@@ -724,22 +767,22 @@ private class MetalDevice
         var lastCommand: MTLCommandBuffer! = nil
         for metalBuffer in metalBuffers
         {
-            // Buffer for storing encoded commands that are sent to GPU
+            // Buffer for storing encoded commands that are sent to GPU.
             let command = _queue.makeCommandBuffer()!
             
-            // Create the command encoder from the command buffer
+            // Create the command encoder from the command buffer.
             let blitEncoder = command.makeBlitCommandEncoder()!
             
-            // Command
+            // Command.
             blitEncoder.synchronize(resource: metalBuffer.metal)
             
-            // Finalize configuration
+            // Finalize configuration.
             blitEncoder.endEncoding()
             
-            // Add command buffer to the queue
+            // Add command buffer to the queue.
             command.enqueue()
             
-            // Start job
+            // Start job.
             command.commit()
             
             lastCommand = command
@@ -747,7 +790,7 @@ private class MetalDevice
         
         if lastCommand != nil
         {
-            // Wait for GPU to finish
+            // Wait for GPU to end.
             lastCommand.waitUntilCompleted()
         }
     }
@@ -778,7 +821,8 @@ private class MetalDevice
                 sourceOffset: 0,
                 to: metalBuffer.shared.metal,
                 destinationOffset: 0,
-                size: metalBuffer.nbElems * MemoryLayout<T>.size)
+                size: metalBuffer.nbElems * MemoryLayout<T>.size
+            )
             
             // Finalize configuration.
             blitEncoder.endEncoding()
@@ -809,7 +853,8 @@ private class MetalDevice
         for metalBuffer in metalBuffers
         {
             metalBuffer.metal.didModifyRange(
-                0..<metalBuffer.nbElems * MemoryLayout<T>.size)
+                0..<metalBuffer.nbElems * MemoryLayout<T>.size
+            )
         }
     }
     
@@ -846,7 +891,8 @@ private class MetalDevice
                 sourceOffset: 0,
                 to: metalBuffer.metal,
                 destinationOffset: 0,
-                size: metalBuffer.nbElems * MemoryLayout<T>.size)
+                size: metalBuffer.nbElems * MemoryLayout<T>.size
+            )
             
             // Finalize configuration.
             blitEncoder.endEncoding()
@@ -862,11 +908,11 @@ private class MetalDevice
         
         if lastCommand != nil
         {
-            // Wait for GPU to endIsh
+            // Wait for GPU to end.
             lastCommand.waitUntilCompleted()
         }
         
-        // do not neet shared anymore
+        // We do not neet shared anymore.
         for metalBuffer in metalBuffers
         {
             metalBuffer._shared = nil
@@ -993,18 +1039,18 @@ public class MetalCommand
     /// Enqueue command and start job.
     public func enqueue()
     {
-        // Finalize configuration
+        // Finalize configuration.
         _encoder.endEncoding()
         
-        // Add command buffer to the queue
+        // Add command buffer to the queue.
         _command.enqueue()
         
-        // Start job
+        // Start job.
         _command.commit()
         
         if MAKit.Time.track
         {
-            // Wait for it to endIsh
+            // Wait for GPU to end.
             _command.waitUntilCompleted()
         }
     }

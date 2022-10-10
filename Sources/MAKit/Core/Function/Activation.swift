@@ -184,6 +184,8 @@ open class ActivationFunction: Codable
         let nbElems = outs.nbElems
         let pNbElems: [UInt32] = [UInt32(nbElems)]
         
+        print("COUCOU1")
+        
         let command = MetalKernel.get.createCommand(
             forwardKernel, deviceID: deviceID
         )
@@ -198,7 +200,12 @@ open class ActivationFunction: Codable
             threadsPerGrid: threadsPerGrid,
             threadsPerThreadgroup: threadsPerThreadgroup
         )
+        
+        print("COUCOU1")
+        
         command.enqueue()
+        
+        print("COUCOU2")
     }
     
     ///

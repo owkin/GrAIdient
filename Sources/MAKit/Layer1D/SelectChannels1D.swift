@@ -7,9 +7,12 @@
 
 import MetalKit
 
+/// Layer with a 1D shape neural structure.
 public class SelectChannels1D: Layer1D
 {
+    /// List of neurons to select.
     let _channels: [Int]
+    /// List of coefficients to scale each selected neuron.
     let _coeffs: [Double]
     
     private enum Keys: String, CodingKey
@@ -18,6 +21,15 @@ public class SelectChannels1D: Layer1D
         case coeffs
     }
     
+    ///
+    /// Create a layer with a 1D shape neural structure.
+    ///
+    /// - Parameters:
+    ///     - layerPrev: Previous layer that has been queued to the model.
+    ///     - channels: The list of neurons to select.
+    ///     - coeffs: The list of coefficients to scale each selected neuron.
+    ///     - params: Contextual parameters linking to the model.
+    ///
     public init(layerPrev: Layer1D,
                 channels: [Int],
                 coeffs: [Double],
@@ -30,26 +42,10 @@ public class SelectChannels1D: Layer1D
                    params: params)
     }
     
-    public init(layerPrev: Layer1D,
-                coeffs: [Double],
-                params: MAKit.Model.Params)
-    {
-        var channels = [Int]()
-        for i in 0..<layerPrev.nbNeurones
-        {
-            channels.append(i)
-        }
-        _channels = channels
-        _coeffs = coeffs
-        super.init(layerPrev: layerPrev,
-                   nbNeurones: _channels.count,
-                   params: params)
-    }
-    
     ///
-    /// Create an instance of Layer by decoding from the given decoder.
+    /// Decode from the disk.
     ///
-    /// This initializer throws an error if reading from the decoder fails, or
+    /// Throw an error if reading from the decoder fails, or
     /// if the data read is corrupted or otherwise invalid.
     ///
     /// - Parameter decoder: The decoder to read data from.
@@ -63,12 +59,12 @@ public class SelectChannels1D: Layer1D
     }
     
     ///
-    /// Encode this value into the given encoder.
+    /// Encode to the disk.
     ///
     /// If the value fails to encode anything, `encoder` will encode an empty
     /// keyed container in its place.
     ///
-    /// This function throws an error if any values are invalid for the given
+    /// Throw an error if any values are invalid for the given
     /// encoder's format.
     ///
     /// - Parameter encoder: The encoder to write data to.
@@ -82,7 +78,7 @@ public class SelectChannels1D: Layer1D
     }
     
     ///
-    /// Create a new instance of `Layer` with same values as this.
+    /// Create a layer with same values as this.
     ///
     /// - Parameters:
     ///     - mapping: Dictionary allowing to find the layer associated to some id.
@@ -90,7 +86,7 @@ public class SelectChannels1D: Layer1D
     ///     their `layerPrev`.
     ///     - inPlace: Whether hard resources should be copied as is.
     ///
-    /// - Returns: A new instance of `Layer`. When `inPlace` is false, `initKernel` is
+    /// - Returns: A new layer. When `inPlace` is false, `initKernel` is
     /// necessary in order to recreate hard resources.
     ///
     public override func copy(
@@ -115,7 +111,7 @@ public class SelectChannels1D: Layer1D
     ///
     /// Apply the forward pass of the Gradient Checking in CPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func forwardGCCPU() throws
     {
@@ -146,7 +142,7 @@ public class SelectChannels1D: Layer1D
     ///
     /// Apply the forward pass of the Gradient Checking in GPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func forwardGCGPU() throws
     {
@@ -156,7 +152,7 @@ public class SelectChannels1D: Layer1D
     ///
     /// Apply the forward pass in the CPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func forwardCPU() throws
     {
@@ -180,7 +176,7 @@ public class SelectChannels1D: Layer1D
     ///
     /// Apply the forward pass in the GPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func forwardGPU() throws
     {
@@ -255,7 +251,7 @@ public class SelectChannels1D: Layer1D
     ///
     /// Apply the backward pass in the GPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func backwardGPU() throws
     {

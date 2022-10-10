@@ -7,17 +7,25 @@
 
 import MetalKit
 
+/// Layer with a 1D shape neural structure, weights and biases and an activation function.
 public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
 {
+    /// Whether to use biases or not.
     var _useBiases = true
     
+    /// Grid of weights.
     var _wArrays: WeightGrids! = nil
+    /// Array of biases.
     var _bArrays: WeightArrays! = nil
     
+    /// Buffer of weights.
     var _wBuffers: IWeightBuffers! = nil
+    //// Buffer of biases.
     var _bBuffers: IWeightBuffers! = nil
     
+    /// Buffer of gradients per sample for weights.
     var _wDeltaWeights: MetalPrivateBuffer<Float>! = nil
+    /// Buffer of gradients per sample for biases.
     var _bDeltaWeights: MetalPrivateBuffer<Float>! = nil
     
     /// Whether to compute weights' gradients or not.
@@ -26,9 +34,12 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
     /// Whether gradients of weights must be accumulated or not.
     public var accumulateDeltaWeights: Bool = false
     
+    /// Height of the weight's grid shape.
     public let weightHeight: Int
+    /// Width of the weight's grid shape.
     public let weightWidth: Int
     
+    /// Get the neurons of the previous layer.
     var neuronesPrev: [Neurone]
     {
         get {
@@ -52,6 +63,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
         }
     }
     
+    /// Get the number of neurons of the previous layer.
     var nbNeuronesPrev: Int
     {
         get {
@@ -72,6 +84,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
         }
     }
     
+    /// Output buffer of previous layer.
     var outsPrev: MetalPrivateBuffer<Float>
     {
         get {
@@ -90,6 +103,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
         }
     }
     
+    /// Gradient buffer of previous layer.
     var deltaPrev: MetalPrivateBuffer<Float>?
     {
         get {
@@ -122,6 +136,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
         }
     }
     
+    /// Whether to update biases or not.
     var updateBiases: Bool
     {
         get {
@@ -129,6 +144,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
         }
     }
     
+    /// Cache for weights before calling `initKernel` API.
     var _weightsList = [Float]()
     
     /// Weights in the CPU execution context.
@@ -184,12 +200,14 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
         }
     }
     
+    /// Get buffer of gradients per sample for weights.
     public var wDeltaWeights: MetalPrivateBuffer<Float>
     {
         get {
             return _wDeltaWeights
         }
     }
+    /// Get buffer of gradients per sample for biases.
     public var bDeltaWeights: MetalPrivateBuffer<Float>
     {
         get {
@@ -197,6 +215,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
         }
     }
     
+    /// Get the coefficient to apply during the weights initialization.
     var coeffInitWeights: Double
     {
         get {
@@ -232,6 +251,16 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
         case useBiases
     }
     
+    ///
+    /// Create a layer with a 1D shape neural structure.
+    ///
+    /// - Parameters:
+    ///     - layerPrev: Previous layer that has been queued to the model.
+    ///     - nbNeurones: Number of neurons.
+    ///     - activation: The activation function.
+    ///     - biases: Whether to use biases or not.
+    ///     - params: Contextual parameters linking to the model.
+    ///
     public init(layerPrev: Layer,
                 nbNeurones: Int, activation: String?, biases: Bool,
                 params: MAKit.Model.Params)
@@ -263,9 +292,9 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
     }
     
     ///
-    /// Create an instance of Layer by decoding from the given decoder.
+    /// Decode from the disk.
     ///
-    /// This initializer throws an error if reading from the decoder fails, or
+    /// Throw an error if reading from the decoder fails, or
     /// if the data read is corrupted or otherwise invalid.
     ///
     /// - Parameter decoder: The decoder to read data from.
@@ -284,12 +313,12 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
     }
     
     ///
-    /// Encode this value into the given encoder.
+    /// Encode to the disk.
     ///
     /// If the value fails to encode anything, `encoder` will encode an empty
     /// keyed container in its place.
     ///
-    /// This function throws an error if any values are invalid for the given
+    /// Throw an error if any values are invalid for the given
     /// encoder's format.
     ///
     /// - Parameter encoder: The encoder to write data to.
@@ -317,7 +346,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
     }
     
     ///
-    /// Create a new instance of `Layer` with same values as this.
+    /// Create a layer with same values as this.
     ///
     /// - Parameters:
     ///     - mapping: Dictionary allowing to find the layer associated to some id.
@@ -325,7 +354,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
     ///     their `layerPrev`.
     ///     - inPlace: Whether hard resources should be copied as is.
     ///
-    /// - Returns: A new instance of `Layer`. When `inPlace` is false, `initKernel` is
+    /// - Returns: A new layer. When `inPlace` is false, `initKernel` is
     /// necessary in order to recreate hard resources.
     ///
     public override func copy(
@@ -585,7 +614,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
     ///
     /// Apply the forward pass of the Gradient Checking in CPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func forwardGCCPU() throws
     {
@@ -696,7 +725,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
     ///
     /// Apply the forward pass of the Gradient Checking in GPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func forwardGCGPU() throws
     {
@@ -823,7 +852,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
     ///
     /// Apply the forward pass in the CPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func forwardCPU() throws
     {
@@ -855,7 +884,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
     ///
     /// Apply the forward pass in the GPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func forwardGPU() throws
     {
@@ -983,7 +1012,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
     ///
     /// Apply the backward pass in the GPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func backwardGPU() throws
     {
@@ -1220,7 +1249,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
     ///
     /// Get the weights' gradients in the CPU execution context.
     ///
-    /// Throws an error when layer has not been updated through backward pass.
+    /// Throw an error when layer has not been updated through backward pass.
     ///
     public func getDeltaWeightsCPU<T: BinaryFloatingPoint>() throws -> [T]
     {
@@ -1245,7 +1274,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
     ///
     /// Get the weights' gradients in the GPU execution context.
     ///
-    /// Throws an error when layer has not been updated through backward pass.
+    /// Throw an error when layer has not been updated through backward pass.
     ///
     public func getDeltaWeightsGPU<T: BinaryFloatingPoint>() throws -> [T]
     {

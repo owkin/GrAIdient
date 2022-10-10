@@ -7,10 +7,11 @@
 
 import MetalKit
 
+/// Last layer with a 1D shape neural structure.
 public class LinearError1D: LayerOutput1D
 {
     ///
-    /// Create a new instance of `Layer` with same values as this.
+    /// Create a layer with same values as this.
     ///
     /// - Parameters:
     ///     - mapping: Dictionary allowing to find the layer associated to some id.
@@ -18,7 +19,7 @@ public class LinearError1D: LayerOutput1D
     ///     their `layerPrev`.
     ///     - inPlace: Whether hard resources should be copied as is.
     ///
-    /// - Returns: A new instance of `Layer`. When `inPlace` is false, `initKernel` is
+    /// - Returns: A new layer. When `inPlace` is false, `initKernel` is
     /// necessary in order to recreate hard resources.
     ///
     public override func copy(
@@ -37,6 +38,14 @@ public class LinearError1D: LayerOutput1D
         return newLayer
     }
     
+    ///
+    /// Estimate the gradients of weights thanks to Gradient Checking.
+    ///
+    /// Throw an error if batch size or ground truth are incoherent.
+    ///
+    /// - Parameter groundTruth: The ground truth.
+    /// - Returns: The estimated gradients of weights.
+    ///
     public func collectGradientsApprox(
         _ groundTruth: [[Double]]) throws -> [Double]
     {
@@ -53,6 +62,16 @@ public class LinearError1D: LayerOutput1D
         return gradients
     }
     
+    ///
+    /// Get the loss consecutive of a modified weights during the Gradient Checking process.
+    ///
+    /// Throw an error if batch size or ground truth are incoherent.
+    ///
+    /// - Parameters:
+    ///     - groundTruth: The ground truth.
+    ///     - elem: The modified weight for which we collect the resulting loss.
+    /// - Returns: The loss value.
+    ///
     func getLossGC(_ groundTruth: [[Double]], elem: Int) throws -> Double
     {
         let batchSize = groundTruth.count
@@ -83,6 +102,14 @@ public class LinearError1D: LayerOutput1D
                Double(nbNeurones * batchSize)
     }
     
+    ///
+    /// Get loss in the CPU execution context.
+    ///
+    /// Throw an error if batch size or ground truth are incoherent.
+    ///
+    /// - Parameter groundTruth: The ground truth.
+    /// - Returns: The loss value.
+    ///
     public func getLossCPU(_ groundTruth: [[Double]]) throws -> Double
     {
         let batchSize = groundTruth.count
@@ -113,6 +140,16 @@ public class LinearError1D: LayerOutput1D
                Double(nbNeurones * batchSize)
     }
     
+    ///
+    /// Get loss in the GPU execution context.
+    ///
+    /// Throw an error if batch size or ground truth are incoherent.
+    ///
+    /// - Parameters:
+    ///     -  groundTruth: The ground truth.
+    ///     - batchSize: The batch size of data.
+    /// - Returns: The loss value.
+    ///
     public func getLossGPU(
         _ groundTruth: MetalBuffer<Float>,
         batchSize: Int) throws -> Float
@@ -166,6 +203,11 @@ public class LinearError1D: LayerOutput1D
         return Float(coeff) * loss / Float(nbNeurones * batchSize)
     }
     
+    ///
+    /// Apply the gradient in the CPU execution context.
+    ///
+    /// Throw an error if batch size or ground truth are incoherent.
+    ///
     public func applyGradientCPU() throws
     {
         if batchSize <= 0 || batchSize > neurones.get(0)!.v.count
@@ -188,6 +230,11 @@ public class LinearError1D: LayerOutput1D
         }
     }
     
+    ///
+    /// Apply the gradient in the GPU execution context.
+    ///
+    /// Throw an error if batch size or ground truth are incoherent.
+    ///
     public func applyGradientGPU() throws
     {
         if let layerPrev = self.layerPrev as? Layer1D

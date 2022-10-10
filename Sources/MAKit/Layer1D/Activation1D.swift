@@ -7,10 +7,14 @@
 
 import MetalKit
 
+/// Layer with a 1D shape neural structure and an activation function.
 public class Activation1D: Layer1D
 {
+    /// The activation function.
     let _activation: ActivationFunction?
     
+    /// Pre output buffer (result of the forward pass before applying activation)
+    /// used in the GPU execution context.
     var _tmp: MetalPrivateBuffer<Float>! = nil
     
     private enum Keys: String, CodingKey
@@ -18,6 +22,14 @@ public class Activation1D: Layer1D
         case activation
     }
     
+    ///
+    /// Create a layer with a 1D shape neural structure.
+    ///
+    /// - Parameters:
+    ///     - layerPrev: Previous layer that has been queued to the model.
+    ///     - activation: The activation function.
+    ///     - params: Contextual parameters linking to the model.
+    ///
     public init(layerPrev: Layer1D,
                 activation: String,
                 params: MAKit.Model.Params)
@@ -29,6 +41,15 @@ public class Activation1D: Layer1D
                    params: params)
     }
     
+    ///
+    /// Create a layer with a 1D shape neural structure.
+    ///
+    /// - Parameters:
+    ///     - layerPrev: Previous layer that has been queued to the model.
+    ///     - nbNeurones: Number of neurons.
+    ///     - activation: The activation function.
+    ///     - params: Contextual parameters linking to the model.
+    ///
     public init(layerPrev: Layer?,
                 nbNeurones: Int, activation: String?,
                 params: MAKit.Model.Params)
@@ -45,6 +66,14 @@ public class Activation1D: Layer1D
         super.init(layerPrev: layerPrev, nbNeurones: nbNeurones, params: params)
     }
     
+    ///
+    /// Decode from the disk.
+    ///
+    /// Throw an error if reading from the decoder fails, or
+    /// if the data read is corrupted or otherwise invalid.
+    ///
+    /// - Parameter decoder: The decoder to read data from.
+    ///
     public required init(from decoder: Decoder) throws
     {
         let container = try decoder.container(keyedBy: Keys.self)
@@ -54,6 +83,17 @@ public class Activation1D: Layer1D
         try super.init(from: decoder)
     }
     
+    ///
+    /// Encode to the disk.
+    ///
+    /// If the value fails to encode anything, `encoder` will encode an empty
+    /// keyed container in its place.
+    ///
+    /// Throw an error if any values are invalid for the given
+    /// encoder's format.
+    ///
+    /// - Parameter encoder: The encoder to write data to.
+    ///
     public override func encode(to encoder: Encoder) throws
     {
         var container = encoder.container(keyedBy: Keys.self)
@@ -65,6 +105,18 @@ public class Activation1D: Layer1D
         try super.encode(to: encoder)
     }
     
+    ///
+    /// Create a layer with same values as this.
+    ///
+    /// - Parameters:
+    ///     - mapping: Dictionary allowing to find the layer associated to some id.
+    ///     This dictionary is particularly useful when the different layers cannot access
+    ///     their `layerPrev`.
+    ///     - inPlace: Whether hard resources should be copied as is.
+    ///
+    /// - Returns: A new layer. When `inPlace` is false, `initKernel` is
+    /// necessary in order to recreate hard resources.
+    ///
     public override func copy(
         mapping: Dictionary<Int, Layer>,
         inPlace: Bool) -> Layer
@@ -83,6 +135,11 @@ public class Activation1D: Layer1D
         return layer
     }
     
+    ///
+    /// Clean state resources in the GPU execution context.
+    ///
+    /// State resources are the resources that are dependent on the batch size.
+    ///
     public override func resetKernelGPU()
     {
         super.resetKernelGPU()
@@ -92,7 +149,7 @@ public class Activation1D: Layer1D
     ///
     /// Apply the forward pass of the Gradient Checking in CPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func forwardGCCPU() throws
     {
@@ -100,6 +157,11 @@ public class Activation1D: Layer1D
         _activation!.forwardGC(self)
     }
     
+    ///
+    /// Apply the forward pass (until the activation function) of the Gradient Checking.
+    ///
+    /// Throw an error if batch size is greater than the first batch size.
+    ///
     private func _forwardGC() throws
     {
         if let layerPrev = self.layerPrev as? Layer1D
@@ -128,7 +190,7 @@ public class Activation1D: Layer1D
     ///
     /// Apply the forward pass of the Gradient Checking in GPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func forwardGCGPU() throws
     {
@@ -139,7 +201,7 @@ public class Activation1D: Layer1D
     ///
     /// Apply the forward pass in the CPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func forwardCPU() throws
     {
@@ -164,7 +226,7 @@ public class Activation1D: Layer1D
     ///
     /// Apply the forward pass in the GPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func forwardGPU() throws
     {
@@ -228,7 +290,7 @@ public class Activation1D: Layer1D
     ///
     /// Apply the backward pass in the GPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func backwardGPU() throws
     {

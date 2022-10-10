@@ -7,8 +7,10 @@
 
 import MetalKit
 
+/// Arrays needed to update the inputs of a layer.
 class InputArrays1D: InputArrays<Layer1D>, IWeightArrays
 {
+    /// Inputs array: the array to update.
     var w: [Double]
     {
         get {
@@ -33,6 +35,7 @@ class InputArrays1D: InputArrays<Layer1D>, IWeightArrays
         }
     }
     
+    /// Gradients array.
     var g: [Double]
     {
         get {
@@ -58,8 +61,10 @@ class InputArrays1D: InputArrays<Layer1D>, IWeightArrays
     }
 }
 
+/// GPU buffers needed to update the inputs of a layer.
 class InputBuffers1D: InputBuffers<Layer1D>, IWeightBuffers
 {
+    /// Inputs buffer: the buffer to be update.
     var w: MetalBuffer<Float>
     {
         get {
@@ -67,6 +72,7 @@ class InputBuffers1D: InputBuffers<Layer1D>, IWeightBuffers
         }
     }
     
+    /// Gradients buffer.
     var g: MetalBuffer<Float>
     {
         get {
@@ -75,9 +81,12 @@ class InputBuffers1D: InputBuffers<Layer1D>, IWeightBuffers
     }
 }
 
+/// First layer with a 1D shape neural structure.
 public class Input1D: LayerInput1D, LayerUpdate
 {
+    /// Grid of "weights".
     var _wArrays: InputArrays1D! = nil
+    /// Buffer of "weights".
     var _wBuffers: InputBuffers1D! = nil
     
     /// Whether to compute weights' gradients or not.
@@ -99,6 +108,13 @@ public class Input1D: LayerInput1D, LayerUpdate
         set {}
     }
     
+    ///
+    /// Create a layer with a 1D shape neural structure.
+    ///
+    /// - Parameters:
+    ///     - nbNeurones: Number of neurons.
+    ///     - params: Contextual parameters linking to the model.
+    ///
     public init(nbNeurones: Int, params: MAKit.Model.Params)
     {
         super.init(layerPrev: nil,
@@ -107,6 +123,13 @@ public class Input1D: LayerInput1D, LayerUpdate
         computeDelta = false
     }
     
+    ///
+    /// Create a layer with a 1D shape neural structure.
+    ///
+    /// - Parameters:
+    ///     - layerPrev: Previous layer that has been queued to the model.
+    ///     - params: Contextual parameters linking to the model.
+    ///
     public init(layerPrev: Layer1D, params: MAKit.Model.Params)
     {
         super.init(layerPrev: layerPrev,
@@ -116,9 +139,9 @@ public class Input1D: LayerInput1D, LayerUpdate
     }
     
     ///
-    /// Create an instance of Layer by decoding from the given decoder.
+    /// Decode from the disk.
     ///
-    /// This initializer throws an error if reading from the decoder fails, or
+    /// Throw an error if reading from the decoder fails, or
     /// if the data read is corrupted or otherwise invalid.
     ///
     /// - Parameter decoder: The decoder to read data from.
@@ -130,7 +153,7 @@ public class Input1D: LayerInput1D, LayerUpdate
     }
     
     ///
-    /// Create a new instance of `Layer` with same values as this.
+    /// Create a layer with same values as this.
     ///
     /// - Parameters:
     ///     - mapping: Dictionary allowing to find the layer associated to some id.
@@ -138,7 +161,7 @@ public class Input1D: LayerInput1D, LayerUpdate
     ///     their `layerPrev`.
     ///     - inPlace: Whether hard resources should be copied as is.
     ///
-    /// - Returns: A new instance of `Layer`. When `inPlace` is false, `initKernel` is
+    /// - Returns: A new layer. When `inPlace` is false, `initKernel` is
     /// necessary in order to recreate hard resources.
     ///
     public override func copy(
@@ -229,6 +252,13 @@ public class Input1D: LayerInput1D, LayerUpdate
     /// Initialize weights in the GPU execution context.
     public func initWeightsGPU() {}
     
+    ///
+    /// API to set data in the CPU execution context.
+    ///
+    /// Throw an error if data size is not coherent.
+    ///
+    /// - Parameter data: The data to set.
+    ///
     public func setDataCPU<T: BinaryFloatingPoint>(_ data: [[T]]) throws
     {
         let batchSize = data.count
@@ -249,6 +279,13 @@ public class Input1D: LayerInput1D, LayerUpdate
         }
     }
     
+    ///
+    /// API to set data in the GPU execution context.
+    ///
+    /// Throw an error if data size is not coherent.
+    ///
+    /// - Parameter data: The data to set.
+    ///
     public func setDataGPU<T: BinaryFloatingPoint>(_ data: [[T]]) throws
     {
         let batchSize = data.count
@@ -276,6 +313,13 @@ public class Input1D: LayerInput1D, LayerUpdate
         MetalKernel.get.upload([outs])
     }
     
+    ///
+    /// API to set data in the GPU execution context.
+    ///
+    /// Throw an error if data size is not coherent.
+    ///
+    /// - Parameter data: The data to set.
+    ///
     public func setDataGPU(
         _ data: MetalPrivateBuffer<Float>,
         batchSize: Int) throws
@@ -292,7 +336,7 @@ public class Input1D: LayerInput1D, LayerUpdate
     ///
     /// Apply the forward pass in the CPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func forwardCPU() throws
     {
@@ -315,7 +359,7 @@ public class Input1D: LayerInput1D, LayerUpdate
     ///
     /// Apply the forward pass in the GPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func forwardGPU() throws
     {
@@ -372,7 +416,7 @@ public class Input1D: LayerInput1D, LayerUpdate
     ///
     /// Apply the backward pass in the GPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func backwardGPU() throws
     {
@@ -415,13 +459,13 @@ public class Input1D: LayerInput1D, LayerUpdate
         }
     }
     
-    /// Get the weights in the CPU execution context.
+    /// Get the "weights" in the CPU execution context.
     public func collectWeightsCPU() -> [IWeightArrays]
     {
         return [_wArrays]
     }
 
-    /// Get the weights in the GPU execution context.
+    /// Get the "weights" in the GPU execution context.
     public func collectWeightsGPU() -> [IWeightBuffers]
     {
         return [_wBuffers]

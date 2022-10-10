@@ -184,8 +184,6 @@ open class ActivationFunction: Codable
         let nbElems = outs.nbElems
         let pNbElems: [UInt32] = [UInt32(nbElems)]
         
-        fatalError("COUCOU1")
-        
         let command = MetalKernel.get.createCommand(
             forwardKernel, deviceID: deviceID
         )
@@ -200,12 +198,7 @@ open class ActivationFunction: Codable
             threadsPerGrid: threadsPerGrid,
             threadsPerThreadgroup: threadsPerThreadgroup
         )
-        
-        fatalError("COUCOU2")
-        
         command.enqueue()
-        
-        fatalError("COUCOU3")
     }
     
     ///

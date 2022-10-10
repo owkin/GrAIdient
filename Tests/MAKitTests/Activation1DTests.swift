@@ -124,6 +124,7 @@ class Activation1DGradTests: Input1DMSE1DCase
     
     func testFLLeakyReLUGPU() throws
     {
+        fatalError("COUCOU1")
         let trainer = _buildTrainer(
             model: "FullyConnected", activation: LeakyReLU.str
         )

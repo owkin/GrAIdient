@@ -12,6 +12,6 @@ jobs:
           swift-version: "5.6.0"
       - uses: actions/checkout@v3
       - name: Build
-        run: swift build -v
+        run: swift build
       - name: Test
-        run: swift test -v
+        run: swift test

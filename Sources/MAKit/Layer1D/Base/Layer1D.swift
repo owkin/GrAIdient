@@ -5,15 +5,21 @@
 // Created by Jean-François Reboud on 09/10/2022.
 //
 
+/// Layer with a 1D shape neural structure.
 open class Layer1D: Layer
 {
+    /// Neural structure used in the CPU execution context.
     public internal(set) var neurones: EnsembleNeurones = EnsembleNeurones(0)
     
+    /// Output buffer (result of the forward pass) used in the GPU execution context.
     public internal(set) var outs: MetalPrivateBuffer<Float>! = nil
+    /// Gradient buffer (result of the backward pass) used in the GPU execution context.
     public internal(set) var delta: MetalPrivateBuffer<Float>! = nil
     
+    /// Number of neurons.
     public let nbNeurones: Int
     
+    /// Number of different weigths for which we are estimating the gradient during Gradient Checking.
     public override var nbGC: Int
     {
         get {
@@ -26,12 +32,28 @@ open class Layer1D: Layer
         case nbNeurones
     }
     
+    ///
+    /// Create a layer with a 1D shape neural structure.
+    ///
+    /// - Parameters:
+    ///     - layerPrev: Previous layer that has been queued to the model.
+    ///     - nbNeurones: Number of neurons.
+    ///     - params: Contextual parameters linking to the model.
+    ///
     public init(layerPrev: Layer?, nbNeurones: Int, params: MAKit.Model.Params)
     {
         self.nbNeurones = nbNeurones
         super.init(layerPrev: layerPrev, params: params)
     }
     
+    ///
+    /// Decode from the disk.
+    ///
+    /// Throw an error if reading from the decoder fails, or
+    /// if the data read is corrupted or otherwise invalid.
+    ///
+    /// - Parameter decoder: The decoder to read data from.
+    ///
     public required init(from decoder: Decoder) throws
     {
         let container = try decoder.container(keyedBy: Keys.self)
@@ -39,6 +61,17 @@ open class Layer1D: Layer
         try super.init(from: decoder)
     }
     
+    ///
+    /// Encode to the disk.
+    ///
+    /// If the value fails to encode anything, `encoder` will encode an empty
+    /// keyed container in its place.
+    ///
+    /// Throw an error if any values are invalid for the given
+    /// encoder's format.
+    ///
+    /// - Parameter encoder: The encoder to write data to.
+    ///
     open override func encode(to encoder: Encoder) throws
     {
         var container = encoder.container(keyedBy: Keys.self)
@@ -49,7 +82,7 @@ open class Layer1D: Layer
     ///
     /// Clean state resources in the CPU execution context.
     ///
-    /// We clean the neurones' state (forward and backward).
+    /// We clean the neurons' state (forward and backward).
     ///
     open override func resetKernelCPU()
     {
@@ -60,7 +93,7 @@ open class Layer1D: Layer
     ///
     /// Clean state resources in the GPU execution context.
     ///
-    /// We clean the neurones' state (forward and backward).
+    /// We clean the neurons' state (forward and backward).
     ///
     open override func resetKernelGPU()
     {
@@ -72,7 +105,7 @@ open class Layer1D: Layer
     ///
     /// Initialize state resources in the CPU execution context.
     ///
-    /// We initialize the neurones' state (forward and backward).
+    /// We initialize the neurons' state (forward and backward).
     ///
     public func checkStateCPU(batchSize: Int) throws
     {
@@ -93,7 +126,7 @@ open class Layer1D: Layer
     ///
     /// Initialize state resources in the GPU execution context.
     ///
-    /// We initialize the neurones' forward state.
+    /// We initialize the neurons' forward state.
     ///
     public func checkStateForwardGPU(batchSize: Int) throws
     {
@@ -112,7 +145,7 @@ open class Layer1D: Layer
     ///
     /// Initialize state resources in the GPU execution context.
     ///
-    /// We initialize the neurones' backward state.
+    /// We initialize the neurons' backward state.
     ///
     public func checkStateBackwardGPU(batchSize: Int) throws
     {
@@ -166,7 +199,7 @@ open class Layer1D: Layer
     ///
     /// Get the delta of this layer in the CPU execution context.
     ///
-    /// Throws an error when layer has not been updated through backward pass.
+    /// Throw an error when layer has not been updated through backward pass.
     ///
     /// - Parameter elem: The batch element to retrieve the outputs from.
     ///
@@ -189,7 +222,7 @@ open class Layer1D: Layer
     ///
     /// Get the delta of this layer in the GPU execution context.
     ///
-    /// Throws an error when layer has not been updated through backward pass.
+    /// Throw an error when layer has not been updated through backward pass.
     ///
     /// - Parameter elem: The batch element to retrieve the outputs from.
     ///

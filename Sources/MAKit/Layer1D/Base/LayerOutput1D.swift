@@ -7,10 +7,13 @@
 
 import MetalKit
 
+/// Last layer of a model.
 open class LayerOutput1D: Layer1D
 {
+    /// Coefficient to be applied to the loss compuptation.
     public var coeff: Double = 1.0
     
+    /// Loss buffer in the GPU execution context.
     public internal(set) var loss: MetalSharedBuffer<Float>! = nil
     
     private enum Keys: String, CodingKey
@@ -18,6 +21,13 @@ open class LayerOutput1D: Layer1D
         case coeff
     }
     
+    ///
+    /// Create a layer with a 1D shape neural structure.
+    ///
+    /// - Parameters:
+    ///     - layerPrev: Previous layer that has been queued to the model.
+    ///     - params: Contextual parameters linking to the model.
+    ///
     public init(layerPrev: Layer1D, params: MAKit.Model.Params)
     {
         super.init(layerPrev: layerPrev,
@@ -25,6 +35,14 @@ open class LayerOutput1D: Layer1D
                    params: params)
     }
     
+    ///
+    /// Decode from the disk.
+    ///
+    /// Throw an error if reading from the decoder fails, or
+    /// if the data read is corrupted or otherwise invalid.
+    ///
+    /// - Parameter decoder: The decoder to read data from.
+    ///
     public required init(from decoder: Decoder) throws
     {
         let container = try decoder.container(keyedBy: Keys.self)
@@ -33,6 +51,17 @@ open class LayerOutput1D: Layer1D
         try super.init(from: decoder)
     }
     
+    ///
+    /// Encode to the disk.
+    ///
+    /// If the value fails to encode anything, `encoder` will encode an empty
+    /// keyed container in its place.
+    ///
+    /// Throw an error if any values are invalid for the given
+    /// encoder's format.
+    ///
+    /// - Parameter encoder: The encoder to write data to.
+    ///
     public override func encode(to encoder: Encoder) throws
     {
         var container = encoder.container(keyedBy: Keys.self)
@@ -40,6 +69,11 @@ open class LayerOutput1D: Layer1D
         try super.encode(to: encoder)
     }
     
+    ///
+    /// Clean state resources in the GPU execution context.
+    ///
+    /// We clean the neurons' state (forward and backward).
+    ///
     open override func resetKernelGPU()
     {
         super.resetKernelGPU()
@@ -49,7 +83,7 @@ open class LayerOutput1D: Layer1D
     ///
     /// Apply the forward pass of the Gradient Checking in CPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     open override func forwardGCCPU() throws
     {
@@ -77,7 +111,7 @@ open class LayerOutput1D: Layer1D
     ///
     /// Apply the forward pass of the Gradient Checking in GPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     open override func forwardGCGPU() throws
     {
@@ -87,7 +121,7 @@ open class LayerOutput1D: Layer1D
     ///
     /// Apply the forward pass in the CPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     open override func forwardCPU() throws
     {
@@ -107,7 +141,7 @@ open class LayerOutput1D: Layer1D
     ///
     /// Apply the forward pass in the GPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     open override func forwardGPU() throws
     {
@@ -163,7 +197,7 @@ open class LayerOutput1D: Layer1D
     ///
     /// Apply the backward pass in the GPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     open override func backwardGPU() throws
     {

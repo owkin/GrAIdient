@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import MetalKit
 
 /// Activation function to be used in a layer.
 open class ActivationFunction: Codable
@@ -106,6 +107,120 @@ open class ActivationFunction: Codable
     open func derivate(_ x: Double) -> Double
     {
         fatalError("Not implemented.")
+    }
+    
+    func forwardGC(_ layer: Activation1D)
+    {
+        let nbBatch = layer.batchSize
+        let neurones = layer.neurones
+        let nbGC = layer.nbGC
+        
+        for neurone in neurones.all {
+        for batch in 0..<nbBatch {
+        for elem in 0..<nbGC
+        {
+            let tmp = neurone.gc[batch][elem].out
+            let out = apply(tmp)
+        
+            neurone.gc[batch][elem].out = out
+        }}}
+    }
+    
+    func forwardCPU(_ layer: Activation1D)
+    {
+        let nbBatch = layer.batchSize
+        for neurone in layer.neurones.all {
+        for elem in 0..<nbBatch
+        {
+            let tmp = neurone.v[elem].out
+            let out = apply(tmp)
+            
+            neurone.v[elem].tmp = tmp
+            neurone.v[elem].out = out
+        }}
+    }
+    
+    func backwardCPU(_ layer: Activation1D)
+    {
+        let nbBatch = layer.batchSize
+        for neurone in layer.neurones.all {
+        for elem in 0..<nbBatch
+        {
+            let tmp = neurone.v[elem].tmp
+            let derivative = derivate(tmp)
+            
+            neurone.v[elem].delta *= derivative
+        }}
+    }
+    
+    private func _forwardGPU(
+        tmp: MetalBuffer<Float>,
+        outs: MetalBuffer<Float>,
+        deviceID: Int)
+    {
+        let nbElems = outs.nbElems
+        let pNbElems: [UInt32] = [UInt32(nbElems)]
+        
+        let command = MetalKernel.get.createCommand(
+            forwardKernel, deviceID: deviceID
+        )
+        command.setBytes(pNbElems, atIndex: 0)
+        command.setBuffer(tmp.metal, atIndex: 1)
+        command.setBuffer(outs.metal, atIndex: 2)
+        
+        let threads = command.threadExecutionWidth
+        let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
+        let threadsPerGrid = MTLSize(width: nbElems, height: 1, depth: 1)
+        command.dispatchThreads(threadsPerGrid: threadsPerGrid,
+                                threadsPerThreadgroup: threadsPerThreadgroup)
+        command.enqueue()
+    }
+    
+    open func forwardGPU(_ layer: Activation1D)
+    {
+        let nbElems = layer.outs.nbElems
+        if layer._tmp == nil
+        {
+            layer._tmp = MetalPrivateBuffer<Float>(
+                nbElems, deviceID: layer.deviceID)
+        }
+        _forwardGPU(
+            tmp: layer._tmp,
+            outs: layer.outs,
+            deviceID: layer.deviceID
+        )
+    }
+    
+    private func _backwardGPU(
+        tmp: MetalBuffer<Float>,
+        delta: MetalBuffer<Float>,
+        deviceID: Int)
+    {
+        let nbElems = delta.nbElems
+        let pNbElems: [UInt32] = [UInt32(nbElems)]
+        
+        let command = MetalKernel.get.createCommand(
+            backwardKernel, deviceID: deviceID
+        )
+        command.setBuffer(tmp.metal, atIndex: 0)
+        command.setBytes(pNbElems, atIndex: 1)
+        command.setBuffer(delta.metal, atIndex: 2)
+        
+        let threads = command.threadExecutionWidth
+        let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
+        let threadsPerGrid = MTLSize(width: nbElems, height: 1, depth: 1)
+        command.dispatchThreads(threadsPerGrid: threadsPerGrid,
+                                threadsPerThreadgroup: threadsPerThreadgroup)
+        command.enqueue()
+    }
+    
+    open func backwardGPU(_ layer: Activation1D)
+    {
+        _backwardGPU(
+            tmp: layer._tmp,
+            delta: layer.delta,
+            deviceID: layer.deviceID
+        )
     }
     
     // TODO: add elements here.

@@ -7,7 +7,7 @@
 
 import Foundation
 
-/// Activation function to be used in a Layer.
+/// Activation function to be used in a layer.
 open class ActivationFunction: Codable
 {
     /// Get the name of the function.

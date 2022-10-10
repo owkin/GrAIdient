@@ -22,7 +22,7 @@ public protocol IWeightArrays
     /// Veclocity normalized array.
     var vHat: [Double] { get set }
     
-    /// Clean the momentum, preserving the weights.
+    /// Clean the momentum..., preserving the weights.
     func reset()
 }
 
@@ -149,7 +149,7 @@ class WeightArrays: IWeightArrays
         }
     }
     
-    /// Clean the momentum, preserving the weights.
+    /// Clean the momentum..., preserving the weights.
     func reset()
     {
         _g = []

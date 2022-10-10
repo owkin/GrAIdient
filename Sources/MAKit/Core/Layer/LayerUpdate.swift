@@ -63,7 +63,7 @@ public protocol IWeightBuffers
     /// Velocity normalized buffer.
     var vHat: MetalBuffer<Float> { get }
     
-    /// Clean the momentum, preserving the weights.
+    /// Clean the momentum..., preserving the weights.
     func reset()
 }
 
@@ -187,7 +187,7 @@ class WeightBuffers: IWeightBuffers
         }
     }
     
-    /// Clean the momentum, preserving the weights.
+    /// Clean the momentum..., preserving the weights.
     func reset()
     {
         // do not touch _w

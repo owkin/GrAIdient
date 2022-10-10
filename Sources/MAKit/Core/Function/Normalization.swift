@@ -7,10 +7,21 @@
 
 import Accelerate
 
+/// Normalization function to be used in a layer.
 class Normalization
 {
+    /// Slight modification to avoid "divide by 0" errors.
     static let _Ɛ: Double = 1e-5
 
+    ///
+    /// Forward Gradient Checking CPU.
+    ///
+    /// - Parameters:
+    ///     - outs: The data to normalize.
+    ///     - β: A bias to add to the normalization result.
+    ///     - Ɣ: A weight to scale the normalization result.
+    /// - Returns: The data normalized.
+    ///
     static func forwardGC(outs: [Double],
                           β: Double,
                           Ɣ: Double) -> [Double]
@@ -23,6 +34,18 @@ class Normalization
         return outsNew
     }
 
+    ///
+    /// Forward Training CPU.
+    ///
+    /// - Parameters:
+    ///     - outs: The data to normalize.
+    ///     - β: A bias to add to the normalization result.
+    ///     - Ɣ: A weight to scale the normalization result.
+    /// - Returns: (The data normalized,
+    ///            The data normalized without taking into account the bias and the weight,
+    ///            The average of the data,
+    ///            The deviation of the data).
+    ///
     static func forward(outs: [Double],
                         β: Double,
                         Ɣ: Double) -> (outsNew: [Double],
@@ -43,6 +66,17 @@ class Normalization
                 σ2: σ2)
     }
 
+    ///
+    /// Forward Inference CPU.
+    ///
+    /// - Parameters:
+    ///     - outs: The data to normalize.
+    ///     - μ: A global average of data.
+    ///     - σ2: A global deviation of data.
+    ///     - β: A bias to add to the normalization result.
+    ///     - Ɣ: A weight to scale the normalization result.
+    /// - Returns: The data normalized.
+    ///
     static func forward(outs: [Double],
                         μ: Double,
                         σ2: Double,
@@ -54,6 +88,18 @@ class Normalization
         return vDSP.add(β, vDSP.multiply(Ɣ, xHat))
     }
 
+    ///
+    /// Backward Training CPU.
+    ///
+    /// - Parameters:
+    ///     - delta: The gradients to back propagate.
+    ///     - xHat: The data normalized without taking into account the bias and the weight.
+    ///     - σ2: The deviation of the data.
+    ///     - Ɣ: The weight that scaled the normalization result.
+    /// - Returns: (The gradient taking into account the normalization,
+    ///            The gradient of β,
+    ///            The gradient of Ɣ).
+    ///
     static func backward(delta: [Double],
                          xHat: [Double],
                          σ2: Double,
@@ -84,6 +130,15 @@ class Normalization
                 dƔ: dƔ)
     }
 
+    ///
+    /// Backward Inference CPU.
+    ///
+    /// - Parameters:
+    ///     - delta: The gradients to back propagate.
+    ///     - σ2: The deviation of the data.
+    ///     - Ɣ: The weight that scaled the normalization result.
+    /// - Returns: The gradient taking into account the normalization.
+    ///
     static func backward(delta: [Double],
                          σ2: Double,
                          Ɣ: Double) -> [Double]

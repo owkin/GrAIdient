@@ -5,21 +5,32 @@
 // Created by Jean-François Reboud on 09/10/2022.
 //
 
+/// Arrays needed to update the inputs of a layer.
 class InputArrays<T: Layer>
 {
+    /// The link to the layer.
     unowned let _layer: T
+    /// Number of elements in the different arrays.
     let nbElems: Int
     
     var _m: [Double] = []
     var _v: [Double] = []
     var _vHat: [Double] = []
     
+    ///
+    /// Create a container of arrays.
+    ///
+    /// - Parameters:
+    ///     - layer: The link to the layer.
+    ///     - nbElems: Number of elements in the different arrays.
+    ///
     init(layer: T, nbElems: Int)
     {
         _layer = layer
         self.nbElems = nbElems
     }
     
+    /// Momentum array.
     var m: [Double]
     {
         get {
@@ -39,6 +50,7 @@ class InputArrays<T: Layer>
             _m = newValue
         }
     }
+    /// Velocity array.
     var v: [Double]
     {
         get {
@@ -58,6 +70,7 @@ class InputArrays<T: Layer>
             _v = newValue
         }
     }
+    /// Veclocity normalized array.
     var vHat: [Double]
     {
         get {
@@ -78,7 +91,7 @@ class InputArrays<T: Layer>
         }
     }
     
-    /// Clean the momentum, preserving the weights.
+    /// Clean the momentum..., preserving the weights.
     func reset()
     {
         _m = []
@@ -87,16 +100,28 @@ class InputArrays<T: Layer>
     }
 }
 
+/// GPU buffers needed to update the inputs of a layer.
 class InputBuffers<T: Layer>
 {
+    /// The link to the layer.
     unowned let _layer: T
+    /// Number of elements in the different buffers.
     let nbElems: Int
+    /// GPU device where the buffers are sent.
     let deviceID: Int
     
     var _m: MetalBuffer<Float>! = nil
     var _v: MetalBuffer<Float>! = nil
     var _vHat: MetalBuffer<Float>! = nil
     
+    ///
+    /// Create a container of buffers.
+    ///
+    /// - Parameters:
+    ///     - layer: The link to the layer.
+    ///     - nbElems: Number of elements in the different buffers.
+    ///     - deviceID: GPU device where the buffers are sent.
+    ///
     init(layer: T,
          nbElems: Int,
          deviceID: Int)
@@ -106,6 +131,7 @@ class InputBuffers<T: Layer>
         self.deviceID = deviceID
     }
     
+    /// Momentum buffer.
     var m: MetalBuffer<Float>
     {
         get {
@@ -117,6 +143,7 @@ class InputBuffers<T: Layer>
         }
     }
     
+    /// Velocity buffer.
     var v: MetalBuffer<Float>
     {
         get {
@@ -128,6 +155,7 @@ class InputBuffers<T: Layer>
         }
     }
     
+    /// Velocity normalized buffer.
     var vHat: MetalBuffer<Float>
     {
         get {
@@ -139,7 +167,7 @@ class InputBuffers<T: Layer>
         }
     }
     
-    /// Clean the momentum, preserving the weights.
+    /// Clean the momentum..., preserving the weights.
     func reset()
     {
         _m = nil

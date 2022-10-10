@@ -63,6 +63,11 @@ open class GradTrainer: Trainer
         getGradientsApprox: (LossT, Model)->[Double],
         validate: (Double)->())
     {
+        if MAKit.Opti.GPU
+        {
+            fatalError("COUCOU1")
+        }
+        
         model.initialize(
             params: optimizerParams,
             phase: .Training,

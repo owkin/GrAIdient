@@ -203,8 +203,8 @@ public class SelectChannels1D: Layer1D
             }
             
             let command = MetalKernel.get.createCommand(
-                "selectChForward", deviceID: deviceID)
-            
+                "selectChForward", deviceID: deviceID
+            )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(pNbNeurones, atIndex: 1)
             command.setBytes(pNbNeuronesPrev, atIndex: 2)
@@ -217,8 +217,10 @@ public class SelectChannels1D: Layer1D
             let threadsPerGrid = MTLSize(width: nbNeurones,
                                          height: batchSize,
                                          depth: 1)
-            command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+            command.dispatchThreads(
+                threadsPerGrid: threadsPerGrid,
+                threadsPerThreadgroup: threadsPerThreadgroup
+            )
             command.enqueue()
         }
     }
@@ -283,8 +285,8 @@ public class SelectChannels1D: Layer1D
                 let pNbElems: [UInt32] = [UInt32(nbElems)]
                 
                 command = MetalKernel.get.createCommand(
-                    "reset", deviceID: deviceID)
-                
+                    "reset", deviceID: deviceID
+                )
                 command.setBytes(pNbElems, atIndex: 0)
                 command.setBuffer(layerPrev.delta.metal, atIndex: 1)
                 
@@ -295,14 +297,16 @@ public class SelectChannels1D: Layer1D
                 let threadsPerGrid = MTLSize(width: nbElems,
                                              height: 1,
                                              depth: 1)
-                command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                   threadsPerThreadgroup: threadsPerThreadgroup)
+                command.dispatchThreads(
+                    threadsPerGrid: threadsPerGrid,
+                    threadsPerThreadgroup: threadsPerThreadgroup
+                )
                 command.enqueue()
             }
             
             command = MetalKernel.get.createCommand(
-                "selectChBackward", deviceID: deviceID)
-            
+                "selectChBackward", deviceID: deviceID
+            )
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBytes(pNbNeurones, atIndex: 1)
             command.setBytes(pNbNeuronesPrev, atIndex: 2)
@@ -315,8 +319,10 @@ public class SelectChannels1D: Layer1D
             let threadsPerGrid = MTLSize(width: nbNeurones,
                                          height: batchSize,
                                          depth: 1)
-            command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+            command.dispatchThreads(
+                threadsPerGrid: threadsPerGrid,
+                threadsPerThreadgroup: threadsPerThreadgroup
+            )
             command.enqueue()
             
             propagateDirty()

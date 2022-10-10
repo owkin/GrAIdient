@@ -109,6 +109,11 @@ open class ActivationFunction: Codable
         fatalError("Not implemented.")
     }
     
+    ///
+    /// Forward Gradient Checking CPU.
+    ///
+    /// - Parameter layer: Layer to execute the activation function for.
+    ///
     func forwardGC(_ layer: Activation1D)
     {
         let nbBatch = layer.batchSize
@@ -126,6 +131,11 @@ open class ActivationFunction: Codable
         }}}
     }
     
+    ///
+    /// Forward CPU.
+    ///
+    /// - Parameter layer: Layer to execute the activation function for.
+    ///
     func forwardCPU(_ layer: Activation1D)
     {
         let nbBatch = layer.batchSize
@@ -140,6 +150,11 @@ open class ActivationFunction: Codable
         }}
     }
     
+    ///
+    /// Backward CPU.
+    ///
+    /// - Parameter layer: Layer to execute the activation function for.
+    ///
     func backwardCPU(_ layer: Activation1D)
     {
         let nbBatch = layer.batchSize
@@ -153,6 +168,14 @@ open class ActivationFunction: Codable
         }}
     }
     
+    ///
+    /// Forward GPU.
+    ///
+    /// - Parameters:
+    ///     - tmp: Buffer containing forward values before activation.
+    ///     - outs: Buffer containing forward values after activation.
+    ///     - deviceID: GPU device where to execute the operation.
+    ///
     private func _forwardGPU(
         tmp: MetalBuffer<Float>,
         outs: MetalBuffer<Float>,
@@ -171,11 +194,18 @@ open class ActivationFunction: Codable
         let threads = command.threadExecutionWidth
         let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
         let threadsPerGrid = MTLSize(width: nbElems, height: 1, depth: 1)
-        command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+        command.dispatchThreads(
+            threadsPerGrid: threadsPerGrid,
+            threadsPerThreadgroup: threadsPerThreadgroup
+        )
         command.enqueue()
     }
     
+    ///
+    /// Forward GPU.
+    ///
+    /// - Parameter layer: Layer to execute the activation function for.
+    ///
     open func forwardGPU(_ layer: Activation1D)
     {
         let nbElems = layer.outs.nbElems
@@ -191,6 +221,14 @@ open class ActivationFunction: Codable
         )
     }
     
+    ///
+    /// Backward GPU.
+    ///
+    /// - Parameters:
+    ///     - tmp: Buffer containing forward values before activation.
+    ///     - delta: Buffer containing backward values to back propagate.
+    ///     - deviceID: GPU device where to execute the operation.
+    ///
     private func _backwardGPU(
         tmp: MetalBuffer<Float>,
         delta: MetalBuffer<Float>,
@@ -209,11 +247,18 @@ open class ActivationFunction: Codable
         let threads = command.threadExecutionWidth
         let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
         let threadsPerGrid = MTLSize(width: nbElems, height: 1, depth: 1)
-        command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+        command.dispatchThreads(
+            threadsPerGrid: threadsPerGrid,
+            threadsPerThreadgroup: threadsPerThreadgroup
+        )
         command.enqueue()
     }
     
+    ///
+    /// Backward GPU.
+    ///
+    /// - Parameter layer: Layer to execute the activation function for.
+    ///
     open func backwardGPU(_ layer: Activation1D)
     {
         _backwardGPU(

@@ -872,8 +872,8 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         
         let command = MetalKernel.get.createCommand(
-            "flForward", deviceID: deviceID)
-        
+            "flForward", deviceID: deviceID
+        )
         command.setBuffer(outsPrev.metal, atIndex: 0)
         command.setBuffer(_wBuffers.w.metal, atIndex: 1)
         command.setBuffer(_bBuffers.w.metal, atIndex: 2)
@@ -886,8 +886,10 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
         let threadsPerGrid = MTLSize(width: nbNeurones,
                                      height: batchSize,
                                      depth: 1)
-        command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                            threadsPerThreadgroup: threadsPerThreadgroup)
+        command.dispatchThreads(
+            threadsPerGrid: threadsPerGrid,
+            threadsPerThreadgroup: threadsPerThreadgroup
+        )
         command.enqueue()
     }
     
@@ -1010,8 +1012,8 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
             let command = MetalKernel.get.createCommand(
-                "flBackward", deviceID: deviceID)
-            
+                "flBackward", deviceID: deviceID
+            )
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBuffer(_wBuffers.w.metal, atIndex: 1)
             command.setBytes(pNbNeurones, atIndex: 2)
@@ -1024,8 +1026,10 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
             let threadsPerGrid = MTLSize(width: weightWidth,
                                          height: batchSize,
                                          depth: 1)
-            command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+            command.dispatchThreads(
+                threadsPerGrid: threadsPerGrid,
+                threadsPerThreadgroup: threadsPerThreadgroup
+            )
             command.enqueue()
             
             propagateDirty()
@@ -1051,8 +1055,8 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                 // Compute Gradients per batch
                 // -------------------------------------------------------------
                 command = MetalKernel.get.createCommand(
-                    "flBatchDerWeights", deviceID: deviceID)
-                
+                    "flBatchDerWeights", deviceID: deviceID
+                )
                 command.setBuffer(outsPrev.metal, atIndex: 0)
                 command.setBuffer(delta.metal, atIndex: 1)
                 command.setBytes(pNbNeurones, atIndex: 2)
@@ -1065,16 +1069,17 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                 threadsPerGrid = MTLSize(width: nbNeurones,
                                          height: weightWidth,
                                          depth: 1)
-                command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
-                
+                command.dispatchThreads(
+                    threadsPerGrid: threadsPerGrid,
+                    threadsPerThreadgroup: threadsPerThreadgroup
+                )
                 command.enqueue()
                 
                 if updateBiases
                 {
                     command = MetalKernel.get.createCommand(
-                        "flBatchDerBiases", deviceID: deviceID)
-                    
+                        "flBatchDerBiases", deviceID: deviceID
+                    )
                     command.setBuffer(delta.metal, atIndex: 0)
                     command.setBytes(pNbNeurones, atIndex: 1)
                     command.setBytes(pNbBatch, atIndex: 2)
@@ -1086,8 +1091,10 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                     threadsPerGrid = MTLSize(width: nbNeurones,
                                              height: 1,
                                              depth: 1)
-                    command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+                    command.dispatchThreads(
+                        threadsPerGrid: threadsPerGrid,
+                        threadsPerThreadgroup: threadsPerThreadgroup
+                    )
                     command.enqueue()
                 }
             }
@@ -1097,8 +1104,8 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                 // Compute Gradients per sample
                 // -------------------------------------------------------------
                 command = MetalKernel.get.createCommand(
-                    "flDerWeights", deviceID: deviceID)
-                
+                    "flDerWeights", deviceID: deviceID
+                )
                 command.setBuffer(outsPrev.metal, atIndex: 0)
                 command.setBuffer(delta.metal, atIndex: 1)
                 command.setBytes(pNbNeurones, atIndex: 2)
@@ -1110,15 +1117,17 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                 threadsPerGrid = MTLSize(width: nbNeurones,
                                          height: weightWidth,
                                          depth: batchSize)
-                command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+                command.dispatchThreads(
+                    threadsPerGrid: threadsPerGrid,
+                    threadsPerThreadgroup: threadsPerThreadgroup
+                )
                 command.enqueue()
                 
                 if updateBiases
                 {
                     command = MetalKernel.get.createCommand(
-                        "flDerBiases", deviceID: deviceID)
-                    
+                        "flDerBiases", deviceID: deviceID
+                    )
                     command.setBuffer(delta.metal, atIndex: 0)
                     command.setBytes(pNbNeurones, atIndex: 1)
                     command.setBytes(pNbBatch, atIndex: 2)
@@ -1128,8 +1137,10 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                     threadsPerGrid = MTLSize(width: nbNeurones,
                                              height: batchSize,
                                              depth: 1)
-                    command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+                    command.dispatchThreads(
+                        threadsPerGrid: threadsPerGrid,
+                        threadsPerThreadgroup: threadsPerThreadgroup
+                    )
                     command.enqueue()
                 }
                 
@@ -1137,8 +1148,8 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                 // Compute Gradients per batch
                 // -------------------------------------------------------------
                 command = MetalKernel.get.createCommand(
-                    "flReduceWeights", deviceID: deviceID)
-                
+                    "flReduceWeights", deviceID: deviceID
+                )
                 command.setBuffer(_wDeltaWeights.metal, atIndex: 0)
                 command.setBytes(pNbNeurones, atIndex: 1)
                 command.setBytes(pNbNeuronesPrev, atIndex: 2)
@@ -1150,15 +1161,17 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                 threadsPerGrid = MTLSize(width: nbNeurones,
                                          height: nbNeuronesPrev,
                                          depth: 1)
-                command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+                command.dispatchThreads(
+                    threadsPerGrid: threadsPerGrid,
+                    threadsPerThreadgroup: threadsPerThreadgroup
+                )
                 command.enqueue()
                 
                 if updateBiases
                 {
                     command = MetalKernel.get.createCommand(
-                        "reduceBiases", deviceID: deviceID)
-                    
+                        "reduceBiases", deviceID: deviceID
+                    )
                     command.setBuffer(_bDeltaWeights.metal, atIndex: 0)
                     command.setBytes(pNbNeurones, atIndex: 1)
                     command.setBytes(pNbBatch, atIndex: 2)
@@ -1170,8 +1183,10 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                     threadsPerGrid = MTLSize(width: nbNeurones,
                                              height: 1,
                                              depth: 1)
-                    command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+                    command.dispatchThreads(
+                        threadsPerGrid: threadsPerGrid,
+                        threadsPerThreadgroup: threadsPerThreadgroup
+                    )
                     command.enqueue()
                 }
             }

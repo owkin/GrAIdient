@@ -126,8 +126,8 @@ public class MSE1D: LayerOutput1D
         }
         
         let command = MetalKernel.get.createCommand(
-            "MSE1DLoss", deviceID: deviceID)
-        
+            "MSE1DLoss", deviceID: deviceID
+        )
         command.setBuffer(outs.metal, atIndex: 0)
         command.setBuffer(groundTruth.metal, atIndex: 1)
         command.setBytes(pNbNeurones, atIndex: 2)
@@ -137,8 +137,10 @@ public class MSE1D: LayerOutput1D
         let threads = command.threadExecutionWidth
         let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
         let threadsPerGrid = MTLSize(width: batchSize, height: 1, depth: 1)
-        command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                           threadsPerThreadgroup: threadsPerThreadgroup)
+        command.dispatchThreads(
+            threadsPerGrid: threadsPerGrid,
+            threadsPerThreadgroup: threadsPerThreadgroup
+        )
         command.enqueue()
         
         MetalKernel.get.download([loss])
@@ -214,8 +216,8 @@ public class MSE1D: LayerOutput1D
             }
             
             let command = MetalKernel.get.createCommand(
-                "MSE1DApplyGradient", deviceID: deviceID)
-            
+                "MSE1DApplyGradient", deviceID: deviceID
+            )
             command.setBuffer(outs.metal, atIndex: 0)
             command.setBuffer(groundTruth.metal, atIndex: 1)
             command.setBytes(pNbNeurones, atIndex: 2)
@@ -227,8 +229,10 @@ public class MSE1D: LayerOutput1D
             let threadsPerGrid = MTLSize(width: nbNeurones,
                                          height: batchSize,
                                          depth: 1)
-            command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                               threadsPerThreadgroup: threadsPerThreadgroup)
+            command.dispatchThreads(
+                threadsPerGrid: threadsPerGrid,
+                threadsPerThreadgroup: threadsPerThreadgroup
+            )
             command.enqueue()
             
             propagateDirty()

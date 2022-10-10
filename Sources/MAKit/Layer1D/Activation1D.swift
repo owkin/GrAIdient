@@ -176,8 +176,8 @@ public class Activation1D: Layer1D
             let pNbElems: [UInt32] = [UInt32(nbElems)]
             
             let command = MetalKernel.get.createCommand(
-                "sum1", deviceID: deviceID)
-            
+                "sum1", deviceID: deviceID
+            )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(pNbElems, atIndex: 1)
             command.setBuffer(outs.metal, atIndex: 2)
@@ -187,8 +187,10 @@ public class Activation1D: Layer1D
             let threadsPerGrid = MTLSize(width: nbElems,
                                          height: 1,
                                          depth: 1)
-            command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+            command.dispatchThreads(
+                threadsPerGrid: threadsPerGrid,
+                threadsPerThreadgroup: threadsPerThreadgroup
+            )
             command.enqueue()
             
             _activation!.forwardGPU(self)
@@ -243,14 +245,15 @@ public class Activation1D: Layer1D
             if layerPrev.dirty
             {
                 command = MetalKernel.get.createCommand(
-                    "sum1", deviceID: deviceID)
+                    "sum1", deviceID: deviceID
+                )
             }
             else
             {
                 command = MetalKernel.get.createCommand(
-                    "sum2", deviceID: deviceID)
+                    "sum2", deviceID: deviceID
+                )
             }
-            
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBytes(pNbElems, atIndex: 1)
             command.setBuffer(layerPrev.delta.metal, atIndex: 2)
@@ -260,8 +263,10 @@ public class Activation1D: Layer1D
             let threadsPerGrid = MTLSize(width: nbElems,
                                          height: 1,
                                          depth: 1)
-            command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+            command.dispatchThreads(
+                threadsPerGrid: threadsPerGrid,
+                threadsPerThreadgroup: threadsPerThreadgroup
+            )
             command.enqueue()
             
             propagateDirty()

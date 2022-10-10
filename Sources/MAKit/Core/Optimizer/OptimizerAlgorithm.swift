@@ -238,8 +238,8 @@ public class OptimizerAlgorithm
                     let pFactor: [Float] = [Float(factor)]
                     
                     let command = MetalKernel.get.createCommand(
-                        "multiplyGradients", deviceID: layer.deviceID)
-                    
+                        "multiplyGradients", deviceID: layer.deviceID
+                    )
                     command.setBytes(pNbElems, atIndex: 0)
                     command.setBytes(pFactor, atIndex: 1)
                     command.setBuffer(buffers.g.metal, atIndex: 2)
@@ -249,8 +249,10 @@ public class OptimizerAlgorithm
                     let threadsPerGrid = MTLSize(width: nbElems,
                                                  height: 1,
                                                  depth: 1)
-                    command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+                    command.dispatchThreads(
+                        threadsPerGrid: threadsPerGrid,
+                        threadsPerThreadgroup: threadsPerThreadgroup
+                    )
                     command.enqueue()
                 }
             }
@@ -534,8 +536,8 @@ public class OptimizerAlgorithm
                     let pNormThreshold: [Float] = [Float(normThreshold)]
                     
                     let command = MetalKernel.get.createCommand(
-                        "clipGradients", deviceID: layer.deviceID)
-                    
+                        "clipGradients", deviceID: layer.deviceID
+                    )
                     command.setBytes(pNbElems, atIndex: 0)
                     command.setBytes(pGradientNorm, atIndex: 1)
                     command.setBytes(pNormThreshold, atIndex: 2)
@@ -546,8 +548,10 @@ public class OptimizerAlgorithm
                     let threadsPerGrid = MTLSize(width: nbElems,
                                                  height: 1,
                                                  depth: 1)
-                    command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+                    command.dispatchThreads(
+                        threadsPerGrid: threadsPerGrid,
+                        threadsPerThreadgroup: threadsPerThreadgroup
+                    )
                     command.enqueue()
                 }
             }

@@ -28,7 +28,12 @@ extension SerializationError: CustomStringConvertible
 /// Registry of layer types.
 let LAYER_REGISTRY: [String: Codable.Type] = buildRegistry(
 [
-    // TODO: add elements here.
+    Activation1D.self,
+    FullyConnected.self,
+    Input1D.self,
+    LinearError1D.self,
+    MSE1D.self,
+    SelectChannels1D.self,
 ])
 
 ///
@@ -127,7 +132,9 @@ class LayerContainer: Codable
 /// Registry of activation function types.
 let ACTIVATION_REGISTRY: [String: Codable.Type] = buildRegistry(
 [
-    // TODO: add elements here.
+    ReLU.self,
+    LeakyReLU.self,
+    SoftReLU.self
 ])
 
 /// Serialize and deserialize an activation function thanks to its string type.

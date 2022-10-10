@@ -568,6 +568,10 @@ private class MetalDevice
             "Reset": [
                 "reset"
             ],
+            "Sum": [
+                "sum1",
+                "sum2",
+            ]
         ]
         
         for (libName, kernelNames) in listKernels

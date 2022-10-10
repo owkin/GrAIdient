@@ -1,24 +1,25 @@
 //
-// LayerOutput1D.swift
+// Activation1D.swift
 // MAKit
 //
-// Created by Jean-François Reboud on 09/10/2022.
+// Created by Jean-François Reboud on 10/10/2022.
 //
 
 import MetalKit
 
-/// Last layer of a model.
-open class LayerOutput1D: Layer1D
+/// Layer with a 1D shape neural structure and an activation function.
+public class Activation1D: Layer1D
 {
-    /// Coefficient to be applied to the loss compuptation.
-    public var coeff: Double = 1.0
+    /// The activation function.
+    let _activation: ActivationFunction?
     
-    /// Loss buffer in the GPU execution context.
-    public internal(set) var loss: MetalSharedBuffer<Float>! = nil
+    /// Pre output buffer (result of the forward pass before applying activation)
+    /// used in the GPU execution context.
+    var _tmp: MetalPrivateBuffer<Float>! = nil
     
     private enum Keys: String, CodingKey
     {
-        case coeff
+        case activation
     }
     
     ///
@@ -26,13 +27,43 @@ open class LayerOutput1D: Layer1D
     ///
     /// - Parameters:
     ///     - layerPrev: Previous layer that has been queued to the model.
+    ///     - activation: The activation function.
     ///     - params: Contextual parameters linking to the model.
     ///
-    public init(layerPrev: Layer1D, params: MAKit.Model.Params)
+    public init(layerPrev: Layer1D,
+                activation: String,
+                params: MAKit.Model.Params)
     {
+        _activation = MAKit.Model.Activation.build(activation)
+        
         super.init(layerPrev: layerPrev,
                    nbNeurones: layerPrev.nbNeurones,
                    params: params)
+    }
+    
+    ///
+    /// Create a layer with a 1D shape neural structure.
+    ///
+    /// - Parameters:
+    ///     - layerPrev: Previous layer that has been queued to the model.
+    ///     - nbNeurones: Number of neurons.
+    ///     - activation: The activation function.
+    ///     - params: Contextual parameters linking to the model.
+    ///
+    public init(layerPrev: Layer?,
+                nbNeurones: Int, activation: String?,
+                params: MAKit.Model.Params)
+    {
+        if let activationStr = activation
+        {
+            _activation = MAKit.Model.Activation.build(activationStr)
+        }
+        else
+        {
+            _activation = nil
+        }
+        
+        super.init(layerPrev: layerPrev, nbNeurones: nbNeurones, params: params)
     }
     
     ///
@@ -46,8 +77,9 @@ open class LayerOutput1D: Layer1D
     public required init(from decoder: Decoder) throws
     {
         let container = try decoder.container(keyedBy: Keys.self)
-        let coeff = try container.decode(Float.self, forKey: .coeff)
-        self.coeff = Double(coeff)
+        _activation =
+            try container.decodeIfPresent(ActivationContainer.self,
+                                          forKey: .activation)?.activation
         try super.init(from: decoder)
     }
     
@@ -65,19 +97,53 @@ open class LayerOutput1D: Layer1D
     public override func encode(to encoder: Encoder) throws
     {
         var container = encoder.container(keyedBy: Keys.self)
-        try container.encode(Float(coeff), forKey: .coeff)
+        if let activation = _activation
+        {
+            try container.encode(ActivationContainer(activation),
+                                 forKey: Keys.activation)
+        }
         try super.encode(to: encoder)
+    }
+    
+    ///
+    /// Create a layer with same values as this.
+    ///
+    /// - Parameters:
+    ///     - mapping: Dictionary allowing to find the layer associated to some id.
+    ///     This dictionary is particularly useful when the different layers cannot access
+    ///     their `layerPrev`.
+    ///     - inPlace: Whether hard resources should be copied as is.
+    ///
+    /// - Returns: A new layer. When `inPlace` is false, `initKernel` is
+    /// necessary in order to recreate hard resources.
+    ///
+    public override func copy(
+        mapping: Dictionary<Int, Layer>,
+        inPlace: Bool) -> Layer
+    {
+        let context = ModelContext(name: "", curID: 0)
+        let layerPrev = mapping[idPrev] as! Layer1D
+        
+        let params = MAKit.Model.Params(context: context)
+        params.context.curID = id
+        
+        let layer = Activation1D(
+            layerPrev: layerPrev,
+            activation: _activation!.name,
+            params: params
+        )
+        return layer
     }
     
     ///
     /// Clean state resources in the GPU execution context.
     ///
-    /// We clean the neurons' state (forward and backward).
+    /// State resources are the resources that are dependent on the batch size.
     ///
-    open override func resetKernelGPU()
+    public override func resetKernelGPU()
     {
         super.resetKernelGPU()
-        loss = nil
+        _tmp = nil
     }
     
     ///
@@ -85,26 +151,39 @@ open class LayerOutput1D: Layer1D
     ///
     /// Throw an error if batch size is greater than the first batch size.
     ///
-    open override func forwardGCCPU() throws
+    public override func forwardGCCPU() throws
+    {
+        try _forwardGC()
+        _activation!.forwardGC(self)
+    }
+    
+    ///
+    /// Apply the forward pass (until the activation function) of the Gradient Checking.
+    ///
+    /// Throw an error if batch size is greater than the first batch size.
+    ///
+    private func _forwardGC() throws
     {
         if let layerPrev = self.layerPrev as? Layer1D
         {
             try checkStateCPU(batchSize: batchSize)
             
             let nbGC = layerPrev.nbGC
-            for depth in 0..<nbNeurones
+            for j in 0..<nbNeurones
             {
-                neurones.get(depth)!.initGC(batchSize: batchSize, nbGC: nbGC)
+                neurones.get(j)!.initGC(batchSize: batchSize, nbGC: nbGC)
             }
             
             let neuronesPrev = layerPrev.neurones
             for batch in 0..<batchSize {
-            for elem in 0..<nbGC {
-            for j in 0..<nbNeurones
+            for elem in 0..<nbGC
             {
-                neurones.get(j)!.gc[batch][elem].out =
-                    neuronesPrev.get(j)!.gc[batch][elem].out
-            }}}
+                for depth in 0..<nbNeurones
+                {
+                    neurones.get(depth)!.gc[batch][elem].out =
+                        neuronesPrev.get(depth)!.gc[batch][elem].out
+                }
+            }}
         }
     }
     
@@ -113,9 +192,10 @@ open class LayerOutput1D: Layer1D
     ///
     /// Throw an error if batch size is greater than the first batch size.
     ///
-    open override func forwardGCGPU() throws
+    public override func forwardGCGPU() throws
     {
-        try forwardGCCPU()
+        try _forwardGC()
+        _activation!.forwardGC(self)
     }
     
     ///
@@ -123,18 +203,23 @@ open class LayerOutput1D: Layer1D
     ///
     /// Throw an error if batch size is greater than the first batch size.
     ///
-    open override func forwardCPU() throws
+    public override func forwardCPU() throws
     {
         if let layerPrev = self.layerPrev as? Layer1D
         {
             try checkStateCPU(batchSize: batchSize)
             
             let neuronesPrev = layerPrev.neurones
-            for elem in 0..<batchSize {
-            for j in 0..<nbNeurones
+            for elem in 0..<batchSize
             {
-                neurones.get(j)!.v[elem].out = neuronesPrev.get(j)!.v[elem].out
-            }}
+                for depth in 0..<nbNeurones
+                {
+                    neurones.get(depth)!.v[elem].out =
+                        neuronesPrev.get(depth)!.v[elem].out
+                }
+            }
+            
+            _activation!.forwardCPU(self)
         }
     }
     
@@ -143,7 +228,7 @@ open class LayerOutput1D: Layer1D
     ///
     /// Throw an error if batch size is greater than the first batch size.
     ///
-    open override func forwardGPU() throws
+    public override func forwardGPU() throws
     {
         if let layerPrev = self.layerPrev as? Layer1D
         {
@@ -161,37 +246,43 @@ open class LayerOutput1D: Layer1D
             
             let threads = command.threadExecutionWidth
             let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
-            let threadsPerGrid = MTLSize(width: nbElems, height: 1, depth: 1)
+            let threadsPerGrid = MTLSize(width: nbElems,
+                                         height: 1,
+                                         depth: 1)
             command.dispatchThreads(
                 threadsPerGrid: threadsPerGrid,
                 threadsPerThreadgroup: threadsPerThreadgroup
             )
             command.enqueue()
+            
+            _activation!.forwardGPU(self)
         }
     }
     
     /// Apply the backward pass in the CPU execution context.
-    open override func backwardCPU()
+    public override func backwardCPU()
     {
-        // Note that backward is not called except when it is
-        // an intermediate layer.
-        // Model.backward is only called on not dirty layers.
+        _activation!.backwardCPU(self)
+        
         if let layerPrev = self.layerPrev as? Layer1D, mustComputeBackward
         {
             let neuronesPrev = layerPrev.neurones
-            for elem in 0..<batchSize {
-            for depth in 0..<nbNeurones
+            for elem in 0..<batchSize
             {
-                let delta = neurones.get(depth)!.v[elem].delta
-                if layerPrev.dirty
+                for depth in 0..<nbNeurones
                 {
-                    neuronesPrev.get(depth)!.v[elem].delta = delta
+                    if layerPrev.dirty
+                    {
+                        neuronesPrev.get(depth)!.v[elem].delta =
+                            neurones.get(depth)!.v[elem].delta
+                    }
+                    else
+                    {
+                        neuronesPrev.get(depth)!.v[elem].delta +=
+                            neurones.get(depth)!.v[elem].delta
+                    }
                 }
-                else
-                {
-                    neuronesPrev.get(depth)!.v[elem].delta += delta
-                }
-            }}
+            }
             propagateDirty()
         }
     }
@@ -201,11 +292,10 @@ open class LayerOutput1D: Layer1D
     ///
     /// Throw an error if batch size is greater than the first batch size.
     ///
-    open override func backwardGPU() throws
+    public override func backwardGPU() throws
     {
-        // Note that backward is not called except when it is
-        // an intermediate layer.
-        // Model.backward is only called on not dirty layers.
+        _activation!.backwardGPU(self)
+        
         if let layerPrev = self.layerPrev as? Layer1D, mustComputeBackward
         {
             try layerPrev.checkStateBackwardGPU(batchSize: batchSize)

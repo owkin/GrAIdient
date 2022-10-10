@@ -526,6 +526,34 @@ private class MetalDevice
     {
         let listKernels =
         [
+            "Activation": [
+                "forwardReLU",
+                "backwardReLU",
+                "forwardLeakyReLU",
+                "backwardLeakyReLU",
+                "forwardSoftReLU",
+                "backwardSoftReLU",
+            ],
+            "Biases": [
+                "reduceBiases",
+            ],
+            "FullyConnected": [
+                "flForward",
+                "flBackward",
+                "flBatchDerWeights",
+                "flBatchDerBiases",
+                "flDerWeights",
+                "flDerBiases",
+                "flReduceWeights",
+            ],
+            "Layer1D": [
+                "MSE1DLoss",
+                "MSE1DApplyGradient",
+                "linearErrorLoss",
+                "linearErrorApplyGradient",
+                "selectChForward",
+                "selectChBackward",
+            ],
             "Optimizer": [
                 "clipGradients",
                 "multiplyGradients",
@@ -536,6 +564,9 @@ private class MetalDevice
                 "weightsAdamRectified",
                 "weightsAdaBound",
                 "weightsAMSBound",
+            ],
+            "Reset": [
+                "reset"
             ],
         ]
         

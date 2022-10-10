@@ -186,8 +186,8 @@ class SGDOptimizer: OptimizerImpl
         let pLambda: [Float] = [lambda != nil ? Float(lambda!) : 0.0]
         
         let command = MetalKernel.get.createCommand(
-            "weightsSGD", deviceID: weights.deviceID)
-        
+            "weightsSGD", deviceID: weights.deviceID
+        )
         command.setBuffer(weights.g.metal, atIndex: 0)
         command.setBytes(pNbElems, atIndex: 1)
         command.setBytes(pAlpha, atIndex: 2)
@@ -197,8 +197,10 @@ class SGDOptimizer: OptimizerImpl
         let threads = command.threadExecutionWidth
         let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
         let threadsPerGrid = MTLSize(width: nbElems, height: 1, depth: 1)
-        command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+        command.dispatchThreads(
+            threadsPerGrid: threadsPerGrid,
+            threadsPerThreadgroup: threadsPerThreadgroup
+        )
         command.enqueue()
     }
 }
@@ -244,8 +246,8 @@ class SGDMomentumOptimizer: OptimizerImpl
         let pLambda: [Float] = [lambda != nil ? Float(lambda!) : 0.0]
         
         let command = MetalKernel.get.createCommand(
-            "weightsMomentum", deviceID: weights.deviceID)
-        
+            "weightsMomentum", deviceID: weights.deviceID
+        )
         command.setBuffer(weights.g.metal, atIndex: 0)
         command.setBytes(pNbElems, atIndex: 1)
         command.setBytes(pAlpha, atIndex: 2)
@@ -256,8 +258,10 @@ class SGDMomentumOptimizer: OptimizerImpl
         let threads = command.threadExecutionWidth
         let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
         let threadsPerGrid = MTLSize(width: nbElems, height: 1, depth: 1)
-        command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+        command.dispatchThreads(
+            threadsPerGrid: threadsPerGrid,
+            threadsPerThreadgroup: threadsPerThreadgroup
+        )
         command.enqueue()
     }
 }
@@ -316,8 +320,8 @@ class AdamOptimizer: OptimizerImpl
         let pT: [Float] = [Float(t)]
         
         let command = MetalKernel.get.createCommand(
-            "weightsAdam", deviceID: weights.deviceID)
-        
+            "weightsAdam", deviceID: weights.deviceID
+        )
         command.setBuffer(weights.g.metal, atIndex: 0)
         command.setBytes(pNbElems, atIndex: 1)
         command.setBytes(pAlpha, atIndex: 2)
@@ -330,8 +334,10 @@ class AdamOptimizer: OptimizerImpl
         let threads = command.threadExecutionWidth
         let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
         let threadsPerGrid = MTLSize(width: nbElems, height: 1, depth: 1)
-        command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+        command.dispatchThreads(
+            threadsPerGrid: threadsPerGrid,
+            threadsPerThreadgroup: threadsPerThreadgroup
+        )
         command.enqueue()
     }
 }
@@ -392,8 +398,8 @@ class AMSGradOptimizer: OptimizerImpl
         let pT: [Float] = [Float(t)]
         
         let command = MetalKernel.get.createCommand(
-            "weightsAMSGrad", deviceID: weights.deviceID)
-        
+            "weightsAMSGrad", deviceID: weights.deviceID
+        )
         command.setBuffer(weights.g.metal, atIndex: 0)
         command.setBytes(pNbElems, atIndex: 1)
         command.setBytes(pAlpha, atIndex: 2)
@@ -407,8 +413,10 @@ class AMSGradOptimizer: OptimizerImpl
         let threads = command.threadExecutionWidth
         let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
         let threadsPerGrid = MTLSize(width: nbElems, height: 1, depth: 1)
-        command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+        command.dispatchThreads(
+            threadsPerGrid: threadsPerGrid,
+            threadsPerThreadgroup: threadsPerThreadgroup
+        )
         command.enqueue()
     }
 }
@@ -479,8 +487,8 @@ class AdamRectifiedOptimizer: OptimizerImpl
         let pT: [Float] = [Float(t)]
         
         let command = MetalKernel.get.createCommand(
-            "weightsAdamRectified", deviceID: weights.deviceID)
-        
+            "weightsAdamRectified", deviceID: weights.deviceID
+        )
         command.setBuffer(weights.g.metal, atIndex: 0)
         command.setBytes(pNbElems, atIndex: 1)
         command.setBytes(pAlpha, atIndex: 2)
@@ -493,8 +501,10 @@ class AdamRectifiedOptimizer: OptimizerImpl
         let threads = command.threadExecutionWidth
         let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
         let threadsPerGrid = MTLSize(width: nbElems, height: 1, depth: 1)
-        command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+        command.dispatchThreads(
+            threadsPerGrid: threadsPerGrid,
+            threadsPerThreadgroup: threadsPerThreadgroup
+        )
         command.enqueue()
     }
 }
@@ -619,8 +629,8 @@ class AdaBoundOptimizer: BoundOptimizer
         let pUpperBound: [Float] = [Float(upperBound!)]
         
         let command = MetalKernel.get.createCommand(
-            "weightsAdaBound", deviceID: weights.deviceID)
-        
+            "weightsAdaBound", deviceID: weights.deviceID
+        )
         command.setBuffer(weights.g.metal, atIndex: 0)
         command.setBytes(pNbElems, atIndex: 1)
         command.setBytes(pAlpha, atIndex: 2)
@@ -635,8 +645,10 @@ class AdaBoundOptimizer: BoundOptimizer
         let threads = command.threadExecutionWidth
         let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
         let threadsPerGrid = MTLSize(width: nbElems, height: 1, depth: 1)
-        command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+        command.dispatchThreads(
+            threadsPerGrid: threadsPerGrid,
+            threadsPerThreadgroup: threadsPerThreadgroup
+        )
         command.enqueue()
     }
 }
@@ -707,8 +719,8 @@ class AMSBoundOptimizer: BoundOptimizer
         let pUpperBound: [Float] = [Float(upperBound!)]
         
         let command = MetalKernel.get.createCommand(
-            "weightsAMSBound", deviceID: weights.deviceID)
-        
+            "weightsAMSBound", deviceID: weights.deviceID
+        )
         command.setBuffer(weights.g.metal, atIndex: 0)
         command.setBytes(pNbElems, atIndex: 1)
         command.setBytes(pAlpha, atIndex: 2)
@@ -724,8 +736,10 @@ class AMSBoundOptimizer: BoundOptimizer
         let threads = command.threadExecutionWidth
         let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
         let threadsPerGrid = MTLSize(width: nbElems, height: 1, depth: 1)
-        command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+        command.dispatchThreads(
+            threadsPerGrid: threadsPerGrid,
+            threadsPerThreadgroup: threadsPerThreadgroup
+        )
         command.enqueue()
     }
 }

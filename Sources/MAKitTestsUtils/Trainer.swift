@@ -69,11 +69,6 @@ open class GradTrainer: Trainer
             deviceID: DEVICE_ID_DEFAULT
         )
         
-        if MAKit.Opti.GPU
-        {
-            fatalError("COUCOU1")
-        }
-        
         var epoch = 0
         let nbEpochsMax = 1
         while epoch < nbEpochsMax

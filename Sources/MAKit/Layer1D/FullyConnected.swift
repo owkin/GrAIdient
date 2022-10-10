@@ -538,6 +538,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                                   deviceID: deviceID)
         
         let weightsPtr = _wBuffers.w_p!.shared.buffer
+        fatalError("COUCOU1")
         let biasesPtr = _bBuffers.w_p!.shared.buffer
         
         if _weightsList.count == 0

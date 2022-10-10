@@ -7,18 +7,11 @@
 
 import Foundation
 
-/// Activation function to be used in a Layer.
+/// Activation function to be used in a layer.
 open class ActivationFunction: Codable
 {
-    let _name: String
-    
     /// Get the name of the function.
-    var name: String
-    {
-        get {
-            return _name
-        }
-    }
+    let name: String
     
     /// Forward GPU kernel.
     open var forwardKernel: String
@@ -47,7 +40,7 @@ open class ActivationFunction: Codable
     ///
     public init(_ name: String)
     {
-        _name = name
+        self.name = name
     }
     
     ///
@@ -61,7 +54,7 @@ open class ActivationFunction: Codable
     required public init(from decoder: Decoder) throws
     {
         let container = try decoder.container(keyedBy: Keys.self)
-        _name = try container.decode(String.self, forKey: .name)
+        name = try container.decode(String.self, forKey: .name)
     }
     
     ///
@@ -78,7 +71,7 @@ open class ActivationFunction: Codable
     public func encode(to encoder: Encoder) throws
     {
         var container = encoder.container(keyedBy: Keys.self)
-        try container.encode(_name, forKey: .name)
+        try container.encode(name, forKey: .name)
     }
     
     ///

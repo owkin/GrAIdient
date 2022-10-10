@@ -135,8 +135,8 @@ open class Layer: Codable
     /// Create a layer.
     ///
     /// - Parameters:
-    ///    - layerPrev: Previous layer that has been queued in the `Model`.
-    ///    - params: Contextual parameters of a Model.
+    ///    - layerPrev: Previous layer that has been queued to the model.
+    ///    - params: Contextual parameters linking to the model.
     ///
     public init(layerPrev: Layer?, params: MAKit.Model.Params)
     {
@@ -266,7 +266,7 @@ open class Layer: Codable
     }
     
     ///
-    /// Get every layers (a "graph") between the very first of the `Model` until this.
+    /// Get every layers (a "graph") between the very first of the `Model` and this.
     ///
     /// - Parameter layerPrev: The different layers found in the "graph".
     ///

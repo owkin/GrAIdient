@@ -581,8 +581,6 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
         
         MetalKernel.get.upload([_wBuffers.w_p!, _bBuffers.w_p!])
         
-        fatalError("COUCOU1")
-        
         _wDeltaWeights = nil
         _bDeltaWeights = nil
     }

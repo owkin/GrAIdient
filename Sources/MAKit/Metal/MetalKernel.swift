@@ -75,6 +75,10 @@ public class MetalKernel
                     }
                 }
                 
+                if listDevices.count == 0
+                {
+                    fatalError("Could not find any GPU device.")
+                }
                 _metalKernel = MetalKernel(listDevices)
             }
             return _metalKernel

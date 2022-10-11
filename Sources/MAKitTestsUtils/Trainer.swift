@@ -8,6 +8,17 @@
 import Foundation
 import MAKit
 
+///
+/// Update optimizer parameters with several options.
+///
+/// - Parameters:
+///     - params: The optimizer parameters to update.
+///     - optimizerClass: The optimizer to use for weight update.
+///     - alpha: The learning rate.
+///     - lambda: The weight decay coefficient.
+///     - lowerBound: The lower bound value.
+///     - upperBound: The upper bound value.
+///
 public func setOptimizerParams(
     params: inout MAKit.Optimizer.Params,
     optimizerClass: MAKit.Optimizer.Class = .SGD,
@@ -31,13 +42,24 @@ public func setOptimizerParams(
     ]
 }
 
+/// GPU default device id where to execute the model.
 public let DEVICE_ID_DEFAULT = 0
 
+/// Abstract pipeline to run tests on models.
 open class Trainer
 {
+    /// Name of the pipeline.
     public let modelName: String
+    /// Parameters of the optimizer.
     public var optimizerParams: MAKit.Optimizer.Params
     
+    ///
+    /// Create a new pipeline.
+    ///
+    /// - Parameters:
+    ///     - name: The name of the pipeline.
+    ///     - params: The parameters of the optimizer.
+    ///
     public init(name: String, params: MAKit.Optimizer.Params)
     {
         modelName = name
@@ -45,10 +67,17 @@ open class Trainer
     }
 }
 
+/// Pipeline that runs Gradient Checking.
 open class GradTrainer: Trainer
 {
+    /// The model.
     public var model: Model! = nil
     
+    ///
+    /// Create the model.
+    ///
+    /// - Parameter buildFct: A function that creates the different layers of the model.
+    ///
     public func build(_ buildFct: (ModelContext)->())
     {
         let context = ModelContext(name: modelName, curID: 0)
@@ -56,6 +85,19 @@ open class GradTrainer: Trainer
         model = Model(model: context.model, modelsPrev: [])
     }
     
+    ///
+    /// Run Gradient Checking test.
+    ///
+    /// The goal is to compare the gradients of weights that are computed through `backward`
+    /// to an estimation that is being computed through `forwardGC`.
+    ///
+    /// - Parameters:
+    ///     - layersGraph: The layers of the model.
+    ///     - setData: A function to create/set data to the model.
+    ///     - setLoss: A function to create/set ground truth to the model.
+    ///     - getGradientsApprox: A function that gets gradients of weights approximations.
+    ///     - validate: A function that checks whether the relative difference is small enough.
+    ///
     public func run<DataT, LossT>(
         layersGraph: [Layer],
         setData: (DataT?, Model)->(DataT, Int),
@@ -105,16 +147,20 @@ open class GradTrainer: Trainer
     }
 }
 
+/// Pipeline that compares gradients of weights computed in the CPU execution context againt the GPU one.
 open class FlowTrainer: Trainer
 {
+    /// The two models: [model to execute on the CPU, same model to execute on the GPU].
     public var models: [Model] = []
     
+    /// Get the model to execute on the CPU.
     public var modelCPU: Model
     {
         get {
             return models[0]
         }
     }
+    /// Get the model to execute on the GPU.
     public var modelGPU: Model
     {
         get {
@@ -122,6 +168,11 @@ open class FlowTrainer: Trainer
         }
     }
     
+    ///
+    /// Create a model in the two execution contexts: CPU and GPU.
+    ///
+    /// - Parameter buildFct: A Function that creates the different layers of the models.
+    ///
     public func build(_ buildFct: (ModelContext)->())
     {
         var baseModels = [BaseModel]()
@@ -142,6 +193,7 @@ open class FlowTrainer: Trainer
         self.models = models
     }
 
+    /// Initialize the kernel of the models.
     public func initialize()
     {
         for i in 0...1
@@ -169,6 +221,17 @@ open class FlowTrainer: Trainer
         }
     }
     
+    ///
+    /// Run the test.
+    ///
+    /// The goal is to compare the gradients of weights computed in the CPU execution context with
+    /// the gradients of weights computed in the GPU execution context.
+    ///
+    /// - Parameters:
+    ///     - setData: A function to create/set data to the model.
+    ///     - setLoss: A function to create/set ground truth to the model.
+    ///     - validate: A function that checks whether the relative difference is small enough.
+    ///
     public func run<DataT, LossT>(
         setData: (DataT?, Model)->(DataT, Int),
         setLoss: (LossT?, Model)->(LossT),
@@ -226,8 +289,11 @@ open class FlowTrainer: Trainer
     }
 }
 
+/// Compares gradients of weights computed in the CPU execution context againt the GPU one
+/// after a call to the reset API.
 open class FlowResetTrainer: FlowTrainer
 {
+    /// Reset the kernel of the models.
     public func reset()
     {
         for i in 0...1
@@ -244,6 +310,17 @@ open class FlowResetTrainer: FlowTrainer
         }
     }
     
+    ///
+    /// Run the test.
+    ///
+    /// The goal is to compare the gradients of weights computed in the CPU execution context with
+    /// the gradients of weights computed in the GPU execution context.
+    ///
+    /// - Parameters:
+    ///     - setData: A function to create/set data to the model.
+    ///     - setLoss: A function to create/set ground truth to the model.
+    ///     - validate: A function that checks whether the relative difference is small enough.
+    ///
     public override func run<DataT, LossT>(
         setData: (DataT?, Model)->(DataT, Int),
         setLoss: (LossT?, Model)->(LossT),
@@ -257,8 +334,12 @@ open class FlowResetTrainer: FlowTrainer
     }
 }
 
+/// Compares gradients of weights computed in the CPU execution context againt the GPU one
+/// after switchig the contexts: the one that ran on CPU now runs on GPU,
+/// the one that ran on GPU now runs on CPU.
 open class FlowReverseTrainer: FlowTrainer
 {
+    /// Function to switch the two model execution contexts.
     public func initializeReverse()
     {
         for i in 0...1
@@ -284,6 +365,17 @@ open class FlowReverseTrainer: FlowTrainer
         }
     }
     
+    ///
+    /// Run the test.
+    ///
+    /// The goal is to compare the gradients of weights computed in the CPU execution context with
+    /// the gradients of weights computed in the GPU execution context.
+    ///
+    /// - Parameters:
+    ///     - setData: A function to create/set data to the model.
+    ///     - setLoss: A function to create/set ground truth to the model.
+    ///     - validate: A function that checks whether the relative difference is small enough.
+    ///
     public override func run<DataT, LossT>(
         setData: (DataT?, Model)->(DataT, Int),
         setLoss: (LossT?, Model)->(LossT),
@@ -343,8 +435,22 @@ open class FlowReverseTrainer: FlowTrainer
     }
 }
 
+/// Pipeline that compares losses computed in the CPU execution context againt the GPU one
+/// during the inference phase.
 open class InferenceTrainer: FlowTrainer
 {
+    ///
+    /// Run the test.
+    ///
+    /// The goal is to compare the losses computed in the CPU execution context with
+    /// the losses computed in the GPU execution context during the inference phase.
+    ///
+    /// - Parameters:
+    ///     - setData: A function to create/set data to the model.
+    ///     - setLoss: A function to create/set ground truth to the model.
+    ///     - getLoss: A function to get the loss of the model.
+    ///     - validate: A function that checks whether the relative difference is small enough.
+    ///
     public func run<DataT, LossT>(
         setData: (DataT?, Model)->(DataT, Int),
         setLoss: (LossT?, Model)->(LossT),
@@ -399,8 +505,22 @@ open class InferenceTrainer: FlowTrainer
     }
 }
 
+/// Pipeline that compares losses computed in the CPU execution context after having loaded the
+/// model from the disk. The pipeline does the same in the GPU execution context.
 open class LoadTrainer: FlowTrainer
 {
+    ///
+    /// Run the test.
+    ///
+    /// The goal is to compare the losses computed in the CPU execution after havinng loaded the
+    /// model from the disk and do the same in the GPU execution context.
+    ///
+    /// - Parameters:
+    ///     - setData: A function to create/set data to the model.
+    ///     - setLoss: A function to create/set ground truth to the model.
+    ///     - getLoss: A function to get the loss of the model.
+    ///     - validate: A function that checks whether the relative difference is small enough.
+    ///
     public func run<DataT, LossT>(
         setData: (DataT?, Model)->(DataT, Int),
         setLoss: (LossT?, Model)->(LossT),
@@ -519,8 +639,23 @@ open class LoadTrainer: FlowTrainer
     }
 }
 
+/// Pipeline that compares losses computed in the CPU execution context after some
+/// transformation on the model. The pipeline does the same in the GPU execution context.
 open class TransformTrainer: FlowTrainer
 {
+    ///
+    /// Run the test.
+    ///
+    /// The goal is to compare the losses computed in the CPU execution
+    /// after some transformation of the model and do the same in the GPU execution context.
+    ///
+    /// - Parameters:
+    ///     - transform: A function that transforms the model into another one.
+    ///     - setData: A function to create/set data to the model.
+    ///     - setLoss: A function to create/set ground truth to the model.
+    ///     - getLoss: A function to get the loss of the model.
+    ///     - validate: A function that checks whether the relative difference is small enough.
+    ///
     public func run<DataT, LossT>(
         transform: (Model)->Model,
         setData: (DataT?, Model)->(DataT, Int),
@@ -607,16 +742,30 @@ open class TransformTrainer: FlowTrainer
     }
 }
 
+/// Pipeline that checks the clipping of the gradients of the weights.
 open class NormTrainer: Trainer
 {
+    /// The model.
     public var model: Model! = nil
     
+    ///
+    /// Create a new pipeline.
+    ///
+    /// - Parameters:
+    ///     - name: The name of the pipeline.
+    ///     - params: The parameters of the optimizer.
+    ///
     public override init(name: String,
                          params: MAKit.Optimizer.Params)
     {
         super.init(name: name, params: params)
     }
     
+    ///
+    /// Create the model.
+    ///
+    /// - Parameter buildFct: A function that creates the different layers of the model.
+    ///
     public func build(_ buildFct: (ModelContext)->())
     {
         let context = ModelContext(name: modelName, curID: 0)
@@ -624,6 +773,16 @@ open class NormTrainer: Trainer
         model = Model(model: context.model, modelsPrev: [])
     }
     
+    ///
+    /// Run the test.
+    ///
+    /// The goal is to compare the norm of the gradients of the weights with a threshold.
+    ///
+    /// - Parameters:
+    ///     - setData: A function to create/set data to the model.
+    ///     - setLoss: A function to create/set ground truth to the model.
+    ///     - validate: A function that checks whether the relative difference is small enough.
+    ///
     public func run<DataT, LossT>(
         setData: (DataT?, Model)->(DataT, Int),
         setLoss: (LossT?, Model)->(LossT),

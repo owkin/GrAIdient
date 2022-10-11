@@ -8,6 +8,14 @@
 import Foundation
 import MAKit
 
+///
+/// Compare list of values.
+///
+/// - Parameters:
+///     - ref: The reference list to compare.
+///     - target: The other list to compare to the reference.
+/// - Returns: The relative difference between the two lists.
+///
 public func checkFlow(_ ref: [Double], _ target: [Double]) -> Double?
 {
     assert(ref.count == target.count)
@@ -63,6 +71,12 @@ public func checkFlow(_ ref: [Double], _ target: [Double]) -> Double?
     return result
 }
 
+///
+/// Get gradients of weights.
+///
+/// - Parameter model: The model to get the gradients from.
+/// - Returns: The list of gradients of weights.
+///
 public func getGradients(model: Model) -> [Double]
 {
     return try! model.collectGradients(layers: model.layers)

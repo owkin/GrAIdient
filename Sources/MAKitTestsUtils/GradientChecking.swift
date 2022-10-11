@@ -8,6 +8,15 @@
 import Foundation
 import MAKit
 
+///
+/// Compare the gradients of weights with an estimation made through gradient checking.
+///
+/// - Parameters:
+///     - model: The model.
+///     - layersGraph: The list of layers (a "graph") to go through.
+///     - gradientsApprox: The list of gradients of weights approximations.
+/// - Returns: The relative difference between the two.
+///
 public func checkGradients(
     model: Model,
     layersGraph: [Layer],

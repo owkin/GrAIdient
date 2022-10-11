@@ -9,8 +9,18 @@ import XCTest
 import MAKit
 import MAKitTestsUtils
 
+/// A class that will test a model with a structural hypothesis:
+/// the model last layer is a LinearError1D layer, the model first layer is a Input1D.
 class Input1DLinearError1DCase: LinearError1DCase
 {
+    ///
+    /// A function to create/set data to the model.
+    ///
+    /// - Parameters:
+    ///     - inputs: The data to set.
+    ///     - model: The model.
+    /// - Returns: (The data, the batch size).
+    ///
     func setData(
         _ inputs: [[Float]]?,
         _ model: Model
@@ -38,6 +48,12 @@ class Input1DLinearError1DCase: LinearError1DCase
         return (ins, ins.count)
     }
     
+    ///
+    /// Copy a model and call the `initKernel` API.
+    ///
+    /// - Parameter model: The model.
+    /// - Returns: The transformed model.
+    ///
     func copy(_ model: Model) -> Model
     {
         let modelNew = Model.copy(models: [model], inPlace: false)[0]
@@ -49,6 +65,12 @@ class Input1DLinearError1DCase: LinearError1DCase
         return modelNew
     }
     
+    ///
+    /// Copy a model in place: do not call the `initKernel` API.
+    ///
+    /// - Parameter model: The model.
+    /// - Returns: The transformed model.
+    ///
     func copyInPlace(_ model: Model) -> Model
     {
         let modelNew = Model.copy(models: [model], inPlace: true)[0]
@@ -57,6 +79,14 @@ class Input1DLinearError1DCase: LinearError1DCase
         return modelNew
     }
     
+    ///
+    /// Run Gradient Checking test.
+    ///
+    /// The goal is to compare the gradients of weights that are computed through `backward`
+    /// to an estimation that is being computed through `forwardGC`.
+    ///
+    /// - Parameter trainer: The testing pipeline to run.
+    ///
     func run(_ trainer: GradTrainer)
     {
         let model = trainer.model!
@@ -73,6 +103,14 @@ class Input1DLinearError1DCase: LinearError1DCase
         }
     }
     
+    ///
+    /// Run Flow test.
+    ///
+    /// The goal is to compare the gradients of weights computed in the CPU execution context with
+    /// the gradients of weights computed in the GPU execution context.
+    ///
+    /// - Parameter trainer: The testing pipeline to run.
+    ///
     func run(_ trainer: FlowTrainer)
     {
         trainer.run(
@@ -84,6 +122,14 @@ class Input1DLinearError1DCase: LinearError1DCase
         }
     }
     
+    ///
+    /// Run Flow Reset test.
+    ///
+    /// The goal is to compare the gradients of weights computed in the CPU execution context with
+    /// the gradients of weights computed in the GPU execution context.
+    ///
+    /// - Parameter trainer: The testing pipeline to run.
+    ///
     func run(_ trainer: FlowResetTrainer)
     {
         trainer.run(
@@ -95,6 +141,14 @@ class Input1DLinearError1DCase: LinearError1DCase
         }
     }
     
+    ///
+    /// Run Flow Reverse test.
+    ///
+    /// The goal is to compare the gradients of weights computed in the CPU execution context with
+    /// the gradients of weights computed in the GPU execution context.
+    ///
+    /// - Parameter trainer: The testing pipeline to run.
+    ///
     func run(_ trainer: FlowReverseTrainer)
     {
         trainer.run(
@@ -106,6 +160,14 @@ class Input1DLinearError1DCase: LinearError1DCase
         }
     }
     
+    ///
+    /// Run Inference test.
+    ///
+    /// The goal is to compare the losses computed in the CPU execution context with
+    /// the losses computed in the GPU execution context during the inference phase.
+    ///
+    /// - Parameter trainer: The testing pipeline to run.
+    ///
     func run(_ trainer: InferenceTrainer)
     {
         trainer.run(
@@ -118,6 +180,14 @@ class Input1DLinearError1DCase: LinearError1DCase
         }
     }
     
+    ///
+    /// Run Loading test.
+    ///
+    /// The goal is to compare the losses computed in the CPU execution after havinng loaded the
+    /// model from the disk and do the same in the GPU execution context.
+    ///
+    /// - Parameter trainer: The testing pipeline to run.
+    ///
     func run(_ trainer: LoadTrainer)
     {
         trainer.run(
@@ -131,6 +201,14 @@ class Input1DLinearError1DCase: LinearError1DCase
         }
     }
     
+    ///
+    /// Run Copy test.
+    ///
+    /// The goal is to compare the losses computed in the CPU execution
+    /// after copying the model and do the same in the GPU execution context.
+    ///
+    /// - Parameter trainer: The testing pipeline to run.
+    ///
     func runCopy(_ trainer: TransformTrainer)
     {
         trainer.run(
@@ -145,6 +223,14 @@ class Input1DLinearError1DCase: LinearError1DCase
         }
     }
     
+    ///
+    /// Run Copy In Place test.
+    ///
+    /// The goal is to compare the losses computed in the CPU execution
+    /// after copying the model in place and do the same in the GPU execution context.
+    ///
+    /// - Parameter trainer: The testing pipeline to run.
+    ///
     func runCopyInPlace(_ trainer: TransformTrainer)
     {
         trainer.run(
@@ -159,6 +245,13 @@ class Input1DLinearError1DCase: LinearError1DCase
         }
     }
     
+    ///
+    /// Run Clipping test.
+    ///
+    /// The goal is to compare the norm of the gradients of the weights with a threshold.
+    ///
+    /// - Parameter trainer: The testing pipeline to run.
+    ///
     func run(_ trainer: NormTrainer)
     {
         let normClipping = 0.03

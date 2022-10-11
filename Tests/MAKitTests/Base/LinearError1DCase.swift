@@ -9,13 +9,19 @@ import XCTest
 import MAKit
 import MAKitTestsUtils
 
+/// A class that will test a model with a structural hypothesis:
+/// the model last layer is a LinearError1D layer.
 class LinearError1DCase: XCTestCase
 {
+    /// Batch size of data.
     var batchSize: Int! = nil
+    /// Optimizer parameters.
     var optimizerParams = MAKit.Optimizer.Params()
     
+    /// Ground truth buffer.
     var _gtBuffer: MetalSharedBuffer<Float>! = nil
     
+    /// Systematic call before test begins.
     override func setUpWithError() throws
     {
         batchSize = 5
@@ -25,6 +31,15 @@ class LinearError1DCase: XCTestCase
         optimizerParams.nbLoops = 3
     }
     
+    ///
+    /// Get the current batch size of data.
+    ///
+    /// This function allows to simulate the fact that the batch size of data may be smalling during the
+    /// last iteration of the training.
+    ///
+    /// - Parameter model: The model.
+    /// - Returns: The batch size of data.
+    ///
     func getBatchSize(_ model: Model) -> Int
     {
         if model.optimizerParams.step == model.optimizerParams.nbLoops-1
@@ -37,6 +52,14 @@ class LinearError1DCase: XCTestCase
         }
     }
     
+    ///
+    /// Create synthetic data.
+    ///
+    /// - Parameters:
+    ///     - dim1: The first dimension of the data.
+    ///     - dim2: The second dimension of the data.
+    /// - Returns: The created data.
+    ///
     func build1DData<T: BinaryFloatingPoint>(dim1: Int, dim2: Int) -> [[T]]
     {
         var data = [[T]]()
@@ -52,6 +75,13 @@ class LinearError1DCase: XCTestCase
         return data
     }
     
+    ///
+    /// Upload data to a GPU buffer.
+    ///
+    /// - Parameters:
+    ///     - data: The data to upload.
+    ///     - buffer: The GPU buffer that should contain the data.
+    ///
     func uploadData<T: BinaryFloatingPoint>(
         data: [[T]], buffer: MetalBuffer<Float>)
     {
@@ -59,14 +89,14 @@ class LinearError1DCase: XCTestCase
         let bufferPtr: UnsafeMutableBufferPointer<Float>
         if let sBuffer = buffer as? MetalSharedBuffer<Float>
         {
-            // Wait for previous loop to end to avoid race condition
+            // Wait for previous loop to end to avoid race condition.
             MetalKernel.get.download([sBuffer])
             
             bufferPtr = sBuffer.buffer
         }
         else if let pBuffer = buffer as? MetalPrivateBuffer<Float>
         {
-            // Wait for previous loop to end to avoid race condition
+            // Wait for previous loop to end to avoid race condition.
             MetalKernel.get.download([pBuffer])
             
             bufferPtr = pBuffer.shared.buffer
@@ -94,6 +124,14 @@ class LinearError1DCase: XCTestCase
         }
     }
     
+    ///
+    /// A function to create/set ground truth to the model.
+    ///
+    /// - Parameters:
+    ///     - groundTruth: The ground truth to set.
+    ///     - model: The model.
+    /// - Returns: The ground truth.
+    ///
     func setLoss(_ groundTruth: [[Double]]?, _ model: Model) -> [[Double]]
     {
         let lastLayer = model.layers.last as! LinearError1D
@@ -118,6 +156,14 @@ class LinearError1DCase: XCTestCase
         return gt
     }
     
+    ///
+    /// A function to get loss of a model.
+    ///
+    /// - Parameters:
+    ///     - groundTruth: The ground truth to set.
+    ///     - model: The model.
+    /// - Returns: The loss value.
+    ///
     func getLoss(_ groundTruth: [[Double]], _ model: Model) -> Double
     {
         let lastLayer = model.layers.last as! LinearError1D
@@ -142,10 +188,17 @@ class LinearError1DCase: XCTestCase
         }
     }
     
+    ///
+    /// A function to get the gradients of weights approximations..
+    ///
+    /// - Parameters:
+    ///     - groundTruth: The ground truth.
+    ///     - model: The model.
+    /// - Returns: The gradients of weights approximations.
+    ///
     func getGradientsApprox(
         _ groundTruth: [[Double]],
-        _ model: Model
-    ) -> [Double]
+        _ model: Model) -> [Double]
     {
         let lastLayer = model.layers.last as! LinearError1D
         return try! lastLayer.collectGradientsApprox(groundTruth)

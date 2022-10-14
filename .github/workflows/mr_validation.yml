@@ -4,7 +4,7 @@ on: [push]
 
 jobs:
   Tests:
-    runs-on: jfr
+    runs-on: self-hosted
 
     steps:
       - uses: swift-actions/setup-swift@v1

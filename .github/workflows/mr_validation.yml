@@ -4,7 +4,7 @@ on: [push]
 
 jobs:
   Tests:
-    runs-on: macos-latest
+    runs-on: jfr
 
     steps:
       - uses: swift-actions/setup-swift@v1

@@ -7,24 +7,38 @@
 
 import MetalKit
 
+/// Layer with a 2D shape neural structure, weights and biases,  an activation function and
+/// batch normalization units.
 public class Convolution2D: BN2D
 {
+    /// Downscale factor of the resolution (height and width).
     let _stride: Int
+    /// Whether to use biases or not.
     var _useBiases = true
     
+    /// List of grids of weights.
     var _wArrays: [WeightGrids] = []
+    /// Array of biases.
     var _bArrays: WeightArrays! = nil
     
+    /// Buffer of weights.
     var _wBuffers: IWeightBuffers! = nil
+    /// Buffer of biases.
     var _bBuffers: IWeightBuffers! = nil
     
+    /// Buffer of gradients per sample for weights.
     var _wDeltaWeights: MetalPrivateBuffer<Float>! = nil
+    /// Buffer of gradients per sample for biases.
     var _bDeltaWeights: MetalPrivateBuffer<Float>! = nil
     
+    /// Number of channels.
     public let nbWeights: Int
+    /// Height of the weight's grid shape.
     public let weightHeight: Int
+    /// Width of the weight's grid shape.
     public let weightWidth: Int
     
+    /// Get forward pass GPU kernel.
     var forwardKernel: String
     {
         get {
@@ -32,6 +46,7 @@ public class Convolution2D: BN2D
         }
     }
     
+    /// Get backward pass GPU kernel.
     var backwardKernel: String
     {
         get {
@@ -39,12 +54,14 @@ public class Convolution2D: BN2D
         }
     }
     
+    /// Get GPU kernel used to compute gradients of weights.
     var batchDerWeightsKernel: String
     {
         get {
             return "convBatchDerWeights"
         }
     }
+    /// Get GPU kernel used to compute gradients of biases.
     var batchDerBiasesKernel: String
     {
         get {
@@ -52,12 +69,14 @@ public class Convolution2D: BN2D
         }
     }
     
+    /// Get GPU kernel used to compute gradients of weights per sample.
     var derWeightsKernel: String
     {
         get {
             return "convDerWeights"
         }
     }
+    /// Get GPU kernel used to compute gradients of biases per sample.
     var derBiasesKernel: String
     {
         get {
@@ -65,12 +84,14 @@ public class Convolution2D: BN2D
         }
     }
     
+    /// Get GPU kernel used to reduce gradients of weights per sample.
     var reduceWeightsKernel: String
     {
         get {
             return "convReduceWeights"
         }
     }
+    /// Get GPU kernel used to reduce gradients of biases per sample.
     var reduceBiasesKernel: String
     {
         get {
@@ -78,6 +99,7 @@ public class Convolution2D: BN2D
         }
     }
     
+    /// Get the number of neurons of the previous layer.
     var nbFiltersPrev: Int
     {
         get {
@@ -86,6 +108,7 @@ public class Convolution2D: BN2D
         }
     }
     
+    /// Whether to update biases or not.
     var updateBiases: Bool
     {
         get {
@@ -93,8 +116,10 @@ public class Convolution2D: BN2D
         }
     }
     
+    /// Cache for weights before calling `initKernel` API.
     var _weightsList = [Float]()
     
+    /// Weights (without weights of batch normalization) in the CPU execution context.
     var weightsListCPU: [Float]
     {
         get {
@@ -125,6 +150,7 @@ public class Convolution2D: BN2D
         }
     }
     
+    /// Weights (without weights of batch normalization) in the GPU execution context.
     var weightsListGPU: [Float]
     {
         get {
@@ -215,6 +241,7 @@ public class Convolution2D: BN2D
         }
     }
     
+    /// Get the coefficient to apply during the weights initialization.
     var coeffInitWeights: Double
     {
         get {
@@ -247,6 +274,7 @@ public class Convolution2D: BN2D
         }
     }
     
+    /// Downscale factor of the resolution (height and width).
     public override var strideFactor: Double
     {
         get {
@@ -263,6 +291,7 @@ public class Convolution2D: BN2D
         }
     }
     
+    /// The size of the input image this layer is looking at.
     public override var receptiveField: Int
     {
         get {
@@ -306,6 +335,19 @@ public class Convolution2D: BN2D
         case useBiases
     }
     
+    ///
+    /// Create a layer with a 2D shape neural structure.
+    ///
+    /// - Parameters:
+    ///     - layerPrev: Previous layer that has been queued to the model.
+    ///     - size: Size (height, weight) of the weights kernels.
+    ///     - nbFilters: Number of channels.
+    ///     - stride: Downscale factor of the resolution (height and width).
+    ///     - activation: The activation function.
+    ///     - biases: Whether to use biases or not.
+    ///     - bn: Whether to use batch normalization or not.
+    ///     - params: Contextual parameters linking to the model.
+    ///
     public init(layerPrev: Layer2D, size: Int, nbFilters: Int, stride: Int,
                 activation: String?, biases: Bool, bn: Bool,
                 params: MAKit.Model.Params)
@@ -334,9 +376,9 @@ public class Convolution2D: BN2D
     }
     
     ///
-    /// Create an instance of Layer by decoding from the given decoder.
+    /// Decode from the disk.
     ///
-    /// This initializer throws an error if reading from the decoder fails, or
+    /// Throw an error if reading from the decoder fails, or
     /// if the data read is corrupted or otherwise invalid.
     ///
     /// - Parameter decoder: The decoder to read data from.
@@ -357,12 +399,12 @@ public class Convolution2D: BN2D
     }
     
     ///
-    /// Encode this value into the given encoder.
+    /// Encode to the disk.
     ///
     /// If the value fails to encode anything, `encoder` will encode an empty
     /// keyed container in its place.
     ///
-    /// This function throws an error if any values are invalid for the given
+    /// Throw an error if any values are invalid for the given
     /// encoder's format.
     ///
     /// - Parameter encoder: The encoder to write data to.
@@ -392,7 +434,7 @@ public class Convolution2D: BN2D
     }
     
     ///
-    /// Create a new instance of `Layer` with same values as this.
+    /// Create a layer with same values as this.
     ///
     /// - Parameters:
     ///     - mapping: Dictionary allowing to find the layer associated to some id.
@@ -400,7 +442,7 @@ public class Convolution2D: BN2D
     ///     their `layerPrev`.
     ///     - inPlace: Whether hard resources should be copied as is.
     ///
-    /// - Returns: A new instance of `Layer`. When `inPlace` is false, `initKernel` is
+    /// - Returns: A new layer. When `inPlace` is false, `initKernel` is
     /// necessary in order to recreate hard resources.
     ///
     public override func copy(
@@ -621,10 +663,12 @@ public class Convolution2D: BN2D
         
         _wBuffers = WeightBuffers(
             nbElems: nbWeights * weightHeight * weightWidth,
-            deviceID: deviceID)
+            deviceID: deviceID
+        )
         _bBuffers = WeightBuffers(
             nbElems: nbFilters,
-            deviceID: deviceID)
+            deviceID: deviceID
+        )
         
         let weightsPtr = _wBuffers.w_p!.shared.buffer
         let biasesPtr = _bBuffers.w_p!.shared.buffer
@@ -1219,8 +1263,8 @@ public class Convolution2D: BN2D
             }
             
             let command = MetalKernel.get.createCommand(
-                forwardKernel, deviceID: deviceID)
-            
+                forwardKernel, deviceID: deviceID
+            )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBuffer(_wBuffers.w.metal, atIndex: 1)
             command.setBuffer(_bBuffers.w.metal, atIndex: 2)
@@ -1238,8 +1282,10 @@ public class Convolution2D: BN2D
             let threadsPerGrid = MTLSize(width: width,
                                          height: height,
                                          depth: nbFilters * batchSize)
-            command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+            command.dispatchThreads(
+                threadsPerGrid: threadsPerGrid,
+                threadsPerThreadgroup: threadsPerThreadgroup
+            )
             command.enqueue()
         }
     }
@@ -1403,8 +1449,8 @@ public class Convolution2D: BN2D
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
             let command = MetalKernel.get.createCommand(
-                backwardKernel, deviceID: deviceID)
-            
+                backwardKernel, deviceID: deviceID
+            )
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBuffer(_wBuffers.w.metal, atIndex: 1)
             command.setBytes(pStart, atIndex: 2)
@@ -1422,8 +1468,10 @@ public class Convolution2D: BN2D
             let threadsPerGrid = MTLSize(width: layerPrev.width,
                                          height: layerPrev.height,
                                          depth: nbFiltersPrev * batchSize)
-            command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+            command.dispatchThreads(
+                threadsPerGrid: threadsPerGrid,
+                threadsPerThreadgroup: threadsPerThreadgroup
+            )
             command.enqueue()
             
             propagateDirty()
@@ -1460,8 +1508,8 @@ public class Convolution2D: BN2D
             if MAKit.Gradient.batch
             {
                 command = MetalKernel.get.createCommand(
-                    batchDerWeightsKernel, deviceID: deviceID)
-                
+                    batchDerWeightsKernel, deviceID: deviceID
+                )
                 command.setBuffer(layerPrev.outs.metal, atIndex: 0)
                 command.setBuffer(delta.metal, atIndex: 1)
                 command.setBytes(pStart, atIndex: 2)
@@ -1479,15 +1527,17 @@ public class Convolution2D: BN2D
                 threadsPerGrid = MTLSize(width: nbFilters * weightWidth,
                                          height: nbFiltersPrev * weightHeight,
                                          depth: 1)
-                command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+                command.dispatchThreads(
+                    threadsPerGrid: threadsPerGrid,
+                    threadsPerThreadgroup: threadsPerThreadgroup
+                )
                 command.enqueue()
                 
                 if updateBiases
                 {
                     command = MetalKernel.get.createCommand(
-                        batchDerBiasesKernel, deviceID: deviceID)
-                    
+                        batchDerBiasesKernel, deviceID: deviceID
+                    )
                     command.setBuffer(delta.metal, atIndex: 0)
                     command.setBytes(pNbFilters, atIndex: 1)
                     command.setBytes(pDimensions, atIndex: 2)
@@ -1500,8 +1550,10 @@ public class Convolution2D: BN2D
                     threadsPerGrid = MTLSize(width: nbFilters,
                                              height: 1,
                                              depth: 1)
-                    command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+                    command.dispatchThreads(
+                        threadsPerGrid: threadsPerGrid,
+                        threadsPerThreadgroup: threadsPerThreadgroup
+                    )
                     command.enqueue()
                 }
             }
@@ -1511,8 +1563,8 @@ public class Convolution2D: BN2D
                 // Compute Gradients per sample
                 // -------------------------------------------------------------
                 command = MetalKernel.get.createCommand(
-                    derWeightsKernel, deviceID: deviceID)
-                
+                    derWeightsKernel, deviceID: deviceID
+                )
                 command.setBuffer(layerPrev.outs.metal, atIndex: 0)
                 command.setBuffer(delta.metal, atIndex: 1)
                 command.setBytes(pStart, atIndex: 2)
@@ -1529,15 +1581,17 @@ public class Convolution2D: BN2D
                 threadsPerGrid = MTLSize(width: nbFilters * weightWidth,
                                          height: nbFiltersPrev * weightHeight,
                                          depth: batchSize)
-                command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+                command.dispatchThreads(
+                    threadsPerGrid: threadsPerGrid,
+                    threadsPerThreadgroup: threadsPerThreadgroup
+                )
                 command.enqueue()
             
                 if updateBiases
                 {
                     command = MetalKernel.get.createCommand(
-                        derBiasesKernel, deviceID: deviceID)
-                    
+                        derBiasesKernel, deviceID: deviceID
+                    )
                     command.setBuffer(delta.metal, atIndex: 0)
                     command.setBytes(pNbFilters, atIndex: 1)
                     command.setBytes(pDimensions, atIndex: 2)
@@ -1548,8 +1602,10 @@ public class Convolution2D: BN2D
                     threadsPerGrid = MTLSize(width: nbFilters,
                                              height: batchSize,
                                              depth: 1)
-                    command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+                    command.dispatchThreads(
+                        threadsPerGrid: threadsPerGrid,
+                        threadsPerThreadgroup: threadsPerThreadgroup
+                    )
                     command.enqueue()
                 }
                 
@@ -1557,8 +1613,8 @@ public class Convolution2D: BN2D
                 // Compute Gradients per batch
                 // -------------------------------------------------------------
                 command = MetalKernel.get.createCommand(
-                    reduceWeightsKernel, deviceID: deviceID)
-                
+                    reduceWeightsKernel, deviceID: deviceID
+                )
                 command.setBuffer(_wDeltaWeights.metal, atIndex: 0)
                 command.setBytes(pNbFilters, atIndex: 1)
                 command.setBytes(pNbFiltersPrev, atIndex: 2)
@@ -1571,15 +1627,17 @@ public class Convolution2D: BN2D
                 threadsPerGrid = MTLSize(width: nbFilters * weightWidth,
                                          height: nbFiltersPrev * weightHeight,
                                          depth: 1)
-                command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+                command.dispatchThreads(
+                    threadsPerGrid: threadsPerGrid,
+                    threadsPerThreadgroup: threadsPerThreadgroup
+                )
                 command.enqueue()
             
                 if updateBiases
                 {
                     command = MetalKernel.get.createCommand(
-                        reduceBiasesKernel, deviceID: deviceID)
-                    
+                        reduceBiasesKernel, deviceID: deviceID
+                    )
                     command.setBuffer(_bDeltaWeights.metal, atIndex: 0)
                     command.setBytes(pNbFilters, atIndex: 1)
                     command.setBytes(pNbBatch, atIndex: 2)
@@ -1591,8 +1649,10 @@ public class Convolution2D: BN2D
                     threadsPerGrid = MTLSize(width: nbFilters,
                                              height: 1,
                                              depth: 1)
-                    command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+                    command.dispatchThreads(
+                        threadsPerGrid: threadsPerGrid,
+                        threadsPerThreadgroup: threadsPerThreadgroup
+                    )
                     command.enqueue()
                 }
             }

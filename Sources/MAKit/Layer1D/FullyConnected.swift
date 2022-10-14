@@ -20,7 +20,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
     
     /// Buffer of weights.
     var _wBuffers: IWeightBuffers! = nil
-    //// Buffer of biases.
+    /// Buffer of biases.
     var _bBuffers: IWeightBuffers! = nil
     
     /// Buffer of gradients per sample for weights.
@@ -517,10 +517,14 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
     ///
     public func initWeightsGPU()
     {
-        _wBuffers = WeightBuffers(nbElems: weightHeight * weightWidth,
-                                  deviceID: deviceID)
-        _bBuffers = WeightBuffers(nbElems: weightHeight,
-                                  deviceID: deviceID)
+        _wBuffers = WeightBuffers(
+            nbElems: weightHeight * weightWidth,
+            deviceID: deviceID
+        )
+        _bBuffers = WeightBuffers(
+            nbElems: weightHeight,
+            deviceID: deviceID
+        )
         
         let weightsPtr = _wBuffers.w_p!.shared.buffer
         let biasesPtr = _bBuffers.w_p!.shared.buffer

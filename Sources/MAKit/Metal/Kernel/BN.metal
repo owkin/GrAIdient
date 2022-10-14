@@ -281,8 +281,8 @@ kernel void backwardWeightsBNConv(
         return ;
     }
     
-    float sum1 = 0.0, sum2 = 0.0;
-    float sum3 = 0.0, sum4 = 0.0;
+    float tmp1 = 0.0, tmp2 = 0.0;
+    float tmp3 = 0.0, tmp4 = 0.0;
     for (uint elem=0; elem<nbBatch; elem++)
     {
         for (uint x=0; x<width; x++){
@@ -296,25 +296,25 @@ kernel void backwardWeightsBNConv(
             float deltaTmp = delta[offset];
             float xHatTmp = xHat[offset];
             float dxhat = Ɣ[neurone] * deltaTmp;
-            sum1 += dxhat;
-            sum2 += dxhat * xHatTmp;
+            tmp1 += dxhat;
+            tmp2 += dxhat * xHatTmp;
             
-            sum3 += deltaTmp * xHatTmp;
-            sum4 += deltaTmp;
+            tmp3 += deltaTmp * xHatTmp;
+            tmp4 += deltaTmp;
         }}
     }
-    sum1[neurone] = sum1;
-    sum2[neurone] = sum2;
+    sum1[neurone] = tmp1;
+    sum2[neurone] = tmp2;
     
     if (accumulate)
     {
-        dƔ[neurone] += sum3;
-        dβ[neurone] += sum4;
+        dƔ[neurone] += tmp3;
+        dβ[neurone] += tmp4;
     }
     else
     {
-        dƔ[neurone] = sum3;
-        dβ[neurone] = sum4;
+        dƔ[neurone] = tmp3;
+        dβ[neurone] = tmp4;
     }
 }
 

@@ -103,7 +103,7 @@ open class GradTrainer: Trainer
         setData: (DataT?, Model)->(DataT, Int),
         setLoss: (LossT?, Model)->(LossT),
         getGradientsApprox: (LossT, Model)->[Double],
-        validate: (Double)->())
+        validate: (Double) throws -> ()) throws
     {
         model.initialize(
             params: optimizerParams,
@@ -134,7 +134,7 @@ open class GradTrainer: Trainer
                     layersGraph: layersGraph,
                     gradientsApprox: gradientsApprox)
                 {
-                    validate(gradDiff)
+                    try validate(gradDiff)
                 }
                 
                 model.incStep()
@@ -235,7 +235,7 @@ open class FlowTrainer: Trainer
     public func run<DataT, LossT>(
         setData: (DataT?, Model)->(DataT, Int),
         setLoss: (LossT?, Model)->(LossT),
-        validate: (Double)->())
+        validate: (Double) throws -> ()) throws
     {
         initialize()
         
@@ -274,7 +274,7 @@ open class FlowTrainer: Trainer
                 
                 if let gradDiff = checkFlow(resultsCPU, resultsGPU)
                 {
-                    validate(gradDiff)
+                    try validate(gradDiff)
                 }
                 
                 modelCPU.incStep()
@@ -324,13 +324,13 @@ open class FlowResetTrainer: FlowTrainer
     public override func run<DataT, LossT>(
         setData: (DataT?, Model)->(DataT, Int),
         setLoss: (LossT?, Model)->(LossT),
-        validate: (Double)->())
+        validate: (Double) throws -> ()) throws
     {
-        super.run(setData: setData, setLoss: setLoss){ (Double) in }
+        try super.run(setData: setData, setLoss: setLoss){ (Double) in }
         
         reset()
         
-        super.run(setData: setData, setLoss: setLoss, validate: validate)
+        try super.run(setData: setData, setLoss: setLoss, validate: validate)
     }
 }
 
@@ -379,9 +379,9 @@ open class FlowReverseTrainer: FlowTrainer
     public override func run<DataT, LossT>(
         setData: (DataT?, Model)->(DataT, Int),
         setLoss: (LossT?, Model)->(LossT),
-        validate: (Double)->())
+        validate: (Double) throws -> ()) throws
     {
-        super.run(setData: setData, setLoss: setLoss){ (Double) in }
+        try super.run(setData: setData, setLoss: setLoss){ (Double) in }
         
         initializeReverse()
         
@@ -420,7 +420,7 @@ open class FlowReverseTrainer: FlowTrainer
                 
                 if let gradDiff = checkFlow(resultsCPU, resultsGPU)
                 {
-                    validate(gradDiff)
+                    try validate(gradDiff)
                 }
                 
                 modelCPU.incStep()
@@ -455,9 +455,9 @@ open class InferenceTrainer: FlowTrainer
         setData: (DataT?, Model)->(DataT, Int),
         setLoss: (LossT?, Model)->(LossT),
         getLoss: (LossT, Model)->Double,
-        validate: (Double)->())
+        validate: (Double) throws -> ()) throws
     {
-        super.run(setData: setData, setLoss: setLoss){ (Double) in }
+        try super.run(setData: setData, setLoss: setLoss){ (Double) in }
         
         modelCPU.phase = .Inference
         modelGPU.phase = .Inference
@@ -496,7 +496,7 @@ open class InferenceTrainer: FlowTrainer
                 let strDump = warning + String(diff)
                 print(strDump)
                 
-                validate(diff)
+                try validate(diff)
                 numLoop += 1
             }
             
@@ -525,11 +525,11 @@ open class LoadTrainer: FlowTrainer
         setData: (DataT?, Model)->(DataT, Int),
         setLoss: (LossT?, Model)->(LossT),
         getLoss: (LossT, Model)->Double,
-        validate: (Double, Double)->())
+        validate: (Double, Double) throws -> ()) throws
     {
         // 1. Train modelCPU and modelGPU.
         
-        super.run(setData: setData, setLoss: setLoss){ (Double) in }
+        try super.run(setData: setData, setLoss: setLoss){ (Double) in }
         
         // 2. Save modelCPU and modelGPU on the disk.
         
@@ -635,7 +635,7 @@ open class LoadTrainer: FlowTrainer
         let strDump = warning + String(maxDiff)
         print(strDump)
         
-        validate(diffCPU, diffGPU)
+        try validate(diffCPU, diffGPU)
     }
 }
 
@@ -661,11 +661,11 @@ open class TransformTrainer: FlowTrainer
         setData: (DataT?, Model)->(DataT, Int),
         setLoss: (LossT?, Model)->(LossT),
         getLoss: (LossT, Model)->Double,
-        validate: (Double, Double)->())
+        validate: (Double, Double) throws -> ()) throws
     {
         // 1. Train modelCPU and modelGPU.
         
-        super.run(setData: setData, setLoss: setLoss){ (Double) in }
+        try super.run(setData: setData, setLoss: setLoss){ (Double) in }
         
         // 2. Run one step of Inference for modelCPU and modelGPU.
         
@@ -738,7 +738,7 @@ open class TransformTrainer: FlowTrainer
         let strDump = warning + String(maxDiff)
         print(strDump)
         
-        validate(diffCPU, diffGPU)
+        try validate(diffCPU, diffGPU)
     }
 }
 
@@ -786,7 +786,7 @@ open class NormTrainer: Trainer
     public func run<DataT, LossT>(
         setData: (DataT?, Model)->(DataT, Int),
         setLoss: (LossT?, Model)->(LossT),
-        validate: (Double)->())
+        validate: (Double) throws -> ()) throws
     {
         model.initialize(
             params: optimizerParams,
@@ -821,7 +821,7 @@ open class NormTrainer: Trainer
                 result += String(diff)
                 print(result)
                 
-                validate(diff)
+                try validate(diff)
                 
                 model.incStep()
                 numLoop += 1

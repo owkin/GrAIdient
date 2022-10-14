@@ -6,6 +6,7 @@
 //
 
 import XCTest
+import Retry
 import MAKit
 import MAKitTestsUtils
 
@@ -92,14 +93,21 @@ class Input1DLinearError1DCase: LinearError1DCase
         let model = trainer.model!
         let lastLayer = model.layers.last as! LinearError1D
         let layersGraph = model.getGraph(lastLayer)
-        trainer.run(
-            layersGraph: layersGraph,
-            setData: setData,
-            setLoss: setLoss,
-            getGradientsApprox: getGradientsApprox)
+        
+        retry(max: NB_RETRY)
         {
-            (gradDiff: Double) in
-            XCTAssert(gradDiff <= 0.000001)
+            try trainer.run(
+                layersGraph: layersGraph,
+                setData: self.setData,
+                setLoss: self.setLoss,
+                getGradientsApprox: self.getGradientsApprox)
+            {
+                (gradDiff: Double) throws in
+                if gradDiff > 0.000001
+                {
+                    throw TestError.Numeric
+                }
+            }
         }
     }
     
@@ -113,12 +121,18 @@ class Input1DLinearError1DCase: LinearError1DCase
     ///
     func run(_ trainer: FlowTrainer)
     {
-        trainer.run(
-            setData: setData,
-            setLoss: setLoss)
+        retry(max: NB_RETRY)
         {
-            (gradDiff: Double) in
-            XCTAssert(gradDiff <= 0.000001)
+            try trainer.run(
+                setData: self.setData,
+                setLoss: self.setLoss)
+            {
+                (gradDiff: Double) throws in
+                if gradDiff > 0.000001
+                {
+                    throw TestError.Numeric
+                }
+            }
         }
     }
     
@@ -132,12 +146,18 @@ class Input1DLinearError1DCase: LinearError1DCase
     ///
     func run(_ trainer: FlowResetTrainer)
     {
-        trainer.run(
-            setData: setData,
-            setLoss: setLoss)
+        retry(max: NB_RETRY)
         {
-            (gradDiff: Double) in
-            XCTAssert(gradDiff <= 0.000001)
+            try trainer.run(
+                setData: self.setData,
+                setLoss: self.setLoss)
+            {
+                (gradDiff: Double) throws in
+                if gradDiff > 0.000001
+                {
+                    throw TestError.Numeric
+                }
+            }
         }
     }
     
@@ -151,12 +171,18 @@ class Input1DLinearError1DCase: LinearError1DCase
     ///
     func run(_ trainer: FlowReverseTrainer)
     {
-        trainer.run(
-            setData: setData,
-            setLoss: setLoss)
+        retry(max: NB_RETRY)
         {
-            (gradDiff: Double) in
-            XCTAssert(gradDiff <= 0.000001)
+            try trainer.run(
+                setData: self.setData,
+                setLoss: self.setLoss)
+            {
+                (gradDiff: Double) throws in
+                if gradDiff > 0.000001
+                {
+                    throw TestError.Numeric
+                }
+            }
         }
     }
     
@@ -170,13 +196,19 @@ class Input1DLinearError1DCase: LinearError1DCase
     ///
     func run(_ trainer: InferenceTrainer)
     {
-        trainer.run(
-            setData: setData,
-            setLoss: setLoss,
-            getLoss: getLoss)
+        retry(max: NB_RETRY)
         {
-            (lossDiff: Double) in
-            XCTAssert(lossDiff <= 0.001)
+            try trainer.run(
+                setData: self.setData,
+                setLoss: self.setLoss,
+                getLoss: self.getLoss)
+            {
+                (lossDiff: Double) throws in
+                if lossDiff > 0.001
+                {
+                    throw TestError.Numeric
+                }
+            }
         }
     }
     
@@ -190,14 +222,23 @@ class Input1DLinearError1DCase: LinearError1DCase
     ///
     func run(_ trainer: LoadTrainer)
     {
-        trainer.run(
-            setData: setData,
-            setLoss: setLoss,
-            getLoss: getLoss)
+        retry(max: NB_RETRY)
         {
-            (diffCPU: Double, diffGPU: Double) in
-            XCTAssert(diffCPU <= 0.001)
-            XCTAssert(diffGPU <= 0.001)
+            try trainer.run(
+                setData: self.setData,
+                setLoss: self.setLoss,
+                getLoss: self.getLoss)
+            {
+                (diffCPU: Double, diffGPU: Double) throws in
+                if diffCPU > 0.001
+                {
+                    throw TestError.Numeric
+                }
+                if diffGPU > 0.001
+                {
+                    throw TestError.Numeric
+                }
+            }
         }
     }
     
@@ -211,15 +252,24 @@ class Input1DLinearError1DCase: LinearError1DCase
     ///
     func runCopy(_ trainer: TransformTrainer)
     {
-        trainer.run(
-            transform: copy,
-            setData: setData,
-            setLoss: setLoss,
-            getLoss: getLoss)
+        retry(max: NB_RETRY)
         {
-            (diffCPU: Double, diffGPU: Double) in
-            XCTAssert(diffCPU <= 0.001)
-            XCTAssert(diffGPU <= 0.001)
+            try trainer.run(
+                transform: self.copy,
+                setData: self.setData,
+                setLoss: self.setLoss,
+                getLoss: self.getLoss)
+            {
+                (diffCPU: Double, diffGPU: Double) throws in
+                if diffCPU > 0.001
+                {
+                    throw TestError.Numeric
+                }
+                if diffGPU > 0.001
+                {
+                    throw TestError.Numeric
+                }
+            }
         }
     }
     
@@ -233,15 +283,24 @@ class Input1DLinearError1DCase: LinearError1DCase
     ///
     func runCopyInPlace(_ trainer: TransformTrainer)
     {
-        trainer.run(
-            transform: copyInPlace,
-            setData: setData,
-            setLoss: setLoss,
-            getLoss: getLoss)
+        retry(max: NB_RETRY)
         {
-            (diffCPU: Double, diffGPU: Double) in
-            XCTAssert(diffCPU <= 0.001)
-            XCTAssert(diffGPU <= 0.001)
+            try trainer.run(
+                transform: self.copyInPlace,
+                setData: self.setData,
+                setLoss: self.setLoss,
+                getLoss: self.getLoss)
+            {
+                (diffCPU: Double, diffGPU: Double) throws in
+                if diffCPU > 0.001
+                {
+                    throw TestError.Numeric
+                }
+                if diffGPU > 0.001
+                {
+                    throw TestError.Numeric
+                }
+            }
         }
     }
     
@@ -259,12 +318,18 @@ class Input1DLinearError1DCase: LinearError1DCase
         optimizerParams.normThreshold = normClipping
         trainer.optimizerParams = optimizerParams
         
-        trainer.run(
-            setData: setData,
-            setLoss: setLoss)
+        retry(max: NB_RETRY)
         {
-            (normDiff: Double) in
-            XCTAssert(normDiff <= 0.000001)
+            try trainer.run(
+                setData: self.setData,
+                setLoss: self.setLoss)
+            {
+                (normDiff: Double) throws in
+                if normDiff > 0.000001
+                {
+                    throw TestError.Numeric
+                }
+            }
         }
     }
 }

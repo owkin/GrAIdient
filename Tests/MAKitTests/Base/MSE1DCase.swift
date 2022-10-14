@@ -9,6 +9,25 @@ import XCTest
 import MAKit
 import MAKitTestsUtils
 
+/// Error occuring during tests.
+public enum TestError: Error
+{
+    /// Wrong numeric value.
+    case Numeric
+}
+
+extension TestError: CustomStringConvertible
+{
+    public var description: String
+    {
+        switch self
+        {
+        case .Numeric:
+            return "Wrong numeric value."
+        }
+    }
+}
+
 /// A class that will test a model with a structural hypothesis:
 /// the model last layer is a MSE1D layer.
 class MSE1DCase: XCTestCase

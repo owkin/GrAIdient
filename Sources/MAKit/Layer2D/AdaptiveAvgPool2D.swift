@@ -1,0 +1,773 @@
+//
+// AdaptiveAvgPool2D.swift
+// MAKit
+//
+// Created by Jean-François Reboud on 14/10/2022.
+//
+
+import MetalKit
+
+public class AdaptiveAvgPool2D: Layer2D
+{
+    var _nbElems: MetalBuffer<Int32>! = nil
+    
+    public override var strideFactor: Double
+    {
+        get {
+            if let value = strideFactorCache
+            {
+                return value
+            }
+            else
+            {
+                let heightPrev = (layerPrev as! Layer2D).height
+                let size: Int
+                
+                if heightPrev >= height
+                {
+                    size = heightPrev / height
+                }
+                else
+                {
+                    fatalError("'strideFactor' has no meaning in this config.")
+                }
+                
+                let value = super.strideFactor * Double(size)
+                strideFactorCache = value
+                return value
+            }
+        }
+    }
+    
+    public override var receptiveField: Int
+    {
+        get {
+            if let value = receptiveFieldCache
+            {
+                return value
+            }
+            else
+            {
+                let layerPrev = self.layerPrev as! Layer2D
+                let heightPrev = layerPrev.height
+                
+                let smallSize: Int
+                let bigSize: Int
+                if heightPrev >= height
+                {
+                    smallSize = height
+                    bigSize = heightPrev
+                }
+                else
+                {
+                    fatalError(
+                        "'receptiveField' has no meaning in this config."
+                    )
+                }
+                
+                let start = _startIndex(
+                    index: 0,
+                    smallSize: smallSize,
+                    bigSize: bigSize
+                )
+                let end = _endIndex(
+                    index: 0,
+                    smallSize: smallSize,
+                    bigSize: bigSize
+                )
+                let size = end - start
+                
+                let value = super.receptiveField +
+                    (size - 1) * Int(super.strideFactor)
+                receptiveFieldCache = value
+                return value
+            }
+        }
+    }
+    
+    public init(layerPrev: Layer2D, size: Int, params: MAKit.Model.Params)
+    {
+        super.init(layerPrev: layerPrev,
+                   nbFilters: layerPrev.nbFilters,
+                   height: size,
+                   width: size,
+                   params: params)
+    }
+    
+    public required init(from decoder: Decoder) throws
+    {
+        try super.init(from: decoder)
+    }
+    
+    public override func resetKernelCPU()
+    {
+        super.resetKernelCPU()
+        _nbElems = nil
+    }
+    
+    public override func resetKernelGPU()
+    {
+        super.resetKernelGPU()
+        _nbElems = nil
+    }
+    
+    public override func checkStateCPU(batchSize: Int) throws
+    {
+        try super.checkStateCPU(batchSize: batchSize)
+        
+        if let layerPrev = self.layerPrev as? Layer2D
+        {
+            let heightPrev = layerPrev.height
+            if heightPrev < height && _nbElems == nil
+            {
+                _nbElems = MetalSharedBuffer<Int32>(
+                    batchSize * nbFilters * height * width,
+                    deviceID: deviceID
+                )
+            }
+        }
+    }
+    
+    public override func checkStateForwardGPU(batchSize: Int) throws
+    {
+        try super.checkStateForwardGPU(batchSize: batchSize)
+        
+        if let layerPrev = self.layerPrev as? Layer2D
+        {
+            let heightPrev = layerPrev.height
+            if heightPrev < height && _nbElems == nil
+            {
+                _nbElems = MetalPrivateBuffer<Int32>(
+                    batchSize * nbFilters * height * width,
+                    deviceID: deviceID
+                )
+            }
+        }
+    }
+    
+    public override func copy(
+        mapping: Dictionary<Int, Layer>,
+        inPlace: Bool) -> Layer
+    {
+        let context = ModelContext(name: "", curID: 0)
+        let layerPrev = mapping[idPrev] as! Layer2D
+        
+        let params = MAKit.Model.Params(context: context)
+        params.context.curID = id
+            
+        let newLayer = AdaptiveAvgPool2D(
+            layerPrev: layerPrev,
+            size: height,
+            params: params
+        )
+        if inPlace
+        {
+            newLayer.neurones = neurones
+            newLayer._nbElems = _nbElems
+        }
+        return newLayer
+    }
+    
+    private func _startIndex(index: Int, smallSize: Int, bigSize: Int) -> Int
+    {
+        return Int(floor(Double(index * bigSize) / Double(smallSize)))
+    }
+    
+    private func _endIndex(index: Int, smallSize: Int, bigSize: Int) -> Int
+    {
+        return Int(ceil(Double((index + 1) * bigSize) / Double(smallSize)))
+    }
+    
+    ///
+    /// Apply the forward pass of the Gradient Checking in CPU execution context.
+    ///
+    /// Throws an error if batch size is greater than the first batch size.
+    ///
+    public override func forwardGCCPU() throws
+    {
+        if let layerPrev = self.layerPrev as? Layer2D
+        {
+            try checkStateCPU(batchSize: batchSize)
+            
+            let nbGC = layerPrev.nbGC
+            for depth in 0..<nbFilters
+            {
+                for i in 0..<height {
+                for j in 0..<width
+                {
+                    neurones[depth].get(i, j)!.initGC(batchSize: batchSize,
+                                                      nbGC: nbGC)
+                }}
+            }
+            
+            let neuronesPrev = layerPrev.neurones
+            let heightPrev = layerPrev.height
+            let widthPrev = layerPrev.width
+            
+            if heightPrev >= height
+            {
+                for batch in 0..<batchSize {
+                for elem in 0..<nbGC {
+                for depth in 0..<nbFilters
+                {
+                    for i in 0..<height
+                    {
+                    let startI = _startIndex(index: i,
+                                             smallSize: height,
+                                             bigSize: heightPrev)
+                    let endI = _endIndex(index: i,
+                                         smallSize: height,
+                                         bigSize: heightPrev)
+                    let nbElemsI = endI - startI
+                        
+                    for j in 0..<width
+                    {
+                        let startJ = _startIndex(index: j,
+                                                 smallSize: width,
+                                                 bigSize: widthPrev)
+                        let endJ = _endIndex(index: j,
+                                             smallSize: width,
+                                             bigSize: widthPrev)
+                        let nbElemsJ = endJ - startJ
+                        
+                        let nbElems = nbElemsI * nbElemsJ
+                        
+                        var sum = 0.0
+                        for k in 0..<nbElemsI {
+                        for l in 0..<nbElemsJ
+                        {
+                            sum += neuronesPrev[depth].get(
+                                startI + k,
+                                startJ + l)!.gc[batch][elem].out
+                        }}
+                        
+                        neurones[depth].get(i, j)!.gc[batch][elem].out =
+                            sum / Double(nbElems)
+                    }}
+                }}}
+            }
+            else
+            {
+                for batch in 0..<batchSize {
+                for elem in 0..<nbGC {
+                for depth in 0..<nbFilters
+                {
+                    for I in 0..<height {
+                    for J in 0..<width
+                    {
+                        neurones[depth].get(I, J)!.gc[batch][elem].out = 0.0
+                    }}
+                }}}
+                
+                let nbElemsPtr: UnsafeMutableBufferPointer<Int32>
+                if let sBuffer = _nbElems as? MetalSharedBuffer<Int32>
+                {
+                    nbElemsPtr = sBuffer.buffer
+                }
+                else if let pBuffer = _nbElems as? MetalPrivateBuffer
+                {
+                    MetalKernel.get.download([pBuffer])
+                    nbElemsPtr = pBuffer.shared.buffer
+                }
+                else
+                {
+                    fatalError("Unreachable.")
+                }
+                
+                for batch in 0..<batchSize {
+                for elem in 0..<nbGC {
+                for depth in 0..<nbFilters
+                {
+                    let offsetStart =
+                        (depth + nbFilters * batch) * height
+                    
+                    for i in 0..<heightPrev
+                    {
+                    let startI = _startIndex(index: i,
+                                             smallSize: heightPrev,
+                                             bigSize: height)
+                    let endI = _endIndex(index: i,
+                                         smallSize: heightPrev,
+                                         bigSize: height)
+                    let nbElemsI = endI - startI
+                    
+                    for j in 0..<widthPrev
+                    {
+                        let startJ = _startIndex(index: j,
+                                                 smallSize: widthPrev,
+                                                 bigSize: width)
+                        let endJ = _endIndex(index: j,
+                                             smallSize: widthPrev,
+                                             bigSize: width)
+                        let nbElemsJ = endJ - startJ
+                        
+                        let outPrev = neuronesPrev[depth].get(i, j)!
+                            .gc[batch][elem].out
+                        
+                        for k in 0..<nbElemsI {
+                        for l in 0..<nbElemsJ
+                        {
+                            let offset = startJ + l +
+                                (offsetStart + startI + k) * width
+                            
+                            neurones[depth].get(
+                                startI + k, startJ + l)!.gc[batch][elem].out +=
+                                outPrev / Double(nbElemsPtr[offset])
+                        }}
+                    }}
+                }}}
+            }
+        }
+    }
+    
+    ///
+    /// Apply the forward pass of the Gradient Checking in GPU execution context.
+    ///
+    /// Throws an error if batch size is greater than the first batch size.
+    ///
+    public override func forwardGCGPU() throws
+    {
+        try forwardGCCPU()
+    }
+    
+    ///
+    /// Apply the forward pass in the CPU execution context.
+    ///
+    /// Throws an error if batch size is greater than the first batch size.
+    ///
+    public override func forwardCPU() throws
+    {
+        if let layerPrev = self.layerPrev as? Layer2D
+        {
+            try checkStateCPU(batchSize: batchSize)
+            
+            let neuronesPrev = layerPrev.neurones
+            let heightPrev = layerPrev.height
+            let widthPrev = layerPrev.width
+            
+            if heightPrev >= height
+            {
+                for elem in 0..<batchSize {
+                for depth in 0..<nbFilters
+                {
+                    for i in 0..<height
+                    {
+                    let startI = _startIndex(index: i,
+                                             smallSize: height,
+                                             bigSize: heightPrev)
+                    let endI = _endIndex(index: i,
+                                         smallSize: height,
+                                         bigSize: heightPrev)
+                    let nbElemsI = endI - startI
+                        
+                    for j in 0..<width
+                    {
+                        let startJ = _startIndex(index: j,
+                                                 smallSize: width,
+                                                 bigSize: widthPrev)
+                        let endJ = _endIndex(index: j,
+                                             smallSize: width,
+                                             bigSize: widthPrev)
+                        let nbElemsJ = endJ - startJ
+                        
+                        let nbElems = nbElemsI * nbElemsJ
+                        
+                        var sum = 0.0
+                        for k in 0..<nbElemsI {
+                        for l in 0..<nbElemsJ
+                        {
+                            sum += neuronesPrev[depth].get(
+                                startI + k,
+                                startJ + l)!.v[elem].out
+                        }}
+                        
+                        neurones[depth].get(i, j)!.v[elem].out =
+                            sum / Double(nbElems)
+                    }}
+                }}
+            }
+            else
+            {
+                let nbElemsPtr =
+                    (_nbElems as! MetalSharedBuffer<Int32>).buffer
+                
+                for elem in 0..<batchSize {
+                for depth in 0..<nbFilters
+                {
+                    let offsetStart =
+                        (depth + nbFilters * elem) * height
+                    
+                    for I in 0..<height {
+                    for J in 0..<width
+                    {
+                        let offset = J +
+                            (offsetStart + I) * width
+                        
+                        nbElemsPtr[offset] = 0
+                        neurones[depth].get(I, J)!.v[elem].out = 0.0
+                    }}
+                }}
+                
+                for elem in 0..<batchSize {
+                for depth in 0..<nbFilters
+                {
+                    let offsetStart =
+                        (depth + nbFilters * elem) * height
+                    
+                    for i in 0..<heightPrev
+                    {
+                    let startI = _startIndex(index: i,
+                                             smallSize: heightPrev,
+                                             bigSize: height)
+                    let endI = _endIndex(index: i,
+                                         smallSize: heightPrev,
+                                         bigSize: height)
+                    let nbElemsI = endI - startI
+                    
+                    for j in 0..<widthPrev
+                    {
+                        let startJ = _startIndex(index: j,
+                                                 smallSize: widthPrev,
+                                                 bigSize: width)
+                        let endJ = _endIndex(index: j,
+                                             smallSize: widthPrev,
+                                             bigSize: width)
+                        let nbElemsJ = endJ - startJ
+                        
+                        let outPrev =
+                            neuronesPrev[depth].get(i, j)!.v[elem].out
+                        
+                        for k in 0..<nbElemsI {
+                        for l in 0..<nbElemsJ
+                        {
+                            let offset = startJ + l +
+                                (offsetStart + startI + k) * width
+                            
+                            neurones[depth].get(
+                                startI + k,
+                                startJ + l)!.v[elem].out += outPrev
+                            nbElemsPtr[offset] += 1
+                        }}
+                    }}
+                }}
+                
+                for elem in 0..<batchSize {
+                for depth in 0..<nbFilters
+                {
+                    let offsetStart =
+                        (depth + nbFilters * elem) * height
+                    
+                    for I in 0..<height {
+                    for J in 0..<width
+                    {
+                        let offset = J +
+                            (offsetStart + I) * width
+                        
+                        neurones[depth].get(I, J)!.v[elem].out /=
+                            Double(nbElemsPtr[offset])
+                    }}
+                }}
+            }
+        }
+    }
+    
+    ///
+    /// Apply the forward pass in the GPU execution context.
+    ///
+    /// Throws an error if batch size is greater than the first batch size.
+    ///
+    public override func forwardGPU() throws
+    {
+        if let layerPrev = self.layerPrev as? Layer2D
+        {
+            try checkStateForwardGPU(batchSize: batchSize)
+            
+            let widthPrev = layerPrev.width
+            let heightPrev = layerPrev.height
+            
+            let pNbFilters: [UInt32] = [UInt32(nbFilters)]
+            let pNbBatch: [UInt32] = [UInt32(batchSize)]
+            let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
+            let pDimensionsPrev: [UInt32] = [UInt32(widthPrev),
+                                             UInt32(heightPrev)]
+            
+            let metalKernel = MetalKernel.get
+            var command: MetalCommand
+            
+            if heightPrev >= height
+            {
+                command = metalKernel.createCommand(
+                    "adaptiveAvgPoolForward1", deviceID: deviceID)
+                
+                command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+                command.setBytes(pNbFilters, atIndex: 1)
+                command.setBytes(pDimensions, atIndex: 2)
+                command.setBytes(pDimensionsPrev, atIndex: 3)
+                command.setBytes(pNbBatch, atIndex: 4)
+                command.setBuffer(outs.metal, atIndex: 5)
+                
+                let threadsPerThreadgroup = MTLSizeMake(8, 8, 8)
+                let threadsPerGrid = MTLSize(width: width,
+                                             height: height,
+                                             depth: nbFilters * batchSize)
+                command.dispatchThreads(threadsPerGrid: threadsPerGrid,
+                                   threadsPerThreadgroup: threadsPerThreadgroup)
+                command.enqueue()
+            }
+            else
+            {
+                var nbElems = _nbElems.nbElems
+                var pNbElems: [UInt32] = [UInt32(nbElems)]
+                
+                command = metalKernel.createCommand("reset", deviceID: deviceID)
+                
+                command.setBytes(pNbElems, atIndex: 0)
+                command.setBuffer(_nbElems.metal, atIndex: 1)
+                
+                let threads = command.threadExecutionWidth
+                var threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
+                var threadsPerGrid = MTLSize(width: nbElems,
+                                             height: 1,
+                                             depth: 1)
+                command.dispatchThreads(threadsPerGrid: threadsPerGrid,
+                                   threadsPerThreadgroup: threadsPerThreadgroup)
+                command.enqueue()
+                
+                nbElems = outs.nbElems
+                pNbElems = [UInt32(nbElems)]
+                
+                command = metalKernel.createCommand("reset", deviceID: deviceID)
+                
+                command.setBytes(pNbElems, atIndex: 0)
+                command.setBuffer(outs.metal, atIndex: 1)
+                
+                threadsPerGrid = MTLSize(width: nbElems,
+                                         height: 1,
+                                         depth: 1)
+                command.dispatchThreads(threadsPerGrid: threadsPerGrid,
+                                   threadsPerThreadgroup: threadsPerThreadgroup)
+                command.enqueue()
+                
+                command = metalKernel.createCommand(
+                    "adaptiveAvgPoolForward2", deviceID: deviceID)
+                
+                command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+                command.setBytes(pNbFilters, atIndex: 1)
+                command.setBytes(pDimensions, atIndex: 2)
+                command.setBytes(pDimensionsPrev, atIndex: 3)
+                command.setBytes(pNbBatch, atIndex: 4)
+                command.setBuffer(_nbElems.metal, atIndex: 5)
+                command.setBuffer(outs.metal, atIndex: 6)
+                
+                threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
+                threadsPerGrid = MTLSize(width: nbFilters,
+                                         height: batchSize,
+                                         depth: 1)
+                command.dispatchThreads(threadsPerGrid: threadsPerGrid,
+                                   threadsPerThreadgroup: threadsPerThreadgroup)
+                command.enqueue()
+            }
+        }
+    }
+    
+    /// Apply the backward pass in the CPU execution context.
+    public override func backwardCPU()
+    {
+        if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
+        {
+            let neuronesPrev = layerPrev.neurones
+            let heightPrev = layerPrev.height
+            let widthPrev = layerPrev.width
+            
+            if layerPrev.dirty
+            {
+                for elem in 0..<batchSize {
+                for depth in 0..<nbFilters
+                {
+                    for I in 0..<heightPrev {
+                    for J in 0..<widthPrev
+                    {
+                        neuronesPrev[depth].get(I, J)!.v[elem].delta = 0.0
+                    }}
+                }}
+            }
+            
+            if heightPrev >= height
+            {
+                for elem in 0..<batchSize {
+                for depth in 0..<nbFilters
+                {
+                    for i in 0..<height
+                    {
+                    let startI = _startIndex(index: i,
+                                             smallSize: height,
+                                             bigSize: heightPrev)
+                    let endI = _endIndex(index: i,
+                                         smallSize: height,
+                                         bigSize: heightPrev)
+                    let nbElemsI = endI - startI
+                        
+                    for j in 0..<width
+                    {
+                        let startJ = _startIndex(index: j,
+                                                 smallSize: width,
+                                                 bigSize: widthPrev)
+                        let endJ = _endIndex(index: j,
+                                             smallSize: width,
+                                             bigSize: widthPrev)
+                        let nbElemsJ = endJ - startJ
+                        
+                        let nbElems = nbElemsI * nbElemsJ
+                        
+                        let deltaCur = neurones[depth].get(i, j)!
+                            .v[elem].delta / Double(nbElems)
+                        
+                        for k in 0..<nbElemsI {
+                        for l in 0..<nbElemsJ
+                        {
+                            neuronesPrev[depth].get(
+                                startI + k,
+                                startJ + l)!.v[elem].delta += deltaCur
+                        }}
+                    }}
+                }}
+            }
+            else
+            {
+                let nbElemsPtr =
+                    (_nbElems as! MetalSharedBuffer<Int32>).buffer
+                
+                for elem in 0..<batchSize {
+                for depth in 0..<nbFilters
+                {
+                    let offsetStart =
+                        (depth + nbFilters * elem) * height
+                    
+                    for i in 0..<heightPrev
+                    {
+                    let startI = _startIndex(index: i,
+                                             smallSize: heightPrev,
+                                             bigSize: height)
+                    let endI = _endIndex(index: i,
+                                         smallSize: heightPrev,
+                                         bigSize: height)
+                    let nbElemsI = endI - startI
+                        
+                    for j in 0..<widthPrev
+                    {
+                        let startJ = _startIndex(index: j,
+                                                 smallSize: widthPrev,
+                                                 bigSize: width)
+                        let endJ = _endIndex(index: j,
+                                             smallSize: widthPrev,
+                                             bigSize: width)
+                        let nbElemsJ = endJ - startJ
+                        
+                        for k in 0..<nbElemsI {
+                        for l in 0..<nbElemsJ
+                        {
+                            let offset = startJ + l +
+                                (offsetStart + startI + k) * width
+                            
+                            neuronesPrev[depth].get(i, j)!
+                                .v[elem].delta += neurones[depth].get(
+                                startI + k,
+                                startJ + l)!.v[elem].delta /
+                                Double(nbElemsPtr[offset])
+                        }}
+                    }}
+                }}
+            }
+            
+            propagateDirty()
+        }
+    }
+    
+    ///
+    /// Apply the backward pass in the GPU execution context.
+    ///
+    /// Throws an error if batch size is greater than the first batch size.
+    ///
+    public override func backwardGPU() throws
+    {
+        if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
+        {
+            try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
+            
+            let widthPrev = layerPrev.width
+            let heightPrev = layerPrev.height
+            
+            let pNbFilters: [UInt32] = [UInt32(nbFilters)]
+            let pNbBatch: [UInt32] = [UInt32(batchSize)]
+            let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
+            let pDimensionsPrev: [UInt32] = [UInt32(widthPrev),
+                                             UInt32(heightPrev)]
+            
+            let metalKernel = MetalKernel.get
+            var command: MetalCommand
+            
+            if layerPrev.dirty
+            {
+                let nbElems = layerPrev.delta.nbElems
+                let pNbElems: [UInt32] = [UInt32(nbElems)]
+                
+                command = metalKernel.createCommand("reset", deviceID: deviceID)
+                
+                command.setBytes(pNbElems, atIndex: 0)
+                command.setBuffer(layerPrev.delta.metal, atIndex: 1)
+                
+                let threads = command.threadExecutionWidth
+                let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
+                let threadsPerGrid = MTLSize(width: nbElems,
+                                             height: 1,
+                                             depth: 1)
+                command.dispatchThreads(threadsPerGrid: threadsPerGrid,
+                                   threadsPerThreadgroup: threadsPerThreadgroup)
+                command.enqueue()
+            }
+            
+            if heightPrev >= height
+            {
+                command = metalKernel.createCommand(
+                    "adaptiveAvgPoolBackward1", deviceID: deviceID)
+                
+                command.setBuffer(delta.metal, atIndex: 0)
+                command.setBytes(pNbFilters, atIndex: 1)
+                command.setBytes(pDimensions, atIndex: 2)
+                command.setBytes(pDimensionsPrev, atIndex: 3)
+                command.setBytes(pNbBatch, atIndex: 4)
+                command.setBuffer(layerPrev.delta.metal, atIndex: 5)
+                
+                let threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
+                let threadsPerGrid = MTLSize(width: nbFilters,
+                                             height: batchSize,
+                                             depth: 1)
+                command.dispatchThreads(threadsPerGrid: threadsPerGrid,
+                                   threadsPerThreadgroup: threadsPerThreadgroup)
+                command.enqueue()
+            }
+            else
+            {
+                command = metalKernel.createCommand(
+                    "adaptiveAvgPoolBackward2", deviceID: deviceID)
+                
+                command.setBuffer(delta.metal, atIndex: 0)
+                command.setBuffer(_nbElems.metal, atIndex: 1)
+                command.setBytes(pNbFilters, atIndex: 2)
+                command.setBytes(pDimensions, atIndex: 3)
+                command.setBytes(pDimensionsPrev, atIndex: 4)
+                command.setBytes(pNbBatch, atIndex: 5)
+                command.setBuffer(layerPrev.delta.metal, atIndex: 6)
+                
+                let threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
+                let threadsPerGrid = MTLSize(width: nbFilters,
+                                             height: batchSize,
+                                             depth: 1)
+                command.dispatchThreads(threadsPerGrid: threadsPerGrid,
+                                   threadsPerThreadgroup: threadsPerThreadgroup)
+                command.enqueue()
+            }
+            propagateDirty()
+        }
+    }
+}

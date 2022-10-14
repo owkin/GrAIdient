@@ -1,8 +1,8 @@
 //
-//  Biases.metal
+// Biases.metal
+// MAKit
 //
-//  Created by Jean-François Reboud on 25/07/2022.
-//  Copyright © 2022 Jean-François Reboud. All rights reserved.
+// Created by Jean-François Reboud on 14/10/2022.
 //
 
 #include <metal_stdlib>

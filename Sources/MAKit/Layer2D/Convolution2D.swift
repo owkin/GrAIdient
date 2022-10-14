@@ -1,0 +1,1693 @@
+//
+// Convolution2D.swift
+// MAKit
+//
+// Created by Jean-François Reboud on 14/10/2022.
+//
+
+import MetalKit
+
+public class Convolution2D: BN2D
+{
+    let _stride: Int
+    var _useBiases = true
+    
+    var _wArrays: [WeightGrids] = []
+    var _bArrays: WeightArrays! = nil
+    
+    var _wBuffers: IWeightBuffers! = nil
+    var _bBuffers: IWeightBuffers! = nil
+    
+    var _wDeltaWeights: MetalPrivateBuffer<Float>! = nil
+    var _bDeltaWeights: MetalPrivateBuffer<Float>! = nil
+    
+    public let nbWeights: Int
+    public let weightHeight: Int
+    public let weightWidth: Int
+    
+    var forwardKernel: String
+    {
+        get {
+            return "convForward"
+        }
+    }
+    
+    var backwardKernel: String
+    {
+        get {
+            return "convBackward"
+        }
+    }
+    
+    var batchDerWeightsKernel: String
+    {
+        get {
+            return "convBatchDerWeights"
+        }
+    }
+    var batchDerBiasesKernel: String
+    {
+        get {
+            return "convBatchDerBiases"
+        }
+    }
+    
+    var derWeightsKernel: String
+    {
+        get {
+            return "convDerWeights"
+        }
+    }
+    var derBiasesKernel: String
+    {
+        get {
+            return "convDerBiases"
+        }
+    }
+    
+    var reduceWeightsKernel: String
+    {
+        get {
+            return "convReduceWeights"
+        }
+    }
+    var reduceBiasesKernel: String
+    {
+        get {
+            return "reduceBiases"
+        }
+    }
+    
+    var nbFiltersPrev: Int
+    {
+        get {
+            let layerPrev = self.layerPrev as! Layer2D
+            return layerPrev.nbFilters
+        }
+    }
+    
+    var updateBiases: Bool
+    {
+        get {
+            return _useBiases
+        }
+    }
+    
+    var _weightsList = [Float]()
+    
+    var weightsListCPU: [Float]
+    {
+        get {
+            if _wArrays.count == 0
+            {
+                return _weightsList
+            }
+            
+            var weightsTmp = [Float]()
+            for elem in 0..<nbWeights
+            {
+                for i in 0..<weightHeight {
+                for j in 0..<weightWidth
+                {
+                    weightsTmp.append(Float(_wArrays[elem].w(i, j)))
+                }}
+            }
+            
+            if _useBiases {
+            for depth in 0..<nbFilters
+            {
+                weightsTmp.append(Float(_bArrays.w[depth]))
+            }}
+            return weightsTmp
+        }
+        set {
+            _weightsList = newValue
+        }
+    }
+    
+    var weightsListGPU: [Float]
+    {
+        get {
+            if _wBuffers == nil
+            {
+                return _weightsList
+            }
+            
+            var weightsTmp = [Float]()
+            MetalKernel.get.download([_wBuffers.w_p!])
+            weightsTmp += _wBuffers.w_p!.shared.array
+            
+            if _useBiases
+            {
+                MetalKernel.get.download([_bBuffers.w_p!])
+                weightsTmp += _bBuffers.w_p!.shared.array
+            }
+            return weightsTmp
+        }
+        set {
+            weightsListCPU = newValue
+        }
+    }
+    
+    /// Weights in the CPU execution context.
+    public override var weightsCPU: [Float]
+    {
+        get {
+            var weightsTmp = weightsListCPU
+            weightsTmp += super.weightsCPU
+            return weightsTmp
+        }
+        set {
+            if newValue.count == 0
+            {
+                weightsListCPU = []
+                super.weightsCPU = []
+                return
+            }
+            
+            let nbConvWeights: Int
+            if _useBiases
+            {
+                nbConvWeights = nbWeights * weightHeight * weightWidth +
+                                nbFilters
+            }
+            else
+            {
+                nbConvWeights = nbWeights * weightHeight * weightWidth
+            }
+            weightsListCPU = [Float](newValue[0..<nbConvWeights])
+            
+            let bnWeights = newValue[nbConvWeights..<newValue.count]
+            super.weightsCPU = [Float](bnWeights)
+        }
+    }
+    
+    /// Weights in the GPU execution context.
+    public override var weightsGPU: [Float]
+    {
+        get {
+            var weightsTmp = weightsListGPU
+            weightsTmp += super.weightsGPU
+            return weightsTmp
+        }
+        set {
+            if newValue.count == 0
+            {
+                weightsListGPU = []
+                super.weightsGPU = []
+                return
+            }
+            
+            let nbConvWeights: Int
+            if _useBiases
+            {
+                nbConvWeights = nbWeights * weightHeight * weightWidth +
+                                nbFilters
+            }
+            else
+            {
+                nbConvWeights = nbWeights * weightHeight * weightWidth
+            }
+            weightsListGPU = [Float](newValue[0..<nbConvWeights])
+            
+            let bnWeights = newValue[nbConvWeights..<newValue.count]
+            super.weightsGPU = [Float](bnWeights)
+        }
+    }
+    
+    var coeffInitWeights: Double
+    {
+        get {
+            if let activation = _activation
+            {
+                return activation.coeffInitWeights(
+                    nPrev: nbFiltersPrev * weightHeight * weightWidth,
+                    nCur: nbFilters)
+            }
+            return sqrt(2.0 /
+                        Double(nbFiltersPrev * weightHeight * weightWidth))
+        }
+    }
+    
+    /// Number of new weights due to this layer, estimated during the Gradient Checking.
+    override var nbLearnedGC: Int
+    {
+        get {
+            var nbGC = 0
+            nbGC += nbFilters * nbFiltersPrev * weightHeight * weightWidth
+            if updateBiases
+            {
+                nbGC += nbFilters
+            }
+            if _bn != nil || _bnGPU != nil
+            {
+                nbGC += 2 * nbFilters
+            }
+            return nbGC
+        }
+    }
+    
+    public override var strideFactor: Double
+    {
+        get {
+            if let value = strideFactorCache
+            {
+                return value
+            }
+            else
+            {
+                let value = super.strideFactor * Double(_stride)
+                strideFactorCache = value
+                return value
+            }
+        }
+    }
+    
+    public override var receptiveField: Int
+    {
+        get {
+            if let value = receptiveFieldCache
+            {
+                return value
+            }
+            else
+            {
+                let value = super.receptiveField +
+                    (weightWidth - 1) * Int(super.strideFactor)
+                receptiveFieldCache = value
+                return value
+            }
+        }
+    }
+    
+    var _kernelIndices: (Int, Int, Int, Int)
+    {
+        get {
+            let weightHeightHalf = weightHeight / 2
+            let weightWidthHalf = weightWidth / 2
+            let startI = weightWidth % 2 == 1 ? -weightHeightHalf :
+                                                -weightHeightHalf+1
+            let endI = weightHeightHalf
+            let startJ = weightHeight % 2 == 1 ? -weightWidthHalf :
+                                                 -weightWidthHalf+1
+            let endJ = weightWidthHalf
+            
+            return (startI, endI, startJ, endJ)
+        }
+    }
+    
+    private enum Keys: String, CodingKey
+    {
+        case stride
+        case nbWeights
+        case weightWidth
+        case weightHeight
+        case weights
+        case useBiases
+    }
+    
+    public init(layerPrev: Layer2D, size: Int, nbFilters: Int, stride: Int,
+                activation: String?, biases: Bool, bn: Bool,
+                params: MAKit.Model.Params)
+    {
+        _stride = stride
+        
+        let width = layerPrev.width
+        let height = layerPrev.height
+        let widthRes = width % _stride
+        let heightRes = height % _stride
+        let widthNew = widthRes == 0 ? width / _stride : width / _stride + 1
+        let heightNew = heightRes == 0 ? height / _stride : height / _stride + 1
+        
+        nbWeights = nbFilters * layerPrev.nbFilters
+        weightWidth = size
+        weightHeight = size
+        _useBiases = biases
+        
+        super.init(layerPrev: layerPrev,
+                   nbFilters: nbFilters,
+                   height: heightNew,
+                   width: widthNew,
+                   activation: activation,
+                   bn: bn,
+                   params: params)
+    }
+    
+    ///
+    /// Create an instance of Layer by decoding from the given decoder.
+    ///
+    /// This initializer throws an error if reading from the decoder fails, or
+    /// if the data read is corrupted or otherwise invalid.
+    ///
+    /// - Parameter decoder: The decoder to read data from.
+    ///
+    public required init(from decoder: Decoder) throws
+    {
+        let values = try decoder.container(keyedBy: Keys.self)
+        _stride = try values.decode(Int.self, forKey: .stride)
+        _useBiases = try values.decode(Bool.self, forKey: .useBiases)
+        nbWeights = try values.decode(Int.self, forKey: .nbWeights)
+        weightWidth = try values.decode(Int.self, forKey: .weightWidth)
+        weightHeight = try values.decode(Int.self, forKey: .weightHeight)
+        
+        try super.init(from: decoder)
+        
+        let weightsList = try values.decode([Float].self, forKey: .weights)
+        self.weightsListCPU = weightsList
+    }
+    
+    ///
+    /// Encode this value into the given encoder.
+    ///
+    /// If the value fails to encode anything, `encoder` will encode an empty
+    /// keyed container in its place.
+    ///
+    /// This function throws an error if any values are invalid for the given
+    /// encoder's format.
+    ///
+    /// - Parameter encoder: The encoder to write data to.
+    ///
+    public override func encode(to encoder: Encoder) throws
+    {
+        var container = encoder.container(keyedBy: Keys.self)
+        
+        try container.encode(_stride, forKey: .stride)
+        try container.encode(_useBiases, forKey: .useBiases)
+        try container.encode(nbWeights, forKey: .nbWeights)
+        try container.encode(weightWidth, forKey: .weightWidth)
+        try container.encode(weightHeight, forKey: .weightHeight)
+        
+        var weightsList = [Float]()
+        if MAKit.Opti.GPU
+        {
+            weightsList = self.weightsListGPU
+        }
+        else
+        {
+            weightsList = self.weightsListCPU
+        }
+        try container.encode(weightsList, forKey: .weights)
+        
+        try super.encode(to: encoder)
+    }
+    
+    ///
+    /// Create a new instance of `Layer` with same values as this.
+    ///
+    /// - Parameters:
+    ///     - mapping: Dictionary allowing to find the layer associated to some id.
+    ///     This dictionary is particularly useful when the different layers cannot access
+    ///     their `layerPrev`.
+    ///     - inPlace: Whether hard resources should be copied as is.
+    ///
+    /// - Returns: A new instance of `Layer`. When `inPlace` is false, `initKernel` is
+    /// necessary in order to recreate hard resources.
+    ///
+    public override func copy(
+        mapping: Dictionary<Int, Layer>,
+        inPlace: Bool) -> Layer
+    {
+        let context = ModelContext(name: "", curID: 0)
+        let layerPrev = mapping[idPrev] as! Layer2D
+
+        let params = MAKit.Model.Params(context: context)
+        params.context.curID = id
+        
+        let layer = Convolution2D(
+            layerPrev: layerPrev,
+            size: weightWidth,
+            nbFilters: nbFilters,
+            stride: _stride,
+            activation: _activation?.name,
+            biases: _useBiases,
+            bn: _bn != nil || _bnGPU != nil,
+            params: params
+        )
+        if inPlace
+        {
+            layer._wArrays = _wArrays
+            layer._bArrays = _bArrays
+            layer._wBuffers = _wBuffers
+            layer._bBuffers = _bBuffers
+            layer._bn = _bn
+            layer._bnGPU = _bnGPU
+        }
+        else
+        {
+            // only one of them should be cloned
+            if let bn = _bnGPU
+            {
+                layer._bn = bn.clone()
+            }
+            else if let bn = _bn
+            {
+                layer._bn = bn.clone()
+            }
+            
+            if MAKit.Opti.GPU
+            {
+                layer.weightsListGPU = weightsListGPU
+            }
+            else
+            {
+                layer.weightsListCPU = weightsListCPU
+            }
+        }
+        return layer
+    }
+    
+    ///
+    /// Extract main operation of this layer.
+    ///
+    /// - Parameter inPlace: Whether hard resources should be copied as is.
+    ///
+    /// - Returns: A new instance of `Layer`. When `inPlace` is false, `initKernel` is
+    /// necessary in order to recreate hard resources.
+    ///
+    public override func extract(inPlace: Bool) -> Layer
+    {
+        let context = ModelContext(name: "", curID: 0)
+        let layerPrev = self.layerPrev as! Layer2D
+        
+        let params = MAKit.Model.Params(context: context)
+        params.context.curID = id
+        
+        let layer = Convolution2D(
+            layerPrev: layerPrev,
+            size: weightHeight,
+            nbFilters: nbFilters,
+            stride: _stride,
+            activation: nil,
+            biases: _useBiases,
+            bn: false,
+            params: params
+        )
+        if inPlace
+        {
+            layer._wArrays = _wArrays
+            layer._bArrays = _bArrays
+            layer._wBuffers = _wBuffers
+            layer._bBuffers = _bBuffers
+            layer._bn = nil
+            layer._bnGPU = nil
+        }
+        else
+        {
+            if MAKit.Opti.GPU
+            {
+                layer.weightsListGPU = weightsListGPU
+            }
+            else
+            {
+                layer.weightsListCPU = weightsListCPU
+            }
+        }
+        return layer
+    }
+    
+    ///
+    /// Clean state resources in the CPU execution context.
+    ///
+    /// We first clean the neurones' state (forward and backward).
+    /// We do not clean weights and biases but must reset their delta (dependent on batch size) and
+    /// momentum state.
+    ///
+    public override func resetKernelCPU()
+    {
+        super.resetKernelCPU()
+        
+        for grid in _wArrays
+        {
+            grid.reset()
+        }
+        _bArrays?.reset()
+    }
+    
+    ///
+    /// Clean state resources in the GPU execution context.
+    ///
+    /// We first clean the neurones' state (forward and backward).
+    /// We do not clean weights and biases but must reset their delta (dependent on batch size) and
+    /// momentum state.
+    ///
+    public override func resetKernelGPU()
+    {
+        super.resetKernelGPU()
+        
+        _wDeltaWeights = nil
+        _bDeltaWeights = nil
+        
+        _wBuffers?.reset()
+        _bBuffers?.reset()
+    }
+    
+    ///
+    /// Initialize weights in the CPU execution context.
+    ///
+    /// Their momentum and delta state are also reset.
+    ///
+    public override func initWeightsCPU()
+    {
+        super.initWeightsCPU()
+        
+        _wArrays = [WeightGrids]()
+        for _ in 0..<nbWeights
+        {
+            _wArrays.append(WeightGrids(width: weightWidth,
+                                        height: weightHeight))
+        }
+        _bArrays = WeightArrays(nbFilters)
+        
+        if _weightsList.count == 0
+        {
+            let coeff = coeffInitWeights
+            for elem in 0..<nbWeights
+            {
+                for i in 0..<weightHeight {
+                for j in 0..<weightWidth
+                {
+                    _wArrays[elem].w(i, j, coeff * Double.random(in: -1..<1))
+                }}
+            }
+            
+            for depth in 0..<nbFilters
+            {
+                _bArrays.w[depth] = 0.0
+            }
+        }
+        else
+        {
+            for elem in 0..<nbWeights
+            {
+                let offsetStart = elem * weightHeight
+                
+                for i in 0..<weightHeight {
+                for j in 0..<weightWidth
+                {
+                    let offset = j + (offsetStart + i) * weightWidth
+                    _wArrays[elem].w(i, j, Double(_weightsList[offset]))
+                }}
+            }
+            
+            if _useBiases
+            {
+                let offset = nbWeights * weightHeight * weightWidth
+                for depth in 0..<nbFilters
+                {
+                    _bArrays.w[depth] =
+                        Double(_weightsList[offset + depth])
+                }
+            }
+            else
+            {
+                for depth in 0..<nbFilters
+                {
+                    _bArrays.w[depth] = 0.0
+                }
+            }
+            
+            _weightsList = []
+        }
+    }
+    
+    ///
+    /// Initialize weights in the GPU execution context.
+    ///
+    /// Their momentum and delta state are also reset.
+    ///
+    public override func initWeightsGPU()
+    {
+        super.initWeightsGPU()
+        
+        _wBuffers = WeightBuffers(
+            nbElems: nbWeights * weightHeight * weightWidth,
+            deviceID: deviceID)
+        _bBuffers = WeightBuffers(
+            nbElems: nbFilters,
+            deviceID: deviceID)
+        
+        let weightsPtr = _wBuffers.w_p!.shared.buffer
+        let biasesPtr = _bBuffers.w_p!.shared.buffer
+        
+        if _weightsList.count == 0
+        {
+            let coeff = Float(coeffInitWeights)
+            for elem in 0..<nbWeights * weightHeight * weightWidth
+            {
+                weightsPtr[elem] = coeff * Float.random(in: -1..<1)
+            }
+            
+            for depth in 0..<nbFilters
+            {
+                biasesPtr[depth] = 0.0
+            }
+        }
+        else
+        {
+            for elem in 0..<nbWeights * weightHeight * weightWidth
+            {
+                weightsPtr[elem] = _weightsList[elem]
+            }
+            
+            if _useBiases
+            {
+                let offset = nbWeights * weightHeight * weightWidth
+                for depth in 0..<nbFilters
+                {
+                    biasesPtr[depth] = _weightsList[offset + depth]
+                }
+            }
+            else
+            {
+                for depth in 0..<nbFilters
+                {
+                    biasesPtr[depth] = 0.0
+                }
+            }
+            
+            _weightsList = []
+        }
+        
+        MetalKernel.get.upload([_wBuffers.w_p!, _bBuffers.w_p!])
+        
+        _wDeltaWeights = nil
+        _bDeltaWeights = nil
+    }
+    
+    ///
+    /// Initialize state resources in the GPU execution context.
+    ///
+    /// We initialize the neurones' forward state.
+    /// We initialize the weights and biases' delta.
+    ///
+    public override func checkStateForwardGPU(batchSize: Int) throws
+    {
+        try super.checkStateForwardGPU(batchSize: batchSize)
+        
+        if computeDeltaWeights &&
+           MAKit.Gradient.sample && _wDeltaWeights == nil
+        {
+            _wDeltaWeights = MetalPrivateBuffer<Float>(
+                batchSize*nbFilters*nbFiltersPrev*weightWidth*weightHeight,
+                deviceID: deviceID
+            )
+            
+            if updateBiases
+            {
+                _bDeltaWeights = MetalPrivateBuffer<Float>(
+                    batchSize * nbFilters, deviceID: deviceID
+                )
+            }
+        }
+    }
+    
+    ///
+    /// Apply the forward pass of the Gradient Checking in CPU execution context.
+    ///
+    /// Throws an error if batch size is greater than the first batch size.
+    ///
+    public override func forwardGCCPU() throws
+    {
+        try _forwardGCCPU()
+        bn?.forwardGC(self)
+        _activation?.forwardGC(self)
+    }
+    
+    func _forwardGCCPU() throws
+    {
+        if let layerPrev = self.layerPrev as? Layer2D
+        {
+            try checkStateCPU(batchSize: batchSize)
+            
+            let nbGC = layerPrev.nbGC
+            let newGC = nbGC + 2 * nbLearnedGC
+            
+            for depth in 0..<nbFilters
+            {
+                for i in 0..<height {
+                for j in 0..<width
+                {
+                    neurones[depth].get(i, j)!.initGC(batchSize: batchSize,
+                                                      nbGC: newGC)
+                }}
+            }
+            
+            let neuronesPrev = layerPrev.neurones
+            let (startI, endI, startJ, endJ) = _kernelIndices
+            
+            for batch in 0..<batchSize {
+            for elem in 0..<nbGC {
+            for depth in 0..<nbFilters
+            {
+                for i in 0..<height {
+                for j in 0..<width
+                {
+                    var tmp: Double = _bArrays.w[depth]
+                    for depthPrev in 0..<nbFiltersPrev
+                    {
+                        let weights =
+                            _wArrays[nbFiltersPrev * depth + depthPrev]
+                        
+                        for k in startI...endI {
+                        for l in startJ...endJ
+                        {
+                            if let outPrev = neuronesPrev[depthPrev].get(
+                                _stride*i+k, _stride*j+l)?.gc[batch][elem].out
+                            {
+                                let w = weights.w(k-startI, l-startJ)
+                                tmp += outPrev * w
+                            }
+                        }}
+                    }
+                    neurones[depth].get(i, j)!.gc[batch][elem].out = tmp
+                }}
+            }}}
+            
+            for batch in 0..<batchSize {
+            for DEPTH in 0..<nbFilters {
+            for DEPTHPREV in 0..<nbFiltersPrev {
+            for I in 0..<weightHeight {
+            for J in 0..<weightWidth {
+            for elem in 0...1 {
+            for depth in 0..<nbFilters
+            {
+                for i in 0..<height {
+                for j in 0..<width
+                {
+                    var tmp: Double = _bArrays.w[depth]
+                    for depthPrev in 0..<nbFiltersPrev
+                    {
+                        let weights =
+                            _wArrays[nbFiltersPrev * depth + depthPrev]
+                        
+                        for k in startI...endI {
+                        for l in startJ...endJ
+                        {
+                            if let outPrev = neuronesPrev[depthPrev].get(
+                                _stride*i+k, _stride*j+l)?.v[batch].out
+                            {
+                                var w = weights.w(k-startI, l-startJ)
+                                
+                                if depth == DEPTH && depthPrev == DEPTHPREV &&
+                                   k-startI == I && l-startJ == J
+                                {
+                                    if elem % 2 == 0
+                                    {
+                                        w += Ɛ
+                                    }
+                                    else
+                                    {
+                                        w -= Ɛ
+                                    }
+                                }
+                                tmp += outPrev * w
+                            }
+                        }}
+                    }
+                    
+                    let offset = nbGC +
+                        elem + 2 * J + 2 * weightWidth * I +
+                        2 * weightWidth * weightHeight * DEPTHPREV +
+                        2 * weightWidth * weightHeight * nbFiltersPrev * DEPTH
+                    neurones[depth].get(i, j)!.gc[batch][offset].out = tmp
+                }}
+            }}}}}}}
+            
+            if updateBiases {
+            for batch in 0..<batchSize {
+            for DEPTH in 0..<nbFilters {
+            for elem in 0...1 {
+            for depth in 0..<nbFilters
+            {
+                for i in 0..<height {
+                for j in 0..<width
+                {
+                    var tmp: Double = _bArrays.w[depth]
+                    if depth == DEPTH
+                    {
+                        if elem % 2 == 0
+                        {
+                            tmp += Ɛ
+                        }
+                        else
+                        {
+                            tmp -= Ɛ
+                        }
+                    }
+                    
+                    for depthPrev in 0..<nbFiltersPrev
+                    {
+                        let weights =
+                            _wArrays[nbFiltersPrev * depth + depthPrev]
+                        
+                        for k in startI...endI {
+                        for l in startJ...endJ
+                        {
+                            if let outPrev = neuronesPrev[depthPrev].get(
+                                _stride*i+k, _stride*j+l)?.v[batch].out
+                            {
+                                let w = weights.w(k-startI, l-startJ)
+                                tmp += outPrev * w
+                            }
+                        }}
+                    }
+                    
+                    let offset = nbGC +
+                        2 * nbFilters * nbFiltersPrev *
+                            weightHeight * weightWidth + elem +
+                        2 * DEPTH
+                    neurones[depth].get(i, j)!.gc[batch][offset].out = tmp
+                }}
+            }}}}}
+            
+            // Prepare GC for BN weights: Ɣ and β.
+            if _bn != nil {
+            for batch in 0..<batchSize {
+            for elem in newGC-4*nbFilters..<newGC {
+            for depth in 0..<nbFilters
+            {
+                for i in 0..<height {
+                for j in 0..<width
+                {
+                    var tmp: Double = _bArrays.w[depth]
+                    for depthPrev in 0..<nbFiltersPrev
+                    {
+                        let weights =
+                            _wArrays[nbFiltersPrev * depth + depthPrev]
+                        
+                        for k in startI...endI {
+                        for l in startJ...endJ
+                        {
+                            if let outPrev = neuronesPrev[depthPrev].get(
+                                _stride*i+k, _stride*j+l)?.v[batch].out
+                            {
+                                let w = weights.w(k-startI, l-startJ)
+                                tmp += outPrev * w
+                            }
+                        }}
+                    }
+                    neurones[depth].get(i, j)!.gc[batch][elem].out = tmp
+                }}
+            }}}}
+        }
+    }
+    
+    ///
+    /// Apply the forward pass of the Gradient Checking in GPU execution context.
+    ///
+    /// Throws an error if batch size is greater than the first batch size.
+    ///
+    public override func forwardGCGPU() throws
+    {
+        try _forwardGCGPU()
+        bn?.forwardFlowGC(self)
+        _activation?.forwardGC(self)
+    }
+    
+    func _forwardGCGPU() throws
+    {
+        if let layerPrev = self.layerPrev as? Layer2D
+        {
+            try checkStateCPU(batchSize: batchSize)
+            
+            let nbGC = layerPrev.nbGC
+            let newGC = nbGC + 2 * nbLearnedGC
+            
+            for depth in 0..<nbFilters
+            {
+                for i in 0..<height {
+                for j in 0..<width
+                {
+                    neurones[depth].get(i, j)!.initGC(batchSize: batchSize,
+                                                      nbGC: newGC)
+                }}
+            }
+            
+            MetalKernel.get.download([_wBuffers.w_p!, _bBuffers.w_p!])
+            MetalKernel.get.download([layerPrev.outs])
+            
+            let weightsPtr = _wBuffers.w_p!.shared.buffer
+            let biasesPtr = _bBuffers.w_p!.shared.buffer
+            
+            let neuronesPrev = layerPrev.neurones
+            let widthPrev = layerPrev.width
+            let heightPrev = layerPrev.height
+            
+            let (startI, endI, startJ, endJ) = _kernelIndices
+            
+            for batch in 0..<batchSize {
+            for elem in 0..<nbGC {
+            for depth in 0..<nbFilters
+            {
+                for i in 0..<height {
+                for j in 0..<width
+                {
+                    var tmp: Double = Double(biasesPtr[depth])
+                    for depthPrev in 0..<nbFiltersPrev
+                    {
+                        let offsetStartWeights =
+                            (depthPrev + nbFiltersPrev * depth) * weightHeight
+                        
+                        for k in startI...endI {
+                        for l in startJ...endJ
+                        {
+                            let offsetWeights = l-startJ +
+                                (offsetStartWeights + k-startI) * weightWidth
+                            
+                            if let outPrev = neuronesPrev[depthPrev].get(
+                                _stride*i+k, _stride*j+l)?.gc[batch][elem].out
+                            {
+                                let w = Double(weightsPtr[offsetWeights])
+                                tmp += outPrev * w
+                            }
+                        }}
+                    }
+                    neurones[depth].get(i, j)!.gc[batch][elem].out = tmp
+                }}
+            }}}
+            
+            let outsPrevPtr = layerPrev.outs.shared.buffer
+            
+            for batch in 0..<batchSize {
+            for DEPTH in 0..<nbFilters {
+            for DEPTHPREV in 0..<nbFiltersPrev {
+            for I in 0..<weightHeight {
+            for J in 0..<weightWidth {
+            for elem in 0...1 {
+            for depth in 0..<nbFilters
+            {
+                for i in 0..<height {
+                for j in 0..<width
+                {
+                    var tmp: Double = Double(biasesPtr[depth])
+                    for depthPrev in 0..<nbFiltersPrev
+                    {
+                        let offsetStartPrev =
+                            (depthPrev + nbFiltersPrev * batch) * heightPrev
+                        let offsetStartWeights =
+                            (depthPrev + nbFiltersPrev * depth) * weightHeight
+                        
+                        for k in startI...endI {
+                        for l in startJ...endJ
+                        {
+                            let offsetWeights = l-startJ +
+                                (offsetStartWeights + k-startI) * weightWidth
+                            
+                            let I1 = _stride * i + k
+                            let J1 = _stride * j + l
+                            if I1 >= 0, I1 < heightPrev, J1 >= 0, J1 < widthPrev
+                            {
+                                var w = Double(weightsPtr[offsetWeights])
+                                
+                                if depth == DEPTH && depthPrev == DEPTHPREV &&
+                                   k-startI == I && l-startJ == J
+                                {
+                                    if elem % 2 == 0
+                                    {
+                                        w += Ɛ
+                                    }
+                                    else
+                                    {
+                                        w -= Ɛ
+                                    }
+                                }
+                                
+                                let offsetPrev = J1 +
+                                    (offsetStartPrev + I1) * widthPrev
+                                let outPrev = Double(outsPrevPtr[offsetPrev])
+                                
+                                tmp += outPrev * w
+                            }
+                        }}
+                    }
+                    
+                    let offset = nbGC +
+                        elem + 2 * J + 2 * weightWidth * I +
+                        2 * weightWidth * weightHeight * DEPTHPREV +
+                        2 * weightWidth * weightHeight * nbFiltersPrev * DEPTH
+                    neurones[depth].get(i, j)!.gc[batch][offset].out = tmp
+                }}
+            }}}}}}}
+            
+            if updateBiases {
+            for batch in 0..<batchSize {
+            for DEPTH in 0..<nbFilters {
+            for elem in 0...1 {
+            for depth in 0..<nbFilters
+            {
+                for i in 0..<height {
+                for j in 0..<width
+                {
+                    var tmp: Double = Double(biasesPtr[depth])
+                    if depth == DEPTH
+                    {
+                        if elem % 2 == 0
+                        {
+                            tmp += Ɛ
+                        }
+                        else
+                        {
+                            tmp -= Ɛ
+                        }
+                    }
+                    
+                    for depthPrev in 0..<nbFiltersPrev
+                    {
+                        let offsetStartPrev =
+                            (depthPrev + nbFiltersPrev * batch) * heightPrev
+                        let offsetStartWeights =
+                            (depthPrev + nbFiltersPrev * depth) * weightHeight
+                        
+                        for k in startI...endI {
+                        for l in startJ...endJ
+                        {
+                            let offsetWeights = l-startJ +
+                                (offsetStartWeights + k-startI) * weightWidth
+                            
+                            let I1 = _stride * i + k
+                            let J1 = _stride * j + l
+                            if I1 >= 0, I1 < heightPrev, J1 >= 0, J1 < widthPrev
+                            {
+                                let w = Double(weightsPtr[offsetWeights])
+                                
+                                let offsetPrev = J1 +
+                                    (offsetStartPrev + I1) * widthPrev
+                                let outPrev = Double(outsPrevPtr[offsetPrev])
+                                
+                                tmp += outPrev * w
+                            }
+                        }}
+                    }
+                    
+                    let offset = nbGC +
+                        2 * nbFilters * nbFiltersPrev *
+                        weightHeight * weightWidth + elem +
+                        2 * DEPTH
+                    neurones[depth].get(i, j)!.gc[batch][offset].out = tmp
+                }}
+            }}}}}
+            
+            // Prepare GC for BN weights: Ɣ and β.
+            if _bnGPU != nil {
+            for batch in 0..<batchSize {
+            for elem in newGC-4*nbFilters..<newGC {
+            for depth in 0..<nbFilters
+            {
+                for i in 0..<height {
+                for j in 0..<width
+                {
+                    var tmp: Double = _bArrays.w[depth]
+                    for depthPrev in 0..<nbFiltersPrev
+                    {
+                        let offsetStartPrev =
+                            (depthPrev + nbFiltersPrev * batch) * heightPrev
+                        let offsetStartWeights =
+                            (depthPrev + nbFiltersPrev * depth) * weightHeight
+                        
+                        for k in startI...endI {
+                        for l in startJ...endJ
+                        {
+                            let offsetWeights = l-startJ +
+                                (offsetStartWeights + k-startI) * weightWidth
+                            
+                            let I1 = _stride * i + k
+                            let J1 = _stride * j + l
+                            if I1 >= 0, I1 < heightPrev, J1 >= 0, J1 < widthPrev
+                            {
+                                let w = Double(weightsPtr[offsetWeights])
+                                
+                                let offsetPrev = J1 +
+                                    (offsetStartPrev + I1) * widthPrev
+                                let outPrev = Double(outsPrevPtr[offsetPrev])
+                                
+                                tmp += outPrev * w
+                            }
+                        }}
+                    }
+                    neurones[depth].get(i, j)!.gc[batch][elem].out = tmp
+                }}
+            }}}}
+        }
+    }
+    
+    ///
+    /// Apply the forward pass in the CPU execution context.
+    ///
+    /// Throws an error if batch size is greater than the first batch size.
+    ///
+    public override func forwardCPU() throws
+    {
+        try _forwardCPU()
+        bn?.forward(self)
+        _activation?.forwardCPU(self)
+    }
+    
+    func _forwardCPU() throws
+    {
+        if let layerPrev = self.layerPrev as? Layer2D
+        {
+            try checkStateCPU(batchSize: batchSize)
+            
+            let neuronesPrev = layerPrev.neurones
+            let (startI, endI, startJ, endJ) = _kernelIndices
+            
+            for elem in 0..<batchSize {
+            for depth in 0..<nbFilters
+            {
+                for i in 0..<height {
+                for j in 0..<width
+                {
+                    var tmp: Double = _bArrays.w[depth]
+                    for depthPrev in 0..<nbFiltersPrev
+                    {
+                        let weights =
+                            _wArrays[nbFiltersPrev * depth + depthPrev]
+                        
+                        for k in startI...endI {
+                        for l in startJ...endJ
+                        {
+                            if let outPrev = neuronesPrev[depthPrev].get(
+                                _stride*i+k, _stride*j+l)?.v[elem].out
+                            {
+                                let w = weights.w(k-startI, l-startJ)
+                                tmp += outPrev * w
+                            }
+                        }}
+                    }
+                    neurones[depth].get(i, j)!.v[elem].out = tmp
+                }}
+            }}
+        }
+    }
+    
+    ///
+    /// Apply the forward pass in the GPU execution context.
+    ///
+    /// Throws an error if batch size is greater than the first batch size.
+    ///
+    public override func forwardGPU() throws
+    {
+        try _forwardGPU()
+        _bnGPU?.forward(self)
+        _activation?.forwardGPU(self)
+    }
+    
+    private func _forwardGPU() throws
+    {
+        if let layerPrev = self.layerPrev as? Layer2D
+        {
+            try checkStateForwardGPU(batchSize: batchSize)
+            
+            let (startI, endI, startJ, endJ) = _kernelIndices
+            
+            let pStart: [Int32] = [Int32(startI), Int32(endI),
+                                   Int32(startJ), Int32(endJ)]
+            let pStride: [UInt32] = [UInt32(_stride)]
+            let pNbFilters: [UInt32] = [UInt32(nbFilters)]
+            let pNbFiltersPrev: [UInt32] = [UInt32(nbFiltersPrev)]
+            let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
+            let pDimensionsPrev: [UInt32] = [UInt32(layerPrev.width),
+                                             UInt32(layerPrev.height)]
+            let pDimWeights: [UInt32] = [UInt32(weightWidth),
+                                         UInt32(weightHeight)]
+            let pNbBatch: [UInt32] = [UInt32(batchSize)]
+            
+            if outs == nil
+            {
+                outs = MetalPrivateBuffer<Float>(
+                    batchSize * nbFilters * width * height, deviceID: deviceID)
+            }
+            
+            let command = MetalKernel.get.createCommand(
+                forwardKernel, deviceID: deviceID)
+            
+            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+            command.setBuffer(_wBuffers.w.metal, atIndex: 1)
+            command.setBuffer(_bBuffers.w.metal, atIndex: 2)
+            command.setBytes(pStart, atIndex: 3)
+            command.setBytes(pStride, atIndex: 4)
+            command.setBytes(pNbFilters, atIndex: 5)
+            command.setBytes(pNbFiltersPrev, atIndex: 6)
+            command.setBytes(pDimensions, atIndex: 7)
+            command.setBytes(pDimensionsPrev, atIndex: 8)
+            command.setBytes(pDimWeights, atIndex: 9)
+            command.setBytes(pNbBatch, atIndex: 10)
+            command.setBuffer(outs.metal, atIndex: 11)
+            
+            let threadsPerThreadgroup = MTLSizeMake(8, 8, 8)
+            let threadsPerGrid = MTLSize(width: width,
+                                         height: height,
+                                         depth: nbFilters * batchSize)
+            command.dispatchThreads(threadsPerGrid: threadsPerGrid,
+                                threadsPerThreadgroup: threadsPerThreadgroup)
+            command.enqueue()
+        }
+    }
+    
+    /// Apply the backward pass in the CPU execution context.
+    public override func backwardCPU()
+    {
+        _activation?.backwardCPU(self)
+        bn?.backward(self)
+        
+        _backwardCPU()
+        _backwardWeightsCPU()
+    }
+    
+    func _backwardCPU()
+    {
+        if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
+        {
+            let neuronesPrev = layerPrev.neurones
+            let (startI, endI, startJ, endJ) = _kernelIndices
+            
+            for elem in 0..<batchSize {
+            for depthPrev in 0..<nbFiltersPrev
+            {
+                for i in 0..<layerPrev.height {
+                for j in 0..<layerPrev.width
+                {
+                    var tmp: Double = 0.0
+                    for depth in 0..<nbFilters
+                    {
+                        let weights =
+                            _wArrays[nbFiltersPrev * depth + depthPrev]
+                        
+                        for k in startI...endI {
+                        for l in startJ...endJ
+                        {
+                            if (i-k) % _stride == 0 && (j-l) % _stride == 0
+                            {
+                                if let deltaCur = neurones[depth]
+                                    .get((i-k) / _stride, (j-l) / _stride)?
+                                    .v[elem].delta
+                                {
+                                    let w = weights.w(k-startI, l-startJ)
+                                    tmp += deltaCur * w
+                                }
+                            }
+                        }}
+                    }
+                    
+                    if layerPrev.dirty
+                    {
+                        neuronesPrev[depthPrev].get(i, j)!.v[elem].delta =
+                            tmp
+                    }
+                    else
+                    {
+                        neuronesPrev[depthPrev].get(i, j)!.v[elem].delta +=
+                            tmp
+                    }
+                }}
+            }}
+            propagateDirty()
+        }
+    }
+    
+    func _backwardWeightsCPU()
+    {
+        if let layerPrev = self.layerPrev as? Layer2D, computeDeltaWeights
+        {
+            // -----------------------------------------------------------------
+            // Compute Gradients per batch
+            // -----------------------------------------------------------------
+            let neuronesPrev = layerPrev.neurones
+            let (startI, endI, startJ, endJ) = _kernelIndices
+            
+            for depth in 0..<nbFilters
+            {
+                for depthPrev in 0..<nbFiltersPrev
+                {
+                    let weights = _wArrays[nbFiltersPrev * depth + depthPrev]
+                    
+                    for i in startI...endI {
+                    for j in startJ...endJ
+                    {
+                        var tmp: Double = 0.0
+                        for elem in 0..<batchSize {
+                        for k in 0..<height {
+                        for l in 0..<width
+                        {
+                            if let outPrev = neuronesPrev[depthPrev]
+                                .get(_stride*k+i, _stride*l+j)?.v[elem].out
+                            {
+                                let deltaCur =
+                                    neurones[depth].get(k, l)!.v[elem].delta
+                                tmp += deltaCur * outPrev
+                            }
+                        }}}
+                        
+                        if accumulateDeltaWeights
+                        {
+                            tmp += weights.g(i-startI, j-startJ)
+                        }
+                        weights.g(i-startI, j-startJ, tmp)
+                    }}
+                }
+                if updateBiases
+                {
+                    var tmp: Double = 0.0
+                    for elem in 0..<batchSize {
+                    for i in 0..<height {
+                    for j in 0..<width
+                    {
+                        let deltaCur =
+                            neurones[depth].get(i, j)!.v[elem].delta
+                        tmp += deltaCur
+                    }}}
+                    
+                    if accumulateDeltaWeights
+                    {
+                        tmp += _bArrays.g[depth]
+                    }
+                    _bArrays.g[depth] = tmp
+                }
+            }
+        }
+    }
+    
+    ///
+    /// Apply the backward pass in the GPU execution context.
+    ///
+    /// Throws an error if batch size is greater than the first batch size.
+    ///
+    public override func backwardGPU() throws
+    {
+        _activation?.backwardGPU(self)
+        _bnGPU?.backward(self)
+        
+        try _backwardGPU()
+        _backwardWeightsGPU()
+    }
+    
+    private func _backwardGPU() throws
+    {
+        if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
+        {
+            try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
+            
+            let (startI, endI, startJ, endJ) = _kernelIndices
+            
+            let pStart: [Int32] = [Int32(startI), Int32(endI),
+                                   Int32(startJ), Int32(endJ)]
+            let pStride: [UInt32] = [UInt32(_stride)]
+            let pNbFilters: [UInt32] = [UInt32(nbFilters)]
+            let pNbFiltersPrev: [UInt32] = [UInt32(nbFiltersPrev)]
+            let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
+            let pDimensionsPrev: [UInt32] = [UInt32(layerPrev.width),
+                                             UInt32(layerPrev.height)]
+            let pDimWeights: [UInt32] = [UInt32(weightWidth),
+                                         UInt32(weightHeight)]
+            let pNbBatch: [UInt32] = [UInt32(batchSize)]
+            let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
+            
+            let command = MetalKernel.get.createCommand(
+                backwardKernel, deviceID: deviceID)
+            
+            command.setBuffer(delta.metal, atIndex: 0)
+            command.setBuffer(_wBuffers.w.metal, atIndex: 1)
+            command.setBytes(pStart, atIndex: 2)
+            command.setBytes(pStride, atIndex: 3)
+            command.setBytes(pNbFilters, atIndex: 4)
+            command.setBytes(pNbFiltersPrev, atIndex: 5)
+            command.setBytes(pDimensions, atIndex: 6)
+            command.setBytes(pDimensionsPrev, atIndex: 7)
+            command.setBytes(pDimWeights, atIndex: 8)
+            command.setBytes(pNbBatch, atIndex: 9)
+            command.setBytes(pDirty, atIndex: 10)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 11)
+            
+            let threadsPerThreadgroup = MTLSizeMake(8, 8, 8)
+            let threadsPerGrid = MTLSize(width: layerPrev.width,
+                                         height: layerPrev.height,
+                                         depth: nbFiltersPrev * batchSize)
+            command.dispatchThreads(threadsPerGrid: threadsPerGrid,
+                                threadsPerThreadgroup: threadsPerThreadgroup)
+            command.enqueue()
+            
+            propagateDirty()
+        }
+    }
+    
+    private func _backwardWeightsGPU()
+    {
+        if let layerPrev = self.layerPrev as? Layer2D, computeDeltaWeights
+        {
+            // -----------------------------------------------------------------
+            // Compute Gradients per batch
+            // -----------------------------------------------------------------
+            let (startI, endI, startJ, endJ) = _kernelIndices
+            
+            let pStart: [Int32] = [Int32(startI), Int32(endI),
+                                   Int32(startJ), Int32(endJ)]
+            let pStride: [UInt32] = [UInt32(_stride)]
+            let pNbFilters: [UInt32] = [UInt32(nbFilters)]
+            let pNbFiltersPrev: [UInt32] = [UInt32(nbFiltersPrev)]
+            let pDimensions: [UInt32] = [UInt32(width),
+                                         UInt32(height)]
+            let pDimensionsPrev: [UInt32] = [UInt32(layerPrev.width),
+                                             UInt32(layerPrev.height)]
+            let pDimWeights: [UInt32] = [UInt32(weightWidth),
+                                         UInt32(weightHeight)]
+            let pNbBatch: [UInt32] = [UInt32(batchSize)]
+            let pAccumulate: [UInt32] = accumulateDeltaWeights ? [1] : [0]
+            
+            var command: MetalCommand
+            var threadsPerThreadgroup: MTLSize
+            var threadsPerGrid: MTLSize
+            
+            if MAKit.Gradient.batch
+            {
+                command = MetalKernel.get.createCommand(
+                    batchDerWeightsKernel, deviceID: deviceID)
+                
+                command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+                command.setBuffer(delta.metal, atIndex: 1)
+                command.setBytes(pStart, atIndex: 2)
+                command.setBytes(pStride, atIndex: 3)
+                command.setBytes(pNbFilters, atIndex: 4)
+                command.setBytes(pNbFiltersPrev, atIndex: 5)
+                command.setBytes(pDimensions, atIndex: 6)
+                command.setBytes(pDimensionsPrev, atIndex: 7)
+                command.setBytes(pDimWeights, atIndex: 8)
+                command.setBytes(pNbBatch, atIndex: 9)
+                command.setBytes(pAccumulate, atIndex: 10)
+                command.setBuffer(_wBuffers.g.metal, atIndex: 11)
+                
+                threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
+                threadsPerGrid = MTLSize(width: nbFilters * weightWidth,
+                                         height: nbFiltersPrev * weightHeight,
+                                         depth: 1)
+                command.dispatchThreads(threadsPerGrid: threadsPerGrid,
+                                threadsPerThreadgroup: threadsPerThreadgroup)
+                command.enqueue()
+                
+                if updateBiases
+                {
+                    command = MetalKernel.get.createCommand(
+                        batchDerBiasesKernel, deviceID: deviceID)
+                    
+                    command.setBuffer(delta.metal, atIndex: 0)
+                    command.setBytes(pNbFilters, atIndex: 1)
+                    command.setBytes(pDimensions, atIndex: 2)
+                    command.setBytes(pNbBatch, atIndex: 3)
+                    command.setBytes(pAccumulate, atIndex: 4)
+                    command.setBuffer(_bBuffers.g.metal, atIndex: 5)
+                    
+                    let threads = command.threadExecutionWidth
+                    threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
+                    threadsPerGrid = MTLSize(width: nbFilters,
+                                             height: 1,
+                                             depth: 1)
+                    command.dispatchThreads(threadsPerGrid: threadsPerGrid,
+                                threadsPerThreadgroup: threadsPerThreadgroup)
+                    command.enqueue()
+                }
+            }
+            else
+            {
+                // -------------------------------------------------------------
+                // Compute Gradients per sample
+                // -------------------------------------------------------------
+                command = MetalKernel.get.createCommand(
+                    derWeightsKernel, deviceID: deviceID)
+                
+                command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+                command.setBuffer(delta.metal, atIndex: 1)
+                command.setBytes(pStart, atIndex: 2)
+                command.setBytes(pStride, atIndex: 3)
+                command.setBytes(pNbFilters, atIndex: 4)
+                command.setBytes(pNbFiltersPrev, atIndex: 5)
+                command.setBytes(pDimensions, atIndex: 6)
+                command.setBytes(pDimensionsPrev, atIndex: 7)
+                command.setBytes(pDimWeights, atIndex: 8)
+                command.setBytes(pNbBatch, atIndex: 9)
+                command.setBuffer(_wDeltaWeights.metal, atIndex: 10)
+                
+                threadsPerThreadgroup = MTLSizeMake(8, 8, 8)
+                threadsPerGrid = MTLSize(width: nbFilters * weightWidth,
+                                         height: nbFiltersPrev * weightHeight,
+                                         depth: batchSize)
+                command.dispatchThreads(threadsPerGrid: threadsPerGrid,
+                                threadsPerThreadgroup: threadsPerThreadgroup)
+                command.enqueue()
+            
+                if updateBiases
+                {
+                    command = MetalKernel.get.createCommand(
+                        derBiasesKernel, deviceID: deviceID)
+                    
+                    command.setBuffer(delta.metal, atIndex: 0)
+                    command.setBytes(pNbFilters, atIndex: 1)
+                    command.setBytes(pDimensions, atIndex: 2)
+                    command.setBytes(pNbBatch, atIndex: 3)
+                    command.setBuffer(_bDeltaWeights.metal, atIndex: 4)
+                    
+                    threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
+                    threadsPerGrid = MTLSize(width: nbFilters,
+                                             height: batchSize,
+                                             depth: 1)
+                    command.dispatchThreads(threadsPerGrid: threadsPerGrid,
+                                threadsPerThreadgroup: threadsPerThreadgroup)
+                    command.enqueue()
+                }
+                
+                // -------------------------------------------------------------
+                // Compute Gradients per batch
+                // -------------------------------------------------------------
+                command = MetalKernel.get.createCommand(
+                    reduceWeightsKernel, deviceID: deviceID)
+                
+                command.setBuffer(_wDeltaWeights.metal, atIndex: 0)
+                command.setBytes(pNbFilters, atIndex: 1)
+                command.setBytes(pNbFiltersPrev, atIndex: 2)
+                command.setBytes(pDimWeights, atIndex: 3)
+                command.setBytes(pNbBatch, atIndex: 4)
+                command.setBytes(pAccumulate, atIndex: 5)
+                command.setBuffer(_wBuffers.g.metal, atIndex: 6)
+                
+                threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
+                threadsPerGrid = MTLSize(width: nbFilters * weightWidth,
+                                         height: nbFiltersPrev * weightHeight,
+                                         depth: 1)
+                command.dispatchThreads(threadsPerGrid: threadsPerGrid,
+                                threadsPerThreadgroup: threadsPerThreadgroup)
+                command.enqueue()
+            
+                if updateBiases
+                {
+                    command = MetalKernel.get.createCommand(
+                        reduceBiasesKernel, deviceID: deviceID)
+                    
+                    command.setBuffer(_bDeltaWeights.metal, atIndex: 0)
+                    command.setBytes(pNbFilters, atIndex: 1)
+                    command.setBytes(pNbBatch, atIndex: 2)
+                    command.setBytes(pAccumulate, atIndex: 3)
+                    command.setBuffer(_bBuffers.g.metal, atIndex: 4)
+                    
+                    let threads = command.threadExecutionWidth
+                    threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
+                    threadsPerGrid = MTLSize(width: nbFilters,
+                                             height: 1,
+                                             depth: 1)
+                    command.dispatchThreads(threadsPerGrid: threadsPerGrid,
+                                threadsPerThreadgroup: threadsPerThreadgroup)
+                    command.enqueue()
+                }
+            }
+        }
+    }
+    
+    /// Get the weights in the CPU execution context.
+    public override func collectWeightsCPU() -> [IWeightArrays]
+    {
+        var weights = [IWeightArrays]()
+        weights += _wArrays
+        if updateBiases
+        {
+            weights.append(_bArrays)
+        }
+        if let bn = self.bn
+        {
+            weights += bn.collectWeights()
+        }
+        return weights
+    }
+    
+    /// Get the weights in the GPU execution context.
+    public override func collectWeightsGPU() -> [IWeightBuffers]
+    {
+        var weights = [IWeightBuffers]()
+        weights.append(_wBuffers)
+        if updateBiases
+        {
+            weights.append(_bBuffers)
+        }
+        if let bnFlow = _bnGPU
+        {
+            weights += bnFlow.collectWeights()
+        }
+        return weights
+    }
+    
+    ///
+    /// Get the weights' gradients in the CPU execution context.
+    ///
+    /// Throws an error when layer has not been updated through backward pass.
+    ///
+    public func getDeltaWeightsCPU<T: BinaryFloatingPoint>() throws -> [T]
+    {
+        if dirty
+        {
+            throw UpdateError.Dirty
+        }
+        
+        let nbFiltersPrev = (self.layerPrev as! Layer2D).nbFilters
+        var deltaWeights = [T]()
+        for depth in 0..<nbFilters {
+        for depthPrev in 0..<nbFiltersPrev
+        {
+            for i in 0..<weightHeight {
+            for j in 0..<weightWidth
+            {
+                deltaWeights.append(T(
+                    _wArrays[nbFiltersPrev * depth + depthPrev].g(i, j)
+                ))
+            }}
+        }}
+        for depth in 0..<nbFilters
+        {
+            deltaWeights.append(T(_bArrays.g[depth]))
+        }
+        return deltaWeights
+    }
+    
+    ///
+    /// Get the weights' gradients in the GPU execution context.
+    ///
+    /// Throws an error when layer has not been updated through backward pass.
+    ///
+    public func getDeltaWeightsGPU<T: BinaryFloatingPoint>() throws -> [T]
+    {
+        if dirty
+        {
+            throw UpdateError.Dirty
+        }
+        
+        var deltaWeights = [T]()
+        MetalKernel.get.download([_wBuffers.g_p!, _bBuffers.g_p!])
+        
+        var deltaWeightsPtr = _wBuffers.g_p!.shared.buffer
+        for i in 0..<_wBuffers.nbElems
+        {
+            deltaWeights.append(T(deltaWeightsPtr[i]))
+        }
+        deltaWeightsPtr = _bBuffers.g_p!.shared.buffer
+        for i in 0..<_bBuffers.nbElems
+        {
+            deltaWeights.append(T(deltaWeightsPtr[i]))
+        }
+        return deltaWeights
+    }
+}

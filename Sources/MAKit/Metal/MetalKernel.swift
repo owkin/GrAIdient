@@ -541,6 +541,24 @@ private class MetalDevice
             "Biases": [
                 "reduceBiases",
             ],
+            "BN": [
+                "computeConvμ",
+                "computeConvσ2",
+                "forwardBNConvTraining",
+                "forwardBNConvInference",
+                "computeConvTmp",
+                "backwardBNConvTraining",
+                "backwardBNConvInference",
+            ],
+            "Convolution": [
+                "convForward",
+                "convBackward",
+                "convBatchDerWeights",
+                "convBatchDerBiases",
+                "convDerWeights",
+                "convDerBiases",
+                "convReduceWeights",
+            ],
             "FullyConnected": [
                 "flForward",
                 "flBackward",
@@ -557,6 +575,18 @@ private class MetalDevice
                 "linearErrorApplyGradient",
                 "selectChForward",
                 "selectChBackward",
+            ],
+            "Layer2D": [
+                "avgPoolForward",
+                "avgPoolBackward",
+                "maxPoolForward",
+                "maxPoolBackward",
+                "adaptiveAvgPoolForward1",
+                "adaptiveAvgPoolForward2",
+                "adaptiveAvgPoolBackward1",
+                "adaptiveAvgPoolBackward2",
+                "selectNeuroneForward",
+                "selectNeuroneBackward",
             ],
             "Optimizer": [
                 "clipGradients",

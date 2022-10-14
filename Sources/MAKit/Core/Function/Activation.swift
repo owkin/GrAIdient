@@ -132,6 +132,29 @@ open class ActivationFunction: Codable
     }
     
     ///
+    /// Forward Gradient Checking CPU.
+    ///
+    /// - Parameter layer: Layer to execute the activation function for.
+    ///
+    func forwardGC(_ layer: Activation2D)
+    {
+        let nbBatch = layer.batchSize
+        let neurones = layer.neurones
+        let nbGC = layer.nbGC
+        
+        for grid in neurones {
+        for neurone in grid.all {
+        for batch in 0..<nbBatch {
+        for elem in 0..<nbGC
+        {
+            let tmp = neurone.gc[batch][elem].out
+            let out = apply(tmp)
+            
+            neurone.gc[batch][elem].out = out
+        }}}}
+    }
+    
+    ///
     /// Forward CPU.
     ///
     /// - Parameter layer: Layer to execute the activation function for.
@@ -151,6 +174,26 @@ open class ActivationFunction: Codable
     }
     
     ///
+    /// Forward CPU.
+    ///
+    /// - Parameter layer: Layer to execute the activation function for.
+    ///
+    func forwardCPU(_ layer: Activation2D)
+    {
+        let nbBatch = layer.batchSize
+        for grid in layer.neurones {
+        for neurone in grid.all {
+        for elem in 0..<nbBatch
+        {
+            let tmp = neurone.v[elem].out
+            let out = apply(tmp)
+            
+            neurone.v[elem].tmp = tmp
+            neurone.v[elem].out = out
+        }}}
+    }
+    
+    ///
     /// Backward CPU.
     ///
     /// - Parameter layer: Layer to execute the activation function for.
@@ -166,6 +209,25 @@ open class ActivationFunction: Codable
             
             neurone.v[elem].delta *= derivative
         }}
+    }
+    
+    ///
+    /// Backward CPU.
+    ///
+    /// - Parameter layer: Layer to execute the activation function for.
+    ///
+    func backwardCPU(_ layer: Activation2D)
+    {
+        let nbBatch = layer.batchSize
+        for grid in layer.neurones {
+        for neurone in grid.all {
+        for elem in 0..<nbBatch
+        {
+            let tmp = neurone.v[elem].tmp
+            let derivative = derivate(tmp)
+            
+            neurone.v[elem].delta *= derivative
+        }}}
     }
     
     ///
@@ -207,6 +269,26 @@ open class ActivationFunction: Codable
     /// - Parameter layer: Layer to execute the activation function for.
     ///
     open func forwardGPU(_ layer: Activation1D)
+    {
+        let nbElems = layer.outs.nbElems
+        if layer._tmp == nil
+        {
+            layer._tmp = MetalPrivateBuffer<Float>(
+                nbElems, deviceID: layer.deviceID)
+        }
+        _forwardGPU(
+            tmp: layer._tmp,
+            outs: layer.outs,
+            deviceID: layer.deviceID
+        )
+    }
+    
+    ///
+    /// Forward GPU.
+    ///
+    /// - Parameter layer: Layer to execute the activation function for.
+    ///
+    open func forwardGPU(_ layer: Activation2D)
     {
         let nbElems = layer.outs.nbElems
         if layer._tmp == nil
@@ -268,7 +350,19 @@ open class ActivationFunction: Codable
         )
     }
     
-    // TODO: add elements here.
+    ///
+    /// Backward GPU.
+    ///
+    /// - Parameter layer: Layer to execute the activation function for.
+    ///
+    open func backwardGPU(_ layer: Activation2D)
+    {
+        _backwardGPU(
+            tmp: layer._tmp,
+            delta: layer.delta,
+            deviceID: layer.deviceID
+        )
+    }
 }
 
 /// ReLU activation function.

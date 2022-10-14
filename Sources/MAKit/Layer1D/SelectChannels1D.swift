@@ -7,7 +7,11 @@
 
 import MetalKit
 
+///
 /// Layer with a 1D shape neural structure.
+///
+/// This layer enables to reduce the number of channels of a 1D layer.
+/// 
 public class SelectChannels1D: Layer1D
 {
     /// List of neurons to select.

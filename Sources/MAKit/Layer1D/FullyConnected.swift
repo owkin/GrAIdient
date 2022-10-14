@@ -7,7 +7,12 @@
 
 import MetalKit
 
+///
 /// Layer with a 1D shape neural structure, weights and biases and an activation function.
+///
+/// This is the fundamental learning layer of a 1D model.
+/// Note that its previous layer may be a Layer1D or a Layer2D.
+///
 public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
 {
     /// Whether to use biases or not.

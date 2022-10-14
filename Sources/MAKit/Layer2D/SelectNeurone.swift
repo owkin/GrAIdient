@@ -7,7 +7,12 @@
 
 import MetalKit
 
+///
 /// Layer with a 1D shape neural structure.
+///
+/// This layer transforms a 2D layer into a 1D layer, selecting one neuron of the input grids into as many
+/// output neurons.
+///
 public class SelectNeurone: Layer1D, LayerResize
 {
     /// Row of the selected neuron.

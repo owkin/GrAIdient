@@ -7,7 +7,19 @@
 
 import MetalKit
 
+///
 /// Layer with a 2D shape neural structure.
+///
+/// This layer enables to fix a desired output grid size without having to specify any downscale factor.
+/// It has an important role when `FullyConnected` layers follow: it allows to enforce the number
+/// of connections whatever the size of the previous `Layer2D` layer is.
+///
+/// Example:
+/// convolution -> adaptive_avg_pool -> fully_connected
+///
+/// In this example, the convolution size may be anything but the adaptive_avg_pool will output
+/// a specific size which guaranties the fully_connected is safely connected to every  elements.
+///
 public class AdaptiveAvgPool2D: Layer2D
 {
     /// Buffer containing the number of elements to average in each direction for each element in

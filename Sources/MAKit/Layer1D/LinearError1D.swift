@@ -7,7 +7,7 @@
 
 import MetalKit
 
-/// Last layer with a 1D shape neural structure.
+/// Last layer with a 1D shape neural structure and a loss function that depends linearly on its inputs.
 public class LinearError1D: LayerOutput1D
 {
     ///

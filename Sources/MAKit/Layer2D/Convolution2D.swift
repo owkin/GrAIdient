@@ -7,8 +7,12 @@
 
 import MetalKit
 
+///
 /// Layer with a 2D shape neural structure, weights and biases,  an activation function and
 /// batch normalization units.
+///
+/// This is the fundamental learning layer of a 2D model.
+/// 
 public class Convolution2D: BN2D
 {
     /// Downscale factor of the resolution (height and width).

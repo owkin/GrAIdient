@@ -7,7 +7,11 @@
 
 import MetalKit
 
+///
 /// Layer with a 1D shape neural structure.
+///
+/// This layer transforms a 2D layer into a 1D layer, averaging the neurons in the different channels.
+///
 public class AvgPool2D: Layer1D
 {
     ///

@@ -7,7 +7,7 @@
 
 import MetalKit
 
-/// Last layer with a 1D shape neural structure.
+/// Last layer with a 1D shape neural structure and a loss that computes root mean squared error.
 public class MSE1D: LayerOutput1D
 {
     ///

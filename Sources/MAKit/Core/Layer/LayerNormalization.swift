@@ -7,19 +7,27 @@
 
 import MetalKit
 
+/// API for something that can be copied as is.
 public protocol Cloneable
 {
+    /// Copy this.
     func clone() -> Self
 }
 
+/// A layer that applies batch normalization.
 public class BatchNormalizationBase: Codable, Cloneable
 {
+    /// Number of independent units of batch normalization.
     let _nbNeurones: Int
+    /// Number of elements in one batch size.
     var _nbElems = 0
     
+    /// Cache for weights before calling `initKernel` API.
     var _weightsList = [Float]()
+    /// Cache for stats before calling `initKernel` API.
     var _statsList = [Float]()
     
+    /// Weights in the CPU execution context.
     var weights: [Float]
     {
         get {
@@ -29,6 +37,7 @@ public class BatchNormalizationBase: Codable, Cloneable
             _weightsList = newValue
         }
     }
+    /// Stats in the CPU execution context.
     var stats: [Float]
     {
         get {
@@ -47,16 +56,34 @@ public class BatchNormalizationBase: Codable, Cloneable
         case stats
     }
     
+    ///
+    /// Create a layer with independent units of batch normalization.
+    ///
+    /// - Parameter nbNeurones: Number of independent units.
+    ///
     init(nbNeurones: Int)
     {
         _nbNeurones = nbNeurones
     }
     
+    ///
+    /// Create a layer with independent units of batch normalization.
+    ///
+    /// - Parameter layer: The layer with the structure we want to apply the batch normalization to .
+    ///
     convenience init(_ layer: BN2D)
     {
         self.init(nbNeurones: layer.nbFilters)
     }
     
+    ///
+    /// Decode from the disk.
+    ///
+    /// Throw an error if reading from the decoder fails, or
+    /// if the data read is corrupted or otherwise invalid.
+    ///
+    /// - Parameter decoder: The decoder to read data from.
+    ///
     public required init(from decoder: Decoder) throws
     {
         let container = try decoder.container(keyedBy: Keys.self)
@@ -68,6 +95,11 @@ public class BatchNormalizationBase: Codable, Cloneable
         _statsList = try container.decode([Float].self, forKey: .stats)
     }
     
+    ///
+    /// Copy a batch normalization layer.
+    ///
+    /// - Parameter bn: The layer to copy.
+    ///
     init(bn: BatchNormalizationBase)
     {
         _nbNeurones = bn._nbNeurones
@@ -80,23 +112,23 @@ public class BatchNormalizationBase: Codable, Cloneable
         self.stats = stats
     }
     
-    init(bn: BatchNormalizationBase, depth: Int)
-    {
-        _nbNeurones = 1
-        _nbElems = bn._nbElems
-        
-        let weights = bn.weights
-        self.weights = [weights[depth], weights[bn._nbNeurones + depth]]
-        
-        let stats = bn.stats
-        self.stats = [stats[depth], stats[bn._nbNeurones + depth]]
-    }
-    
+    /// Copy this.
     public func clone() -> Self
     {
         return BatchNormalizationBase(bn: self) as! Self
     }
     
+    ///
+    /// Encode to the disk.
+    ///
+    /// If the value fails to encode anything, `encoder` will encode an empty
+    /// keyed container in its place.
+    ///
+    /// Throw an error if any values are invalid for the given
+    /// encoder's format.
+    ///
+    /// - Parameter encoder: The encoder to write data to.
+    ///
     public func encode(to encoder: Encoder) throws
     {
         var container = encoder.container(keyedBy: Keys.self)
@@ -111,18 +143,26 @@ public class BatchNormalizationBase: Codable, Cloneable
     }
 }
 
+/// A layer that applies batch normalization in the CPU execution context.
 public class BatchNormalization: BatchNormalizationBase
 {
+    /// Slight modification to avoid "divide by 0" errors.
     let _Ɛ: Double = 1e-5
     
+    /// Arrays of weights to scale the normalization result.
     var _Ɣ: WeightArrays! = nil
+    /// Arrays of biases to add to the normalization result.
     var _β: WeightArrays! = nil
     
+    /// List of deviations of data for the different independent batch normalization units.
     var _σ2 = [Double]()
     
+    /// List of global averages of data for the different independent batch normalization units.
     var _Eμ = [Double]()
+    /// List of global deviations of data for the different independent batch normalization units.
     var _Eσ2 = [Double]()
     
+    /// The list of data normalized without taking into account the biases and the weights.
     var _xHat = [[Double]]()
     
     /// Weights in the CPU execution context.
@@ -156,6 +196,7 @@ public class BatchNormalization: BatchNormalizationBase
         }
     }
     
+    /// Stats in the CPU execution context.
     override var stats: [Float]
     {
         get {
@@ -187,6 +228,7 @@ public class BatchNormalization: BatchNormalizationBase
         }
     }
     
+    /// Copy this.
     public override func clone() -> Self
     {
         return BatchNormalization(bn: self) as! Self
@@ -247,6 +289,7 @@ public class BatchNormalization: BatchNormalizationBase
         }
     }
     
+    /// Initialize stats in the CPU execution context.
     func initStats()
     {
         _Eμ = [Double](repeating: 0.0, count: _nbNeurones)
@@ -458,19 +501,29 @@ public class BatchNormalization: BatchNormalizationBase
     }
 }
 
+/// A layer that applies batch normalization in the GPU execution context.
 class BatchNormalizationGPU: BatchNormalizationBase
 {
+    /// Buffers of weights to scale the normalization result.
     var _ƔBuffers: IWeightBuffers! = nil
+    /// Buffers of biases to add to the normalization result.
     var _βBuffers: IWeightBuffers! = nil
     
+    /// Buffer of averages of data for the different independent batch normalization units.
     var _μ: MetalBuffer<Float>! = nil
+    /// Buffer of global averages of data for the different independent batch normalization units.
     var _Eμ: MetalPrivateBuffer<Float>! = nil
+    /// Buffer of deviations of data for the different independent batch normalization units.
     var _σ2: MetalBuffer<Float>! = nil
+    /// Buffer of global deviations of data for the different independent batch normalization units.
     var _Eσ2: MetalPrivateBuffer<Float>! = nil
     
+    /// Buffer of data normalized without taking into account the biases and the weights.
     var _xHat: MetalBuffer<Float>! = nil
     
+    /// Buffer used to compute backward pass.
     var _sum1: MetalBuffer<Float>! = nil
+    /// Buffer used to compute backward pass.
     var _sum2: MetalBuffer<Float>! = nil
    
     /// GPU device on which model is executed.
@@ -503,6 +556,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
         }
     }
     
+    /// Stats in the GPU execution context.
     override var stats: [Float]
     {
         get {
@@ -529,6 +583,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
         }
     }
     
+    /// Copy this.
     public override func clone() -> Self
     {
         return BatchNormalizationGPU(bn: self) as! Self
@@ -598,12 +653,11 @@ class BatchNormalizationGPU: BatchNormalizationBase
         MetalKernel.get.upload([_βBuffers.w_p!, _ƔBuffers.w_p!])
     }
     
+    /// Initialize stats in the GPU execution context.
     func initStats()
     {
-        _Eμ = MetalPrivateBuffer<Float>(_nbNeurones,
-                                        deviceID: _deviceID)
-        _Eσ2 = MetalPrivateBuffer<Float>(_nbNeurones,
-                                         deviceID: _deviceID)
+        _Eμ = MetalPrivateBuffer<Float>(_nbNeurones, deviceID: _deviceID)
+        _Eσ2 = MetalPrivateBuffer<Float>(_nbNeurones, deviceID: _deviceID)
         
         let EμPtr = _Eμ.shared.buffer
         let Eσ2Ptr = _Eσ2.shared.buffer
@@ -629,6 +683,13 @@ class BatchNormalizationGPU: BatchNormalizationBase
         MetalKernel.get.upload([_Eμ, _Eσ2])
     }
     
+    ///
+    /// Get the weights and biases back to the CPU execution context.
+    ///
+    /// This function is necessary for the Gradient Checking in the GPU execution context.
+    ///
+    /// - Parameter bn: The layer in the CPU execution context.
+    ///
     func applyWeights(bn: BatchNormalization)
     {
         let weights = self.weights
@@ -644,15 +705,16 @@ class BatchNormalizationGPU: BatchNormalizationBase
     {
         if layer.phase != nil && layer.phase! == .Training
         {
-            forwardTraining(layer)
+            _forwardTraining(layer)
         }
         else
         {
-            fowardInference(layer)
+            _fowardInference(layer)
         }
     }
     
-    private func computeμ(_ layer: BN2D)
+    /// Compute the averages of the different independent batch normalization units.
+    private func _computeμ(_ layer: BN2D)
     {
         let nbNeurones = layer.nbFilters
         let batchSize = layer.batchSize
@@ -666,13 +728,12 @@ class BatchNormalizationGPU: BatchNormalizationBase
         
         if _μ == nil
         {
-            _μ = MetalPrivateBuffer<Float>(_nbNeurones,
-                                           deviceID: _deviceID)
+            _μ = MetalPrivateBuffer<Float>(_nbNeurones, deviceID: _deviceID)
         }
         
-        let command = MetalKernel.get.createCommand("computeConvμ",
-                                                    deviceID: _deviceID)
-        
+        let command = MetalKernel.get.createCommand(
+            "computeConvμ", deviceID: _deviceID
+        )
         command.setBuffer(layer.outs.metal, atIndex: 0)
         command.setBytes(pNbNeurones, atIndex: 1)
         command.setBytes(pNbBatch, atIndex: 2)
@@ -684,12 +745,15 @@ class BatchNormalizationGPU: BatchNormalizationBase
         let threads = command.threadExecutionWidth
         let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
         let threadsPerGrid = MTLSize(width: _nbNeurones, height: 1, depth: 1)
-        command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+        command.dispatchThreads(
+            threadsPerGrid: threadsPerGrid,
+            threadsPerThreadgroup: threadsPerThreadgroup
+        )
         command.enqueue()
     }
     
-    private func computeσ2(_ layer: BN2D)
+    /// Compute the deviations of the different independent batch normalization units.
+    private func _computeσ2(_ layer: BN2D)
     {
         let nbNeurones = layer.nbFilters
         let batchSize = layer.batchSize
@@ -703,13 +767,12 @@ class BatchNormalizationGPU: BatchNormalizationBase
         
         if _σ2 == nil
         {
-            _σ2 = MetalPrivateBuffer<Float>(_nbNeurones,
-                                            deviceID: _deviceID)
+            _σ2 = MetalPrivateBuffer<Float>(_nbNeurones, deviceID: _deviceID)
         }
         
-        let command = MetalKernel.get.createCommand("computeConvσ2",
-                                                    deviceID: _deviceID)
-        
+        let command = MetalKernel.get.createCommand(
+            "computeConvσ2", deviceID: _deviceID
+        )
         command.setBuffer(layer.outs.metal, atIndex: 0)
         command.setBuffer(_μ.metal, atIndex: 1)
         command.setBytes(pNbNeurones, atIndex: 2)
@@ -722,15 +785,18 @@ class BatchNormalizationGPU: BatchNormalizationBase
         let threads = command.threadExecutionWidth
         let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
         let threadsPerGrid = MTLSize(width: _nbNeurones, height: 1, depth: 1)
-        command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+        command.dispatchThreads(
+            threadsPerGrid: threadsPerGrid,
+            threadsPerThreadgroup: threadsPerThreadgroup
+        )
         command.enqueue()
     }
     
-    private func forwardTraining(_ layer: BN2D)
+    /// Apply the forward training pass in the GPU execution context.
+    private func _forwardTraining(_ layer: BN2D)
     {
-        computeμ(layer)
-        computeσ2(layer)
+        _computeμ(layer)
+        _computeσ2(layer)
         
         let batchSize = layer.batchSize
         let width = layer.width
@@ -743,12 +809,14 @@ class BatchNormalizationGPU: BatchNormalizationBase
         if _xHat == nil
         {
             _xHat = MetalPrivateBuffer<Float>(
-                batchSize * _nbNeurones * width * height, deviceID: _deviceID)
+                batchSize * _nbNeurones * width * height,
+                deviceID: _deviceID
+            )
         }
         
-        let command = MetalKernel.get.createCommand("forwardBNConvTraining",
-                                                    deviceID: _deviceID)
-        
+        let command = MetalKernel.get.createCommand(
+            "forwardBNConvTraining", deviceID: _deviceID
+        )
         command.setBuffer(_βBuffers.w.metal, atIndex: 0)
         command.setBuffer(_ƔBuffers.w.metal, atIndex: 1)
         command.setBuffer(_μ.metal, atIndex: 2)
@@ -763,8 +831,10 @@ class BatchNormalizationGPU: BatchNormalizationBase
         let threadsPerGrid = MTLSize(width: width,
                                      height: height,
                                      depth: _nbNeurones * batchSize)
-        command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+        command.dispatchThreads(
+            threadsPerGrid: threadsPerGrid,
+            threadsPerThreadgroup: threadsPerThreadgroup
+        )
         command.enqueue()
         
         if _nbElems == 0
@@ -773,7 +843,8 @@ class BatchNormalizationGPU: BatchNormalizationBase
         }
     }
     
-    private func fowardInference(_ layer: BN2D)
+    /// Apply the forward inference pass in the GPU execution context.
+    private func _fowardInference(_ layer: BN2D)
     {
         let batchSize = layer.batchSize
         let width = layer.width
@@ -784,9 +855,10 @@ class BatchNormalizationGPU: BatchNormalizationBase
         let pM: [UInt32] = [UInt32(_nbElems)]
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
         
-        let command = MetalKernel.get.createCommand("forwardBNConvInference",
-                                                    deviceID: _deviceID)
-        
+        let command = MetalKernel.get.createCommand(
+            "forwardBNConvInference",
+            deviceID: _deviceID
+        )
         command.setBuffer(_βBuffers.w.metal, atIndex: 0)
         command.setBuffer(_ƔBuffers.w.metal, atIndex: 1)
         command.setBuffer(_Eμ.metal, atIndex: 2)
@@ -801,8 +873,10 @@ class BatchNormalizationGPU: BatchNormalizationBase
         let threadsPerGrid = MTLSize(width: width,
                                      height: height,
                                      depth: _nbNeurones * batchSize)
-        command.dispatchThreads(threadsPerGrid:threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+        command.dispatchThreads(
+            threadsPerGrid:threadsPerGrid,
+            threadsPerThreadgroup: threadsPerThreadgroup
+        )
         command.enqueue()
     }
     
@@ -811,15 +885,16 @@ class BatchNormalizationGPU: BatchNormalizationBase
     {
         if layer.phase != nil && layer.phase! == .Training
         {
-            backwardTraining(layer)
+            _backwardTraining(layer)
         }
         else
         {
-            backwardInference(layer)
+            _backwardInference(layer)
         }
     }
     
-    private func computeTmp(_ layer: BN2D)
+    /// Compute the gradients of weights  in the GPU execution context.
+    private func _backwardWeights(_ layer: BN2D)
     {
         let batchSize = layer.batchSize
         let width = layer.width
@@ -832,15 +907,13 @@ class BatchNormalizationGPU: BatchNormalizationBase
         
         if _sum1 == nil
         {
-            _sum1 = MetalPrivateBuffer<Float>(_nbNeurones,
-                                              deviceID: _deviceID)
-            _sum2 = MetalPrivateBuffer<Float>(_nbNeurones,
-                                              deviceID: _deviceID)
+            _sum1 = MetalPrivateBuffer<Float>(_nbNeurones, deviceID: _deviceID)
+            _sum2 = MetalPrivateBuffer<Float>(_nbNeurones, deviceID: _deviceID)
         }
         
-        let command = MetalKernel.get.createCommand("computeConvTmp",
-                                                    deviceID: _deviceID)
-        
+        let command = MetalKernel.get.createCommand(
+            "computeConvTmp", deviceID: _deviceID
+        )
         command.setBuffer(layer.delta.metal, atIndex: 0)
         command.setBuffer(_xHat.metal, atIndex: 1)
         command.setBuffer(_ƔBuffers.w.metal, atIndex: 2)
@@ -856,14 +929,17 @@ class BatchNormalizationGPU: BatchNormalizationBase
         let threads = command.threadExecutionWidth
         let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
         let threadsPerGrid = MTLSize(width: _nbNeurones, height: 1, depth: 1)
-        command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+        command.dispatchThreads(
+            threadsPerGrid: threadsPerGrid,
+            threadsPerThreadgroup: threadsPerThreadgroup
+        )
         command.enqueue()
     }
     
-    private func backwardTraining(_ layer: BN2D)
+    /// Apply the backward training pass in the GPU execution context.
+    private func _backwardTraining(_ layer: BN2D)
     {
-        computeTmp(layer)
+        _backwardWeights(layer)
         
         let batchSize = layer.batchSize
         let width = layer.width
@@ -873,9 +949,9 @@ class BatchNormalizationGPU: BatchNormalizationBase
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
         
-        let command = MetalKernel.get.createCommand("backwardBNConvTraining",
-                                                    deviceID: _deviceID)
-        
+        let command = MetalKernel.get.createCommand(
+            "backwardBNConvTraining", deviceID: _deviceID
+        )
         command.setBuffer(_σ2.metal, atIndex: 0)
         command.setBuffer(_xHat.metal, atIndex: 1)
         command.setBuffer(_ƔBuffers.w.metal, atIndex: 2)
@@ -890,12 +966,15 @@ class BatchNormalizationGPU: BatchNormalizationBase
         let threadsPerGrid = MTLSize(width: width,
                                      height: height,
                                      depth: _nbNeurones * batchSize)
-        command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+        command.dispatchThreads(
+            threadsPerGrid: threadsPerGrid,
+            threadsPerThreadgroup: threadsPerThreadgroup
+        )
         command.enqueue()
     }
     
-    private func backwardInference(_ layer: BN2D)
+    /// Apply the backward inference pass in the GPU execution context.
+    private func _backwardInference(_ layer: BN2D)
     {
         let batchSize = layer.batchSize
         let width = layer.width
@@ -906,9 +985,9 @@ class BatchNormalizationGPU: BatchNormalizationBase
         let pM: [UInt32] = [UInt32(_nbElems)]
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
         
-        let command = MetalKernel.get.createCommand("backwardBNConvInference",
-                                                    deviceID: _deviceID)
-        
+        let command = MetalKernel.get.createCommand(
+            "backwardBNConvInference", deviceID: _deviceID
+        )
         command.setBuffer(_ƔBuffers.w.metal, atIndex: 0)
         command.setBuffer(_Eσ2.metal, atIndex: 1)
         command.setBytes(pNbNeurones, atIndex: 2)
@@ -921,8 +1000,10 @@ class BatchNormalizationGPU: BatchNormalizationBase
         let threadsPerGrid = MTLSize(width: width,
                                      height: height,
                                      depth: _nbNeurones * batchSize)
-        command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+        command.dispatchThreads(
+            threadsPerGrid: threadsPerGrid,
+            threadsPerThreadgroup: threadsPerThreadgroup
+        )
         command.enqueue()
     }
     

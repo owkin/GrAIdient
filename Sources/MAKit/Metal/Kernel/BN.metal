@@ -242,7 +242,7 @@ kernel void forwardBNConvInference(
     tmps[offset] = Ɣ[neurone] * xhat + β[neurone];
 }
 
-kernel void computeConvTmp(
+kernel void backwardWeightsBNConv(
     const device float * delta,
     const device float * xHat,
     const device float * Ɣ,
@@ -250,8 +250,8 @@ kernel void computeConvTmp(
     constant uint * pNbBatch,
     constant uint * pDimensions,
     constant uint * pAccumulate,
-    device float * somme1,
-    device float * somme2,
+    device float * sum1,
+    device float * sum2,
     device float * dƔ,
     device float * dβ,
     uint id [[ thread_position_in_grid ]])
@@ -264,7 +264,7 @@ kernel void computeConvTmp(
     
     if (pNbNeurones && pNbBatch && pDimensions && pAccumulate &&
         delta && xHat && Ɣ &&
-        somme1 && somme2 && dƔ && dβ)
+        sum1 && sum2 && dƔ && dβ)
     {
         nbNeurones = *pNbNeurones;
         nbBatch = *pNbBatch;
@@ -303,8 +303,8 @@ kernel void computeConvTmp(
             sum4 += deltaTmp;
         }}
     }
-    somme1[neurone] = sum1;
-    somme2[neurone] = sum2;
+    sum1[neurone] = sum1;
+    sum2[neurone] = sum2;
     
     if (accumulate)
     {
@@ -322,8 +322,8 @@ kernel void backwardBNConvTraining(
     const device float * σ2,
     const device float * xHat,
     const device float * Ɣ,
-    const device float * somme1,
-    const device float * somme2,
+    const device float * sum1,
+    const device float * sum2,
     constant uint * pNbNeurones,
     constant uint * pNbBatch,
     constant uint * pDimensions,
@@ -367,8 +367,8 @@ kernel void backwardBNConvTraining(
     float mult = 1.0 / ((float)nbElems * sqrt(σ2[neurone] + Ɛ));
     float dxhat = Ɣ[neurone] * delta[offset];
     float tmp1 = nbElems * dxhat;
-    float tmp2 = somme1[neurone];
-    float tmp3 = xHat[offset] * somme2[neurone];
+    float tmp2 = sum1[neurone];
+    float tmp3 = xHat[offset] * sum2[neurone];
     
     delta[offset] = mult * (tmp1 - tmp2 - tmp3);
 }

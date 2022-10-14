@@ -7,10 +7,14 @@
 
 import MetalKit
 
+/// Layer with a 2D shape neural structure.
 public class AdaptiveAvgPool2D: Layer2D
 {
+    /// Buffer containing the number of elements to average in each direction for each element in
+    /// the output grid.
     var _nbElems: MetalBuffer<Int32>! = nil
     
+    /// Downscale factor of the resolution (height and width).
     public override var strideFactor: Double
     {
         get {
@@ -39,6 +43,7 @@ public class AdaptiveAvgPool2D: Layer2D
         }
     }
     
+    /// The size of the input image this layer is looking at.
     public override var receptiveField: Int
     {
         get {
@@ -85,6 +90,14 @@ public class AdaptiveAvgPool2D: Layer2D
         }
     }
     
+    ///
+    /// Create a layer with a 2D shape neural structure.
+    ///
+    /// - Parameters:
+    ///     - layerPrev: Previous layer that has been queued to the model.
+    ///     - size: The output fixed grid resolution (height, width).
+    ///     - params: Contextual parameters linking to the model.
+    ///
     public init(layerPrev: Layer2D, size: Int, params: MAKit.Model.Params)
     {
         super.init(layerPrev: layerPrev,
@@ -94,23 +107,46 @@ public class AdaptiveAvgPool2D: Layer2D
                    params: params)
     }
     
+    ///
+    /// Decode from the disk.
+    ///
+    /// Throw an error if reading from the decoder fails, or
+    /// if the data read is corrupted or otherwise invalid.
+    ///
+    /// - Parameter decoder: The decoder to read data from.
+    ///
     public required init(from decoder: Decoder) throws
     {
         try super.init(from: decoder)
     }
     
+    ///
+    /// Clean state resources in the CPU execution context.
+    ///
+    /// We clean the neurons' state (forward and backward).
+    ///
     public override func resetKernelCPU()
     {
         super.resetKernelCPU()
         _nbElems = nil
     }
     
+    ///
+    /// Clean state resources in the GPU execution context.
+    ///
+    /// We clean the neurons' state (forward and backward).
+    ///
     public override func resetKernelGPU()
     {
         super.resetKernelGPU()
         _nbElems = nil
     }
     
+    ///
+    /// Initialize state resources in the CPU execution context.
+    ///
+    /// We initialize the neurons' state (forward and backward).
+    ///
     public override func checkStateCPU(batchSize: Int) throws
     {
         try super.checkStateCPU(batchSize: batchSize)
@@ -128,6 +164,11 @@ public class AdaptiveAvgPool2D: Layer2D
         }
     }
     
+    ///
+    /// Initialize state resources in the GPU execution context.
+    ///
+    /// We initialize the neurons' forward state.
+    ///
     public override func checkStateForwardGPU(batchSize: Int) throws
     {
         try super.checkStateForwardGPU(batchSize: batchSize)
@@ -145,6 +186,18 @@ public class AdaptiveAvgPool2D: Layer2D
         }
     }
     
+    ///
+    /// Create a layer with same values as this.
+    ///
+    /// - Parameters:
+    ///     - mapping: Dictionary allowing to find the layer associated to some id.
+    ///     This dictionary is particularly useful when the different layers cannot access
+    ///     their `layerPrev`.
+    ///     - inPlace: Whether hard resources should be copied as is.
+    ///
+    /// - Returns: A new layer. When `inPlace` is false, `initKernel` is
+    /// necessary in order to recreate hard resources.
+    ///
     public override func copy(
         mapping: Dictionary<Int, Layer>,
         inPlace: Bool) -> Layer
@@ -181,7 +234,7 @@ public class AdaptiveAvgPool2D: Layer2D
     ///
     /// Apply the forward pass of the Gradient Checking in CPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func forwardGCCPU() throws
     {
@@ -323,7 +376,7 @@ public class AdaptiveAvgPool2D: Layer2D
     ///
     /// Apply the forward pass of the Gradient Checking in GPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func forwardGCGPU() throws
     {
@@ -333,7 +386,7 @@ public class AdaptiveAvgPool2D: Layer2D
     ///
     /// Apply the forward pass in the CPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func forwardCPU() throws
     {
@@ -474,7 +527,7 @@ public class AdaptiveAvgPool2D: Layer2D
     ///
     /// Apply the forward pass in the GPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func forwardGPU() throws
     {
@@ -490,15 +543,14 @@ public class AdaptiveAvgPool2D: Layer2D
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pDimensionsPrev: [UInt32] = [UInt32(widthPrev),
                                              UInt32(heightPrev)]
-            
             let metalKernel = MetalKernel.get
             var command: MetalCommand
             
             if heightPrev >= height
             {
                 command = metalKernel.createCommand(
-                    "adaptiveAvgPoolForward1", deviceID: deviceID)
-                
+                    "adaptiveAvgPoolForward1", deviceID: deviceID
+                )
                 command.setBuffer(layerPrev.outs.metal, atIndex: 0)
                 command.setBytes(pNbFilters, atIndex: 1)
                 command.setBytes(pDimensions, atIndex: 2)
@@ -510,8 +562,10 @@ public class AdaptiveAvgPool2D: Layer2D
                 let threadsPerGrid = MTLSize(width: width,
                                              height: height,
                                              depth: nbFilters * batchSize)
-                command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                   threadsPerThreadgroup: threadsPerThreadgroup)
+                command.dispatchThreads(
+                    threadsPerGrid: threadsPerGrid,
+                    threadsPerThreadgroup: threadsPerThreadgroup
+                )
                 command.enqueue()
             }
             else
@@ -529,8 +583,10 @@ public class AdaptiveAvgPool2D: Layer2D
                 var threadsPerGrid = MTLSize(width: nbElems,
                                              height: 1,
                                              depth: 1)
-                command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                   threadsPerThreadgroup: threadsPerThreadgroup)
+                command.dispatchThreads(
+                    threadsPerGrid: threadsPerGrid,
+                    threadsPerThreadgroup: threadsPerThreadgroup
+                )
                 command.enqueue()
                 
                 nbElems = outs.nbElems
@@ -544,13 +600,15 @@ public class AdaptiveAvgPool2D: Layer2D
                 threadsPerGrid = MTLSize(width: nbElems,
                                          height: 1,
                                          depth: 1)
-                command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                   threadsPerThreadgroup: threadsPerThreadgroup)
+                command.dispatchThreads(
+                    threadsPerGrid: threadsPerGrid,
+                    threadsPerThreadgroup: threadsPerThreadgroup
+                )
                 command.enqueue()
                 
                 command = metalKernel.createCommand(
-                    "adaptiveAvgPoolForward2", deviceID: deviceID)
-                
+                    "adaptiveAvgPoolForward2", deviceID: deviceID
+                )
                 command.setBuffer(layerPrev.outs.metal, atIndex: 0)
                 command.setBytes(pNbFilters, atIndex: 1)
                 command.setBytes(pDimensions, atIndex: 2)
@@ -563,8 +621,10 @@ public class AdaptiveAvgPool2D: Layer2D
                 threadsPerGrid = MTLSize(width: nbFilters,
                                          height: batchSize,
                                          depth: 1)
-                command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                   threadsPerThreadgroup: threadsPerThreadgroup)
+                command.dispatchThreads(
+                    threadsPerGrid: threadsPerGrid,
+                    threadsPerThreadgroup: threadsPerThreadgroup
+                )
                 command.enqueue()
             }
         }
@@ -686,7 +746,7 @@ public class AdaptiveAvgPool2D: Layer2D
     ///
     /// Apply the backward pass in the GPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func backwardGPU() throws
     {
@@ -702,7 +762,6 @@ public class AdaptiveAvgPool2D: Layer2D
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pDimensionsPrev: [UInt32] = [UInt32(widthPrev),
                                              UInt32(heightPrev)]
-            
             let metalKernel = MetalKernel.get
             var command: MetalCommand
             
@@ -721,16 +780,18 @@ public class AdaptiveAvgPool2D: Layer2D
                 let threadsPerGrid = MTLSize(width: nbElems,
                                              height: 1,
                                              depth: 1)
-                command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                   threadsPerThreadgroup: threadsPerThreadgroup)
+                command.dispatchThreads(
+                    threadsPerGrid: threadsPerGrid,
+                    threadsPerThreadgroup: threadsPerThreadgroup
+                )
                 command.enqueue()
             }
             
             if heightPrev >= height
             {
                 command = metalKernel.createCommand(
-                    "adaptiveAvgPoolBackward1", deviceID: deviceID)
-                
+                    "adaptiveAvgPoolBackward1", deviceID: deviceID
+                )
                 command.setBuffer(delta.metal, atIndex: 0)
                 command.setBytes(pNbFilters, atIndex: 1)
                 command.setBytes(pDimensions, atIndex: 2)
@@ -742,15 +803,17 @@ public class AdaptiveAvgPool2D: Layer2D
                 let threadsPerGrid = MTLSize(width: nbFilters,
                                              height: batchSize,
                                              depth: 1)
-                command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                   threadsPerThreadgroup: threadsPerThreadgroup)
+                command.dispatchThreads(
+                    threadsPerGrid: threadsPerGrid,
+                    threadsPerThreadgroup: threadsPerThreadgroup
+                )
                 command.enqueue()
             }
             else
             {
                 command = metalKernel.createCommand(
-                    "adaptiveAvgPoolBackward2", deviceID: deviceID)
-                
+                    "adaptiveAvgPoolBackward2", deviceID: deviceID
+                )
                 command.setBuffer(delta.metal, atIndex: 0)
                 command.setBuffer(_nbElems.metal, atIndex: 1)
                 command.setBytes(pNbFilters, atIndex: 2)
@@ -763,8 +826,10 @@ public class AdaptiveAvgPool2D: Layer2D
                 let threadsPerGrid = MTLSize(width: nbFilters,
                                              height: batchSize,
                                              depth: 1)
-                command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                   threadsPerThreadgroup: threadsPerThreadgroup)
+                command.dispatchThreads(
+                    threadsPerGrid: threadsPerGrid,
+                    threadsPerThreadgroup: threadsPerThreadgroup
+                )
                 command.enqueue()
             }
             propagateDirty()

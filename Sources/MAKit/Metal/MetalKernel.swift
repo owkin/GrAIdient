@@ -546,7 +546,7 @@ private class MetalDevice
                 "computeConvσ2",
                 "forwardBNConvTraining",
                 "forwardBNConvInference",
-                "computeConvTmp",
+                "backwardWeightsBNConv",
                 "backwardBNConvTraining",
                 "backwardBNConvInference",
             ],

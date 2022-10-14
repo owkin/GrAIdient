@@ -7,9 +7,12 @@
 
 import MetalKit
 
+/// Layer with a 2D shape neural structure, an activation function and batch normalization units.
 public class BN2D: Activation2D, LayerUpdate, LayerExtract
 {
+    /// Batch normalization by default or batch normalization in the CPU execution context.
     var _bn: BatchNormalizationBase? = nil
+    /// Batch normalization in the GPU execution context.
     var _bnGPU: BatchNormalizationGPU? = nil
     
     /// Whether to compute weights' gradients or not.
@@ -64,6 +67,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
         }
     }
     
+    /// Stats in the CPU execution context.
     public var statsCPU: [Float]
     {
         get {
@@ -82,6 +86,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
         }
     }
     
+    /// Stats in the GPU execution context.
     public var statsGPU: [Float]
     {
         get {
@@ -108,6 +113,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
         }
     }
     
+    /// Get batch normalization in the CPU execution context.
     var bn: BatchNormalization?
     {
         get {
@@ -128,6 +134,14 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
         case BN = "BatchNormalization"
     }
     
+    ///
+    /// Create a layer with a 2D shape neural structure.
+    ///
+    /// - Parameters:
+    ///     - layerPrev: Previous layer that has been queued to the model.
+    ///     - activation: The activation function.
+    ///     - params: Contextual parameters linking to the model.
+    ///
     public override init(layerPrev: Layer2D, activation: String?,
                          params: MAKit.Model.Params)
     {
@@ -141,6 +155,18 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
         _bn = BatchNormalizationBase(self)
     }
     
+    ///
+    /// Create a layer with a 2D shape neural structure.
+    ///
+    /// - Parameters:
+    ///     - layerPrev: Previous layer that has been queued to the model.
+    ///     - nbFilters: Number of channels.
+    ///     - height: Height of each channel.
+    ///     - width: Width of each channel.
+    ///     - activation: The activation function.
+    ///     - bn: Whether to use batch normalization or not.
+    ///     - params: Contextual parameters linking to the model.
+    ///
     public init(layerPrev: Layer2D,
                 nbFilters: Int, height: Int, width: Int,
                 activation: String?, bn: Bool,
@@ -159,9 +185,9 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
     }
     
     ///
-    /// Create an instance of Layer by decoding from the given decoder.
+    /// Decode from the disk.
     ///
-    /// This initializer throws an error if reading from the decoder fails, or
+    /// Throw an error if reading from the decoder fails, or
     /// if the data read is corrupted or otherwise invalid.
     ///
     /// - Parameter decoder: The decoder to read data from.
@@ -175,12 +201,12 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
     }
     
     ///
-    /// Encode this value into the given encoder.
+    /// Encode to the disk.
     ///
     /// If the value fails to encode anything, `encoder` will encode an empty
     /// keyed container in its place.
     ///
-    /// This function throws an error if any values are invalid for the given
+    /// Throw an error if any values are invalid for the given
     /// encoder's format.
     ///
     /// - Parameter encoder: The encoder to write data to.
@@ -200,7 +226,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
     }
     
     ///
-    /// Create a new instance of `Layer` with same values as this.
+    /// Create a layer with same values as this.
     ///
     /// - Parameters:
     ///     - mapping: Dictionary allowing to find the layer associated to some id.
@@ -208,7 +234,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
     ///     their `layerPrev`.
     ///     - inPlace: Whether hard resources should be copied as is.
     ///
-    /// - Returns: A new instance of `Layer`. When `inPlace` is false, `initKernel` is
+    /// - Returns: A new layer. When `inPlace` is false, `initKernel` is
     /// necessary in order to recreate hard resources.
     ///
     public override func copy(
@@ -381,7 +407,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
     ///
     /// Apply the forward pass of the Gradient Checking in CPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func forwardGCCPU() throws
     {
@@ -390,6 +416,11 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
         _activation?.forwardGC(self)
     }
     
+    ///
+    /// Apply the forward pass of the Gradient Checking in CPU execution context.
+    ///
+    /// Throw an error if batch size is greater than the first batch size.
+    ///
     private func _forwardGCCPU() throws
     {
         if let layerPrev = self.layerPrev as? Layer2D
@@ -434,7 +465,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
     ///
     /// Apply the forward pass of the Gradient Checking in GPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func forwardGCGPU() throws
     {
@@ -443,6 +474,11 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
         _activation?.forwardGC(self)
     }
     
+    ///
+    /// Apply the forward pass of the Gradient Checking in GPU execution context.
+    ///
+    /// Throw an error if batch size is greater than the first batch size.
+    ///
     private func _forwardGCGPU() throws
     {
         if let layerPrev = self.layerPrev as? Layer2D
@@ -497,7 +533,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
     ///
     /// Apply the forward pass in the CPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func forwardCPU() throws
     {
@@ -525,7 +561,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
     ///
     /// Apply the forward pass in the GPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func forwardGPU() throws
     {
@@ -537,8 +573,8 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
             let pNbElems: [UInt32] = [UInt32(nbElems)]
             
             let command = MetalKernel.get.createCommand(
-                "sum1", deviceID: deviceID)
-            
+                "sum1", deviceID: deviceID
+            )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(pNbElems, atIndex: 1)
             command.setBuffer(outs.metal, atIndex: 2)
@@ -548,8 +584,10 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
             let threadsPerGrid = MTLSize(width: nbElems,
                                          height: 1,
                                          depth: 1)
-            command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+            command.dispatchThreads(
+                threadsPerGrid: threadsPerGrid,
+                threadsPerThreadgroup: threadsPerThreadgroup
+            )
             command.enqueue()
             
             _bnGPU!.forward(self)
@@ -592,7 +630,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
     ///
     /// Apply the backward pass in the GPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func backwardGPU() throws
     {
@@ -610,12 +648,14 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
             if layerPrev.dirty
             {
                 command = MetalKernel.get.createCommand(
-                    "sum1", deviceID: deviceID)
+                    "sum1", deviceID: deviceID
+                )
             }
             else
             {
                 command = MetalKernel.get.createCommand(
-                    "sum2", deviceID: deviceID)
+                    "sum2", deviceID: deviceID
+                )
             }
             
             command.setBuffer(delta.metal, atIndex: 0)
@@ -627,8 +667,10 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
             let threadsPerGrid = MTLSize(width: nbElems,
                                          height: 1,
                                          depth: 1)
-            command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+            command.dispatchThreads(
+                threadsPerGrid: threadsPerGrid,
+                threadsPerThreadgroup: threadsPerThreadgroup
+            )
             command.enqueue()
             
             propagateDirty()
@@ -652,6 +694,14 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
         return _bnGPU!.collectWeights()
     }
     
+    ///
+    /// Get the outputs of Gradient Checking (result of the forward pass) in the CPU execution context.
+    ///
+    /// - Parameters:
+    ///     - depth: Channel index.
+    ///     - elem: Weight estimation index during the Gradient Checking.
+    /// - Returns: The outputs.
+    ///
     func getOutsGC(depth: Int, elem: Int) -> [Double]
     {
         var sorties = [Double](repeating: 0.0,
@@ -673,6 +723,14 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
         return sorties
     }
     
+    ///
+    /// Set the outputs of Gradient Checking (result of the forward pass) in the CPU execution context.
+    ///
+    /// - Parameters:
+    ///     - depth: Channel index.
+    ///     - elem: Weight estimation index during the Gradient Checking.
+    ///     - outs: The outputs to set.
+    ///
     func setOutsGC(depth: Int, elem: Int, outs: [Double])
     {
         for batch in 0..<batchSize
@@ -688,6 +746,12 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
         }
     }
     
+    ///
+    /// Get the outputs (result of the forward pass) in the CPU execution context.
+    ///
+    /// - Parameter depth: Channel index.
+    /// - Returns: The outputs.
+    ///
     func getOuts(_ depth: Int) -> [Double]
     {
         var outs = [Double](repeating: 0.0,
@@ -706,6 +770,13 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
         return outs
     }
     
+    ///
+    /// Set the outputs (result of the forward pass) in the CPU execution context.
+    ///
+    /// - Parameters:
+    ///     - depth: Channel index.
+    ///     - outs: The outputs to set.
+    ///
     func setOuts(depth: Int, outs: [Double])
     {
         for elem in 0..<batchSize
@@ -721,6 +792,12 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
         }
     }
     
+    ///
+    /// Get the gradients (result of the backward pass) in the CPU execution context.
+    ///
+    /// - Parameter depth: Channel index.
+    /// - Returns: The gradients.
+    ///
     func getDelta(_ depth: Int) -> [Double]
     {
         var delta = [Double](repeating: 0.0,
@@ -739,6 +816,13 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
         return delta
     }
     
+    ///
+    /// Set the gradients (result of the backward pass) in the CPU execution context.
+    ///
+    /// - Parameters:
+    ///     - depth: Channel index.
+    ///     - outs: The gradients to set.
+    ///
     func setDelta(depth: Int, delta: [Double])
     {
         for elem in 0..<batchSize

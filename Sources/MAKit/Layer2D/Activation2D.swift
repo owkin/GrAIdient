@@ -22,6 +22,14 @@ public class Activation2D: Layer2D
         case activation
     }
     
+    ///
+    /// Create a layer with a 2D shape neural structure.
+    ///
+    /// - Parameters:
+    ///     - layerPrev: Previous layer that has been queued to the model.
+    ///     - activation: The activation function.
+    ///     - params: Contextual parameters linking to the model.
+    ///
     public init(layerPrev: Layer2D, activation: String,
                 params: MAKit.Model.Params)
     {
@@ -34,6 +42,17 @@ public class Activation2D: Layer2D
                    params: params)
     }
     
+    ///
+    /// Create a layer with a 2D shape neural structure.
+    ///
+    /// - Parameters:
+    ///     - layerPrev: Previous layer that has been queued to the model.
+    ///     - nbFilters: Number of channels.
+    ///     - height: Height of each channel.
+    ///     - width: Width of each channel.
+    ///     - activation: The activation function.
+    ///     - params: Contextual parameters linking to the model.
+    ///
     public init(layerPrev: Layer?,
                 nbFilters: Int, height: Int, width: Int, activation: String?,
                 params: MAKit.Model.Params)
@@ -54,6 +73,14 @@ public class Activation2D: Layer2D
                    params: params)
     }
     
+    ///
+    /// Decode from the disk.
+    ///
+    /// Throw an error if reading from the decoder fails, or
+    /// if the data read is corrupted or otherwise invalid.
+    ///
+    /// - Parameter decoder: The decoder to read data from.
+    ///
     public required init(from decoder: Decoder) throws
     {
         let container = try decoder.container(keyedBy: Keys.self)
@@ -63,6 +90,17 @@ public class Activation2D: Layer2D
         try super.init(from: decoder)
     }
     
+    ///
+    /// Encode to the disk.
+    ///
+    /// If the value fails to encode anything, `encoder` will encode an empty
+    /// keyed container in its place.
+    ///
+    /// Throw an error if any values are invalid for the given
+    /// encoder's format.
+    ///
+    /// - Parameter encoder: The encoder to write data to.
+    ///
     public override func encode(to encoder: Encoder) throws
     {
         var container = encoder.container(keyedBy: Keys.self)
@@ -74,6 +112,18 @@ public class Activation2D: Layer2D
         try super.encode(to: encoder)
     }
     
+    ///
+    /// Create a layer with same values as this.
+    ///
+    /// - Parameters:
+    ///     - mapping: Dictionary allowing to find the layer associated to some id.
+    ///     This dictionary is particularly useful when the different layers cannot access
+    ///     their `layerPrev`.
+    ///     - inPlace: Whether hard resources should be copied as is.
+    ///
+    /// - Returns: A new layer. When `inPlace` is false, `initKernel` is
+    /// necessary in order to recreate hard resources.
+    ///
     public override func copy(
         mapping: Dictionary<Int, Layer>,
         inPlace: Bool) -> Layer
@@ -92,6 +142,11 @@ public class Activation2D: Layer2D
         return layer
     }
     
+    ///
+    /// Clean state resources in the GPU execution context.
+    ///
+    /// State resources are the resources that are dependent on the batch size.
+    ///
     public override func resetKernelGPU()
     {
         super.resetKernelGPU()
@@ -101,7 +156,7 @@ public class Activation2D: Layer2D
     ///
     /// Apply the forward pass of the Gradient Checking in CPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func forwardGCCPU() throws
     {
@@ -109,6 +164,11 @@ public class Activation2D: Layer2D
         _activation!.forwardGC(self)
     }
     
+    ///
+    /// Apply the forward pass (until the activation function) of the Gradient Checking.
+    ///
+    /// Throw an error if batch size is greater than the first batch size.
+    ///
     private func _forwardGC() throws
     {
         if let layerPrev = self.layerPrev as? Layer2D
@@ -139,7 +199,7 @@ public class Activation2D: Layer2D
     ///
     /// Apply the forward pass of the Gradient Checking in GPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func forwardGCGPU() throws
     {
@@ -150,7 +210,7 @@ public class Activation2D: Layer2D
     ///
     /// Apply the forward pass in the CPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func forwardCPU() throws
     {
@@ -177,7 +237,7 @@ public class Activation2D: Layer2D
     ///
     /// Apply the forward pass in the GPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func forwardGPU() throws
     {
@@ -189,8 +249,8 @@ public class Activation2D: Layer2D
             let pNbElems: [UInt32] = [UInt32(nbElems)]
             
             let command = MetalKernel.get.createCommand(
-                "sum1", deviceID: deviceID)
-            
+                "sum1", deviceID: deviceID
+            )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(pNbElems, atIndex: 1)
             command.setBuffer(outs.metal, atIndex: 2)
@@ -200,8 +260,10 @@ public class Activation2D: Layer2D
             let threadsPerGrid = MTLSize(width: nbElems,
                                          height: 1,
                                          depth: 1)
-            command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+            command.dispatchThreads(
+                threadsPerGrid: threadsPerGrid,
+                threadsPerThreadgroup: threadsPerThreadgroup
+            )
             command.enqueue()
             
             _activation!.forwardGPU(self)
@@ -242,7 +304,7 @@ public class Activation2D: Layer2D
     ///
     /// Apply the backward pass in the GPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func backwardGPU() throws
     {
@@ -259,12 +321,14 @@ public class Activation2D: Layer2D
             if layerPrev.dirty
             {
                 command = MetalKernel.get.createCommand(
-                    "sum1", deviceID: deviceID)
+                    "sum1", deviceID: deviceID
+                )
             }
             else
             {
                 command = MetalKernel.get.createCommand(
-                    "sum2", deviceID: deviceID)
+                    "sum2", deviceID: deviceID
+                )
             }
             
             command.setBuffer(delta.metal, atIndex: 0)
@@ -276,8 +340,10 @@ public class Activation2D: Layer2D
             let threadsPerGrid = MTLSize(width: nbElems,
                                          height: 1,
                                          depth: 1)
-            command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                                threadsPerThreadgroup: threadsPerThreadgroup)
+            command.dispatchThreads(
+                threadsPerGrid: threadsPerGrid,
+                threadsPerThreadgroup: threadsPerThreadgroup
+            )
             command.enqueue()
             
             propagateDirty()

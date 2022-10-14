@@ -7,8 +7,16 @@
 
 import MetalKit
 
+/// Layer with a 1D shape neural structure.
 public class AvgPool2D: Layer1D
 {
+    ///
+    /// Create a layer with a 1D shape neural structure.
+    ///
+    /// - Parameters:
+    ///     - layerPrev: Previous layer that has been queued to the model.
+    ///     - params: Contextual parameters linking to the model.
+    ///
     public init(layerPrev: Layer2D, params: MAKit.Model.Params)
     {
         super.init(layerPrev: layerPrev,
@@ -16,11 +24,31 @@ public class AvgPool2D: Layer1D
                    params: params)
     }
     
+    ///
+    /// Decode from the disk.
+    ///
+    /// Throw an error if reading from the decoder fails, or
+    /// if the data read is corrupted or otherwise invalid.
+    ///
+    /// - Parameter decoder: The decoder to read data from.
+    ///
     public required init(from decoder: Decoder) throws
     {
         try super.init(from: decoder)
     }
     
+    ///
+    /// Create a layer with same values as this.
+    ///
+    /// - Parameters:
+    ///     - mapping: Dictionary allowing to find the layer associated to some id.
+    ///     This dictionary is particularly useful when the different layers cannot access
+    ///     their `layerPrev`.
+    ///     - inPlace: Whether hard resources should be copied as is.
+    ///
+    /// - Returns: A new layer. When `inPlace` is false, `initKernel` is
+    /// necessary in order to recreate hard resources.
+    ///
     public override func copy(
         mapping: Dictionary<Int, Layer>,
         inPlace: Bool) -> Layer
@@ -38,7 +66,7 @@ public class AvgPool2D: Layer1D
     ///
     /// Apply the forward pass of the Gradient Checking in CPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func forwardGCCPU() throws
     {
@@ -80,7 +108,7 @@ public class AvgPool2D: Layer1D
     ///
     /// Apply the forward pass of the Gradient Checking in GPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func forwardGCGPU() throws
     {
@@ -90,7 +118,7 @@ public class AvgPool2D: Layer1D
     ///
     /// Apply the forward pass in the CPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func forwardCPU() throws
     {
@@ -123,7 +151,7 @@ public class AvgPool2D: Layer1D
     ///
     /// Apply the forward pass in the GPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func forwardGPU() throws
     {
@@ -140,8 +168,8 @@ public class AvgPool2D: Layer1D
                                              UInt32(heightPrev)]
             
             let command = MetalKernel.get.createCommand(
-                "avgPoolForward", deviceID: deviceID)
-            
+                "avgPoolForward", deviceID: deviceID
+            )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(pNbNeurones, atIndex: 1)
             command.setBytes(pDimensionsPrev, atIndex: 2)
@@ -152,8 +180,10 @@ public class AvgPool2D: Layer1D
             let threadsPerGrid = MTLSize(width: nbNeurones,
                                          height: batchSize,
                                          depth: 1)
-            command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                               threadsPerThreadgroup: threadsPerThreadgroup)
+            command.dispatchThreads(
+                threadsPerGrid: threadsPerGrid,
+                threadsPerThreadgroup: threadsPerThreadgroup
+            )
             command.enqueue()
         }
     }
@@ -196,7 +226,7 @@ public class AvgPool2D: Layer1D
     ///
     /// Apply the backward pass in the GPU execution context.
     ///
-    /// Throws an error if batch size is greater than the first batch size.
+    /// Throw an error if batch size is greater than the first batch size.
     ///
     public override func backwardGPU() throws
     {
@@ -214,8 +244,8 @@ public class AvgPool2D: Layer1D
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
             let command = MetalKernel.get.createCommand(
-                "avgPoolBackward", deviceID: deviceID)
-            
+                "avgPoolBackward", deviceID: deviceID
+            )
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBytes(pNbNeurones, atIndex: 1)
             command.setBytes(pDimensionsPrev, atIndex: 2)
@@ -227,8 +257,10 @@ public class AvgPool2D: Layer1D
             let threadsPerGrid = MTLSize(width: widthPrev,
                                          height: heightPrev,
                                          depth: nbNeurones * batchSize)
-            command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                               threadsPerThreadgroup: threadsPerThreadgroup)
+            command.dispatchThreads(
+                threadsPerGrid: threadsPerGrid,
+                threadsPerThreadgroup: threadsPerThreadgroup
+            )
             command.enqueue()
             
             propagateDirty()

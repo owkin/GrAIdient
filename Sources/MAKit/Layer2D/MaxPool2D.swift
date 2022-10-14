@@ -7,13 +7,18 @@
 
 import MetalKit
 
+/// Layer with a 2D shape neural structure.
 public class MaxPool2D: Layer2D
 {
+    /// Indices of maximal elements.
     var _indicesMax: MetalBuffer<Int32>! = nil
     
+    /// Size of the maximal kernel.
     let _size: Int
+    /// Downscale factor of the resolution (height and width).
     let _stride: Int
     
+    /// Downscale factor of the resolution (height and width).
     public override var strideFactor: Double
     {
         get {
@@ -30,6 +35,7 @@ public class MaxPool2D: Layer2D
         }
     }
     
+    /// The size of the input image this layer is looking at.
     public override var receptiveField: Int
     {
         get {
@@ -63,6 +69,15 @@ public class MaxPool2D: Layer2D
         case stride
     }
     
+    ///
+    /// Create a layer with a 2D shape neural structure.
+    ///
+    /// - Parameters:
+    ///     - layerPrev: Previous layer that has been queued to the model.
+    ///     - size: The maximal kernel size.
+    ///     - stride: Downscale factor of the resolution (height and width).
+    ///     - params: Contextual parameters linking to the model.
+    ///
     public init(layerPrev: Layer2D,
                 size: Int,
                 stride: Int,
@@ -85,6 +100,14 @@ public class MaxPool2D: Layer2D
                    params: params)
     }
     
+    ///
+    /// Decode from the disk.
+    ///
+    /// Throw an error if reading from the decoder fails, or
+    /// if the data read is corrupted or otherwise invalid.
+    ///
+    /// - Parameter decoder: The decoder to read data from.
+    ///
     public required init(from decoder: Decoder) throws
     {
         let values = try decoder.container(keyedBy: Keys.self)
@@ -93,6 +116,17 @@ public class MaxPool2D: Layer2D
         try super.init(from: decoder)
     }
     
+    ///
+    /// Encode to the disk.
+    ///
+    /// If the value fails to encode anything, `encoder` will encode an empty
+    /// keyed container in its place.
+    ///
+    /// Throw an error if any values are invalid for the given
+    /// encoder's format.
+    ///
+    /// - Parameter encoder: The encoder to write data to.
+    ///
     public override func encode(to encoder: Encoder) throws
     {
         var container = encoder.container(keyedBy: Keys.self)
@@ -101,6 +135,18 @@ public class MaxPool2D: Layer2D
         try super.encode(to: encoder)
     }
     
+    ///
+    /// Create a layer with same values as this.
+    ///
+    /// - Parameters:
+    ///     - mapping: Dictionary allowing to find the layer associated to some id.
+    ///     This dictionary is particularly useful when the different layers cannot access
+    ///     their `layerPrev`.
+    ///     - inPlace: Whether hard resources should be copied as is.
+    ///
+    /// - Returns: A new layer. When `inPlace` is false, `initKernel` is
+    /// necessary in order to recreate hard resources.
+    ///
     public override func copy(
         mapping: Dictionary<Int, Layer>,
         inPlace: Bool) -> Layer
@@ -120,18 +166,33 @@ public class MaxPool2D: Layer2D
         return layer
     }
     
+    ///
+    /// Clean state resources in the CPU execution context.
+    ///
+    /// We clean the neurons' state (forward and backward).
+    ///
     public override func resetKernelCPU()
     {
         super.resetKernelCPU()
         _indicesMax = nil
     }
     
+    ///
+    /// Clean state resources in the GPU execution context.
+    ///
+    /// We clean the neurons' state (forward and backward).
+    ///
     public override func resetKernelGPU()
     {
         super.resetKernelGPU()
         _indicesMax = nil
     }
     
+    ///
+    /// Initialize state resources in the CPU execution context.
+    ///
+    /// We initialize the neurons' state (forward and backward).
+    ///
     public override func checkStateCPU(batchSize: Int) throws
     {
         try super.checkStateCPU(batchSize: batchSize)
@@ -145,6 +206,11 @@ public class MaxPool2D: Layer2D
         }
     }
     
+    ///
+    /// Initialize state resources in the GPU execution context.
+    ///
+    /// We initialize the neurons' forward state.
+    ///
     public override func checkStateForwardGPU(batchSize: Int) throws
     {
         try super.checkStateForwardGPU(batchSize: batchSize)
@@ -298,8 +364,8 @@ public class MaxPool2D: Layer2D
                                              UInt32(heightPrev)]
             
             let command = MetalKernel.get.createCommand(
-                "maxPoolForward", deviceID: deviceID)
-            
+                "maxPoolForward", deviceID: deviceID
+            )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(pStart, atIndex: 1)
             command.setBytes(pStride, atIndex: 2)
@@ -314,8 +380,10 @@ public class MaxPool2D: Layer2D
             let threadsPerGrid = MTLSize(width: width,
                                          height: height,
                                          depth: nbFilters * batchSize)
-            command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                               threadsPerThreadgroup: threadsPerThreadgroup)
+            command.dispatchThreads(
+                threadsPerGrid: threadsPerGrid,
+                threadsPerThreadgroup: threadsPerThreadgroup
+            )
             command.enqueue()
         }
     }
@@ -390,8 +458,8 @@ public class MaxPool2D: Layer2D
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
             let command = MetalKernel.get.createCommand(
-                "maxPoolBackward", deviceID: deviceID)
-            
+                "maxPoolBackward", deviceID: deviceID
+            )
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBuffer(_indicesMax.metal, atIndex: 1)
             command.setBytes(pStart, atIndex: 2)
@@ -407,8 +475,10 @@ public class MaxPool2D: Layer2D
             let threadsPerGrid = MTLSize(width: widthPrev,
                                          height: heightPrev,
                                          depth: nbFilters * batchSize)
-            command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                               threadsPerThreadgroup: threadsPerThreadgroup)
+            command.dispatchThreads(
+                threadsPerGrid: threadsPerGrid,
+                threadsPerThreadgroup: threadsPerThreadgroup
+            )
             command.enqueue()
             
             propagateDirty()

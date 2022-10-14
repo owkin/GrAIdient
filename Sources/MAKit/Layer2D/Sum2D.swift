@@ -7,8 +7,16 @@
 
 import MetalKit
 
+/// Layer with a 2D shape neural structure.
 public class Sum2D: LayerMerge2D
 {
+    ///
+    /// Create a layer with a 2D shape neural structure.
+    ///
+    /// - Parameters:
+    ///     - layersPrev: List of previous layers that have been queued to the model.
+    ///     - params: Contextual parameters linking to the model.
+    ///
     public init(layersPrev: [Layer2D], params: MAKit.Model.Params)
     {
         let layer0 = layersPrev[0]
@@ -29,11 +37,31 @@ public class Sum2D: LayerMerge2D
                    params: params)
     }
     
+    ///
+    /// Decode from the disk.
+    ///
+    /// Throw an error if reading from the decoder fails, or
+    /// if the data read is corrupted or otherwise invalid.
+    ///
+    /// - Parameter decoder: The decoder to read data from.
+    ///
     public required init(from decoder: Decoder) throws
     {
         try super.init(from: decoder)
     }
     
+    ///
+    /// Create a layer with same values as this.
+    ///
+    /// - Parameters:
+    ///     - mapping: Dictionary allowing to find the layer associated to some id.
+    ///     This dictionary is particularly useful when the different layers cannot access
+    ///     their `layerPrev`.
+    ///     - inPlace: Whether hard resources should be copied as is.
+    ///
+    /// - Returns: A new layer. When `inPlace` is false, `initKernel` is
+    /// necessary in order to recreate hard resources.
+    ///
     public override func copy(
         mapping: Dictionary<Int, Layer>,
         inPlace: Bool) -> Layer
@@ -273,17 +301,20 @@ public class Sum2D: LayerMerge2D
             if first
             {
                 command = MetalKernel.get.createCommand(
-                    "sum1", deviceID: deviceID)
+                    "sum1", deviceID: deviceID
+                )
                 first = false
             }
             else
             {
                 command = MetalKernel.get.createCommand(
-                    "sum2", deviceID: deviceID)
+                    "sum2", deviceID: deviceID
+                )
             }
             
-            command.setBuffer((_layersPrev[num] as! Layer2D).outs.metal,
-                              atIndex: 0)
+            command.setBuffer(
+                (_layersPrev[num] as! Layer2D).outs.metal, atIndex: 0
+            )
             command.setBytes(pNbElems, atIndex: 1)
             command.setBuffer(outs.metal, atIndex: 2)
             
@@ -292,8 +323,10 @@ public class Sum2D: LayerMerge2D
             let threadsPerGrid = MTLSize(width: nbElems,
                                          height: 1,
                                          depth: 1)
-            command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                               threadsPerThreadgroup: threadsPerThreadgroup)
+            command.dispatchThreads(
+                threadsPerGrid: threadsPerGrid,
+                threadsPerThreadgroup: threadsPerThreadgroup
+            )
             command.enqueue()
         }
     }
@@ -369,26 +402,31 @@ public class Sum2D: LayerMerge2D
             if _layersPrev[num].dirty
             {
                 command = MetalKernel.get.createCommand(
-                    "sum1", deviceID: deviceID)
+                    "sum1", deviceID: deviceID
+                )
             }
             else
             {
                 command = MetalKernel.get.createCommand(
-                    "sum2", deviceID: deviceID)
+                    "sum2", deviceID: deviceID
+                )
             }
             
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBytes(pNbElems, atIndex: 1)
-            command.setBuffer((_layersPrev[num] as! Layer2D).delta.metal,
-                              atIndex: 2)
+            command.setBuffer(
+                (_layersPrev[num] as! Layer2D).delta.metal, atIndex: 2
+            )
             
             let threads = command.threadExecutionWidth
             let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
             let threadsPerGrid = MTLSize(width: nbElems,
                                          height: 1,
                                          depth: 1)
-            command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                               threadsPerThreadgroup: threadsPerThreadgroup)
+            command.dispatchThreads(
+                threadsPerGrid: threadsPerGrid,
+                threadsPerThreadgroup: threadsPerThreadgroup
+            )
             command.enqueue()
         }
         

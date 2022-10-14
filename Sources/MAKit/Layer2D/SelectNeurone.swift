@@ -7,11 +7,16 @@
 
 import MetalKit
 
+/// Layer with a 1D shape neural structure.
 public class SelectNeurone: Layer1D, LayerResize
 {
+    /// Row of the selected neuron.
     public let targetI: Int
+    /// Column of the selected neuron.
     public let targetJ: Int
+    /// Height ratio of the selected neuron.
     public let ratioI: Double
+    /// Width ratio of the selected neuron.
     public let ratioJ: Double
     
     private enum Keys: String, CodingKey
@@ -22,6 +27,15 @@ public class SelectNeurone: Layer1D, LayerResize
         case ratioJ
     }
     
+    ///
+    /// Create a layer with a 1D shape neural structure.
+    ///
+    /// - Parameters:
+    ///     - layerPrev: Previous layer that has been queued to the model.
+    ///     - targetI: Row of the selected neuron.
+    ///     - targetJ: Column of the selected neuron.
+    ///     - params: Contextual parameters linking to the model.
+    ///
     public init(layerPrev: Layer2D,
                 targetI: Int,
                 targetJ: Int,
@@ -37,6 +51,15 @@ public class SelectNeurone: Layer1D, LayerResize
                    params: params)
     }
     
+    ///
+    /// Create a layer with a 1D shape neural structure.
+    ///
+    /// - Parameters:
+    ///     - layerPrev: Previous layer that has been queued to the model.
+    ///     - ratioI: Height ratio of the selected neuron.
+    ///     - ratioJ: Width ratio of the selected neuron.
+    ///     - params: Contextual parameters linking to the model.
+    ///
     public init(layerPrev: Layer2D,
                 ratioI: Double,
                 ratioJ: Double,
@@ -52,6 +75,14 @@ public class SelectNeurone: Layer1D, LayerResize
                    params: params)
     }
     
+    ///
+    /// Decode from the disk.
+    ///
+    /// Throw an error if reading from the decoder fails, or
+    /// if the data read is corrupted or otherwise invalid.
+    ///
+    /// - Parameter decoder: The decoder to read data from.
+    ///
     public required init(from decoder: Decoder) throws
     {
         let values = try decoder.container(keyedBy: Keys.self)
@@ -62,6 +93,17 @@ public class SelectNeurone: Layer1D, LayerResize
         try super.init(from: decoder)
     }
     
+    ///
+    /// Encode to the disk.
+    ///
+    /// If the value fails to encode anything, `encoder` will encode an empty
+    /// keyed container in its place.
+    ///
+    /// Throw an error if any values are invalid for the given
+    /// encoder's format.
+    ///
+    /// - Parameter encoder: The encoder to write data to.
+    ///
     public override func encode(to encoder: Encoder) throws
     {
         var container = encoder.container(keyedBy: Keys.self)
@@ -73,7 +115,7 @@ public class SelectNeurone: Layer1D, LayerResize
     }
     
     ///
-    /// Create a new instance of `Layer` with same values as this.
+    /// Create a layer with same values as this.
     ///
     /// - Parameters:
     ///     - mapping: Dictionary allowing to find the layer associated to some id.
@@ -81,7 +123,7 @@ public class SelectNeurone: Layer1D, LayerResize
     ///     their `layerPrev`.
     ///     - inPlace: Whether hard resources should be copied as is.
     ///
-    /// - Returns: A new instance of `Layer`. When `inPlace` is false, `initKernel` is
+    /// - Returns: A new layer. When `inPlace` is false, `initKernel` is
     /// necessary in order to recreate hard resources.
     ///
     public override func copy(
@@ -223,9 +265,9 @@ public class SelectNeurone: Layer1D, LayerResize
             let pDimensionsPrev: [UInt32] = [UInt32(widthPrev),
                                              UInt32(heightPrev)]
             
-            let command = MetalKernel.get.createCommand("selectNeuroneForward",
-                                                        deviceID: deviceID)
-            
+            let command = MetalKernel.get.createCommand(
+                "selectNeuroneForward", deviceID: deviceID
+            )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(pTarget, atIndex: 1)
             command.setBytes(pNbNeurones, atIndex: 2)
@@ -237,8 +279,10 @@ public class SelectNeurone: Layer1D, LayerResize
             let threadsPerGrid = MTLSize(width: nbNeurones,
                                          height: batchSize,
                                          depth: 1)
-            command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                               threadsPerThreadgroup: threadsPerThreadgroup)
+            command.dispatchThreads(
+                threadsPerGrid: threadsPerGrid,
+                threadsPerThreadgroup: threadsPerThreadgroup
+            )
             command.enqueue()
         }
     }
@@ -300,8 +344,8 @@ public class SelectNeurone: Layer1D, LayerResize
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
             let command = MetalKernel.get.createCommand(
-                "selectNeuroneBackward", deviceID: deviceID)
-            
+                "selectNeuroneBackward", deviceID: deviceID
+            )
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBytes(pTarget, atIndex: 1)
             command.setBytes(pNbNeurones, atIndex: 2)
@@ -314,8 +358,10 @@ public class SelectNeurone: Layer1D, LayerResize
             let threadsPerGrid = MTLSize(width: widthPrev,
                                          height: heightPrev,
                                          depth: nbNeurones * batchSize)
-            command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                               threadsPerThreadgroup: threadsPerThreadgroup)
+            command.dispatchThreads(
+                threadsPerGrid: threadsPerGrid,
+                threadsPerThreadgroup: threadsPerThreadgroup
+            )
             command.enqueue()
         }
     }

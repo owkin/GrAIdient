@@ -200,21 +200,6 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
         }
     }
     
-    /// Get buffer of gradients per sample for weights.
-    public var wDeltaWeights: MetalPrivateBuffer<Float>
-    {
-        get {
-            return _wDeltaWeights
-        }
-    }
-    /// Get buffer of gradients per sample for biases.
-    public var bDeltaWeights: MetalPrivateBuffer<Float>
-    {
-        get {
-            return _bDeltaWeights
-        }
-    }
-    
     /// Get the coefficient to apply during the weights initialization.
     var coeffInitWeights: Double
     {

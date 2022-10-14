@@ -318,7 +318,9 @@ public class Input1D: LayerInput1D, LayerUpdate
     ///
     /// Throw an error if data size is not coherent.
     ///
-    /// - Parameter data: The data to set.
+    /// - Parameters:
+    ///     - data: The data to set.
+    ///     - batchSize: The batch size of data.
     ///
     public func setDataGPU(
         _ data: MetalPrivateBuffer<Float>,

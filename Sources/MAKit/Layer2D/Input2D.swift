@@ -7,13 +7,21 @@
 
 import MetalKit
 
+///
+/// Format of images.
+///
+/// RGB: Image structure is (batch, channel, height, width).
+/// Neurone: Image structure is (batch, height, width, channel).
+///
 public enum ImageFormat
 {
     case RGB, Neurone
 }
 
+/// Arrays needed to update the inputs of a layer.
 class InputArrays2D: InputArrays<Layer2D>, IWeightArrays
 {
+    /// Inputs array: the array to update.
     var w: [Double]
     {
         get {
@@ -42,6 +50,7 @@ class InputArrays2D: InputArrays<Layer2D>, IWeightArrays
         }
     }
     
+    /// Gradients array.
     var g: [Double]
     {
         get {
@@ -71,8 +80,10 @@ class InputArrays2D: InputArrays<Layer2D>, IWeightArrays
     }
 }
 
+/// GPU buffers needed to update the inputs of a layer.
 class InputBuffers2D: InputBuffers<Layer2D>, IWeightBuffers
 {
+    /// Inputs buffer: the buffer to be update.
     var w: MetalBuffer<Float>
     {
         get {
@@ -80,6 +91,7 @@ class InputBuffers2D: InputBuffers<Layer2D>, IWeightBuffers
         }
     }
     
+    /// Gradients buffer.
     var g: MetalBuffer<Float>
     {
         get {
@@ -88,9 +100,12 @@ class InputBuffers2D: InputBuffers<Layer2D>, IWeightBuffers
     }
 }
 
+/// First layer with a 2D shape neural structure.
 public class Input2D: LayerInput2D, LayerResize, LayerUpdate
 {
+    /// Grid of "weights".
     var _wArrays: InputArrays2D! = nil
+    /// Buffer of "weights".
     var _wBuffers: InputBuffers2D! = nil
     
     /// Whether to compute weights' gradients or not.
@@ -112,16 +127,15 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
         set {}
     }
     
-    public convenience init(width: Int, height: Int,
-                            params: MAKit.Model.Params)
-    {
-        self.init(nbFilters: 3,
-                  width: width,
-                  height: height,
-                  params: params)
-        computeDelta = false
-    }
-    
+    ///
+    /// Create a layer with a 2D shape neural structure.
+    ///
+    /// - Parameters:
+    ///     - nbFilters: Number of channels.
+    ///     - height: Height of each channel.
+    ///     - width: Width of each channel.
+    ///     - params: Contextual parameters linking to the model.
+    ///
     public init(nbFilters: Int, width: Int, height: Int,
                 params: MAKit.Model.Params)
     {
@@ -133,6 +147,13 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
         computeDelta = false
     }
     
+    ///
+    /// Create a layer with a 2D shape neural structure.
+    ///
+    /// - Parameters:
+    ///     - layerPrev: Previous layer that has been queued to the model.
+    ///     - params: Contextual parameters linking to the model.
+    ///
     public init(layerPrev: Layer2D, params: MAKit.Model.Params)
     {
         super.init(layerPrev: layerPrev,
@@ -144,9 +165,9 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
     }
     
     ///
-    /// Create an instance of Layer by decoding from the given decoder.
+    /// Decode from the disk.
     ///
-    /// This initializer throws an error if reading from the decoder fails, or
+    /// Throw an error if reading from the decoder fails, or
     /// if the data read is corrupted or otherwise invalid.
     ///
     /// - Parameter decoder: The decoder to read data from.
@@ -158,7 +179,7 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
     }
     
     ///
-    /// Create a new instance of `Layer` with same values as this.
+    /// Create a layer with same values as this.
     ///
     /// - Parameters:
     ///     - mapping: Dictionary allowing to find the layer associated to some id.
@@ -166,7 +187,7 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
     ///     their `layerPrev`.
     ///     - inPlace: Whether hard resources should be copied as is.
     ///
-    /// - Returns: A new instance of `Layer`. When `inPlace` is false, `initKernel` is
+    /// - Returns: A new layer. When `inPlace` is false, `initKernel` is
     /// necessary in order to recreate hard resources.
     ///
     public override func copy(
@@ -222,13 +243,15 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
         if idPrev > -1
         {
             layer = Input2D(
-                layerPrev: mapping[idPrev] as! Layer2D, params: params)
+                layerPrev: mapping[idPrev] as! Layer2D, params: params
+            )
         }
         else
         {
             layer = Input2D(
                 nbFilters: nbFilters, width: imageWidth, height: imageHeight,
-                params: params)
+                params: params
+            )
         }
         return layer
     }
@@ -298,6 +321,16 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
     /// Initialize weights in the GPU execution context.
     public func initWeightsGPU() {}
     
+    ///
+    /// API to set data in the CPU execution context.
+    ///
+    /// Throw an error if data size is not coherent.
+    ///
+    /// - Parameters:
+    ///     - data: The data to set.
+    ///     - batchSize: The batch size of data.
+    ///     - format: The data format.
+    ///
     public func setDataCPU<T: BinaryFloatingPoint>(
         _ data: [T],
         batchSize: Int,
@@ -344,6 +377,16 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
         }
     }
     
+    ///
+    /// API to set data in the GPU execution context.
+    ///
+    /// Throw an error if data size is not coherent.
+    ///
+    /// - Parameters:
+    ///     - data: The data to set.
+    ///     - batchSize: The batch size of data.
+    ///     - format: The data format.
+    ///
     public func setDataGPU<T: BinaryFloatingPoint>(
         _ data: [T],
         batchSize: Int,
@@ -399,6 +442,15 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
         MetalKernel.get.upload([outs])
     }
     
+    ///
+    /// API to set data in the GPU execution context.
+    ///
+    /// Throw an error if data size is not coherent.
+    ///
+    /// - Parameters:
+    ///     - data: The data to set.
+    ///     - batchSize: The batch size of data.
+    ///
     public func setDataGPU(
         _ data: MetalPrivateBuffer<Float>,
         batchSize: Int) throws
@@ -452,8 +504,8 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
             let pNbElems: [UInt32] = [UInt32(nbElems)]
             
             let command = MetalKernel.get.createCommand(
-                "sum1", deviceID: deviceID)
-            
+                "sum1", deviceID: deviceID
+            )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(pNbElems, atIndex: 1)
             command.setBuffer(outs.metal, atIndex: 2)
@@ -461,8 +513,10 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
             let threads = command.threadExecutionWidth
             let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
             let threadsPerGrid = MTLSize(width: nbElems, height: 1, depth: 1)
-            command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                               threadsPerThreadgroup: threadsPerThreadgroup)
+            command.dispatchThreads(
+                threadsPerGrid: threadsPerGrid,
+                threadsPerThreadgroup: threadsPerThreadgroup
+            )
             command.enqueue()
         }
     }
@@ -514,12 +568,14 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
             if layerPrev.dirty
             {
                 command = MetalKernel.get.createCommand(
-                    "sum1", deviceID: deviceID)
+                    "sum1", deviceID: deviceID
+                )
             }
             else
             {
                 command = MetalKernel.get.createCommand(
-                    "sum2", deviceID: deviceID)
+                    "sum2", deviceID: deviceID
+                )
             }
             
             command.setBuffer(delta.metal, atIndex: 0)
@@ -531,8 +587,10 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
             let threadsPerGrid = MTLSize(width: nbElems,
                                          height: 1,
                                          depth: 1)
-            command.dispatchThreads(threadsPerGrid: threadsPerGrid,
-                               threadsPerThreadgroup: threadsPerThreadgroup)
+            command.dispatchThreads(
+                threadsPerGrid: threadsPerGrid,
+                threadsPerThreadgroup: threadsPerThreadgroup
+            )
             command.enqueue()
             
             propagateDirty()

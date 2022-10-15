@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import XCTest
 import MAKit
 
 ///
@@ -44,6 +45,58 @@ public func setOptimizerParams(
 
 /// GPU default device id where to execute the model.
 public let DEVICE_ID_DEFAULT = 0
+
+/// Error occuring during tests.
+public enum TestError: Error
+{
+    /// Wrong numeric value.
+    case Numeric
+}
+
+extension TestError: CustomStringConvertible
+{
+    public var description: String
+    {
+        switch self
+        {
+        case .Numeric:
+            return "Wrong numeric value."
+        }
+    }
+}
+
+///
+/// Function used to retry flaky numeric tests.
+///
+/// This function ensures test fails when internal function did not complete.
+///
+/// - Parameters:
+///     - nbRetry: Number maximal of retries.
+///     - block: Function to execute.
+///
+public func retryNumeric(nbRetry: Int, _ block: @escaping () throws -> ())
+{
+    var iter = 0
+    while iter < nbRetry
+    {
+        do {
+            try block()
+            iter += 1
+            break
+        }
+        catch TestError.Numeric
+        {
+            iter += 1
+        }
+        catch {
+            fatalError()
+        }
+    }
+    if iter == nbRetry
+    {
+        XCTAssert(false)
+    }
+}
 
 /// Abstract pipeline to run tests on models.
 open class Trainer

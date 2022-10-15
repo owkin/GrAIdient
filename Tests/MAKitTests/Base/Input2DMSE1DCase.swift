@@ -1,22 +1,39 @@
 //
-// Input1DMSE1DCase.swift
+// Input2DMSE1DCase.swift
 // MAKitTests
 //
-// Created by Jean-François Reboud on 10/10/2022.
+// Created by Jean-François Reboud on 15/10/2022.
 //
 
 import XCTest
 import MAKit
 import MAKitTestsUtils
 
-let NB_RETRY = 3
-
 ///
 /// A class that will test a model with a structural hypothesis:
-/// the model last layer is a MSE1D layer, the model first layer is a Input1D.
+/// the model last layer is a MSE1D layer, the model first layer is a Input2D.
 ///
-class Input1DMSE1DCase: MSE1DCase
+class Input2DMSE1DCase: MSE1DCase
 {
+    let height = 6
+    let width = 6
+     
+    ///
+    /// Create synthetic data.
+    ///
+    /// - Parameter nbElems: The number of elements of the data.
+    /// - Returns: The created data.
+    ///
+    func build2DData<T: BinaryFloatingPoint>(_ nbElems: Int) -> [T]
+    {
+        var data = [T]()
+        for _ in 0..<nbElems
+        {
+            data.append(T(Double.random(in: -1.0..<1.0)))
+        }
+        return data
+    }
+    
     ///
     /// A function to create/set data to the model.
     ///
@@ -25,30 +42,36 @@ class Input1DMSE1DCase: MSE1DCase
     ///     - model: The model.
     /// - Returns: (The data, the batch size).
     ///
-    public func setData(
-        _ inputs: [[Float]]?,
-        _ model: Model) -> ([[Float]], Int)
+    func setData(_ inputs: [Double]?, _ model: Model) -> ([Double], Int)
     {
-        let firstLayer = model.layers.first as! Input1D
-        let ins: [[Float]]
+        let firstLayer = model.layers.first as! Input2D
+        let ins: [Double]
         if let insTmp = inputs
         {
             ins = insTmp
         }
         else
         {
-            ins = build1DData(dim1: getBatchSize(model), dim2: 1)
+            ins = build2DData(getBatchSize(model) * height * width)
         }
         
         if MAKit.Opti.GPU
         {
-            try! firstLayer.setDataGPU(ins)
+            try! firstLayer.setDataGPU(
+                ins,
+                batchSize: getBatchSize(model),
+                format: .Neuron
+            )
         }
         else
         {
-            try! firstLayer.setDataCPU(ins)
+            try! firstLayer.setDataCPU(
+                ins,
+                batchSize: getBatchSize(model),
+                format: .Neuron
+            )
         }
-        return (ins, ins.count)
+        return (ins, ins.count / (height * width))
     }
     
     ///
@@ -81,6 +104,56 @@ class Input1DMSE1DCase: MSE1DCase
     func copyInPlace(_ model: Model) -> Model
     {
         let modelNew = Model.copy(models: [model], inPlace: true)[0]
+        modelNew.setupOptimizers(params: optimizerParams)
+        modelNew.phase = .Inference
+        return modelNew
+    }
+    
+    ///
+    /// Resize a model.
+    ///
+    /// We must call the `initKernel` API.
+    ///
+    /// - Parameter model: The model.
+    /// - Returns: The transformed model.
+    ///
+    func resize(_ model: Model) -> Model
+    {
+        let modelsNew = Model.resize(models: [model],
+                                     imageWidth: 2 * width,
+                                     imageHeight: 2 * height,
+                                     inPlace: false)
+        let modelNew = Model.resize(models: modelsNew,
+                                    imageWidth: width,
+                                    imageHeight: height,
+                                    inPlace: false)[0]
+        modelNew.initialize(
+            params: optimizerParams,
+            phase: .Inference,
+            deviceID: DEVICE_ID_DEFAULT
+        )
+        return modelNew
+    }
+    
+    ///
+    /// Resize a model in place.
+    ///
+    /// No need to call the `initKernel` API.
+    ///
+    /// - Parameter model: The model.
+    /// - Returns: The transformed model.
+    ///
+    func resizeInPlace(_ model: Model) -> Model
+    {
+        let modelsNew = Model.resize(models: [model],
+                                     imageWidth: 2 * width,
+                                     imageHeight: 2 * height,
+                                     inPlace: true)
+        let modelNew = Model.resize(models: modelsNew,
+                                    imageWidth: width,
+                                    imageHeight: height,
+                                    inPlace: true)[0]
+        modelNew.updateKernel(batchSize: batchSize)
         modelNew.setupOptimizers(params: optimizerParams)
         modelNew.phase = .Inference
         return modelNew
@@ -347,6 +420,82 @@ class Input1DMSE1DCase: MSE1DCase
             () throws in
             try trainer.run(
                 transform: self.copyInPlace,
+                setData: self.setData,
+                setLoss: self.setLoss,
+                getLoss: self.getLoss)
+            {
+                (diffCPU: Double, diffGPU: Double) throws in
+                if diffCPU > diffThreshold
+                {
+                    throw TestError.Numeric
+                }
+                if diffGPU > diffThreshold
+                {
+                    throw TestError.Numeric
+                }
+            }
+        }
+    }
+    
+    ///
+    /// Run Resize test.
+    ///
+    /// The goal is to compare the losses computed in the CPU execution
+    /// after resizing the model and do the same in the GPU execution context.
+    ///
+    /// - Parameters:
+    ///     - trainer: The testing pipeline to run.
+    ///     - nbRetry: The maximum number we can retry the test.
+    ///     - diffThreshold: The threshold above which the relative difference is too high.
+    ///
+    func runResize(
+        _ trainer: TransformTrainer,
+        nbRetry: Int = NB_RETRY,
+        diffThreshold: Double = 0.001)
+    {
+        retryNumeric(nbRetry: nbRetry)
+        {
+            () throws in
+            try trainer.run(
+                transform: self.resize,
+                setData: self.setData,
+                setLoss: self.setLoss,
+                getLoss: self.getLoss)
+            {
+                (diffCPU: Double, diffGPU: Double) in
+                if diffCPU > diffThreshold
+                {
+                    throw TestError.Numeric
+                }
+                if diffGPU > diffThreshold
+                {
+                    throw TestError.Numeric
+                }
+            }
+        }
+    }
+    
+    ///
+    /// Run Resize In Place test.
+    ///
+    /// The goal is to compare the losses computed in the CPU execution
+    /// after resizing the model in place and do the same in the GPU execution context.
+    ///
+    /// - Parameters:
+    ///     - trainer: The testing pipeline to run.
+    ///     - nbRetry: The maximum number we can retry the test.
+    ///     - diffThreshold: The threshold above which the relative difference is too high.
+    ///
+    func runResizeInPlace(
+        _ trainer: TransformTrainer,
+        nbRetry: Int = NB_RETRY,
+        diffThreshold: Double = 0.001)
+    {
+        retryNumeric(nbRetry: nbRetry)
+        {
+            () throws in
+            try trainer.run(
+                transform: self.resizeInPlace,
                 setData: self.setData,
                 setLoss: self.setLoss,
                 getLoss: self.getLoss)

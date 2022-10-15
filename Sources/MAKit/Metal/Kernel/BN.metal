@@ -10,7 +10,7 @@ using namespace metal;
 
 kernel void computeConvμ(
     const device float * tmps,
-    constant uint * pNbNeurons,
+    constant uint * pNbChannels,
     constant uint * pNbBatch,
     constant uint * pDimensions,
     constant uint * pFirstCall,
@@ -18,16 +18,16 @@ kernel void computeConvμ(
     device float * Eμ,
     uint id [[ thread_position_in_grid ]])
 {
-    uint nbNeurons;
+    uint nbChannels;
     uint nbBatch;
     uint width;
     uint height;
     uint firstCall;
     
-    if (pNbNeurons && pNbBatch && pDimensions && pFirstCall && tmps &&
+    if (pNbChannels && pNbBatch && pDimensions && pFirstCall && tmps &&
         μ && Eμ)
     {
-        nbNeurons = *pNbNeurons;
+        nbChannels = *pNbChannels;
         nbBatch = *pNbBatch;
         width = pDimensions[0];
         height = pDimensions[1];
@@ -36,8 +36,8 @@ kernel void computeConvμ(
     else
         return ;
     
-    uint neuron = id;
-    if (neuron >= nbNeurons)
+    uint depth = id;
+    if (depth >= nbChannels)
     {
         return ;
     }
@@ -49,30 +49,28 @@ kernel void computeConvμ(
         for (uint x=0; x<width; x++){
         for (uint y=0; y<height; y++)
         {
-            uint offsetStart =
-                (neuron + nbNeurons * elem) * height;
-            uint offset = y +
-                (offsetStart + x) * width;
+            uint offsetStart = (depth + nbChannels * elem) * height;
+            uint offset = y + (offsetStart + x) * width;
                 
             sum += tmps[offset];
         }}
     }
-    μ[neuron] = sum / nbElems;
+    μ[depth] = sum / nbElems;
     
     if (pFirstCall)
     {
-        Eμ[neuron] = μ[neuron];
+        Eμ[depth] = μ[depth];
     }
     else
     {
-        Eμ[neuron] = 0.9 * Eμ[neuron] + 0.1 * μ[neuron];
+        Eμ[depth] = 0.9 * Eμ[depth] + 0.1 * μ[depth];
     }
 }
 
 kernel void computeConvσ2(
     const device float * tmps,
     const device float * μ,
-    constant uint * pNbNeurons,
+    constant uint * pNbChannels,
     constant uint * pNbBatch,
     constant uint * pDimensions,
     constant uint * pFirstCall,
@@ -80,16 +78,16 @@ kernel void computeConvσ2(
     device float * Eσ2,
     uint id [[ thread_position_in_grid ]])
 {
-    uint nbNeurons;
+    uint nbChannels;
     uint nbBatch;
     uint width;
     uint height;
     uint firstCall;
     
-    if (pNbNeurons && pNbBatch && pDimensions && pFirstCall &&
+    if (pNbChannels && pNbBatch && pDimensions && pFirstCall &&
         tmps && μ && σ2 && Eσ2)
     {
-        nbNeurons = *pNbNeurons;
+        nbChannels = *pNbChannels;
         nbBatch = *pNbBatch;
         width = pDimensions[0];
         height = pDimensions[1];
@@ -98,8 +96,8 @@ kernel void computeConvσ2(
     else
         return ;
     
-    uint neuron = id;
-    if (neuron >= nbNeurons)
+    uint depth = id;
+    if (depth >= nbChannels)
     {
         return ;
     }
@@ -111,24 +109,22 @@ kernel void computeConvσ2(
         for (uint x=0; x<width; x++){
         for (uint y=0; y<height; y++)
         {
-            uint offsetStart =
-                (neuron + nbNeurons * elem) * height;
-            uint offset = y +
-                (offsetStart + x) * width;
+            uint offsetStart = (depth + nbChannels * elem) * height;
+            uint offset = y + (offsetStart + x) * width;
                 
-            float tmp = tmps[offset] - μ[neuron];
+            float tmp = tmps[offset] - μ[depth];
             sum += tmp * tmp;
         }}
     }
-    σ2[neuron] = sum / nbElems;
+    σ2[depth] = sum / nbElems;
     
     if (firstCall)
     {
-        Eσ2[neuron] = σ2[neuron];
+        Eσ2[depth] = σ2[depth];
     }
     else
     {
-        Eσ2[neuron] = 0.9 * Eσ2[neuron] + 0.1 * σ2[neuron];
+        Eσ2[depth] = 0.9 * Eσ2[depth] + 0.1 * σ2[depth];
     }
 }
 
@@ -137,23 +133,23 @@ kernel void forwardBNConvTraining(
     const device float * Ɣ,
     const device float * μ,
     const device float * σ2,
-    constant uint * pNbNeurons,
+    constant uint * pNbChannels,
     constant uint * pNbBatch,
     constant uint * pDimensions,
     device float * tmps,
     device float * xHat,
     uint3 id [[ thread_position_in_grid ]])
 {
-    uint nbNeurons;
+    uint nbChannels;
     uint nbBatch;
     uint width;
     uint height;
     float Ɛ = 1e-5;
     
-    if (pNbNeurons && pNbBatch && pDimensions && β && Ɣ &&
+    if (pNbChannels && pNbBatch && pDimensions && β && Ɣ &&
         tmps && xHat && μ && σ2)
     {
-        nbNeurons = *pNbNeurons;
+        nbChannels = *pNbChannels;
         nbBatch = *pNbBatch;
         width = pDimensions[0];
         height = pDimensions[1];
@@ -163,25 +159,23 @@ kernel void forwardBNConvTraining(
     
     uint i = id[1];
     uint j = id[0];
-    uint neuron = id[2] % nbNeurons;
-    uint elem = id[2] / nbNeurons;
+    uint depth = id[2] % nbChannels;
+    uint elem = id[2] / nbChannels;
     
     if (i >= height || j >= width ||
-        id[2] >= nbNeurons * nbBatch)
+        id[2] >= nbChannels * nbBatch)
     {
         return ;
     }
     
-    uint offsetStart =
-        (neuron + nbNeurons * elem) * height;
-    uint offset = j +
-        (offsetStart + i) * width;
+    uint offsetStart = (depth + nbChannels * elem) * height;
+    uint offset = j + (offsetStart + i) * width;
     
-    float tmp1 = tmps[offset] - μ[neuron];
-    float tmp2 = sqrt(σ2[neuron] + Ɛ);
+    float tmp1 = tmps[offset] - μ[depth];
+    float tmp2 = sqrt(σ2[depth] + Ɛ);
     float xhat = tmp1 / tmp2;
     xHat[offset] = xhat;
-    tmps[offset] = Ɣ[neuron] * xhat + β[neuron];
+    tmps[offset] = Ɣ[depth] * xhat + β[depth];
 }
 
 kernel void forwardBNConvInference(
@@ -189,24 +183,24 @@ kernel void forwardBNConvInference(
     const device float * Ɣ,
     const device float * Eμ,
     const device float * Eσ2,
-    constant uint * pNbNeurons,
+    constant uint * pNbChannels,
     constant uint * pNbBatch,
     constant uint * pM,
     constant uint * pDimensions,
     device float * tmps,
     uint3 id [[ thread_position_in_grid ]])
 {
-    uint nbNeurons;
+    uint nbChannels;
     uint nbBatch;
     uint m;
     uint width;
     uint height;
     float Ɛ = 1e-5;
     
-    if (pNbNeurons && pNbBatch && pM && pDimensions && β && Ɣ &&
+    if (pNbChannels && pNbBatch && pM && pDimensions && β && Ɣ &&
         tmps && Eμ && Eσ2)
     {
-        nbNeurons = *pNbNeurons;
+        nbChannels = *pNbChannels;
         nbBatch = *pNbBatch;
         m = *pM;
         width = pDimensions[0];
@@ -217,36 +211,34 @@ kernel void forwardBNConvInference(
     
     uint i = id[1];
     uint j = id[0];
-    uint neuron = id[2] % nbNeurons;
-    uint elem = id[2] / nbNeurons;
+    uint depth = id[2] % nbChannels;
+    uint elem = id[2] / nbChannels;
     
     if (i >= height || j >= width ||
-        id[2] >= nbNeurons * nbBatch)
+        id[2] >= nbChannels * nbBatch)
     {
         return ;
     }
     
-    uint offsetStart =
-        (neuron + nbNeurons * elem) * height;
-    uint offset = j +
-        (offsetStart + i) * width;
+    uint offsetStart = (depth + nbChannels * elem) * height;
+    uint offset = j + (offsetStart + i) * width;
     
-    float Var = Eσ2[neuron];
+    float Var = Eσ2[depth];
     if (m > 1)
     {
         Var *= (float)m / ((float)m - 1);
     }
-    float tmp1 = tmps[offset] - Eμ[neuron];
+    float tmp1 = tmps[offset] - Eμ[depth];
     float tmp2 = sqrt(Var + Ɛ);
     float xhat = tmp1 / tmp2;
-    tmps[offset] = Ɣ[neuron] * xhat + β[neuron];
+    tmps[offset] = Ɣ[depth] * xhat + β[depth];
 }
 
 kernel void backwardWeightsBNConv(
     const device float * delta,
     const device float * xHat,
     const device float * Ɣ,
-    constant uint * pNbNeurons,
+    constant uint * pNbChannels,
     constant uint * pNbBatch,
     constant uint * pDimensions,
     constant uint * pAccumulate,
@@ -256,17 +248,17 @@ kernel void backwardWeightsBNConv(
     device float * dβ,
     uint id [[ thread_position_in_grid ]])
 {
-    uint nbNeurons;
+    uint nbChannels;
     uint nbBatch;
     uint width;
     uint height;
     uint accumulate;
     
-    if (pNbNeurons && pNbBatch && pDimensions && pAccumulate &&
+    if (pNbChannels && pNbBatch && pDimensions && pAccumulate &&
         delta && xHat && Ɣ &&
         sum1 && sum2 && dƔ && dβ)
     {
-        nbNeurons = *pNbNeurons;
+        nbChannels = *pNbChannels;
         nbBatch = *pNbBatch;
         width = pDimensions[0];
         height = pDimensions[1];
@@ -275,8 +267,8 @@ kernel void backwardWeightsBNConv(
     else
         return ;
     
-    uint neuron = id;
-    if (neuron >= nbNeurons)
+    uint depth = id;
+    if (depth >= nbChannels)
     {
         return ;
     }
@@ -288,14 +280,12 @@ kernel void backwardWeightsBNConv(
         for (uint x=0; x<width; x++){
         for (uint y=0; y<height; y++)
         {
-            uint offsetStart =
-                (neuron + nbNeurons * elem) * height;
-            uint offset = y +
-                (offsetStart + x) * width;
+            uint offsetStart = (depth + nbChannels * elem) * height;
+            uint offset = y + (offsetStart + x) * width;
                 
             float deltaTmp = delta[offset];
             float xHatTmp = xHat[offset];
-            float dxhat = Ɣ[neuron] * deltaTmp;
+            float dxhat = Ɣ[depth] * deltaTmp;
             tmp1 += dxhat;
             tmp2 += dxhat * xHatTmp;
             
@@ -303,18 +293,18 @@ kernel void backwardWeightsBNConv(
             tmp4 += deltaTmp;
         }}
     }
-    sum1[neuron] = tmp1;
-    sum2[neuron] = tmp2;
+    sum1[depth] = tmp1;
+    sum2[depth] = tmp2;
     
     if (accumulate)
     {
-        dƔ[neuron] += tmp3;
-        dβ[neuron] += tmp4;
+        dƔ[depth] += tmp3;
+        dβ[depth] += tmp4;
     }
     else
     {
-        dƔ[neuron] = tmp3;
-        dβ[neuron] = tmp4;
+        dƔ[depth] = tmp3;
+        dβ[depth] = tmp4;
     }
 }
 
@@ -324,22 +314,22 @@ kernel void backwardBNConvTraining(
     const device float * Ɣ,
     const device float * sum1,
     const device float * sum2,
-    constant uint * pNbNeurons,
+    constant uint * pNbChannels,
     constant uint * pNbBatch,
     constant uint * pDimensions,
     device float * delta,
     uint3 id [[ thread_position_in_grid ]])
 {
-    uint nbNeurons;
+    uint nbChannels;
     uint nbBatch;
     uint width;
     uint height;
     float Ɛ = 1e-5;
     
-    if (pNbNeurons && pNbBatch && pDimensions && σ2 && xHat && Ɣ &&
+    if (pNbChannels && pNbBatch && pDimensions && σ2 && xHat && Ɣ &&
         delta)
     {
-        nbNeurons = *pNbNeurons;
+        nbChannels = *pNbChannels;
         nbBatch = *pNbBatch;
         width = pDimensions[0];
         height = pDimensions[1];
@@ -349,26 +339,24 @@ kernel void backwardBNConvTraining(
     
     uint i = id[1];
     uint j = id[0];
-    uint neuron = id[2] % nbNeurons;
-    uint elem = id[2] / nbNeurons;
+    uint depth = id[2] % nbChannels;
+    uint elem = id[2] / nbChannels;
     uint nbElems = nbBatch * width * height;
     
     if (i >= height || j >= width ||
-        id[2] >= nbNeurons * nbBatch)
+        id[2] >= nbChannels * nbBatch)
     {
         return ;
     }
     
-    uint offsetStart =
-        (neuron + nbNeurons * elem) * height;
-    uint offset = j +
-        (offsetStart + i) * width;
+    uint offsetStart = (depth + nbChannels * elem) * height;
+    uint offset = j + (offsetStart + i) * width;
     
-    float mult = 1.0 / ((float)nbElems * sqrt(σ2[neuron] + Ɛ));
-    float dxhat = Ɣ[neuron] * delta[offset];
+    float mult = 1.0 / ((float)nbElems * sqrt(σ2[depth] + Ɛ));
+    float dxhat = Ɣ[depth] * delta[offset];
     float tmp1 = nbElems * dxhat;
-    float tmp2 = sum1[neuron];
-    float tmp3 = xHat[offset] * sum2[neuron];
+    float tmp2 = sum1[depth];
+    float tmp3 = xHat[offset] * sum2[depth];
     
     delta[offset] = mult * (tmp1 - tmp2 - tmp3);
 }
@@ -376,24 +364,24 @@ kernel void backwardBNConvTraining(
 kernel void backwardBNConvInference(
     const device float * Ɣ,
     const device float * Eσ2,
-    constant uint * pNbNeurons,
+    constant uint * pNbChannels,
     constant uint * pNbBatch,
     constant uint * pM,
     constant uint * pDimensions,
     device float * delta,
     uint3 id [[ thread_position_in_grid ]])
 {
-    uint nbNeurons;
+    uint nbChannels;
     uint nbBatch;
     uint m;
     uint width;
     uint height;
     float Ɛ = 1e-5;
     
-    if (pNbNeurons && pNbBatch && pM && pDimensions && Ɣ &&
+    if (pNbChannels && pNbBatch && pM && pDimensions && Ɣ &&
         Eσ2 && delta)
     {
-        nbNeurons = *pNbNeurons;
+        nbChannels = *pNbChannels;
         nbBatch = *pNbBatch;
         m = *pM;
         width = pDimensions[0];
@@ -404,21 +392,19 @@ kernel void backwardBNConvInference(
     
     uint i = id[1];
     uint j = id[0];
-    uint neuron = id[2] % nbNeurons;
-    uint elem = id[2] / nbNeurons;
+    uint depth = id[2] % nbChannels;
+    uint elem = id[2] / nbChannels;
     
     if (i >= height || j >= width ||
-        id[2] >= nbNeurons * nbBatch)
+        id[2] >= nbChannels * nbBatch)
     {
         return ;
     }
     
-    uint offsetStart =
-        (neuron + nbNeurons * elem) * height;
-    uint offset = j +
-        (offsetStart + i) * width;
+    uint offsetStart = (depth + nbChannels * elem) * height;
+    uint offset = j + (offsetStart + i) * width;
     
-    float Var = Eσ2[neuron];
+    float Var = Eσ2[depth];
     if (m > 1)
     {
         Var *= (float)m / ((float)m - 1);
@@ -426,5 +412,5 @@ kernel void backwardBNConvInference(
     float tmp1 = delta[offset];
     float tmp2 = sqrt(Var + Ɛ);
     float xhat = tmp1 / tmp2;
-    delta[offset] = Ɣ[neuron] * xhat;
+    delta[offset] = Ɣ[depth] * xhat;
 }

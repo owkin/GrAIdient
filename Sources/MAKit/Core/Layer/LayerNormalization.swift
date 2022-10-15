@@ -716,12 +716,12 @@ class BatchNormalizationGPU: BatchNormalizationBase
     /// Compute the averages of the different independent batch normalization units.
     private func _computeμ(_ layer: BN2D)
     {
-        let nbNeurons = layer.nbChannels
+        let nbChannels = layer.nbChannels
         let batchSize = layer.batchSize
         let width = layer.width
         let height = layer.height
         
-        let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
+        let pNbChannels: [UInt32] = [UInt32(nbChannels)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
         let pFirstCall: [UInt32] = _nbElems == 0 ? [1] : [0]
@@ -735,7 +735,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
             "computeConvμ", deviceID: _deviceID
         )
         command.setBuffer(layer.outs.metal, atIndex: 0)
-        command.setBytes(pNbNeurons, atIndex: 1)
+        command.setBytes(pNbChannels, atIndex: 1)
         command.setBytes(pNbBatch, atIndex: 2)
         command.setBytes(pDimensions, atIndex: 3)
         command.setBytes(pFirstCall, atIndex: 4)
@@ -755,12 +755,12 @@ class BatchNormalizationGPU: BatchNormalizationBase
     /// Compute the deviations of the different independent batch normalization units.
     private func _computeσ2(_ layer: BN2D)
     {
-        let nbNeurons = layer.nbChannels
+        let nbChannels = layer.nbChannels
         let batchSize = layer.batchSize
         let width = layer.width
         let height = layer.height
         
-        let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
+        let pNbChannels: [UInt32] = [UInt32(nbChannels)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
         let pFirstCall: [UInt32] = _nbElems == 0 ? [1] : [0]
@@ -775,7 +775,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
         )
         command.setBuffer(layer.outs.metal, atIndex: 0)
         command.setBuffer(_μ.metal, atIndex: 1)
-        command.setBytes(pNbNeurons, atIndex: 2)
+        command.setBytes(pNbChannels, atIndex: 2)
         command.setBytes(pNbBatch, atIndex: 3)
         command.setBytes(pDimensions, atIndex: 4)
         command.setBytes(pFirstCall, atIndex: 5)
@@ -802,7 +802,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
         let width = layer.width
         let height = layer.height
         
-        let pNbNeurons: [UInt32] = [UInt32(_nbNeurons)]
+        let pNbChannels: [UInt32] = [UInt32(_nbNeurons)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
         
@@ -821,7 +821,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
         command.setBuffer(_ƔBuffers.w.metal, atIndex: 1)
         command.setBuffer(_μ.metal, atIndex: 2)
         command.setBuffer(_σ2.metal, atIndex: 3)
-        command.setBytes(pNbNeurons, atIndex: 4)
+        command.setBytes(pNbChannels, atIndex: 4)
         command.setBytes(pNbBatch, atIndex: 5)
         command.setBytes(pDimensions, atIndex: 6)
         command.setBuffer(layer.outs.metal, atIndex: 7)
@@ -850,7 +850,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
         let width = layer.width
         let height = layer.height
         
-        let pNbNeurons: [UInt32] = [UInt32(_nbNeurons)]
+        let pNbChannels: [UInt32] = [UInt32(_nbNeurons)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pM: [UInt32] = [UInt32(_nbElems)]
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
@@ -863,7 +863,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
         command.setBuffer(_ƔBuffers.w.metal, atIndex: 1)
         command.setBuffer(_Eμ.metal, atIndex: 2)
         command.setBuffer(_Eσ2.metal, atIndex: 3)
-        command.setBytes(pNbNeurons, atIndex: 4)
+        command.setBytes(pNbChannels, atIndex: 4)
         command.setBytes(pNbBatch, atIndex: 5)
         command.setBytes(pM, atIndex: 6)
         command.setBytes(pDimensions, atIndex: 7)
@@ -900,7 +900,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
         let width = layer.width
         let height = layer.height
         
-        let pNbNeurons: [UInt32] = [UInt32(_nbNeurons)]
+        let pNbChannels: [UInt32] = [UInt32(_nbNeurons)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
         let pAccumulate: [UInt32] = layer.accumulateDeltaWeights ? [1] : [0]
@@ -917,7 +917,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
         command.setBuffer(layer.delta.metal, atIndex: 0)
         command.setBuffer(_xHat.metal, atIndex: 1)
         command.setBuffer(_ƔBuffers.w.metal, atIndex: 2)
-        command.setBytes(pNbNeurons, atIndex: 3)
+        command.setBytes(pNbChannels, atIndex: 3)
         command.setBytes(pNbBatch, atIndex: 4)
         command.setBytes(pDimensions, atIndex: 5)
         command.setBytes(pAccumulate, atIndex: 6)
@@ -945,7 +945,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
         let width = layer.width
         let height = layer.height
         
-        let pNbNeurons: [UInt32] = [UInt32(_nbNeurons)]
+        let pNbChannels: [UInt32] = [UInt32(_nbNeurons)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
         
@@ -957,7 +957,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
         command.setBuffer(_ƔBuffers.w.metal, atIndex: 2)
         command.setBuffer(_sum1.metal, atIndex: 3)
         command.setBuffer(_sum2.metal, atIndex: 4)
-        command.setBytes(pNbNeurons, atIndex: 5)
+        command.setBytes(pNbChannels, atIndex: 5)
         command.setBytes(pNbBatch, atIndex: 6)
         command.setBytes(pDimensions, atIndex: 7)
         command.setBuffer(layer.delta.metal, atIndex: 8)
@@ -980,7 +980,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
         let width = layer.width
         let height = layer.height
         
-        let pNbNeurons: [UInt32] = [UInt32(_nbNeurons)]
+        let pNbChannels: [UInt32] = [UInt32(_nbNeurons)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pM: [UInt32] = [UInt32(_nbElems)]
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
@@ -990,7 +990,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
         )
         command.setBuffer(_ƔBuffers.w.metal, atIndex: 0)
         command.setBuffer(_Eσ2.metal, atIndex: 1)
-        command.setBytes(pNbNeurons, atIndex: 2)
+        command.setBytes(pNbChannels, atIndex: 2)
         command.setBytes(pNbBatch, atIndex: 3)
         command.setBytes(pM, atIndex: 4)
         command.setBytes(pDimensions, atIndex: 5)

@@ -550,7 +550,7 @@ public class AdaptiveAvgPool2D: Layer2D
             let widthPrev = layerPrev.width
             let heightPrev = layerPrev.height
             
-            let pNbFilters: [UInt32] = [UInt32(nbChannels)]
+            let pNbChannels: [UInt32] = [UInt32(nbChannels)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pDimensionsPrev: [UInt32] = [UInt32(widthPrev),
@@ -564,7 +564,7 @@ public class AdaptiveAvgPool2D: Layer2D
                     "adaptiveAvgPoolForward1", deviceID: deviceID
                 )
                 command.setBuffer(layerPrev.outs.metal, atIndex: 0)
-                command.setBytes(pNbFilters, atIndex: 1)
+                command.setBytes(pNbChannels, atIndex: 1)
                 command.setBytes(pDimensions, atIndex: 2)
                 command.setBytes(pDimensionsPrev, atIndex: 3)
                 command.setBytes(pNbBatch, atIndex: 4)
@@ -622,7 +622,7 @@ public class AdaptiveAvgPool2D: Layer2D
                     "adaptiveAvgPoolForward2", deviceID: deviceID
                 )
                 command.setBuffer(layerPrev.outs.metal, atIndex: 0)
-                command.setBytes(pNbFilters, atIndex: 1)
+                command.setBytes(pNbChannels, atIndex: 1)
                 command.setBytes(pDimensions, atIndex: 2)
                 command.setBytes(pDimensionsPrev, atIndex: 3)
                 command.setBytes(pNbBatch, atIndex: 4)
@@ -769,7 +769,7 @@ public class AdaptiveAvgPool2D: Layer2D
             let widthPrev = layerPrev.width
             let heightPrev = layerPrev.height
             
-            let pNbFilters: [UInt32] = [UInt32(nbChannels)]
+            let pNbChannels: [UInt32] = [UInt32(nbChannels)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pDimensionsPrev: [UInt32] = [UInt32(widthPrev),
@@ -805,7 +805,7 @@ public class AdaptiveAvgPool2D: Layer2D
                     "adaptiveAvgPoolBackward1", deviceID: deviceID
                 )
                 command.setBuffer(delta.metal, atIndex: 0)
-                command.setBytes(pNbFilters, atIndex: 1)
+                command.setBytes(pNbChannels, atIndex: 1)
                 command.setBytes(pDimensions, atIndex: 2)
                 command.setBytes(pDimensionsPrev, atIndex: 3)
                 command.setBytes(pNbBatch, atIndex: 4)
@@ -828,7 +828,7 @@ public class AdaptiveAvgPool2D: Layer2D
                 )
                 command.setBuffer(delta.metal, atIndex: 0)
                 command.setBuffer(_nbElems.metal, atIndex: 1)
-                command.setBytes(pNbFilters, atIndex: 2)
+                command.setBytes(pNbChannels, atIndex: 2)
                 command.setBytes(pDimensions, atIndex: 3)
                 command.setBytes(pDimensionsPrev, atIndex: 4)
                 command.setBytes(pNbBatch, atIndex: 5)

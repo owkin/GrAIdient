@@ -10,7 +10,7 @@ using namespace metal;
 
 kernel void avgPoolForward(
     const device float * outsPrev,
-    constant uint * pNbFilters,
+    constant uint * pNbChannels,
     constant uint * pDimensionsPrev,
     constant uint * pNbBatch,
     device float * outs,
@@ -20,12 +20,12 @@ kernel void avgPoolForward(
     uint nbNeurons;
     uint nbBatch;
     
-    if (pNbFilters && pDimensionsPrev && pNbBatch &&
+    if (pNbChannels && pDimensionsPrev && pNbBatch &&
         outsPrev && outs)
     {
         widthPrev = pDimensionsPrev[0];
         heightPrev = pDimensionsPrev[1];
-        nbNeurons = *pNbFilters;
+        nbNeurons = *pNbChannels;
         nbBatch = *pNbBatch;
     }
     else
@@ -56,7 +56,7 @@ kernel void avgPoolForward(
 
 kernel void avgPoolBackward(
     const device float * delta,
-    constant uint * pNbFilters,
+    constant uint * pNbChannels,
     constant uint * pDimensionsPrev,
     constant uint * pNbBatch,
     constant uint * pDirty,
@@ -68,12 +68,12 @@ kernel void avgPoolBackward(
     uint nbBatch;
     uint dirty;
     
-    if (pNbFilters && pDimensionsPrev && pNbBatch && pDirty &&
+    if (pNbChannels && pDimensionsPrev && pNbBatch && pDirty &&
         delta && deltaPrev)
     {
         widthPrev = pDimensionsPrev[0];
         heightPrev = pDimensionsPrev[1];
-        nbNeurons = *pNbFilters;
+        nbNeurons = *pNbChannels;
         nbBatch = *pNbBatch;
         dirty = *pDirty;
     }
@@ -111,7 +111,7 @@ kernel void maxPoolForward(
     const device float * outsPrev,
     constant int * pStart,
     constant uint * pStride,
-    constant uint * pNbFilters,
+    constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pDimensionsPrev,
     constant uint * pNbBatch,
@@ -126,7 +126,7 @@ kernel void maxPoolForward(
     uint nbNeurons;
     uint nbBatch;
     
-    if (pStart && pStride && pNbFilters && pDimensions && pDimensionsPrev &&
+    if (pStart && pStride && pNbChannels && pDimensions && pDimensionsPrev &&
         pNbBatch && outsPrev && outs && indicesMax)
     {
         start = pStart[0];
@@ -136,7 +136,7 @@ kernel void maxPoolForward(
         height = pDimensions[1];
         widthPrev = pDimensionsPrev[0];
         heightPrev = pDimensionsPrev[1];
-        nbNeurons = *pNbFilters;
+        nbNeurons = *pNbChannels;
         nbBatch = *pNbBatch;
     }
     else
@@ -187,7 +187,7 @@ kernel void maxPoolBackward(
     const device int * indicesMax,
     constant int * pStart,
     constant uint * pStride,
-    constant uint * pNbFilters,
+    constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pDimensionsPrev,
     constant uint * pNbBatch,
@@ -203,7 +203,7 @@ kernel void maxPoolBackward(
     uint nbBatch;
     uint dirty;
     
-    if (pStart && pStride && pNbFilters && pDimensions && pDimensionsPrev &&
+    if (pStart && pStride && pNbChannels && pDimensions && pDimensionsPrev &&
         pNbBatch && pDirty && delta && indicesMax && deltaPrev)
     {
         start = pStart[0];
@@ -213,7 +213,7 @@ kernel void maxPoolBackward(
         height = pDimensions[1];
         widthPrev = pDimensionsPrev[0];
         heightPrev = pDimensionsPrev[1];
-        nbNeurons = *pNbFilters;
+        nbNeurons = *pNbChannels;
         nbBatch = *pNbBatch;
         dirty = *pDirty;
     }
@@ -291,7 +291,7 @@ uint _endIndex(uint index, uint smallSize, uint bigSize)
 
 kernel void adaptiveAvgPoolForward1(
     const device float * outsPrev,
-    constant uint * pNbFilters,
+    constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pDimensionsPrev,
     constant uint * pNbBatch,
@@ -303,14 +303,14 @@ kernel void adaptiveAvgPoolForward1(
     uint nbNeurons;
     uint nbBatch;
     
-    if (pNbFilters && pDimensions && pDimensionsPrev && pNbBatch &&
+    if (pNbChannels && pDimensions && pDimensionsPrev && pNbBatch &&
         outsPrev && outs)
     {
         width = pDimensions[0];
         height = pDimensions[1];
         widthPrev = pDimensionsPrev[0];
         heightPrev = pDimensionsPrev[1];
-        nbNeurons = *pNbFilters;
+        nbNeurons = *pNbChannels;
         nbBatch = *pNbBatch;
     }
     else
@@ -353,7 +353,7 @@ kernel void adaptiveAvgPoolForward1(
 
 kernel void adaptiveAvgPoolForward2(
     const device float * outsPrev,
-    constant uint * pNbFilters,
+    constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pDimensionsPrev,
     constant uint * pNbBatch,
@@ -366,14 +366,14 @@ kernel void adaptiveAvgPoolForward2(
     uint nbNeurons;
     uint nbBatch;
     
-    if (pNbFilters && pDimensions && pDimensionsPrev && pNbBatch &&
+    if (pNbChannels && pDimensions && pDimensionsPrev && pNbBatch &&
         outsPrev && nbElems && outs)
     {
         width = pDimensions[0];
         height = pDimensions[1];
         widthPrev = pDimensionsPrev[0];
         heightPrev = pDimensionsPrev[1];
-        nbNeurons = *pNbFilters;
+        nbNeurons = *pNbChannels;
         nbBatch = *pNbBatch;
     }
     else
@@ -424,7 +424,7 @@ kernel void adaptiveAvgPoolForward2(
 
 kernel void adaptiveAvgPoolBackward1(
     const device float * delta,
-    constant uint * pNbFilters,
+    constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pDimensionsPrev,
     constant uint * pNbBatch,
@@ -436,14 +436,14 @@ kernel void adaptiveAvgPoolBackward1(
     uint nbNeurons;
     uint nbBatch;
     
-    if (pNbFilters && pDimensions && pDimensionsPrev && pNbBatch &&
+    if (pNbChannels && pDimensions && pDimensionsPrev && pNbBatch &&
         delta && deltaPrev)
     {
         width = pDimensions[0];
         height = pDimensions[1];
         widthPrev = pDimensionsPrev[0];
         heightPrev = pDimensionsPrev[1];
-        nbNeurons = *pNbFilters;
+        nbNeurons = *pNbChannels;
         nbBatch = *pNbBatch;
     }
     else
@@ -488,7 +488,7 @@ kernel void adaptiveAvgPoolBackward1(
 kernel void adaptiveAvgPoolBackward2(
     const device float * delta,
     const device int * nbElems,
-    constant uint * pNbFilters,
+    constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pDimensionsPrev,
     constant uint * pNbBatch,
@@ -500,14 +500,14 @@ kernel void adaptiveAvgPoolBackward2(
     uint nbNeurons;
     uint nbBatch;
     
-    if (pNbFilters && pDimensions && pDimensionsPrev && pNbBatch &&
+    if (pNbChannels && pDimensions && pDimensionsPrev && pNbBatch &&
         delta && nbElems && deltaPrev)
     {
         width = pDimensions[0];
         height = pDimensions[1];
         widthPrev = pDimensionsPrev[0];
         heightPrev = pDimensionsPrev[1];
-        nbNeurons = *pNbFilters;
+        nbNeurons = *pNbChannels;
         nbBatch = *pNbBatch;
     }
     else

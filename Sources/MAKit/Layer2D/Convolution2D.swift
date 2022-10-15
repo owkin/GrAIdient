@@ -1251,8 +1251,8 @@ public class Convolution2D: BN2D
             let pStart: [Int32] = [Int32(startI), Int32(endI),
                                    Int32(startJ), Int32(endJ)]
             let pStride: [UInt32] = [UInt32(_stride)]
-            let pNbFilters: [UInt32] = [UInt32(nbChannels)]
-            let pNbFiltersPrev: [UInt32] = [UInt32(nbChannelsPrev)]
+            let pNbChannels: [UInt32] = [UInt32(nbChannels)]
+            let pNbChannelsPrev: [UInt32] = [UInt32(nbChannelsPrev)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pDimensionsPrev: [UInt32] = [UInt32(layerPrev.width),
                                              UInt32(layerPrev.height)]
@@ -1274,8 +1274,8 @@ public class Convolution2D: BN2D
             command.setBuffer(_bBuffers.w.metal, atIndex: 2)
             command.setBytes(pStart, atIndex: 3)
             command.setBytes(pStride, atIndex: 4)
-            command.setBytes(pNbFilters, atIndex: 5)
-            command.setBytes(pNbFiltersPrev, atIndex: 6)
+            command.setBytes(pNbChannels, atIndex: 5)
+            command.setBytes(pNbChannelsPrev, atIndex: 6)
             command.setBytes(pDimensions, atIndex: 7)
             command.setBytes(pDimensionsPrev, atIndex: 8)
             command.setBytes(pDimWeights, atIndex: 9)
@@ -1442,8 +1442,8 @@ public class Convolution2D: BN2D
             let pStart: [Int32] = [Int32(startI), Int32(endI),
                                    Int32(startJ), Int32(endJ)]
             let pStride: [UInt32] = [UInt32(_stride)]
-            let pNbFilters: [UInt32] = [UInt32(nbChannels)]
-            let pNbFiltersPrev: [UInt32] = [UInt32(nbChannelsPrev)]
+            let pNbChannels: [UInt32] = [UInt32(nbChannels)]
+            let pNbChannelsPrev: [UInt32] = [UInt32(nbChannelsPrev)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pDimensionsPrev: [UInt32] = [UInt32(layerPrev.width),
                                              UInt32(layerPrev.height)]
@@ -1459,8 +1459,8 @@ public class Convolution2D: BN2D
             command.setBuffer(_wBuffers.w.metal, atIndex: 1)
             command.setBytes(pStart, atIndex: 2)
             command.setBytes(pStride, atIndex: 3)
-            command.setBytes(pNbFilters, atIndex: 4)
-            command.setBytes(pNbFiltersPrev, atIndex: 5)
+            command.setBytes(pNbChannels, atIndex: 4)
+            command.setBytes(pNbChannelsPrev, atIndex: 5)
             command.setBytes(pDimensions, atIndex: 6)
             command.setBytes(pDimensionsPrev, atIndex: 7)
             command.setBytes(pDimWeights, atIndex: 8)
@@ -1494,8 +1494,8 @@ public class Convolution2D: BN2D
             let pStart: [Int32] = [Int32(startI), Int32(endI),
                                    Int32(startJ), Int32(endJ)]
             let pStride: [UInt32] = [UInt32(_stride)]
-            let pNbFilters: [UInt32] = [UInt32(nbChannels)]
-            let pNbFiltersPrev: [UInt32] = [UInt32(nbChannelsPrev)]
+            let pNbChannels: [UInt32] = [UInt32(nbChannels)]
+            let pNbChannelsPrev: [UInt32] = [UInt32(nbChannelsPrev)]
             let pDimensions: [UInt32] = [UInt32(width),
                                          UInt32(height)]
             let pDimensionsPrev: [UInt32] = [UInt32(layerPrev.width),
@@ -1518,8 +1518,8 @@ public class Convolution2D: BN2D
                 command.setBuffer(delta.metal, atIndex: 1)
                 command.setBytes(pStart, atIndex: 2)
                 command.setBytes(pStride, atIndex: 3)
-                command.setBytes(pNbFilters, atIndex: 4)
-                command.setBytes(pNbFiltersPrev, atIndex: 5)
+                command.setBytes(pNbChannels, atIndex: 4)
+                command.setBytes(pNbChannelsPrev, atIndex: 5)
                 command.setBytes(pDimensions, atIndex: 6)
                 command.setBytes(pDimensionsPrev, atIndex: 7)
                 command.setBytes(pDimWeights, atIndex: 8)
@@ -1543,7 +1543,7 @@ public class Convolution2D: BN2D
                         batchDerBiasesKernel, deviceID: deviceID
                     )
                     command.setBuffer(delta.metal, atIndex: 0)
-                    command.setBytes(pNbFilters, atIndex: 1)
+                    command.setBytes(pNbChannels, atIndex: 1)
                     command.setBytes(pDimensions, atIndex: 2)
                     command.setBytes(pNbBatch, atIndex: 3)
                     command.setBytes(pAccumulate, atIndex: 4)
@@ -1573,8 +1573,8 @@ public class Convolution2D: BN2D
                 command.setBuffer(delta.metal, atIndex: 1)
                 command.setBytes(pStart, atIndex: 2)
                 command.setBytes(pStride, atIndex: 3)
-                command.setBytes(pNbFilters, atIndex: 4)
-                command.setBytes(pNbFiltersPrev, atIndex: 5)
+                command.setBytes(pNbChannels, atIndex: 4)
+                command.setBytes(pNbChannelsPrev, atIndex: 5)
                 command.setBytes(pDimensions, atIndex: 6)
                 command.setBytes(pDimensionsPrev, atIndex: 7)
                 command.setBytes(pDimWeights, atIndex: 8)
@@ -1597,7 +1597,7 @@ public class Convolution2D: BN2D
                         derBiasesKernel, deviceID: deviceID
                     )
                     command.setBuffer(delta.metal, atIndex: 0)
-                    command.setBytes(pNbFilters, atIndex: 1)
+                    command.setBytes(pNbChannels, atIndex: 1)
                     command.setBytes(pDimensions, atIndex: 2)
                     command.setBytes(pNbBatch, atIndex: 3)
                     command.setBuffer(_bDeltaWeights.metal, atIndex: 4)
@@ -1620,8 +1620,8 @@ public class Convolution2D: BN2D
                     reduceWeightsKernel, deviceID: deviceID
                 )
                 command.setBuffer(_wDeltaWeights.metal, atIndex: 0)
-                command.setBytes(pNbFilters, atIndex: 1)
-                command.setBytes(pNbFiltersPrev, atIndex: 2)
+                command.setBytes(pNbChannels, atIndex: 1)
+                command.setBytes(pNbChannelsPrev, atIndex: 2)
                 command.setBytes(pDimWeights, atIndex: 3)
                 command.setBytes(pNbBatch, atIndex: 4)
                 command.setBytes(pAccumulate, atIndex: 5)
@@ -1643,7 +1643,7 @@ public class Convolution2D: BN2D
                         reduceBiasesKernel, deviceID: deviceID
                     )
                     command.setBuffer(_bDeltaWeights.metal, atIndex: 0)
-                    command.setBytes(pNbFilters, atIndex: 1)
+                    command.setBytes(pNbChannels, atIndex: 1)
                     command.setBytes(pNbBatch, atIndex: 2)
                     command.setBytes(pAccumulate, atIndex: 3)
                     command.setBuffer(_bBuffers.g.metal, atIndex: 4)

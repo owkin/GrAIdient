@@ -361,7 +361,7 @@ public class MaxPool2D: Layer2D
             
             let pStart: [Int32] = [Int32(start), Int32(end)]
             let pStride: [UInt32] = [UInt32(_stride)]
-            let pNbFilters: [UInt32] = [UInt32(nbChannels)]
+            let pNbChannels: [UInt32] = [UInt32(nbChannels)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pDimensionsPrev: [UInt32] = [UInt32(widthPrev),
@@ -373,7 +373,7 @@ public class MaxPool2D: Layer2D
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(pStart, atIndex: 1)
             command.setBytes(pStride, atIndex: 2)
-            command.setBytes(pNbFilters, atIndex: 3)
+            command.setBytes(pNbChannels, atIndex: 3)
             command.setBytes(pDimensions, atIndex: 4)
             command.setBytes(pDimensionsPrev, atIndex: 5)
             command.setBytes(pNbBatch, atIndex: 6)
@@ -454,7 +454,7 @@ public class MaxPool2D: Layer2D
             
             let pStart: [Int32] = [Int32(start), Int32(end)]
             let pStride: [UInt32] = [UInt32(_stride)]
-            let pNbFilters: [UInt32] = [UInt32(nbChannels)]
+            let pNbChannels: [UInt32] = [UInt32(nbChannels)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pDimensionsPrev: [UInt32] = [UInt32(widthPrev),
@@ -468,7 +468,7 @@ public class MaxPool2D: Layer2D
             command.setBuffer(_indicesMax.metal, atIndex: 1)
             command.setBytes(pStart, atIndex: 2)
             command.setBytes(pStride, atIndex: 3)
-            command.setBytes(pNbFilters, atIndex: 4)
+            command.setBytes(pNbChannels, atIndex: 4)
             command.setBytes(pDimensions, atIndex: 5)
             command.setBytes(pDimensionsPrev, atIndex: 6)
             command.setBytes(pNbBatch, atIndex: 7)

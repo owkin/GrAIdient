@@ -10,7 +10,7 @@ import MetalKit
 ///
 /// Layer with a 2D shape neural structure.
 ///
-/// This layer downscales the previous layer, outputing the maximal elements of small windows.
+/// This layer downscales the previous layer, outputing the maximal elements contained in a moving kernel.
 ///
 public class MaxPool2D: Layer2D
 {

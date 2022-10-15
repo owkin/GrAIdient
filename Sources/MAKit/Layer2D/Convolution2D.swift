@@ -17,8 +17,6 @@ public class Convolution2D: BN2D
 {
     /// Downscale factor of the resolution (height and width).
     let _stride: Int
-    /// Whether to use biases or not.
-    var _useBiases = true
     
     /// List of grids of weights.
     var _wArrays: [WeightGrids] = []
@@ -113,12 +111,7 @@ public class Convolution2D: BN2D
     }
     
     /// Whether to update biases or not.
-    var updateBiases: Bool
-    {
-        get {
-            return _useBiases
-        }
-    }
+    var _updateBiases: Bool = true
     
     /// Cache for weights before calling `initKernel` API.
     var _weightsList = [Float]()
@@ -142,7 +135,7 @@ public class Convolution2D: BN2D
                 }}
             }
             
-            if _useBiases {
+            if _updateBiases {
             for depth in 0..<nbChannels
             {
                 weightsTmp.append(Float(_bArrays.w[depth]))
@@ -167,7 +160,7 @@ public class Convolution2D: BN2D
             MetalKernel.get.download([_wBuffers.w_p!])
             weightsTmp += _wBuffers.w_p!.shared.array
             
-            if _useBiases
+            if _updateBiases
             {
                 MetalKernel.get.download([_bBuffers.w_p!])
                 weightsTmp += _bBuffers.w_p!.shared.array
@@ -196,7 +189,7 @@ public class Convolution2D: BN2D
             }
             
             let nbConvWeights: Int
-            if _useBiases
+            if _updateBiases
             {
                 nbConvWeights = nbWeights * weightHeight * weightWidth +
                                 nbChannels
@@ -229,7 +222,7 @@ public class Convolution2D: BN2D
             }
             
             let nbConvWeights: Int
-            if _useBiases
+            if _updateBiases
             {
                 nbConvWeights = nbWeights * weightHeight * weightWidth +
                                 nbChannels
@@ -266,7 +259,7 @@ public class Convolution2D: BN2D
         get {
             var nbGC = 0
             nbGC += nbChannels * nbChannelsPrev * weightHeight * weightWidth
-            if updateBiases
+            if _updateBiases
             {
                 nbGC += nbChannels
             }
@@ -336,7 +329,7 @@ public class Convolution2D: BN2D
         case weightWidth
         case weightHeight
         case weights
-        case useBiases
+        case updateBiases
     }
     
     ///
@@ -348,7 +341,7 @@ public class Convolution2D: BN2D
     ///     - nbChannels: Number of channels.
     ///     - stride: Downscale factor of the resolution (height and width).
     ///     - activation: The activation function.
-    ///     - biases: Whether to use biases or not.
+    ///     - biases: Whether to update biases or not.
     ///     - bn: Whether to use batch normalization or not.
     ///     - params: Contextual parameters linking to the model.
     ///
@@ -368,7 +361,7 @@ public class Convolution2D: BN2D
         nbWeights = nbChannels * layerPrev.nbChannels
         weightWidth = size
         weightHeight = size
-        _useBiases = biases
+        _updateBiases = biases
         
         super.init(layerPrev: layerPrev,
                    nbChannels: nbChannels,
@@ -391,7 +384,7 @@ public class Convolution2D: BN2D
     {
         let values = try decoder.container(keyedBy: Keys.self)
         _stride = try values.decode(Int.self, forKey: .stride)
-        _useBiases = try values.decode(Bool.self, forKey: .useBiases)
+        _updateBiases = try values.decode(Bool.self, forKey: .updateBiases)
         nbWeights = try values.decode(Int.self, forKey: .nbWeights)
         weightWidth = try values.decode(Int.self, forKey: .weightWidth)
         weightHeight = try values.decode(Int.self, forKey: .weightHeight)
@@ -418,7 +411,7 @@ public class Convolution2D: BN2D
         var container = encoder.container(keyedBy: Keys.self)
         
         try container.encode(_stride, forKey: .stride)
-        try container.encode(_useBiases, forKey: .useBiases)
+        try container.encode(_updateBiases, forKey: .updateBiases)
         try container.encode(nbWeights, forKey: .nbWeights)
         try container.encode(weightWidth, forKey: .weightWidth)
         try container.encode(weightHeight, forKey: .weightHeight)
@@ -465,7 +458,7 @@ public class Convolution2D: BN2D
             nbChannels: nbChannels,
             stride: _stride,
             activation: _activation?.name,
-            biases: _useBiases,
+            biases: _updateBiases,
             bn: _bn != nil || _bnGPU != nil,
             params: params
         )
@@ -524,7 +517,7 @@ public class Convolution2D: BN2D
             nbChannels: nbChannels,
             stride: _stride,
             activation: nil,
-            biases: _useBiases,
+            biases: _updateBiases,
             bn: false,
             params: params
         )
@@ -635,7 +628,7 @@ public class Convolution2D: BN2D
                 }}
             }
             
-            if _useBiases
+            if _updateBiases
             {
                 let offset = nbWeights * weightHeight * weightWidth
                 for depth in 0..<nbChannels
@@ -697,7 +690,7 @@ public class Convolution2D: BN2D
                 weightsPtr[elem] = _weightsList[elem]
             }
             
-            if _useBiases
+            if _updateBiases
             {
                 let offset = nbWeights * weightHeight * weightWidth
                 for depth in 0..<nbChannels
@@ -740,7 +733,7 @@ public class Convolution2D: BN2D
                 deviceID: deviceID
             )
             
-            if updateBiases
+            if _updateBiases
             {
                 _bDeltaWeights = MetalPrivateBuffer<Float>(
                     batchSize * nbChannels, deviceID: deviceID
@@ -861,7 +854,7 @@ public class Convolution2D: BN2D
                 }}
             }}}}}}}
             
-            if updateBiases {
+            if _updateBiases {
             for batch in 0..<batchSize {
             for DEPTH in 0..<nbChannels {
             for elem in 0...1 {
@@ -1077,7 +1070,7 @@ public class Convolution2D: BN2D
                 }}
             }}}}}}}
             
-            if updateBiases {
+            if _updateBiases {
             for batch in 0..<batchSize {
             for DEPTH in 0..<nbChannels {
             for elem in 0...1 {
@@ -1395,7 +1388,7 @@ public class Convolution2D: BN2D
                         weights.g(i-startI, j-startJ, tmp)
                     }}
                 }
-                if updateBiases
+                if _updateBiases
                 {
                     var tmp: Double = 0.0
                     for elem in 0..<batchSize {
@@ -1537,7 +1530,7 @@ public class Convolution2D: BN2D
                 )
                 command.enqueue()
                 
-                if updateBiases
+                if _updateBiases
                 {
                     command = MetalKernel.get.createCommand(
                         batchDerBiasesKernel, deviceID: deviceID
@@ -1591,7 +1584,7 @@ public class Convolution2D: BN2D
                 )
                 command.enqueue()
             
-                if updateBiases
+                if _updateBiases
                 {
                     command = MetalKernel.get.createCommand(
                         derBiasesKernel, deviceID: deviceID
@@ -1637,7 +1630,7 @@ public class Convolution2D: BN2D
                 )
                 command.enqueue()
             
-                if updateBiases
+                if _updateBiases
                 {
                     command = MetalKernel.get.createCommand(
                         reduceBiasesKernel, deviceID: deviceID
@@ -1668,7 +1661,7 @@ public class Convolution2D: BN2D
     {
         var weights = [IWeightArrays]()
         weights += _wArrays
-        if updateBiases
+        if _updateBiases
         {
             weights.append(_bArrays)
         }
@@ -1684,7 +1677,7 @@ public class Convolution2D: BN2D
     {
         var weights = [IWeightBuffers]()
         weights.append(_wBuffers)
-        if updateBiases
+        if _updateBiases
         {
             weights.append(_bBuffers)
         }

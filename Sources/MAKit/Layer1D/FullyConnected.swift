@@ -15,9 +15,6 @@ import MetalKit
 ///
 public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
 {
-    /// Whether to use biases or not.
-    var _useBiases = true
-    
     /// Grid of weights.
     var _wArrays: WeightGrids! = nil
     /// Array of biases.
@@ -142,12 +139,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
     }
     
     /// Whether to update biases or not.
-    var updateBiases: Bool
-    {
-        get {
-            return _useBiases
-        }
-    }
+    var _updateBiases: Bool = true
     
     /// Cache for weights before calling `initKernel` API.
     var _weightsList = [Float]()
@@ -168,7 +160,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                 weightsTmp.append(Float(_wArrays.w(i, j)))
             }}
             
-            if _useBiases {
+            if _updateBiases {
             for depth in 0..<weightHeight
             {
                 weightsTmp.append(Float(_bArrays.w[depth]))
@@ -193,7 +185,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
             MetalKernel.get.download([_wBuffers.w_p!])
             weightsTmp += _wBuffers.w_p!.shared.array
             
-            if _useBiases
+            if _updateBiases
             {
                 MetalKernel.get.download([_bBuffers.w_p!])
                 weightsTmp += _bBuffers.w_p!.shared.array
@@ -222,7 +214,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
     var nbLearnedGC: Int
     {
         get {
-            if !updateBiases
+            if !_updateBiases
             {
                 return nbNeurons * nbNeuronsPrev
             }
@@ -238,7 +230,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
         case weightWidth
         case weightHeight
         case weights
-        case useBiases
+        case updateBiases
     }
     
     ///
@@ -248,7 +240,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
     ///     - layerPrev: Previous layer that has been queued to the model.
     ///     - nbNeurons: Number of neurons.
     ///     - activation: The activation function.
-    ///     - biases: Whether to use biases or not.
+    ///     - biases: Whether to update biases or not.
     ///     - params: Contextual parameters linking to the model.
     ///
     public init(layerPrev: Layer,
@@ -273,7 +265,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
         
         weightWidth = nbNeuronsPrev
         weightHeight = nbNeurons
-        _useBiases = biases
+        _updateBiases = biases
         
         super.init(layerPrev: layerPrev,
                    nbNeurons: nbNeurons,
@@ -292,7 +284,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
     public required init(from decoder: Decoder) throws
     {
         let values = try decoder.container(keyedBy: Keys.self)
-        _useBiases = try values.decode(Bool.self, forKey: .useBiases)
+        _updateBiases = try values.decode(Bool.self, forKey: .updateBiases)
         weightWidth = try values.decode(Int.self, forKey: .weightWidth)
         weightHeight = try values.decode(Int.self, forKey: .weightHeight)
         
@@ -317,7 +309,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
     {
         var container = encoder.container(keyedBy: Keys.self)
         
-        try container.encode(_useBiases, forKey: .useBiases)
+        try container.encode(_updateBiases, forKey: .updateBiases)
         try container.encode(weightWidth, forKey: .weightWidth)
         try container.encode(weightHeight, forKey: .weightHeight)
         
@@ -361,7 +353,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
             layerPrev: layerPrev,
             nbNeurons: nbNeurons,
             activation: _activation?.name,
-            biases: _useBiases,
+            biases: _updateBiases,
             params: params
         )
         if inPlace
@@ -405,7 +397,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
             layerPrev: layerPrev,
             nbNeurons: nbNeurons,
             activation: nil,
-            biases: _useBiases,
+            biases: _updateBiases,
             params: params
         )
         if inPlace
@@ -495,7 +487,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                 _wArrays.w(i, j, Double(_weightsList[offset]))
             }}
         
-            if _useBiases
+            if _updateBiases
             {
                 let offset = weightHeight * weightWidth
                 for depth in 0..<weightHeight
@@ -554,7 +546,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                 weightsPtr[elem] = _weightsList[elem]
             }
             
-            if _useBiases
+            if _updateBiases
             {
                 let offset = weightHeight * weightWidth
                 for depth in 0..<weightHeight
@@ -596,7 +588,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                 batchSize * nbNeurons * weightWidth, deviceID: deviceID
             )
             
-            if updateBiases
+            if _updateBiases
             {
                 _bDeltaWeights = MetalPrivateBuffer<Float>(
                     batchSize * nbNeurons, deviceID: deviceID
@@ -680,7 +672,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                 }
             }}}}
             
-            if updateBiases {
+            if _updateBiases {
             for batch in 0..<batchSize {
             for I in 0..<nbNeurons {
             for elem in 0...1
@@ -804,7 +796,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                 }
             }}}}
             
-            if updateBiases {
+            if _updateBiases {
             for batch in 0..<batchSize {
             for I in 0..<nbNeurons {
             for elem in 0...1
@@ -982,7 +974,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                 _wArrays.g(depth, depthPrev, tmp)
             }}
             
-            if updateBiases
+            if _updateBiases
             {
                 for depth in 0..<nbNeurons
                 {
@@ -1098,7 +1090,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                 )
                 command.enqueue()
                 
-                if updateBiases
+                if _updateBiases
                 {
                     command = MetalKernel.get.createCommand(
                         "flBatchDerBiases", deviceID: deviceID
@@ -1146,7 +1138,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                 )
                 command.enqueue()
                 
-                if updateBiases
+                if _updateBiases
                 {
                     command = MetalKernel.get.createCommand(
                         "flDerBiases", deviceID: deviceID
@@ -1190,7 +1182,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                 )
                 command.enqueue()
                 
-                if updateBiases
+                if _updateBiases
                 {
                     command = MetalKernel.get.createCommand(
                         "reduceBiases", deviceID: deviceID
@@ -1221,7 +1213,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
     {
         var weights = [IWeightArrays]()
         weights.append(_wArrays)
-        if updateBiases
+        if _updateBiases
         {
             weights.append(_bArrays)
         }
@@ -1233,7 +1225,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
     {
         var weights = [IWeightBuffers]()
         weights.append(_wBuffers)
-        if updateBiases
+        if _updateBiases
         {
             weights.append(_bBuffers)
         }

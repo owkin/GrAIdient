@@ -46,7 +46,7 @@ class Activation2DGradTests: Input2DMSE1DCase
         let params = MAKit.Model.Params(context: context)
         
         var layer: Layer2D = Input2D(
-            nbChannels: 3,
+            nbChannels: 1,
             width: width,
             height: height,
             params: params

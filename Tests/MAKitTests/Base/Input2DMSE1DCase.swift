@@ -52,7 +52,7 @@ class Input2DMSE1DCase: MSE1DCase
         }
         else
         {
-            ins = build2DData(getBatchSize(model) * 3 * height * width)
+            ins = build2DData(getBatchSize(model) * height * width)
         }
         
         if MAKit.Opti.GPU
@@ -71,7 +71,7 @@ class Input2DMSE1DCase: MSE1DCase
                 format: .Neuron
             )
         }
-        return (ins, ins.count / (3 * height * width))
+        return (ins, ins.count / (height * width))
     }
     
     ///

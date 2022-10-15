@@ -39,7 +39,7 @@ class Layer2DGradTests: Input2DMSE1DCase
         let params = MAKit.Model.Params(context: context)
         
         var layer: Layer2D = Input2D(
-            nbChannels: 3, width: width, height: height, params: params
+            nbChannels: 1, width: width, height: height, params: params
         )
         let firstLayer = layer
         var head: Layer1D? = nil
@@ -458,7 +458,7 @@ class Layer2DFlowTests: Input2DMSE1DCase
         let params = MAKit.Model.Params(context: context)
         
         var layer: Layer2D = Input2D(
-            nbChannels: 3, width: width, height: height, params: params
+            nbChannels: 1, width: width, height: height, params: params
         )
         let firstLayer = layer
         var head: Layer1D? = nil

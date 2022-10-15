@@ -6,7 +6,6 @@
 //
 
 import XCTest
-import Retry
 import MAKit
 import MAKitTestsUtils
 
@@ -96,8 +95,9 @@ class Input1DLinearError1DCase: LinearError1DCase
         let lastLayer = model.layers.last as! LinearError1D
         let layersGraph = model.getGraph(lastLayer)
         
-        retry(max: NB_RETRY)
+        retryNumeric(nbRetry: NB_RETRY)
         {
+            () throws in
             try trainer.run(
                 layersGraph: layersGraph,
                 setData: self.setData,
@@ -123,8 +123,9 @@ class Input1DLinearError1DCase: LinearError1DCase
     ///
     func run(_ trainer: FlowTrainer)
     {
-        retry(max: NB_RETRY)
+        retryNumeric(nbRetry: NB_RETRY)
         {
+            () throws in
             try trainer.run(
                 setData: self.setData,
                 setLoss: self.setLoss)
@@ -148,8 +149,9 @@ class Input1DLinearError1DCase: LinearError1DCase
     ///
     func run(_ trainer: FlowResetTrainer)
     {
-        retry(max: NB_RETRY)
+        retryNumeric(nbRetry: NB_RETRY)
         {
+            () throws in
             try trainer.run(
                 setData: self.setData,
                 setLoss: self.setLoss)
@@ -173,8 +175,9 @@ class Input1DLinearError1DCase: LinearError1DCase
     ///
     func run(_ trainer: FlowReverseTrainer)
     {
-        retry(max: NB_RETRY)
+        retryNumeric(nbRetry: NB_RETRY)
         {
+            () throws in
             try trainer.run(
                 setData: self.setData,
                 setLoss: self.setLoss)
@@ -198,8 +201,9 @@ class Input1DLinearError1DCase: LinearError1DCase
     ///
     func run(_ trainer: InferenceTrainer)
     {
-        retry(max: NB_RETRY)
+        retryNumeric(nbRetry: NB_RETRY)
         {
+            () throws in
             try trainer.run(
                 setData: self.setData,
                 setLoss: self.setLoss,
@@ -224,8 +228,9 @@ class Input1DLinearError1DCase: LinearError1DCase
     ///
     func run(_ trainer: LoadTrainer)
     {
-        retry(max: NB_RETRY)
+        retryNumeric(nbRetry: NB_RETRY)
         {
+            () throws in
             try trainer.run(
                 setData: self.setData,
                 setLoss: self.setLoss,
@@ -254,8 +259,9 @@ class Input1DLinearError1DCase: LinearError1DCase
     ///
     func runCopy(_ trainer: TransformTrainer)
     {
-        retry(max: NB_RETRY)
+        retryNumeric(nbRetry: NB_RETRY)
         {
+            () throws in
             try trainer.run(
                 transform: self.copy,
                 setData: self.setData,
@@ -285,8 +291,9 @@ class Input1DLinearError1DCase: LinearError1DCase
     ///
     func runCopyInPlace(_ trainer: TransformTrainer)
     {
-        retry(max: NB_RETRY)
+        retryNumeric(nbRetry: NB_RETRY)
         {
+            () throws in
             try trainer.run(
                 transform: self.copyInPlace,
                 setData: self.setData,
@@ -320,8 +327,9 @@ class Input1DLinearError1DCase: LinearError1DCase
         optimizerParams.normThreshold = normClipping
         trainer.optimizerParams = optimizerParams
         
-        retry(max: NB_RETRY)
+        retryNumeric(nbRetry: NB_RETRY)
         {
+            () throws in
             try trainer.run(
                 setData: self.setData,
                 setLoss: self.setLoss)

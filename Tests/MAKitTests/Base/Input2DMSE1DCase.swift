@@ -6,7 +6,6 @@
 //
 
 import XCTest
-import Retry
 import MAKit
 import MAKitTestsUtils
 
@@ -174,8 +173,9 @@ class Input2DMSE1DCase: MSE1DCase
         let lastLayer = model.layers.last as! MSE1D
         let layersGraph = model.getGraph(lastLayer)
         
-        retry(max: NB_RETRY)
+        retryNumeric(nbRetry: NB_RETRY)
         {
+            () throws in
             try trainer.run(
                 layersGraph: layersGraph,
                 setData: self.setData,
@@ -201,8 +201,9 @@ class Input2DMSE1DCase: MSE1DCase
     ///
     func run(_ trainer: FlowTrainer)
     {
-        retry(max: NB_RETRY)
+        retryNumeric(nbRetry: NB_RETRY)
         {
+            () throws in
             try trainer.run(
                 setData: self.setData,
                 setLoss: self.setLoss)
@@ -226,8 +227,9 @@ class Input2DMSE1DCase: MSE1DCase
     ///
     func run(_ trainer: FlowResetTrainer)
     {
-        retry(max: NB_RETRY)
+        retryNumeric(nbRetry: NB_RETRY)
         {
+            () throws in
             try trainer.run(
                 setData: self.setData,
                 setLoss: self.setLoss)
@@ -251,8 +253,9 @@ class Input2DMSE1DCase: MSE1DCase
     ///
     func run(_ trainer: FlowReverseTrainer)
     {
-        retry(max: NB_RETRY)
+        retryNumeric(nbRetry: NB_RETRY)
         {
+            () throws in
             try trainer.run(
                 setData: self.setData,
                 setLoss: self.setLoss)
@@ -276,8 +279,9 @@ class Input2DMSE1DCase: MSE1DCase
     ///
     func run(_ trainer: InferenceTrainer)
     {
-        retry(max: NB_RETRY)
+        retryNumeric(nbRetry: NB_RETRY)
         {
+            () throws in
             try trainer.run(
                 setData: self.setData,
                 setLoss: self.setLoss,
@@ -302,8 +306,9 @@ class Input2DMSE1DCase: MSE1DCase
     ///
     func run(_ trainer: LoadTrainer)
     {
-        retry(max: NB_RETRY)
+        retryNumeric(nbRetry: NB_RETRY)
         {
+            () throws in
             try trainer.run(
                 setData: self.setData,
                 setLoss: self.setLoss,
@@ -332,8 +337,9 @@ class Input2DMSE1DCase: MSE1DCase
     ///
     func runCopy(_ trainer: TransformTrainer)
     {
-        retry(max: NB_RETRY)
+        retryNumeric(nbRetry: NB_RETRY)
         {
+            () throws in
             try trainer.run(
                 transform: self.copy,
                 setData: self.setData,
@@ -363,8 +369,9 @@ class Input2DMSE1DCase: MSE1DCase
     ///
     func runCopyInPlace(_ trainer: TransformTrainer)
     {
-        retry(max: NB_RETRY)
+        retryNumeric(nbRetry: NB_RETRY)
         {
+            () throws in
             try trainer.run(
                 transform: self.copyInPlace,
                 setData: self.setData,
@@ -394,8 +401,9 @@ class Input2DMSE1DCase: MSE1DCase
     ///
     func runResize(_ trainer: TransformTrainer)
     {
-        retry(max: NB_RETRY)
+        retryNumeric(nbRetry: NB_RETRY)
         {
+            () throws in
             try trainer.run(
                 transform: self.resize,
                 setData: self.setData,
@@ -425,8 +433,9 @@ class Input2DMSE1DCase: MSE1DCase
     ///
     func runResizeInPlace(_ trainer: TransformTrainer)
     {
-        retry(max: NB_RETRY)
+        retryNumeric(nbRetry: NB_RETRY)
         {
+            () throws in
             try trainer.run(
                 transform: self.resizeInPlace,
                 setData: self.setData,
@@ -460,8 +469,9 @@ class Input2DMSE1DCase: MSE1DCase
         optimizerParams.normThreshold = normClipping
         trainer.optimizerParams = optimizerParams
         
-        retry(max: NB_RETRY)
+        retryNumeric(nbRetry: NB_RETRY)
         {
+            () throws in
             try trainer.run(
                 setData: self.setData,
                 setLoss: self.setLoss)

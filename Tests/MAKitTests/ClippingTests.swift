@@ -9,7 +9,7 @@ import MAKit
 import MAKitTestsUtils
 
 // -----------------------------------------------------------------------------
-// Gradient Gradient Clipping
+// Gradient Checking
 // We expect to see errors ~ 1e-7 and less.
 // -----------------------------------------------------------------------------
 class ClippingTests: Input1DMSE1DCase

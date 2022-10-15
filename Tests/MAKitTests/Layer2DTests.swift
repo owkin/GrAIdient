@@ -105,21 +105,21 @@ class Layer2DGradTests: Input2DMSE1DCase
             
         case "AdaptiveAvgPool1":
             layer = AdaptiveAvgPool2D(
-                layerPrev: layer, size: 12, params: params
+                layerPrev: layer, size: 6, params: params
             )
             
         case "AdaptiveAvgPool2":
-            layer = AdaptiveAvgPool2D(layerPrev: layer, size: 5, params: params)
+            layer = AdaptiveAvgPool2D(layerPrev: layer, size: 2, params: params)
             
         case "AdaptiveAvgPool3":
-            layer = AdaptiveAvgPool2D(layerPrev: layer, size: 6, params: params)
+            layer = AdaptiveAvgPool2D(layerPrev: layer, size: 3, params: params)
             
         case "AdaptiveAvgPool4":
             layer = MaxPool2D(
                 layerPrev: layer, size: 2, stride: 2, params: params
             )
             layer = AdaptiveAvgPool2D(
-                layerPrev: layer, size: 15, params: params
+                layerPrev: layer, size: 9, params: params
             )
             
         case "AdaptiveAvgPool5":
@@ -127,7 +127,7 @@ class Layer2DGradTests: Input2DMSE1DCase
                 layerPrev: layer, size: 2, stride: 2, params: params
             )
             layer = AdaptiveAvgPool2D(
-                layerPrev: layer, size: 12, params: params
+                layerPrev: layer, size: 6, params: params
             )
             
         case "Sum":
@@ -149,7 +149,7 @@ class Layer2DGradTests: Input2DMSE1DCase
         case "SelectNeurons":
             head = SelectNeurons2D(
                 layerPrev: layer,
-                targetI: 3, targetJ: 6,
+                targetI: 1, targetJ: 3,
                 params: params
             )
             
@@ -524,17 +524,17 @@ class Layer2DFlowTests: Input2DMSE1DCase
             
         case "AdaptiveAvgPool1":
             layer = AdaptiveAvgPool2D(
-                layerPrev: layer, size: 12, params: params
+                layerPrev: layer, size: 6, params: params
             )
             
         case "AdaptiveAvgPool2":
             layer = AdaptiveAvgPool2D(
-                layerPrev: layer, size: 5, params: params
+                layerPrev: layer, size: 2, params: params
             )
             
         case "AdaptiveAvgPool3":
             layer = AdaptiveAvgPool2D(
-                layerPrev: layer, size: 6, params: params
+                layerPrev: layer, size: 3, params: params
             )
             
         case "AdaptiveAvgPool4":
@@ -542,7 +542,7 @@ class Layer2DFlowTests: Input2DMSE1DCase
                 layerPrev: layer, size: 2, stride: 2, params: params
             )
             layer = AdaptiveAvgPool2D(
-                layerPrev: layer, size: 15, params: params
+                layerPrev: layer, size: 9, params: params
             )
             
         case "AdaptiveAvgPool5":
@@ -550,7 +550,7 @@ class Layer2DFlowTests: Input2DMSE1DCase
                 layerPrev: layer, size: 2, stride: 2, params: params
             )
             layer = AdaptiveAvgPool2D(
-                layerPrev: layer, size: 12, params: params
+                layerPrev: layer, size: 6, params: params
             )
             
         case "Sum":
@@ -572,7 +572,7 @@ class Layer2DFlowTests: Input2DMSE1DCase
         case "SelectNeurons":
             head = SelectNeurons2D(
                 layerPrev: layer,
-                targetI: 3, targetJ: 6,
+                targetI: 1, targetJ: 3,
                 params: params
             )
             
@@ -1082,6 +1082,12 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
 // -----------------------------------------------------------------------------
 class Layer2DInferenceTests: Layer2DFlowTests
 {
+    override func setUpWithError() throws
+    {
+        try! super.setUpWithError()
+        optimizerParams.nbLoops = 2
+    }
+    
     private func _buildTrainer(model: String, bn: Bool) -> InferenceTrainer
     {
         let trainer = InferenceTrainer(
@@ -1099,14 +1105,14 @@ class Layer2DInferenceTests: Layer2DFlowTests
     override func testConvolution1BN() throws
     {
         let trainer = _buildTrainer(model: "Convolution1", bn: true)
-        run(trainer)
+        run(trainer, nbRetry: 5, diffThreshold: 0.01)
     }
     
     override func testConvolution1BNSample() throws
     {
         MAKit.Gradient.sample = true
         let trainer = _buildTrainer(model: "Convolution1", bn: true)
-        run(trainer)
+        run(trainer, nbRetry: 5, diffThreshold: 0.01)
     }
     
     override func testConvolution1NoBN() throws
@@ -1164,7 +1170,7 @@ class Layer2DInferenceTests: Layer2DFlowTests
     override func testBN2D() throws
     {
         let trainer = _buildTrainer(model: "BN", bn: false)
-        run(trainer)
+        run(trainer, nbRetry: 5, diffThreshold: 0.01)
     }
     
     override func testMaxPool1() throws

@@ -92,15 +92,21 @@ class Input1DMSE1DCase: MSE1DCase
     /// The goal is to compare the gradients of weights that are computed through `backward`
     /// to an estimation that is being computed through `forwardGC`.
     ///
-    /// - Parameter trainer: The testing pipeline to run.
+    /// - Parameters:
+    ///     - trainer: The testing pipeline to run.
+    ///     - nbRetry: The maximum number we can retry the test.
+    ///     - diffThreshold: The threshold above which the relative difference is too high.
     ///
-    func run(_ trainer: GradTrainer)
+    func run(
+        _ trainer: GradTrainer,
+        nbRetry: Int = NB_RETRY,
+        diffThreshold: Double = 0.000001)
     {
         let model = trainer.model!
         let lastLayer = model.layers.last as! MSE1D
         let layersGraph = model.getGraph(lastLayer)
         
-        retryNumeric(nbRetry: NB_RETRY)
+        retryNumeric(nbRetry: nbRetry)
         {
             () throws in
             try trainer.run(
@@ -110,7 +116,7 @@ class Input1DMSE1DCase: MSE1DCase
                 getGradientsApprox: self.getGradientsApprox)
             {
                 (gradDiff: Double) in
-                if gradDiff > 0.000001
+                if gradDiff > diffThreshold
                 {
                     throw TestError.Numeric
                 }
@@ -124,11 +130,17 @@ class Input1DMSE1DCase: MSE1DCase
     /// The goal is to compare the gradients of weights computed in the CPU execution context with
     /// the gradients of weights computed in the GPU execution context.
     ///
-    /// - Parameter trainer: The testing pipeline to run.
+    /// - Parameters:
+    ///     - trainer: The testing pipeline to run.
+    ///     - nbRetry: The maximum number we can retry the test.
+    ///     - diffThreshold: The threshold above which the relative difference is too high.
     ///
-    func run(_ trainer: FlowTrainer)
+    func run(
+        _ trainer: FlowTrainer,
+        nbRetry: Int = NB_RETRY,
+        diffThreshold: Double = 0.000001)
     {
-        retryNumeric(nbRetry: NB_RETRY)
+        retryNumeric(nbRetry: nbRetry)
         {
             () throws in
             try trainer.run(
@@ -136,7 +148,7 @@ class Input1DMSE1DCase: MSE1DCase
                 setLoss: self.setLoss)
             {
                 (gradDiff: Double) in
-                if gradDiff > 0.000001
+                if gradDiff > diffThreshold
                 {
                     throw TestError.Numeric
                 }
@@ -150,11 +162,17 @@ class Input1DMSE1DCase: MSE1DCase
     /// The goal is to compare the gradients of weights computed in the CPU execution context with
     /// the gradients of weights computed in the GPU execution context.
     ///
-    /// - Parameter trainer: The testing pipeline to run.
+    /// - Parameters:
+    ///     - trainer: The testing pipeline to run.
+    ///     - nbRetry: The maximum number we can retry the test.
+    ///     - diffThreshold: The threshold above which the relative difference is too high.
     ///
-    func run(_ trainer: FlowResetTrainer)
+    func run(
+        _ trainer: FlowResetTrainer,
+        nbRetry: Int = NB_RETRY,
+        diffThreshold: Double = 0.000001)
     {
-        retryNumeric(nbRetry: NB_RETRY)
+        retryNumeric(nbRetry: nbRetry)
         {
             () throws in
             try trainer.run(
@@ -162,7 +180,7 @@ class Input1DMSE1DCase: MSE1DCase
                 setLoss: self.setLoss)
             {
                 (gradDiff: Double) in
-                if gradDiff > 0.000001
+                if gradDiff > diffThreshold
                 {
                     throw TestError.Numeric
                 }
@@ -176,11 +194,17 @@ class Input1DMSE1DCase: MSE1DCase
     /// The goal is to compare the gradients of weights computed in the CPU execution context with
     /// the gradients of weights computed in the GPU execution context.
     ///
-    /// - Parameter trainer: The testing pipeline to run.
+    /// - Parameters:
+    ///     - trainer: The testing pipeline to run.
+    ///     - nbRetry: The maximum number we can retry the test.
+    ///     - diffThreshold: The threshold above which the relative difference is too high.
     ///
-    func run(_ trainer: FlowReverseTrainer)
+    func run(
+        _ trainer: FlowReverseTrainer,
+        nbRetry: Int = NB_RETRY,
+        diffThreshold: Double = 0.000001)
     {
-        retryNumeric(nbRetry: NB_RETRY)
+        retryNumeric(nbRetry: nbRetry)
         {
             () throws in
             try trainer.run(
@@ -188,7 +212,7 @@ class Input1DMSE1DCase: MSE1DCase
                 setLoss: self.setLoss)
             {
                 (gradDiff: Double) in
-                if gradDiff > 0.000001
+                if gradDiff > diffThreshold
                 {
                     throw TestError.Numeric
                 }
@@ -202,11 +226,16 @@ class Input1DMSE1DCase: MSE1DCase
     /// The goal is to compare the losses computed in the CPU execution context with
     /// the losses computed in the GPU execution context during the inference phase.
     ///
-    /// - Parameter trainer: The testing pipeline to run.
+    /// - Parameters:
+    ///     - trainer: The testing pipeline to run.
+    ///     - nbRetry: The maximum number we can retry the test.
+    ///     - diffThreshold: The threshold above which the relative difference is too high.
     ///
-    func run(_ trainer: InferenceTrainer)
+    func run(_ trainer: InferenceTrainer,
+             nbRetry: Int = NB_RETRY,
+             diffThreshold: Double = 0.001)
     {
-        retryNumeric(nbRetry: NB_RETRY)
+        retryNumeric(nbRetry: nbRetry)
         {
             () throws in
             try trainer.run(
@@ -215,7 +244,7 @@ class Input1DMSE1DCase: MSE1DCase
                 getLoss: self.getLoss)
             {
                 (lossDiff: Double) in
-                if lossDiff > 0.001
+                if lossDiff > diffThreshold
                 {
                     throw TestError.Numeric
                 }
@@ -229,11 +258,16 @@ class Input1DMSE1DCase: MSE1DCase
     /// The goal is to compare the losses computed in the CPU execution after havinng loaded the
     /// model from the disk and do the same in the GPU execution context.
     ///
-    /// - Parameter trainer: The testing pipeline to run.
+    /// - Parameters:
+    ///     - trainer: The testing pipeline to run.
+    ///     - nbRetry: The maximum number we can retry the test.
+    ///     - diffThreshold: The threshold above which the relative difference is too high.
     ///
-    func run(_ trainer: LoadTrainer)
+    func run(_ trainer: LoadTrainer,
+             nbRetry: Int = NB_RETRY,
+             diffThreshold: Double = 0.001)
     {
-        retryNumeric(nbRetry: NB_RETRY)
+        retryNumeric(nbRetry: nbRetry)
         {
             () throws in
             try trainer.run(
@@ -242,11 +276,11 @@ class Input1DMSE1DCase: MSE1DCase
                 getLoss: self.getLoss)
             {
                 (diffCPU: Double, diffGPU: Double) in
-                if diffCPU > 0.001
+                if diffCPU > diffThreshold
                 {
                     throw TestError.Numeric
                 }
-                if diffGPU > 0.001
+                if diffGPU > diffThreshold
                 {
                     throw TestError.Numeric
                 }
@@ -260,11 +294,17 @@ class Input1DMSE1DCase: MSE1DCase
     /// The goal is to compare the losses computed in the CPU execution
     /// after copying the model and do the same in the GPU execution context.
     ///
-    /// - Parameter trainer: The testing pipeline to run.
+    /// - Parameters:
+    ///     - trainer: The testing pipeline to run.
+    ///     - nbRetry: The maximum number we can retry the test.
+    ///     - diffThreshold: The threshold above which the relative difference is too high.
     ///
-    func runCopy(_ trainer: TransformTrainer)
+    func runCopy(
+        _ trainer: TransformTrainer,
+        nbRetry: Int = NB_RETRY,
+        diffThreshold: Double = 0.001)
     {
-        retryNumeric(nbRetry: NB_RETRY)
+        retryNumeric(nbRetry: nbRetry)
         {
             () throws in
             try trainer.run(
@@ -274,11 +314,11 @@ class Input1DMSE1DCase: MSE1DCase
                 getLoss: self.getLoss)
             {
                 (diffCPU: Double, diffGPU: Double) in
-                if diffCPU > 0.001
+                if diffCPU > diffThreshold
                 {
                     throw TestError.Numeric
                 }
-                if diffGPU > 0.001
+                if diffGPU > diffThreshold
                 {
                     throw TestError.Numeric
                 }
@@ -292,11 +332,17 @@ class Input1DMSE1DCase: MSE1DCase
     /// The goal is to compare the losses computed in the CPU execution
     /// after copying the model in place and do the same in the GPU execution context.
     ///
-    /// - Parameter trainer: The testing pipeline to run.
+    /// - Parameters:
+    ///     - trainer: The testing pipeline to run.
+    ///     - nbRetry: The maximum number we can retry the test.
+    ///     - diffThreshold: The threshold above which the relative difference is too high.
     ///
-    func runCopyInPlace(_ trainer: TransformTrainer)
+    func runCopyInPlace(
+        _ trainer: TransformTrainer,
+        nbRetry: Int = NB_RETRY,
+        diffThreshold: Double = 0.001)
     {
-        retryNumeric(nbRetry: NB_RETRY)
+        retryNumeric(nbRetry: nbRetry)
         {
             () throws in
             try trainer.run(
@@ -306,11 +352,11 @@ class Input1DMSE1DCase: MSE1DCase
                 getLoss: self.getLoss)
             {
                 (diffCPU: Double, diffGPU: Double) throws in
-                if diffCPU > 0.001
+                if diffCPU > diffThreshold
                 {
                     throw TestError.Numeric
                 }
-                if diffGPU > 0.001
+                if diffGPU > diffThreshold
                 {
                     throw TestError.Numeric
                 }
@@ -323,16 +369,23 @@ class Input1DMSE1DCase: MSE1DCase
     ///
     /// The goal is to compare the norm of the gradients of the weights with a threshold.
     ///
-    /// - Parameter trainer: The testing pipeline to run.
+    /// - Parameters:
+    ///     - trainer: The testing pipeline to run.
+    ///     - nbRetry: The maximum number we can retry the test.
+    ///     - diffThreshold: The threshold above which the relative difference is too high.
+    ///     - normClipping: The threshold above which gradients must be cut.
     ///
-    func run(_ trainer: NormTrainer)
+    func run(
+        _ trainer: NormTrainer,
+        nbRetry: Int = NB_RETRY,
+        diffThreshold: Double = 0.001,
+        normClipping: Double = 0.001)
     {
-        let normClipping = 0.001
         optimizerParams.gradientClipping = true
         optimizerParams.normThreshold = normClipping
         trainer.optimizerParams = optimizerParams
         
-        retryNumeric(nbRetry: NB_RETRY)
+        retryNumeric(nbRetry: nbRetry)
         {
             () throws in
             try trainer.run(
@@ -340,7 +393,7 @@ class Input1DMSE1DCase: MSE1DCase
                 setLoss: self.setLoss)
             {
                 (normDiff: Double) throws in
-                if normDiff > 0.000001
+                if normDiff > diffThreshold
                 {
                     throw TestError.Numeric
                 }

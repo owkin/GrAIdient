@@ -1,8 +1,8 @@
 //
-//  Biases.metal
+// Biases.metal
+// MAKit
 //
-//  Created by Jean-François Reboud on 25/07/2022.
-//  Copyright © 2022 Jean-François Reboud. All rights reserved.
+// Created by Jean-François Reboud on 14/10/2022.
 //
 
 #include <metal_stdlib>
@@ -10,19 +10,19 @@ using namespace metal;
 
 kernel void reduceBiases(
     const device float * deltaWeights,
-    constant uint * pNbNeurones,
+    constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pAccumulate,
     device float * grads,
     uint id [[ thread_position_in_grid ]])
 {
-    uint nbNeurones;
+    uint nbNeurons;
     uint nbBatch;
     uint accumulate;
     
-    if (pNbNeurones && pNbBatch && pAccumulate && deltaWeights && grads)
+    if (pNbNeurons && pNbBatch && pAccumulate && deltaWeights && grads)
     {
-        nbNeurones = *pNbNeurones;
+        nbNeurons = *pNbNeurons;
         nbBatch = *pNbBatch;
         accumulate = *pAccumulate;
     }
@@ -30,7 +30,7 @@ kernel void reduceBiases(
         return ;
     
     uint depth = id;
-    if (depth >= nbNeurones)
+    if (depth >= nbNeurons)
     {
         return ;
     }
@@ -38,7 +38,7 @@ kernel void reduceBiases(
     float tmp = 0.0;
     for (uint elem=0; elem<nbBatch; elem++)
     {
-        uint offset = depth + elem * nbNeurones;
+        uint offset = depth + elem * nbNeurons;
         tmp += deltaWeights[offset];
     }
     

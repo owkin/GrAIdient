@@ -1,12 +1,12 @@
 //
-// Neurones.swift
+// Neurons.swift
 // MAKit
 //
 // Created by Jean-François Reboud on 09/10/2022.
 //
 
 /// Unit of a neural structure in the CPU execution context.
-public class Neurone
+public class Neuron
 {
     /// List of state variables of size: (batch size,).
     public var v = [Var]()
@@ -42,7 +42,7 @@ public class Neurone
         public var out: Double = 0.0
     }
     
-    /// Create one Neurone.
+    /// Create one Neuron.
     public init() {}
     
     ///
@@ -75,34 +75,34 @@ public class Neurone
 }
 
 /// 1D shape collection of neurons.
-public class EnsembleNeurones: Ensemble
+public class EnsembleNeurons: Ensemble
 {
     /// The unit type in the collection is a neuron.
-    public typealias T = Neurone
+    public typealias T = Neuron
     
     /// The list of internal neurons.
-    var _neurones: [Neurone]
+    var _neurons: [Neuron]
     /// Number of neurons.
-    var _nbNeurones = 0
+    var _nbNeurons = 0
     
     /// Get the different neurons in the array.
-    public var all: [Neurone]
+    public var all: [Neuron]
     {
-        return _neurones
+        return _neurons
     }
     
     ///
     /// Create an array of neurons.
     ///
-    /// - Parameter nbNeurones: Number of neurons in the array.
+    /// - Parameter nbNeurons: Number of neurons in the array.
     ///
-    public init(_ nbNeurones: Int)
+    public init(_ nbNeurons: Int)
     {
-        _nbNeurones = nbNeurones
-        _neurones = [Neurone]()
-        for _ in 0..<_nbNeurones
+        _nbNeurons = nbNeurons
+        _neurons = [Neuron]()
+        for _ in 0..<_nbNeurons
         {
-            _neurones.append(Neurone())
+            _neurons.append(Neuron())
         }
     }
     
@@ -116,9 +116,9 @@ public class EnsembleNeurones: Ensemble
     ///
     public func initGC(batchSize: Int, nbGC: Int)
     {
-        for neurone in _neurones
+        for neuron in _neurons
         {
-            neurone.initGC(batchSize: batchSize, nbGC: nbGC)
+            neuron.initGC(batchSize: batchSize, nbGC: nbGC)
         }
     }
     
@@ -129,15 +129,15 @@ public class EnsembleNeurones: Ensemble
     ///
     public func initBatch(_ batchSize: Int)
     {
-        for neurone in _neurones
+        for neuron in _neurons
         {
-            neurone.initBatch(batchSize)
+            neuron.initBatch(batchSize)
         }
     }
 }
 
 /// 2D shape collection of neurons.
-public class GridNeurones: EnsembleNeurones, Grid
+public class GridNeurons: EnsembleNeurons, Grid
 {
     /// The width of the grid.
     public let width: Int

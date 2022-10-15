@@ -9,7 +9,7 @@
 open class Layer1D: Layer
 {
     /// Neural structure used in the CPU execution context.
-    public internal(set) var neurones: EnsembleNeurones = EnsembleNeurones(0)
+    public internal(set) var neurons: EnsembleNeurons = EnsembleNeurons(0)
     
     /// Output buffer (result of the forward pass) used in the GPU execution context.
     public internal(set) var outs: MetalPrivateBuffer<Float>! = nil
@@ -17,19 +17,19 @@ open class Layer1D: Layer
     public internal(set) var delta: MetalPrivateBuffer<Float>! = nil
     
     /// Number of neurons.
-    public let nbNeurones: Int
+    public let nbNeurons: Int
     
     /// Number of different weigths for which we are estimating the gradient during Gradient Checking.
     public override var nbGC: Int
     {
         get {
-            return neurones.get(0)!.nbGC
+            return neurons.get(0)!.nbGC
         }
     }
     
     private enum Keys: String, CodingKey
     {
-        case nbNeurones
+        case nbNeurons
     }
     
     ///
@@ -37,12 +37,12 @@ open class Layer1D: Layer
     ///
     /// - Parameters:
     ///     - layerPrev: Previous layer that has been queued to the model.
-    ///     - nbNeurones: Number of neurons.
+    ///     - nbNeurons: Number of neurons.
     ///     - params: Contextual parameters linking to the model.
     ///
-    public init(layerPrev: Layer?, nbNeurones: Int, params: MAKit.Model.Params)
+    public init(layerPrev: Layer?, nbNeurons: Int, params: MAKit.Model.Params)
     {
-        self.nbNeurones = nbNeurones
+        self.nbNeurons = nbNeurons
         super.init(layerPrev: layerPrev, params: params)
     }
     
@@ -57,7 +57,7 @@ open class Layer1D: Layer
     public required init(from decoder: Decoder) throws
     {
         let container = try decoder.container(keyedBy: Keys.self)
-        nbNeurones = try container.decode(Int.self, forKey: .nbNeurones)
+        nbNeurons = try container.decode(Int.self, forKey: .nbNeurons)
         try super.init(from: decoder)
     }
     
@@ -75,7 +75,7 @@ open class Layer1D: Layer
     open override func encode(to encoder: Encoder) throws
     {
         var container = encoder.container(keyedBy: Keys.self)
-        try container.encode(nbNeurones, forKey: .nbNeurones)
+        try container.encode(nbNeurons, forKey: .nbNeurons)
         try super.encode(to: encoder)
     }
     
@@ -87,7 +87,7 @@ open class Layer1D: Layer
     open override func resetKernelCPU()
     {
         super.resetKernelCPU()
-        neurones = EnsembleNeurones(0)
+        neurons = EnsembleNeurons(0)
     }
     
     ///
@@ -109,15 +109,15 @@ open class Layer1D: Layer
     ///
     public func checkStateCPU(batchSize: Int) throws
     {
-        if neurones.nbElems == 0
+        if neurons.nbElems == 0
         {
-            neurones = EnsembleNeurones(nbNeurones)
-            for neurone in neurones.all
+            neurons = EnsembleNeurons(nbNeurons)
+            for neuron in neurons.all
             {
-                neurone.initBatch(batchSize)
+                neuron.initBatch(batchSize)
             }
         }
-        else if batchSize <= 0 || batchSize > neurones.get(0)!.v.count
+        else if batchSize <= 0 || batchSize > neurons.get(0)!.v.count
         {
             throw LayerError.BatchSize
         }
@@ -133,10 +133,10 @@ open class Layer1D: Layer
         if outs == nil
         {
             outs = MetalPrivateBuffer<Float>(
-                batchSize * nbNeurones, deviceID: deviceID
+                batchSize * nbNeurons, deviceID: deviceID
             )
         }
-        else if batchSize <= 0 || batchSize > outs.nbElems / nbNeurones
+        else if batchSize <= 0 || batchSize > outs.nbElems / nbNeurons
         {
             throw LayerError.BatchSize
         }
@@ -152,10 +152,10 @@ open class Layer1D: Layer
         if delta == nil
         {
             delta = MetalPrivateBuffer<Float>(
-                batchSize * nbNeurones, deviceID: deviceID
+                batchSize * nbNeurons, deviceID: deviceID
             )
         }
-        else if batchSize <= 0 || batchSize > delta.nbElems / nbNeurones
+        else if batchSize <= 0 || batchSize > delta.nbElems / nbNeurons
         {
             throw LayerError.BatchSize
         }
@@ -169,9 +169,9 @@ open class Layer1D: Layer
     public func getOutsCPU<T: BinaryFloatingPoint>(elem: Int) -> [T]
     {
         var outs = [T]()
-        for neurone in neurones.all
+        for neuron in neurons.all
         {
-            let out = T(neurone.v[elem].out)
+            let out = T(neuron.v[elem].out)
             outs.append(out)
         }
         return outs
@@ -188,9 +188,9 @@ open class Layer1D: Layer
         MetalKernel.get.download([self.outs])
         
         let outsPtr = self.outs.shared.buffer
-        for depth in 0..<nbNeurones
+        for depth in 0..<nbNeurons
         {
-            let offset = depth + nbNeurones * elem
+            let offset = depth + nbNeurons * elem
             outs.append(T(outsPtr[offset]))
         }
         return outs
@@ -211,9 +211,9 @@ open class Layer1D: Layer
         }
         
         var delta = [T]()
-        for neurone in neurones.all
+        for neuron in neurons.all
         {
-            let out = T(neurone.v[elem].delta)
+            let out = T(neuron.v[elem].delta)
             delta.append(out)
         }
         return delta
@@ -237,9 +237,9 @@ open class Layer1D: Layer
         MetalKernel.get.download([self.delta])
         
         let deltaPtr = self.delta.shared.buffer
-        for depth in 0..<nbNeurones
+        for depth in 0..<nbNeurons
         {
-            let offset = depth + nbNeurones * elem
+            let offset = depth + nbNeurons * elem
             delta.append(T(deltaPtr[offset]))
         }
         return delta

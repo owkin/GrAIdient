@@ -1,14 +1,14 @@
 //
-// Activation1D.swift
+// Activation2D.swift
 // MAKit
 //
-// Created by Jean-François Reboud on 10/10/2022.
+// Created by Jean-François Reboud on 14/10/2022.
 //
 
 import MetalKit
 
-/// Layer with a 1D shape neural structure and an activation function.
-public class Activation1D: Layer1D
+/// Layer with a 2D shape neural structure and an activation function.
+public class Activation2D: Layer2D
 {
     /// The activation function.
     let _activation: ActivationFunction?
@@ -23,35 +23,38 @@ public class Activation1D: Layer1D
     }
     
     ///
-    /// Create a layer with a 1D shape neural structure.
+    /// Create a layer with a 2D shape neural structure.
     ///
     /// - Parameters:
     ///     - layerPrev: Previous layer that has been queued to the model.
     ///     - activation: The activation function.
     ///     - params: Contextual parameters linking to the model.
     ///
-    public init(layerPrev: Layer1D,
-                activation: String,
+    public init(layerPrev: Layer2D, activation: String,
                 params: MAKit.Model.Params)
     {
         _activation = MAKit.Model.Activation.build(activation)
         
         super.init(layerPrev: layerPrev,
-                   nbNeurons: layerPrev.nbNeurons,
+                   nbChannels: layerPrev.nbChannels,
+                   height: layerPrev.height,
+                   width: layerPrev.width,
                    params: params)
     }
     
     ///
-    /// Create a layer with a 1D shape neural structure.
+    /// Create a layer with a 2D shape neural structure.
     ///
     /// - Parameters:
     ///     - layerPrev: Previous layer that has been queued to the model.
-    ///     - nbNeurons: Number of neurons.
+    ///     - nbChannels: Number of channels.
+    ///     - height: Height of each channel.
+    ///     - width: Width of each channel.
     ///     - activation: The activation function.
     ///     - params: Contextual parameters linking to the model.
     ///
     public init(layerPrev: Layer?,
-                nbNeurons: Int, activation: String?,
+                nbChannels: Int, height: Int, width: Int, activation: String?,
                 params: MAKit.Model.Params)
     {
         if let activationStr = activation
@@ -63,7 +66,11 @@ public class Activation1D: Layer1D
             _activation = nil
         }
         
-        super.init(layerPrev: layerPrev, nbNeurons: nbNeurons, params: params)
+        super.init(layerPrev: layerPrev,
+                   nbChannels: nbChannels,
+                   height: height,
+                   width: width,
+                   params: params)
     }
     
     ///
@@ -122,12 +129,12 @@ public class Activation1D: Layer1D
         inPlace: Bool) -> Layer
     {
         let context = ModelContext(name: "", curID: 0)
-        let layerPrev = mapping[idPrev] as! Layer1D
+        let layerPrev = mapping[idPrev] as! Layer2D
         
         let params = MAKit.Model.Params(context: context)
         params.context.curID = id
         
-        let layer = Activation1D(
+        let layer = Activation2D(
             layerPrev: layerPrev,
             activation: _activation!.name,
             params: params
@@ -164,25 +171,27 @@ public class Activation1D: Layer1D
     ///
     private func _forwardGC() throws
     {
-        if let layerPrev = self.layerPrev as? Layer1D
+        if let layerPrev = self.layerPrev as? Layer2D
         {
             try checkStateCPU(batchSize: batchSize)
             
             let nbGC = layerPrev.nbGC
-            for j in 0..<nbNeurons
+            for j in 0..<nbChannels
             {
-                neurons.get(j)!.initGC(batchSize: batchSize, nbGC: nbGC)
+                neurons[j].initGC(batchSize: batchSize, nbGC: nbGC)
             }
             
             let neuronsPrev = layerPrev.neurons
             for batch in 0..<batchSize {
             for elem in 0..<nbGC
             {
-                for depth in 0..<nbNeurons
+                for depth in 0..<nbChannels {
+                for i in 0..<height {
+                for j in 0..<width
                 {
-                    neurons.get(depth)!.gc[batch][elem].out =
-                        neuronsPrev.get(depth)!.gc[batch][elem].out
-                }
+                    neurons[depth].get(i, j)!.gc[batch][elem].out =
+                        neuronsPrev[depth].get(i, j)!.gc[batch][elem].out
+                }}}
             }}
         }
     }
@@ -205,18 +214,20 @@ public class Activation1D: Layer1D
     ///
     public override func forwardCPU() throws
     {
-        if let layerPrev = self.layerPrev as? Layer1D
+        if let layerPrev = self.layerPrev as? Layer2D
         {
             try checkStateCPU(batchSize: batchSize)
             
             let neuronsPrev = layerPrev.neurons
             for elem in 0..<batchSize
             {
-                for depth in 0..<nbNeurons
+                for depth in 0..<nbChannels {
+                for i in 0..<height {
+                for j in 0..<width
                 {
-                    neurons.get(depth)!.v[elem].out =
-                        neuronsPrev.get(depth)!.v[elem].out
-                }
+                    neurons[depth].get(i, j)!.v[elem].out =
+                        neuronsPrev[depth].get(i, j)!.v[elem].out
+                }}}
             }
             
             _activation!.forwardCPU(self)
@@ -230,7 +241,7 @@ public class Activation1D: Layer1D
     ///
     public override func forwardGPU() throws
     {
-        if let layerPrev = self.layerPrev as? Layer1D
+        if let layerPrev = self.layerPrev as? Layer2D
         {
             try checkStateForwardGPU(batchSize: batchSize)
             
@@ -264,25 +275,28 @@ public class Activation1D: Layer1D
     {
         _activation!.backwardCPU(self)
         
-        if let layerPrev = self.layerPrev as? Layer1D, mustComputeBackward
+        if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
             let neuronsPrev = layerPrev.neurons
             for elem in 0..<batchSize
             {
-                for depth in 0..<nbNeurons
+                for depth in 0..<nbChannels {
+                for i in 0..<height {
+                for j in 0..<width
                 {
                     if layerPrev.dirty
                     {
-                        neuronsPrev.get(depth)!.v[elem].delta =
-                            neurons.get(depth)!.v[elem].delta
+                        neuronsPrev[depth].get(i, j)!.v[elem].delta =
+                            neurons[depth].get(i, j)!.v[elem].delta
                     }
                     else
                     {
-                        neuronsPrev.get(depth)!.v[elem].delta +=
-                            neurons.get(depth)!.v[elem].delta
+                        neuronsPrev[depth].get(i, j)!.v[elem].delta +=
+                            neurons[depth].get(i, j)!.v[elem].delta
                     }
-                }
+                }}}
             }
+            
             propagateDirty()
         }
     }
@@ -296,7 +310,7 @@ public class Activation1D: Layer1D
     {
         _activation!.backwardGPU(self)
         
-        if let layerPrev = self.layerPrev as? Layer1D, mustComputeBackward
+        if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
             try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
             
@@ -316,6 +330,7 @@ public class Activation1D: Layer1D
                     "sum2", deviceID: deviceID
                 )
             }
+            
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBytes(pNbElems, atIndex: 1)
             command.setBuffer(layerPrev.delta.metal, atIndex: 2)

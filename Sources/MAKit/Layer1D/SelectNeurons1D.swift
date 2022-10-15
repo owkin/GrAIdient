@@ -1,5 +1,5 @@
 //
-// SelectChannels1D.swift
+// SelectNeurons1D.swift
 // MAKit
 //
 // Created by Jean-François Reboud on 10/10/2022.
@@ -7,17 +7,21 @@
 
 import MetalKit
 
+///
 /// Layer with a 1D shape neural structure.
-public class SelectChannels1D: Layer1D
+///
+/// This layer enables to reduce the number of neurons of a 1D layer.
+/// 
+public class SelectNeurons1D: Layer1D
 {
     /// List of neurons to select.
-    let _channels: [Int]
+    let _neurons: [Int]
     /// List of coefficients to scale each selected neuron.
     let _coeffs: [Double]
     
     private enum Keys: String, CodingKey
     {
-        case channels
+        case neurons
         case coeffs
     }
     
@@ -26,19 +30,19 @@ public class SelectChannels1D: Layer1D
     ///
     /// - Parameters:
     ///     - layerPrev: Previous layer that has been queued to the model.
-    ///     - channels: The list of neurons to select.
+    ///     - neurons: The list of neurons to select.
     ///     - coeffs: The list of coefficients to scale each selected neuron.
     ///     - params: Contextual parameters linking to the model.
     ///
     public init(layerPrev: Layer1D,
-                channels: [Int],
+                neurons: [Int],
                 coeffs: [Double],
                 params: MAKit.Model.Params)
     {
-        _channels = channels
+        _neurons = neurons
         _coeffs = coeffs
         super.init(layerPrev: layerPrev,
-                   nbNeurones: _channels.count,
+                   nbNeurons: _neurons.count,
                    params: params)
     }
     
@@ -53,7 +57,7 @@ public class SelectChannels1D: Layer1D
     public required init(from decoder: Decoder) throws
     {
         let container = try decoder.container(keyedBy: Keys.self)
-        _channels = try container.decode([Int].self, forKey: .channels)
+        _neurons = try container.decode([Int].self, forKey: .neurons)
         _coeffs = try container.decode([Double].self, forKey: .coeffs)
         try super.init(from: decoder)
     }
@@ -72,7 +76,7 @@ public class SelectChannels1D: Layer1D
     public override func encode(to encoder: Encoder) throws
     {
         var container = encoder.container(keyedBy: Keys.self)
-        try container.encode(_channels, forKey: Keys.channels)
+        try container.encode(_neurons, forKey: Keys.neurons)
         try container.encode(_coeffs, forKey: Keys.coeffs)
         try super.encode(to: encoder)
     }
@@ -99,9 +103,9 @@ public class SelectChannels1D: Layer1D
         let params = MAKit.Model.Params(context: context)
         params.context.curID = id
             
-        let layer = SelectChannels1D(
+        let layer = SelectNeurons1D(
             layerPrev: layerPrev,
-            channels: _channels,
+            neurons: _neurons,
             coeffs: _coeffs,
             params: params
         )
@@ -120,20 +124,20 @@ public class SelectChannels1D: Layer1D
             try checkStateCPU(batchSize: batchSize)
             
             let nbGC = layerPrev.nbGC
-            for j in 0..<nbNeurones
+            for j in 0..<nbNeurons
             {
-                neurones.get(j)!.initGC(batchSize: batchSize, nbGC: nbGC)
+                neurons.get(j)!.initGC(batchSize: batchSize, nbGC: nbGC)
             }
             
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             for batch in 0..<batchSize {
             for elem in 0..<nbGC
             {
-                for depth in 0..<nbNeurones
+                for depth in 0..<nbNeurons
                 {
-                    neurones.get(depth)!.gc[batch][elem].out =
+                    neurons.get(depth)!.gc[batch][elem].out =
                         _coeffs[depth] *
-                        neuronesPrev.get(_channels[depth])!.gc[batch][elem].out
+                        neuronsPrev.get(_neurons[depth])!.gc[batch][elem].out
                 }
             }}
         }
@@ -160,14 +164,14 @@ public class SelectChannels1D: Layer1D
         {
             try checkStateCPU(batchSize: batchSize)
             
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             for elem in 0..<batchSize
             {
-                for depth in 0..<nbNeurones
+                for depth in 0..<nbNeurons
                 {
-                    neurones.get(depth)!.v[elem].out =
+                    neurons.get(depth)!.v[elem].out =
                         _coeffs[depth] *
-                        neuronesPrev.get(_channels[depth])!.v[elem].out
+                        neuronsPrev.get(_neurons[depth])!.v[elem].out
                 }
             }
         }
@@ -184,13 +188,13 @@ public class SelectChannels1D: Layer1D
         {
             try checkStateForwardGPU(batchSize: batchSize)
             
-            let pNbNeurones: [UInt32] = [UInt32(nbNeurones)]
-            let pNbNeuronesPrev: [UInt32] = [UInt32(layerPrev.nbNeurones)]
+            let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
+            let pNbNeuronsPrev: [UInt32] = [UInt32(layerPrev.nbNeurons)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
-            var pChannels = [UInt32]()
-            for channel in _channels
+            var pNeurons = [UInt32]()
+            for neuron in _neurons
             {
-                pChannels.append(UInt32(channel))
+                pNeurons.append(UInt32(neuron))
             }
             var pCoeffs = [Float]()
             for coeff in _coeffs
@@ -199,18 +203,18 @@ public class SelectChannels1D: Layer1D
             }
             
             let command = MetalKernel.get.createCommand(
-                "selectChForward", deviceID: deviceID
+                "selectNeurons1DForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
-            command.setBytes(pNbNeurones, atIndex: 1)
-            command.setBytes(pNbNeuronesPrev, atIndex: 2)
-            command.setBytes(pChannels, atIndex: 3)
+            command.setBytes(pNbNeurons, atIndex: 1)
+            command.setBytes(pNbNeuronsPrev, atIndex: 2)
+            command.setBytes(pNeurons, atIndex: 3)
             command.setBytes(pCoeffs, atIndex: 4)
             command.setBytes(pNbBatch, atIndex: 5)
             command.setBuffer(outs.metal, atIndex: 6)
             
             let threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
-            let threadsPerGrid = MTLSize(width: nbNeurones,
+            let threadsPerGrid = MTLSize(width: nbNeurons,
                                          height: batchSize,
                                          depth: 1)
             command.dispatchThreads(
@@ -226,22 +230,22 @@ public class SelectChannels1D: Layer1D
     {
         if let layerPrev = self.layerPrev as? Layer1D, mustComputeBackward
         {
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             if layerPrev.dirty
             {
                 for elem in 0..<batchSize {
-                for depth in 0..<layerPrev.nbNeurones
+                for depth in 0..<layerPrev.nbNeurons
                 {
-                    neuronesPrev.get(depth)!.v[elem].delta = 0.0
+                    neuronsPrev.get(depth)!.v[elem].delta = 0.0
                 }}
             }
             
             for elem in 0..<batchSize
             {
-                for depth in 0..<nbNeurones
+                for depth in 0..<nbNeurons
                 {
-                    neuronesPrev.get(_channels[depth])!.v[elem].delta +=
-                        _coeffs[depth] * neurones.get(depth)!.v[elem].delta
+                    neuronsPrev.get(_neurons[depth])!.v[elem].delta +=
+                        _coeffs[depth] * neurons.get(depth)!.v[elem].delta
                 }
             }
             propagateDirty()
@@ -259,13 +263,13 @@ public class SelectChannels1D: Layer1D
         {
             try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
             
-            let pNbNeurones: [UInt32] = [UInt32(nbNeurones)]
-            let pNbNeuronesPrev: [UInt32] = [UInt32(layerPrev.nbNeurones)]
+            let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
+            let pNbNeuronsPrev: [UInt32] = [UInt32(layerPrev.nbNeurons)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
-            var pChannels = [UInt32]()
-            for channel in _channels
+            var pNeurons = [UInt32]()
+            for neuron in _neurons
             {
-                pChannels.append(UInt32(channel))
+                pNeurons.append(UInt32(neuron))
             }
             var pCoeffs = [Float]()
             for coeff in _coeffs
@@ -301,18 +305,18 @@ public class SelectChannels1D: Layer1D
             }
             
             command = MetalKernel.get.createCommand(
-                "selectChBackward", deviceID: deviceID
+                "selectNeurons1DBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
-            command.setBytes(pNbNeurones, atIndex: 1)
-            command.setBytes(pNbNeuronesPrev, atIndex: 2)
-            command.setBytes(pChannels, atIndex: 3)
+            command.setBytes(pNbNeurons, atIndex: 1)
+            command.setBytes(pNbNeuronsPrev, atIndex: 2)
+            command.setBytes(pNeurons, atIndex: 3)
             command.setBytes(pCoeffs, atIndex: 4)
             command.setBytes(pNbBatch, atIndex: 5)
             command.setBuffer(layerPrev.delta.metal, atIndex: 6)
             
             let threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
-            let threadsPerGrid = MTLSize(width: nbNeurones,
+            let threadsPerGrid = MTLSize(width: nbNeurons,
                                          height: batchSize,
                                          depth: 1)
             command.dispatchThreads(

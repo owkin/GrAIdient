@@ -9,7 +9,7 @@
 open class Layer2D: Layer
 {
     /// Neural structure used in the CPU execution context.
-    public internal(set) var neurones: [GridNeurones] = []
+    public internal(set) var neurons: [GridNeurons] = []
     
     /// Output buffer (result of the forward pass) used in the GPU execution context.
     public internal(set) var outs: MetalPrivateBuffer<Float>! = nil
@@ -17,7 +17,7 @@ open class Layer2D: Layer
     public internal(set) var delta: MetalPrivateBuffer<Float>! = nil
     
     /// Number of channels.
-    public let nbFilters: Int
+    public let nbChannels: Int
     /// Height of each channel.
     public let height: Int
     /// Width of each channel.
@@ -27,7 +27,7 @@ open class Layer2D: Layer
     public override var nbGC: Int
     {
         get {
-            return neurones.first!.get(0)!.nbGC
+            return neurons.first!.get(0)!.nbGC
         }
     }
     
@@ -63,7 +63,7 @@ open class Layer2D: Layer
     
     private enum Keys: String, CodingKey
     {
-        case nbFilters
+        case nbChannels
         case height
         case width
     }
@@ -73,15 +73,15 @@ open class Layer2D: Layer
     ///
     /// - Parameters:
     ///     - layerPrev: Previous layer that has been queued to the model.
-    ///     - nbFilters: Number of channels.
+    ///     - nbChannels: Number of channels.
     ///     - height: Height of each channel.
     ///     - width: Width of each channel.
     ///     - params: Contextual parameters linking to the model.
     ///
-    public init(layerPrev: Layer?, nbFilters: Int, height: Int, width: Int,
+    public init(layerPrev: Layer?, nbChannels: Int, height: Int, width: Int,
                 params: MAKit.Model.Params)
     {
-        self.nbFilters = nbFilters
+        self.nbChannels = nbChannels
         self.height = height
         self.width = width
         super.init(layerPrev: layerPrev, params: params)
@@ -98,7 +98,7 @@ open class Layer2D: Layer
     public required init(from decoder: Decoder) throws
     {
         let container = try decoder.container(keyedBy: Keys.self)
-        nbFilters = try container.decode(Int.self, forKey: .nbFilters)
+        nbChannels = try container.decode(Int.self, forKey: .nbChannels)
         height = try container.decode(Int.self, forKey: .height)
         width = try container.decode(Int.self, forKey: .width)
         try super.init(from: decoder)
@@ -118,7 +118,7 @@ open class Layer2D: Layer
     open override func encode(to encoder: Encoder) throws
     {
         var container = encoder.container(keyedBy: Keys.self)
-        try container.encode(nbFilters, forKey: .nbFilters)
+        try container.encode(nbChannels, forKey: .nbChannels)
         try container.encode(height, forKey: .height)
         try container.encode(width, forKey: .width)
         try super.encode(to: encoder)
@@ -134,7 +134,7 @@ open class Layer2D: Layer
         super.resetKernelCPU()
         strideFactorCache = nil
         receptiveFieldCache = nil
-        neurones = []
+        neurons = []
     }
     
     ///
@@ -158,20 +158,20 @@ open class Layer2D: Layer
     ///
     public func checkStateCPU(batchSize: Int) throws
     {
-        if neurones.count == 0
+        if neurons.count == 0
         {
-            neurones = []
-            for _ in 0..<nbFilters
+            neurons = []
+            for _ in 0..<nbChannels
             {
-                neurones.append(GridNeurones(width: width, height: height))
+                neurons.append(GridNeurons(width: width, height: height))
             }
-            for grid in neurones {
-            for neurone in grid.all
+            for grid in neurons {
+            for neuron in grid.all
             {
-                neurone.initBatch(batchSize)
+                neuron.initBatch(batchSize)
             }}
         }
-        else if batchSize <= 0 || batchSize > neurones.first!.get(0)!.v.count
+        else if batchSize <= 0 || batchSize > neurons.first!.get(0)!.v.count
         {
             throw LayerError.BatchSize
         }
@@ -187,11 +187,11 @@ open class Layer2D: Layer
         if outs == nil
         {
             outs = MetalPrivateBuffer<Float>(
-                batchSize * nbFilters * width * height, deviceID: deviceID
+                batchSize * nbChannels * width * height, deviceID: deviceID
             )
         }
         else if batchSize <= 0 ||
-                batchSize > outs.nbElems / (nbFilters * width * height)
+                batchSize > outs.nbElems / (nbChannels * width * height)
         {
             throw LayerError.BatchSize
         }
@@ -207,11 +207,11 @@ open class Layer2D: Layer
         if delta == nil
         {
             delta = MetalPrivateBuffer<Float>(
-                batchSize * nbFilters * width * height, deviceID: deviceID
+                batchSize * nbChannels * width * height, deviceID: deviceID
             )
         }
         else if batchSize <= 0 ||
-                batchSize > delta.nbElems / (nbFilters * width * height)
+                batchSize > delta.nbElems / (nbChannels * width * height)
         {
             throw LayerError.BatchSize
         }
@@ -225,10 +225,10 @@ open class Layer2D: Layer
     public func getOutsCPU<T: BinaryFloatingPoint>(elem: Int) -> [T]
     {
         var outs = [T]()
-        for grid in neurones {
-        for neurone in grid.all
+        for grid in neurons {
+        for neuron in grid.all
         {
-            let out = T(neurone.v[elem].out)
+            let out = T(neuron.v[elem].out)
             outs.append(out)
         }}
         return outs
@@ -245,9 +245,9 @@ open class Layer2D: Layer
         MetalKernel.get.download([self.outs])
         
         let outsPtr = self.outs.shared.buffer
-        for depth in 0..<nbFilters
+        for depth in 0..<nbChannels
         {
-            let offsetStart = (depth + nbFilters * elem) * height
+            let offsetStart = (depth + nbChannels * elem) * height
             
             for i in 0..<height {
             for j in 0..<width
@@ -274,10 +274,10 @@ open class Layer2D: Layer
         }
         
         var delta = [T]()
-        for grid in neurones {
-        for neurone in grid.all
+        for grid in neurons {
+        for neuron in grid.all
         {
-            let out = T(neurone.v[elem].delta)
+            let out = T(neuron.v[elem].delta)
             delta.append(out)
         }}
         return delta
@@ -301,9 +301,9 @@ open class Layer2D: Layer
         MetalKernel.get.download([self.delta])
         
         let deltaPtr = self.delta.shared.buffer
-        for depth in 0..<nbFilters
+        for depth in 0..<nbChannels
         {
-            let offsetStart = (depth + nbFilters * elem) * height
+            let offsetStart = (depth + nbChannels * elem) * height
             
             for i in 0..<height {
             for j in 0..<width

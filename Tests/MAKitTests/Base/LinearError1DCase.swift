@@ -172,7 +172,7 @@ class LinearError1DCase: XCTestCase
             if _gtBuffer == nil
             {
                 _gtBuffer = MetalSharedBuffer<Float>(
-                    lastLayer.nbNeurones * batchSize,
+                    lastLayer.nbNeurons * batchSize,
                     deviceID: DEVICE_ID_DEFAULT
                 )
             }

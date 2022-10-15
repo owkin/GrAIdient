@@ -29,11 +29,20 @@ extension SerializationError: CustomStringConvertible
 let LAYER_REGISTRY: [String: Codable.Type] = buildRegistry(
 [
     Activation1D.self,
+    Activation2D.self,
+    AdaptiveAvgPool2D.self,
+    AvgPool2D.self,
+    BN2D.self,
+    Convolution2D.self,
     FullyConnected.self,
     Input1D.self,
+    Input2D.self,
     LinearError1D.self,
+    MaxPool2D.self,
     MSE1D.self,
-    SelectChannels1D.self,
+    Sum2D.self,
+    SelectNeurons1D.self,
+    SelectNeurons2D.self,
 ])
 
 ///

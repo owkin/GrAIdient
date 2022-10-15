@@ -37,22 +37,22 @@ class OptimizerTests: Input1DMSE1DCase
     {
         let params = MAKit.Model.Params(context: context)
         
-        var layer: Layer1D = Input1D(nbNeurones: 1, params: params)
+        var layer: Layer1D = Input1D(nbNeurons: 1, params: params)
         
         layer = FullyConnected(
-            layerPrev: layer, nbNeurones: 1,
+            layerPrev: layer, nbNeurons: 1,
             activation: LeakyReLU.str, biases: true,
             params: params
         )
         
         layer = FullyConnected(
-            layerPrev: layer, nbNeurones: 12,
+            layerPrev: layer, nbNeurons: 12,
             activation: LeakyReLU.str, biases: true,
             params: params
         )
         
         layer = FullyConnected(
-            layerPrev: layer, nbNeurones: 1,
+            layerPrev: layer, nbNeurons: 1,
             activation: LeakyReLU.str, biases: true,
             params: params
         )

@@ -17,9 +17,9 @@ class InputArrays1D: InputArrays<Layer1D>, IWeightArrays
             var cur = 0
             var outs = [Double](repeating: 0.0, count: nbElems)
             for elem in 0..<_layer.batchSize {
-            for depth in 0..<_layer.nbNeurones
+            for depth in 0..<_layer.nbNeurons
             {
-                outs[cur] = _layer.neurones.get(depth)!.v[elem].out
+                outs[cur] = _layer.neurons.get(depth)!.v[elem].out
                 cur += 1
             }}
             return outs
@@ -27,9 +27,9 @@ class InputArrays1D: InputArrays<Layer1D>, IWeightArrays
         set {
             var cur = 0
             for elem in 0..<_layer.batchSize {
-            for depth in 0..<_layer.nbNeurones
+            for depth in 0..<_layer.nbNeurons
             {
-                _layer.neurones.get(depth)!.v[elem].out = newValue[cur]
+                _layer.neurons.get(depth)!.v[elem].out = newValue[cur]
                 cur += 1
             }}
         }
@@ -42,9 +42,9 @@ class InputArrays1D: InputArrays<Layer1D>, IWeightArrays
             var cur = 0
             var delta = [Double](repeating: 0.0, count: nbElems)
             for elem in 0..<_layer.batchSize {
-            for depth in 0..<_layer.nbNeurones
+            for depth in 0..<_layer.nbNeurons
             {
-                delta[cur] = _layer.neurones.get(depth)!.v[elem].delta
+                delta[cur] = _layer.neurons.get(depth)!.v[elem].delta
                 cur += 1
             }}
             return delta
@@ -52,9 +52,9 @@ class InputArrays1D: InputArrays<Layer1D>, IWeightArrays
         set {
             var cur = 0
             for elem in 0..<_layer.batchSize {
-            for depth in 0..<_layer.nbNeurones
+            for depth in 0..<_layer.nbNeurons
             {
-                _layer.neurones.get(depth)!.v[elem].delta = newValue[cur]
+                _layer.neurons.get(depth)!.v[elem].delta = newValue[cur]
                 cur += 1
             }}
         }
@@ -112,13 +112,13 @@ public class Input1D: LayerInput1D, LayerUpdate
     /// Create a layer with a 1D shape neural structure.
     ///
     /// - Parameters:
-    ///     - nbNeurones: Number of neurons.
+    ///     - nbNeurons: Number of neurons.
     ///     - params: Contextual parameters linking to the model.
     ///
-    public init(nbNeurones: Int, params: MAKit.Model.Params)
+    public init(nbNeurons: Int, params: MAKit.Model.Params)
     {
         super.init(layerPrev: nil,
-                   nbNeurones: nbNeurones,
+                   nbNeurons: nbNeurons,
                    params: params)
         computeDelta = false
     }
@@ -133,7 +133,7 @@ public class Input1D: LayerInput1D, LayerUpdate
     public init(layerPrev: Layer1D, params: MAKit.Model.Params)
     {
         super.init(layerPrev: layerPrev,
-                   nbNeurones: layerPrev.nbNeurones,
+                   nbNeurons: layerPrev.nbNeurons,
                    params: params)
         computeDelta = false
     }
@@ -182,7 +182,7 @@ public class Input1D: LayerInput1D, LayerUpdate
         }
         else
         {
-            layer = Input1D(nbNeurones: nbNeurones, params: params)
+            layer = Input1D(nbNeurons: nbNeurons, params: params)
         }
         return layer
     }
@@ -212,7 +212,7 @@ public class Input1D: LayerInput1D, LayerUpdate
     ///
     /// Initialize state resources in the CPU execution context.
     ///
-    /// We initialize the neurones' state (forward and backward).
+    /// We initialize the neurons' state (forward and backward).
     ///
     public override func checkStateCPU(batchSize: Int) throws
     {
@@ -222,7 +222,7 @@ public class Input1D: LayerInput1D, LayerUpdate
         {
             _wArrays = InputArrays1D(
                 layer: self,
-                nbElems: nbNeurones * batchSize
+                nbElems: nbNeurons * batchSize
             )
         }
     }
@@ -230,7 +230,7 @@ public class Input1D: LayerInput1D, LayerUpdate
     ///
     /// Initialize state resources in the GPU execution context.
     ///
-    /// We initialize the neurones' forward state.
+    /// We initialize the neurons' forward state.
     /// We initialize the weights.
     ///
     public override func checkStateForwardGPU(batchSize: Int) throws
@@ -241,7 +241,7 @@ public class Input1D: LayerInput1D, LayerUpdate
         {
             _wBuffers = InputBuffers1D(
                 layer: self,
-                nbElems: nbNeurones * batchSize,
+                nbElems: nbNeurons * batchSize,
                 deviceID: deviceID
             )
         }
@@ -266,15 +266,15 @@ public class Input1D: LayerInput1D, LayerUpdate
         
         for (elem, sample) in data.enumerated()
         {
-            if sample.count != nbNeurones
+            if sample.count != nbNeurons
             {
                 throw LayerError.DataSize
             }
             
             for (i, feature) in sample.enumerated() {
-            if let neurone = neurones.get(i)
+            if let neuron = neurons.get(i)
             {
-                neurone.v[elem].out = Double(feature)
+                neuron.v[elem].out = Double(feature)
             }}
         }
     }
@@ -296,7 +296,7 @@ public class Input1D: LayerInput1D, LayerUpdate
         // FullyConnected.backwardWeightsGPU accesses layerPrev.outs.
         MetalKernel.get.download([outs])
         
-        if batchSize * nbNeurones != data.count * data.first!.count
+        if batchSize * nbNeurons != data.count * data.first!.count
         {
             throw LayerError.DataSize
         }
@@ -304,9 +304,9 @@ public class Input1D: LayerInput1D, LayerUpdate
         let outsPtr = outs.shared.buffer
         for elem in 0..<batchSize
         {
-            for depth in 0..<nbNeurones
+            for depth in 0..<nbNeurons
             {
-                let offset = depth + nbNeurones * elem
+                let offset = depth + nbNeurons * elem
                 outsPtr[offset] = Float(data[elem][depth])
             }
         }
@@ -326,7 +326,7 @@ public class Input1D: LayerInput1D, LayerUpdate
         _ data: MetalPrivateBuffer<Float>,
         batchSize: Int) throws
     {
-        if batchSize * nbNeurones != data.nbElems
+        if batchSize * nbNeurons != data.nbElems
         {
             throw LayerError.DataSize
         }
@@ -346,13 +346,13 @@ public class Input1D: LayerInput1D, LayerUpdate
         {
             try checkStateCPU(batchSize: batchSize)
             
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             for elem in 0..<batchSize
             {
-                for depth in 0..<nbNeurones
+                for depth in 0..<nbNeurons
                 {
-                    neurones.get(depth)?.v[elem].out =
-                        neuronesPrev.get(depth)!.v[elem].out
+                    neurons.get(depth)?.v[elem].out =
+                        neuronsPrev.get(depth)!.v[elem].out
                 }
             }
         }
@@ -395,19 +395,19 @@ public class Input1D: LayerInput1D, LayerUpdate
     {
         if let layerPrev = self.layerPrev as? Layer1D, mustComputeBackward
         {
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             for elem in 0..<batchSize
             {
-                for depth in 0..<nbNeurones
+                for depth in 0..<nbNeurons
                 {
-                    let delta = neurones.get(depth)!.v[elem].delta
+                    let delta = neurons.get(depth)!.v[elem].delta
                     if layerPrev.dirty
                     {
-                        neuronesPrev.get(depth)!.v[elem].delta = delta
+                        neuronsPrev.get(depth)!.v[elem].delta = delta
                     }
                     else
                     {
-                        neuronesPrev.get(depth)!.v[elem].delta += delta
+                        neuronsPrev.get(depth)!.v[elem].delta += delta
                     }
                 }
             }

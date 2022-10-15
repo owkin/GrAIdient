@@ -37,7 +37,7 @@ public class Activation1D: Layer1D
         _activation = MAKit.Model.Activation.build(activation)
         
         super.init(layerPrev: layerPrev,
-                   nbNeurones: layerPrev.nbNeurones,
+                   nbNeurons: layerPrev.nbNeurons,
                    params: params)
     }
     
@@ -46,12 +46,12 @@ public class Activation1D: Layer1D
     ///
     /// - Parameters:
     ///     - layerPrev: Previous layer that has been queued to the model.
-    ///     - nbNeurones: Number of neurons.
+    ///     - nbNeurons: Number of neurons.
     ///     - activation: The activation function.
     ///     - params: Contextual parameters linking to the model.
     ///
     public init(layerPrev: Layer?,
-                nbNeurones: Int, activation: String?,
+                nbNeurons: Int, activation: String?,
                 params: MAKit.Model.Params)
     {
         if let activationStr = activation
@@ -63,7 +63,7 @@ public class Activation1D: Layer1D
             _activation = nil
         }
         
-        super.init(layerPrev: layerPrev, nbNeurones: nbNeurones, params: params)
+        super.init(layerPrev: layerPrev, nbNeurons: nbNeurons, params: params)
     }
     
     ///
@@ -169,19 +169,19 @@ public class Activation1D: Layer1D
             try checkStateCPU(batchSize: batchSize)
             
             let nbGC = layerPrev.nbGC
-            for j in 0..<nbNeurones
+            for j in 0..<nbNeurons
             {
-                neurones.get(j)!.initGC(batchSize: batchSize, nbGC: nbGC)
+                neurons.get(j)!.initGC(batchSize: batchSize, nbGC: nbGC)
             }
             
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             for batch in 0..<batchSize {
             for elem in 0..<nbGC
             {
-                for depth in 0..<nbNeurones
+                for depth in 0..<nbNeurons
                 {
-                    neurones.get(depth)!.gc[batch][elem].out =
-                        neuronesPrev.get(depth)!.gc[batch][elem].out
+                    neurons.get(depth)!.gc[batch][elem].out =
+                        neuronsPrev.get(depth)!.gc[batch][elem].out
                 }
             }}
         }
@@ -209,13 +209,13 @@ public class Activation1D: Layer1D
         {
             try checkStateCPU(batchSize: batchSize)
             
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             for elem in 0..<batchSize
             {
-                for depth in 0..<nbNeurones
+                for depth in 0..<nbNeurons
                 {
-                    neurones.get(depth)!.v[elem].out =
-                        neuronesPrev.get(depth)!.v[elem].out
+                    neurons.get(depth)!.v[elem].out =
+                        neuronsPrev.get(depth)!.v[elem].out
                 }
             }
             
@@ -266,20 +266,20 @@ public class Activation1D: Layer1D
         
         if let layerPrev = self.layerPrev as? Layer1D, mustComputeBackward
         {
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             for elem in 0..<batchSize
             {
-                for depth in 0..<nbNeurones
+                for depth in 0..<nbNeurons
                 {
                     if layerPrev.dirty
                     {
-                        neuronesPrev.get(depth)!.v[elem].delta =
-                            neurones.get(depth)!.v[elem].delta
+                        neuronsPrev.get(depth)!.v[elem].delta =
+                            neurons.get(depth)!.v[elem].delta
                     }
                     else
                     {
-                        neuronesPrev.get(depth)!.v[elem].delta +=
-                            neurones.get(depth)!.v[elem].delta
+                        neuronsPrev.get(depth)!.v[elem].delta +=
+                            neurons.get(depth)!.v[elem].delta
                     }
                 }
             }

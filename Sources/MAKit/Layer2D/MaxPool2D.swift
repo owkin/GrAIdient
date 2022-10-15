@@ -245,12 +245,12 @@ public class MaxPool2D: Layer2D
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    neurones[depth].get(i, j)!.initGC(batchSize: batchSize,
+                    neurons[depth].get(i, j)!.initGC(batchSize: batchSize,
                                                       nbGC: nbGC)
                 }}
             }
             
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             let (start, end) = _kernelIndices
             
             for batch in 0..<batchSize {
@@ -264,14 +264,14 @@ public class MaxPool2D: Layer2D
                     for k in start...end {
                     for l in start...end
                     {
-                        if let outPrev = neuronesPrev[depth]
+                        if let outPrev = neuronsPrev[depth]
                            .get(_stride*i+k, _stride*j+l)?.gc[batch][elem].out,
                            outPrev > maxOutPrev
                         {
                             maxOutPrev = outPrev
                         }
                     }}
-                    neurones[depth].get(i, j)!.gc[batch][elem].out = maxOutPrev
+                    neurons[depth].get(i, j)!.gc[batch][elem].out = maxOutPrev
                 }}
             }}}
         }
@@ -298,7 +298,7 @@ public class MaxPool2D: Layer2D
         {
             try checkStateCPU(batchSize: batchSize)
             
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             let (start, end) = _kernelIndices
             let indicesMaxPtr =
                 (_indicesMax as! MetalSharedBuffer<Int32>).buffer
@@ -317,7 +317,7 @@ public class MaxPool2D: Layer2D
                     for k in start...end {
                     for l in start...end
                     {
-                        if let outPrev = neuronesPrev[depth]
+                        if let outPrev = neuronsPrev[depth]
                             .get(_stride*i+k, _stride*j+l)?.v[elem].out,
                            outPrev > maxOutPrev
                         {
@@ -331,7 +331,7 @@ public class MaxPool2D: Layer2D
                     {
                         let offset = j + (offsetStart + i) * width
                         
-                        neurones[depth].get(i, j)!.v[elem].out = maxOutPrev
+                        neurons[depth].get(i, j)!.v[elem].out = maxOutPrev
                         indicesMaxPtr[2 * offset] = Int32(maxI)
                         indicesMaxPtr[2 * offset + 1] = Int32(maxJ)
                     }
@@ -397,7 +397,7 @@ public class MaxPool2D: Layer2D
     {
         if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             let heightPrev = layerPrev.height
             let widthPrev = layerPrev.width
             let indicesMaxPtr =
@@ -411,7 +411,7 @@ public class MaxPool2D: Layer2D
                     for i in 0..<heightPrev {
                     for j in 0..<widthPrev
                     {
-                        neuronesPrev[depth].get(i, j)!.v[elem].delta = 0.0
+                        neuronsPrev[depth].get(i, j)!.v[elem].delta = 0.0
                     }}
                 }}
             }
@@ -429,8 +429,8 @@ public class MaxPool2D: Layer2D
                     let maxI = Int(indicesMaxPtr[2 * offset])
                     let maxJ = Int(indicesMaxPtr[2 * offset + 1])
                     
-                    let deltaCur = neurones[depth].get(i, j)!.v[elem].delta
-                    neuronesPrev[depth].get(maxI, maxJ)!.v[elem].delta +=
+                    let deltaCur = neurons[depth].get(i, j)!.v[elem].delta
+                    neuronsPrev[depth].get(maxI, maxJ)!.v[elem].delta +=
                         deltaCur
                 }}
             }}

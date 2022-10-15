@@ -106,7 +106,7 @@ public class Sum2D: LayerMerge2D
             for i in 0..<height {
             for j in 0..<width
             {
-                neurones[depth].get(i, j)!.initGC(batchSize: batchSize,
+                neurons[depth].get(i, j)!.initGC(batchSize: batchSize,
                                                   nbGC: nbGC)
             }}
         }
@@ -121,11 +121,11 @@ public class Sum2D: LayerMerge2D
                 var sum = 0.0
                 for num in 0..<_layersPrev.count
                 {
-                    let neuronesPrev = (_layersPrev[num] as! Layer2D).neurones
-                    sum += neuronesPrev[depth].get(i, j)!.gc[batch][elem].out
+                    let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
+                    sum += neuronsPrev[depth].get(i, j)!.gc[batch][elem].out
                 }
                 
-                neurones[depth].get(i, j)!.gc[batch][elem].out = sum
+                neurons[depth].get(i, j)!.gc[batch][elem].out = sum
             }}
         }}}
     
@@ -143,20 +143,20 @@ public class Sum2D: LayerMerge2D
                 var sum = 0.0
                 for num in 0..<_layersPrev.count
                 {
-                    let neuronesPrev = (_layersPrev[num] as! Layer2D).neurones
+                    let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
                     
                     if num == index
                     {
-                        sum += neuronesPrev[depth].get(i, j)!
+                        sum += neuronsPrev[depth].get(i, j)!
                             .gc[batch][nbLastElems[index]+elem].out
                     }
                     else
                     {
-                        sum += neuronesPrev[depth].get(i, j)!.v[batch].out
+                        sum += neuronsPrev[depth].get(i, j)!.v[batch].out
                     }
                 }
                 
-                neurones[depth].get(i, j)!
+                neurons[depth].get(i, j)!
                     .gc[batch][offset+elem].out = sum
             }}
         }}
@@ -193,7 +193,7 @@ public class Sum2D: LayerMerge2D
             for i in 0..<height {
             for j in 0..<width
             {
-                neurones[depth].get(i, j)!.initGC(batchSize: batchSize,
+                neurons[depth].get(i, j)!.initGC(batchSize: batchSize,
                                                   nbGC: nbGC)
             }}
         }
@@ -208,11 +208,11 @@ public class Sum2D: LayerMerge2D
                 var sum = 0.0
                 for num in 0..<_layersPrev.count
                 {
-                    let neuronesPrev = (_layersPrev[num] as! Layer2D).neurones
-                    sum += neuronesPrev[depth].get(i, j)!.gc[batch][elem].out
+                    let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
+                    sum += neuronsPrev[depth].get(i, j)!.gc[batch][elem].out
                 }
                 
-                neurones[depth].get(i, j)!.gc[batch][elem].out = sum
+                neurons[depth].get(i, j)!.gc[batch][elem].out = sum
             }}
         }}}
         
@@ -232,12 +232,12 @@ public class Sum2D: LayerMerge2D
                 {
                     let outsPrevPtr =
                         (_layersPrev[num] as! Layer2D).outs.shared.buffer
-                    let neuronesPrev =
-                        (_layersPrev[num] as! Layer2D).neurones
+                    let neuronsPrev =
+                        (_layersPrev[num] as! Layer2D).neurons
                     
                     if num == index
                     {
-                        sum += neuronesPrev[depth].get(i, j)!
+                        sum += neuronsPrev[depth].get(i, j)!
                             .gc[batch][nbLastElems[index]+elem].out
                     }
                     else
@@ -249,7 +249,7 @@ public class Sum2D: LayerMerge2D
                     }
                 }
                 
-                neurones[depth].get(i, j)!.gc[batch][offset+elem].out = sum
+                neurons[depth].get(i, j)!.gc[batch][offset+elem].out = sum
             }}
         }}
             
@@ -276,12 +276,12 @@ public class Sum2D: LayerMerge2D
                 var sum = 0.0
                 for num in 0..<_layersPrev.count
                 {
-                    let neuronesPrev =
-                        (_layersPrev[num] as! Layer2D).neurones
-                    sum += neuronesPrev[depth].get(i, j)!.v[elem].out
+                    let neuronsPrev =
+                        (_layersPrev[num] as! Layer2D).neurons
+                    sum += neuronsPrev[depth].get(i, j)!.v[elem].out
                 }
                 
-                neurones[depth].get(i, j)!.v[elem].out = sum
+                neurons[depth].get(i, j)!.v[elem].out = sum
             }}
         }}
     }
@@ -350,23 +350,23 @@ public class Sum2D: LayerMerge2D
                 continue
             }
             
-            let neuronesPrev = (_layersPrev[num] as! Layer2D).neurones
+            let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
             for elem in 0..<batchSize {
             for depth in 0..<nbFilters
             {
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    let deltaCur = neurones[depth].get(i, j)!.v[elem].delta
+                    let deltaCur = neurons[depth].get(i, j)!.v[elem].delta
                     
                     if _layersPrev[num].dirty
                     {
-                        neuronesPrev[depth].get(i, j)!.v[elem].delta =
+                        neuronsPrev[depth].get(i, j)!.v[elem].delta =
                             deltaCur
                     }
                     else
                     {
-                        neuronesPrev[depth].get(i, j)!.v[elem].delta +=
+                        neuronsPrev[depth].get(i, j)!.v[elem].delta +=
                             deltaCur
                     }
                 }}

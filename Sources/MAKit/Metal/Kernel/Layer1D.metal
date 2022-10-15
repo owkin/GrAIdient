@@ -11,17 +11,17 @@ using namespace metal;
 kernel void MSE1DLoss(
     const device float * outs,
     const device float * groundTruth,
-    constant uint * pNbNeurones,
+    constant uint * pNbNeurons,
     constant uint * pNbBatch,
     device float * losses,
     uint id [[ thread_position_in_grid ]])
 {
-    uint nbNeurones;
+    uint nbNeurons;
     uint nbBatch;
     
-    if (pNbNeurones && pNbBatch && outs && groundTruth && losses)
+    if (pNbNeurons && pNbBatch && outs && groundTruth && losses)
     {
-        nbNeurones = *pNbNeurones;
+        nbNeurons = *pNbNeurons;
         nbBatch = *pNbBatch;
     }
     else
@@ -34,9 +34,9 @@ kernel void MSE1DLoss(
     }
     
     float tmp = 0.0;
-    for (uint depth=0; depth<nbNeurones; depth++)
+    for (uint depth=0; depth<nbNeurons; depth++)
     {
-        uint offset = depth + nbNeurones * elem;
+        uint offset = depth + nbNeurons * elem;
     
         float gt = groundTruth[offset];
         float out = outs[offset];
@@ -51,19 +51,19 @@ kernel void MSE1DLoss(
 kernel void MSE1DApplyGradient(
     const device float * outs,
     const device float * groundTruth,
-    constant uint * pNbNeurones,
+    constant uint * pNbNeurons,
     constant float * pCoeff,
     constant uint * pNbBatch,
     device float * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
-    uint nbNeurones;
+    uint nbNeurons;
     float coeff;
     uint nbBatch;
     
-    if (pNbNeurones && pNbBatch && pCoeff && outs && groundTruth && deltaPrev)
+    if (pNbNeurons && pNbBatch && pCoeff && outs && groundTruth && deltaPrev)
     {
-        nbNeurones = *pNbNeurones;
+        nbNeurons = *pNbNeurons;
         coeff = *pCoeff;
         nbBatch = *pNbBatch;
     }
@@ -73,34 +73,34 @@ kernel void MSE1DApplyGradient(
     uint depth = id[0];
     uint elem = id[1];
     
-    if (depth >= nbNeurones || elem >= nbBatch)
+    if (depth >= nbNeurons || elem >= nbBatch)
     {
         return ;
     }
     
-    uint offset = depth + nbNeurones * elem;
+    uint offset = depth + nbNeurons * elem;
 
     float gt = groundTruth[offset];
     float out = outs[offset];
     float diff = out - gt;
     
-    deltaPrev[offset] = 2 * coeff * diff / float(nbNeurones * nbBatch);
+    deltaPrev[offset] = 2 * coeff * diff / float(nbNeurons * nbBatch);
 }
 
 kernel void linearErrorLoss(
     const device float * outs,
     const device float * groundTruth,
-    constant uint * pNbNeurones,
+    constant uint * pNbNeurons,
     constant uint * pNbBatch,
     device float * losses,
     uint id [[ thread_position_in_grid ]])
 {
-    uint nbNeurones;
+    uint nbNeurons;
     uint nbBatch;
     
-    if (pNbNeurones && pNbBatch && outs && groundTruth && losses)
+    if (pNbNeurons && pNbBatch && outs && groundTruth && losses)
     {
-        nbNeurones = *pNbNeurones;
+        nbNeurons = *pNbNeurons;
         nbBatch = *pNbBatch;
     }
     else
@@ -113,9 +113,9 @@ kernel void linearErrorLoss(
     }
     
     float tmp = 0.0;
-    for (uint depth=0; depth<nbNeurones; depth++)
+    for (uint depth=0; depth<nbNeurons; depth++)
     {
-        uint offset = depth + nbNeurones * elem;
+        uint offset = depth + nbNeurons * elem;
     
         float gt = groundTruth[offset];
         float out = outs[offset];
@@ -129,19 +129,19 @@ kernel void linearErrorLoss(
 
 kernel void linearErrorApplyGradient(
     const device float * outs,
-    constant uint * pNbNeurones,
+    constant uint * pNbNeurons,
     constant float * pCoeff,
     constant uint * pNbBatch,
     device float * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
-    uint nbNeurones;
+    uint nbNeurons;
     float coeff;
     uint nbBatch;
     
-    if (pNbNeurones && pNbBatch && pCoeff && outs && deltaPrev)
+    if (pNbNeurons && pNbBatch && pCoeff && outs && deltaPrev)
     {
-        nbNeurones = *pNbNeurones;
+        nbNeurons = *pNbNeurons;
         coeff = *pCoeff;
         nbBatch = *pNbBatch;
     }
@@ -151,34 +151,34 @@ kernel void linearErrorApplyGradient(
     uint depth = id[0];
     uint elem = id[1];
     
-    if (depth >= nbNeurones || elem >= nbBatch)
+    if (depth >= nbNeurons || elem >= nbBatch)
     {
         return ;
     }
     
-    uint offset = depth + nbNeurones * elem;
-    deltaPrev[offset] = coeff / float(nbNeurones * nbBatch);
+    uint offset = depth + nbNeurons * elem;
+    deltaPrev[offset] = coeff / float(nbNeurons * nbBatch);
 }
 
 kernel void selectChForward(
     const device float * outsPrev,
-    constant uint * pNbNeurones,
-    constant uint * pNbNeuronesPrev,
+    constant uint * pNbNeurons,
+    constant uint * pNbNeuronsPrev,
     constant uint * pChannels,
     constant float * pCoeffs,
     constant uint * pNbBatch,
     device float * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
-    uint nbNeurones;
-    uint nbNeuronesPrev;
+    uint nbNeurons;
+    uint nbNeuronsPrev;
     uint nbBatch;
     
-    if (pNbNeurones && pNbNeuronesPrev && pChannels && pCoeffs && pNbBatch &&
+    if (pNbNeurons && pNbNeuronsPrev && pChannels && pCoeffs && pNbBatch &&
         outsPrev && outs)
     {
-        nbNeurones = *pNbNeurones;
-        nbNeuronesPrev = *pNbNeuronesPrev;
+        nbNeurons = *pNbNeurons;
+        nbNeuronsPrev = *pNbNeuronsPrev;
         nbBatch = *pNbBatch;
     }
     else
@@ -187,35 +187,35 @@ kernel void selectChForward(
     uint depth = id[0];
     uint elem = id[1];
     
-    if (depth >= nbNeurones || elem >= nbBatch)
+    if (depth >= nbNeurons || elem >= nbBatch)
     {
         return ;
     }
     
-    uint offset = depth + nbNeurones * elem;
-    uint offsetPrev = pChannels[depth] + nbNeuronesPrev * elem;
+    uint offset = depth + nbNeurons * elem;
+    uint offsetPrev = pChannels[depth] + nbNeuronsPrev * elem;
     outs[offset] = pCoeffs[depth] * outsPrev[offsetPrev];
 }
 
 kernel void selectChBackward(
     const device float * delta,
-    constant uint * pNbNeurones,
-    constant uint * pNbNeuronesPrev,
+    constant uint * pNbNeurons,
+    constant uint * pNbNeuronsPrev,
     constant uint * pChannels,
     constant float * pCoeffs,
     constant uint * pNbBatch,
     device float * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
-    uint nbNeurones;
-    uint nbNeuronesPrev;
+    uint nbNeurons;
+    uint nbNeuronsPrev;
     uint nbBatch;
     
-    if (pNbNeurones && pNbNeuronesPrev && pChannels && pCoeffs && pNbBatch &&
+    if (pNbNeurons && pNbNeuronsPrev && pChannels && pCoeffs && pNbBatch &&
         deltaPrev && delta)
     {
-        nbNeurones = *pNbNeurones;
-        nbNeuronesPrev = *pNbNeuronesPrev;
+        nbNeurons = *pNbNeurons;
+        nbNeuronsPrev = *pNbNeuronsPrev;
         nbBatch = *pNbBatch;
     }
     else
@@ -224,12 +224,12 @@ kernel void selectChBackward(
     uint depth = id[0];
     uint elem = id[1];
     
-    if (depth >= nbNeurones || elem >= nbBatch)
+    if (depth >= nbNeurons || elem >= nbBatch)
     {
         return ;
     }
     
-    uint offset = depth + nbNeurones * elem;
-    uint offsetPrev = pChannels[depth] + nbNeuronesPrev * elem;
+    uint offset = depth + nbNeurons * elem;
+    uint offsetPrev = pChannels[depth] + nbNeuronsPrev * elem;
     deltaPrev[offsetPrev] += pCoeffs[depth] * delta[offset];
 }

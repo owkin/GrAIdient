@@ -11,11 +11,11 @@ import MetalKit
 /// Format of images.
 ///
 /// RGB: Image structure is (batch, channel, height, width).
-/// Neurone: Image structure is (batch, height, width, channel).
+/// Neuron: Image structure is (batch, height, width, channel).
 ///
 public enum ImageFormat
 {
-    case RGB, Neurone
+    case RGB, Neuron
 }
 
 /// Arrays needed to update the inputs of a layer.
@@ -32,7 +32,7 @@ class InputArrays2D: InputArrays<Layer2D>, IWeightArrays
             for i in 0..<_layer.height {
             for j in 0..<_layer.width
             {
-                outs[cur] = _layer.neurones[depth].get(i, j)!.v[elem].out
+                outs[cur] = _layer.neurons[depth].get(i, j)!.v[elem].out
                 cur += 1
             }}}}
             return outs
@@ -44,7 +44,7 @@ class InputArrays2D: InputArrays<Layer2D>, IWeightArrays
             for i in 0..<_layer.height {
             for j in 0..<_layer.width
             {
-                _layer.neurones[depth].get(i, j)!.v[elem].out = newValue[cur]
+                _layer.neurons[depth].get(i, j)!.v[elem].out = newValue[cur]
                 cur += 1
             }}}}
         }
@@ -61,7 +61,7 @@ class InputArrays2D: InputArrays<Layer2D>, IWeightArrays
             for i in 0..<_layer.height {
             for j in 0..<_layer.width
             {
-                delta[cur] = _layer.neurones[depth].get(i, j)!.v[elem].delta
+                delta[cur] = _layer.neurons[depth].get(i, j)!.v[elem].delta
                 cur += 1
             }}}}
             return delta
@@ -73,7 +73,7 @@ class InputArrays2D: InputArrays<Layer2D>, IWeightArrays
             for i in 0..<_layer.height {
             for j in 0..<_layer.width
             {
-                _layer.neurones[depth].get(i, j)!.v[elem].delta = newValue[cur]
+                _layer.neurons[depth].get(i, j)!.v[elem].delta = newValue[cur]
                 cur += 1
             }}}}
         }
@@ -281,7 +281,7 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
     ///
     /// Initialize state resources in the CPU execution context.
     ///
-    /// We initialize the neurones' state (forward and backward).
+    /// We initialize the neurons' state (forward and backward).
     ///
     public override func checkStateCPU(batchSize: Int) throws
     {
@@ -299,7 +299,7 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
     ///
     /// Initialize state resources in the GPU execution context.
     ///
-    /// We initialize the neurones' forward state.
+    /// We initialize the neurons' forward state.
     /// We initialize the weights.
     ///
     public override func checkStateForwardGPU(batchSize: Int) throws
@@ -353,12 +353,12 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
                     let offset = j + (elem * height + i) * width
                     for depth in 0..<nbFilters
                     {
-                        neurones[depth].get(i, j)!.v[elem].out =
+                        neurons[depth].get(i, j)!.v[elem].out =
                             Double(data[nbFilters * offset + depth])
                     }
                 }}
             }
-        case .Neurone:
+        case .Neuron:
             for elem in 0..<batchSize
             {
                 for i in 0..<height {
@@ -369,7 +369,7 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
                         let offsetStart = (depth + nbFilters * elem) * height
                         let offset = j + (offsetStart + i) * width
                         
-                        neurones[depth].get(i, j)!.v[elem].out =
+                        neurons[depth].get(i, j)!.v[elem].out =
                             Double(data[offset])
                     }
                 }}
@@ -423,7 +423,7 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
                     }
                 }}
             }
-        case .Neurone:
+        case .Neuron:
             for elem in 0..<batchSize
             {
                 for i in 0..<height {
@@ -475,15 +475,15 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
         {
             try checkStateCPU(batchSize: batchSize)
             
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             for elem in 0..<batchSize {
             for depth in 0..<nbFilters
             {
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    neurones[depth].get(i, j)!.v[elem].out =
-                        neuronesPrev[depth].get(i, j)!.v[elem].out
+                    neurons[depth].get(i, j)!.v[elem].out =
+                        neuronsPrev[depth].get(i, j)!.v[elem].out
                 }}
             }}
         }
@@ -526,22 +526,22 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
     {
         if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             for elem in 0..<batchSize {
             for depth in 0..<nbFilters
             {
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    let delta = neurones[depth].get(i, j)!.v[elem].delta
+                    let delta = neurons[depth].get(i, j)!.v[elem].delta
                     if layerPrev.dirty
                     {
-                        neuronesPrev[depth].get(i, j)!
+                        neuronsPrev[depth].get(i, j)!
                             .v[elem].delta = delta
                     }
                     else
                     {
-                        neuronesPrev[depth].get(i, j)!
+                        neuronsPrev[depth].get(i, j)!
                             .v[elem].delta += delta
                     }
                 }}

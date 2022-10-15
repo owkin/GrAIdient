@@ -585,8 +585,8 @@ private class MetalDevice
                 "adaptiveAvgPoolForward2",
                 "adaptiveAvgPoolBackward1",
                 "adaptiveAvgPoolBackward2",
-                "selectNeuroneForward",
-                "selectNeuroneBackward",
+                "selectNeuronForward",
+                "selectNeuronBackward",
             ],
             "Optimizer": [
                 "clipGradients",

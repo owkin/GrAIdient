@@ -12,21 +12,21 @@ kernel void flForward(
     const device float * outsPrev,
     const device float * weights,
     const device float * biases,
-    constant uint * pNbNeurones,
-    constant uint * pNbNeuronesPrev,
+    constant uint * pNbNeurons,
+    constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     device float * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
-    uint nbNeurones;
-    uint nbNeuronesPrev;
+    uint nbNeurons;
+    uint nbNeuronsPrev;
     uint nbBatch;
     
-    if (pNbNeurones && pNbNeuronesPrev && pNbBatch &&
+    if (pNbNeurons && pNbNeuronsPrev && pNbBatch &&
         outsPrev && weights && biases && outs)
     {
-        nbNeurones = *pNbNeurones;
-        nbNeuronesPrev = *pNbNeuronesPrev;
+        nbNeurons = *pNbNeurons;
+        nbNeuronsPrev = *pNbNeuronsPrev;
         nbBatch = *pNbBatch;
     }
     else
@@ -35,16 +35,16 @@ kernel void flForward(
     uint depth = id[0];
     uint elem = id[1];
     
-    if (depth >= nbNeurones || elem >= nbBatch)
+    if (depth >= nbNeurons || elem >= nbBatch)
     {
         return ;
     }
     
     float tmp = biases[depth];
-    for (uint depthPrev=0; depthPrev<nbNeuronesPrev; depthPrev++)
+    for (uint depthPrev=0; depthPrev<nbNeuronsPrev; depthPrev++)
     {
-        uint offsetPrev = depthPrev + nbNeuronesPrev * elem;
-        uint offsetWeights = depthPrev + nbNeuronesPrev * depth;
+        uint offsetPrev = depthPrev + nbNeuronsPrev * elem;
+        uint offsetWeights = depthPrev + nbNeuronsPrev * depth;
         
         float outPrev = outsPrev[offsetPrev];
         float w = weights[offsetWeights];
@@ -52,30 +52,30 @@ kernel void flForward(
         tmp += outPrev * w;
     }
     
-    uint offset = depth + nbNeurones * elem;
+    uint offset = depth + nbNeurons * elem;
     outs[offset] = tmp;
 }
 
 kernel void flBackward(
     const device float * delta,
     const device float * weights,
-    constant uint * pNbNeurones,
-    constant uint * pNbNeuronesPrev,
+    constant uint * pNbNeurons,
+    constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pDirty,
     device float * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
-    uint nbNeurones;
-    uint nbNeuronesPrev;
+    uint nbNeurons;
+    uint nbNeuronsPrev;
     uint nbBatch;
     uint dirty;
     
-    if (pNbNeurones && pNbNeuronesPrev && pNbBatch && pDirty &&
+    if (pNbNeurons && pNbNeuronsPrev && pNbBatch && pDirty &&
         deltaPrev && weights && delta)
     {
-        nbNeurones = *pNbNeurones;
-        nbNeuronesPrev = *pNbNeuronesPrev;
+        nbNeurons = *pNbNeurons;
+        nbNeuronsPrev = *pNbNeuronsPrev;
         nbBatch = *pNbBatch;
         dirty = *pDirty;
     }
@@ -85,16 +85,16 @@ kernel void flBackward(
     uint depthPrev = id[0];
     uint elem = id[1];
     
-    if (depthPrev >= nbNeuronesPrev || elem >= nbBatch)
+    if (depthPrev >= nbNeuronsPrev || elem >= nbBatch)
     {
         return ;
     }
     
     float tmp = 0.0;
-    for (uint depth=0; depth<nbNeurones; depth++)
+    for (uint depth=0; depth<nbNeurons; depth++)
     {
-        uint offset = depth + nbNeurones * elem;
-        uint offsetWeights = depthPrev + nbNeuronesPrev * depth;
+        uint offset = depth + nbNeurons * elem;
+        uint offsetWeights = depthPrev + nbNeuronsPrev * depth;
         
         float deltaCur = delta[offset];
         float w = weights[offsetWeights];
@@ -102,7 +102,7 @@ kernel void flBackward(
         tmp += w * deltaCur;
     }
     
-    uint offsetPrev = depthPrev + nbNeuronesPrev * elem;
+    uint offsetPrev = depthPrev + nbNeuronsPrev * elem;
     if (dirty)
     {
         deltaPrev[offsetPrev] = tmp;
@@ -116,23 +116,23 @@ kernel void flBackward(
 kernel void flBatchDerWeights(
     const device float * outsPrev,
     const device float * delta,
-    constant uint * pNbNeurones,
-    constant uint * pNbNeuronesPrev,
+    constant uint * pNbNeurons,
+    constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pAccumulate,
     device float * grads,
     uint2 id [[ thread_position_in_grid ]])
 {
-    uint nbNeurones;
-    uint nbNeuronesPrev;
+    uint nbNeurons;
+    uint nbNeuronsPrev;
     uint nbBatch;
     uint accumulate;
     
-    if (pNbNeurones && pNbNeuronesPrev && pNbBatch && pAccumulate &&
+    if (pNbNeurons && pNbNeuronsPrev && pNbBatch && pAccumulate &&
         outsPrev && delta && grads)
     {
-        nbNeurones = *pNbNeurones;
-        nbNeuronesPrev = *pNbNeuronesPrev;
+        nbNeurons = *pNbNeurons;
+        nbNeuronsPrev = *pNbNeuronsPrev;
         nbBatch = *pNbBatch;
         accumulate = *pAccumulate;
     }
@@ -142,7 +142,7 @@ kernel void flBatchDerWeights(
     uint depth = id[0];
     uint depthPrev = id[1];
     
-    if (depth >= nbNeurones || depthPrev >= nbNeuronesPrev)
+    if (depth >= nbNeurons || depthPrev >= nbNeuronsPrev)
     {
         return ;
     }
@@ -150,16 +150,16 @@ kernel void flBatchDerWeights(
     float tmp = 0.0;
     for (uint elem=0; elem<nbBatch; elem++)
     {
-        uint offset = depth + nbNeurones * elem;
+        uint offset = depth + nbNeurons * elem;
         float deltaCur = delta[offset];
         
-        uint offsetPrev = depthPrev + nbNeuronesPrev * elem;
+        uint offsetPrev = depthPrev + nbNeuronsPrev * elem;
         float outPrev = outsPrev[offsetPrev];
         
         tmp += deltaCur * outPrev;
     }
     
-    uint offsetWeights = depthPrev + nbNeuronesPrev * depth;
+    uint offsetWeights = depthPrev + nbNeuronsPrev * depth;
     if (accumulate)
     {
         grads[offsetWeights] += tmp;
@@ -172,19 +172,19 @@ kernel void flBatchDerWeights(
 
 kernel void flBatchDerBiases(
     const device float * delta,
-    constant uint * pNbNeurones,
+    constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pAccumulate,
     device float * grads,
     uint id [[ thread_position_in_grid ]])
 {
-    uint nbNeurones;
+    uint nbNeurons;
     uint nbBatch;
     uint accumulate;
     
-    if (pNbNeurones && pNbBatch && pAccumulate && delta && grads)
+    if (pNbNeurons && pNbBatch && pAccumulate && delta && grads)
     {
-        nbNeurones = *pNbNeurones;
+        nbNeurons = *pNbNeurons;
         nbBatch = *pNbBatch;
         accumulate = *pAccumulate;
     }
@@ -192,7 +192,7 @@ kernel void flBatchDerBiases(
         return ;
     
     uint depth = id;
-    if (depth >= nbNeurones)
+    if (depth >= nbNeurons)
     {
         return ;
     }
@@ -200,7 +200,7 @@ kernel void flBatchDerBiases(
     float tmp = 0.0;
     for (uint elem=0; elem<nbBatch; elem++)
     {
-        uint offset = depth + nbNeurones * elem;
+        uint offset = depth + nbNeurons * elem;
         tmp += delta[offset];
     }
     
@@ -217,21 +217,21 @@ kernel void flBatchDerBiases(
 kernel void flDerWeights(
     const device float * outsPrev,
     const device float * delta,
-    constant uint * pNbNeurones,
-    constant uint * pNbNeuronesPrev,
+    constant uint * pNbNeurons,
+    constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     device float * deltaWeights,
     uint3 id [[ thread_position_in_grid ]])
 {
-    uint nbNeurones;
-    uint nbNeuronesPrev;
+    uint nbNeurons;
+    uint nbNeuronsPrev;
     uint nbBatch;
     
-    if (pNbNeurones && pNbNeuronesPrev && pNbBatch &&
+    if (pNbNeurons && pNbNeuronsPrev && pNbBatch &&
         outsPrev && delta && deltaWeights)
     {
-        nbNeurones = *pNbNeurones;
-        nbNeuronesPrev = *pNbNeuronesPrev;
+        nbNeurons = *pNbNeurons;
+        nbNeuronsPrev = *pNbNeuronsPrev;
         nbBatch = *pNbBatch;
     }
     else
@@ -241,38 +241,38 @@ kernel void flDerWeights(
     uint depthPrev = id[1];
     uint elem = id[2];
     
-    if (depth >= nbNeurones || depthPrev >= nbNeuronesPrev || elem >= nbBatch)
+    if (depth >= nbNeurons || depthPrev >= nbNeuronsPrev || elem >= nbBatch)
     {
         return ;
     }
     
-    uint offset = depth + nbNeurones * elem;
+    uint offset = depth + nbNeurons * elem;
     float deltaCur = delta[offset];
     
-    uint offsetPrev = depthPrev + nbNeuronesPrev * elem;
+    uint offsetPrev = depthPrev + nbNeuronsPrev * elem;
     float outPrev = outsPrev[offsetPrev];
     
     float tmp = deltaCur * outPrev;
     
-    uint offsetStartWeights = elem * nbNeurones * nbNeuronesPrev;
+    uint offsetStartWeights = elem * nbNeurons * nbNeuronsPrev;
     uint offsetWeights = offsetStartWeights +
-        depthPrev + nbNeuronesPrev * depth;
+        depthPrev + nbNeuronsPrev * depth;
     deltaWeights[offsetWeights] = tmp;
 }
 
 kernel void flDerBiases(
     const device float * delta,
-    constant uint * pNbNeurones,
+    constant uint * pNbNeurons,
     constant uint * pNbBatch,
     device float * deltaWeights,
     uint2 id [[ thread_position_in_grid ]])
 {
-    uint nbNeurones;
+    uint nbNeurons;
     uint nbBatch;
     
-    if (pNbNeurones && pNbBatch && delta && deltaWeights)
+    if (pNbNeurons && pNbBatch && delta && deltaWeights)
     {
-        nbNeurones = *pNbNeurones;
+        nbNeurons = *pNbNeurons;
         nbBatch = *pNbBatch;
     }
     else
@@ -281,37 +281,37 @@ kernel void flDerBiases(
     uint depth = id[0];
     uint elem = id[1];
     
-    if (depth >= nbNeurones || elem >= nbBatch)
+    if (depth >= nbNeurons || elem >= nbBatch)
     {
         return ;
     }
     
-    uint offset = depth + nbNeurones * elem;
+    uint offset = depth + nbNeurons * elem;
     float deltaCur = delta[offset];
     
-    uint offsetWeights = elem * nbNeurones + depth;
+    uint offsetWeights = elem * nbNeurons + depth;
     deltaWeights[offsetWeights] = deltaCur;
 }
 
 kernel void flReduceWeights(
     const device float * deltaWeights,
-    constant uint * pNbNeurones,
-    constant uint * pNbNeuronesPrev,
+    constant uint * pNbNeurons,
+    constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pAccumulate,
     device float * grads,
     uint2 id [[ thread_position_in_grid ]])
 {
-    uint nbNeurones;
-    uint nbNeuronesPrev;
+    uint nbNeurons;
+    uint nbNeuronsPrev;
     uint nbBatch;
     uint accumulate;
     
-    if (pNbNeurones && pNbNeuronesPrev && pNbBatch && pAccumulate &&
+    if (pNbNeurons && pNbNeuronsPrev && pNbBatch && pAccumulate &&
         deltaWeights && grads)
     {
-        nbNeurones = *pNbNeurones;
-        nbNeuronesPrev = *pNbNeuronesPrev;
+        nbNeurons = *pNbNeurons;
+        nbNeuronsPrev = *pNbNeuronsPrev;
         nbBatch = *pNbBatch;
         accumulate = *pAccumulate;
     }
@@ -321,17 +321,17 @@ kernel void flReduceWeights(
     uint depth = id[0];
     uint depthPrev = id[1];
     
-    if (depth >= nbNeurones || depthPrev >= nbNeuronesPrev)
+    if (depth >= nbNeurons || depthPrev >= nbNeuronsPrev)
     {
         return ;
     }
     
-    uint offsetWeights = depthPrev + nbNeuronesPrev * depth;
+    uint offsetWeights = depthPrev + nbNeuronsPrev * depth;
         
     float tmp = 0.0;
     for (uint elem=0; elem<nbBatch; elem++)
     {
-        uint offset = elem * nbNeurones * nbNeuronesPrev + offsetWeights;
+        uint offset = elem * nbNeurons * nbNeuronsPrev + offsetWeights;
         tmp += deltaWeights[offset];
     }
     

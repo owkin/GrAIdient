@@ -18,7 +18,7 @@ public protocol Cloneable
 public class BatchNormalizationBase: Codable, Cloneable
 {
     /// Number of independent units of batch normalization.
-    let _nbNeurones: Int
+    let _nbNeurons: Int
     /// Number of elements in one batch size.
     var _nbElems = 0
     
@@ -50,7 +50,7 @@ public class BatchNormalizationBase: Codable, Cloneable
     
     private enum Keys: String, CodingKey
     {
-        case nbNeurones
+        case nbNeurons
         case nbElems
         case weights
         case stats
@@ -59,11 +59,11 @@ public class BatchNormalizationBase: Codable, Cloneable
     ///
     /// Create a layer with independent units of batch normalization.
     ///
-    /// - Parameter nbNeurones: Number of independent units.
+    /// - Parameter nbNeurons: Number of independent units.
     ///
-    init(nbNeurones: Int)
+    init(nbNeurons: Int)
     {
-        _nbNeurones = nbNeurones
+        _nbNeurons = nbNeurons
     }
     
     ///
@@ -73,7 +73,7 @@ public class BatchNormalizationBase: Codable, Cloneable
     ///
     convenience init(_ layer: BN2D)
     {
-        self.init(nbNeurones: layer.nbFilters)
+        self.init(nbNeurons: layer.nbFilters)
     }
     
     ///
@@ -88,7 +88,7 @@ public class BatchNormalizationBase: Codable, Cloneable
     {
         let container = try decoder.container(keyedBy: Keys.self)
         
-        _nbNeurones = try container.decode(Int.self, forKey: .nbNeurones)
+        _nbNeurons = try container.decode(Int.self, forKey: .nbNeurons)
         _nbElems = try container.decode(Int.self, forKey: .nbElems)
         
         _weightsList = try container.decode([Float].self, forKey: .weights)
@@ -102,7 +102,7 @@ public class BatchNormalizationBase: Codable, Cloneable
     ///
     init(bn: BatchNormalizationBase)
     {
-        _nbNeurones = bn._nbNeurones
+        _nbNeurons = bn._nbNeurons
         _nbElems = bn._nbElems
         
         let weights = bn.weights
@@ -133,7 +133,7 @@ public class BatchNormalizationBase: Codable, Cloneable
     {
         var container = encoder.container(keyedBy: Keys.self)
         
-        try container.encode(_nbNeurones, forKey: .nbNeurones)
+        try container.encode(_nbNeurons, forKey: .nbNeurons)
         try container.encode(_nbElems, forKey: .nbElems)
         
         let weights = self.weights
@@ -186,7 +186,7 @@ public class BatchNormalization: BatchNormalizationBase
             return weightsTmp
         }
         set {
-            if newValue.count > 0 && newValue.count != 2 * _nbNeurones
+            if newValue.count > 0 && newValue.count != 2 * _nbNeurons
             {
                 fatalError(
                     "Weights do not have the expected number of elements."
@@ -206,11 +206,11 @@ public class BatchNormalization: BatchNormalizationBase
             }
             
             var statsTmp = [Float]()
-            for depth in 0..<_nbNeurones
+            for depth in 0..<_nbNeurons
             {
                 statsTmp.append(Float(_Eμ[depth]))
             }
-            for depth in 0..<_nbNeurones
+            for depth in 0..<_nbNeurons
             {
                 statsTmp.append(Float(_Eσ2[depth]))
             }
@@ -218,7 +218,7 @@ public class BatchNormalization: BatchNormalizationBase
         }
         set {
             if newValue.count > 0 &&
-               newValue.count != 2 * _nbNeurones
+               newValue.count != 2 * _nbNeurons
             {
                 fatalError(
                     "Stats do not have the expected number of elements."
@@ -256,8 +256,8 @@ public class BatchNormalization: BatchNormalizationBase
     {
         initStats()
         
-        _σ2 = [Double](repeating: 0.0, count: _nbNeurones)
-        _xHat = [[Double]](repeating: [], count: _nbNeurones)
+        _σ2 = [Double](repeating: 0.0, count: _nbNeurons)
+        _xHat = [[Double]](repeating: [], count: _nbNeurons)
     }
     
     ///
@@ -268,11 +268,11 @@ public class BatchNormalization: BatchNormalizationBase
     ///
     func initWeights()
     {
-        _β = WeightArrays(_nbNeurones)
-        _Ɣ = WeightArrays(_nbNeurones)
+        _β = WeightArrays(_nbNeurons)
+        _Ɣ = WeightArrays(_nbNeurons)
         if _weightsList.count == 0
         {
-            for depth in 0..<_nbNeurones
+            for depth in 0..<_nbNeurons
             {
                 _Ɣ.w[depth] = 1.0
                 _β.w[depth] = 0.0
@@ -280,10 +280,10 @@ public class BatchNormalization: BatchNormalizationBase
         }
         else
         {
-            for depth in 0..<_nbNeurones
+            for depth in 0..<_nbNeurons
             {
                 _Ɣ.w[depth] = Double(_weightsList[depth])
-                _β.w[depth] = Double(_weightsList[_nbNeurones + depth])
+                _β.w[depth] = Double(_weightsList[_nbNeurons + depth])
             }
             _weightsList = []
         }
@@ -292,15 +292,15 @@ public class BatchNormalization: BatchNormalizationBase
     /// Initialize stats in the CPU execution context.
     func initStats()
     {
-        _Eμ = [Double](repeating: 0.0, count: _nbNeurones)
-        _Eσ2 = [Double](repeating: 0.0, count: _nbNeurones)
+        _Eμ = [Double](repeating: 0.0, count: _nbNeurons)
+        _Eσ2 = [Double](repeating: 0.0, count: _nbNeurons)
         
         if _statsList.count > 0
         {
-            for depth in 0..<_nbNeurones
+            for depth in 0..<_nbNeurons
             {
                 _Eμ[depth] = Double(_statsList[depth])
-                _Eσ2[depth] = Double(_statsList[_nbNeurones + depth])
+                _Eσ2[depth] = Double(_statsList[_nbNeurons + depth])
             }
             _statsList = []
         }
@@ -546,7 +546,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
             return weightsTmp
         }
         set {
-            if newValue.count > 0 && newValue.count != 2 * _nbNeurones
+            if newValue.count > 0 && newValue.count != 2 * _nbNeurons
             {
                 fatalError(
                     "Weights do not have the expected number of elements."
@@ -573,7 +573,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
             return statsTmp
         }
         set {
-            if newValue.count > 0 && newValue.count != 2 * _nbNeurones
+            if newValue.count > 0 && newValue.count != 2 * _nbNeurons
             {
                 fatalError(
                     "Stats do not have the expected number of elements."
@@ -626,15 +626,15 @@ class BatchNormalizationGPU: BatchNormalizationBase
     ///
     func initWeights()
     {
-        _βBuffers = WeightBuffers(nbElems: _nbNeurones, deviceID: _deviceID)
-        _ƔBuffers = WeightBuffers(nbElems: _nbNeurones, deviceID: _deviceID)
+        _βBuffers = WeightBuffers(nbElems: _nbNeurons, deviceID: _deviceID)
+        _ƔBuffers = WeightBuffers(nbElems: _nbNeurons, deviceID: _deviceID)
         
         let βPtr = _βBuffers.w_p!.shared.buffer
         let ƔPtr = _ƔBuffers.w_p!.shared.buffer
         
         if _weightsList.count == 0
         {
-            for depth in 0..<_nbNeurones
+            for depth in 0..<_nbNeurons
             {
                 ƔPtr[depth] = 1.0
                 βPtr[depth] = 0.0
@@ -642,10 +642,10 @@ class BatchNormalizationGPU: BatchNormalizationBase
         }
         else
         {
-            for depth in 0..<_nbNeurones
+            for depth in 0..<_nbNeurons
             {
                 ƔPtr[depth] = _weightsList[depth]
-                βPtr[depth] = _weightsList[_nbNeurones + depth]
+                βPtr[depth] = _weightsList[_nbNeurons + depth]
             }
             _weightsList = []
         }
@@ -656,15 +656,15 @@ class BatchNormalizationGPU: BatchNormalizationBase
     /// Initialize stats in the GPU execution context.
     func initStats()
     {
-        _Eμ = MetalPrivateBuffer<Float>(_nbNeurones, deviceID: _deviceID)
-        _Eσ2 = MetalPrivateBuffer<Float>(_nbNeurones, deviceID: _deviceID)
+        _Eμ = MetalPrivateBuffer<Float>(_nbNeurons, deviceID: _deviceID)
+        _Eσ2 = MetalPrivateBuffer<Float>(_nbNeurons, deviceID: _deviceID)
         
         let EμPtr = _Eμ.shared.buffer
         let Eσ2Ptr = _Eσ2.shared.buffer
         
         if _statsList.count == 0
         {
-            for depth in 0..<_nbNeurones
+            for depth in 0..<_nbNeurons
             {
                 EμPtr[depth] = 0.0
                 Eσ2Ptr[depth] = 0.0
@@ -672,10 +672,10 @@ class BatchNormalizationGPU: BatchNormalizationBase
         }
         else
         {
-            for depth in 0..<_nbNeurones
+            for depth in 0..<_nbNeurons
             {
                 EμPtr[depth] = _statsList[depth]
-                Eσ2Ptr[depth] = _statsList[_nbNeurones + depth]
+                Eσ2Ptr[depth] = _statsList[_nbNeurons + depth]
             }
             _statsList = []
         }
@@ -693,10 +693,10 @@ class BatchNormalizationGPU: BatchNormalizationBase
     func applyWeights(bn: BatchNormalization)
     {
         let weights = self.weights
-        for depth in 0..<_nbNeurones
+        for depth in 0..<_nbNeurons
         {
             bn._Ɣ.w[depth] = Double(weights[depth])
-            bn._β.w[depth] = Double(weights[_nbNeurones + depth])
+            bn._β.w[depth] = Double(weights[_nbNeurons + depth])
         }
     }
     
@@ -716,26 +716,26 @@ class BatchNormalizationGPU: BatchNormalizationBase
     /// Compute the averages of the different independent batch normalization units.
     private func _computeμ(_ layer: BN2D)
     {
-        let nbNeurones = layer.nbFilters
+        let nbNeurons = layer.nbFilters
         let batchSize = layer.batchSize
         let width = layer.width
         let height = layer.height
         
-        let pNbNeurones: [UInt32] = [UInt32(nbNeurones)]
+        let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
         let pFirstCall: [UInt32] = _nbElems == 0 ? [1] : [0]
         
         if _μ == nil
         {
-            _μ = MetalPrivateBuffer<Float>(_nbNeurones, deviceID: _deviceID)
+            _μ = MetalPrivateBuffer<Float>(_nbNeurons, deviceID: _deviceID)
         }
         
         let command = MetalKernel.get.createCommand(
             "computeConvμ", deviceID: _deviceID
         )
         command.setBuffer(layer.outs.metal, atIndex: 0)
-        command.setBytes(pNbNeurones, atIndex: 1)
+        command.setBytes(pNbNeurons, atIndex: 1)
         command.setBytes(pNbBatch, atIndex: 2)
         command.setBytes(pDimensions, atIndex: 3)
         command.setBytes(pFirstCall, atIndex: 4)
@@ -744,7 +744,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
         
         let threads = command.threadExecutionWidth
         let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
-        let threadsPerGrid = MTLSize(width: _nbNeurones, height: 1, depth: 1)
+        let threadsPerGrid = MTLSize(width: _nbNeurons, height: 1, depth: 1)
         command.dispatchThreads(
             threadsPerGrid: threadsPerGrid,
             threadsPerThreadgroup: threadsPerThreadgroup
@@ -755,19 +755,19 @@ class BatchNormalizationGPU: BatchNormalizationBase
     /// Compute the deviations of the different independent batch normalization units.
     private func _computeσ2(_ layer: BN2D)
     {
-        let nbNeurones = layer.nbFilters
+        let nbNeurons = layer.nbFilters
         let batchSize = layer.batchSize
         let width = layer.width
         let height = layer.height
         
-        let pNbNeurones: [UInt32] = [UInt32(nbNeurones)]
+        let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
         let pFirstCall: [UInt32] = _nbElems == 0 ? [1] : [0]
         
         if _σ2 == nil
         {
-            _σ2 = MetalPrivateBuffer<Float>(_nbNeurones, deviceID: _deviceID)
+            _σ2 = MetalPrivateBuffer<Float>(_nbNeurons, deviceID: _deviceID)
         }
         
         let command = MetalKernel.get.createCommand(
@@ -775,7 +775,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
         )
         command.setBuffer(layer.outs.metal, atIndex: 0)
         command.setBuffer(_μ.metal, atIndex: 1)
-        command.setBytes(pNbNeurones, atIndex: 2)
+        command.setBytes(pNbNeurons, atIndex: 2)
         command.setBytes(pNbBatch, atIndex: 3)
         command.setBytes(pDimensions, atIndex: 4)
         command.setBytes(pFirstCall, atIndex: 5)
@@ -784,7 +784,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
         
         let threads = command.threadExecutionWidth
         let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
-        let threadsPerGrid = MTLSize(width: _nbNeurones, height: 1, depth: 1)
+        let threadsPerGrid = MTLSize(width: _nbNeurons, height: 1, depth: 1)
         command.dispatchThreads(
             threadsPerGrid: threadsPerGrid,
             threadsPerThreadgroup: threadsPerThreadgroup
@@ -802,14 +802,14 @@ class BatchNormalizationGPU: BatchNormalizationBase
         let width = layer.width
         let height = layer.height
         
-        let pNbNeurones: [UInt32] = [UInt32(_nbNeurones)]
+        let pNbNeurons: [UInt32] = [UInt32(_nbNeurons)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
         
         if _xHat == nil
         {
             _xHat = MetalPrivateBuffer<Float>(
-                batchSize * _nbNeurones * width * height,
+                batchSize * _nbNeurons * width * height,
                 deviceID: _deviceID
             )
         }
@@ -821,7 +821,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
         command.setBuffer(_ƔBuffers.w.metal, atIndex: 1)
         command.setBuffer(_μ.metal, atIndex: 2)
         command.setBuffer(_σ2.metal, atIndex: 3)
-        command.setBytes(pNbNeurones, atIndex: 4)
+        command.setBytes(pNbNeurons, atIndex: 4)
         command.setBytes(pNbBatch, atIndex: 5)
         command.setBytes(pDimensions, atIndex: 6)
         command.setBuffer(layer.outs.metal, atIndex: 7)
@@ -830,7 +830,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
         let threadsPerThreadgroup = MTLSizeMake(8, 8, 8)
         let threadsPerGrid = MTLSize(width: width,
                                      height: height,
-                                     depth: _nbNeurones * batchSize)
+                                     depth: _nbNeurons * batchSize)
         command.dispatchThreads(
             threadsPerGrid: threadsPerGrid,
             threadsPerThreadgroup: threadsPerThreadgroup
@@ -850,7 +850,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
         let width = layer.width
         let height = layer.height
         
-        let pNbNeurones: [UInt32] = [UInt32(_nbNeurones)]
+        let pNbNeurons: [UInt32] = [UInt32(_nbNeurons)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pM: [UInt32] = [UInt32(_nbElems)]
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
@@ -863,7 +863,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
         command.setBuffer(_ƔBuffers.w.metal, atIndex: 1)
         command.setBuffer(_Eμ.metal, atIndex: 2)
         command.setBuffer(_Eσ2.metal, atIndex: 3)
-        command.setBytes(pNbNeurones, atIndex: 4)
+        command.setBytes(pNbNeurons, atIndex: 4)
         command.setBytes(pNbBatch, atIndex: 5)
         command.setBytes(pM, atIndex: 6)
         command.setBytes(pDimensions, atIndex: 7)
@@ -872,7 +872,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
         let threadsPerThreadgroup = MTLSizeMake(8, 8, 8)
         let threadsPerGrid = MTLSize(width: width,
                                      height: height,
-                                     depth: _nbNeurones * batchSize)
+                                     depth: _nbNeurons * batchSize)
         command.dispatchThreads(
             threadsPerGrid:threadsPerGrid,
             threadsPerThreadgroup: threadsPerThreadgroup
@@ -900,15 +900,15 @@ class BatchNormalizationGPU: BatchNormalizationBase
         let width = layer.width
         let height = layer.height
         
-        let pNbNeurones: [UInt32] = [UInt32(_nbNeurones)]
+        let pNbNeurons: [UInt32] = [UInt32(_nbNeurons)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
         let pAccumulate: [UInt32] = layer.accumulateDeltaWeights ? [1] : [0]
         
         if _sum1 == nil
         {
-            _sum1 = MetalPrivateBuffer<Float>(_nbNeurones, deviceID: _deviceID)
-            _sum2 = MetalPrivateBuffer<Float>(_nbNeurones, deviceID: _deviceID)
+            _sum1 = MetalPrivateBuffer<Float>(_nbNeurons, deviceID: _deviceID)
+            _sum2 = MetalPrivateBuffer<Float>(_nbNeurons, deviceID: _deviceID)
         }
         
         let command = MetalKernel.get.createCommand(
@@ -917,7 +917,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
         command.setBuffer(layer.delta.metal, atIndex: 0)
         command.setBuffer(_xHat.metal, atIndex: 1)
         command.setBuffer(_ƔBuffers.w.metal, atIndex: 2)
-        command.setBytes(pNbNeurones, atIndex: 3)
+        command.setBytes(pNbNeurons, atIndex: 3)
         command.setBytes(pNbBatch, atIndex: 4)
         command.setBytes(pDimensions, atIndex: 5)
         command.setBytes(pAccumulate, atIndex: 6)
@@ -928,7 +928,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
         
         let threads = command.threadExecutionWidth
         let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
-        let threadsPerGrid = MTLSize(width: _nbNeurones, height: 1, depth: 1)
+        let threadsPerGrid = MTLSize(width: _nbNeurons, height: 1, depth: 1)
         command.dispatchThreads(
             threadsPerGrid: threadsPerGrid,
             threadsPerThreadgroup: threadsPerThreadgroup
@@ -945,7 +945,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
         let width = layer.width
         let height = layer.height
         
-        let pNbNeurones: [UInt32] = [UInt32(_nbNeurones)]
+        let pNbNeurons: [UInt32] = [UInt32(_nbNeurons)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
         
@@ -957,7 +957,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
         command.setBuffer(_ƔBuffers.w.metal, atIndex: 2)
         command.setBuffer(_sum1.metal, atIndex: 3)
         command.setBuffer(_sum2.metal, atIndex: 4)
-        command.setBytes(pNbNeurones, atIndex: 5)
+        command.setBytes(pNbNeurons, atIndex: 5)
         command.setBytes(pNbBatch, atIndex: 6)
         command.setBytes(pDimensions, atIndex: 7)
         command.setBuffer(layer.delta.metal, atIndex: 8)
@@ -965,7 +965,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
         let threadsPerThreadgroup = MTLSizeMake(8, 8, 8)
         let threadsPerGrid = MTLSize(width: width,
                                      height: height,
-                                     depth: _nbNeurones * batchSize)
+                                     depth: _nbNeurons * batchSize)
         command.dispatchThreads(
             threadsPerGrid: threadsPerGrid,
             threadsPerThreadgroup: threadsPerThreadgroup
@@ -980,7 +980,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
         let width = layer.width
         let height = layer.height
         
-        let pNbNeurones: [UInt32] = [UInt32(_nbNeurones)]
+        let pNbNeurons: [UInt32] = [UInt32(_nbNeurons)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pM: [UInt32] = [UInt32(_nbElems)]
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
@@ -990,7 +990,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
         )
         command.setBuffer(_ƔBuffers.w.metal, atIndex: 0)
         command.setBuffer(_Eσ2.metal, atIndex: 1)
-        command.setBytes(pNbNeurones, atIndex: 2)
+        command.setBytes(pNbNeurons, atIndex: 2)
         command.setBytes(pNbBatch, atIndex: 3)
         command.setBytes(pM, atIndex: 4)
         command.setBytes(pDimensions, atIndex: 5)
@@ -999,7 +999,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
         let threadsPerThreadgroup = MTLSizeMake(8, 8, 8)
         let threadsPerGrid = MTLSize(width: width,
                                      height: height,
-                                     depth: _nbNeurones * batchSize)
+                                     depth: _nbNeurons * batchSize)
         command.dispatchThreads(
             threadsPerGrid: threadsPerGrid,
             threadsPerThreadgroup: threadsPerThreadgroup

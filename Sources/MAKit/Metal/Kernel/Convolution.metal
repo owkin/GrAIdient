@@ -26,8 +26,8 @@ kernel void convForward(
     uint height, width;
     uint heightPrev, widthPrev;
     uint weightHeight, weightWidth;
-    uint nbNeurones;
-    uint nbNeuronesPrev;
+    uint nbNeurons;
+    uint nbNeuronsPrev;
     int startI, startJ;
     int endI, endJ;
     uint stride;
@@ -43,8 +43,8 @@ kernel void convForward(
         heightPrev = pDimensionsPrev[1];
         weightWidth = pDimWeights[0];
         weightHeight = pDimWeights[1];
-        nbNeurones = *pNbFilters;
-        nbNeuronesPrev = *pNbFiltersPrev;
+        nbNeurons = *pNbFilters;
+        nbNeuronsPrev = *pNbFiltersPrev;
         nbBatch = *pNbBatch;
         startI = pStart[0];
         endI = pStart[1];
@@ -57,24 +57,24 @@ kernel void convForward(
     
     uint i = id[1];
     uint j = id[0];
-    uint depth = id[2] % nbNeurones;
-    uint elem = id[2] / nbNeurones;
+    uint depth = id[2] % nbNeurons;
+    uint elem = id[2] / nbNeurons;
     
     if (i >= height || j >= width ||
-        id[2] >= nbNeurones * nbBatch)
+        id[2] >= nbNeurons * nbBatch)
     {
         return ;
     }
     
-    uint offsetStart = (depth+nbNeurones*elem)*height;
+    uint offsetStart = (depth+nbNeurons*elem)*height;
     
     float tmp = biases[depth];
-    for (uint depthPrev=0; depthPrev<nbNeuronesPrev; depthPrev++)
+    for (uint depthPrev=0; depthPrev<nbNeuronsPrev; depthPrev++)
     {
         uint offsetStartPrev =
-            (depthPrev + nbNeuronesPrev*elem) * heightPrev;
+            (depthPrev + nbNeuronsPrev*elem) * heightPrev;
         uint offsetStartWeights =
-            (depthPrev + nbNeuronesPrev * depth) * weightHeight;
+            (depthPrev + nbNeuronsPrev * depth) * weightHeight;
         
         for (int k=startI; k<=endI; k++){
         for (int l=startJ; l<=endJ; l++)
@@ -117,8 +117,8 @@ kernel void convBackward(
     uint height, width;
     uint heightPrev, widthPrev;
     uint weightHeight, weightWidth;
-    uint nbNeurones;
-    uint nbNeuronesPrev;
+    uint nbNeurons;
+    uint nbNeuronsPrev;
     int startI, startJ;
     int endI, endJ;
     uint stride;
@@ -135,8 +135,8 @@ kernel void convBackward(
         heightPrev = pDimensionsPrev[1];
         weightWidth = pDimWeights[0];
         weightHeight = pDimWeights[1];
-        nbNeurones = *pNbFilters;
-        nbNeuronesPrev = *pNbFiltersPrev;
+        nbNeurons = *pNbFilters;
+        nbNeuronsPrev = *pNbFiltersPrev;
         nbBatch = *pNbBatch;
         startI = pStart[0];
         endI = pStart[1];
@@ -150,23 +150,23 @@ kernel void convBackward(
     
     uint i = id[1];
     uint j = id[0];
-    uint depthPrev = id[2] % nbNeuronesPrev;
-    uint elem = id[2] / nbNeuronesPrev;
+    uint depthPrev = id[2] % nbNeuronsPrev;
+    uint elem = id[2] / nbNeuronsPrev;
     
     if (i >= heightPrev || j >= widthPrev ||
-        id[2] >= nbNeuronesPrev * nbBatch)
+        id[2] >= nbNeuronsPrev * nbBatch)
     {
         return ;
     }
     
-    uint offsetStartPrev = (depthPrev + nbNeuronesPrev * elem) * heightPrev;
+    uint offsetStartPrev = (depthPrev + nbNeuronsPrev * elem) * heightPrev;
     
     float tmp = 0.0;
-    for (uint depth=0; depth<nbNeurones; depth++)
+    for (uint depth=0; depth<nbNeurons; depth++)
     {
         uint offsetStartWeights =
-            (depthPrev + nbNeuronesPrev * depth) * weightHeight;
-        uint offsetStart = (depth + nbNeurones * elem) * height;
+            (depthPrev + nbNeuronsPrev * depth) * weightHeight;
+        uint offsetStart = (depth + nbNeurons * elem) * height;
         
         for (int k=startI; k<=endI; k++){
         for (int l=startJ; l<=endJ; l++)
@@ -229,8 +229,8 @@ kernel void convBatchDerWeights(
     uint height, width;
     uint heightPrev, widthPrev;
     uint weightHeight, weightWidth;
-    uint nbNeurones;
-    uint nbNeuronesPrev;
+    uint nbNeurons;
+    uint nbNeuronsPrev;
     int startI, startJ;
     int endI, endJ;
     uint stride;
@@ -247,8 +247,8 @@ kernel void convBatchDerWeights(
         heightPrev = pDimensionsPrev[1];
         weightWidth = pDimWeights[0];
         weightHeight = pDimWeights[1];
-        nbNeurones = *pNbFilters;
-        nbNeuronesPrev = *pNbFiltersPrev;
+        nbNeurons = *pNbFilters;
+        nbNeuronsPrev = *pNbFiltersPrev;
         nbBatch = *pNbBatch;
         startI = pStart[0];
         endI = pStart[1];
@@ -260,13 +260,13 @@ kernel void convBatchDerWeights(
     else
         return ;
     
-    int weightsI = id[1] / nbNeuronesPrev;
-    int weightsJ = id[0] / nbNeurones;
-    uint depth = id[0] % nbNeurones;
-    uint depthPrev = id[1] % nbNeuronesPrev;
+    int weightsI = id[1] / nbNeuronsPrev;
+    int weightsJ = id[0] / nbNeurons;
+    uint depth = id[0] % nbNeurons;
+    uint depthPrev = id[1] % nbNeuronsPrev;
     
-    if (id[0] >= nbNeurones * weightWidth ||
-        id[1] >= nbNeuronesPrev * weightHeight ||
+    if (id[0] >= nbNeurons * weightWidth ||
+        id[1] >= nbNeuronsPrev * weightHeight ||
         weightsI + startI > endI || weightsJ + startJ > endJ)
     {
         return ;
@@ -279,9 +279,9 @@ kernel void convBatchDerWeights(
     for (uint elem=0; elem<nbBatch; elem++)
     {
         uint offsetStart =
-            (depth + nbNeurones * elem) * height;
+            (depth + nbNeurons * elem) * height;
         uint offsetStartPrev =
-            (depthPrev + nbNeuronesPrev * elem) * heightPrev;
+            (depthPrev + nbNeuronsPrev * elem) * heightPrev;
         
         for (uint k=0; k<height; k++){
         for (uint l=0; l<width; l++)
@@ -302,7 +302,7 @@ kernel void convBatchDerWeights(
     }
     
     uint offsetStartWeights =
-        (depthPrev + nbNeuronesPrev * depth) * weightHeight;
+        (depthPrev + nbNeuronsPrev * depth) * weightHeight;
     uint offsetWeights = j-startJ +
         (offsetStartWeights + i-startI) * weightWidth;
     
@@ -326,7 +326,7 @@ kernel void convBatchDerBiases(
     uint id [[ thread_position_in_grid ]])
 {
     uint height, width;
-    uint nbNeurones;
+    uint nbNeurons;
     uint nbBatch;
     uint accumulate;
     
@@ -335,7 +335,7 @@ kernel void convBatchDerBiases(
     {
         width = pDimensions[0];
         height = pDimensions[1];
-        nbNeurones = *pNbFilters;
+        nbNeurons = *pNbFilters;
         nbBatch = *pNbBatch;
         accumulate = *pAccumulate;
     }
@@ -343,7 +343,7 @@ kernel void convBatchDerBiases(
         return ;
     
     uint depth = id;
-    if (depth >= nbNeurones)
+    if (depth >= nbNeurons)
     {
         return ;
     }
@@ -351,7 +351,7 @@ kernel void convBatchDerBiases(
     float tmp = 0.0;
     for (uint elem=0; elem<nbBatch; elem++)
     {
-        uint offsetStart = (depth + nbNeurones * elem) * height;
+        uint offsetStart = (depth + nbNeurons * elem) * height;
         
         for (uint k=0; k<height; k++){
         for (uint l=0; l<width; l++)
@@ -388,8 +388,8 @@ kernel void convDerWeights(
     uint height, width;
     uint heightPrev, widthPrev;
     uint weightHeight, weightWidth;
-    uint nbNeurones;
-    uint nbNeuronesPrev;
+    uint nbNeurons;
+    uint nbNeuronsPrev;
     int startI, startJ;
     int endI, endJ;
     uint stride;
@@ -405,8 +405,8 @@ kernel void convDerWeights(
         heightPrev = pDimensionsPrev[1];
         weightWidth = pDimWeights[0];
         weightHeight = pDimWeights[1];
-        nbNeurones = *pNbFilters;
-        nbNeuronesPrev = *pNbFiltersPrev;
+        nbNeurons = *pNbFilters;
+        nbNeuronsPrev = *pNbFiltersPrev;
         nbBatch = *pNbBatch;
         startI = pStart[0];
         endI = pStart[1];
@@ -417,14 +417,14 @@ kernel void convDerWeights(
     else
         return ;
     
-    int weightsI = id[1] / nbNeuronesPrev;
-    int weightsJ = id[0] / nbNeurones;
-    uint depth = id[0] % nbNeurones;
-    uint depthPrev = id[1] % nbNeuronesPrev;
+    int weightsI = id[1] / nbNeuronsPrev;
+    int weightsJ = id[0] / nbNeurons;
+    uint depth = id[0] % nbNeurons;
+    uint depthPrev = id[1] % nbNeuronsPrev;
     uint elem = id[2];
     
-    if (id[0] >= nbNeurones * weightWidth ||
-        id[1] >= nbNeuronesPrev * weightHeight ||
+    if (id[0] >= nbNeurons * weightWidth ||
+        id[1] >= nbNeuronsPrev * weightHeight ||
         elem >= nbBatch ||
         weightsI + startI > endI || weightsJ + startJ > endJ)
     {
@@ -432,15 +432,15 @@ kernel void convDerWeights(
     }
     
     uint offsetStartGridWeights =
-        elem * nbNeurones * nbNeuronesPrev * weightHeight;
+        elem * nbNeurons * nbNeuronsPrev * weightHeight;
     
     int i = weightsI + startI;
     int j = weightsJ + startJ;
     
-    uint offsetStart = (depth + nbNeurones * elem) * height;
-    uint offsetStartPrev = (depthPrev + nbNeuronesPrev * elem) * heightPrev;
+    uint offsetStart = (depth + nbNeurons * elem) * height;
+    uint offsetStartPrev = (depthPrev + nbNeuronsPrev * elem) * heightPrev;
     uint offsetStartWeights =
-        (depthPrev + nbNeuronesPrev * depth) * weightHeight;
+        (depthPrev + nbNeuronsPrev * depth) * weightHeight;
     
     float tmp = 0.0;
     for (uint k=0; k<height; k++){
@@ -474,14 +474,14 @@ kernel void convDerBiases(
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
-    uint nbNeurones;
+    uint nbNeurons;
     uint nbBatch;
     
     if (pNbFilters && pDimensions && pNbBatch && delta && deltaWeights)
     {
         width = pDimensions[0];
         height = pDimensions[1];
-        nbNeurones = *pNbFilters;
+        nbNeurons = *pNbFilters;
         nbBatch = *pNbBatch;
     }
     else
@@ -490,12 +490,12 @@ kernel void convDerBiases(
     uint depth = id[0];
     uint elem = id[1];
     
-    if (depth >= nbNeurones || elem >= nbBatch)
+    if (depth >= nbNeurons || elem >= nbBatch)
     {
         return ;
     }
     
-    uint offsetStart = (depth + nbNeurones * elem) * height;
+    uint offsetStart = (depth + nbNeurons * elem) * height;
     
     float tmp = 0.0;
     for (uint i=0; i<height; i++){
@@ -505,7 +505,7 @@ kernel void convDerBiases(
         tmp += delta[offset];
     }}
     
-    uint offsetWeights = elem * nbNeurones + depth;
+    uint offsetWeights = elem * nbNeurons + depth;
     deltaWeights[offsetWeights] = tmp;
 }
 
@@ -519,8 +519,8 @@ kernel void convReduceWeights(
     device float * grads,
     uint2 id [[ thread_position_in_grid ]])
 {
-    uint nbNeurones;
-    uint nbNeuronesPrev;
+    uint nbNeurons;
+    uint nbNeuronsPrev;
     uint weightHeight, weightWidth;
     uint nbBatch;
     uint accumulate;
@@ -528,8 +528,8 @@ kernel void convReduceWeights(
     if (pNbFilters && pNbFiltersPrev && pDimWeights && pNbBatch &&
         pAccumulate && deltaWeights && grads)
     {
-        nbNeurones = *pNbFilters;
-        nbNeuronesPrev = *pNbFiltersPrev;
+        nbNeurons = *pNbFilters;
+        nbNeuronsPrev = *pNbFiltersPrev;
         weightWidth = pDimWeights[0];
         weightHeight = pDimWeights[1];
         nbBatch = *pNbBatch;
@@ -538,19 +538,19 @@ kernel void convReduceWeights(
     else
         return ;
     
-    uint weightsI = id[1] / nbNeuronesPrev;
-    uint weightsJ = id[0] / nbNeurones;
-    uint depth = id[0] % nbNeurones;
-    uint depthPrev = id[1] % nbNeuronesPrev;
+    uint weightsI = id[1] / nbNeuronsPrev;
+    uint weightsJ = id[0] / nbNeurons;
+    uint depth = id[0] % nbNeurons;
+    uint depthPrev = id[1] % nbNeuronsPrev;
     
-    if (id[0] >= nbNeurones * weightWidth ||
-        id[1] >= nbNeuronesPrev * weightHeight)
+    if (id[0] >= nbNeurons * weightWidth ||
+        id[1] >= nbNeuronsPrev * weightHeight)
     {
         return ;
     }
     
     uint offsetStartWeights =
-        (depthPrev + nbNeuronesPrev * depth) * weightHeight;
+        (depthPrev + nbNeuronsPrev * depth) * weightHeight;
     uint offsetWeights = weightsJ +
         (offsetStartWeights + weightsI) * weightWidth;
     
@@ -558,7 +558,7 @@ kernel void convReduceWeights(
     for (uint elem=0; elem<nbBatch; elem++)
     {
         uint offsetStart =
-            elem * nbNeurones * nbNeuronesPrev * weightHeight;
+            elem * nbNeurons * nbNeuronsPrev * weightHeight;
         uint offset = weightsJ +
             (offsetStart + offsetStartWeights + weightsI) * weightWidth;
                 

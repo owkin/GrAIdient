@@ -50,7 +50,7 @@ public class MSE1D: LayerOutput1D
         _ groundTruth: [[Double]]) throws -> [Double]
     {
         var gradients = [Double]()
-        let nbGradients = neurones.get(0)!.nbGC / 2
+        let nbGradients = neurons.get(0)!.nbGC / 2
         for elem in 0..<nbGradients
         {
             let loss1 = try getLossGC(groundTruth, elem: 2 * elem)
@@ -75,7 +75,7 @@ public class MSE1D: LayerOutput1D
     func getLossGC(_ groundTruth: [[Double]], elem: Int) throws -> Double
     {
         let batchSize = groundTruth.count
-        if batchSize <= 0 || batchSize > neurones.get(0)!.v.count
+        if batchSize <= 0 || batchSize > neurons.get(0)!.v.count
         {
             throw LayerError.BatchSize
         }
@@ -84,21 +84,21 @@ public class MSE1D: LayerOutput1D
         for batch in 0..<batchSize
         {
             let gt = groundTruth[batch]
-            if gt.count != nbNeurones
+            if gt.count != nbNeurons
             {
                 throw LayerError.DataSize
             }
             
-            for depth in 0..<nbNeurones
+            for depth in 0..<nbNeurons
             {
-                let out = neurones.get(depth)!.gc[batch][elem].out
+                let out = neurons.get(depth)!.gc[batch][elem].out
                 let diff = out - gt[depth]
                 
                 losses[batch] += diff * diff
             }
         }
         return Double(coeff) * losses.reduce(0, +) /
-               Double(nbNeurones * batchSize)
+               Double(nbNeurons * batchSize)
     }
     
     ///
@@ -113,7 +113,7 @@ public class MSE1D: LayerOutput1D
     {
         let batchSize = groundTruth.count
         if batchSize != self.batchSize ||
-           batchSize <= 0 || batchSize > neurones.get(0)!.v.count
+           batchSize <= 0 || batchSize > neurons.get(0)!.v.count
         {
             throw LayerError.BatchSize
         }
@@ -122,21 +122,21 @@ public class MSE1D: LayerOutput1D
         for elem in 0..<batchSize
         {
             let gt = groundTruth[elem]
-            if gt.count != nbNeurones
+            if gt.count != nbNeurons
             {
                 throw LayerError.DataSize
             }
             
-            for depth in 0..<nbNeurones
+            for depth in 0..<nbNeurons
             {
-                let out = neurones.get(depth)!.v[elem].out
+                let out = neurons.get(depth)!.v[elem].out
                 let diff = out - gt[depth]
                 
                 losses[elem] += diff * diff
             }
         }
         return Double(coeff) * losses.reduce(0, +) /
-               Double(nbNeurones * batchSize)
+               Double(nbNeurons * batchSize)
     }
     
     ///
@@ -157,12 +157,12 @@ public class MSE1D: LayerOutput1D
         {
             throw LayerError.BatchSize
         }
-        if batchSize * nbNeurones > groundTruth.nbElems
+        if batchSize * nbNeurons > groundTruth.nbElems
         {
             throw LayerError.DataSize
         }
         
-        let pNbNeurones: [UInt32] = [UInt32(nbNeurones)]
+        let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         
         if loss == nil
@@ -179,7 +179,7 @@ public class MSE1D: LayerOutput1D
         )
         command.setBuffer(outs.metal, atIndex: 0)
         command.setBuffer(groundTruth.metal, atIndex: 1)
-        command.setBytes(pNbNeurones, atIndex: 2)
+        command.setBytes(pNbNeurons, atIndex: 2)
         command.setBytes(pNbBatch, atIndex: 3)
         command.setBuffer(loss.metal, atIndex: 4)
         
@@ -199,7 +199,7 @@ public class MSE1D: LayerOutput1D
         {
             loss += lossPtr[i]
         }
-        return Float(coeff) * loss / Float(nbNeurones * batchSize)
+        return Float(coeff) * loss / Float(nbNeurons * batchSize)
     }
     
     ///
@@ -213,29 +213,29 @@ public class MSE1D: LayerOutput1D
     {
         let batchSize = groundTruth.count
         if batchSize != self.batchSize ||
-           batchSize <= 0 || batchSize > neurones.get(0)!.v.count
+           batchSize <= 0 || batchSize > neurons.get(0)!.v.count
         {
             throw LayerError.BatchSize
         }
         
         if let layerPrev = self.layerPrev as? Layer1D
         {
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             for elem in 0..<batchSize
             {
                 let gt = groundTruth[elem]
-                if gt.count != nbNeurones
+                if gt.count != nbNeurons
                 {
                     throw LayerError.DataSize
                 }
                 
-                for depth in 0..<nbNeurones
+                for depth in 0..<nbNeurons
                 {
-                    let out = neurones.get(depth)!.v[elem].out
+                    let out = neurons.get(depth)!.v[elem].out
                     let diff = out - gt[depth]
                     
-                    neuronesPrev.get(depth)!.v[elem].delta =
-                        2 * coeff * diff / Double(nbNeurones * batchSize)
+                    neuronsPrev.get(depth)!.v[elem].delta =
+                        2 * coeff * diff / Double(nbNeurons * batchSize)
                 }
             }
             propagateDirty()
@@ -259,23 +259,23 @@ public class MSE1D: LayerOutput1D
         {
             throw LayerError.BatchSize
         }
-        if batchSize * nbNeurones > groundTruth.nbElems
+        if batchSize * nbNeurons > groundTruth.nbElems
         {
             throw LayerError.DataSize
         }
         
         if let layerPrev = self.layerPrev as? Layer1D
         {
-            let pNbNeurones: [UInt32] = [UInt32(nbNeurones)]
+            let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
             let pCoeff: [Float] = [Float(coeff)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             
             if layerPrev.delta == nil
             {
                 layerPrev.delta = MetalPrivateBuffer<Float>(
-                    batchSize * nbNeurones, deviceID: deviceID)
+                    batchSize * nbNeurons, deviceID: deviceID)
             }
-            if batchSize * nbNeurones > layerPrev.delta.nbElems
+            if batchSize * nbNeurons > layerPrev.delta.nbElems
             {
                 throw LayerError.BatchSize
             }
@@ -285,13 +285,13 @@ public class MSE1D: LayerOutput1D
             )
             command.setBuffer(outs.metal, atIndex: 0)
             command.setBuffer(groundTruth.metal, atIndex: 1)
-            command.setBytes(pNbNeurones, atIndex: 2)
+            command.setBytes(pNbNeurons, atIndex: 2)
             command.setBytes(pCoeff, atIndex: 3)
             command.setBytes(pNbBatch, atIndex: 4)
             command.setBuffer(layerPrev.delta.metal, atIndex: 5)
             
             let threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
-            let threadsPerGrid = MTLSize(width: nbNeurones,
+            let threadsPerGrid = MTLSize(width: nbNeurons,
                                          height: batchSize,
                                          depth: 1)
             command.dispatchThreads(

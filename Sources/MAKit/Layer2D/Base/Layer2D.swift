@@ -9,7 +9,7 @@
 open class Layer2D: Layer
 {
     /// Neural structure used in the CPU execution context.
-    public internal(set) var neurones: [GridNeurones] = []
+    public internal(set) var neurons: [GridNeurons] = []
     
     /// Output buffer (result of the forward pass) used in the GPU execution context.
     public internal(set) var outs: MetalPrivateBuffer<Float>! = nil
@@ -27,7 +27,7 @@ open class Layer2D: Layer
     public override var nbGC: Int
     {
         get {
-            return neurones.first!.get(0)!.nbGC
+            return neurons.first!.get(0)!.nbGC
         }
     }
     
@@ -134,7 +134,7 @@ open class Layer2D: Layer
         super.resetKernelCPU()
         strideFactorCache = nil
         receptiveFieldCache = nil
-        neurones = []
+        neurons = []
     }
     
     ///
@@ -158,20 +158,20 @@ open class Layer2D: Layer
     ///
     public func checkStateCPU(batchSize: Int) throws
     {
-        if neurones.count == 0
+        if neurons.count == 0
         {
-            neurones = []
+            neurons = []
             for _ in 0..<nbFilters
             {
-                neurones.append(GridNeurones(width: width, height: height))
+                neurons.append(GridNeurons(width: width, height: height))
             }
-            for grid in neurones {
-            for neurone in grid.all
+            for grid in neurons {
+            for neuron in grid.all
             {
-                neurone.initBatch(batchSize)
+                neuron.initBatch(batchSize)
             }}
         }
-        else if batchSize <= 0 || batchSize > neurones.first!.get(0)!.v.count
+        else if batchSize <= 0 || batchSize > neurons.first!.get(0)!.v.count
         {
             throw LayerError.BatchSize
         }
@@ -225,10 +225,10 @@ open class Layer2D: Layer
     public func getOutsCPU<T: BinaryFloatingPoint>(elem: Int) -> [T]
     {
         var outs = [T]()
-        for grid in neurones {
-        for neurone in grid.all
+        for grid in neurons {
+        for neuron in grid.all
         {
-            let out = T(neurone.v[elem].out)
+            let out = T(neuron.v[elem].out)
             outs.append(out)
         }}
         return outs
@@ -274,10 +274,10 @@ open class Layer2D: Layer
         }
         
         var delta = [T]()
-        for grid in neurones {
-        for neurone in grid.all
+        for grid in neurons {
+        for neuron in grid.all
         {
-            let out = T(neurone.v[elem].delta)
+            let out = T(neuron.v[elem].delta)
             delta.append(out)
         }}
         return delta

@@ -178,10 +178,10 @@ public class Activation2D: Layer2D
             let nbGC = layerPrev.nbGC
             for j in 0..<nbFilters
             {
-                neurones[j].initGC(batchSize: batchSize, nbGC: nbGC)
+                neurons[j].initGC(batchSize: batchSize, nbGC: nbGC)
             }
             
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             for batch in 0..<batchSize {
             for elem in 0..<nbGC
             {
@@ -189,8 +189,8 @@ public class Activation2D: Layer2D
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    neurones[depth].get(i, j)!.gc[batch][elem].out =
-                        neuronesPrev[depth].get(i, j)!.gc[batch][elem].out
+                    neurons[depth].get(i, j)!.gc[batch][elem].out =
+                        neuronsPrev[depth].get(i, j)!.gc[batch][elem].out
                 }}}
             }}
         }
@@ -218,15 +218,15 @@ public class Activation2D: Layer2D
         {
             try checkStateCPU(batchSize: batchSize)
             
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             for elem in 0..<batchSize
             {
                 for depth in 0..<nbFilters {
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    neurones[depth].get(i, j)!.v[elem].out =
-                        neuronesPrev[depth].get(i, j)!.v[elem].out
+                    neurons[depth].get(i, j)!.v[elem].out =
+                        neuronsPrev[depth].get(i, j)!.v[elem].out
                 }}}
             }
             
@@ -277,7 +277,7 @@ public class Activation2D: Layer2D
         
         if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             for elem in 0..<batchSize
             {
                 for depth in 0..<nbFilters {
@@ -286,13 +286,13 @@ public class Activation2D: Layer2D
                 {
                     if layerPrev.dirty
                     {
-                        neuronesPrev[depth].get(i, j)!.v[elem].delta =
-                            neurones[depth].get(i, j)!.v[elem].delta
+                        neuronsPrev[depth].get(i, j)!.v[elem].delta =
+                            neurons[depth].get(i, j)!.v[elem].delta
                     }
                     else
                     {
-                        neuronesPrev[depth].get(i, j)!.v[elem].delta +=
-                            neurones[depth].get(i, j)!.v[elem].delta
+                        neuronsPrev[depth].get(i, j)!.v[elem].delta +=
+                            neurons[depth].get(i, j)!.v[elem].delta
                     }
                 }}}
             }

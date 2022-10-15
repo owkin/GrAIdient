@@ -24,7 +24,7 @@ public class AvgPool2D: Layer1D
     public init(layerPrev: Layer2D, params: MAKit.Model.Params)
     {
         super.init(layerPrev: layerPrev,
-                   nbNeurones: layerPrev.nbFilters,
+                   nbNeurons: layerPrev.nbFilters,
                    params: params)
     }
     
@@ -79,31 +79,31 @@ public class AvgPool2D: Layer1D
             try checkStateCPU(batchSize: batchSize)
             
             let nbGC = layerPrev.nbGC
-            for depth in 0..<nbNeurones
+            for depth in 0..<nbNeurons
             {
-                neurones.get(depth)!.initGC(batchSize: batchSize, nbGC: nbGC)
+                neurons.get(depth)!.initGC(batchSize: batchSize, nbGC: nbGC)
             }
             
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             let heightPrev = layerPrev.height
             let widthPrev = layerPrev.width
             
             for batch in 0..<batchSize {
             for elem in 0..<nbGC
             {
-                for depth in 0..<nbNeurones
+                for depth in 0..<nbNeurons
                 {
                     var mean = 0.0
             
                     for i in 0..<heightPrev {
                     for j in 0..<widthPrev
                     {
-                        mean += neuronesPrev[depth].get(i, j)!
+                        mean += neuronsPrev[depth].get(i, j)!
                             .gc[batch][elem].out
                     }}
                     
                     mean /= Double(heightPrev * widthPrev)
-                    neurones.get(depth)!.gc[batch][elem].out = mean
+                    neurons.get(depth)!.gc[batch][elem].out = mean
                 }
             }}
         }
@@ -130,23 +130,23 @@ public class AvgPool2D: Layer1D
         {
             try checkStateCPU(batchSize: batchSize)
             
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             let heightPrev = layerPrev.height
             let widthPrev = layerPrev.width
             
             for elem in 0..<batchSize
             {
-                for depth in 0..<nbNeurones
+                for depth in 0..<nbNeurons
                 {
                     var mean = 0.0
                     for i in 0..<heightPrev {
                     for j in 0..<widthPrev
                     {
-                        mean += neuronesPrev[depth].get(i, j)!.v[elem].out
+                        mean += neuronsPrev[depth].get(i, j)!.v[elem].out
                     }}
                     
                     mean /= Double(heightPrev * widthPrev)
-                    neurones.get(depth)!.v[elem].out = mean
+                    neurons.get(depth)!.v[elem].out = mean
                 }
             }
         }
@@ -166,7 +166,7 @@ public class AvgPool2D: Layer1D
             let heightPrev = layerPrev.height
             let widthPrev = layerPrev.width
             
-            let pNbNeurones: [UInt32] = [UInt32(nbNeurones)]
+            let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensionsPrev: [UInt32] = [UInt32(widthPrev),
                                              UInt32(heightPrev)]
@@ -175,13 +175,13 @@ public class AvgPool2D: Layer1D
                 "avgPoolForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
-            command.setBytes(pNbNeurones, atIndex: 1)
+            command.setBytes(pNbNeurons, atIndex: 1)
             command.setBytes(pDimensionsPrev, atIndex: 2)
             command.setBytes(pNbBatch, atIndex: 3)
             command.setBuffer(outs.metal, atIndex: 4)
             
             let threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
-            let threadsPerGrid = MTLSize(width: nbNeurones,
+            let threadsPerGrid = MTLSize(width: nbNeurons,
                                          height: batchSize,
                                          depth: 1)
             command.dispatchThreads(
@@ -197,27 +197,27 @@ public class AvgPool2D: Layer1D
     {
         if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             let heightPrev = layerPrev.height
             let widthPrev = layerPrev.width
             
             for elem in 0..<batchSize
             {
-                for depth in 0..<nbNeurones
+                for depth in 0..<nbNeurons
                 {
-                    let deltaCur = neurones.get(depth)!.v[elem].delta
+                    let deltaCur = neurons.get(depth)!.v[elem].delta
                     
                     for i in 0..<heightPrev {
                     for j in 0..<widthPrev
                     {
                         if layerPrev.dirty
                         {
-                            neuronesPrev[depth].get(i, j)!.v[elem].delta =
+                            neuronsPrev[depth].get(i, j)!.v[elem].delta =
                                 deltaCur / Double(heightPrev * widthPrev)
                         }
                         else
                         {
-                            neuronesPrev[depth].get(i, j)!.v[elem].delta +=
+                            neuronsPrev[depth].get(i, j)!.v[elem].delta +=
                                 deltaCur / Double(heightPrev * widthPrev)
                         }
                     }}
@@ -241,7 +241,7 @@ public class AvgPool2D: Layer1D
             let heightPrev = layerPrev.height
             let widthPrev = layerPrev.width
             
-            let pNbNeurones: [UInt32] = [UInt32(nbNeurones)]
+            let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensionsPrev: [UInt32] = [UInt32(widthPrev),
                                              UInt32(heightPrev)]
@@ -251,7 +251,7 @@ public class AvgPool2D: Layer1D
                 "avgPoolBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
-            command.setBytes(pNbNeurones, atIndex: 1)
+            command.setBytes(pNbNeurons, atIndex: 1)
             command.setBytes(pDimensionsPrev, atIndex: 2)
             command.setBytes(pNbBatch, atIndex: 3)
             command.setBytes(pDirty, atIndex: 4)
@@ -260,7 +260,7 @@ public class AvgPool2D: Layer1D
             let threadsPerThreadgroup = MTLSizeMake(8, 8, 8)
             let threadsPerGrid = MTLSize(width: widthPrev,
                                          height: heightPrev,
-                                         depth: nbNeurones * batchSize)
+                                         depth: nbNeurons * batchSize)
             command.dispatchThreads(
                 threadsPerGrid: threadsPerGrid,
                 threadsPerThreadgroup: threadsPerThreadgroup

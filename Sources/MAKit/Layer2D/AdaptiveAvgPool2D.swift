@@ -227,7 +227,7 @@ public class AdaptiveAvgPool2D: Layer2D
         )
         if inPlace
         {
-            newLayer.neurones = neurones
+            newLayer.neurons = neurons
             newLayer._nbElems = _nbElems
         }
         return newLayer
@@ -260,12 +260,12 @@ public class AdaptiveAvgPool2D: Layer2D
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    neurones[depth].get(i, j)!.initGC(batchSize: batchSize,
+                    neurons[depth].get(i, j)!.initGC(batchSize: batchSize,
                                                       nbGC: nbGC)
                 }}
             }
             
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             let heightPrev = layerPrev.height
             let widthPrev = layerPrev.width
             
@@ -301,12 +301,12 @@ public class AdaptiveAvgPool2D: Layer2D
                         for k in 0..<nbElemsI {
                         for l in 0..<nbElemsJ
                         {
-                            sum += neuronesPrev[depth].get(
+                            sum += neuronsPrev[depth].get(
                                 startI + k,
                                 startJ + l)!.gc[batch][elem].out
                         }}
                         
-                        neurones[depth].get(i, j)!.gc[batch][elem].out =
+                        neurons[depth].get(i, j)!.gc[batch][elem].out =
                             sum / Double(nbElems)
                     }}
                 }}}
@@ -320,7 +320,7 @@ public class AdaptiveAvgPool2D: Layer2D
                     for I in 0..<height {
                     for J in 0..<width
                     {
-                        neurones[depth].get(I, J)!.gc[batch][elem].out = 0.0
+                        neurons[depth].get(I, J)!.gc[batch][elem].out = 0.0
                     }}
                 }}}
                 
@@ -366,7 +366,7 @@ public class AdaptiveAvgPool2D: Layer2D
                                              bigSize: width)
                         let nbElemsJ = endJ - startJ
                         
-                        let outPrev = neuronesPrev[depth].get(i, j)!
+                        let outPrev = neuronsPrev[depth].get(i, j)!
                             .gc[batch][elem].out
                         
                         for k in 0..<nbElemsI {
@@ -375,7 +375,7 @@ public class AdaptiveAvgPool2D: Layer2D
                             let offset = startJ + l +
                                 (offsetStart + startI + k) * width
                             
-                            neurones[depth].get(
+                            neurons[depth].get(
                                 startI + k, startJ + l)!.gc[batch][elem].out +=
                                 outPrev / Double(nbElemsPtr[offset])
                         }}
@@ -406,7 +406,7 @@ public class AdaptiveAvgPool2D: Layer2D
         {
             try checkStateCPU(batchSize: batchSize)
             
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             let heightPrev = layerPrev.height
             let widthPrev = layerPrev.width
             
@@ -441,12 +441,12 @@ public class AdaptiveAvgPool2D: Layer2D
                         for k in 0..<nbElemsI {
                         for l in 0..<nbElemsJ
                         {
-                            sum += neuronesPrev[depth].get(
+                            sum += neuronsPrev[depth].get(
                                 startI + k,
                                 startJ + l)!.v[elem].out
                         }}
                         
-                        neurones[depth].get(i, j)!.v[elem].out =
+                        neurons[depth].get(i, j)!.v[elem].out =
                             sum / Double(nbElems)
                     }}
                 }}
@@ -469,7 +469,7 @@ public class AdaptiveAvgPool2D: Layer2D
                             (offsetStart + I) * width
                         
                         nbElemsPtr[offset] = 0
-                        neurones[depth].get(I, J)!.v[elem].out = 0.0
+                        neurons[depth].get(I, J)!.v[elem].out = 0.0
                     }}
                 }}
                 
@@ -500,7 +500,7 @@ public class AdaptiveAvgPool2D: Layer2D
                         let nbElemsJ = endJ - startJ
                         
                         let outPrev =
-                            neuronesPrev[depth].get(i, j)!.v[elem].out
+                            neuronsPrev[depth].get(i, j)!.v[elem].out
                         
                         for k in 0..<nbElemsI {
                         for l in 0..<nbElemsJ
@@ -508,7 +508,7 @@ public class AdaptiveAvgPool2D: Layer2D
                             let offset = startJ + l +
                                 (offsetStart + startI + k) * width
                             
-                            neurones[depth].get(
+                            neurons[depth].get(
                                 startI + k,
                                 startJ + l)!.v[elem].out += outPrev
                             nbElemsPtr[offset] += 1
@@ -528,7 +528,7 @@ public class AdaptiveAvgPool2D: Layer2D
                         let offset = J +
                             (offsetStart + I) * width
                         
-                        neurones[depth].get(I, J)!.v[elem].out /=
+                        neurons[depth].get(I, J)!.v[elem].out /=
                             Double(nbElemsPtr[offset])
                     }}
                 }}
@@ -647,7 +647,7 @@ public class AdaptiveAvgPool2D: Layer2D
     {
         if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             let heightPrev = layerPrev.height
             let widthPrev = layerPrev.width
             
@@ -659,7 +659,7 @@ public class AdaptiveAvgPool2D: Layer2D
                     for I in 0..<heightPrev {
                     for J in 0..<widthPrev
                     {
-                        neuronesPrev[depth].get(I, J)!.v[elem].delta = 0.0
+                        neuronsPrev[depth].get(I, J)!.v[elem].delta = 0.0
                     }}
                 }}
             }
@@ -691,13 +691,13 @@ public class AdaptiveAvgPool2D: Layer2D
                         
                         let nbElems = nbElemsI * nbElemsJ
                         
-                        let deltaCur = neurones[depth].get(i, j)!
+                        let deltaCur = neurons[depth].get(i, j)!
                             .v[elem].delta / Double(nbElems)
                         
                         for k in 0..<nbElemsI {
                         for l in 0..<nbElemsJ
                         {
-                            neuronesPrev[depth].get(
+                            neuronsPrev[depth].get(
                                 startI + k,
                                 startJ + l)!.v[elem].delta += deltaCur
                         }}
@@ -741,8 +741,8 @@ public class AdaptiveAvgPool2D: Layer2D
                             let offset = startJ + l +
                                 (offsetStart + startI + k) * width
                             
-                            neuronesPrev[depth].get(i, j)!
-                                .v[elem].delta += neurones[depth].get(
+                            neuronsPrev[depth].get(i, j)!
+                                .v[elem].delta += neurons[depth].get(
                                 startI + k,
                                 startJ + l)!.v[elem].delta /
                                 Double(nbElemsPtr[offset])

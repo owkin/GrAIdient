@@ -12,7 +12,7 @@ import MetalKit
 /// batch normalization units.
 ///
 /// This is the fundamental learning layer of a 2D model.
-/// 
+///
 public class Convolution2D: BN2D
 {
     /// Downscale factor of the resolution (height and width).
@@ -554,7 +554,7 @@ public class Convolution2D: BN2D
     ///
     /// Clean state resources in the CPU execution context.
     ///
-    /// We first clean the neurones' state (forward and backward).
+    /// We first clean the neurons' state (forward and backward).
     /// We do not clean weights and biases but must reset their delta (dependent on batch size) and
     /// momentum state.
     ///
@@ -572,7 +572,7 @@ public class Convolution2D: BN2D
     ///
     /// Clean state resources in the GPU execution context.
     ///
-    /// We first clean the neurones' state (forward and backward).
+    /// We first clean the neurons' state (forward and backward).
     /// We do not clean weights and biases but must reset their delta (dependent on batch size) and
     /// momentum state.
     ///
@@ -725,7 +725,7 @@ public class Convolution2D: BN2D
     ///
     /// Initialize state resources in the GPU execution context.
     ///
-    /// We initialize the neurones' forward state.
+    /// We initialize the neurons' forward state.
     /// We initialize the weights and biases' delta.
     ///
     public override func checkStateForwardGPU(batchSize: Int) throws
@@ -775,12 +775,12 @@ public class Convolution2D: BN2D
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    neurones[depth].get(i, j)!.initGC(batchSize: batchSize,
+                    neurons[depth].get(i, j)!.initGC(batchSize: batchSize,
                                                       nbGC: newGC)
                 }}
             }
             
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             let (startI, endI, startJ, endJ) = _kernelIndices
             
             for batch in 0..<batchSize {
@@ -799,7 +799,7 @@ public class Convolution2D: BN2D
                         for k in startI...endI {
                         for l in startJ...endJ
                         {
-                            if let outPrev = neuronesPrev[depthPrev].get(
+                            if let outPrev = neuronsPrev[depthPrev].get(
                                 _stride*i+k, _stride*j+l)?.gc[batch][elem].out
                             {
                                 let w = weights.w(k-startI, l-startJ)
@@ -807,7 +807,7 @@ public class Convolution2D: BN2D
                             }
                         }}
                     }
-                    neurones[depth].get(i, j)!.gc[batch][elem].out = tmp
+                    neurons[depth].get(i, j)!.gc[batch][elem].out = tmp
                 }}
             }}}
             
@@ -831,7 +831,7 @@ public class Convolution2D: BN2D
                         for k in startI...endI {
                         for l in startJ...endJ
                         {
-                            if let outPrev = neuronesPrev[depthPrev].get(
+                            if let outPrev = neuronsPrev[depthPrev].get(
                                 _stride*i+k, _stride*j+l)?.v[batch].out
                             {
                                 var w = weights.w(k-startI, l-startJ)
@@ -857,7 +857,7 @@ public class Convolution2D: BN2D
                         elem + 2 * J + 2 * weightWidth * I +
                         2 * weightWidth * weightHeight * DEPTHPREV +
                         2 * weightWidth * weightHeight * nbFiltersPrev * DEPTH
-                    neurones[depth].get(i, j)!.gc[batch][offset].out = tmp
+                    neurons[depth].get(i, j)!.gc[batch][offset].out = tmp
                 }}
             }}}}}}}
             
@@ -891,7 +891,7 @@ public class Convolution2D: BN2D
                         for k in startI...endI {
                         for l in startJ...endJ
                         {
-                            if let outPrev = neuronesPrev[depthPrev].get(
+                            if let outPrev = neuronsPrev[depthPrev].get(
                                 _stride*i+k, _stride*j+l)?.v[batch].out
                             {
                                 let w = weights.w(k-startI, l-startJ)
@@ -904,7 +904,7 @@ public class Convolution2D: BN2D
                         2 * nbFilters * nbFiltersPrev *
                             weightHeight * weightWidth + elem +
                         2 * DEPTH
-                    neurones[depth].get(i, j)!.gc[batch][offset].out = tmp
+                    neurons[depth].get(i, j)!.gc[batch][offset].out = tmp
                 }}
             }}}}}
             
@@ -926,7 +926,7 @@ public class Convolution2D: BN2D
                         for k in startI...endI {
                         for l in startJ...endJ
                         {
-                            if let outPrev = neuronesPrev[depthPrev].get(
+                            if let outPrev = neuronsPrev[depthPrev].get(
                                 _stride*i+k, _stride*j+l)?.v[batch].out
                             {
                                 let w = weights.w(k-startI, l-startJ)
@@ -934,7 +934,7 @@ public class Convolution2D: BN2D
                             }
                         }}
                     }
-                    neurones[depth].get(i, j)!.gc[batch][elem].out = tmp
+                    neurons[depth].get(i, j)!.gc[batch][elem].out = tmp
                 }}
             }}}}
         }
@@ -966,7 +966,7 @@ public class Convolution2D: BN2D
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    neurones[depth].get(i, j)!.initGC(batchSize: batchSize,
+                    neurons[depth].get(i, j)!.initGC(batchSize: batchSize,
                                                       nbGC: newGC)
                 }}
             }
@@ -977,7 +977,7 @@ public class Convolution2D: BN2D
             let weightsPtr = _wBuffers.w_p!.shared.buffer
             let biasesPtr = _bBuffers.w_p!.shared.buffer
             
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             let widthPrev = layerPrev.width
             let heightPrev = layerPrev.height
             
@@ -1002,7 +1002,7 @@ public class Convolution2D: BN2D
                             let offsetWeights = l-startJ +
                                 (offsetStartWeights + k-startI) * weightWidth
                             
-                            if let outPrev = neuronesPrev[depthPrev].get(
+                            if let outPrev = neuronsPrev[depthPrev].get(
                                 _stride*i+k, _stride*j+l)?.gc[batch][elem].out
                             {
                                 let w = Double(weightsPtr[offsetWeights])
@@ -1010,7 +1010,7 @@ public class Convolution2D: BN2D
                             }
                         }}
                     }
-                    neurones[depth].get(i, j)!.gc[batch][elem].out = tmp
+                    neurons[depth].get(i, j)!.gc[batch][elem].out = tmp
                 }}
             }}}
             
@@ -1073,7 +1073,7 @@ public class Convolution2D: BN2D
                         elem + 2 * J + 2 * weightWidth * I +
                         2 * weightWidth * weightHeight * DEPTHPREV +
                         2 * weightWidth * weightHeight * nbFiltersPrev * DEPTH
-                    neurones[depth].get(i, j)!.gc[batch][offset].out = tmp
+                    neurons[depth].get(i, j)!.gc[batch][offset].out = tmp
                 }}
             }}}}}}}
             
@@ -1131,7 +1131,7 @@ public class Convolution2D: BN2D
                         2 * nbFilters * nbFiltersPrev *
                         weightHeight * weightWidth + elem +
                         2 * DEPTH
-                    neurones[depth].get(i, j)!.gc[batch][offset].out = tmp
+                    neurons[depth].get(i, j)!.gc[batch][offset].out = tmp
                 }}
             }}}}}
             
@@ -1172,7 +1172,7 @@ public class Convolution2D: BN2D
                             }
                         }}
                     }
-                    neurones[depth].get(i, j)!.gc[batch][elem].out = tmp
+                    neurons[depth].get(i, j)!.gc[batch][elem].out = tmp
                 }}
             }}}}
         }
@@ -1196,7 +1196,7 @@ public class Convolution2D: BN2D
         {
             try checkStateCPU(batchSize: batchSize)
             
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             let (startI, endI, startJ, endJ) = _kernelIndices
             
             for elem in 0..<batchSize {
@@ -1214,7 +1214,7 @@ public class Convolution2D: BN2D
                         for k in startI...endI {
                         for l in startJ...endJ
                         {
-                            if let outPrev = neuronesPrev[depthPrev].get(
+                            if let outPrev = neuronsPrev[depthPrev].get(
                                 _stride*i+k, _stride*j+l)?.v[elem].out
                             {
                                 let w = weights.w(k-startI, l-startJ)
@@ -1222,7 +1222,7 @@ public class Convolution2D: BN2D
                             }
                         }}
                     }
-                    neurones[depth].get(i, j)!.v[elem].out = tmp
+                    neurons[depth].get(i, j)!.v[elem].out = tmp
                 }}
             }}
         }
@@ -1308,7 +1308,7 @@ public class Convolution2D: BN2D
     {
         if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             let (startI, endI, startJ, endJ) = _kernelIndices
             
             for elem in 0..<batchSize {
@@ -1328,7 +1328,7 @@ public class Convolution2D: BN2D
                         {
                             if (i-k) % _stride == 0 && (j-l) % _stride == 0
                             {
-                                if let deltaCur = neurones[depth]
+                                if let deltaCur = neurons[depth]
                                     .get((i-k) / _stride, (j-l) / _stride)?
                                     .v[elem].delta
                                 {
@@ -1341,12 +1341,12 @@ public class Convolution2D: BN2D
                     
                     if layerPrev.dirty
                     {
-                        neuronesPrev[depthPrev].get(i, j)!.v[elem].delta =
+                        neuronsPrev[depthPrev].get(i, j)!.v[elem].delta =
                             tmp
                     }
                     else
                     {
-                        neuronesPrev[depthPrev].get(i, j)!.v[elem].delta +=
+                        neuronsPrev[depthPrev].get(i, j)!.v[elem].delta +=
                             tmp
                     }
                 }}
@@ -1362,7 +1362,7 @@ public class Convolution2D: BN2D
             // -----------------------------------------------------------------
             // Compute Gradients per batch
             // -----------------------------------------------------------------
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             let (startI, endI, startJ, endJ) = _kernelIndices
             
             for depth in 0..<nbFilters
@@ -1379,11 +1379,11 @@ public class Convolution2D: BN2D
                         for k in 0..<height {
                         for l in 0..<width
                         {
-                            if let outPrev = neuronesPrev[depthPrev]
+                            if let outPrev = neuronsPrev[depthPrev]
                                 .get(_stride*k+i, _stride*l+j)?.v[elem].out
                             {
                                 let deltaCur =
-                                    neurones[depth].get(k, l)!.v[elem].delta
+                                    neurons[depth].get(k, l)!.v[elem].delta
                                 tmp += deltaCur * outPrev
                             }
                         }}}
@@ -1403,7 +1403,7 @@ public class Convolution2D: BN2D
                     for j in 0..<width
                     {
                         let deltaCur =
-                            neurones[depth].get(i, j)!.v[elem].delta
+                            neurons[depth].get(i, j)!.v[elem].delta
                         tmp += deltaCur
                     }}}
                     

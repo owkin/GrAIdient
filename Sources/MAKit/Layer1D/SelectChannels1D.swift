@@ -42,7 +42,7 @@ public class SelectChannels1D: Layer1D
         _channels = channels
         _coeffs = coeffs
         super.init(layerPrev: layerPrev,
-                   nbNeurones: _channels.count,
+                   nbNeurons: _channels.count,
                    params: params)
     }
     
@@ -124,20 +124,20 @@ public class SelectChannels1D: Layer1D
             try checkStateCPU(batchSize: batchSize)
             
             let nbGC = layerPrev.nbGC
-            for j in 0..<nbNeurones
+            for j in 0..<nbNeurons
             {
-                neurones.get(j)!.initGC(batchSize: batchSize, nbGC: nbGC)
+                neurons.get(j)!.initGC(batchSize: batchSize, nbGC: nbGC)
             }
             
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             for batch in 0..<batchSize {
             for elem in 0..<nbGC
             {
-                for depth in 0..<nbNeurones
+                for depth in 0..<nbNeurons
                 {
-                    neurones.get(depth)!.gc[batch][elem].out =
+                    neurons.get(depth)!.gc[batch][elem].out =
                         _coeffs[depth] *
-                        neuronesPrev.get(_channels[depth])!.gc[batch][elem].out
+                        neuronsPrev.get(_channels[depth])!.gc[batch][elem].out
                 }
             }}
         }
@@ -164,14 +164,14 @@ public class SelectChannels1D: Layer1D
         {
             try checkStateCPU(batchSize: batchSize)
             
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             for elem in 0..<batchSize
             {
-                for depth in 0..<nbNeurones
+                for depth in 0..<nbNeurons
                 {
-                    neurones.get(depth)!.v[elem].out =
+                    neurons.get(depth)!.v[elem].out =
                         _coeffs[depth] *
-                        neuronesPrev.get(_channels[depth])!.v[elem].out
+                        neuronsPrev.get(_channels[depth])!.v[elem].out
                 }
             }
         }
@@ -188,8 +188,8 @@ public class SelectChannels1D: Layer1D
         {
             try checkStateForwardGPU(batchSize: batchSize)
             
-            let pNbNeurones: [UInt32] = [UInt32(nbNeurones)]
-            let pNbNeuronesPrev: [UInt32] = [UInt32(layerPrev.nbNeurones)]
+            let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
+            let pNbNeuronsPrev: [UInt32] = [UInt32(layerPrev.nbNeurons)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             var pChannels = [UInt32]()
             for channel in _channels
@@ -206,15 +206,15 @@ public class SelectChannels1D: Layer1D
                 "selectChForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
-            command.setBytes(pNbNeurones, atIndex: 1)
-            command.setBytes(pNbNeuronesPrev, atIndex: 2)
+            command.setBytes(pNbNeurons, atIndex: 1)
+            command.setBytes(pNbNeuronsPrev, atIndex: 2)
             command.setBytes(pChannels, atIndex: 3)
             command.setBytes(pCoeffs, atIndex: 4)
             command.setBytes(pNbBatch, atIndex: 5)
             command.setBuffer(outs.metal, atIndex: 6)
             
             let threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
-            let threadsPerGrid = MTLSize(width: nbNeurones,
+            let threadsPerGrid = MTLSize(width: nbNeurons,
                                          height: batchSize,
                                          depth: 1)
             command.dispatchThreads(
@@ -230,22 +230,22 @@ public class SelectChannels1D: Layer1D
     {
         if let layerPrev = self.layerPrev as? Layer1D, mustComputeBackward
         {
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             if layerPrev.dirty
             {
                 for elem in 0..<batchSize {
-                for depth in 0..<layerPrev.nbNeurones
+                for depth in 0..<layerPrev.nbNeurons
                 {
-                    neuronesPrev.get(depth)!.v[elem].delta = 0.0
+                    neuronsPrev.get(depth)!.v[elem].delta = 0.0
                 }}
             }
             
             for elem in 0..<batchSize
             {
-                for depth in 0..<nbNeurones
+                for depth in 0..<nbNeurons
                 {
-                    neuronesPrev.get(_channels[depth])!.v[elem].delta +=
-                        _coeffs[depth] * neurones.get(depth)!.v[elem].delta
+                    neuronsPrev.get(_channels[depth])!.v[elem].delta +=
+                        _coeffs[depth] * neurons.get(depth)!.v[elem].delta
                 }
             }
             propagateDirty()
@@ -263,8 +263,8 @@ public class SelectChannels1D: Layer1D
         {
             try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
             
-            let pNbNeurones: [UInt32] = [UInt32(nbNeurones)]
-            let pNbNeuronesPrev: [UInt32] = [UInt32(layerPrev.nbNeurones)]
+            let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
+            let pNbNeuronsPrev: [UInt32] = [UInt32(layerPrev.nbNeurons)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             var pChannels = [UInt32]()
             for channel in _channels
@@ -308,15 +308,15 @@ public class SelectChannels1D: Layer1D
                 "selectChBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
-            command.setBytes(pNbNeurones, atIndex: 1)
-            command.setBytes(pNbNeuronesPrev, atIndex: 2)
+            command.setBytes(pNbNeurons, atIndex: 1)
+            command.setBytes(pNbNeuronsPrev, atIndex: 2)
             command.setBytes(pChannels, atIndex: 3)
             command.setBytes(pCoeffs, atIndex: 4)
             command.setBytes(pNbBatch, atIndex: 5)
             command.setBuffer(layerPrev.delta.metal, atIndex: 6)
             
             let threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
-            let threadsPerGrid = MTLSize(width: nbNeurones,
+            let threadsPerGrid = MTLSize(width: nbNeurons,
                                          height: batchSize,
                                          depth: 1)
             command.dispatchThreads(

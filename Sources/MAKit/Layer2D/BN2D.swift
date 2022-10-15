@@ -431,10 +431,10 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
             let newGC = nbGC + 2 * nbLearnedGC
             for j in 0..<nbFilters
             {
-                neurones[j].initGC(batchSize: batchSize, nbGC: newGC)
+                neurons[j].initGC(batchSize: batchSize, nbGC: newGC)
             }
             
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             for batch in 0..<batchSize {
             for elem in 0..<nbGC
             {
@@ -442,8 +442,8 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    neurones[depth].get(i, j)!.gc[batch][elem].out =
-                        neuronesPrev[depth].get(i, j)!.gc[batch][elem].out
+                    neurons[depth].get(i, j)!.gc[batch][elem].out =
+                        neuronsPrev[depth].get(i, j)!.gc[batch][elem].out
                 }}}
             }}
             
@@ -455,8 +455,8 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    neurones[depth].get(i, j)!.gc[batch][elem].out =
-                        neuronesPrev[depth].get(i, j)!.v[batch].out
+                    neurons[depth].get(i, j)!.gc[batch][elem].out =
+                        neuronsPrev[depth].get(i, j)!.v[batch].out
                 }}}
             }}
         }
@@ -489,10 +489,10 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
             let newGC = nbGC + 2 * nbLearnedGC
             for j in 0..<nbFilters
             {
-                neurones[j].initGC(batchSize: batchSize, nbGC: newGC)
+                neurons[j].initGC(batchSize: batchSize, nbGC: newGC)
             }
             
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             for batch in 0..<batchSize {
             for elem in 0..<nbGC
             {
@@ -500,8 +500,8 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    neurones[depth].get(i, j)!.gc[batch][elem].out =
-                        neuronesPrev[depth].get(i, j)!.gc[batch][elem].out
+                    neurons[depth].get(i, j)!.gc[batch][elem].out =
+                        neuronsPrev[depth].get(i, j)!.gc[batch][elem].out
                 }}}
             }}
             
@@ -522,7 +522,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
                     {
                         let offset = j + (offsetStart + i) * width
                         
-                        neurones[depth].get(i, j)!.gc[batch][elem].out =
+                        neurons[depth].get(i, j)!.gc[batch][elem].out =
                             Double(outsPrevPtr[offset])
                     }}
                 }
@@ -541,15 +541,15 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
         {
             try checkStateCPU(batchSize: batchSize)
             
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             for elem in 0..<batchSize
             {
                 for depth in 0..<nbFilters {
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    neurones[depth].get(i, j)!.v[elem].out =
-                        neuronesPrev[depth].get(i, j)!.v[elem].out
+                    neurons[depth].get(i, j)!.v[elem].out =
+                        neuronsPrev[depth].get(i, j)!.v[elem].out
                 }}}
             }
             
@@ -603,7 +603,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
         
         if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             for elem in 0..<batchSize
             {
                 for depth in 0..<nbFilters {
@@ -612,13 +612,13 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
                 {
                     if layerPrev.dirty
                     {
-                        neuronesPrev[depth].get(i, j)!.v[elem].delta =
-                            neurones[depth].get(i, j)!.v[elem].delta
+                        neuronsPrev[depth].get(i, j)!.v[elem].delta =
+                            neurons[depth].get(i, j)!.v[elem].delta
                     }
                     else
                     {
-                        neuronesPrev[depth].get(i, j)!.v[elem].delta +=
-                            neurones[depth].get(i, j)!.v[elem].delta
+                        neuronsPrev[depth].get(i, j)!.v[elem].delta +=
+                            neurons[depth].get(i, j)!.v[elem].delta
                     }
                 }}}
             }
@@ -716,7 +716,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
             {
                 let offset = j + (offsetStart + i) * width
                 sorties[offset] =
-                    neurones[depth].get(i, j)!.gc[batch][elem].out
+                    neurons[depth].get(i, j)!.gc[batch][elem].out
             }}
         }
         
@@ -741,7 +741,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
             for j in 0..<width
             {
                 let offset = j + (offsetStart + i) * width
-                neurones[depth].get(i, j)!.gc[batch][elem].out = outs[offset]
+                neurons[depth].get(i, j)!.gc[batch][elem].out = outs[offset]
             }}
         }
     }
@@ -764,7 +764,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
             for j in 0..<width
             {
                 let offset = j + (offsetStart + i) * width
-                outs[offset] = neurones[depth].get(i, j)!.v[elem].out
+                outs[offset] = neurons[depth].get(i, j)!.v[elem].out
             }}
         }
         return outs
@@ -787,7 +787,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
             for j in 0..<width
             {
                 let offset = j + (offsetStart + i) * width
-                neurones[depth].get(i, j)!.v[elem].out = outs[offset]
+                neurons[depth].get(i, j)!.v[elem].out = outs[offset]
             }}
         }
     }
@@ -810,7 +810,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
             for j in 0..<width
             {
                 let offset = j + (offsetStart + i) * width
-                delta[offset] = neurones[depth].get(i, j)!.v[elem].delta
+                delta[offset] = neurons[depth].get(i, j)!.v[elem].delta
             }}
         }
         return delta
@@ -833,7 +833,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
             for j in 0..<width
             {
                 let offset = j + (offsetStart + i) * width
-                neurones[depth].get(i, j)!.v[elem].delta = delta[offset]
+                neurons[depth].get(i, j)!.v[elem].delta = delta[offset]
             }}
         }
     }

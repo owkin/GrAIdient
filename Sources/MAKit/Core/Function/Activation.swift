@@ -117,17 +117,17 @@ open class ActivationFunction: Codable
     func forwardGC(_ layer: Activation1D)
     {
         let nbBatch = layer.batchSize
-        let neurones = layer.neurones
+        let neurons = layer.neurons
         let nbGC = layer.nbGC
         
-        for neurone in neurones.all {
+        for neuron in neurons.all {
         for batch in 0..<nbBatch {
         for elem in 0..<nbGC
         {
-            let tmp = neurone.gc[batch][elem].out
+            let tmp = neuron.gc[batch][elem].out
             let out = apply(tmp)
         
-            neurone.gc[batch][elem].out = out
+            neuron.gc[batch][elem].out = out
         }}}
     }
     
@@ -139,18 +139,18 @@ open class ActivationFunction: Codable
     func forwardGC(_ layer: Activation2D)
     {
         let nbBatch = layer.batchSize
-        let neurones = layer.neurones
+        let neurons = layer.neurons
         let nbGC = layer.nbGC
         
-        for grid in neurones {
-        for neurone in grid.all {
+        for grid in neurons {
+        for neuron in grid.all {
         for batch in 0..<nbBatch {
         for elem in 0..<nbGC
         {
-            let tmp = neurone.gc[batch][elem].out
+            let tmp = neuron.gc[batch][elem].out
             let out = apply(tmp)
             
-            neurone.gc[batch][elem].out = out
+            neuron.gc[batch][elem].out = out
         }}}}
     }
     
@@ -162,14 +162,14 @@ open class ActivationFunction: Codable
     func forwardCPU(_ layer: Activation1D)
     {
         let nbBatch = layer.batchSize
-        for neurone in layer.neurones.all {
+        for neuron in layer.neurons.all {
         for elem in 0..<nbBatch
         {
-            let tmp = neurone.v[elem].out
+            let tmp = neuron.v[elem].out
             let out = apply(tmp)
             
-            neurone.v[elem].tmp = tmp
-            neurone.v[elem].out = out
+            neuron.v[elem].tmp = tmp
+            neuron.v[elem].out = out
         }}
     }
     
@@ -181,15 +181,15 @@ open class ActivationFunction: Codable
     func forwardCPU(_ layer: Activation2D)
     {
         let nbBatch = layer.batchSize
-        for grid in layer.neurones {
-        for neurone in grid.all {
+        for grid in layer.neurons {
+        for neuron in grid.all {
         for elem in 0..<nbBatch
         {
-            let tmp = neurone.v[elem].out
+            let tmp = neuron.v[elem].out
             let out = apply(tmp)
             
-            neurone.v[elem].tmp = tmp
-            neurone.v[elem].out = out
+            neuron.v[elem].tmp = tmp
+            neuron.v[elem].out = out
         }}}
     }
     
@@ -201,13 +201,13 @@ open class ActivationFunction: Codable
     func backwardCPU(_ layer: Activation1D)
     {
         let nbBatch = layer.batchSize
-        for neurone in layer.neurones.all {
+        for neuron in layer.neurons.all {
         for elem in 0..<nbBatch
         {
-            let tmp = neurone.v[elem].tmp
+            let tmp = neuron.v[elem].tmp
             let derivative = derivate(tmp)
             
-            neurone.v[elem].delta *= derivative
+            neuron.v[elem].delta *= derivative
         }}
     }
     
@@ -219,14 +219,14 @@ open class ActivationFunction: Codable
     func backwardCPU(_ layer: Activation2D)
     {
         let nbBatch = layer.batchSize
-        for grid in layer.neurones {
-        for neurone in grid.all {
+        for grid in layer.neurons {
+        for neuron in grid.all {
         for elem in 0..<nbBatch
         {
-            let tmp = neurone.v[elem].tmp
+            let tmp = neuron.v[elem].tmp
             let derivative = derivate(tmp)
             
-            neurone.v[elem].delta *= derivative
+            neuron.v[elem].delta *= derivative
         }}}
     }
     

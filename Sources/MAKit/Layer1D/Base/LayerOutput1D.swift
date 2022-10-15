@@ -31,7 +31,7 @@ open class LayerOutput1D: Layer1D
     public init(layerPrev: Layer1D, params: MAKit.Model.Params)
     {
         super.init(layerPrev: layerPrev,
-                   nbNeurones: layerPrev.nbNeurones,
+                   nbNeurons: layerPrev.nbNeurons,
                    params: params)
     }
     
@@ -92,18 +92,18 @@ open class LayerOutput1D: Layer1D
             try checkStateCPU(batchSize: batchSize)
             
             let nbGC = layerPrev.nbGC
-            for depth in 0..<nbNeurones
+            for depth in 0..<nbNeurons
             {
-                neurones.get(depth)!.initGC(batchSize: batchSize, nbGC: nbGC)
+                neurons.get(depth)!.initGC(batchSize: batchSize, nbGC: nbGC)
             }
             
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             for batch in 0..<batchSize {
             for elem in 0..<nbGC {
-            for j in 0..<nbNeurones
+            for j in 0..<nbNeurons
             {
-                neurones.get(j)!.gc[batch][elem].out =
-                    neuronesPrev.get(j)!.gc[batch][elem].out
+                neurons.get(j)!.gc[batch][elem].out =
+                    neuronsPrev.get(j)!.gc[batch][elem].out
             }}}
         }
     }
@@ -129,11 +129,11 @@ open class LayerOutput1D: Layer1D
         {
             try checkStateCPU(batchSize: batchSize)
             
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             for elem in 0..<batchSize {
-            for j in 0..<nbNeurones
+            for j in 0..<nbNeurons
             {
-                neurones.get(j)!.v[elem].out = neuronesPrev.get(j)!.v[elem].out
+                neurons.get(j)!.v[elem].out = neuronsPrev.get(j)!.v[elem].out
             }}
         }
     }
@@ -178,18 +178,18 @@ open class LayerOutput1D: Layer1D
         // Model.backward is only called on not dirty layers.
         if let layerPrev = self.layerPrev as? Layer1D, mustComputeBackward
         {
-            let neuronesPrev = layerPrev.neurones
+            let neuronsPrev = layerPrev.neurons
             for elem in 0..<batchSize {
-            for depth in 0..<nbNeurones
+            for depth in 0..<nbNeurons
             {
-                let delta = neurones.get(depth)!.v[elem].delta
+                let delta = neurons.get(depth)!.v[elem].delta
                 if layerPrev.dirty
                 {
-                    neuronesPrev.get(depth)!.v[elem].delta = delta
+                    neuronsPrev.get(depth)!.v[elem].delta = delta
                 }
                 else
                 {
-                    neuronesPrev.get(depth)!.v[elem].delta += delta
+                    neuronsPrev.get(depth)!.v[elem].delta += delta
                 }
             }}
             propagateDirty()

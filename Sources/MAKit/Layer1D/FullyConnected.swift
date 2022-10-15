@@ -45,21 +45,21 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
     public let weightWidth: Int
     
     /// Get the neurons of the previous layer.
-    var neuronesPrev: [Neurone]
+    var neuronsPrev: [Neuron]
     {
         get {
             if let layerPrev = self.layerPrev as? Layer1D
             {
-                return layerPrev.neurones.all
+                return layerPrev.neurons.all
             }
             else if let layerPrev = self.layerPrev as? Layer2D
             {
-                var neurones = [Neurone]()
-                for grid in layerPrev.neurones
+                var neurons = [Neuron]()
+                for grid in layerPrev.neurons
                 {
-                    neurones += grid.all
+                    neurons += grid.all
                 }
-                return neurones
+                return neurons
             }
             else
             {
@@ -69,12 +69,12 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
     }
     
     /// Get the number of neurons of the previous layer.
-    var nbNeuronesPrev: Int
+    var nbNeuronsPrev: Int
     {
         get {
             if let layerPrev = self.layerPrev as? Layer1D
             {
-                return layerPrev.nbNeurones
+                return layerPrev.nbNeurons
             }
             else if let layerPrev = self.layerPrev as? Layer2D
             {
@@ -211,10 +211,10 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
         get {
             if let activation = _activation
             {
-                return activation.coeffInitWeights(nPrev: nbNeuronesPrev,
-                                                   nCur: nbNeurones)
+                return activation.coeffInitWeights(nPrev: nbNeuronsPrev,
+                                                   nCur: nbNeurons)
             }
-            return sqrt(2.0 / Double(nbNeuronesPrev + nbNeurones))
+            return sqrt(2.0 / Double(nbNeuronsPrev + nbNeurons))
         }
     }
     
@@ -224,11 +224,11 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
         get {
             if !updateBiases
             {
-                return nbNeurones * nbNeuronesPrev
+                return nbNeurons * nbNeuronsPrev
             }
             else
             {
-                return nbNeurones * (nbNeuronesPrev + 1)
+                return nbNeurons * (nbNeuronsPrev + 1)
             }
         }
     }
@@ -246,23 +246,23 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
     ///
     /// - Parameters:
     ///     - layerPrev: Previous layer that has been queued to the model.
-    ///     - nbNeurones: Number of neurons.
+    ///     - nbNeurons: Number of neurons.
     ///     - activation: The activation function.
     ///     - biases: Whether to use biases or not.
     ///     - params: Contextual parameters linking to the model.
     ///
     public init(layerPrev: Layer,
-                nbNeurones: Int, activation: String?, biases: Bool,
+                nbNeurons: Int, activation: String?, biases: Bool,
                 params: MAKit.Model.Params)
     {
-        let nbNeuronesPrev: Int
+        let nbNeuronsPrev: Int
         if let layerPrev = layerPrev as? Layer1D
         {
-            nbNeuronesPrev = layerPrev.nbNeurones
+            nbNeuronsPrev = layerPrev.nbNeurons
         }
         else if let layerPrev = layerPrev as? Layer2D
         {
-            nbNeuronesPrev = layerPrev.nbFilters *
+            nbNeuronsPrev = layerPrev.nbFilters *
                              layerPrev.height *
                              layerPrev.width
         }
@@ -271,12 +271,12 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
             fatalError("Layer structure error.")
         }
         
-        weightWidth = nbNeuronesPrev
-        weightHeight = nbNeurones
+        weightWidth = nbNeuronsPrev
+        weightHeight = nbNeurons
         _useBiases = biases
         
         super.init(layerPrev: layerPrev,
-                   nbNeurones: nbNeurones,
+                   nbNeurons: nbNeurons,
                    activation: activation,
                    params: params)
     }
@@ -359,7 +359,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
             
         let layer = FullyConnected(
             layerPrev: layerPrev,
-            nbNeurones: nbNeurones,
+            nbNeurons: nbNeurons,
             activation: _activation?.name,
             biases: _useBiases,
             params: params
@@ -403,7 +403,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
         
         let layer = FullyConnected(
             layerPrev: layerPrev,
-            nbNeurones: nbNeurones,
+            nbNeurons: nbNeurons,
             activation: nil,
             biases: _useBiases,
             params: params
@@ -432,7 +432,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
     ///
     /// Clean state resources in the CPU execution context.
     ///
-    /// We first clean the neurones' state (forward and backward).
+    /// We first clean the neurons' state (forward and backward).
     /// We do not clean weights and biases but must reset their delta (dependent on batch size) and
     /// momentum state.
     ///
@@ -447,7 +447,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
     ///
     /// Clean state resources in the GPU execution context.
     ///
-    /// We first clean the neurones' state (forward and backward).
+    /// We first clean the neurons' state (forward and backward).
     /// We do not clean weights and biases but must reset their delta (dependent on batch size) and
     /// momentum state.
     ///
@@ -582,7 +582,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
     ///
     /// Initialize state resources in the GPU execution context.
     ///
-    /// We initialize the neurones' forward state.
+    /// We initialize the neurons' forward state.
     /// We initialize the weights and biases' delta.
     ///
     public override func checkStateForwardGPU(batchSize: Int) throws
@@ -593,13 +593,13 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
            MAKit.Gradient.sample && _wDeltaWeights == nil
         {
             _wDeltaWeights = MetalPrivateBuffer<Float>(
-                batchSize * nbNeurones * weightWidth, deviceID: deviceID
+                batchSize * nbNeurons * weightWidth, deviceID: deviceID
             )
             
             if updateBiases
             {
                 _bDeltaWeights = MetalPrivateBuffer<Float>(
-                    batchSize * nbNeurones, deviceID: deviceID
+                    batchSize * nbNeurons, deviceID: deviceID
                 )
             }
         }
@@ -625,35 +625,35 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
             let nbGC = layerPrev.nbGC
             let newGC = nbGC + 2 * nbLearnedGC
             
-            for depth in 0..<nbNeurones
+            for depth in 0..<nbNeurons
             {
-                neurones.get(depth)!.initGC(batchSize: batchSize, nbGC: newGC)
+                neurons.get(depth)!.initGC(batchSize: batchSize, nbGC: newGC)
             }
             
-            let neuronesPrev = self.neuronesPrev
+            let neuronsPrev = self.neuronsPrev
             for batch in 0..<batchSize {
             for elem in 0..<nbGC
             {
-                for depth in 0..<nbNeurones
+                for depth in 0..<nbNeurons
                 {
                     var tmp: Double = _bArrays.w[depth]
                     for depthPrev in 0..<weightWidth
                     {
                         let w = _wArrays.w(depth, depthPrev)
                         let outPrev =
-                            neuronesPrev[depthPrev].gc[batch][elem].out
+                            neuronsPrev[depthPrev].gc[batch][elem].out
                         tmp += w * outPrev
                     }
-                    neurones.get(depth)!.gc[batch][elem].out = tmp
+                    neurons.get(depth)!.gc[batch][elem].out = tmp
                 }
             }}
             
             for batch in 0..<batchSize {
-            for I in 0..<nbNeurones {
+            for I in 0..<nbNeurons {
             for J in 0..<weightWidth {
             for elem in 0...1
             {
-                for depth in 0..<nbNeurones
+                for depth in 0..<nbNeurons
                 {
                     var tmp: Double = _bArrays.w[depth]
                     for depthPrev in 0..<weightWidth
@@ -671,21 +671,21 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                             }
                         }
                         
-                        let outPrev = neuronesPrev[depthPrev].v[batch].out
+                        let outPrev = neuronsPrev[depthPrev].v[batch].out
                         tmp += w * outPrev
                     }
                     
                     let offset = nbGC + 2 * (J + weightWidth * I) + elem
-                    neurones.get(depth)!.gc[batch][offset].out = tmp
+                    neurons.get(depth)!.gc[batch][offset].out = tmp
                 }
             }}}}
             
             if updateBiases {
             for batch in 0..<batchSize {
-            for I in 0..<nbNeurones {
+            for I in 0..<nbNeurons {
             for elem in 0...1
             {
-                for depth in 0..<nbNeurones
+                for depth in 0..<nbNeurons
                 {
                     var tmp: Double = _bArrays.w[depth]
                     if depth == I
@@ -703,14 +703,14 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                     for depthPrev in 0..<weightWidth
                     {
                         let w = _wArrays.w(depth, depthPrev)
-                        let outPrev = neuronesPrev[depthPrev].v[batch].out
+                        let outPrev = neuronsPrev[depthPrev].v[batch].out
                         tmp += w * outPrev
                     }
                     
                     let offset = nbGC +
-                                 2 * nbNeurones * weightWidth +
+                                 2 * nbNeurons * weightWidth +
                                  2 * I + elem
-                    neurones.get(depth)!.gc[batch][offset].out = tmp
+                    neurons.get(depth)!.gc[batch][offset].out = tmp
                 }
             }}}}
         }
@@ -736,9 +736,9 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
             let nbGC = layerPrev.nbGC
             let newGC = nbGC + 2 * nbLearnedGC
             
-            for depth in 0..<nbNeurones
+            for depth in 0..<nbNeurons
             {
-                neurones.get(depth)!.initGC(batchSize: batchSize, nbGC: newGC)
+                neurons.get(depth)!.initGC(batchSize: batchSize, nbGC: newGC)
             }
             
             MetalKernel.get.download([_wBuffers.w_p!, _bBuffers.w_p!])
@@ -747,11 +747,11 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
             let weightsPtr = _wBuffers.w_p!.shared.buffer
             let biasesPtr = _bBuffers.w_p!.shared.buffer
             
-            let neuronesPrev = self.neuronesPrev
+            let neuronsPrev = self.neuronsPrev
             for batch in 0..<batchSize {
             for elem in 0..<nbGC
             {
-                for depth in 0..<nbNeurones
+                for depth in 0..<nbNeurons
                 {
                     var tmp: Double = Double(biasesPtr[depth])
                     for depthPrev in 0..<weightWidth
@@ -760,21 +760,21 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                         
                         let w = Double(weightsPtr[offsetWeights])
                         let outPrev =
-                            neuronesPrev[depthPrev].gc[batch][elem].out
+                            neuronsPrev[depthPrev].gc[batch][elem].out
                         tmp += w * outPrev
                     }
-                    neurones.get(depth)!.gc[batch][elem].out = tmp
+                    neurons.get(depth)!.gc[batch][elem].out = tmp
                 }
             }}
             
             let outsPrevPtr = outsPrev.shared.buffer
             
             for batch in 0..<batchSize {
-            for I in 0..<nbNeurones {
+            for I in 0..<nbNeurons {
             for J in 0..<weightWidth {
             for elem in 0...1
             {
-                for depth in 0..<nbNeurones
+                for depth in 0..<nbNeurons
                 {
                     var tmp: Double = Double(biasesPtr[depth])
                     for depthPrev in 0..<weightWidth
@@ -800,16 +800,16 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                     }
                     
                     let offset = nbGC + 2 * (J + weightWidth * I) + elem
-                    neurones.get(depth)!.gc[batch][offset].out = tmp
+                    neurons.get(depth)!.gc[batch][offset].out = tmp
                 }
             }}}}
             
             if updateBiases {
             for batch in 0..<batchSize {
-            for I in 0..<nbNeurones {
+            for I in 0..<nbNeurons {
             for elem in 0...1
             {
-                for depth in 0..<nbNeurones
+                for depth in 0..<nbNeurons
                 {
                     var tmp: Double = Double(biasesPtr[depth])
                     if depth == I
@@ -835,9 +835,9 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                     }
                     
                     let offset = nbGC +
-                                 2 * nbNeurones * weightWidth +
+                                 2 * nbNeurons * weightWidth +
                                  2 * I + elem
-                    neurones.get(depth)!.gc[batch][offset].out = tmp
+                    neurons.get(depth)!.gc[batch][offset].out = tmp
                 }
             }}}}
         }
@@ -858,19 +858,19 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
     {
         try checkStateCPU(batchSize: batchSize)
         
-        let neuronesPrev = self.neuronesPrev
+        let neuronsPrev = self.neuronsPrev
         for elem in 0..<batchSize
         {
-            for depth in 0..<nbNeurones
+            for depth in 0..<nbNeurons
             {
                 var tmp: Double = _bArrays.w[depth]
                 for depthPrev in 0..<weightWidth
                 {
                     let w = _wArrays.w(depth, depthPrev)
-                    let outPrev = neuronesPrev[depthPrev].v[elem].out
+                    let outPrev = neuronsPrev[depthPrev].v[elem].out
                     tmp += w * outPrev
                 }
-                neurones.get(depth)!.v[elem].out = tmp
+                neurons.get(depth)!.v[elem].out = tmp
             }
         }
     }
@@ -890,8 +890,8 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
     {
         try checkStateForwardGPU(batchSize: batchSize)
         
-        let pNbNeurones: [UInt32] = [UInt32(nbNeurones)]
-        let pNbNeuronesPrev: [UInt32] = [UInt32(nbNeuronesPrev)]
+        let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
+        let pNbNeuronsPrev: [UInt32] = [UInt32(nbNeuronsPrev)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         
         let command = MetalKernel.get.createCommand(
@@ -900,13 +900,13 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
         command.setBuffer(outsPrev.metal, atIndex: 0)
         command.setBuffer(_wBuffers.w.metal, atIndex: 1)
         command.setBuffer(_bBuffers.w.metal, atIndex: 2)
-        command.setBytes(pNbNeurones, atIndex: 3)
-        command.setBytes(pNbNeuronesPrev, atIndex: 4)
+        command.setBytes(pNbNeurons, atIndex: 3)
+        command.setBytes(pNbNeuronsPrev, atIndex: 4)
         command.setBytes(pNbBatch, atIndex: 5)
         command.setBuffer(outs.metal, atIndex: 6)
         
         let threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
-        let threadsPerGrid = MTLSize(width: nbNeurones,
+        let threadsPerGrid = MTLSize(width: nbNeurons,
                                      height: batchSize,
                                      depth: 1)
         command.dispatchThreads(
@@ -929,26 +929,26 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
     {
         if let layerPrev = self.layerPrev, mustComputeBackward
         {
-            let neuronesPrev = self.neuronesPrev
+            let neuronsPrev = self.neuronsPrev
             for elem in 0..<batchSize
             {
                 for depthPrev in 0..<weightWidth
                 {
                     var tmp: Double = 0.0
-                    for depth in 0..<nbNeurones
+                    for depth in 0..<nbNeurons
                     {
                         let w = _wArrays.w(depth, depthPrev)
-                        let deltaCur = neurones.get(depth)!.v[elem].delta
+                        let deltaCur = neurons.get(depth)!.v[elem].delta
                         tmp += w * deltaCur
                     }
                     
                     if layerPrev.dirty
                     {
-                        neuronesPrev[depthPrev].v[elem].delta = tmp
+                        neuronsPrev[depthPrev].v[elem].delta = tmp
                     }
                     else
                     {
-                        neuronesPrev[depthPrev].v[elem].delta += tmp
+                        neuronsPrev[depthPrev].v[elem].delta += tmp
                     }
                 }
             }
@@ -963,15 +963,15 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
             // -----------------------------------------------------------------
             // Compute Gradients per batch
             // -----------------------------------------------------------------
-            let neuronesPrev = self.neuronesPrev
-            for depth in 0..<nbNeurones {
+            let neuronsPrev = self.neuronsPrev
+            for depth in 0..<nbNeurons {
             for depthPrev in 0..<weightWidth
             {
                 var tmp: Double = 0.0
                 for elem in 0..<batchSize
                 {
-                    let deltaCur = neurones.get(depth)!.v[elem].delta
-                    let outPrev = neuronesPrev[depthPrev].v[elem].out
+                    let deltaCur = neurons.get(depth)!.v[elem].delta
+                    let outPrev = neuronsPrev[depthPrev].v[elem].out
                     tmp += outPrev * deltaCur
                 }
                 
@@ -984,12 +984,12 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
             
             if updateBiases
             {
-                for depth in 0..<nbNeurones
+                for depth in 0..<nbNeurons
                 {
                     var tmp: Double = 0.0
                     for elem in 0..<batchSize
                     {
-                        let deltaCur = neurones.get(depth)!.v[elem].delta
+                        let deltaCur = neurons.get(depth)!.v[elem].delta
                         tmp += deltaCur
                     }
                     
@@ -1029,8 +1029,8 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                 try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
             }
             
-            let pNbNeurones: [UInt32] = [UInt32(nbNeurones)]
-            let pNbNeuronesPrev: [UInt32] = [UInt32(weightWidth)]
+            let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
+            let pNbNeuronsPrev: [UInt32] = [UInt32(weightWidth)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
@@ -1039,8 +1039,8 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
             )
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBuffer(_wBuffers.w.metal, atIndex: 1)
-            command.setBytes(pNbNeurones, atIndex: 2)
-            command.setBytes(pNbNeuronesPrev, atIndex: 3)
+            command.setBytes(pNbNeurons, atIndex: 2)
+            command.setBytes(pNbNeuronsPrev, atIndex: 3)
             command.setBytes(pNbBatch, atIndex: 4)
             command.setBytes(pDirty, atIndex: 5)
             command.setBuffer(deltaPrev!.metal, atIndex: 6)
@@ -1063,8 +1063,8 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
     {
         if computeDeltaWeights
         {
-            let pNbNeurones: [UInt32] = [UInt32(nbNeurones)]
-            let pNbNeuronesPrev: [UInt32] = [UInt32(weightWidth)]
+            let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
+            let pNbNeuronsPrev: [UInt32] = [UInt32(weightWidth)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pAccumulate: [UInt32] = accumulateDeltaWeights ? [1] : [0]
             
@@ -1082,14 +1082,14 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                 )
                 command.setBuffer(outsPrev.metal, atIndex: 0)
                 command.setBuffer(delta.metal, atIndex: 1)
-                command.setBytes(pNbNeurones, atIndex: 2)
-                command.setBytes(pNbNeuronesPrev, atIndex: 3)
+                command.setBytes(pNbNeurons, atIndex: 2)
+                command.setBytes(pNbNeuronsPrev, atIndex: 3)
                 command.setBytes(pNbBatch, atIndex: 4)
                 command.setBytes(pAccumulate, atIndex: 5)
                 command.setBuffer(_wBuffers.g.metal, atIndex: 6)
                 
                 threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
-                threadsPerGrid = MTLSize(width: nbNeurones,
+                threadsPerGrid = MTLSize(width: nbNeurons,
                                          height: weightWidth,
                                          depth: 1)
                 command.dispatchThreads(
@@ -1104,14 +1104,14 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                         "flBatchDerBiases", deviceID: deviceID
                     )
                     command.setBuffer(delta.metal, atIndex: 0)
-                    command.setBytes(pNbNeurones, atIndex: 1)
+                    command.setBytes(pNbNeurons, atIndex: 1)
                     command.setBytes(pNbBatch, atIndex: 2)
                     command.setBytes(pAccumulate, atIndex: 3)
                     command.setBuffer(_bBuffers.g.metal, atIndex: 4)
                     
                     let threads = command.threadExecutionWidth
                     threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
-                    threadsPerGrid = MTLSize(width: nbNeurones,
+                    threadsPerGrid = MTLSize(width: nbNeurons,
                                              height: 1,
                                              depth: 1)
                     command.dispatchThreads(
@@ -1131,13 +1131,13 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                 )
                 command.setBuffer(outsPrev.metal, atIndex: 0)
                 command.setBuffer(delta.metal, atIndex: 1)
-                command.setBytes(pNbNeurones, atIndex: 2)
-                command.setBytes(pNbNeuronesPrev, atIndex: 3)
+                command.setBytes(pNbNeurons, atIndex: 2)
+                command.setBytes(pNbNeuronsPrev, atIndex: 3)
                 command.setBytes(pNbBatch, atIndex: 4)
                 command.setBuffer(_wDeltaWeights.metal, atIndex: 5)
                 
                 threadsPerThreadgroup = MTLSizeMake(8, 8, 8)
-                threadsPerGrid = MTLSize(width: nbNeurones,
+                threadsPerGrid = MTLSize(width: nbNeurons,
                                          height: weightWidth,
                                          depth: batchSize)
                 command.dispatchThreads(
@@ -1152,12 +1152,12 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                         "flDerBiases", deviceID: deviceID
                     )
                     command.setBuffer(delta.metal, atIndex: 0)
-                    command.setBytes(pNbNeurones, atIndex: 1)
+                    command.setBytes(pNbNeurons, atIndex: 1)
                     command.setBytes(pNbBatch, atIndex: 2)
                     command.setBuffer(_bDeltaWeights.metal, atIndex: 3)
                     
                     threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
-                    threadsPerGrid = MTLSize(width: nbNeurones,
+                    threadsPerGrid = MTLSize(width: nbNeurons,
                                              height: batchSize,
                                              depth: 1)
                     command.dispatchThreads(
@@ -1174,15 +1174,15 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                     "flReduceWeights", deviceID: deviceID
                 )
                 command.setBuffer(_wDeltaWeights.metal, atIndex: 0)
-                command.setBytes(pNbNeurones, atIndex: 1)
-                command.setBytes(pNbNeuronesPrev, atIndex: 2)
+                command.setBytes(pNbNeurons, atIndex: 1)
+                command.setBytes(pNbNeuronsPrev, atIndex: 2)
                 command.setBytes(pNbBatch, atIndex: 3)
                 command.setBytes(pAccumulate, atIndex: 4)
                 command.setBuffer(_wBuffers.g.metal, atIndex: 5)
                 
                 threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
-                threadsPerGrid = MTLSize(width: nbNeurones,
-                                         height: nbNeuronesPrev,
+                threadsPerGrid = MTLSize(width: nbNeurons,
+                                         height: nbNeuronsPrev,
                                          depth: 1)
                 command.dispatchThreads(
                     threadsPerGrid: threadsPerGrid,
@@ -1196,14 +1196,14 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                         "reduceBiases", deviceID: deviceID
                     )
                     command.setBuffer(_bDeltaWeights.metal, atIndex: 0)
-                    command.setBytes(pNbNeurones, atIndex: 1)
+                    command.setBytes(pNbNeurons, atIndex: 1)
                     command.setBytes(pNbBatch, atIndex: 2)
                     command.setBytes(pAccumulate, atIndex: 3)
                     command.setBuffer(_bBuffers.g.metal, atIndex: 4)
                     
                     let threads = command.threadExecutionWidth
                     threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
-                    threadsPerGrid = MTLSize(width: nbNeurones,
+                    threadsPerGrid = MTLSize(width: nbNeurons,
                                              height: 1,
                                              depth: 1)
                     command.dispatchThreads(
@@ -1253,12 +1253,12 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
         }
         
         var deltaWeights = [T]()
-        for depth in 0..<nbNeurones {
+        for depth in 0..<nbNeurons {
         for depthPrev in 0..<weightWidth
         {
             deltaWeights.append(T(_wArrays.g(depth, depthPrev)))
         }}
-        for depth in 0..<nbNeurones
+        for depth in 0..<nbNeurons
         {
             deltaWeights.append(T(_bArrays.g[depth]))
         }

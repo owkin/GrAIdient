@@ -98,7 +98,7 @@ class Input1DLinearError1DCase: LinearError1DCase
         diffThreshold: Double = 0.000001)
     {
         let model = trainer.model!
-        let lastLayer = model.layers.last as! MSE1D
+        let lastLayer = model.layers.last as! LinearError1D
         let layersGraph = model.getGraph(lastLayer)
         
         retryNumeric(nbRetry: nbRetry)

@@ -1,5 +1,5 @@
 //
-// SelectNeuron.swift
+// SelectNeurons2D.swift
 // MAKit
 //
 // Created by Jean-François Reboud on 14/10/2022.
@@ -10,10 +10,10 @@ import MetalKit
 ///
 /// Layer with a 1D shape neural structure.
 ///
-/// This layer transforms a 2D layer into a 1D layer, selecting one neuron of the input grids into as many
-/// output neurons.
+/// This layer transforms a 2D layer into a 1D layer, selecting neurons at a precise position in the input grids
+/// into as many output neurons.
 ///
-public class SelectNeuron: Layer1D, LayerResize
+public class SelectNeurons2D: Layer1D, LayerResize
 {
     /// Row of the selected neuron.
     public let targetI: Int
@@ -141,7 +141,7 @@ public class SelectNeuron: Layer1D, LayerResize
         let params = MAKit.Model.Params(context: context)
         params.context.curID = id
             
-        let layer = SelectNeuron(
+        let layer = SelectNeurons2D(
             layerPrev: layerPrev,
             targetI: targetI,
             targetJ: targetJ,
@@ -175,7 +175,7 @@ public class SelectNeuron: Layer1D, LayerResize
         let params = MAKit.Model.Params(context: context)
         params.context.curID = id
         
-        let layer = SelectNeuron(
+        let layer = SelectNeurons2D(
             layerPrev: layerPrev,
             ratioI: self.ratioI,
             ratioJ: self.ratioJ,
@@ -198,8 +198,7 @@ public class SelectNeuron: Layer1D, LayerResize
             let nbGC = layerPrev.nbGC
             for depth in 0..<nbNeurons
             {
-                neurons.get(depth)!.initGC(batchSize: batchSize,
-                                            nbGC: nbGC)
+                neurons.get(depth)!.initGC(batchSize: batchSize, nbGC: nbGC)
             }
             
             let neuronsPrev = layerPrev.neurons
@@ -271,7 +270,7 @@ public class SelectNeuron: Layer1D, LayerResize
                                              UInt32(heightPrev)]
             
             let command = MetalKernel.get.createCommand(
-                "selectNeuronForward", deviceID: deviceID
+                "selectNeurons2DForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(pTarget, atIndex: 1)
@@ -349,7 +348,7 @@ public class SelectNeuron: Layer1D, LayerResize
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
             let command = MetalKernel.get.createCommand(
-                "selectNeuronBackward", deviceID: deviceID
+                "selectNeurons2DBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBytes(pTarget, atIndex: 1)

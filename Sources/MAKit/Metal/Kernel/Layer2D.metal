@@ -546,7 +546,7 @@ kernel void adaptiveAvgPoolBackward2(
     }}
 }
 
-kernel void selectNeuronForward(
+kernel void selectNeurons2DForward(
     const device float * outsPrev,
     constant uint * pTarget,
     constant uint * pNbNeurons,
@@ -589,7 +589,7 @@ kernel void selectNeuronForward(
     outs[offset] = outsPrev[offsetPrev];
 }
 
-kernel void selectNeuronBackward(
+kernel void selectNeurons2DBackward(
     const device float * delta,
     constant uint * pTarget,
     constant uint * pNbNeurons,

@@ -573,8 +573,8 @@ private class MetalDevice
                 "MSE1DApplyGradient",
                 "linearErrorLoss",
                 "linearErrorApplyGradient",
-                "selectChForward",
-                "selectChBackward",
+                "selectNeurons1DForward",
+                "selectNeurons1DBackward",
             ],
             "Layer2D": [
                 "avgPoolForward",
@@ -585,8 +585,8 @@ private class MetalDevice
                 "adaptiveAvgPoolForward2",
                 "adaptiveAvgPoolBackward1",
                 "adaptiveAvgPoolBackward2",
-                "selectNeuronForward",
-                "selectNeuronBackward",
+                "selectNeurons2DForward",
+                "selectNeurons2DBackward",
             ],
             "Optimizer": [
                 "clipGradients",

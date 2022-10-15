@@ -62,10 +62,10 @@ class Layer1DGradTests: Input1DMSE1DCase
                 params: params
             )
             
-        case "SelectChannels":
-            layer = SelectChannels1D(
+        case "SelectNeurons":
+            layer = SelectNeurons1D(
                 layerPrev: layer,
-                channels: [1, 4],
+                neurons: [1, 4],
                 coeffs: [0.6, 0.4],
                 params: params
             )
@@ -116,16 +116,16 @@ class Layer1DGradTests: Input1DMSE1DCase
         run(trainer)
     }
     
-    func testSelectChannelsCPU() throws
+    func testSelectNeuronsCPU() throws
     {
         MAKit.Opti.CPU = true
-        let trainer = _buildTrainer("SelectChannels")
+        let trainer = _buildTrainer("SelectNeurons")
         run(trainer)
     }
     
-    func testSelectChannelsGPU() throws
+    func testSelectNeuronsGPU() throws
     {
-        let trainer = _buildTrainer("SelectChannels")
+        let trainer = _buildTrainer("SelectNeurons")
         run(trainer)
     }
 }
@@ -178,10 +178,10 @@ class Layer1DFlowTests: Input1DMSE1DCase
                 params: params
             )
             
-        case "SelectChannels":
-            layer = SelectChannels1D(
+        case "SelectNeurons":
+            layer = SelectNeurons1D(
                 layerPrev: layer,
-                channels: [1, 4],
+                neurons: [1, 4],
                 coeffs: [0.6, 0.4],
                 params: params
             )
@@ -218,9 +218,9 @@ class Layer1DFlowTests: Input1DMSE1DCase
         run(trainer)
     }
     
-    func testSelectChannels() throws
+    func testSelectNeurons() throws
     {
-        let trainer = _buildTrainer("SelectChannels")
+        let trainer = _buildTrainer("SelectNeurons")
         run(trainer)
     }
 }
@@ -272,9 +272,9 @@ class Layer1DFlowResetTests: Layer1DFlowTests
         run(trainer)
     }
     
-    override func testSelectChannels() throws
+    override func testSelectNeurons() throws
     {
-        let trainer = _buildTrainer("SelectChannels")
+        let trainer = _buildTrainer("SelectNeurons")
         run(trainer)
     }
 }
@@ -326,9 +326,9 @@ class Layer1DFlowReverseTests: Layer1DFlowTests
         run(trainer)
     }
     
-    override func testSelectChannels() throws
+    override func testSelectNeurons() throws
     {
-        let trainer = _buildTrainer("SelectChannels")
+        let trainer = _buildTrainer("SelectNeurons")
         run(trainer)
     }
 }
@@ -372,9 +372,9 @@ class Layer1DInferenceTests: Layer1DFlowTests
         run(trainer)
     }
     
-    override func testSelectChannels() throws
+    override func testSelectNeurons() throws
     {
-        let trainer = _buildTrainer("SelectChannels")
+        let trainer = _buildTrainer("SelectNeurons")
         run(trainer)
     }
 }
@@ -419,9 +419,9 @@ class Layer1DLoadTests: Layer1DFlowTests
         run(trainer)
     }
     
-    override func testSelectChannels() throws
+    override func testSelectNeurons() throws
     {
-        let trainer = _buildTrainer("SelectChannels")
+        let trainer = _buildTrainer("SelectNeurons")
         run(trainer)
     }
 }
@@ -485,15 +485,15 @@ class Layer1DTransformTests: Layer1DFlowTests
         runCopyInPlace(trainer)
     }
     
-    override func testSelectChannels() throws
+    override func testSelectNeurons() throws
     {
-        let trainer = _buildTrainer("SelectChannels")
+        let trainer = _buildTrainer("SelectNeurons")
         runCopy(trainer)
     }
     
-    func testSelectChannelsCopyInPlace() throws
+    func testSelectNeuronsCopyInPlace() throws
     {
-        let trainer = _buildTrainer("SelectChannels")
+        let trainer = _buildTrainer("SelectNeurons")
         runCopyInPlace(trainer)
     }
 }

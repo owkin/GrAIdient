@@ -160,11 +160,11 @@ kernel void linearErrorApplyGradient(
     deltaPrev[offset] = coeff / float(nbNeurons * nbBatch);
 }
 
-kernel void selectChForward(
+kernel void selectNeurons1DForward(
     const device float * outsPrev,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
-    constant uint * pChannels,
+    constant uint * pNeurons,
     constant float * pCoeffs,
     constant uint * pNbBatch,
     device float * outs,
@@ -174,7 +174,7 @@ kernel void selectChForward(
     uint nbNeuronsPrev;
     uint nbBatch;
     
-    if (pNbNeurons && pNbNeuronsPrev && pChannels && pCoeffs && pNbBatch &&
+    if (pNbNeurons && pNbNeuronsPrev && pNeurons && pCoeffs && pNbBatch &&
         outsPrev && outs)
     {
         nbNeurons = *pNbNeurons;
@@ -193,15 +193,15 @@ kernel void selectChForward(
     }
     
     uint offset = depth + nbNeurons * elem;
-    uint offsetPrev = pChannels[depth] + nbNeuronsPrev * elem;
+    uint offsetPrev = pNeurons[depth] + nbNeuronsPrev * elem;
     outs[offset] = pCoeffs[depth] * outsPrev[offsetPrev];
 }
 
-kernel void selectChBackward(
+kernel void selectNeurons1DBackward(
     const device float * delta,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
-    constant uint * pChannels,
+    constant uint * pNeurons,
     constant float * pCoeffs,
     constant uint * pNbBatch,
     device float * deltaPrev,
@@ -211,7 +211,7 @@ kernel void selectChBackward(
     uint nbNeuronsPrev;
     uint nbBatch;
     
-    if (pNbNeurons && pNbNeuronsPrev && pChannels && pCoeffs && pNbBatch &&
+    if (pNbNeurons && pNbNeuronsPrev && pNeurons && pCoeffs && pNbBatch &&
         deltaPrev && delta)
     {
         nbNeurons = *pNbNeurons;
@@ -230,6 +230,6 @@ kernel void selectChBackward(
     }
     
     uint offset = depth + nbNeurons * elem;
-    uint offsetPrev = pChannels[depth] + nbNeuronsPrev * elem;
+    uint offsetPrev = pNeurons[depth] + nbNeuronsPrev * elem;
     deltaPrev[offsetPrev] += pCoeffs[depth] * delta[offset];
 }

@@ -17,6 +17,8 @@ class Layer2DGradTests: Input2DMSE1DCase
     override func setUpWithError() throws
     {
         try! super.setUpWithError()
+        
+        optimizerParams.nbLoops = 1
         MAKit.Loop.gradientChecking = true
     }
     

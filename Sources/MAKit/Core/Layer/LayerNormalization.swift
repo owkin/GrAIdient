@@ -912,7 +912,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
         }
         
         let command = MetalKernel.get.createCommand(
-            "computeConvTmp", deviceID: _deviceID
+            "backwardWeightsBNConv", deviceID: _deviceID
         )
         command.setBuffer(layer.delta.metal, atIndex: 0)
         command.setBuffer(_xHat.metal, atIndex: 1)

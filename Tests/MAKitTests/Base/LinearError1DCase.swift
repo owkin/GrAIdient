@@ -9,8 +9,10 @@ import XCTest
 import MAKit
 import MAKitTestsUtils
 
+///
 /// A class that will test a model with a structural hypothesis:
 /// the model last layer is a LinearError1D layer.
+/// 
 class LinearError1DCase: XCTestCase
 {
     /// Batch size of data.

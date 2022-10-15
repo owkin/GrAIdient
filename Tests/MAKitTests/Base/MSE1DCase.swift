@@ -28,8 +28,10 @@ extension TestError: CustomStringConvertible
     }
 }
 
+///
 /// A class that will test a model with a structural hypothesis:
 /// the model last layer is a MSE1D layer.
+/// 
 class MSE1DCase: XCTestCase
 {
     /// Batch size of data.

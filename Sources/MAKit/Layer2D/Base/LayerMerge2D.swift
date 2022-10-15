@@ -92,13 +92,13 @@ open class LayerMerge2D: Layer2D
     ///
     /// - Parameters:
     ///     - layersPrev: List of previous layers that have been queued to the model.
-    ///     - nbFilters: Number of channels.
+    ///     - nbChannels: Number of channels.
     ///     - height: Height of each channel.
     ///     - width: Width of each channel.
     ///     - params: Contextual parameters linking to the model.
     ///
     public init(layersPrev: [Layer],
-                nbFilters: Int, height: Int, width: Int,
+                nbChannels: Int, height: Int, width: Int,
                 params: MAKit.Model.Params)
     {
         var idsPrev = [Int]()
@@ -109,7 +109,7 @@ open class LayerMerge2D: Layer2D
         _idsPrev = idsPrev
         
         super.init(layerPrev: layersPrev[0],
-                   nbFilters: nbFilters,
+                   nbChannels: nbChannels,
                    height: height,
                    width: width,
                    params: params)

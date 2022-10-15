@@ -52,7 +52,7 @@ public class SelectNeuron: Layer1D, LayerResize
         self.ratioJ = Double(targetJ) / Double(layerPrev.width)
         
         super.init(layerPrev: layerPrev,
-                   nbNeurons: layerPrev.nbFilters,
+                   nbNeurons: layerPrev.nbChannels,
                    params: params)
     }
     
@@ -76,7 +76,7 @@ public class SelectNeuron: Layer1D, LayerResize
         self.ratioJ = ratioJ
         
         super.init(layerPrev: layerPrev,
-                   nbNeurons: layerPrev.nbFilters,
+                   nbNeurons: layerPrev.nbChannels,
                    params: params)
     }
     

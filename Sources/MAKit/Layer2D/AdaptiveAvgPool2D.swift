@@ -113,7 +113,7 @@ public class AdaptiveAvgPool2D: Layer2D
     public init(layerPrev: Layer2D, size: Int, params: MAKit.Model.Params)
     {
         super.init(layerPrev: layerPrev,
-                   nbFilters: layerPrev.nbFilters,
+                   nbChannels: layerPrev.nbChannels,
                    height: size,
                    width: size,
                    params: params)
@@ -169,7 +169,7 @@ public class AdaptiveAvgPool2D: Layer2D
             if heightPrev < height && _nbElems == nil
             {
                 _nbElems = MetalSharedBuffer<Int32>(
-                    batchSize * nbFilters * height * width,
+                    batchSize * nbChannels * height * width,
                     deviceID: deviceID
                 )
             }
@@ -191,7 +191,7 @@ public class AdaptiveAvgPool2D: Layer2D
             if heightPrev < height && _nbElems == nil
             {
                 _nbElems = MetalPrivateBuffer<Int32>(
-                    batchSize * nbFilters * height * width,
+                    batchSize * nbChannels * height * width,
                     deviceID: deviceID
                 )
             }
@@ -255,7 +255,7 @@ public class AdaptiveAvgPool2D: Layer2D
             try checkStateCPU(batchSize: batchSize)
             
             let nbGC = layerPrev.nbGC
-            for depth in 0..<nbFilters
+            for depth in 0..<nbChannels
             {
                 for i in 0..<height {
                 for j in 0..<width
@@ -273,7 +273,7 @@ public class AdaptiveAvgPool2D: Layer2D
             {
                 for batch in 0..<batchSize {
                 for elem in 0..<nbGC {
-                for depth in 0..<nbFilters
+                for depth in 0..<nbChannels
                 {
                     for i in 0..<height
                     {
@@ -315,7 +315,7 @@ public class AdaptiveAvgPool2D: Layer2D
             {
                 for batch in 0..<batchSize {
                 for elem in 0..<nbGC {
-                for depth in 0..<nbFilters
+                for depth in 0..<nbChannels
                 {
                     for I in 0..<height {
                     for J in 0..<width
@@ -341,10 +341,10 @@ public class AdaptiveAvgPool2D: Layer2D
                 
                 for batch in 0..<batchSize {
                 for elem in 0..<nbGC {
-                for depth in 0..<nbFilters
+                for depth in 0..<nbChannels
                 {
                     let offsetStart =
-                        (depth + nbFilters * batch) * height
+                        (depth + nbChannels * batch) * height
                     
                     for i in 0..<heightPrev
                     {
@@ -413,7 +413,7 @@ public class AdaptiveAvgPool2D: Layer2D
             if heightPrev >= height
             {
                 for elem in 0..<batchSize {
-                for depth in 0..<nbFilters
+                for depth in 0..<nbChannels
                 {
                     for i in 0..<height
                     {
@@ -457,10 +457,10 @@ public class AdaptiveAvgPool2D: Layer2D
                     (_nbElems as! MetalSharedBuffer<Int32>).buffer
                 
                 for elem in 0..<batchSize {
-                for depth in 0..<nbFilters
+                for depth in 0..<nbChannels
                 {
                     let offsetStart =
-                        (depth + nbFilters * elem) * height
+                        (depth + nbChannels * elem) * height
                     
                     for I in 0..<height {
                     for J in 0..<width
@@ -474,10 +474,10 @@ public class AdaptiveAvgPool2D: Layer2D
                 }}
                 
                 for elem in 0..<batchSize {
-                for depth in 0..<nbFilters
+                for depth in 0..<nbChannels
                 {
                     let offsetStart =
-                        (depth + nbFilters * elem) * height
+                        (depth + nbChannels * elem) * height
                     
                     for i in 0..<heightPrev
                     {
@@ -517,10 +517,10 @@ public class AdaptiveAvgPool2D: Layer2D
                 }}
                 
                 for elem in 0..<batchSize {
-                for depth in 0..<nbFilters
+                for depth in 0..<nbChannels
                 {
                     let offsetStart =
-                        (depth + nbFilters * elem) * height
+                        (depth + nbChannels * elem) * height
                     
                     for I in 0..<height {
                     for J in 0..<width
@@ -550,7 +550,7 @@ public class AdaptiveAvgPool2D: Layer2D
             let widthPrev = layerPrev.width
             let heightPrev = layerPrev.height
             
-            let pNbFilters: [UInt32] = [UInt32(nbFilters)]
+            let pNbFilters: [UInt32] = [UInt32(nbChannels)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pDimensionsPrev: [UInt32] = [UInt32(widthPrev),
@@ -573,7 +573,7 @@ public class AdaptiveAvgPool2D: Layer2D
                 let threadsPerThreadgroup = MTLSizeMake(8, 8, 8)
                 let threadsPerGrid = MTLSize(width: width,
                                              height: height,
-                                             depth: nbFilters * batchSize)
+                                             depth: nbChannels * batchSize)
                 command.dispatchThreads(
                     threadsPerGrid: threadsPerGrid,
                     threadsPerThreadgroup: threadsPerThreadgroup
@@ -630,7 +630,7 @@ public class AdaptiveAvgPool2D: Layer2D
                 command.setBuffer(outs.metal, atIndex: 6)
                 
                 threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
-                threadsPerGrid = MTLSize(width: nbFilters,
+                threadsPerGrid = MTLSize(width: nbChannels,
                                          height: batchSize,
                                          depth: 1)
                 command.dispatchThreads(
@@ -654,7 +654,7 @@ public class AdaptiveAvgPool2D: Layer2D
             if layerPrev.dirty
             {
                 for elem in 0..<batchSize {
-                for depth in 0..<nbFilters
+                for depth in 0..<nbChannels
                 {
                     for I in 0..<heightPrev {
                     for J in 0..<widthPrev
@@ -667,7 +667,7 @@ public class AdaptiveAvgPool2D: Layer2D
             if heightPrev >= height
             {
                 for elem in 0..<batchSize {
-                for depth in 0..<nbFilters
+                for depth in 0..<nbChannels
                 {
                     for i in 0..<height
                     {
@@ -710,10 +710,10 @@ public class AdaptiveAvgPool2D: Layer2D
                     (_nbElems as! MetalSharedBuffer<Int32>).buffer
                 
                 for elem in 0..<batchSize {
-                for depth in 0..<nbFilters
+                for depth in 0..<nbChannels
                 {
                     let offsetStart =
-                        (depth + nbFilters * elem) * height
+                        (depth + nbChannels * elem) * height
                     
                     for i in 0..<heightPrev
                     {
@@ -769,7 +769,7 @@ public class AdaptiveAvgPool2D: Layer2D
             let widthPrev = layerPrev.width
             let heightPrev = layerPrev.height
             
-            let pNbFilters: [UInt32] = [UInt32(nbFilters)]
+            let pNbFilters: [UInt32] = [UInt32(nbChannels)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pDimensionsPrev: [UInt32] = [UInt32(widthPrev),
@@ -812,7 +812,7 @@ public class AdaptiveAvgPool2D: Layer2D
                 command.setBuffer(layerPrev.delta.metal, atIndex: 5)
                 
                 let threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
-                let threadsPerGrid = MTLSize(width: nbFilters,
+                let threadsPerGrid = MTLSize(width: nbChannels,
                                              height: batchSize,
                                              depth: 1)
                 command.dispatchThreads(
@@ -835,7 +835,7 @@ public class AdaptiveAvgPool2D: Layer2D
                 command.setBuffer(layerPrev.delta.metal, atIndex: 6)
                 
                 let threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
-                let threadsPerGrid = MTLSize(width: nbFilters,
+                let threadsPerGrid = MTLSize(width: nbChannels,
                                              height: batchSize,
                                              depth: 1)
                 command.dispatchThreads(

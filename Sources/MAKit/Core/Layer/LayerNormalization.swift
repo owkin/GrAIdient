@@ -73,7 +73,7 @@ public class BatchNormalizationBase: Codable, Cloneable
     ///
     convenience init(_ layer: BN2D)
     {
-        self.init(nbNeurons: layer.nbFilters)
+        self.init(nbNeurons: layer.nbChannels)
     }
     
     ///
@@ -310,18 +310,18 @@ public class BatchNormalization: BatchNormalizationBase
     func forwardGC(_ layer: BN2D)
     {
         let nbGC = layer.nbGC
-        let nbFilters = layer.nbFilters
+        let nbChannels = layer.nbChannels
         let Ɛ = layer.Ɛ
         
-        Concurrency.slice(nbFilters)
+        Concurrency.slice(nbChannels)
         {
             (depth: Int) in
             
             for elem in 0..<nbGC
             {
                 let outs: [Double]
-                if elem >= nbGC-4*nbFilters && elem < nbGC-2*nbFilters &&
-                   depth == (elem-nbGC+4*nbFilters)/2
+                if elem >= nbGC-4*nbChannels && elem < nbGC-2*nbChannels &&
+                   depth == (elem-nbGC+4*nbChannels)/2
                 {
                     if elem % 2 == 0
                     {
@@ -340,8 +340,8 @@ public class BatchNormalization: BatchNormalizationBase
                         )
                     }
                 }
-                else if elem >= nbGC-2*nbFilters &&
-                        depth == (elem-nbGC+2*nbFilters)/2
+                else if elem >= nbGC-2*nbChannels &&
+                        depth == (elem-nbGC+2*nbChannels)/2
                 {
                     if elem % 2 == 0
                     {
@@ -383,7 +383,7 @@ public class BatchNormalization: BatchNormalizationBase
     /// Apply the forward pass in the CPU execution context.
     func forward(_ layer: BN2D)
     {
-        let nbFilters = layer.nbFilters
+        let nbChannels = layer.nbChannels
         
         if layer.phase != nil && layer.phase! == .Training
         {
@@ -391,7 +391,7 @@ public class BatchNormalization: BatchNormalizationBase
             _Eσ2.withUnsafeMutableBufferPointer { Eσ2Pointer in
             _xHat.withUnsafeMutableBufferPointer { xhatPointer in
             _σ2.withUnsafeMutableBufferPointer { σ2Pointer in
-            Concurrency.slice(nbFilters)
+            Concurrency.slice(nbChannels)
             {
                 (depth: Int) in
                 
@@ -424,7 +424,7 @@ public class BatchNormalization: BatchNormalizationBase
         }
         else
         {
-            Concurrency.slice(nbFilters)
+            Concurrency.slice(nbChannels)
             {
                 (depth: Int) in
                 
@@ -444,14 +444,14 @@ public class BatchNormalization: BatchNormalizationBase
     /// Apply the backward pass in the CPU execution context.
     func backward(_ layer: BN2D)
     {
-        let nbFilters = layer.nbFilters
+        let nbChannels = layer.nbChannels
         
         if layer.phase != nil && layer.phase! == .Training
         {
-            var deltaβ = [Double](repeating: 0.0, count: nbFilters)
-            var deltaƔ = [Double](repeating: 0.0, count: nbFilters)
+            var deltaβ = [Double](repeating: 0.0, count: nbChannels)
+            var deltaƔ = [Double](repeating: 0.0, count: nbChannels)
             
-            for depth in 0..<nbFilters
+            for depth in 0..<nbChannels
             {
                 let (delta, dβ, dƔ) = Normalization.backward(
                     delta: layer.getDelta(depth),
@@ -465,7 +465,7 @@ public class BatchNormalization: BatchNormalizationBase
                 deltaƔ[depth] += dƔ
             }
             
-            for depth in 0..<nbFilters
+            for depth in 0..<nbChannels
             {
                 if !layer.accumulateDeltaWeights
                 {
@@ -481,7 +481,7 @@ public class BatchNormalization: BatchNormalizationBase
         }
         else
         {
-            for depth in 0..<nbFilters
+            for depth in 0..<nbChannels
             {
                 let delta = Normalization.backward(
                     delta: layer.getDelta(depth),
@@ -716,7 +716,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
     /// Compute the averages of the different independent batch normalization units.
     private func _computeμ(_ layer: BN2D)
     {
-        let nbNeurons = layer.nbFilters
+        let nbNeurons = layer.nbChannels
         let batchSize = layer.batchSize
         let width = layer.width
         let height = layer.height
@@ -755,7 +755,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
     /// Compute the deviations of the different independent batch normalization units.
     private func _computeσ2(_ layer: BN2D)
     {
-        let nbNeurons = layer.nbFilters
+        let nbNeurons = layer.nbChannels
         let batchSize = layer.batchSize
         let width = layer.width
         let height = layer.height

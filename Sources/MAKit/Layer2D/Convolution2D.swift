@@ -104,11 +104,11 @@ public class Convolution2D: BN2D
     }
     
     /// Get the number of neurons of the previous layer.
-    var nbFiltersPrev: Int
+    var nbChannelsPrev: Int
     {
         get {
             let layerPrev = self.layerPrev as! Layer2D
-            return layerPrev.nbFilters
+            return layerPrev.nbChannels
         }
     }
     
@@ -143,7 +143,7 @@ public class Convolution2D: BN2D
             }
             
             if _useBiases {
-            for depth in 0..<nbFilters
+            for depth in 0..<nbChannels
             {
                 weightsTmp.append(Float(_bArrays.w[depth]))
             }}
@@ -199,7 +199,7 @@ public class Convolution2D: BN2D
             if _useBiases
             {
                 nbConvWeights = nbWeights * weightHeight * weightWidth +
-                                nbFilters
+                                nbChannels
             }
             else
             {
@@ -232,7 +232,7 @@ public class Convolution2D: BN2D
             if _useBiases
             {
                 nbConvWeights = nbWeights * weightHeight * weightWidth +
-                                nbFilters
+                                nbChannels
             }
             else
             {
@@ -252,11 +252,11 @@ public class Convolution2D: BN2D
             if let activation = _activation
             {
                 return activation.coeffInitWeights(
-                    nPrev: nbFiltersPrev * weightHeight * weightWidth,
-                    nCur: nbFilters)
+                    nPrev: nbChannelsPrev * weightHeight * weightWidth,
+                    nCur: nbChannels)
             }
             return sqrt(2.0 /
-                        Double(nbFiltersPrev * weightHeight * weightWidth))
+                        Double(nbChannelsPrev * weightHeight * weightWidth))
         }
     }
     
@@ -265,14 +265,14 @@ public class Convolution2D: BN2D
     {
         get {
             var nbGC = 0
-            nbGC += nbFilters * nbFiltersPrev * weightHeight * weightWidth
+            nbGC += nbChannels * nbChannelsPrev * weightHeight * weightWidth
             if updateBiases
             {
-                nbGC += nbFilters
+                nbGC += nbChannels
             }
             if _bn != nil || _bnGPU != nil
             {
-                nbGC += 2 * nbFilters
+                nbGC += 2 * nbChannels
             }
             return nbGC
         }
@@ -345,14 +345,14 @@ public class Convolution2D: BN2D
     /// - Parameters:
     ///     - layerPrev: Previous layer that has been queued to the model.
     ///     - size: Size (height, weight) of the weights kernels.
-    ///     - nbFilters: Number of channels.
+    ///     - nbChannels: Number of channels.
     ///     - stride: Downscale factor of the resolution (height and width).
     ///     - activation: The activation function.
     ///     - biases: Whether to use biases or not.
     ///     - bn: Whether to use batch normalization or not.
     ///     - params: Contextual parameters linking to the model.
     ///
-    public init(layerPrev: Layer2D, size: Int, nbFilters: Int, stride: Int,
+    public init(layerPrev: Layer2D, size: Int, nbChannels: Int, stride: Int,
                 activation: String?, biases: Bool, bn: Bool,
                 params: MAKit.Model.Params)
     {
@@ -365,13 +365,13 @@ public class Convolution2D: BN2D
         let widthNew = widthRes == 0 ? width / _stride : width / _stride + 1
         let heightNew = heightRes == 0 ? height / _stride : height / _stride + 1
         
-        nbWeights = nbFilters * layerPrev.nbFilters
+        nbWeights = nbChannels * layerPrev.nbChannels
         weightWidth = size
         weightHeight = size
         _useBiases = biases
         
         super.init(layerPrev: layerPrev,
-                   nbFilters: nbFilters,
+                   nbChannels: nbChannels,
                    height: heightNew,
                    width: widthNew,
                    activation: activation,
@@ -462,7 +462,7 @@ public class Convolution2D: BN2D
         let layer = Convolution2D(
             layerPrev: layerPrev,
             size: weightWidth,
-            nbFilters: nbFilters,
+            nbChannels: nbChannels,
             stride: _stride,
             activation: _activation?.name,
             biases: _useBiases,
@@ -521,7 +521,7 @@ public class Convolution2D: BN2D
         let layer = Convolution2D(
             layerPrev: layerPrev,
             size: weightHeight,
-            nbFilters: nbFilters,
+            nbChannels: nbChannels,
             stride: _stride,
             activation: nil,
             biases: _useBiases,
@@ -602,7 +602,7 @@ public class Convolution2D: BN2D
             _wArrays.append(WeightGrids(width: weightWidth,
                                         height: weightHeight))
         }
-        _bArrays = WeightArrays(nbFilters)
+        _bArrays = WeightArrays(nbChannels)
         
         if _weightsList.count == 0
         {
@@ -616,7 +616,7 @@ public class Convolution2D: BN2D
                 }}
             }
             
-            for depth in 0..<nbFilters
+            for depth in 0..<nbChannels
             {
                 _bArrays.w[depth] = 0.0
             }
@@ -638,7 +638,7 @@ public class Convolution2D: BN2D
             if _useBiases
             {
                 let offset = nbWeights * weightHeight * weightWidth
-                for depth in 0..<nbFilters
+                for depth in 0..<nbChannels
                 {
                     _bArrays.w[depth] =
                         Double(_weightsList[offset + depth])
@@ -646,7 +646,7 @@ public class Convolution2D: BN2D
             }
             else
             {
-                for depth in 0..<nbFilters
+                for depth in 0..<nbChannels
                 {
                     _bArrays.w[depth] = 0.0
                 }
@@ -670,7 +670,7 @@ public class Convolution2D: BN2D
             deviceID: deviceID
         )
         _bBuffers = WeightBuffers(
-            nbElems: nbFilters,
+            nbElems: nbChannels,
             deviceID: deviceID
         )
         
@@ -685,7 +685,7 @@ public class Convolution2D: BN2D
                 weightsPtr[elem] = coeff * Float.random(in: -1..<1)
             }
             
-            for depth in 0..<nbFilters
+            for depth in 0..<nbChannels
             {
                 biasesPtr[depth] = 0.0
             }
@@ -700,14 +700,14 @@ public class Convolution2D: BN2D
             if _useBiases
             {
                 let offset = nbWeights * weightHeight * weightWidth
-                for depth in 0..<nbFilters
+                for depth in 0..<nbChannels
                 {
                     biasesPtr[depth] = _weightsList[offset + depth]
                 }
             }
             else
             {
-                for depth in 0..<nbFilters
+                for depth in 0..<nbChannels
                 {
                     biasesPtr[depth] = 0.0
                 }
@@ -736,14 +736,14 @@ public class Convolution2D: BN2D
            MAKit.Gradient.sample && _wDeltaWeights == nil
         {
             _wDeltaWeights = MetalPrivateBuffer<Float>(
-                batchSize*nbFilters*nbFiltersPrev*weightWidth*weightHeight,
+                batchSize*nbChannels*nbChannelsPrev*weightWidth*weightHeight,
                 deviceID: deviceID
             )
             
             if updateBiases
             {
                 _bDeltaWeights = MetalPrivateBuffer<Float>(
-                    batchSize * nbFilters, deviceID: deviceID
+                    batchSize * nbChannels, deviceID: deviceID
                 )
             }
         }
@@ -770,7 +770,7 @@ public class Convolution2D: BN2D
             let nbGC = layerPrev.nbGC
             let newGC = nbGC + 2 * nbLearnedGC
             
-            for depth in 0..<nbFilters
+            for depth in 0..<nbChannels
             {
                 for i in 0..<height {
                 for j in 0..<width
@@ -785,16 +785,16 @@ public class Convolution2D: BN2D
             
             for batch in 0..<batchSize {
             for elem in 0..<nbGC {
-            for depth in 0..<nbFilters
+            for depth in 0..<nbChannels
             {
                 for i in 0..<height {
                 for j in 0..<width
                 {
                     var tmp: Double = _bArrays.w[depth]
-                    for depthPrev in 0..<nbFiltersPrev
+                    for depthPrev in 0..<nbChannelsPrev
                     {
                         let weights =
-                            _wArrays[nbFiltersPrev * depth + depthPrev]
+                            _wArrays[nbChannelsPrev * depth + depthPrev]
                         
                         for k in startI...endI {
                         for l in startJ...endJ
@@ -812,21 +812,21 @@ public class Convolution2D: BN2D
             }}}
             
             for batch in 0..<batchSize {
-            for DEPTH in 0..<nbFilters {
-            for DEPTHPREV in 0..<nbFiltersPrev {
+            for DEPTH in 0..<nbChannels {
+            for DEPTHPREV in 0..<nbChannelsPrev {
             for I in 0..<weightHeight {
             for J in 0..<weightWidth {
             for elem in 0...1 {
-            for depth in 0..<nbFilters
+            for depth in 0..<nbChannels
             {
                 for i in 0..<height {
                 for j in 0..<width
                 {
                     var tmp: Double = _bArrays.w[depth]
-                    for depthPrev in 0..<nbFiltersPrev
+                    for depthPrev in 0..<nbChannelsPrev
                     {
                         let weights =
-                            _wArrays[nbFiltersPrev * depth + depthPrev]
+                            _wArrays[nbChannelsPrev * depth + depthPrev]
                         
                         for k in startI...endI {
                         for l in startJ...endJ
@@ -856,16 +856,16 @@ public class Convolution2D: BN2D
                     let offset = nbGC +
                         elem + 2 * J + 2 * weightWidth * I +
                         2 * weightWidth * weightHeight * DEPTHPREV +
-                        2 * weightWidth * weightHeight * nbFiltersPrev * DEPTH
+                        2 * weightWidth * weightHeight * nbChannelsPrev * DEPTH
                     neurons[depth].get(i, j)!.gc[batch][offset].out = tmp
                 }}
             }}}}}}}
             
             if updateBiases {
             for batch in 0..<batchSize {
-            for DEPTH in 0..<nbFilters {
+            for DEPTH in 0..<nbChannels {
             for elem in 0...1 {
-            for depth in 0..<nbFilters
+            for depth in 0..<nbChannels
             {
                 for i in 0..<height {
                 for j in 0..<width
@@ -883,10 +883,10 @@ public class Convolution2D: BN2D
                         }
                     }
                     
-                    for depthPrev in 0..<nbFiltersPrev
+                    for depthPrev in 0..<nbChannelsPrev
                     {
                         let weights =
-                            _wArrays[nbFiltersPrev * depth + depthPrev]
+                            _wArrays[nbChannelsPrev * depth + depthPrev]
                         
                         for k in startI...endI {
                         for l in startJ...endJ
@@ -901,7 +901,7 @@ public class Convolution2D: BN2D
                     }
                     
                     let offset = nbGC +
-                        2 * nbFilters * nbFiltersPrev *
+                        2 * nbChannels * nbChannelsPrev *
                             weightHeight * weightWidth + elem +
                         2 * DEPTH
                     neurons[depth].get(i, j)!.gc[batch][offset].out = tmp
@@ -911,17 +911,17 @@ public class Convolution2D: BN2D
             // Prepare GC for BN weights: Ɣ and β.
             if _bn != nil {
             for batch in 0..<batchSize {
-            for elem in newGC-4*nbFilters..<newGC {
-            for depth in 0..<nbFilters
+            for elem in newGC-4*nbChannels..<newGC {
+            for depth in 0..<nbChannels
             {
                 for i in 0..<height {
                 for j in 0..<width
                 {
                     var tmp: Double = _bArrays.w[depth]
-                    for depthPrev in 0..<nbFiltersPrev
+                    for depthPrev in 0..<nbChannelsPrev
                     {
                         let weights =
-                            _wArrays[nbFiltersPrev * depth + depthPrev]
+                            _wArrays[nbChannelsPrev * depth + depthPrev]
                         
                         for k in startI...endI {
                         for l in startJ...endJ
@@ -961,7 +961,7 @@ public class Convolution2D: BN2D
             let nbGC = layerPrev.nbGC
             let newGC = nbGC + 2 * nbLearnedGC
             
-            for depth in 0..<nbFilters
+            for depth in 0..<nbChannels
             {
                 for i in 0..<height {
                 for j in 0..<width
@@ -985,16 +985,16 @@ public class Convolution2D: BN2D
             
             for batch in 0..<batchSize {
             for elem in 0..<nbGC {
-            for depth in 0..<nbFilters
+            for depth in 0..<nbChannels
             {
                 for i in 0..<height {
                 for j in 0..<width
                 {
                     var tmp: Double = Double(biasesPtr[depth])
-                    for depthPrev in 0..<nbFiltersPrev
+                    for depthPrev in 0..<nbChannelsPrev
                     {
                         let offsetStartWeights =
-                            (depthPrev + nbFiltersPrev * depth) * weightHeight
+                            (depthPrev + nbChannelsPrev * depth) * weightHeight
                         
                         for k in startI...endI {
                         for l in startJ...endJ
@@ -1017,23 +1017,23 @@ public class Convolution2D: BN2D
             let outsPrevPtr = layerPrev.outs.shared.buffer
             
             for batch in 0..<batchSize {
-            for DEPTH in 0..<nbFilters {
-            for DEPTHPREV in 0..<nbFiltersPrev {
+            for DEPTH in 0..<nbChannels {
+            for DEPTHPREV in 0..<nbChannelsPrev {
             for I in 0..<weightHeight {
             for J in 0..<weightWidth {
             for elem in 0...1 {
-            for depth in 0..<nbFilters
+            for depth in 0..<nbChannels
             {
                 for i in 0..<height {
                 for j in 0..<width
                 {
                     var tmp: Double = Double(biasesPtr[depth])
-                    for depthPrev in 0..<nbFiltersPrev
+                    for depthPrev in 0..<nbChannelsPrev
                     {
                         let offsetStartPrev =
-                            (depthPrev + nbFiltersPrev * batch) * heightPrev
+                            (depthPrev + nbChannelsPrev * batch) * heightPrev
                         let offsetStartWeights =
-                            (depthPrev + nbFiltersPrev * depth) * weightHeight
+                            (depthPrev + nbChannelsPrev * depth) * weightHeight
                         
                         for k in startI...endI {
                         for l in startJ...endJ
@@ -1072,16 +1072,16 @@ public class Convolution2D: BN2D
                     let offset = nbGC +
                         elem + 2 * J + 2 * weightWidth * I +
                         2 * weightWidth * weightHeight * DEPTHPREV +
-                        2 * weightWidth * weightHeight * nbFiltersPrev * DEPTH
+                        2 * weightWidth * weightHeight * nbChannelsPrev * DEPTH
                     neurons[depth].get(i, j)!.gc[batch][offset].out = tmp
                 }}
             }}}}}}}
             
             if updateBiases {
             for batch in 0..<batchSize {
-            for DEPTH in 0..<nbFilters {
+            for DEPTH in 0..<nbChannels {
             for elem in 0...1 {
-            for depth in 0..<nbFilters
+            for depth in 0..<nbChannels
             {
                 for i in 0..<height {
                 for j in 0..<width
@@ -1099,12 +1099,12 @@ public class Convolution2D: BN2D
                         }
                     }
                     
-                    for depthPrev in 0..<nbFiltersPrev
+                    for depthPrev in 0..<nbChannelsPrev
                     {
                         let offsetStartPrev =
-                            (depthPrev + nbFiltersPrev * batch) * heightPrev
+                            (depthPrev + nbChannelsPrev * batch) * heightPrev
                         let offsetStartWeights =
-                            (depthPrev + nbFiltersPrev * depth) * weightHeight
+                            (depthPrev + nbChannelsPrev * depth) * weightHeight
                         
                         for k in startI...endI {
                         for l in startJ...endJ
@@ -1128,7 +1128,7 @@ public class Convolution2D: BN2D
                     }
                     
                     let offset = nbGC +
-                        2 * nbFilters * nbFiltersPrev *
+                        2 * nbChannels * nbChannelsPrev *
                         weightHeight * weightWidth + elem +
                         2 * DEPTH
                     neurons[depth].get(i, j)!.gc[batch][offset].out = tmp
@@ -1138,19 +1138,19 @@ public class Convolution2D: BN2D
             // Prepare GC for BN weights: Ɣ and β.
             if _bnGPU != nil {
             for batch in 0..<batchSize {
-            for elem in newGC-4*nbFilters..<newGC {
-            for depth in 0..<nbFilters
+            for elem in newGC-4*nbChannels..<newGC {
+            for depth in 0..<nbChannels
             {
                 for i in 0..<height {
                 for j in 0..<width
                 {
                     var tmp: Double = _bArrays.w[depth]
-                    for depthPrev in 0..<nbFiltersPrev
+                    for depthPrev in 0..<nbChannelsPrev
                     {
                         let offsetStartPrev =
-                            (depthPrev + nbFiltersPrev * batch) * heightPrev
+                            (depthPrev + nbChannelsPrev * batch) * heightPrev
                         let offsetStartWeights =
-                            (depthPrev + nbFiltersPrev * depth) * weightHeight
+                            (depthPrev + nbChannelsPrev * depth) * weightHeight
                         
                         for k in startI...endI {
                         for l in startJ...endJ
@@ -1200,16 +1200,16 @@ public class Convolution2D: BN2D
             let (startI, endI, startJ, endJ) = _kernelIndices
             
             for elem in 0..<batchSize {
-            for depth in 0..<nbFilters
+            for depth in 0..<nbChannels
             {
                 for i in 0..<height {
                 for j in 0..<width
                 {
                     var tmp: Double = _bArrays.w[depth]
-                    for depthPrev in 0..<nbFiltersPrev
+                    for depthPrev in 0..<nbChannelsPrev
                     {
                         let weights =
-                            _wArrays[nbFiltersPrev * depth + depthPrev]
+                            _wArrays[nbChannelsPrev * depth + depthPrev]
                         
                         for k in startI...endI {
                         for l in startJ...endJ
@@ -1251,8 +1251,8 @@ public class Convolution2D: BN2D
             let pStart: [Int32] = [Int32(startI), Int32(endI),
                                    Int32(startJ), Int32(endJ)]
             let pStride: [UInt32] = [UInt32(_stride)]
-            let pNbFilters: [UInt32] = [UInt32(nbFilters)]
-            let pNbFiltersPrev: [UInt32] = [UInt32(nbFiltersPrev)]
+            let pNbFilters: [UInt32] = [UInt32(nbChannels)]
+            let pNbFiltersPrev: [UInt32] = [UInt32(nbChannelsPrev)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pDimensionsPrev: [UInt32] = [UInt32(layerPrev.width),
                                              UInt32(layerPrev.height)]
@@ -1263,7 +1263,7 @@ public class Convolution2D: BN2D
             if outs == nil
             {
                 outs = MetalPrivateBuffer<Float>(
-                    batchSize * nbFilters * width * height, deviceID: deviceID)
+                    batchSize * nbChannels * width * height, deviceID: deviceID)
             }
             
             let command = MetalKernel.get.createCommand(
@@ -1285,7 +1285,7 @@ public class Convolution2D: BN2D
             let threadsPerThreadgroup = MTLSizeMake(8, 8, 8)
             let threadsPerGrid = MTLSize(width: width,
                                          height: height,
-                                         depth: nbFilters * batchSize)
+                                         depth: nbChannels * batchSize)
             command.dispatchThreads(
                 threadsPerGrid: threadsPerGrid,
                 threadsPerThreadgroup: threadsPerThreadgroup
@@ -1312,16 +1312,16 @@ public class Convolution2D: BN2D
             let (startI, endI, startJ, endJ) = _kernelIndices
             
             for elem in 0..<batchSize {
-            for depthPrev in 0..<nbFiltersPrev
+            for depthPrev in 0..<nbChannelsPrev
             {
                 for i in 0..<layerPrev.height {
                 for j in 0..<layerPrev.width
                 {
                     var tmp: Double = 0.0
-                    for depth in 0..<nbFilters
+                    for depth in 0..<nbChannels
                     {
                         let weights =
-                            _wArrays[nbFiltersPrev * depth + depthPrev]
+                            _wArrays[nbChannelsPrev * depth + depthPrev]
                         
                         for k in startI...endI {
                         for l in startJ...endJ
@@ -1365,11 +1365,11 @@ public class Convolution2D: BN2D
             let neuronsPrev = layerPrev.neurons
             let (startI, endI, startJ, endJ) = _kernelIndices
             
-            for depth in 0..<nbFilters
+            for depth in 0..<nbChannels
             {
-                for depthPrev in 0..<nbFiltersPrev
+                for depthPrev in 0..<nbChannelsPrev
                 {
-                    let weights = _wArrays[nbFiltersPrev * depth + depthPrev]
+                    let weights = _wArrays[nbChannelsPrev * depth + depthPrev]
                     
                     for i in startI...endI {
                     for j in startJ...endJ
@@ -1442,8 +1442,8 @@ public class Convolution2D: BN2D
             let pStart: [Int32] = [Int32(startI), Int32(endI),
                                    Int32(startJ), Int32(endJ)]
             let pStride: [UInt32] = [UInt32(_stride)]
-            let pNbFilters: [UInt32] = [UInt32(nbFilters)]
-            let pNbFiltersPrev: [UInt32] = [UInt32(nbFiltersPrev)]
+            let pNbFilters: [UInt32] = [UInt32(nbChannels)]
+            let pNbFiltersPrev: [UInt32] = [UInt32(nbChannelsPrev)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pDimensionsPrev: [UInt32] = [UInt32(layerPrev.width),
                                              UInt32(layerPrev.height)]
@@ -1471,7 +1471,7 @@ public class Convolution2D: BN2D
             let threadsPerThreadgroup = MTLSizeMake(8, 8, 8)
             let threadsPerGrid = MTLSize(width: layerPrev.width,
                                          height: layerPrev.height,
-                                         depth: nbFiltersPrev * batchSize)
+                                         depth: nbChannelsPrev * batchSize)
             command.dispatchThreads(
                 threadsPerGrid: threadsPerGrid,
                 threadsPerThreadgroup: threadsPerThreadgroup
@@ -1494,8 +1494,8 @@ public class Convolution2D: BN2D
             let pStart: [Int32] = [Int32(startI), Int32(endI),
                                    Int32(startJ), Int32(endJ)]
             let pStride: [UInt32] = [UInt32(_stride)]
-            let pNbFilters: [UInt32] = [UInt32(nbFilters)]
-            let pNbFiltersPrev: [UInt32] = [UInt32(nbFiltersPrev)]
+            let pNbFilters: [UInt32] = [UInt32(nbChannels)]
+            let pNbFiltersPrev: [UInt32] = [UInt32(nbChannelsPrev)]
             let pDimensions: [UInt32] = [UInt32(width),
                                          UInt32(height)]
             let pDimensionsPrev: [UInt32] = [UInt32(layerPrev.width),
@@ -1528,8 +1528,8 @@ public class Convolution2D: BN2D
                 command.setBuffer(_wBuffers.g.metal, atIndex: 11)
                 
                 threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
-                threadsPerGrid = MTLSize(width: nbFilters * weightWidth,
-                                         height: nbFiltersPrev * weightHeight,
+                threadsPerGrid = MTLSize(width: nbChannels * weightWidth,
+                                         height: nbChannelsPrev * weightHeight,
                                          depth: 1)
                 command.dispatchThreads(
                     threadsPerGrid: threadsPerGrid,
@@ -1551,7 +1551,7 @@ public class Convolution2D: BN2D
                     
                     let threads = command.threadExecutionWidth
                     threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
-                    threadsPerGrid = MTLSize(width: nbFilters,
+                    threadsPerGrid = MTLSize(width: nbChannels,
                                              height: 1,
                                              depth: 1)
                     command.dispatchThreads(
@@ -1582,8 +1582,8 @@ public class Convolution2D: BN2D
                 command.setBuffer(_wDeltaWeights.metal, atIndex: 10)
                 
                 threadsPerThreadgroup = MTLSizeMake(8, 8, 8)
-                threadsPerGrid = MTLSize(width: nbFilters * weightWidth,
-                                         height: nbFiltersPrev * weightHeight,
+                threadsPerGrid = MTLSize(width: nbChannels * weightWidth,
+                                         height: nbChannelsPrev * weightHeight,
                                          depth: batchSize)
                 command.dispatchThreads(
                     threadsPerGrid: threadsPerGrid,
@@ -1603,7 +1603,7 @@ public class Convolution2D: BN2D
                     command.setBuffer(_bDeltaWeights.metal, atIndex: 4)
                     
                     threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
-                    threadsPerGrid = MTLSize(width: nbFilters,
+                    threadsPerGrid = MTLSize(width: nbChannels,
                                              height: batchSize,
                                              depth: 1)
                     command.dispatchThreads(
@@ -1628,8 +1628,8 @@ public class Convolution2D: BN2D
                 command.setBuffer(_wBuffers.g.metal, atIndex: 6)
                 
                 threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
-                threadsPerGrid = MTLSize(width: nbFilters * weightWidth,
-                                         height: nbFiltersPrev * weightHeight,
+                threadsPerGrid = MTLSize(width: nbChannels * weightWidth,
+                                         height: nbChannelsPrev * weightHeight,
                                          depth: 1)
                 command.dispatchThreads(
                     threadsPerGrid: threadsPerGrid,
@@ -1650,7 +1650,7 @@ public class Convolution2D: BN2D
                     
                     let threads = command.threadExecutionWidth
                     threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
-                    threadsPerGrid = MTLSize(width: nbFilters,
+                    threadsPerGrid = MTLSize(width: nbChannels,
                                              height: 1,
                                              depth: 1)
                     command.dispatchThreads(
@@ -1707,20 +1707,20 @@ public class Convolution2D: BN2D
             throw UpdateError.Dirty
         }
         
-        let nbFiltersPrev = (self.layerPrev as! Layer2D).nbFilters
+        let nbChannelsPrev = (self.layerPrev as! Layer2D).nbChannels
         var deltaWeights = [T]()
-        for depth in 0..<nbFilters {
-        for depthPrev in 0..<nbFiltersPrev
+        for depth in 0..<nbChannels {
+        for depthPrev in 0..<nbChannelsPrev
         {
             for i in 0..<weightHeight {
             for j in 0..<weightWidth
             {
                 deltaWeights.append(T(
-                    _wArrays[nbFiltersPrev * depth + depthPrev].g(i, j)
+                    _wArrays[nbChannelsPrev * depth + depthPrev].g(i, j)
                 ))
             }}
         }}
-        for depth in 0..<nbFilters
+        for depth in 0..<nbChannels
         {
             deltaWeights.append(T(_bArrays.g[depth]))
         }

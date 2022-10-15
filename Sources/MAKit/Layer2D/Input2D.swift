@@ -28,7 +28,7 @@ class InputArrays2D: InputArrays<Layer2D>, IWeightArrays
             var cur = 0
             var outs = [Double](repeating: 0.0, count: nbElems)
             for elem in 0..<_layer.batchSize {
-            for depth in 0..<_layer.nbFilters {
+            for depth in 0..<_layer.nbChannels {
             for i in 0..<_layer.height {
             for j in 0..<_layer.width
             {
@@ -40,7 +40,7 @@ class InputArrays2D: InputArrays<Layer2D>, IWeightArrays
         set {
             var cur = 0
             for elem in 0..<_layer.batchSize {
-            for depth in 0..<_layer.nbFilters {
+            for depth in 0..<_layer.nbChannels {
             for i in 0..<_layer.height {
             for j in 0..<_layer.width
             {
@@ -57,7 +57,7 @@ class InputArrays2D: InputArrays<Layer2D>, IWeightArrays
             var cur = 0
             var delta = [Double](repeating: 0.0, count: nbElems)
             for elem in 0..<_layer.batchSize {
-            for depth in 0..<_layer.nbFilters {
+            for depth in 0..<_layer.nbChannels {
             for i in 0..<_layer.height {
             for j in 0..<_layer.width
             {
@@ -69,7 +69,7 @@ class InputArrays2D: InputArrays<Layer2D>, IWeightArrays
         set {
             var cur = 0
             for elem in 0..<_layer.batchSize {
-            for depth in 0..<_layer.nbFilters {
+            for depth in 0..<_layer.nbChannels {
             for i in 0..<_layer.height {
             for j in 0..<_layer.width
             {
@@ -131,16 +131,16 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
     /// Create a layer with a 2D shape neural structure.
     ///
     /// - Parameters:
-    ///     - nbFilters: Number of channels.
+    ///     - nbChannels: Number of channels.
     ///     - height: Height of each channel.
     ///     - width: Width of each channel.
     ///     - params: Contextual parameters linking to the model.
     ///
-    public init(nbFilters: Int, width: Int, height: Int,
+    public init(nbChannels: Int, width: Int, height: Int,
                 params: MAKit.Model.Params)
     {
         super.init(layerPrev: nil,
-                   nbFilters: nbFilters,
+                   nbChannels: nbChannels,
                    height: height,
                    width: width,
                    params: params)
@@ -157,7 +157,7 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
     public init(layerPrev: Layer2D, params: MAKit.Model.Params)
     {
         super.init(layerPrev: layerPrev,
-                   nbFilters: layerPrev.nbFilters,
+                   nbChannels: layerPrev.nbChannels,
                    height: layerPrev.height,
                    width: layerPrev.width,
                    params: params)
@@ -209,7 +209,7 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
         else
         {
             layer = Input2D(
-                nbFilters: nbFilters, width: width, height: height,
+                nbChannels: nbChannels, width: width, height: height,
                 params: params
             )
         }
@@ -249,7 +249,7 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
         else
         {
             layer = Input2D(
-                nbFilters: nbFilters, width: imageWidth, height: imageHeight,
+                nbChannels: nbChannels, width: imageWidth, height: imageHeight,
                 params: params
             )
         }
@@ -291,7 +291,7 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
         {
             _wArrays = InputArrays2D(
                 layer: self,
-                nbElems: nbFilters * height * width * batchSize
+                nbElems: nbChannels * height * width * batchSize
             )
         }
     }
@@ -310,7 +310,7 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
         {
             _wBuffers = InputBuffers2D(
                 layer: self,
-                nbElems: nbFilters * height * width * batchSize,
+                nbElems: nbChannels * height * width * batchSize,
                 deviceID: deviceID
             )
         }
@@ -336,7 +336,7 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
         batchSize: Int,
         format: ImageFormat) throws
     {
-        if batchSize * nbFilters * height * width != data.count
+        if batchSize * nbChannels * height * width != data.count
         {
             throw LayerError.DataSize
         }
@@ -351,10 +351,10 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
                 for j in 0..<width
                 {
                     let offset = j + (elem * height + i) * width
-                    for depth in 0..<nbFilters
+                    for depth in 0..<nbChannels
                     {
                         neurons[depth].get(i, j)!.v[elem].out =
-                            Double(data[nbFilters * offset + depth])
+                            Double(data[nbChannels * offset + depth])
                     }
                 }}
             }
@@ -364,9 +364,9 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    for depth in 0..<nbFilters
+                    for depth in 0..<nbChannels
                     {
-                        let offsetStart = (depth + nbFilters * elem) * height
+                        let offsetStart = (depth + nbChannels * elem) * height
                         let offset = j + (offsetStart + i) * width
                         
                         neurons[depth].get(i, j)!.v[elem].out =
@@ -392,7 +392,7 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
         batchSize: Int,
         format: ImageFormat) throws
     {
-        if batchSize * nbFilters * height * width != data.count
+        if batchSize * nbChannels * height * width != data.count
         {
             throw LayerError.DataSize
         }
@@ -413,13 +413,13 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
                 for j in 0..<width
                 {
                     let offsetGet = j + (elem * height + i) * width
-                    for depth in 0..<nbFilters
+                    for depth in 0..<nbChannels
                     {
-                        let offsetStartSet = (depth + nbFilters * elem) * height
+                        let offsetStartSet = (depth + nbChannels * elem) * height
                         let offsetSet = j + (offsetStartSet + i) * width
                         
                         outsPtr[offsetSet] =
-                            Float(data[nbFilters * offsetGet + depth])
+                            Float(data[nbChannels * offsetGet + depth])
                     }
                 }}
             }
@@ -429,9 +429,9 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    for depth in 0..<nbFilters
+                    for depth in 0..<nbChannels
                     {
-                        let offsetStart = (depth + nbFilters * elem) * height
+                        let offsetStart = (depth + nbChannels * elem) * height
                         let offset = j + (offsetStart + i) * width
                         
                         outsPtr[offset] = Float(data[offset])
@@ -455,7 +455,7 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
         _ data: MetalPrivateBuffer<Float>,
         batchSize: Int) throws
     {
-        if batchSize * nbFilters * height * width != data.nbElems
+        if batchSize * nbChannels * height * width != data.nbElems
         {
             throw LayerError.DataSize
         }
@@ -477,7 +477,7 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
             
             let neuronsPrev = layerPrev.neurons
             for elem in 0..<batchSize {
-            for depth in 0..<nbFilters
+            for depth in 0..<nbChannels
             {
                 for i in 0..<height {
                 for j in 0..<width
@@ -528,7 +528,7 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
         {
             let neuronsPrev = layerPrev.neurons
             for elem in 0..<batchSize {
-            for depth in 0..<nbFilters
+            for depth in 0..<nbChannels
             {
                 for i in 0..<height {
                 for j in 0..<width

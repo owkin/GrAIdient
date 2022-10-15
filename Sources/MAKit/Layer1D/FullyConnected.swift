@@ -78,7 +78,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
             }
             else if let layerPrev = self.layerPrev as? Layer2D
             {
-                return layerPrev.nbFilters *
+                return layerPrev.nbChannels *
                        layerPrev.height *
                        layerPrev.width
             }
@@ -262,7 +262,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
         }
         else if let layerPrev = layerPrev as? Layer2D
         {
-            nbNeuronsPrev = layerPrev.nbFilters *
+            nbNeuronsPrev = layerPrev.nbChannels *
                              layerPrev.height *
                              layerPrev.width
         }

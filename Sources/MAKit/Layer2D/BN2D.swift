@@ -125,7 +125,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
     var nbLearnedGC: Int
     {
         get {
-            return 2 * nbFilters
+            return 2 * nbChannels
         }
     }
     
@@ -146,7 +146,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
                          params: MAKit.Model.Params)
     {
         super.init(layerPrev: layerPrev,
-                   nbFilters: layerPrev.nbFilters,
+                   nbChannels: layerPrev.nbChannels,
                    height: layerPrev.height,
                    width: layerPrev.width,
                    activation: activation,
@@ -160,7 +160,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
     ///
     /// - Parameters:
     ///     - layerPrev: Previous layer that has been queued to the model.
-    ///     - nbFilters: Number of channels.
+    ///     - nbChannels: Number of channels.
     ///     - height: Height of each channel.
     ///     - width: Width of each channel.
     ///     - activation: The activation function.
@@ -168,12 +168,12 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
     ///     - params: Contextual parameters linking to the model.
     ///
     public init(layerPrev: Layer2D,
-                nbFilters: Int, height: Int, width: Int,
+                nbChannels: Int, height: Int, width: Int,
                 activation: String?, bn: Bool,
                 params: MAKit.Model.Params)
     {
         super.init(layerPrev: layerPrev,
-                   nbFilters: nbFilters,
+                   nbChannels: nbChannels,
                    height: height,
                    width: width,
                    activation: activation,
@@ -429,7 +429,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
             
             let nbGC = layerPrev.nbGC
             let newGC = nbGC + 2 * nbLearnedGC
-            for j in 0..<nbFilters
+            for j in 0..<nbChannels
             {
                 neurons[j].initGC(batchSize: batchSize, nbGC: newGC)
             }
@@ -438,7 +438,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
             for batch in 0..<batchSize {
             for elem in 0..<nbGC
             {
-                for depth in 0..<nbFilters {
+                for depth in 0..<nbChannels {
                 for i in 0..<height {
                 for j in 0..<width
                 {
@@ -449,9 +449,9 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
             
             // Prepare GC for BN weights: Ɣ and β.
             for batch in 0..<batchSize {
-            for elem in newGC-4*nbFilters..<newGC
+            for elem in newGC-4*nbChannels..<newGC
             {
-                for depth in 0..<nbFilters {
+                for depth in 0..<nbChannels {
                 for i in 0..<height {
                 for j in 0..<width
                 {
@@ -487,7 +487,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
             
             let nbGC = layerPrev.nbGC
             let newGC = nbGC + 2 * nbLearnedGC
-            for j in 0..<nbFilters
+            for j in 0..<nbChannels
             {
                 neurons[j].initGC(batchSize: batchSize, nbGC: newGC)
             }
@@ -496,7 +496,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
             for batch in 0..<batchSize {
             for elem in 0..<nbGC
             {
-                for depth in 0..<nbFilters {
+                for depth in 0..<nbChannels {
                 for i in 0..<height {
                 for j in 0..<width
                 {
@@ -510,12 +510,12 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
             
             // Prepare GC for BN weights: Ɣ and β.
             for batch in 0..<batchSize {
-            for elem in newGC-4*nbFilters..<newGC
+            for elem in newGC-4*nbChannels..<newGC
             {
-                for depth in 0..<nbFilters
+                for depth in 0..<nbChannels
                 {
                     let offsetStart =
-                        (depth + nbFilters * batch) * height
+                        (depth + nbChannels * batch) * height
                     
                     for i in 0..<height {
                     for j in 0..<width
@@ -544,7 +544,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
             let neuronsPrev = layerPrev.neurons
             for elem in 0..<batchSize
             {
-                for depth in 0..<nbFilters {
+                for depth in 0..<nbChannels {
                 for i in 0..<height {
                 for j in 0..<width
                 {
@@ -606,7 +606,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
             let neuronsPrev = layerPrev.neurons
             for elem in 0..<batchSize
             {
-                for depth in 0..<nbFilters {
+                for depth in 0..<nbChannels {
                 for i in 0..<height {
                 for j in 0..<width
                 {

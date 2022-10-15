@@ -24,7 +24,7 @@ public class AvgPool2D: Layer1D
     public init(layerPrev: Layer2D, params: MAKit.Model.Params)
     {
         super.init(layerPrev: layerPrev,
-                   nbNeurons: layerPrev.nbFilters,
+                   nbNeurons: layerPrev.nbChannels,
                    params: params)
     }
     

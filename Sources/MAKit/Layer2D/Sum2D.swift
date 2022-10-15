@@ -26,7 +26,7 @@ public class Sum2D: LayerMerge2D
         let layer0 = layersPrev[0]
         for layerPrev in layersPrev
         {
-            if layerPrev.nbFilters != layer0.nbFilters ||
+            if layerPrev.nbChannels != layer0.nbChannels ||
                layerPrev.height != layer0.height ||
                layerPrev.width != layer0.width
             {
@@ -35,7 +35,7 @@ public class Sum2D: LayerMerge2D
         }
         
         super.init(layersPrev: layersPrev,
-                   nbFilters: layer0.nbFilters,
+                   nbChannels: layer0.nbChannels,
                    height: layer0.height,
                    width: layer0.width,
                    params: params)
@@ -101,7 +101,7 @@ public class Sum2D: LayerMerge2D
             nbGC += nbElemsTmp
         }
         
-        for depth in 0..<nbFilters
+        for depth in 0..<nbChannels
         {
             for i in 0..<height {
             for j in 0..<width
@@ -113,7 +113,7 @@ public class Sum2D: LayerMerge2D
         
         for batch in 0..<batchSize {
         for elem in 0..<nbSameElems {
-        for depth in 0..<nbFilters
+        for depth in 0..<nbChannels
         {
             for i in 0..<height {
             for j in 0..<width
@@ -135,7 +135,7 @@ public class Sum2D: LayerMerge2D
                                 count: _layersPrev.count)
         for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
         for elem in 0..<nbElemsTmp {
-        for depth in 0..<nbFilters
+        for depth in 0..<nbChannels
         {
             for i in 0..<height {
             for j in 0..<width
@@ -188,7 +188,7 @@ public class Sum2D: LayerMerge2D
             nbGC += nbElemsTmp
         }
         
-        for depth in 0..<nbFilters
+        for depth in 0..<nbChannels
         {
             for i in 0..<height {
             for j in 0..<width
@@ -200,7 +200,7 @@ public class Sum2D: LayerMerge2D
         
         for batch in 0..<batchSize {
         for elem in 0..<nbSameElems {
-        for depth in 0..<nbFilters
+        for depth in 0..<nbChannels
         {
             for i in 0..<height {
             for j in 0..<width
@@ -222,7 +222,7 @@ public class Sum2D: LayerMerge2D
                                 count: _layersPrev.count)
         for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
         for elem in 0..<nbElemsTmp {
-        for depth in 0..<nbFilters
+        for depth in 0..<nbChannels
         {
             for i in 0..<height {
             for j in 0..<width
@@ -242,7 +242,7 @@ public class Sum2D: LayerMerge2D
                     }
                     else
                     {
-                        let offsetStart = (depth + nbFilters * batch) * height
+                        let offsetStart = (depth + nbChannels * batch) * height
                         let offsetTmp = j + (offsetStart + i) * width
                         
                         sum += Double(outsPrevPtr[offsetTmp])
@@ -268,7 +268,7 @@ public class Sum2D: LayerMerge2D
         try checkStateCPU(batchSize: batchSize)
         
         for elem in 0..<batchSize {
-        for depth in 0..<nbFilters
+        for depth in 0..<nbChannels
         {
             for i in 0..<height {
             for j in 0..<width
@@ -352,7 +352,7 @@ public class Sum2D: LayerMerge2D
             
             let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
             for elem in 0..<batchSize {
-            for depth in 0..<nbFilters
+            for depth in 0..<nbChannels
             {
                 for i in 0..<height {
                 for j in 0..<width

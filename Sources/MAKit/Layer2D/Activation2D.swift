@@ -36,7 +36,7 @@ public class Activation2D: Layer2D
         _activation = MAKit.Model.Activation.build(activation)
         
         super.init(layerPrev: layerPrev,
-                   nbFilters: layerPrev.nbFilters,
+                   nbChannels: layerPrev.nbChannels,
                    height: layerPrev.height,
                    width: layerPrev.width,
                    params: params)
@@ -47,14 +47,14 @@ public class Activation2D: Layer2D
     ///
     /// - Parameters:
     ///     - layerPrev: Previous layer that has been queued to the model.
-    ///     - nbFilters: Number of channels.
+    ///     - nbChannels: Number of channels.
     ///     - height: Height of each channel.
     ///     - width: Width of each channel.
     ///     - activation: The activation function.
     ///     - params: Contextual parameters linking to the model.
     ///
     public init(layerPrev: Layer?,
-                nbFilters: Int, height: Int, width: Int, activation: String?,
+                nbChannels: Int, height: Int, width: Int, activation: String?,
                 params: MAKit.Model.Params)
     {
         if let activationStr = activation
@@ -67,7 +67,7 @@ public class Activation2D: Layer2D
         }
         
         super.init(layerPrev: layerPrev,
-                   nbFilters: nbFilters,
+                   nbChannels: nbChannels,
                    height: height,
                    width: width,
                    params: params)
@@ -176,7 +176,7 @@ public class Activation2D: Layer2D
             try checkStateCPU(batchSize: batchSize)
             
             let nbGC = layerPrev.nbGC
-            for j in 0..<nbFilters
+            for j in 0..<nbChannels
             {
                 neurons[j].initGC(batchSize: batchSize, nbGC: nbGC)
             }
@@ -185,7 +185,7 @@ public class Activation2D: Layer2D
             for batch in 0..<batchSize {
             for elem in 0..<nbGC
             {
-                for depth in 0..<nbFilters {
+                for depth in 0..<nbChannels {
                 for i in 0..<height {
                 for j in 0..<width
                 {
@@ -221,7 +221,7 @@ public class Activation2D: Layer2D
             let neuronsPrev = layerPrev.neurons
             for elem in 0..<batchSize
             {
-                for depth in 0..<nbFilters {
+                for depth in 0..<nbChannels {
                 for i in 0..<height {
                 for j in 0..<width
                 {
@@ -280,7 +280,7 @@ public class Activation2D: Layer2D
             let neuronsPrev = layerPrev.neurons
             for elem in 0..<batchSize
             {
-                for depth in 0..<nbFilters {
+                for depth in 0..<nbChannels {
                 for i in 0..<height {
                 for j in 0..<width
                 {

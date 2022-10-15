@@ -98,7 +98,7 @@ public class MaxPool2D: Layer2D
         let heightNew = heightRes == 0 ? height / stride : height / stride + 1
         
         super.init(layerPrev: layerPrev,
-                   nbFilters: layerPrev.nbFilters,
+                   nbChannels: layerPrev.nbChannels,
                    height: heightNew,
                    width: widthNew,
                    params: params)
@@ -204,7 +204,7 @@ public class MaxPool2D: Layer2D
         if _indicesMax == nil
         {
             _indicesMax = MetalSharedBuffer<Int32>(
-                batchSize * nbFilters * height * width * 2,
+                batchSize * nbChannels * height * width * 2,
                 deviceID: deviceID
             )
         }
@@ -222,7 +222,7 @@ public class MaxPool2D: Layer2D
         if _indicesMax == nil
         {
             _indicesMax = MetalPrivateBuffer<Int32>(
-                batchSize * nbFilters * width * height,
+                batchSize * nbChannels * width * height,
                 deviceID: deviceID
             )
         }
@@ -240,7 +240,7 @@ public class MaxPool2D: Layer2D
             try checkStateCPU(batchSize: batchSize)
             
             let nbGC = layerPrev.nbGC
-            for depth in 0..<nbFilters
+            for depth in 0..<nbChannels
             {
                 for i in 0..<height {
                 for j in 0..<width
@@ -255,7 +255,7 @@ public class MaxPool2D: Layer2D
             
             for batch in 0..<batchSize {
             for elem in 0..<nbGC {
-            for depth in 0..<nbFilters
+            for depth in 0..<nbChannels
             {
                 for i in 0..<height {
                 for j in 0..<width
@@ -304,9 +304,9 @@ public class MaxPool2D: Layer2D
                 (_indicesMax as! MetalSharedBuffer<Int32>).buffer
             
             for elem in 0..<batchSize {
-            for depth in 0..<nbFilters
+            for depth in 0..<nbChannels
             {
-                let offsetStart = (depth + nbFilters * elem) * height
+                let offsetStart = (depth + nbChannels * elem) * height
                 
                 for i in 0..<height {
                 for j in 0..<width
@@ -361,7 +361,7 @@ public class MaxPool2D: Layer2D
             
             let pStart: [Int32] = [Int32(start), Int32(end)]
             let pStride: [UInt32] = [UInt32(_stride)]
-            let pNbFilters: [UInt32] = [UInt32(nbFilters)]
+            let pNbFilters: [UInt32] = [UInt32(nbChannels)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pDimensionsPrev: [UInt32] = [UInt32(widthPrev),
@@ -383,7 +383,7 @@ public class MaxPool2D: Layer2D
             let threadsPerThreadgroup = MTLSizeMake(8, 8, 8)
             let threadsPerGrid = MTLSize(width: width,
                                          height: height,
-                                         depth: nbFilters * batchSize)
+                                         depth: nbChannels * batchSize)
             command.dispatchThreads(
                 threadsPerGrid: threadsPerGrid,
                 threadsPerThreadgroup: threadsPerThreadgroup
@@ -406,7 +406,7 @@ public class MaxPool2D: Layer2D
             if layerPrev.dirty
             {
                 for elem in 0..<batchSize {
-                for depth in 0..<nbFilters
+                for depth in 0..<nbChannels
                 {
                     for i in 0..<heightPrev {
                     for j in 0..<widthPrev
@@ -417,9 +417,9 @@ public class MaxPool2D: Layer2D
             }
             
             for elem in 0..<batchSize {
-            for depth in 0..<nbFilters
+            for depth in 0..<nbChannels
             {
-                let offsetStart = (depth + nbFilters * elem) * height
+                let offsetStart = (depth + nbChannels * elem) * height
                 
                 for i in 0..<height {
                 for j in 0..<width
@@ -454,7 +454,7 @@ public class MaxPool2D: Layer2D
             
             let pStart: [Int32] = [Int32(start), Int32(end)]
             let pStride: [UInt32] = [UInt32(_stride)]
-            let pNbFilters: [UInt32] = [UInt32(nbFilters)]
+            let pNbFilters: [UInt32] = [UInt32(nbChannels)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pDimensionsPrev: [UInt32] = [UInt32(widthPrev),
@@ -478,7 +478,7 @@ public class MaxPool2D: Layer2D
             let threadsPerThreadgroup = MTLSizeMake(8, 8, 8)
             let threadsPerGrid = MTLSize(width: widthPrev,
                                          height: heightPrev,
-                                         depth: nbFilters * batchSize)
+                                         depth: nbChannels * batchSize)
             command.dispatchThreads(
                 threadsPerGrid: threadsPerGrid,
                 threadsPerThreadgroup: threadsPerThreadgroup

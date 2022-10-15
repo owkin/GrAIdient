@@ -17,7 +17,7 @@ open class Layer2D: Layer
     public internal(set) var delta: MetalPrivateBuffer<Float>! = nil
     
     /// Number of channels.
-    public let nbFilters: Int
+    public let nbChannels: Int
     /// Height of each channel.
     public let height: Int
     /// Width of each channel.
@@ -63,7 +63,7 @@ open class Layer2D: Layer
     
     private enum Keys: String, CodingKey
     {
-        case nbFilters
+        case nbChannels
         case height
         case width
     }
@@ -73,15 +73,15 @@ open class Layer2D: Layer
     ///
     /// - Parameters:
     ///     - layerPrev: Previous layer that has been queued to the model.
-    ///     - nbFilters: Number of channels.
+    ///     - nbChannels: Number of channels.
     ///     - height: Height of each channel.
     ///     - width: Width of each channel.
     ///     - params: Contextual parameters linking to the model.
     ///
-    public init(layerPrev: Layer?, nbFilters: Int, height: Int, width: Int,
+    public init(layerPrev: Layer?, nbChannels: Int, height: Int, width: Int,
                 params: MAKit.Model.Params)
     {
-        self.nbFilters = nbFilters
+        self.nbChannels = nbChannels
         self.height = height
         self.width = width
         super.init(layerPrev: layerPrev, params: params)
@@ -98,7 +98,7 @@ open class Layer2D: Layer
     public required init(from decoder: Decoder) throws
     {
         let container = try decoder.container(keyedBy: Keys.self)
-        nbFilters = try container.decode(Int.self, forKey: .nbFilters)
+        nbChannels = try container.decode(Int.self, forKey: .nbChannels)
         height = try container.decode(Int.self, forKey: .height)
         width = try container.decode(Int.self, forKey: .width)
         try super.init(from: decoder)
@@ -118,7 +118,7 @@ open class Layer2D: Layer
     open override func encode(to encoder: Encoder) throws
     {
         var container = encoder.container(keyedBy: Keys.self)
-        try container.encode(nbFilters, forKey: .nbFilters)
+        try container.encode(nbChannels, forKey: .nbChannels)
         try container.encode(height, forKey: .height)
         try container.encode(width, forKey: .width)
         try super.encode(to: encoder)
@@ -161,7 +161,7 @@ open class Layer2D: Layer
         if neurons.count == 0
         {
             neurons = []
-            for _ in 0..<nbFilters
+            for _ in 0..<nbChannels
             {
                 neurons.append(GridNeurons(width: width, height: height))
             }
@@ -187,11 +187,11 @@ open class Layer2D: Layer
         if outs == nil
         {
             outs = MetalPrivateBuffer<Float>(
-                batchSize * nbFilters * width * height, deviceID: deviceID
+                batchSize * nbChannels * width * height, deviceID: deviceID
             )
         }
         else if batchSize <= 0 ||
-                batchSize > outs.nbElems / (nbFilters * width * height)
+                batchSize > outs.nbElems / (nbChannels * width * height)
         {
             throw LayerError.BatchSize
         }
@@ -207,11 +207,11 @@ open class Layer2D: Layer
         if delta == nil
         {
             delta = MetalPrivateBuffer<Float>(
-                batchSize * nbFilters * width * height, deviceID: deviceID
+                batchSize * nbChannels * width * height, deviceID: deviceID
             )
         }
         else if batchSize <= 0 ||
-                batchSize > delta.nbElems / (nbFilters * width * height)
+                batchSize > delta.nbElems / (nbChannels * width * height)
         {
             throw LayerError.BatchSize
         }
@@ -245,9 +245,9 @@ open class Layer2D: Layer
         MetalKernel.get.download([self.outs])
         
         let outsPtr = self.outs.shared.buffer
-        for depth in 0..<nbFilters
+        for depth in 0..<nbChannels
         {
-            let offsetStart = (depth + nbFilters * elem) * height
+            let offsetStart = (depth + nbChannels * elem) * height
             
             for i in 0..<height {
             for j in 0..<width
@@ -301,9 +301,9 @@ open class Layer2D: Layer
         MetalKernel.get.download([self.delta])
         
         let deltaPtr = self.delta.shared.buffer
-        for depth in 0..<nbFilters
+        for depth in 0..<nbChannels
         {
-            let offsetStart = (depth + nbFilters * elem) * height
+            let offsetStart = (depth + nbChannels * elem) * height
             
             for i in 0..<height {
             for j in 0..<width

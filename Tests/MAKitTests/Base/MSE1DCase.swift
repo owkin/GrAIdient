@@ -153,7 +153,7 @@ class MSE1DCase: XCTestCase
             {
                 _gtBuffer = MetalSharedBuffer<Float>(
                     lastLayer.nbNeurons * batchSize,
-                    deviceID: DEVICE_ID_DEFAULT
+                    deviceID: DEVICE_ID
                 )
             }
             uploadData(data: gt, buffer: _gtBuffer)
@@ -186,7 +186,7 @@ class MSE1DCase: XCTestCase
             {
                 _gtBuffer = MetalSharedBuffer<Float>(
                     lastLayer.nbNeurons * batchSize,
-                    deviceID: DEVICE_ID_DEFAULT
+                    deviceID: DEVICE_ID
                 )
             }
             uploadData(data: groundTruth, buffer: _gtBuffer)

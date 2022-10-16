@@ -65,7 +65,7 @@ class Input1DMSE1DCase: MSE1DCase
         modelNew.initialize(
             params: optimizerParams,
             phase: .Inference,
-            deviceID: DEVICE_ID_DEFAULT
+            deviceID: DEVICE_ID
         )
         return modelNew
     }

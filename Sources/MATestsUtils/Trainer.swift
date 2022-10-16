@@ -44,7 +44,7 @@ public func setOptimizerParams(
 }
 
 /// GPU default device id where to execute the model.
-public let DEVICE_ID_DEFAULT = 0
+public let DEVICE_ID = 0
 
 /// Error occuring during tests.
 public enum TestError: Error
@@ -81,7 +81,6 @@ public func retryNumeric(nbRetry: Int, _ block: @escaping () throws -> ())
     {
         do {
             try block()
-            iter += 1
             break
         }
         catch TestError.Numeric
@@ -161,7 +160,7 @@ open class GradTrainer: Trainer
         model.initialize(
             params: optimizerParams,
             phase: .Training,
-            deviceID: DEVICE_ID_DEFAULT
+            deviceID: DEVICE_ID
         )
         
         var epoch = 0
@@ -269,7 +268,7 @@ open class FlowTrainer: Trainer
             models[i].initialize(
                 params: optimizerParams,
                 phase: .Training,
-                deviceID: DEVICE_ID_DEFAULT
+                deviceID: DEVICE_ID
             )
         }
     }
@@ -413,7 +412,7 @@ open class FlowReverseTrainer: FlowTrainer
             models[i].initialize(
                 params: optimizerParams,
                 phase: .Training,
-                deviceID: DEVICE_ID_DEFAULT
+                deviceID: DEVICE_ID
             )
         }
     }
@@ -647,7 +646,7 @@ open class LoadTrainer: FlowTrainer
         modelCPU.initialize(
             params: optimizerParams,
             phase: .Inference,
-            deviceID: DEVICE_ID_DEFAULT
+            deviceID: DEVICE_ID
         )
         (inputs, batchSize) = setData(inputs, modelCPU)
         modelCPU.updateKernel(batchSize: batchSize)
@@ -660,7 +659,7 @@ open class LoadTrainer: FlowTrainer
         modelGPU.initialize(
             params: optimizerParams,
             phase: .Inference,
-            deviceID: DEVICE_ID_DEFAULT
+            deviceID: DEVICE_ID
         )
         (inputs, batchSize) = setData(inputs, modelGPU)
         modelGPU.updateKernel(batchSize: batchSize)
@@ -844,7 +843,7 @@ open class NormTrainer: Trainer
         model.initialize(
             params: optimizerParams,
             phase: .Training,
-            deviceID: DEVICE_ID_DEFAULT
+            deviceID: DEVICE_ID
         )
         
         var epoch = 0

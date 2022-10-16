@@ -175,7 +175,7 @@ class LinearError1DCase: XCTestCase
             {
                 _gtBuffer = MetalSharedBuffer<Float>(
                     lastLayer.nbNeurons * batchSize,
-                    deviceID: DEVICE_ID_DEFAULT
+                    deviceID: DEVICE_ID
                 )
             }
             uploadData(data: groundTruth, buffer: _gtBuffer)

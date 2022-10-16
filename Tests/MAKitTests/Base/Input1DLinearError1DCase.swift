@@ -62,7 +62,7 @@ class Input1DLinearError1DCase: LinearError1DCase
         modelNew.initialize(
             params: optimizerParams,
             phase: .Inference,
-            deviceID: DEVICE_ID_DEFAULT
+            deviceID: DEVICE_ID
         )
         return modelNew
     }

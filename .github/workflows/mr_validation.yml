@@ -21,6 +21,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+      - run: |
+          echo COUCOU
+          echo $CONDA
+          echo COUCOU
       - uses: conda-incubator/setup-miniconda@v2
         with:
           activate-environment: makit-ci

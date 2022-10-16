@@ -26,7 +26,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Setup Conda environment
         run: |
-          conda env create --name test python=3.7
+          conda create --name test python=3.7
           conda env list
 
       - name: Execute MLFlow experiment

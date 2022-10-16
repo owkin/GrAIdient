@@ -3,7 +3,7 @@ name: Swift
 on: [push]
 
 jobs:
-  Tests:
+  MAKit:
     runs-on: self-hosted
 
     steps:
@@ -15,3 +15,18 @@ jobs:
         run: swift build
       - name: Test
         run: swift test
+        
+  MAData:
+    runs-on: self-hosted
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          activate-environment: makit-ci
+          python-version: 3.7
+      - run: |
+          conda info
+          conda list
+          conda config --show-sources
+          conda config --show

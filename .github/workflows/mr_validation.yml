@@ -27,6 +27,7 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         env:
           CONDA: ~/opt/anaconda3
+          PATH: "$CONDA/condabin:$PATH"
         with:
           activate-environment: makit-ci
           python-version: 3.7

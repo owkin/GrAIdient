@@ -21,15 +21,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - uses: conda-incubator/setup-miniconda@v2
-        env:
-          CONDA: ~/opt/miniconda3
-        with:
-          activate-environment: makit-ci
-          python-version: 3.7
-          auto-activate-base: false
-      - run: |
-          conda info
-          conda list
-          conda config --show-sources
-          conda config --show
+      - uses: s-weigand/setup-conda@v1
+      - run: conda --version
+      - run: which python

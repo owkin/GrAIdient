@@ -21,11 +21,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - run: |
-          echo COUCOU
-          echo $CONDA
-          echo COUCOU
       - uses: conda-incubator/setup-miniconda@v2
+        env:
+          CONDA: ~/opt/anaconda3
         with:
           activate-environment: makit-ci
           python-version: 3.7

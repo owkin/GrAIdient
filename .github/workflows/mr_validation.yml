@@ -27,7 +27,6 @@ jobs:
         with:
           activate-environment: makit-ci
           python-version: 3.7
-          miniconda-version: "latest"
           auto-activate-base: false
       - run: |
           conda info

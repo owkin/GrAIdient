@@ -226,9 +226,10 @@ class Input1DLinearError1DCase: LinearError1DCase
     ///     - nbRetry: The maximum number we can retry the test.
     ///     - diffThreshold: The threshold above which the relative difference is too high.
     ///
-    func run(_ trainer: InferenceTrainer,
-             nbRetry: Int = NB_RETRY,
-             diffThreshold: Double = 0.001)
+    func run(
+        _ trainer: InferenceTrainer,
+        nbRetry: Int = NB_RETRY,
+        diffThreshold: Double = 0.001)
     {
         retryNumeric(nbRetry: nbRetry)
         {
@@ -258,9 +259,10 @@ class Input1DLinearError1DCase: LinearError1DCase
     ///     - nbRetry: The maximum number we can retry the test.
     ///     - diffThreshold: The threshold above which the relative difference is too high.
     ///
-    func run(_ trainer: LoadTrainer,
-             nbRetry: Int = NB_RETRY,
-             diffThreshold: Double = 0.001)
+    func run(
+        _ trainer: LoadTrainer,
+        nbRetry: Int = NB_RETRY,
+        diffThreshold: Double = 0.001)
     {
         retryNumeric(nbRetry: nbRetry)
         {

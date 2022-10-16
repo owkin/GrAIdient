@@ -6,7 +6,7 @@
 //
 
 import MAKit
-import MAKitTestsUtils
+import MATestsUtils
 
 class OptimizerTests: Input1DMSE1DCase
 {

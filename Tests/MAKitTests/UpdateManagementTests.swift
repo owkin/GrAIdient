@@ -7,7 +7,7 @@
 
 import XCTest
 import MAKit
-import MAKitTestsUtils
+import MATestsUtils
 
 class UpdateManagementTests: XCTestCase
 {

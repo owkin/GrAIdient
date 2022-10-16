@@ -1,6 +1,6 @@
 //
 // Trainer.swift
-// MAKitTestsUtils
+// MATestsUtils
 //
 // Created by Jean-François Reboud on 10/10/2022.
 //

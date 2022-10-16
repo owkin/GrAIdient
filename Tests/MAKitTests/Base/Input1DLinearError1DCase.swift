@@ -7,7 +7,7 @@
 
 import XCTest
 import MAKit
-import MAKitTestsUtils
+import MATestsUtils
 
 ///
 /// A class that will test a model with a structural hypothesis:

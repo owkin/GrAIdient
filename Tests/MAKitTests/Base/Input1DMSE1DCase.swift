@@ -7,7 +7,7 @@
 
 import XCTest
 import MAKit
-import MAKitTestsUtils
+import MATestsUtils
 
 let NB_RETRY = 3
 

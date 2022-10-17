@@ -23,23 +23,17 @@ jobs:
         shell: bash -l {0}
         
     steps:
-      - uses: actions/checkout@v3
-      - name: Setup Conda Environment
-        run: |
-          conda create --name makit-test python=3.7
-          conda env list
-
-      - name: Install Python Library
-        working-directory: Tests/MADataTests/Base
-        run: |
-          conda activate makit-test
-          pip install .
-          
-      - name: Test
-        run: swift test --filter MADataTests
-      
-      - name: Remove Conda Environment
-        if: always()
-        run: |
-          conda deactivate
-          conda env remove --name makit-test
+       - uses: actions/checkout@v3
+       - uses: conda-incubator/setup-miniconda@v2
+         env:
+           CONDA: ~/opt/miniconda3
+           PATH: ~/opt/miniconda3/condabin
+         with:
+           activate-environment: makit-ci
+           python-version: 3.7
+           auto-activate-base: false
+       - run: |
+           conda info
+           conda list
+           conda config --show-sources
+           conda config --show

@@ -1,12 +1,11 @@
 //
 // CIFARTests.swift
-// MADataTests
+// MAExamples
 //
 // Created by Jean-François Reboud on 16/10/2022.
 //
 
 import XCTest
-import Foundation
 
 let PYTHON_LIB =
     FileManager.default.homeDirectoryForCurrentUser.path +

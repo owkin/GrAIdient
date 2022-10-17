@@ -41,7 +41,7 @@ let package = Package(
         ),
         .testTarget(
             name: "MAExamples",
-            dependencies: ["PythonKit"]
+            dependencies: ["MAKit", "PythonKit"]
         ),
     ]
 )

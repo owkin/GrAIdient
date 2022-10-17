@@ -1,6 +1,6 @@
 //
 // DataSampler.swift
-// MAData
+// MAExamples
 //
 // Created by Jean-François Reboud on 16/10/2022.
 //

@@ -10,7 +10,7 @@ import MATestsUtils
 
 class OptimizerTests: Input1DMSE1DCase
 {
-    override func setUpWithError() throws
+    override func setUp()
     {
         batchSize = 5
         MAKit.Opti.GPU = true

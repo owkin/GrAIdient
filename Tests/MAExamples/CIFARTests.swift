@@ -12,34 +12,34 @@ let PYTHON_LIB =
     FileManager.default.homeDirectoryForCurrentUser.path +
     "/opt/anaconda3/envs/maexamples/lib/libpython3.7m.dylib"
 
-func getPythonLib() -> String
+func setPythonLib()
 {
-    let task = Process()
-    task.launchPath = "/usr/bin/which"
-    task.arguments = ["python"]
-    
-    let pipe = Pipe()
-    task.standardOutput = pipe
-    task.launch()
-    task.waitUntilExit()
-    
-    let data = pipe.fileHandleForReading.readDataToEndOfFile()
-    let output = String(data: data, encoding: String.Encoding.utf8)!
-    
-    print("COUCOU")
-    print(output)
-    
-    if output.count > 0
+    if ProcessInfo.processInfo.environment["PYTHON_LIBRARY"] == nil
     {
-        var url = URL(fileURLWithPath: output)
-        url = url.deletingLastPathComponent().deletingLastPathComponent()
-        url = url.appendingPathComponent("lib")
-        url = url.appendingPathComponent("libpython3.7m.dylib")
-        return url.path
-    }
-    else
-    {
-        return PYTHON_LIB
+        let task = Process()
+        task.launchPath = "/usr/bin/which"
+        task.arguments = ["python"]
+        
+        let pipe = Pipe()
+        task.standardOutput = pipe
+        task.launch()
+        task.waitUntilExit()
+        
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        let output = String(data: data, encoding: String.Encoding.utf8)!
+        
+        if output.count > 0
+        {
+            var url = URL(fileURLWithPath: output)
+            url = url.deletingLastPathComponent().deletingLastPathComponent()
+            url = url.appendingPathComponent("lib")
+            url = url.appendingPathComponent("libpython3.7m.dylib")
+            setenv("PYTHON_LIBRARY", url.path, 1)
+        }
+        else
+        {
+            setenv("PYTHON_LIBRARY", PYTHON_LIB, 1)
+        }
     }
 }
 
@@ -50,18 +50,24 @@ final class CIFARTests: XCTestCase
     let _batchSize = 256
     let _size = 32
     
+    override func setUp()
+    {
+        setPythonLib()
+    }
+    
     /*func testDumpLoad()
     {
-        CIFAR.dumpDataset(pythonLibrary: _pythonLibrary,
-                          datasetOutputDir: _datasetOutputDir,
-                          label: 0,
-                          size: _size)
+        CIFAR.dumpDataset(
+            datasetDir: _outputDir,
+            label: 0,
+            size: _size
+        )
         _ = CIFAR.loadDataset(datasetDir: _datasetOutputDir, size: _size)
     }
     
     func testSamples()
     {
-        let cifar = CIFAR.loadDataset(datasetDir: _datasetOutputDir,
+        let cifar = CIFAR.loadDataset(datasetDir: _outputDir,
                                       size: _size)
         cifar.initSamples(batchSize: _batchSize)
         
@@ -92,7 +98,7 @@ final class CIFARTests: XCTestCase
     
     func testShuffleSamples()
     {
-        let cifar = CIFAR.loadDataset(datasetDir: _datasetOutputDir,
+        let cifar = CIFAR.loadDataset(datasetDir: _outputDir,
                                       size: _size)
         cifar.initSamples(batchSize: _batchSize)
         
@@ -123,8 +129,7 @@ final class CIFARTests: XCTestCase
     func testDumpTest()
     {
         CIFAR.dumpTest(
-            pythonLibrary: getPythonLib(),
-            datasetOutputDir: _outputDir,
+            datasetDir: _outputDir,
             label: 0,
             size: _size
         )

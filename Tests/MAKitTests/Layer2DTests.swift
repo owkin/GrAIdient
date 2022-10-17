@@ -14,7 +14,7 @@ import MATestsUtils
 // -----------------------------------------------------------------------------
 class Layer2DGradTests: Input2DMSE1DCase
 {
-    override func setUpWithError() throws
+    override func setUp()
     {
         try! super.setUpWithError()
         
@@ -738,7 +738,7 @@ class Layer2DFlowTests: Input2DMSE1DCase
 // -----------------------------------------------------------------------------
 class Layer2DFlowResetTests: Layer2DFlowTests
 {
-    override func setUpWithError() throws
+    override func setUp()
     {
         try! super.setUpWithError()
         
@@ -910,7 +910,7 @@ class Layer2DFlowResetTests: Layer2DFlowTests
 // -----------------------------------------------------------------------------
 class Layer2DFlowReverseTests: Layer2DFlowTests
 {
-    override func setUpWithError() throws
+    override func setUp()
     {
         try! super.setUpWithError()
         
@@ -1082,7 +1082,7 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
 // -----------------------------------------------------------------------------
 class Layer2DInferenceTests: Layer2DFlowTests
 {
-    override func setUpWithError() throws
+    override func setUp()
     {
         try! super.setUpWithError()
         optimizerParams.nbLoops = 2

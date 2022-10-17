@@ -12,7 +12,7 @@ class OptimizerVariablesTests: XCTestCase
 {
     var optimizerParams = MAKit.Optimizer.Params()
     
-    override func setUpWithError() throws
+    override func setUp()
     {
         let firstEpoch = 10
         let secondEpoch = 20

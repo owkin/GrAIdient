@@ -42,7 +42,12 @@ jobs:
           $pip install -e .
           
       - name: Test
-        run: swift test --filter MAExamples
+        run: |
+          bin="$(dirname `which python`)"
+          lib="$(dirname $bin)"
+          dylib="$lib/lib/libpython3.7m.dylib"
+          export PYTHON_LIBRARY=$dylib
+          swift test --filter MAExamples
       
       - name: Remove Conda Environment
         if: always()

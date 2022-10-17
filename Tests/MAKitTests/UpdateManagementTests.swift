@@ -13,7 +13,7 @@ class UpdateManagementTests: XCTestCase
 {
     var optimizerParams = MAKit.Optimizer.Params()
     
-    override func setUpWithError() throws
+    override func setUp()
     {
         MAKit.Opti.GPU = true
         

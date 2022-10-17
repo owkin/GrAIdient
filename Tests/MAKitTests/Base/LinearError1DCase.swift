@@ -24,7 +24,7 @@ class LinearError1DCase: XCTestCase
     var _gtBuffer: MetalSharedBuffer<Float>! = nil
     
     /// Systematic call before test begins.
-    override func setUpWithError() throws
+    override func setUp()
     {
         batchSize = 5
         MAKit.Opti.GPU = true

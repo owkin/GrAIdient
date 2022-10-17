@@ -14,7 +14,7 @@ import MATestsUtils
 // -----------------------------------------------------------------------------
 class Activation2DGradTests: Input2DMSE1DCase
 {
-    override func setUpWithError() throws
+    override func setUp()
     {
         try! super.setUpWithError()
         

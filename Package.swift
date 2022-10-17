@@ -12,7 +12,7 @@ let package = Package(
         // Products define the executables and libraries a package produces, and make them visible to other packages.
         .library(
             name: "MAKit",
-            targets: ["MAKit", "MAData", "MATestsUtils"]
+            targets: ["MAKit", "MATestsUtils"]
         ),
     ],
     dependencies: [
@@ -32,10 +32,6 @@ let package = Package(
             ]
         ),
         .target(
-            name: "MAData",
-            dependencies: []
-        ),
-        .target(
             name: "MATestsUtils",
             dependencies: ["MAKit"]
         ),
@@ -44,8 +40,8 @@ let package = Package(
             dependencies: ["MAKit", "MATestsUtils"]
         ),
         .testTarget(
-            name: "MADataTests",
-            dependencies: ["MAData", "PythonKit"]
+            name: "MAExamples",
+            dependencies: ["PythonKit"]
         ),
     ]
 )

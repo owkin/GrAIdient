@@ -8,7 +8,6 @@
 import Foundation
 import Darwin
 import PythonKit
-import MAData
 
 public class CIFAR: DataSamplerImpl<UInt8>
 {
@@ -38,19 +37,17 @@ public class CIFAR: DataSamplerImpl<UInt8>
     
     public static func dumpDataset(
         pythonLibrary: String,
-        dataInputDir: String,
         datasetOutputDir: String,
         label: Int,
         size: Int)
     {
         setenv("PYTHON_LIBRARY", pythonLibrary, 1)
-        let motionData = Python.import("data")
+        let cifar = Python.import("cifar")
         
         var features = [UInt8]()
         for dataFile in 1...5
         {
-            let data = motionData.load_CIFAR_data(
-                dataInputDir, dataFile, label, size)
+            let data = cifar.load_CIFAR_data(dataFile, label, size)
             features += Array<UInt8>(data)!
         }
         
@@ -62,16 +59,15 @@ public class CIFAR: DataSamplerImpl<UInt8>
     
     public static func dumpTest(
         pythonLibrary: String,
-        dataInputDir: String,
         datasetOutputDir: String,
         label: Int,
         size: Int)
     {
         setenv("PYTHON_LIBRARY", pythonLibrary, 1)
-        let motionData = Python.import("data")
+        let cifar = Python.import("cifar")
         
         var features = [UInt8]()
-        let data = motionData.load_CIFAR_test(dataInputDir, label, size)
+        let data = cifar.load_CIFAR_test(label, size)
         features += Array<UInt8>(data)!
         
         let featuresPath = datasetOutputDir + "/features"

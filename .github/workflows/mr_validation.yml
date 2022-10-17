@@ -16,7 +16,7 @@ jobs:
       - name: Test
         run: swift test --filter MAKitTests
         
-  MAData:
+  MAExamples:
     runs-on: self-hosted
     defaults:
       run:
@@ -26,20 +26,21 @@ jobs:
       - uses: actions/checkout@v3
       - name: Setup Conda Environment
         run: |
-          conda create --name makit-test python=3.7
+          conda create --name maexamples-ci python=3.7
           conda env list
 
       - name: Install Python Library
-        working-directory: Tests/MADataTests/Base
+        working-directory: Tests/MAExamples/Base
         run: |
-          conda activate makit-test
-          ~/opt/anaconda3/envs/makit-test/bin/pip install .
+          conda activate maexamples-ci
+          which python
+          ~/opt/anaconda3/envs/makit-test/bin/pip install -e .
           
       - name: Test
-        run: swift test --filter MADataTests
+        run: swift test --filter MAExamples
       
       - name: Remove Conda Environment
         if: always()
         run: |
           conda deactivate
-          conda env remove --name makit-test
+          conda env remove --name maexamples-ci

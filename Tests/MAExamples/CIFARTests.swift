@@ -12,9 +12,7 @@ final class CIFARTests: XCTestCase
     static let _homeDir = FileManager.default.homeDirectoryForCurrentUser
     
     let _pythonLibrary =
-        "\(_homeDir.path)/opt/anaconda3/envs/makit-test/lib/libpython3.7m.dylib"
-    let _dataInputDir =
-        "\(_homeDir.path)/DocumentsNonSync/Projet/Python/data/CIFAR"
+        "\(_homeDir.path)/opt/anaconda3/envs/maexamples-ci/lib/libpython3.7m.dylib"
     let _datasetOutputDir = "\(_homeDir.path)/DocumentsNonSync/Projet/Output"
     
     let _batchSize = 256
@@ -23,7 +21,6 @@ final class CIFARTests: XCTestCase
     /*func testDumpLoad()
     {
         CIFAR.dumpDataset(pythonLibrary: _pythonLibrary,
-                          dataInputDir: _dataInputDir,
                           datasetOutputDir: _datasetOutputDir,
                           label: 0,
                           size: _size)
@@ -94,7 +91,6 @@ final class CIFARTests: XCTestCase
     func testDumpTest()
     {
         CIFAR.dumpTest(pythonLibrary: _pythonLibrary,
-                       dataInputDir: _dataInputDir,
                        datasetOutputDir: _datasetOutputDir,
                        label: 0,
                        size: _size)

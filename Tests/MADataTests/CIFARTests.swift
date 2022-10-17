@@ -12,7 +12,7 @@ final class CIFARTests: XCTestCase
     static let _homeDir = FileManager.default.homeDirectoryForCurrentUser
     
     let _pythonLibrary =
-        "\(_homeDir.path)/opt/miniconda3/envs/makit-test/lib/libpython3.7m.dylib"
+        "\(_homeDir.path)/opt/anaconda3/envs/makit-test/lib/libpython3.7m.dylib"
     let _dataInputDir =
         "\(_homeDir.path)/DocumentsNonSync/Projet/Python/data/CIFAR"
     let _datasetOutputDir = "\(_homeDir.path)/DocumentsNonSync/Projet/Output"

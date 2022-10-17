@@ -42,13 +42,6 @@ jobs:
       - name: Test
         run: |
           conda activate maexamples-ci
-          conda env list
-          echo COUCOU
-          which python
-          bin="$(dirname `which python`)"
-          lib="$(dirname $bin)"
-          dylib="$lib/lib/libpython3.7m.dylib"
-          export PYTHON_LIBRARY=$dylib
           swift test --filter MAExamples
       
       - name: Remove Conda Environment

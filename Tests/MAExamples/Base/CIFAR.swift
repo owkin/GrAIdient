@@ -34,55 +34,56 @@ public class CIFAR: DataSamplerImpl<UInt8>
         return CIFAR(copyFrom: self) as! Self
     }
     
-    public static func dumpDataset(
-        datasetDir: String,
+    public static func dumpTrain(
+        datasetPath: String,
         label: Int,
         size: Int)
     {
         let cifar = Python.import("cifar")
         
-        var features = [UInt8]()
+        var dataset = [UInt8]()
         for dataFile in 1...5
         {
             let data = cifar.load_CIFAR_data(dataFile, label, size)
-            features += Array<UInt8>(data)!
+            dataset += Array<UInt8>(data)!
         }
         
-        let featuresPath = datasetDir + "/features"
-        let featuresData = Data(bytes: &features,
-                            count: features.count * MemoryLayout<UInt8>.stride)
-        try! featuresData.write(to: URL(fileURLWithPath: featuresPath))
+        let datasetData = Data(
+            bytes: &dataset,
+            count: dataset.count * MemoryLayout<UInt8>.stride
+        )
+        try! datasetData.write(to: URL(fileURLWithPath: datasetPath))
     }
     
     public static func dumpTest(
-        datasetDir: String,
+        datasetPath: String,
         label: Int,
         size: Int)
     {
         let cifar = Python.import("cifar")
         
-        var features = [UInt8]()
+        var dataset = [UInt8]()
         let data = cifar.load_CIFAR_test(label, size)
-        features += Array<UInt8>(data)!
+        dataset += Array<UInt8>(data)!
         
-        let featuresPath = datasetDir + "/features"
-        let featuresData = Data(bytes: &features,
-                            count: features.count * MemoryLayout<UInt8>.stride)
-        try! featuresData.write(to: URL(fileURLWithPath: featuresPath))
+        let datasetData = Data(
+            bytes: &dataset,
+            count: dataset.count * MemoryLayout<UInt8>.stride
+        )
+        try! datasetData.write(to: URL(fileURLWithPath: datasetPath))
     }
     
-    public static func loadDataset(datasetDir: String, size: Int) -> CIFAR
+    public static func loadDataset(datasetPath: String, size: Int) -> CIFAR
     {
-        let featuresData = try! Data(contentsOf:
-            URL(fileURLWithPath: datasetDir + "/features"))
-        
-        let features: [UInt8] = featuresData.withUnsafeBytes {
+        let datasetData = try! Data(
+            contentsOf: URL(fileURLWithPath: datasetPath)
+        )
+        let dataset: [UInt8] = datasetData.withUnsafeBytes {
             (pointer: UnsafeRawBufferPointer) -> [UInt8] in
             let buffer = pointer.bindMemory(to: UInt8.self)
             return buffer.map { UInt8($0) }
         }
-        
-        return CIFAR(data: features, size: size)
+        return CIFAR(data: dataset, size: size)
     }
 }
 

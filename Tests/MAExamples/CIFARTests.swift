@@ -55,20 +55,27 @@ final class CIFARTests: XCTestCase
         setPythonLib()
     }
     
-    /*func testDumpLoad()
+    func testDumpLoad()
     {
-        CIFAR.dumpDataset(
-            datasetDir: _outputDir,
+        let datasetPath = _outputDir + "/datasetTrain"
+        CIFAR.dumpTrain(
+            datasetPath: datasetPath,
             label: 0,
             size: _size
         )
-        _ = CIFAR.loadDataset(datasetDir: _datasetOutputDir, size: _size)
+        _ = CIFAR.loadDataset(
+            datasetPath: datasetPath,
+            size: _size
+        )
     }
     
     func testSamples()
     {
-        let cifar = CIFAR.loadDataset(datasetDir: _outputDir,
-                                      size: _size)
+        let datasetPath = _outputDir + "/datasetTrain"
+        let cifar = CIFAR.loadDataset(
+            datasetPath: datasetPath,
+            size: _size
+        )
         cifar.initSamples(batchSize: _batchSize)
         
         var nbLoops = 0
@@ -98,8 +105,11 @@ final class CIFARTests: XCTestCase
     
     func testShuffleSamples()
     {
-        let cifar = CIFAR.loadDataset(datasetDir: _outputDir,
-                                      size: _size)
+        let datasetPath = _outputDir + "/datasetTrain"
+        let cifar = CIFAR.loadDataset(
+            datasetPath: datasetPath,
+            size: _size
+        )
         cifar.initSamples(batchSize: _batchSize)
         
         var nbLoops = 0
@@ -124,15 +134,19 @@ final class CIFARTests: XCTestCase
         }
         print("Number of loops per epoch: " + String(nbLoops))
         XCTAssert(nbLoops == cifar.nbLoops)
-    }*/
+    }
     
     func testDumpTest()
     {
+        let datasetPath = _outputDir + "/datasetTest"
         CIFAR.dumpTest(
-            datasetDir: _outputDir,
+            datasetPath: datasetPath,
             label: 0,
             size: _size
         )
-        _ = CIFAR.loadDataset(datasetDir: _outputDir, size: _size)
+        _ = CIFAR.loadDataset(
+            datasetPath: datasetPath,
+            size: _size
+        )
     }
 }

@@ -14,7 +14,7 @@ jobs:
       - name: Build
         run: swift build
       - name: Test
-        run: swift test
+        run: swift test --filter MAKitTests
         
   MAData:
     runs-on: self-hosted
@@ -24,16 +24,22 @@ jobs:
         
     steps:
       - uses: actions/checkout@v3
-      - name: Setup Conda environment
+      - name: Setup Conda Environment
         run: |
-          conda create --name test python=3.7
+          conda create --name makit-test python=3.7
           conda env list
 
-      - name: Execute MLFlow experiment
+      - name: Install Python Library
+        working-directory: Tests/MADataTests/Base
         run: |
-          conda activate test
+          conda activate makit-test
+          pip install .
+          
+      - name: Test
+        run: swift test --filter MADataTests
       
-      - name: Remove Conda environment
+      - name: Remove Conda Environment
+        if: always()
         run: |
           conda deactivate
-          conda env remove --name test
+          conda env remove --name makit-test

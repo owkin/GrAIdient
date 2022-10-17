@@ -16,7 +16,7 @@ class LinearError1DGradTests: Input1DLinearError1DCase
 {
     override func setUp()
     {
-        try! super.setUpWithError()
+        super.setUp()
         MAKit.Loop.gradientChecking = true
     }
     
@@ -198,7 +198,7 @@ class LinearError1DFlowResetTests: LinearError1DFlowTests
 {
     override func setUp()
     {
-        try! super.setUpWithError()
+        super.setUp()
         
         setOptimizerParams(params: &optimizerParams,
                            optimizerClass: .Adam)
@@ -246,7 +246,7 @@ class LinearError1DFlowReverseTests: LinearError1DFlowTests
 {
     override func setUp()
     {
-        try! super.setUpWithError()
+        super.setUp()
         
         setOptimizerParams(params: &optimizerParams,
                            optimizerClass: .Adam)

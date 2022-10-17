@@ -16,7 +16,7 @@ class Activation1DGradTests: Input1DMSE1DCase
 {
     override func setUp()
     {
-        try! super.setUpWithError()
+        super.setUp()
         MAKit.Loop.gradientChecking = true
     }
     

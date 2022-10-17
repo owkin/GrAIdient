@@ -16,7 +16,7 @@ class Layer2DGradTests: Input2DMSE1DCase
 {
     override func setUp()
     {
-        try! super.setUpWithError()
+        super.setUp()
         
         optimizerParams.nbLoops = 1
         MAKit.Loop.gradientChecking = true
@@ -740,7 +740,7 @@ class Layer2DFlowResetTests: Layer2DFlowTests
 {
     override func setUp()
     {
-        try! super.setUpWithError()
+        super.setUp()
         
         setOptimizerParams(params: &optimizerParams,
                            optimizerClass: .Adam)
@@ -912,7 +912,7 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
 {
     override func setUp()
     {
-        try! super.setUpWithError()
+        super.setUp()
         
         setOptimizerParams(params: &optimizerParams,
                            optimizerClass: .Adam)
@@ -1084,7 +1084,7 @@ class Layer2DInferenceTests: Layer2DFlowTests
 {
     override func setUp()
     {
-        try! super.setUpWithError()
+        super.setUp()
         optimizerParams.nbLoops = 2
     }
     

@@ -33,7 +33,7 @@ jobs:
         working-directory: Tests/MADataTests/Base
         run: |
           conda activate makit-test
-          ~/opt/anaconda/envs/makit-test/bin/pip install .
+          ~/opt/anaconda3/envs/makit-test/bin/pip install .
           
       - name: Test
         run: swift test --filter MADataTests

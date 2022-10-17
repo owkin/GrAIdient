@@ -6,14 +6,43 @@
 //
 
 import XCTest
+import Foundation
+
+let PYTHON_LIB =
+    FileManager.default.homeDirectoryForCurrentUser.path +
+    "/opt/anaconda3/envs/maexamples/lib/libpython3.7m.dylib"
+
+func getPythonLib() -> String
+{
+    let task = Process()
+    task.launchPath = "/usr/bin/which"
+    task.arguments = ["python"]
+    
+    let pipe = Pipe()
+    task.standardOutput = pipe
+    task.launch()
+    task.waitUntilExit()
+    
+    let data = pipe.fileHandleForReading.readDataToEndOfFile()
+    let output = String(data: data, encoding: String.Encoding.utf8)!
+    
+    if output.count > 0
+    {
+        var url = URL(fileURLWithPath: output)
+        url = url.deletingLastPathComponent().deletingLastPathComponent()
+        url = url.appendingPathComponent("lib")
+        url = url.appendingPathComponent("libpython3.7m.dylib")
+        return url.path
+    }
+    else
+    {
+        return PYTHON_LIB
+    }
+}
 
 final class CIFARTests: XCTestCase
 {
-    static let _homeDir = FileManager.default.homeDirectoryForCurrentUser
-    
-    let _pythonLibrary =
-        "\(_homeDir.path)/opt/anaconda3/envs/maexamples-ci/lib/libpython3.7m.dylib"
-    let _datasetOutputDir = "\(_homeDir.path)/DocumentsNonSync/Projet/Output"
+    let _outputDir = NSTemporaryDirectory()
     
     let _batchSize = 256
     let _size = 32
@@ -90,10 +119,12 @@ final class CIFARTests: XCTestCase
     
     func testDumpTest()
     {
-        CIFAR.dumpTest(pythonLibrary: _pythonLibrary,
-                       datasetOutputDir: _datasetOutputDir,
-                       label: 0,
-                       size: _size)
-        _ = CIFAR.loadDataset(datasetDir: _datasetOutputDir, size: _size)
+        CIFAR.dumpTest(
+            pythonLibrary: getPythonLib(),
+            datasetOutputDir: _outputDir,
+            label: 0,
+            size: _size
+        )
+        _ = CIFAR.loadDataset(datasetDir: _outputDir, size: _size)
     }
 }

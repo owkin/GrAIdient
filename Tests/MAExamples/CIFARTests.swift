@@ -10,7 +10,7 @@ import Foundation
 
 let PYTHON_LIB =
     FileManager.default.homeDirectoryForCurrentUser.path +
-    "/opt/anaconda3/envs/maexamples-cihum/lib/libpython3.7m.dylib"
+    "/opt/anaconda3/envs/maexamples/lib/libpython3.7m.dylib"
 
 func setPythonLib()
 {

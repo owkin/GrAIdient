@@ -59,15 +59,6 @@ public class CIFAR: DataSamplerImpl<UInt8>
         label: Int,
         size: Int)
     {
-        if ProcessInfo.processInfo.environment["PYTHON_LIBRARY"] == nil
-        {
-            fatalError("NOOOOOOOO!")
-        }
-        else
-        {
-            fatalError("HUM " + ProcessInfo.processInfo.environment["PYTHON_LIBRARY"]!)
-        }
-        
         let cifar = Python.import("cifar")
         
         var features = [UInt8]()

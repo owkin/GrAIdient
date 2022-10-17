@@ -54,7 +54,6 @@ def load_CIFAR_test(
     size: int
 ) -> List[int]:
     data_dir = Path(__file__).parent.parent.resolve() / "data"
-    print(data_dir)
 
     with open(f"{data_dir}/test_batch", 'rb') as fo:
         dict = pickle.load(fo, encoding='bytes')

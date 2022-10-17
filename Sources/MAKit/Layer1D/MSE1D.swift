@@ -144,6 +144,45 @@ public class MSE1D: LayerOutput1D
     ///
     /// Throw an error if batch size or ground truth are incoherent.
     ///
+    /// - Parameter groundTruth: The ground truth.
+    /// - Returns: The loss value.
+    ///
+    public func getLossGPU(_ groundTruth: [[Double]]) throws -> Float
+    {
+        let batchSize = groundTruth.count
+        if self.groundTruth == nil
+        {
+            self.groundTruth = MetalSharedBuffer<Float>(
+                batchSize * nbNeurons,
+                deviceID: deviceID
+            )
+        }
+        
+        let bufferPtr = self.groundTruth.buffer
+        for (i, dataI) in groundTruth.enumerated()
+        {
+            if dataI.count != nbNeurons
+            {
+                throw LayerError.DataSize
+            }
+            for (j, dataIJ) in dataI.enumerated()
+            {
+                bufferPtr[j + i * nbNeurons] = Float(dataIJ)
+            }
+        }
+        MetalKernel.get.upload([self.groundTruth])
+        
+        return try getLossGPU(
+            self.groundTruth,
+            batchSize: groundTruth.count
+        )
+    }
+    
+    ///
+    /// Get loss in the GPU execution context.
+    ///
+    /// Throw an error if batch size or ground truth are incoherent.
+    ///
     /// - Parameters:
     ///     -  groundTruth: The ground truth.
     ///     - batchSize: The batch size of data.
@@ -240,6 +279,44 @@ public class MSE1D: LayerOutput1D
             }
             propagateDirty()
         }
+    }
+    
+    ///
+    /// Apply the gradient in the GPU execution context.
+    ///
+    /// Throw an error if batch size or ground truth are incoherent.
+    ///
+    /// - Parameter groundTruth: The ground truth.
+    ///
+    public func applyGradientGPU(_ groundTruth: [[Double]]) throws
+    {
+        let batchSize = groundTruth.count
+        if self.groundTruth == nil
+        {
+            self.groundTruth = MetalSharedBuffer<Float>(
+                batchSize * nbNeurons,
+                deviceID: deviceID
+            )
+        }
+        
+        let bufferPtr = self.groundTruth.buffer
+        for (i, dataI) in groundTruth.enumerated()
+        {
+            if dataI.count != nbNeurons
+            {
+                throw LayerError.DataSize
+            }
+            for (j, dataIJ) in dataI.enumerated()
+            {
+                bufferPtr[j + i * nbNeurons] = Float(dataIJ)
+            }
+        }
+        MetalKernel.get.upload([self.groundTruth])
+        
+        try applyGradientGPU(
+            self.groundTruth,
+            batchSize: groundTruth.count
+        )
     }
     
     ///

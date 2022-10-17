@@ -13,6 +13,9 @@ open class LayerOutput1D: Layer1D
     /// Coefficient to be applied to the loss compuptation.
     public var coeff: Double = 1.0
     
+    /// Ground truth buffer in the GPU execution context.
+    public internal(set) var groundTruth: MetalSharedBuffer<Float>! = nil
+    
     /// Loss buffer in the GPU execution context.
     public internal(set) var loss: MetalSharedBuffer<Float>! = nil
     
@@ -77,6 +80,7 @@ open class LayerOutput1D: Layer1D
     open override func resetKernelGPU()
     {
         super.resetKernelGPU()
+        groundTruth = nil
         loss = nil
     }
     

@@ -65,20 +65,15 @@ public class CIFAR: DataSamplerImpl<UInt8>
     {
         setenv("PYTHON_LIBRARY", pythonLibrary, 1)
         let cifar = Python.import("cifar")
-        let test = String(cifar.test_dir())!
-        if test.count == 0
-        {
-            fatalError("NOOOOOOOO!")
-        }
         
-        /*var features = [UInt8]()
+        var features = [UInt8]()
         let data = cifar.load_CIFAR_test(label, size)
         features += Array<UInt8>(data)!
         
         let featuresPath = datasetOutputDir + "/features"
         let featuresData = Data(bytes: &features,
                             count: features.count * MemoryLayout<UInt8>.stride)
-        try! featuresData.write(to: URL(fileURLWithPath: featuresPath))*/
+        try! featuresData.write(to: URL(fileURLWithPath: featuresPath))
     }
     
     public static func loadDataset(datasetDir: String, size: Int) -> CIFAR

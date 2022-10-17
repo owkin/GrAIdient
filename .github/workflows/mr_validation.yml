@@ -41,6 +41,7 @@ jobs:
           
       - name: Test
         run: |
+          conda activate maexamples-ci
           conda env list
           echo COUCOU
           which python

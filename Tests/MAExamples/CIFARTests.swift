@@ -94,6 +94,6 @@ final class CIFARTests: XCTestCase
                        datasetOutputDir: _datasetOutputDir,
                        label: 0,
                        size: _size)
-        // _ = CIFAR.loadDataset(datasetDir: _datasetOutputDir, size: _size)
+        _ = CIFAR.loadDataset(datasetDir: _datasetOutputDir, size: _size)
     }
 }

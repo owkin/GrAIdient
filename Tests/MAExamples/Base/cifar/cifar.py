@@ -32,10 +32,6 @@ def extract_images(
     return ret_images[label]
 
 
-def test_dir() -> str:
-    return Path(__file__).as_posix()
-
-
 def load_CIFAR_data(
     data_file: int,
     label: int,

@@ -26,6 +26,9 @@ func getPythonLib() -> String
     let data = pipe.fileHandleForReading.readDataToEndOfFile()
     let output = String(data: data, encoding: String.Encoding.utf8)!
     
+    print("COUCOU")
+    print(output)
+    
     if output.count > 0
     {
         var url = URL(fileURLWithPath: output)

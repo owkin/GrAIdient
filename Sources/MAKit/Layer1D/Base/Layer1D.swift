@@ -11,9 +11,15 @@ open class Layer1D: Layer
     /// Neural structure used in the CPU execution context.
     public internal(set) var neurons: EnsembleNeurons = EnsembleNeurons(0)
     
+    ///
     /// Output buffer (result of the forward pass) used in the GPU execution context.
+    /// Shape ~ (batch, nbNeurons).
+    ///
     public internal(set) var outs: MetalPrivateBuffer<Float>! = nil
+    ///
     /// Gradient buffer (result of the backward pass) used in the GPU execution context.
+    /// Shape ~ (batch, nbNeurons).
+    ///
     public internal(set) var delta: MetalPrivateBuffer<Float>! = nil
     
     /// Number of neurons.

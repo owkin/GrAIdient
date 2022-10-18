@@ -149,20 +149,38 @@ public class BatchNormalization: BatchNormalizationBase
     /// Slight modification to avoid "divide by 0" errors.
     let _Ɛ: Double = 1e-5
     
+    ///
     /// Arrays of weights to scale the normalization result.
+    /// Shape ~ (nbNeurons,).
+    ///
     var _Ɣ: WeightArrays! = nil
+    ///
     /// Arrays of biases to add to the normalization result.
+    /// Shape ~ (nbNeurons,).
+    ///
     var _β: WeightArrays! = nil
     
+    ///
     /// List of deviations of data for the different independent batch normalization units.
+    /// Shape ~ (nbNeurons,).
+    ///
     var _σ2 = [Double]()
     
+    ///
     /// List of global averages of data for the different independent batch normalization units.
+    /// Shape ~ (nbNeurons,).
+    ///
     var _Eμ = [Double]()
+    ///
     /// List of global deviations of data for the different independent batch normalization units.
+    /// Shape ~ (nbNeurons,).
+    ///
     var _Eσ2 = [Double]()
     
+    ///
     /// The list of data normalized without taking into account the biases and the weights.
+    /// Shape ~ (nbNeurons, (batch x height x width)).
+    ///
     var _xHat = [[Double]]()
     
     /// Weights in the CPU execution context.
@@ -504,26 +522,53 @@ public class BatchNormalization: BatchNormalizationBase
 /// A layer that applies batch normalization in the GPU execution context.
 class BatchNormalizationGPU: BatchNormalizationBase
 {
+    ///
     /// Buffers of weights to scale the normalization result.
+    /// Shape ~ (nbNeurons,).
+    ///
     var _ƔBuffers: IWeightBuffers! = nil
+    ///
     /// Buffers of biases to add to the normalization result.
+    /// Shape ~ (nbNeurons,).
+    ///
     var _βBuffers: IWeightBuffers! = nil
     
+    ///
     /// Buffer of averages of data for the different independent batch normalization units.
+    /// Shape ~ (nbNeurons,).
+    ///
     var _μ: MetalBuffer<Float>! = nil
+    ///
     /// Buffer of global averages of data for the different independent batch normalization units.
+    /// Shape ~ (nbNeurons,).
+    ///
     var _Eμ: MetalPrivateBuffer<Float>! = nil
+    ///
     /// Buffer of deviations of data for the different independent batch normalization units.
+    /// Shape ~ (nbNeurons,).
+    ///
     var _σ2: MetalBuffer<Float>! = nil
+    ///
     /// Buffer of global deviations of data for the different independent batch normalization units.
+    /// Shape ~ (nbNeurons,).
+    ///
     var _Eσ2: MetalPrivateBuffer<Float>! = nil
     
+    ///
     /// Buffer of data normalized without taking into account the biases and the weights.
+    /// Shape ~ (batch, nbNeurons, height, width).
+    ///
     var _xHat: MetalBuffer<Float>! = nil
     
+    ///
     /// Buffer used to compute backward pass.
+    /// Shape ~ (nbNeurons,).
+    ///
     var _sum1: MetalBuffer<Float>! = nil
+    ///
     /// Buffer used to compute backward pass.
+    /// Shape ~ (nbNeurons,).
+    ///
     var _sum2: MetalBuffer<Float>! = nil
    
     /// GPU device on which model is executed.

@@ -25,7 +25,7 @@ def extract_images(
     Returns
     -------
     List[int]
-        The list of flatten images with inner dimensions:
+        The list of flatten images with inner shape:
         (batch, channel, height, width).
     """
     ret_images: List[List[int]] = [[] for _ in range(10)]
@@ -70,7 +70,7 @@ def load_CIFAR_data(
     Returns
     -------
     List[int]
-        The list of flatten images with inner dimensions:
+        The list of flatten images with inner shape:
         (batch, channel, height, width).
     """
     data_dir = Path(__file__).parent.parent.resolve() / "data"
@@ -98,7 +98,7 @@ def load_CIFAR_test(
     Returns
     -------
     List[int]
-        The list of flatten images with inner dimensions:
+        The list of flatten images with inner shape:
         (batch, channel, height, width).
     """
     data_dir = Path(__file__).parent.parent.resolve() / "data"

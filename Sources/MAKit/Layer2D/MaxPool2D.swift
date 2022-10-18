@@ -14,7 +14,10 @@ import MetalKit
 ///
 public class MaxPool2D: Layer2D
 {
+    ///
     /// Indices of maximal elements.
+    /// Shape ~ (batch, nbChannels, height, width).
+    ///
     var _indicesMax: MetalBuffer<Int32>! = nil
     
     /// Size of the maximal kernel.

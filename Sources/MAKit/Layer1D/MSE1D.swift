@@ -234,7 +234,7 @@ public class MSE1D: LayerOutput1D
         MetalKernel.get.download([loss])
         var loss: Float = 0.0
         let lossPtr = self.loss.buffer
-        for i in 0..<self.loss.nbElems
+        for i in 0..<batchSize
         {
             loss += lossPtr[i]
         }

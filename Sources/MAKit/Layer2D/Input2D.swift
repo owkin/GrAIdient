@@ -11,7 +11,7 @@ import MetalKit
 /// Format of images.
 ///
 /// RGB: Image structure is (batch, height, width, channel).
-/// Neuron: Image structure is (batch, channel, height, width).
+/// Neuron: Image structure is (batch, nbChannels, height, width).
 ///
 public enum ImageFormat
 {

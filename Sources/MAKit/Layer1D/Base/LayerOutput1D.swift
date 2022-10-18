@@ -13,10 +13,16 @@ open class LayerOutput1D: Layer1D
     /// Coefficient to be applied to the loss compuptation.
     public var coeff: Double = 1.0
     
+    ///
     /// Ground truth buffer in the GPU execution context.
+    /// Shape ~ (batch, nbNeurons).
+    ///
     public internal(set) var groundTruth: MetalSharedBuffer<Float>! = nil
     
+    ///
     /// Loss buffer in the GPU execution context.
+    /// Shape ~ (batch,).
+    ///
     public internal(set) var loss: MetalSharedBuffer<Float>! = nil
     
     private enum Keys: String, CodingKey

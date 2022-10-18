@@ -26,13 +26,19 @@ The API explicitly exposes the following functions:
 
 `MAExamples` contains examples that show how to interact with `MAKit`. 
 The examples are organised as tests so as to demonstrate some capabilities. 
-They may be run in local or in the CI.
+They may be run in local (Xcode or command line) 
+or in the CI (release/main branches or explicit trigger).
 
 The following examples are currently available: 
 
 - VGGExample
 
 ## VGG Example
+
+This example trains a simple model on the GPU. 
+The dataset used is CIFAR 10. 
+We want to train the model to discriminate between 2 labels 
+(not the 10 available).
 
 ### Setup
 
@@ -59,3 +65,11 @@ You may eventually clean the environment with:
 conda deactivate
 conda env remove --name maexamples
 ```
+
+### Steps
+
+1. Dump the training and testing datasets.
+2. Evaluate a random model on the testing dataset: watch a bad performance.  
+3. Train a model on the training dataset.
+4. Evaluate the trained model on the testing dataset: 
+   watch a better performance.

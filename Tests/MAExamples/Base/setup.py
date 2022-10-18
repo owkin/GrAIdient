@@ -1,9 +1,9 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='cifar',
+    name='python_lib',
     version="1.0",
-    description='CIFAR data loader',
+    description='Internal Python library.',
     author='Jean-François Reboud',
     license='MIT',
     install_requires=[

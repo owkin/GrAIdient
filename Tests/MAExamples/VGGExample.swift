@@ -43,16 +43,22 @@ final class VGGExample: XCTestCase
         var optimizerParams = MAKit.Optimizer.Params()
         optimizerParams.nbLoops = nbLoops
         
+        // Simple optimizer scheduler: always the same optimizer during
+        // the training.
         optimizerParams.optimizer = ConstEpochsScheduler(
             MAKit.Optimizer.Class.AdamRectified
         )
         
+        // Simple variable scheduler: always the same variable during
+        // the training.
         optimizerParams.variables["alpha"] = ConstEpochsVar(
             value: ConstVal(1e-3)
         )
         optimizerParams.variables["lambda"] = ConstEpochsVar(
             value: ConstVal(1e-6)
         )
+        
+        // Other schedulers can be built thanks to `MAKit.Optimizer.Params`.
         return optimizerParams
     }
     
@@ -64,6 +70,8 @@ final class VGGExample: XCTestCase
     ///
     func _buildModel(bn: Bool) -> Model
     {
+        // Create the context to build a graph of layers where
+        // there is no previous model dependency: layer id starts at 0.
         let context = ModelContext(name: "VGG", models: [])
         let params = MAKit.Model.Params(context: context)
         
@@ -135,6 +143,8 @@ final class VGGExample: XCTestCase
         
         _ = MSE1D(layerPrev: head, params: params)
         
+        // Retrieve base model in the context and initialize a
+        // real model (with `layerPrev` links updated).
         return Model(model: context.model, modelsPrev: [])
     }
     
@@ -177,6 +187,7 @@ final class VGGExample: XCTestCase
             
             while samples != nil
             {
+                // Pre processing.
                 let data = preprocess(
                     samples!,
                     height: _size,
@@ -186,17 +197,22 @@ final class VGGExample: XCTestCase
                     imageFormat: .Neuron
                 )
                 
+                // Update internal batch size.
                 model.updateKernel(batchSize: samples!.count)
+                
+                // Set data.
                 try! firstLayer.setDataGPU(
                     data,
                     batchSize: samples!.count,
                     format: .Neuron
                 )
                 
+                // Forward.
                 try! model.forward()
                 
                 for elem in 0..<samples!.count
                 {
+                    // Get result: 1 neuron.
                     let result: Float = lastLayer.getOutsGPU(elem: elem)[0]
                     if label == 0 && result < 0.5
                     {
@@ -244,9 +260,12 @@ final class VGGExample: XCTestCase
     /// Test2: test that an untrained model makes bad predictions.
     func test2_UntrainedModel()
     {
+        // Build a model with randomly initialized weights.
         let vgg = _buildModel(bn: true)
+        // Initialize for inference.
         vgg.initKernel(phase: .Inference)
         
+        // Evaluate model on CIFAR testing dataset.
         let (nbRight, nbTotal) = _evaluateModel(vgg)
         
         let ratio = Int(Double(nbRight) / Double(nbTotal) * 100)
@@ -268,23 +287,35 @@ final class VGGExample: XCTestCase
             size: _size
         )
         
+        // Get optimizer parameters for iterating over batch size elements.
         let params = _getOptimizerParams(nbLoops: _batchSize)
+        
+        // A batch will in fact be composed of half elements coming from
+        // cifar8 (ships => label: 0) and half elements coming from
+        // cifar5 (dogs => label: 1).
         cifar8.initSamples(batchSize: _batchSize / 2)
         cifar5.initSamples(batchSize: _batchSize / 2)
+        
+        // We keep a subset of the dataset to have a quicker training.
         cifar8.keep(500)
         cifar5.keep(500)
         
+        // Small trick to force full batches throughout the training:
+        // this enables us to set the ground truth once and for all.
         let nbWholeBatches =
             cifar8.nbSamples / cifar8.batchSize * cifar8.batchSize
         cifar8.keep(nbWholeBatches)
         cifar5.keep(nbWholeBatches)
         
+        // Build model.
         let vgg = _buildModel(bn: true)
+        // Initialize for training.
         vgg.initialize(params: params, phase: .Training)
         
         let firstLayer: Input2D = vgg.layers.first as! Input2D
         let lastLayer: MSE1D = vgg.layers.last as! MSE1D
         
+        // Initialize the ground truth once and for all.
         let groundTruth = MetalSharedBuffer<Float>(_batchSize, deviceID: 0)
         let buffer = groundTruth.buffer
         for elem in 0..<_batchSize / 2
@@ -315,6 +346,7 @@ final class VGGExample: XCTestCase
                     fatalError("Unreachable.")
                 }
                 
+                // Pre processing.
                 let data = preprocess(
                     samples,
                     height: _size,
@@ -324,34 +356,59 @@ final class VGGExample: XCTestCase
                     imageFormat: .Neuron
                 )
                 
+                // Reset gradient validity inside the kernel
+                // for backward pass
+                // and update the batch size (although here it stays the same).
                 vgg.updateKernel(batchSize: _batchSize)
+                
+                // Set data.
                 try! firstLayer.setDataGPU(
                     data,
                     batchSize: _batchSize,
                     format: .Neuron
                 )
                 
+                // Forward.
                 try! vgg.forward()
+                
+                // Apply loss derivative.
                 try! lastLayer.applyGradientGPU(
                     groundTruth,
                     batchSize: _batchSize
                 )
+                
+                // Backward.
                 try! vgg.backward()
+                
+                // Update weights.
                 try! vgg.update()
                 
+                // Get loss result.
+                // Note that backward is explicitly
+                // trickered by `applyGradient` whereas `getLoss` is
+                // just an indicator.
                 let loss = try! lastLayer.getLossGPU(
                     groundTruth,
                     batchSize: _batchSize
                 )
                 print("Step \(step)/\(cifar8.nbLoops-1): \(sqrt(loss)).")
                 
+                // Update internal step.
+                // This is not mandatory except if we used another
+                // optimizer scheduler: see `_getOptimizerParams`.
                 vgg.incStep()
             }
+            // Update internal epoch.
+            // This is not mandatory except if we used another
+            // optimizer scheduler: see `_getOptimizerParams`.
             vgg.incEpoch()
         }
     
+        // Encode the trained model.
         let encoder = PropertyListEncoder()
         let data = try! encoder.encode(vgg)
+        
+        // Save it to the disk.
         try! data.write(
             to: URL(fileURLWithPath: _outputDir + "/vgg.plist")
         )
@@ -360,17 +417,25 @@ final class VGGExample: XCTestCase
     /// Test4: test that the previous trained model makes better predictions than the untrained model.
     func test4_TrainedModel()
     {
+        // Load previous model from the disk.
         let data = try! Data(
             contentsOf: URL(fileURLWithPath: _outputDir + "/vgg.plist")
         )
+        
+        // Decode it as a base model (model where `layerPrev` links are not
+        // initialized).
         let baseModel = try! PropertyListDecoder().decode(
             BaseModel.self,
             from: data
         )
         
+        // Create a model with initialized links
+        // with no previous model dependencies.
         let vgg = Model(model: baseModel, modelsPrev: [])
+        // Initialize for inference.
         vgg.initKernel(phase: .Inference)
         
+        // Evaluate model on CIFAR testing dataset.
         let (nbRight, nbTotal) = _evaluateModel(vgg)
         
         let ratio = Int(Double(nbRight) / Double(nbTotal) * 100)

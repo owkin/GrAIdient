@@ -9,13 +9,13 @@ import Foundation
 import PythonKit
 
 /// CIFAR data sampler.
-public class CIFAR: DataSamplerImpl<UInt8>
+class CIFAR: DataSamplerImpl<UInt8>
 {
     /// Size of one image (height and width are the same).
-    let _size: Int
+    private let _size: Int
     
     /// Size of one internal element.
-    public override var sizeDataBlock: Int
+    override var sizeDataBlock: Int
     {
         return _size * _size * 3
     }
@@ -41,7 +41,7 @@ public class CIFAR: DataSamplerImpl<UInt8>
     ///     - label: The label we want the data associated to.
     ///     - size: The image size (height and width are the same).
     ///
-    public static func dumpTrain(
+    static func dumpTrain(
         datasetPath: String,
         label: Int,
         size: Int)
@@ -70,7 +70,7 @@ public class CIFAR: DataSamplerImpl<UInt8>
     ///     - label: The label we want the data associated to.
     ///     - size: The image size (height and width are the same).
     ///
-    public static func dumpTest(
+    static func dumpTest(
         datasetPath: String,
         label: Int,
         size: Int)
@@ -96,7 +96,7 @@ public class CIFAR: DataSamplerImpl<UInt8>
     ///     - size: The image size (height and width are the same).
     /// - Returns: The CIFAR data sampler.
     ///
-    public static func loadDataset(datasetPath: String, size: Int) -> CIFAR
+    static func loadDataset(datasetPath: String, size: Int) -> CIFAR
     {
         let datasetData = try! Data(
             contentsOf: URL(fileURLWithPath: datasetPath)

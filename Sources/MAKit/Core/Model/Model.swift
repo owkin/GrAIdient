@@ -265,7 +265,35 @@ public class Model: BaseModel
         }
     }
     
-    // TODO: add elements here.
+    /// Downscale factor of the resolution (height and width).
+    public var strideFactor: Double?
+    {
+        get {
+            for layer in layers.reversed()
+            {
+                if let layer2D = layer as? Layer2D
+                {
+                    return layer2D.strideFactor
+                }
+            }
+            return nil
+        }
+    }
+    
+    /// The size of the input image this layer is looking at.
+    public var receptiveField: Int?
+    {
+        get {
+            for layer in layers.reversed()
+            {
+                if let layer2D = layer as? Layer2D
+                {
+                    return layer2D.receptiveField
+                }
+            }
+            return nil
+        }
+    }
     
     /// Get/Set the weights of the different layers.
     public var weights: [[Float]]

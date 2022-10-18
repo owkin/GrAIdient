@@ -10,6 +10,24 @@ def extract_images(
     label: int,
     size: int
 ) -> List[int]:
+    """
+    Load and flatten data from CIFAR data.
+
+    Parameters
+    ----------
+    data_dict:
+        The dictionary containing CIFAR data.
+    label: int
+        The label we want the data associated to.
+    size: int
+        The size of the images.
+
+    Returns
+    -------
+    List[int]
+        The list of flatten images with inner dimensions:
+        (batch, channel, height, width).
+    """
     ret_images: List[List[int]] = [[] for _ in range(10)]
 
     for label_tmp, data_tmp in zip(data_dict[b"labels"], data_dict[b"data"]):
@@ -37,6 +55,24 @@ def load_CIFAR_data(
     label: int,
     size: int
 ) -> List[int]:
+    """
+    Load and flatten data from CIFAR train dataset.
+
+    Parameters
+    ----------
+    data_file:
+        The data file name containing part of the CIFAR training data.
+    label: int
+        The label we want the data associated to.
+    size: int
+        The size of the images.
+
+    Returns
+    -------
+    List[int]
+        The list of flatten images with inner dimensions:
+        (batch, channel, height, width).
+    """
     data_dir = Path(__file__).parent.parent.resolve() / "data"
 
     with open(f"{data_dir}/data_batch_{data_file}", 'rb') as fo:
@@ -49,6 +85,22 @@ def load_CIFAR_test(
     label: int,
     size: int
 ) -> List[int]:
+    """
+    Load and flatten data from CIFAR test dataset.
+
+    Parameters
+    ----------
+    label: int
+        The label we want the data associated to.
+    size: int
+        The size of the images.
+
+    Returns
+    -------
+    List[int]
+        The list of flatten images with inner dimensions:
+        (batch, channel, height, width).
+    """
     data_dir = Path(__file__).parent.parent.resolve() / "data"
 
     with open(f"{data_dir}/test_batch", 'rb') as fo:

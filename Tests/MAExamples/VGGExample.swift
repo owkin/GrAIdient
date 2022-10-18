@@ -8,16 +8,23 @@
 import XCTest
 import MAKit
 
+/// Test that we can train a simple model on the CIFAR dataset.
 final class VGGExample: XCTestCase
 {
+    /// Directory to dump outputs from the tests.
     let _outputDir = NSTemporaryDirectory()
     
+    /// Batch size of data.
     let _batchSize = 64
+    /// Size of one image (height and width are the same).
     let _size = 32
     
+    /// Mean of the preprocessing to apply to data.
     let _mean = (125.3, 123.0, 113.9)
+    /// Deviation of the preprocessing to apply to data.
     let _std = (63.0, 62.1, 66.7)
     
+    /// Initialize test.
     override func setUp()
     {
         setPythonLib()
@@ -25,6 +32,12 @@ final class VGGExample: XCTestCase
         MAKit.Opti.GPU = true
     }
     
+    ///
+    /// Get optimizer parameters for model training.
+    ///
+    /// - Parameter nbLoops: Number of steps per epoch.
+    /// - Returns: The optimizer parameters.
+    ///
     func _getOptimizerParams(nbLoops: Int) -> MAKit.Optimizer.Params
     {
         var optimizerParams = MAKit.Optimizer.Params()
@@ -43,6 +56,12 @@ final class VGGExample: XCTestCase
         return optimizerParams
     }
     
+    ///
+    /// Build a simple model.
+    ///
+    /// - Parameter bn: Whether to use batch normalization or not.
+    /// - Returns: The model built.
+    ///
     func _buildModel(bn: Bool) -> Model
     {
         let context = ModelContext(name: "VGG", models: [])
@@ -119,6 +138,12 @@ final class VGGExample: XCTestCase
         return Model(model: context.model, modelsPrev: [])
     }
     
+    ///
+    /// Evaluate a model on the testing CIFAR dataset.
+    ///
+    /// - Parameter model: The model to evaluate.
+    /// - Returns: (Number of correct predictions, Total number of tests)/
+    ///
     func _evaluateModel(_ model: Model) -> (Int, Int)
     {
         let cifar8 = CIFAR.loadDataset(
@@ -191,6 +216,7 @@ final class VGGExample: XCTestCase
         return (nbRight, nbTotal)
     }
     
+    /// Test1: dump CIFAR train and test datasets for labels 8 and 5.
     func test1_DumpDataset()
     {
         CIFAR.dumpTrain(
@@ -215,6 +241,7 @@ final class VGGExample: XCTestCase
         )
     }
     
+    /// Test2: test that an untrained model makes bad predictions.
     func test2_UntrainedModel()
     {
         let vgg = _buildModel(bn: true)
@@ -229,6 +256,7 @@ final class VGGExample: XCTestCase
         XCTAssert(ratio < 60)
     }
     
+    /// Test3: train a simple model.
     func test3_TrainVGG()
     {
         let cifar8 = CIFAR.loadDataset(
@@ -329,6 +357,7 @@ final class VGGExample: XCTestCase
         )
     }
     
+    /// Test4: test that the previous trained model makes better predictions than the untrained model.
     func test4_TrainedModel()
     {
         let data = try! Data(

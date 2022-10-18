@@ -7,10 +7,12 @@
 
 import XCTest
 
+/// Python library default path.
 let PYTHON_LIB =
     FileManager.default.homeDirectoryForCurrentUser.path +
     "/opt/anaconda3/envs/maexamples/lib/libpython3.7m.dylib"
 
+/// Set the Python library path.
 func setPythonLib()
 {
     if ProcessInfo.processInfo.environment["PYTHON_LIBRARY"] == nil
@@ -42,18 +44,24 @@ func setPythonLib()
     }
 }
 
+/// Test that we can sample the CIFAR dataset.
 final class CIFARTests: XCTestCase
 {
+    /// Directory to dump outputs from the tests.
     let _outputDir = NSTemporaryDirectory()
     
+    /// Batch size of data.
     let _batchSize = 256
+    /// Size of one image (height and width are the same).
     let _size = 32
     
+    /// Initialize test.
     override func setUp()
     {
         setPythonLib()
     }
     
+    /// Test1: dump training dataset and load it.
     func test1_DumpLoad()
     {
         let datasetPath = _outputDir + "/datasetTrain"
@@ -68,6 +76,7 @@ final class CIFARTests: XCTestCase
         )
     }
     
+    /// Test2: load training dataset and get samples until the last one.
     func test2_Samples()
     {
         let datasetPath = _outputDir + "/datasetTrain"
@@ -102,6 +111,7 @@ final class CIFARTests: XCTestCase
         XCTAssert(cifar.getSamples() == nil)
     }
     
+    /// Test3: load training dataset, shuffle and get samples until the last one.
     func test3_ShuffleSamples()
     {
         let datasetPath = _outputDir + "/datasetTrain"
@@ -135,6 +145,7 @@ final class CIFARTests: XCTestCase
         XCTAssert(nbLoops == cifar.nbLoops)
     }
     
+    /// Test4: dump testing dataset and load it..
     func test4_DumpTest()
     {
         let datasetPath = _outputDir + "/datasetTest"

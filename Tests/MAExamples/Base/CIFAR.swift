@@ -8,32 +8,39 @@
 import Foundation
 import PythonKit
 
+/// CIFAR data sampler.
 public class CIFAR: DataSamplerImpl<UInt8>
 {
+    /// Size of one image (height and width are the same).
     let _size: Int
     
+    /// Size of one internal element.
     public override var sizeDataBlock: Int
     {
         return _size * _size * 3
     }
     
+    ///
+    /// Create a data sampler.
+    ///
+    /// - Parameters:
+    ///     - data: The internal data.
+    ///     - size: The image size (height and width are the same).
+    ///
     init(data: [UInt8], size: Int)
     {
         _size = size
         super.init(data: data)
     }
     
-    init(copyFrom: CIFAR)
-    {
-        _size = copyFrom._size
-        super.init(copyFrom: copyFrom)
-    }
-    
-    public override func clone() -> Self
-    {
-        return CIFAR(copyFrom: self) as! Self
-    }
-    
+    ///
+    /// Dump the training dataset to the disk.
+    ///
+    /// - Parameters:
+    ///     - datasetPath: The path where to dump the dataset.
+    ///     - label: The label we want the data associated to.
+    ///     - size: The image size (height and width are the same).
+    ///
     public static func dumpTrain(
         datasetPath: String,
         label: Int,
@@ -55,6 +62,14 @@ public class CIFAR: DataSamplerImpl<UInt8>
         try! datasetData.write(to: URL(fileURLWithPath: datasetPath))
     }
     
+    ///
+    /// Dump the testing dataset to the disk.
+    ///
+    /// - Parameters:
+    ///     - datasetPath: The path where to dump the dataset.
+    ///     - label: The label we want the data associated to.
+    ///     - size: The image size (height and width are the same).
+    ///
     public static func dumpTest(
         datasetPath: String,
         label: Int,
@@ -73,6 +88,14 @@ public class CIFAR: DataSamplerImpl<UInt8>
         try! datasetData.write(to: URL(fileURLWithPath: datasetPath))
     }
     
+    ///
+    /// Load a dataset from the disk.
+    ///
+    /// - Parameters:
+    ///     - datasetPath: The path to load the dataset from.
+    ///     - size: The image size (height and width are the same).
+    /// - Returns: The CIFAR data sampler.
+    ///
     public static func loadDataset(datasetPath: String, size: Int) -> CIFAR
     {
         let datasetData = try! Data(

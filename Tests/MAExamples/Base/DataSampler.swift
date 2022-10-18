@@ -7,33 +7,49 @@
 
 import Foundation
 
+/// API to interact with a data sampler.
 public protocol DataSampler
 {
+    /// Number of different elements.
     var nbSamples: Int { get }
+    /// Number of loops to see every elements.
     var nbLoops: Int { get }
+    /// Number of elements retrieved per loop.
     var batchSize: Int { get set }
     
-    func clone() -> Self
+    ///
+    /// Part internal data into small batches.
+    ///
+    /// - Parameter batchSize: The number of elements per batch.
+    ///
     func initSamples(batchSize: Int)
     
-    func keep(_ nbBlocks: Int)
-    func remove(_ nbBlocks: Int)
+    ///
+    /// Keep a sub part of elements in the original data.
+    ///
+    /// - Parameter nbSamples: The number of elements to keep.
+    ///
+    func keep(_ nbSamples: Int)
     
-    func getSampledDataIndex(_ sampleFactor: Double) -> (subSampled: [Int],
-                                                         notSampled: [Int])
-    func setDataIndex(_ dataIndex: [Int])
+    /// Shuffle the index associated to each element.
     func shuffle()
 }
 
+/// Data sampler generic implementation.
 open class DataSamplerImpl<Type>: DataSampler
 {
+    /// The internal data.
     let _data: [Type]
     
+    /// Number of elements retrieved per loop.
     var _batchSize: Int? = nil
     
+    /// List of indices associated to each elements.
     var _dataIndex: [Int]? = nil
+    /// Current loop index.
     var _curIndex: Int? = nil
     
+    /// Size of one internal element.
     open var sizeDataBlock: Int
     {
         get {
@@ -41,6 +57,7 @@ open class DataSamplerImpl<Type>: DataSampler
         }
     }
     
+    /// Number of different elements.
     public var nbSamples: Int
     {
         get {
@@ -52,6 +69,7 @@ open class DataSamplerImpl<Type>: DataSampler
         }
     }
     
+    /// Number of loops to see every elements.
     public var nbLoops: Int
     {
         get {
@@ -63,6 +81,7 @@ open class DataSamplerImpl<Type>: DataSampler
         }
     }
     
+    /// Number of elements retrieved per loop.
     public var batchSize: Int
     {
         get {
@@ -77,24 +96,21 @@ open class DataSamplerImpl<Type>: DataSampler
         }
     }
     
+    ///
+    /// Create a data sampler.
+    ///
+    /// - Parameter data: The internal data.
+    ///
     public init(data: [Type])
     {
         _data = data
     }
     
-    public init(copyFrom: DataSamplerImpl<Type>)
-    {
-        _data = copyFrom._data
-        _batchSize = copyFrom._batchSize
-        _dataIndex = copyFrom._dataIndex
-        _curIndex = 0
-    }
-    
-    open func clone() -> Self
-    {
-        return DataSamplerImpl<Type>(copyFrom: self) as! Self
-    }
-    
+    ///
+    /// Part internal data into small batches.
+    ///
+    /// - Parameter batchSize: The number of elements per batch.
+    ///
     public func initSamples(batchSize: Int)
     {
         _batchSize = batchSize
@@ -102,57 +118,23 @@ open class DataSamplerImpl<Type>: DataSampler
         _curIndex = 0
     }
     
-    public func keep(_ nbBlocks: Int)
+    ///
+    /// Keep a sub part of elements in the original data.
+    ///
+    /// - Parameter nbSamples: The number of elements to keep.
+    ///
+    public func keep(_ nbSamples: Int)
     {
         guard let dataIndex = _dataIndex else
         {
             fatalError("Call `initSamples` before.")
         }
         
-        _dataIndex = Array(dataIndex[0..<nbBlocks])
+        _dataIndex = Array(dataIndex[0..<nbSamples])
         _curIndex = 0
     }
     
-    public func remove(_ nbBlocks: Int)
-    {
-        guard let dataIndex = _dataIndex else
-        {
-            fatalError("Call `initSamples` before.")
-        }
-        
-        _dataIndex = Array(dataIndex[nbBlocks..<dataIndex.count])
-        _curIndex = 0
-    }
-    
-    public func getSampledDataIndex(_ sampleFactor: Double)
-        -> (subSampled: [Int], notSampled: [Int])
-    {
-        guard let dataIndex = _dataIndex else
-        {
-            fatalError("Call `initSamples` before.")
-        }
-        
-        var subSampled = [Int]()
-        var notSampled = [Int]()
-        
-        var curFactor: Double = sampleFactor
-        for dataIndexTmp in dataIndex
-        {
-            if curFactor >= 1.0
-            {
-                subSampled.append(dataIndexTmp)
-                curFactor = 0.0
-            }
-            else
-            {
-                notSampled.append(dataIndexTmp)
-            }
-            curFactor += sampleFactor
-        }
-        
-        return (subSampled: subSampled, notSampled: notSampled)
-    }
-    
+    /// Shuffle the index associated to each element.
     public func shuffle()
     {
         guard var dataIndex = _dataIndex else
@@ -164,18 +146,11 @@ open class DataSamplerImpl<Type>: DataSampler
         _curIndex = 0
     }
     
-    public func setDataIndex(_ dataIndex: [Int])
-    {
-        _dataIndex = dataIndex
-        _curIndex = 0
-    }
-    
-    public func getSamples(blockIndex: Int) -> [[Type]]?
-    {
-        var curIndex = blockIndex
-        return _getSamples(&curIndex)
-    }
-    
+    ///
+    /// Get the elements in the batch associated to the current loop.
+    ///
+    /// - Returns: The batch of elements.
+    ///
     public func getSamples() -> [[Type]]?
     {
         guard var curIndex = _curIndex else
@@ -189,6 +164,12 @@ open class DataSamplerImpl<Type>: DataSampler
         return samples
     }
     
+    ///
+    /// Get the elements in the batch associated to the current loop.
+    ///
+    /// - Parameter curIndex: Current loop.
+    /// - Returns: The batch of elements.
+    ///
     private func _getSamples(_ curIndex: inout Int) -> [[Type]]?
     {
         guard let dataIndex = _dataIndex,

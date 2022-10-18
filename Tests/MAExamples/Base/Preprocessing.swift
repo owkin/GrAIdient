@@ -7,6 +7,20 @@
 
 import MAKit
 
+///
+/// Transform data images.
+///
+/// Transformation is: (data - mean) / std
+///
+/// - Parameters:
+///     - data: The data to transform.
+///     - height: The height of the images.
+///     - width: The width of the images.
+///     - mean: The mean of the transformation.
+///     - std: The deviation of the transformation.
+///     - imageFormat: The image format.
+/// - Returns: The transformed data.
+///
 func preprocess<T: BinaryFloatingPoint>(
     _ data: [[UInt8]],
     height: Int,
@@ -28,6 +42,20 @@ func preprocess<T: BinaryFloatingPoint>(
     )
 }
 
+///
+/// Transform data images.
+///
+/// Transformation is: (data - mean) / std
+///
+/// - Parameters:
+///     - data: The data to transform.
+///     - height: The height of the images.
+///     - width: The width of the images.
+///     - mean: The mean of the transformation.
+///     - std: The deviation of the transformation.
+///     - imageFormat: The image format.
+/// - Returns: The transformed data.
+///
 func preprocess<T: BinaryFloatingPoint>(
     _ data: [[T]],
     height: Int,
@@ -48,6 +76,21 @@ func preprocess<T: BinaryFloatingPoint>(
     )
 }
 
+///
+/// Transform data images.
+///
+/// Transformation is: (data - mean) / std
+///
+/// - Parameters:
+///     - data: The data to transform.
+///     - batchSize: The batch size of data.
+///     - height: The height of the images.
+///     - width: The width of the images.
+///     - mean: The mean of the transformation.
+///     - std: The deviation of the transformation.
+///     - imageFormat: The image format.
+/// - Returns: The transformed data.
+///
 func preprocess<T: BinaryFloatingPoint>(
     _ data: [T],
     batchSize: Int,

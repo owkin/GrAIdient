@@ -54,7 +54,7 @@ final class CIFARTests: XCTestCase
         setPythonLib()
     }
     
-    func testDumpLoad()
+    func test1_DumpLoad()
     {
         let datasetPath = _outputDir + "/datasetTrain"
         CIFAR.dumpTrain(
@@ -68,7 +68,7 @@ final class CIFARTests: XCTestCase
         )
     }
     
-    func testSamples()
+    func test2_Samples()
     {
         let datasetPath = _outputDir + "/datasetTrain"
         let cifar = CIFAR.loadDataset(
@@ -102,7 +102,7 @@ final class CIFARTests: XCTestCase
         XCTAssert(cifar.getSamples() == nil)
     }
     
-    func testShuffleSamples()
+    func test3_ShuffleSamples()
     {
         let datasetPath = _outputDir + "/datasetTrain"
         let cifar = CIFAR.loadDataset(
@@ -135,7 +135,7 @@ final class CIFARTests: XCTestCase
         XCTAssert(nbLoops == cifar.nbLoops)
     }
     
-    func testDumpTest()
+    func test4_DumpTest()
     {
         let datasetPath = _outputDir + "/datasetTest"
         CIFAR.dumpTest(

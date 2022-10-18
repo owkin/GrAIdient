@@ -13,6 +13,7 @@ class OptimizerTests: Input1DMSE1DCase
     override func setUp()
     {
         batchSize = 5
+        _ = MetalKernel.get
         MAKit.Opti.GPU = true
         
         setOptimizerParams(params: &optimizerParams)

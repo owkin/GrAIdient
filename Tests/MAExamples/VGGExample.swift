@@ -21,6 +21,7 @@ final class VGGExample: XCTestCase
     override func setUp()
     {
         setPythonLib()
+        _ = MetalKernel.get
         MAKit.Opti.GPU = true
     }
     
@@ -190,7 +191,7 @@ final class VGGExample: XCTestCase
         return (nbRight, nbTotal)
     }
     
-    func testDumpDataset()
+    func test1_DumpDataset()
     {
         CIFAR.dumpTrain(
             datasetPath: _outputDir + "/datasetTrain8",
@@ -214,7 +215,7 @@ final class VGGExample: XCTestCase
         )
     }
     
-    func testUntrainedModel()
+    func test2_UntrainedModel()
     {
         let vgg = _buildModel(bn: true)
         vgg.initKernel(phase: .Inference)
@@ -228,7 +229,7 @@ final class VGGExample: XCTestCase
         XCTAssert(ratio < 60)
     }
     
-    func testTrainVGG()
+    func test3_TrainVGG()
     {
         let cifar8 = CIFAR.loadDataset(
             datasetPath: _outputDir + "/datasetTrain8",
@@ -328,7 +329,7 @@ final class VGGExample: XCTestCase
         )
     }
     
-    func testTrainedModel()
+    func test4_TrainedModel()
     {
         let data = try! Data(
             contentsOf: URL(fileURLWithPath: _outputDir + "/vgg.plist")

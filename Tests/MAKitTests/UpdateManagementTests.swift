@@ -15,6 +15,7 @@ class UpdateManagementTests: XCTestCase
     
     override func setUp()
     {
+        _ = MetalKernel.get
         MAKit.Opti.GPU = true
         
         setOptimizerParams(params: &optimizerParams)

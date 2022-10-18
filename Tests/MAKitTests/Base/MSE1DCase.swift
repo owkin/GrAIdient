@@ -24,6 +24,7 @@ class MSE1DCase: XCTestCase
     override func setUp()
     {
         batchSize = 5
+        _ = MetalKernel.get
         MAKit.Opti.GPU = true
         
         setOptimizerParams(params: &optimizerParams)

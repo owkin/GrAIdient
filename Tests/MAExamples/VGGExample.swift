@@ -15,6 +15,9 @@ final class VGGExample: XCTestCase
     let _batchSize = 64
     let _size = 32
     
+    let _mean = (125.3, 123.0, 113.9)
+    let _std = (63.0, 62.1, 66.7)
+    
     override func setUp()
     {
         setPythonLib()
@@ -115,97 +118,124 @@ final class VGGExample: XCTestCase
         return Model(model: context.model, modelsPrev: [])
     }
     
-    func _preprocess(
-        _ data: [UInt8],
-        mean: (Double, Double, Double),
-        imageFormat: ImageFormat) -> [Double]
+    func _evaluateModel(_ model: Model) -> (Int, Int)
     {
-        let batchSize = data.count / (_size * _size * 3)
-        var newData = [Double](repeating: 0.0, count: data.count)
+        let cifar8 = CIFAR.loadDataset(
+            datasetPath: _outputDir + "/datasetTest8",
+            size: _size
+        )
+        let cifar5 = CIFAR.loadDataset(
+            datasetPath: _outputDir + "/datasetTest5",
+            size: _size
+        )
         
-        switch imageFormat
+        cifar8.initSamples(batchSize: _batchSize)
+        cifar5.initSamples(batchSize: _batchSize)
+        
+        let firstLayer: Input2D = model.layers.first as! Input2D
+        let lastLayer: MSE1D = model.layers.last as! MSE1D
+        
+        var nbRight = 0
+        var nbTotal = 0
+        
+        var sampler: CIFAR = cifar8
+        var samples = sampler.getSamples()
+        
+        for label in 0...1
         {
-        case .RGB:
-            for elem in 0..<batchSize
+            if samples == nil
             {
-                for i in 0..<_size {
-                for j in 0..<_size
-                {
-                    let offset = j + (elem * _size + i) * _size
-                    
-                    for channel in 0..<3
-                    {
-                        let valeur = Double(data[3 * offset + channel])
-                        switch channel
-                        {
-                        case 0:
-                            newData[3 * offset + channel] =
-                                (valeur - mean.0) / 255
-                        case 1:
-                            newData[3 * offset + channel] =
-                                (valeur - mean.1) / 255
-                        case 2:
-                            newData[3 * offset + channel] =
-                                (valeur - mean.2) / 255
-                        default:
-                            break
-                        }
-                    }
-                }}
+                sampler = cifar5
+                samples = sampler.getSamples()
             }
-        case .Neuron:
-            for elem in 0..<batchSize
+            
+            while samples != nil
             {
-                for i in 0..<_size {
-                for j in 0..<_size
+                let data = preprocess(
+                    samples!,
+                    height: _size,
+                    width: _size,
+                    mean: _mean,
+                    std: _std,
+                    imageFormat: .Neuron
+                )
+                
+                model.updateKernel(batchSize: samples!.count)
+                try! firstLayer.setDataGPU(
+                    data,
+                    batchSize: samples!.count,
+                    format: .Neuron
+                )
+                
+                try! model.forward()
+                
+                for elem in 0..<samples!.count
                 {
-                    let offsetSet = j + (elem * _size + i) * _size
-                    
-                    for channel in 0..<3
+                    let result: Float = lastLayer.getOutsGPU(elem: elem)[0]
+                    if label == 0 && result < 0.5
                     {
-                        let offsetDebutGet = (channel + 3 * elem) * _size
-                        let offsetGet = j + (offsetDebutGet + i) * _size
-                        
-                        let valeur = Double(data[offsetGet])
-                        switch channel
-                        {
-                        case 0:
-                            newData[3 * offsetSet + channel] =
-                                (valeur - mean.0) / 255
-                        case 1:
-                            newData[3 * offsetSet + channel] =
-                                (valeur - mean.1) / 255
-                        case 2:
-                            newData[3 * offsetSet + channel] =
-                                (valeur - mean.2) / 255
-                        default:
-                            break
-                        }
+                        nbRight += 1
                     }
-                }}
+                    else if label == 1 && result >= 0.5
+                    {
+                        nbRight += 1
+                    }
+                    nbTotal += 1
+                }
+                
+                samples = sampler.getSamples()
             }
         }
-        return newData
+        
+        return (nbRight, nbTotal)
     }
     
-    func testTrainVGG()
+    func testDumpDataset()
     {
         CIFAR.dumpTrain(
-            datasetPath: _outputDir + "/dataset8",
+            datasetPath: _outputDir + "/datasetTrain8",
             label: 8,
             size: _size
         )
         CIFAR.dumpTrain(
-            datasetPath: _outputDir + "/dataset5",
+            datasetPath: _outputDir + "/datasetTrain5",
             label: 5,
             size: _size
         )
+        CIFAR.dumpTest(
+            datasetPath: _outputDir + "/datasetTest8",
+            label: 8,
+            size: _size
+        )
+        CIFAR.dumpTest(
+            datasetPath: _outputDir + "/datasetTest5",
+            label: 5,
+            size: _size
+        )
+    }
+    
+    func testUntrainedModel()
+    {
+        let vgg = _buildModel(bn: true)
+        vgg.initKernel(phase: .Inference)
+        
+        let (nbRight, nbTotal) = _evaluateModel(vgg)
+        
+        let ratio = Int(Double(nbRight) / Double(nbTotal) * 100)
+        print(
+            "Ratio of good predictions: \(ratio)%."
+        )
+        XCTAssert(ratio < 60)
+    }
+    
+    func testTrainVGG()
+    {
         let cifar8 = CIFAR.loadDataset(
-            datasetPath: _outputDir + "/dataset8",
+            datasetPath: _outputDir + "/datasetTrain8",
             size: _size
         )
         let cifar5 = CIFAR.loadDataset(
-            datasetPath: _outputDir + "/dataset5",
+            datasetPath: _outputDir + "/datasetTrain5",
             size: _size
         )
         
@@ -215,16 +245,33 @@ final class VGGExample: XCTestCase
         cifar8.keep(500)
         cifar5.keep(500)
         
+        let nbWholeBatches =
+            cifar8.nbSamples / cifar8.batchSize * cifar8.batchSize
+        cifar8.keep(nbWholeBatches)
+        cifar5.keep(nbWholeBatches)
+        
         let vgg = _buildModel(bn: true)
         vgg.initialize(params: params, phase: .Training)
         
         let firstLayer: Input2D = vgg.layers.first as! Input2D
         let lastLayer: MSE1D = vgg.layers.last as! MSE1D
         
-        let mean = (123.675, 116.28, 103.53)
-        for epoch in 0..<5
+        let groundTruth = MetalSharedBuffer<Float>(_batchSize, deviceID: 0)
+        let buffer = groundTruth.buffer
+        for elem in 0..<_batchSize / 2
         {
-            print("EPOCH \(epoch)/19.")
+            buffer[elem] = 0.0
+        }
+        for elem in _batchSize / 2..<_batchSize
+        {
+            buffer[elem] = 1.0
+        }
+        MetalKernel.get.upload([groundTruth])
+        
+        let nbEpochs = 5
+        for epoch in 0..<nbEpochs
+        {
+            print("EPOCH \(epoch)/\(nbEpochs-1).")
             cifar8.shuffle()
             cifar5.shuffle()
             
@@ -232,45 +279,74 @@ final class VGGExample: XCTestCase
             {
                 let samples8 = cifar8.getSamples()!
                 let samples5 = cifar5.getSamples()!
+                let samples = samples8 + samples5
                 
-                let flat8 = samples8.reduce([], +)
-                let flat5 = samples5.reduce([], +)
-                let data = _preprocess(
-                    flat8 + flat5,
-                    mean: mean,
+                if samples.count != _batchSize
+                {
+                    fatalError("Unreachable.")
+                }
+                
+                let data = preprocess(
+                    samples,
+                    height: _size,
+                    width: _size,
+                    mean: _mean,
+                    std: _std,
                     imageFormat: .Neuron
                 )
                 
-                var gt8 = [[Double]]()
-                for _ in 0..<samples8.count
-                {
-                    gt8.append([0.0])
-                }
-                var gt5 = [[Double]]()
-                for _ in 0..<samples5.count
-                {
-                    gt5.append([1.0])
-                }
-                let gt = gt8 + gt5
-                
-                vgg.updateKernel(batchSize: gt.count)
+                vgg.updateKernel(batchSize: _batchSize)
                 try! firstLayer.setDataGPU(
                     data,
-                    batchSize: gt.count,
+                    batchSize: _batchSize,
                     format: .Neuron
                 )
                 
                 try! vgg.forward()
-                try! lastLayer.applyGradientGPU(gt)
+                try! lastLayer.applyGradientGPU(
+                    groundTruth,
+                    batchSize: _batchSize
+                )
                 try! vgg.backward()
                 try! vgg.update()
                 
-                let loss = try! lastLayer.getLossGPU(gt)
+                let loss = try! lastLayer.getLossGPU(
+                    groundTruth,
+                    batchSize: _batchSize
+                )
                 print("Step \(step)/\(cifar8.nbLoops-1): \(sqrt(loss)).")
                 
                 vgg.incStep()
             }
             vgg.incEpoch()
         }
+    
+        let encoder = PropertyListEncoder()
+        let data = try! encoder.encode(vgg)
+        try! data.write(
+            to: URL(fileURLWithPath: _outputDir + "/vgg.plist")
+        )
+    }
+    
+    func testTrainedModel()
+    {
+        let data = try! Data(
+            contentsOf: URL(fileURLWithPath: _outputDir + "/vgg.plist")
+        )
+        let baseModel = try! PropertyListDecoder().decode(
+            BaseModel.self,
+            from: data
+        )
+        
+        let vgg = Model(model: baseModel, modelsPrev: [])
+        vgg.initKernel(phase: .Inference)
+        
+        let (nbRight, nbTotal) = _evaluateModel(vgg)
+        
+        let ratio = Int(Double(nbRight) / Double(nbTotal) * 100)
+        print(
+            "Ratio of good predictions: \(ratio)%."
+        )
+        XCTAssert(ratio >= 60)
     }
 }

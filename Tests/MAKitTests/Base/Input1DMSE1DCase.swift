@@ -37,7 +37,7 @@ class Input1DMSE1DCase: MSE1DCase
         }
         else
         {
-            ins = build1DData(dim1: getBatchSize(model), dim2: 1)
+            ins = buildData(dim1: getBatchSize(model), dim2: 1)
         }
         
         if MAKit.Opti.GPU

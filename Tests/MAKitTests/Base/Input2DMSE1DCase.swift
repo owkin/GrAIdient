@@ -17,22 +17,6 @@ class Input2DMSE1DCase: MSE1DCase
 {
     let height = 6
     let width = 6
-     
-    ///
-    /// Create synthetic data.
-    ///
-    /// - Parameter nbElems: The number of elements of the data.
-    /// - Returns: The created data.
-    ///
-    func build2DData<T: BinaryFloatingPoint>(_ nbElems: Int) -> [T]
-    {
-        var data = [T]()
-        for _ in 0..<nbElems
-        {
-            data.append(T(Double.random(in: -1.0..<1.0)))
-        }
-        return data
-    }
     
     ///
     /// A function to create/set data to the model.
@@ -42,36 +26,28 @@ class Input2DMSE1DCase: MSE1DCase
     ///     - model: The model.
     /// - Returns: (The data, the batch size).
     ///
-    func setData(_ inputs: [Double]?, _ model: Model) -> ([Double], Int)
+    func setData(_ inputs: [[Double]]?, _ model: Model) -> ([[Double]], Int)
     {
         let firstLayer = model.layers.first as! Input2D
-        let ins: [Double]
+        let ins: [[Double]]
         if let insTmp = inputs
         {
             ins = insTmp
         }
         else
         {
-            ins = build2DData(getBatchSize(model) * height * width)
+            ins = buildData(dim1: getBatchSize(model), dim2: height * width)
         }
         
         if MAKit.Opti.GPU
         {
-            try! firstLayer.setDataGPU(
-                ins,
-                batchSize: getBatchSize(model),
-                format: .Neuron
-            )
+            try! firstLayer.setDataGPU(ins, format: .Neuron)
         }
         else
         {
-            try! firstLayer.setDataCPU(
-                ins,
-                batchSize: getBatchSize(model),
-                format: .Neuron
-            )
+            try! firstLayer.setDataCPU(ins, format: .Neuron)
         }
-        return (ins, ins.count / (height * width))
+        return (ins, ins.count)
     }
     
     ///

@@ -7,14 +7,15 @@
 
 import XCTest
 import MAKit
-import MAKitTestsUtils
+import MATestsUtils
 
 class UpdateManagementTests: XCTestCase
 {
     var optimizerParams = MAKit.Optimizer.Params()
     
-    override func setUpWithError() throws
+    override func setUp()
     {
+        _ = MetalKernel.get
         MAKit.Opti.GPU = true
         
         setOptimizerParams(params: &optimizerParams)
@@ -46,12 +47,12 @@ class UpdateManagementTests: XCTestCase
         model1.initialize(
             params: optimizerParams,
             phase: .Inference,
-            deviceID: DEVICE_ID_DEFAULT
+            deviceID: DEVICE_ID
         )
         model2.initialize(
             params: optimizerParams,
             phase: .Inference,
-            deviceID: DEVICE_ID_DEFAULT
+            deviceID: DEVICE_ID
         )
         
         let groundTruth: [[Double]] = [[0.0]]
@@ -205,16 +206,16 @@ class UpdateManagementTests: XCTestCase
         model1.initialize(
             params: optimizerParams,
             phase: .Inference,
-            deviceID: DEVICE_ID_DEFAULT
+            deviceID: DEVICE_ID
         )
         model2.initialize(
             params: optimizerParams,
             phase: .Inference,
-            deviceID: DEVICE_ID_DEFAULT
+            deviceID: DEVICE_ID
         )
         
         let groundTruth = MetalSharedBuffer<Float>(
-            1, deviceID: DEVICE_ID_DEFAULT
+            1, deviceID: DEVICE_ID
         )
         groundTruth.buffer[0] = 0
         MetalKernel.get.upload([groundTruth])
@@ -371,12 +372,12 @@ class UpdateManagementTests: XCTestCase
         model1.initialize(
             params: optimizerParams,
             phase: .Inference,
-            deviceID: DEVICE_ID_DEFAULT
+            deviceID: DEVICE_ID
         )
         model2.initialize(
             params: optimizerParams,
             phase: .Inference,
-            deviceID: DEVICE_ID_DEFAULT
+            deviceID: DEVICE_ID
         )
         
         let groundTruth: [[Double]] = [[0.0]]
@@ -532,16 +533,16 @@ class UpdateManagementTests: XCTestCase
         model1.initialize(
             params: optimizerParams,
             phase: .Inference,
-            deviceID: DEVICE_ID_DEFAULT
+            deviceID: DEVICE_ID
         )
         model2.initialize(
             params: optimizerParams,
             phase: .Inference,
-            deviceID: DEVICE_ID_DEFAULT
+            deviceID: DEVICE_ID
         )
         
         let groundTruth = MetalSharedBuffer<Float>(
-            1, deviceID: DEVICE_ID_DEFAULT
+            1, deviceID: DEVICE_ID
         )
         groundTruth.buffer[0] = 0
         MetalKernel.get.upload([groundTruth])

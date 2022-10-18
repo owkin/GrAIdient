@@ -7,7 +7,7 @@
 
 import XCTest
 import MAKit
-import MAKitTestsUtils
+import MATestsUtils
 
 ///
 /// A class that will test a model with a structural hypothesis:
@@ -20,13 +20,11 @@ class LinearError1DCase: XCTestCase
     /// Optimizer parameters.
     var optimizerParams = MAKit.Optimizer.Params()
     
-    /// Ground truth buffer.
-    var _gtBuffer: MetalSharedBuffer<Float>! = nil
-    
     /// Systematic call before test begins.
-    override func setUpWithError() throws
+    override func setUp()
     {
         batchSize = 5
+        _ = MetalKernel.get
         MAKit.Opti.GPU = true
         
         setOptimizerParams(params: &optimizerParams)
@@ -62,7 +60,7 @@ class LinearError1DCase: XCTestCase
     ///     - dim2: The second dimension of the data.
     /// - Returns: The created data.
     ///
-    func build1DData<T: BinaryFloatingPoint>(dim1: Int, dim2: Int) -> [[T]]
+    func buildData<T: BinaryFloatingPoint>(dim1: Int, dim2: Int) -> [[T]]
     {
         var data = [[T]]()
         for _ in 0..<dim1
@@ -75,55 +73,6 @@ class LinearError1DCase: XCTestCase
             data.append(data1)
         }
         return data
-    }
-    
-    ///
-    /// Upload data to a GPU buffer.
-    ///
-    /// - Parameters:
-    ///     - data: The data to upload.
-    ///     - buffer: The GPU buffer that should contain the data.
-    ///
-    func uploadData<T: BinaryFloatingPoint>(
-        data: [[T]], buffer: MetalBuffer<Float>)
-    {
-        let dim2 = data.first!.count
-        let bufferPtr: UnsafeMutableBufferPointer<Float>
-        if let sBuffer = buffer as? MetalSharedBuffer<Float>
-        {
-            // Wait for previous loop to end to avoid race condition.
-            MetalKernel.get.download([sBuffer])
-            
-            bufferPtr = sBuffer.buffer
-        }
-        else if let pBuffer = buffer as? MetalPrivateBuffer<Float>
-        {
-            // Wait for previous loop to end to avoid race condition.
-            MetalKernel.get.download([pBuffer])
-            
-            bufferPtr = pBuffer.shared.buffer
-        }
-        else
-        {
-            fatalError("Unreachable.")
-        }
-        
-        for (i, dataI) in data.enumerated()
-        {
-            for (j, dataIJ) in dataI.enumerated()
-            {
-                bufferPtr[j + i * dim2] = Float(dataIJ)
-            }
-        }
-        
-        if let sBuffer = buffer as? MetalSharedBuffer<Float>
-        {
-            MetalKernel.get.upload([sBuffer])
-        }
-        else if let pBuffer = buffer as? MetalPrivateBuffer<Float>
-        {
-            MetalKernel.get.upload([pBuffer])
-        }
     }
     
     ///
@@ -144,7 +93,7 @@ class LinearError1DCase: XCTestCase
         }
         else
         {
-            gt = build1DData(dim1: getBatchSize(model), dim2: 1)
+            gt = buildData(dim1: getBatchSize(model), dim2: 1)
         }
         
         if MAKit.Opti.GPU
@@ -171,18 +120,7 @@ class LinearError1DCase: XCTestCase
         let lastLayer = model.layers.last as! LinearError1D
         if MAKit.Opti.GPU
         {
-            if _gtBuffer == nil
-            {
-                _gtBuffer = MetalSharedBuffer<Float>(
-                    lastLayer.nbNeurons * batchSize,
-                    deviceID: DEVICE_ID_DEFAULT
-                )
-            }
-            uploadData(data: groundTruth, buffer: _gtBuffer)
-            return Double(try! lastLayer.getLossGPU(
-                _gtBuffer,
-                batchSize: getBatchSize(model)
-            ))
+            return Double(try! lastLayer.getLossGPU(groundTruth))
         }
         else
         {

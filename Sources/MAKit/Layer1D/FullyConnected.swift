@@ -15,19 +15,37 @@ import MetalKit
 ///
 public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
 {
+    ///
     /// Grid of weights.
+    /// Shape ~ (nbNeurons, nbNeuronsPrev).
+    ///
     var _wArrays: WeightGrids! = nil
+    ///
     /// Array of biases.
+    /// Shape ~ (nbNeurons,).
+    ///
     var _bArrays: WeightArrays! = nil
     
+    ///
     /// Buffer of weights.
+    /// Shape ~ (nbNeurons, nbNeuronsPrev).
+    ///
     var _wBuffers: IWeightBuffers! = nil
+    ///
     /// Buffer of biases.
+    /// Shape ~ (nbNeurons,).
+    ///
     var _bBuffers: IWeightBuffers! = nil
     
+    ///
     /// Buffer of gradients per sample for weights.
+    /// Shape ~ (batch, nbNeurons, nbNeuronsPrev).
+    ///
     var _wDeltaWeights: MetalPrivateBuffer<Float>! = nil
+    ///
     /// Buffer of gradients per sample for biases.
+    /// Shape ~ (batch, nbNeurons).
+    /// 
     var _bDeltaWeights: MetalPrivateBuffer<Float>! = nil
     
     /// Whether to compute weights' gradients or not.
@@ -255,8 +273,8 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
         else if let layerPrev = layerPrev as? Layer2D
         {
             nbNeuronsPrev = layerPrev.nbChannels *
-                             layerPrev.height *
-                             layerPrev.width
+                            layerPrev.height *
+                            layerPrev.width
         }
         else
         {

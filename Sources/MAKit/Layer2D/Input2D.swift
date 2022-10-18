@@ -10,8 +10,8 @@ import MetalKit
 ///
 /// Format of images.
 ///
-/// RGB: Image structure is (batch, channel, height, width).
-/// Neuron: Image structure is (batch, height, width, channel).
+/// RGB: Image structure is (batch, height, width, channel).
+/// Neuron: Image structure is (batch, nbChannels, height, width).
 ///
 public enum ImageFormat
 {
@@ -328,6 +328,24 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
     ///
     /// - Parameters:
     ///     - data: The data to set.
+    ///     - format: The data format.
+    ///
+    public func setDataCPU<T: BinaryFloatingPoint>(
+        _ data: [[T]],
+        format: ImageFormat) throws
+    {
+        let batchSize = data.count
+        let dataTmp = data.reduce([], +)
+        try setDataCPU(dataTmp, batchSize: batchSize, format: format)
+    }
+    
+    ///
+    /// API to set data in the CPU execution context.
+    ///
+    /// Throw an error if data size is not coherent.
+    ///
+    /// - Parameters:
+    ///     - data: The data to set.
     ///     - batchSize: The batch size of data.
     ///     - format: The data format.
     ///
@@ -384,6 +402,24 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
     ///
     /// - Parameters:
     ///     - data: The data to set.
+    ///     - format: The data format.
+    ///
+    public func setDataGPU<T: BinaryFloatingPoint>(
+        _ data: [[T]],
+        format: ImageFormat) throws
+    {
+        let batchSize = data.count
+        let dataTmp = data.reduce([], +)
+        try setDataGPU(dataTmp, batchSize: batchSize, format: format)
+    }
+    
+    ///
+    /// API to set data in the GPU execution context.
+    ///
+    /// Throw an error if data size is not coherent.
+    ///
+    /// - Parameters:
+    ///     - data: The data to set.
     ///     - batchSize: The batch size of data.
     ///     - format: The data format.
     ///
@@ -415,7 +451,8 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
                     let offsetGet = j + (elem * height + i) * width
                     for depth in 0..<nbChannels
                     {
-                        let offsetStartSet = (depth + nbChannels * elem) * height
+                        let offsetStartSet =
+                            (depth + nbChannels * elem) * height
                         let offsetSet = j + (offsetStartSet + i) * width
                         
                         outsPtr[offsetSet] =

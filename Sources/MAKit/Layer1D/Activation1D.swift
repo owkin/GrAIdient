@@ -13,8 +13,11 @@ public class Activation1D: Layer1D
     /// The activation function.
     let _activation: ActivationFunction?
     
+    ///
     /// Pre output buffer (result of the forward pass before applying activation)
     /// used in the GPU execution context.
+    /// Shape ~ (batch, nbNeurons).
+    ///
     var _tmp: MetalPrivateBuffer<Float>! = nil
     
     private enum Keys: String, CodingKey

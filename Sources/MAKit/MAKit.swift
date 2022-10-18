@@ -249,18 +249,27 @@ public class MAKit
         /// Parameters needed to run optimizers.
         public struct Params
         {
+            /// Time step used by certain optimizers (example: Adam)
             var t: Int = 0
+            /// Step of the model training.
             public var step: Int = 0
+            /// Epoch of the model training.
             public var epoch: Int = 0
             
+            /// Number of steps per epoch.
             public var nbLoops: Int = -1
             
+            /// Optimizer's scheduler.
             public var optimizer: TimeScheduler! = nil
+            /// Dictionary of variables' scheduler.
             public var variables: [String:TimeVariable] = [:]
             
+            /// Use gradient clipping during training.
             public var gradientClipping: Bool = false
+            /// Threshold above which to cut the gradients.
             public var normThreshold: Double = 1.0
             
+            /// Create parameters for optimizer.
             public init() {}
         }
         

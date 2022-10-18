@@ -1,0 +1,45 @@
+name: examples
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - release**
+
+jobs:
+  MAExamples:
+    runs-on: self-hosted
+    defaults:
+      run:
+        shell: bash -l {0}
+        
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          lfs: true
+      - name: Pull lfs
+        run: git lfs pull
+          
+      - name: Setup Conda Environment
+        run: |
+          conda create --name maexamples-ci python=3.7
+          conda env list
+
+      - name: Install Python Library
+        working-directory: Tests/MAExamples/Base
+        run: |
+          conda activate maexamples-ci
+          pip="$(dirname `which python`)"/pip
+          $pip install -e .
+          
+      - name: Test
+        run: |
+          conda activate maexamples-ci
+          swift test --filter MAExamples
+      
+      - name: Remove Conda Environment
+        if: always()
+        run: |
+          conda deactivate
+          conda env remove --name maexamples-ci

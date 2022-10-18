@@ -22,8 +22,11 @@ import MetalKit
 ///
 public class AdaptiveAvgPool2D: Layer2D
 {
+    ///
     /// Buffer containing the number of elements to average in each direction for each element in
     /// the output grid.
+    /// Shape ~ (batch, nbChannels, height, width).
+    ///
     var _nbElems: MetalBuffer<Int32>! = nil
     
     /// Downscale factor of the resolution (height and width).

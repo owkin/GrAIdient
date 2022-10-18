@@ -7,7 +7,7 @@
 
 import XCTest
 import MAKit
-import MAKitTestsUtils
+import MATestsUtils
 
 let NB_RETRY = 3
 
@@ -37,7 +37,7 @@ class Input1DMSE1DCase: MSE1DCase
         }
         else
         {
-            ins = build1DData(dim1: getBatchSize(model), dim2: 1)
+            ins = buildData(dim1: getBatchSize(model), dim2: 1)
         }
         
         if MAKit.Opti.GPU
@@ -65,7 +65,7 @@ class Input1DMSE1DCase: MSE1DCase
         modelNew.initialize(
             params: optimizerParams,
             phase: .Inference,
-            deviceID: DEVICE_ID_DEFAULT
+            deviceID: DEVICE_ID
         )
         return modelNew
     }
@@ -231,9 +231,10 @@ class Input1DMSE1DCase: MSE1DCase
     ///     - nbRetry: The maximum number we can retry the test.
     ///     - diffThreshold: The threshold above which the relative difference is too high.
     ///
-    func run(_ trainer: InferenceTrainer,
-             nbRetry: Int = NB_RETRY,
-             diffThreshold: Double = 0.001)
+    func run(
+        _ trainer: InferenceTrainer,
+        nbRetry: Int = NB_RETRY,
+        diffThreshold: Double = 0.001)
     {
         retryNumeric(nbRetry: nbRetry)
         {
@@ -263,9 +264,10 @@ class Input1DMSE1DCase: MSE1DCase
     ///     - nbRetry: The maximum number we can retry the test.
     ///     - diffThreshold: The threshold above which the relative difference is too high.
     ///
-    func run(_ trainer: LoadTrainer,
-             nbRetry: Int = NB_RETRY,
-             diffThreshold: Double = 0.001)
+    func run(
+        _ trainer: LoadTrainer,
+        nbRetry: Int = NB_RETRY,
+        diffThreshold: Double = 0.001)
     {
         retryNumeric(nbRetry: nbRetry)
         {

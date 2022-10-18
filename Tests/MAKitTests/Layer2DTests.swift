@@ -6,7 +6,7 @@
 //
 
 import MAKit
-import MAKitTestsUtils
+import MATestsUtils
 
 // -----------------------------------------------------------------------------
 // Gradient Checking
@@ -14,9 +14,9 @@ import MAKitTestsUtils
 // -----------------------------------------------------------------------------
 class Layer2DGradTests: Input2DMSE1DCase
 {
-    override func setUpWithError() throws
+    override func setUp()
     {
-        try! super.setUpWithError()
+        super.setUp()
         
         optimizerParams.nbLoops = 1
         MAKit.Loop.gradientChecking = true
@@ -738,9 +738,9 @@ class Layer2DFlowTests: Input2DMSE1DCase
 // -----------------------------------------------------------------------------
 class Layer2DFlowResetTests: Layer2DFlowTests
 {
-    override func setUpWithError() throws
+    override func setUp()
     {
-        try! super.setUpWithError()
+        super.setUp()
         
         setOptimizerParams(params: &optimizerParams,
                            optimizerClass: .Adam)
@@ -910,9 +910,9 @@ class Layer2DFlowResetTests: Layer2DFlowTests
 // -----------------------------------------------------------------------------
 class Layer2DFlowReverseTests: Layer2DFlowTests
 {
-    override func setUpWithError() throws
+    override func setUp()
     {
-        try! super.setUpWithError()
+        super.setUp()
         
         setOptimizerParams(params: &optimizerParams,
                            optimizerClass: .Adam)
@@ -935,14 +935,14 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
     override func testConvolution1BN() throws
     {
         let trainer = _buildTrainer(model: "Convolution1", bn: true)
-        run(trainer)
+        run(trainer, nbRetry: 5)
     }
     
     override func testConvolution1BNSample() throws
     {
         MAKit.Gradient.sample = true
         let trainer = _buildTrainer(model: "Convolution1", bn: true)
-        run(trainer)
+        run(trainer, nbRetry: 5)
     }
     
     override func testConvolution1NoBN() throws
@@ -1000,7 +1000,7 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
     override func testBN2D() throws
     {
         let trainer = _buildTrainer(model: "BN", bn: false)
-        run(trainer)
+        run(trainer, nbRetry: 5)
     }
     
     override func testMaxPool1() throws
@@ -1082,9 +1082,9 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
 // -----------------------------------------------------------------------------
 class Layer2DInferenceTests: Layer2DFlowTests
 {
-    override func setUpWithError() throws
+    override func setUp()
     {
-        try! super.setUpWithError()
+        super.setUp()
         optimizerParams.nbLoops = 2
     }
     

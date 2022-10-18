@@ -18,22 +18,40 @@ public class Convolution2D: BN2D
     /// Downscale factor of the resolution (height and width).
     let _stride: Int
     
+    ///
     /// List of grids of weights.
+    /// Shape ~ (nbWeights, kernel height, kernel width).
+    ///
     var _wArrays: [WeightGrids] = []
+    ///
     /// Array of biases.
+    /// Shape ~ (nbChannels,).
+    ///
     var _bArrays: WeightArrays! = nil
     
+    ///
     /// Buffer of weights.
+    /// Shape ~ (nbWeights, kernel height, kernel width).
+    ///
     var _wBuffers: IWeightBuffers! = nil
+    ///
     /// Buffer of biases.
+    /// Shape ~ (nbChannels,).
+    ///
     var _bBuffers: IWeightBuffers! = nil
     
+    ///
     /// Buffer of gradients per sample for weights.
+    /// Shape ~ (batch, nbWeights, kernel height, kernel width).
+    ///
     var _wDeltaWeights: MetalPrivateBuffer<Float>! = nil
+    ///
     /// Buffer of gradients per sample for biases.
+    /// Shape ~ (batch, nbChannels).
+    ///
     var _bDeltaWeights: MetalPrivateBuffer<Float>! = nil
     
-    /// Number of channels.
+    /// Number of weight kernels.
     public let nbWeights: Int
     /// Height of the weight's grid shape.
     public let weightHeight: Int
@@ -258,7 +276,7 @@ public class Convolution2D: BN2D
     {
         get {
             var nbGC = 0
-            nbGC += nbChannels * nbChannelsPrev * weightHeight * weightWidth
+            nbGC += nbWeights * weightHeight * weightWidth
             if _updateBiases
             {
                 nbGC += nbChannels
@@ -729,7 +747,7 @@ public class Convolution2D: BN2D
            MAKit.Gradient.sample && _wDeltaWeights == nil
         {
             _wDeltaWeights = MetalPrivateBuffer<Float>(
-                batchSize*nbChannels*nbChannelsPrev*weightWidth*weightHeight,
+                batchSize * nbWeights * weightWidth * weightHeight,
                 deviceID: deviceID
             )
             
@@ -894,8 +912,7 @@ public class Convolution2D: BN2D
                     }
                     
                     let offset = nbGC +
-                        2 * nbChannels * nbChannelsPrev *
-                            weightHeight * weightWidth + elem +
+                        2 * nbWeights * weightHeight * weightWidth + elem +
                         2 * DEPTH
                     neurons[depth].get(i, j)!.gc[batch][offset].out = tmp
                 }}
@@ -1121,8 +1138,7 @@ public class Convolution2D: BN2D
                     }
                     
                     let offset = nbGC +
-                        2 * nbChannels * nbChannelsPrev *
-                        weightHeight * weightWidth + elem +
+                        2 * nbWeights * weightHeight * weightWidth + elem +
                         2 * DEPTH
                     neurons[depth].get(i, j)!.gc[batch][offset].out = tmp
                 }}

@@ -6,7 +6,7 @@
 //
 
 import MAKit
-import MAKitTestsUtils
+import MATestsUtils
 
 // -----------------------------------------------------------------------------
 // Gradient Checking
@@ -14,9 +14,9 @@ import MAKitTestsUtils
 // -----------------------------------------------------------------------------
 class LinearError1DGradTests: Input1DLinearError1DCase
 {
-    override func setUpWithError() throws
+    override func setUp()
     {
-        try! super.setUpWithError()
+        super.setUp()
         MAKit.Loop.gradientChecking = true
     }
     
@@ -196,9 +196,9 @@ class LinearError1DFlowTests: Input1DLinearError1DCase
 // -----------------------------------------------------------------------------
 class LinearError1DFlowResetTests: LinearError1DFlowTests
 {
-    override func setUpWithError() throws
+    override func setUp()
     {
-        try! super.setUpWithError()
+        super.setUp()
         
         setOptimizerParams(params: &optimizerParams,
                            optimizerClass: .Adam)
@@ -244,9 +244,9 @@ class LinearError1DFlowResetTests: LinearError1DFlowTests
 // -----------------------------------------------------------------------------
 class LinearError1DFlowReverseTests: LinearError1DFlowTests
 {
-    override func setUpWithError() throws
+    override func setUp()
     {
-        try! super.setUpWithError()
+        super.setUp()
         
         setOptimizerParams(params: &optimizerParams,
                            optimizerClass: .Adam)

@@ -11,9 +11,15 @@ open class Layer2D: Layer
     /// Neural structure used in the CPU execution context.
     public internal(set) var neurons: [GridNeurons] = []
     
+    ///
     /// Output buffer (result of the forward pass) used in the GPU execution context.
+    /// Shape ~ (batch, nbChannels, height, width).
+    ///
     public internal(set) var outs: MetalPrivateBuffer<Float>! = nil
+    ///
     /// Gradient buffer (result of the backward pass) used in the GPU execution context.
+    /// Shape ~ (batch, nbChannels, height, width).
+    ///
     public internal(set) var delta: MetalPrivateBuffer<Float>! = nil
     
     /// Number of channels.

@@ -60,6 +60,13 @@ func computeTest1GradNorm(_ size: Int) -> Float
     return Float(data)!
 }
 
+func computeTest2GradNorm(_ size: Int) -> Float
+{
+    let pythonLib = Python.import("python_lib")
+    let data = pythonLib.compute_test2_grad_norm(size)
+    return Float(data)!
+}
+
 ///
 /// Get optimizer parameters for model training.
 ///

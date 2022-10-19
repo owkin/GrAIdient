@@ -21,13 +21,9 @@ final class MATorchTests: XCTestCase
         MAKit.Opti.GPU = true
     }
     
-    // Test loading weights from PyTorch, transforming target layer and
-    // back propagating gradients to the first layer.
-    func testModel1()
+    func _compareGradientNorm(_ model: Model, expectedNorm: Double)
     {
-        var model = ModelTest1.build(_size)
-        
-        let context = ModelContext(name: "ModelTest1", models: [model])
+        let context = ModelContext(name: "ModelTest", models: [model])
         let params = MAKit.Model.Params(context: context)
         
         let lastLayer = MSE1D(
@@ -36,35 +32,52 @@ final class MATorchTests: XCTestCase
         )
         lastLayer.coeff = -1.0 / 2.0
         
-        model.layers += context.model.layers
-        model = Model(model: model, modelsPrev: [])
+        var finalModel = Model(name: "ModelTest")
+        finalModel.layers = model.layers + context.model.layers
+        finalModel = Model(model: finalModel, modelsPrev: [])
         
-        model.initKernel(phase: .Inference)
-        model.computeDeltaWeights = false
+        finalModel.initKernel(phase: .Inference)
+        finalModel.computeDeltaWeights = false
         
         let optimizerParams = getOptimizerParams(nbLoops: 1)
-        model.setupOptimizers(params: optimizerParams)
+        finalModel.setupOptimizers(params: optimizerParams)
         
         let data: [Float] = getInputData(_size)
         let groundTruth: [[Double]] = [[0.0]]
         
-        let firstLayer: Input2D = model.layers.first as! Input2D
+        let firstLayer: Input2D = finalModel.layers.first as! Input2D
         firstLayer.computeDelta = true
         firstLayer.computeDeltaWeights = true
         try! firstLayer.setDataGPU(data, batchSize: 1, format: .RGB)
         
-        model.updateKernel(batchSize: 1)
-        try! model.forward()
+        finalModel.updateKernel(batchSize: 1)
+        try! finalModel.forward()
         try! lastLayer.applyGradientGPU(groundTruth)
-        try! model.backward()
+        try! finalModel.backward()
         
         let gradNormOutput: Double =
-            try! model.getGradientNorm(layers: [firstLayer])
-        
-        let gradNormExpected: Double = Double(computeTest1GradNorm(_size))
+            try! finalModel.getGradientNorm(layers: [firstLayer])
         
         let diffPercent =
-            abs(gradNormOutput - gradNormExpected) / gradNormExpected * 100.0
+            abs(gradNormOutput - expectedNorm) / expectedNorm * 100.0
         XCTAssert(diffPercent < 1.0)
+    }
+    
+    // Test loading weights from PyTorch, transforming target layer and
+    // back propagating gradients to the first layer.
+    func testModel1()
+    {
+        let model = ModelTest1.build(_size)
+        let expectedNorm: Double = Double(computeTest1GradNorm(_size))
+        _compareGradientNorm(model, expectedNorm: expectedNorm)
+    }
+    
+    // Test loading weights from PyTorch, transforming target layer and
+    // back propagating gradients to the first layer.
+    func testModel2()
+    {
+        let model = ModelTest2.build(_size)
+        let expectedNorm: Double = Double(computeTest2GradNorm(_size))
+        _compareGradientNorm(model, expectedNorm: expectedNorm)
     }
 }

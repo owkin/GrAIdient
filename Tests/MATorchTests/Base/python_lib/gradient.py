@@ -4,7 +4,7 @@ from typing import Optional, List
 from torch.autograd import Variable
 from torchvision.transforms import ToTensor
 
-from python_lib.model import ModelTest1
+from python_lib.model import ModelTest1, ModelTest2
 
 
 class GetGradient:
@@ -39,10 +39,7 @@ def get_input_data(size: int) -> List[float]:
     return data
 
 
-def compute_test1_grad_norm(size: int) -> float:
-    torch.manual_seed(42)
-    model = ModelTest1().eval().cpu()
-
+def _compute_grad_norm(model: torch.nn.Module, size: int) -> float:
     img_array = _build_input_data(size)
     img_tensor = ToTensor()(img_array).type(torch.float32)
     img_var = Variable(img_tensor, requires_grad=True)
@@ -59,3 +56,15 @@ def compute_test1_grad_norm(size: int) -> float:
     gradient_norm = gradient.gradient_norm
     gradient.close()
     return gradient_norm
+
+
+def compute_test1_grad_norm(size: int) -> float:
+    torch.manual_seed(42)
+    model = ModelTest1().eval().cpu()
+    return _compute_grad_norm(model, size)
+
+
+def compute_test2_grad_norm(size: int) -> float:
+    torch.manual_seed(42)
+    model = ModelTest2().eval().cpu()
+    return _compute_grad_norm(model, size)

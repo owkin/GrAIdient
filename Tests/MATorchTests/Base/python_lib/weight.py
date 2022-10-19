@@ -2,7 +2,7 @@ import torch
 import numpy as np
 from typing import List, Tuple
 
-from python_lib.model import ModelTest1
+from python_lib.model import ModelTest1, ModelTest2
 
 
 def _flatten_weights(layer_weights: np.ndarray) -> Tuple[List[float], List[int]]:
@@ -50,4 +50,10 @@ def _extract_weights(model: torch.nn.Module) -> Tuple[List[List[float]], List[Li
 def load_test1_weights() -> Tuple[List[List[float]], List[List[int]]]:
     torch.manual_seed(42)
     model = ModelTest1()
+    return _extract_weights(model)
+
+
+def load_test2_weights() -> Tuple[List[List[float]], List[List[int]]]:
+    torch.manual_seed(42)
+    model = ModelTest2()
     return _extract_weights(model)

@@ -46,6 +46,12 @@ func setPythonLib()
     }
 }
 
+///
+/// Get data image from Python.
+///
+/// - Parameter size: The size of the image.
+/// - Returns: The data image.
+///
 func getInputData(_ size: Int) -> [Float]
 {
     let pythonLib = Python.import("python_lib")
@@ -53,6 +59,12 @@ func getInputData(_ size: Int) -> [Float]
     return [Float](data)!
 }
 
+///
+/// Get gradient norm computed with PyTorch for ModelTest1.
+///
+/// - Parameter size: The size of the input data.
+/// - Returns: The gradient norm.
+///
 func computeTest1GradNorm(_ size: Int) -> Float
 {
     let pythonLib = Python.import("python_lib")
@@ -60,6 +72,12 @@ func computeTest1GradNorm(_ size: Int) -> Float
     return Float(data)!
 }
 
+///
+/// Get gradient norm computed with PyTorch for ModelTest2.
+///
+/// - Parameter size: The size of the input data.
+/// - Returns: The gradient norm.
+///
 func computeTest2GradNorm(_ size: Int) -> Float
 {
     let pythonLib = Python.import("python_lib")

@@ -8,8 +8,20 @@
 import MAKit
 import PythonKit
 
+/// Model to test against PyTorch.
 class ModelTest1
 {
+    ///
+    /// Create the model and import weights from PyTorch.
+    ///
+    /// Principle features:
+    ///   - Convolution with stride and biases
+    ///   - MaxPool
+    ///   - FullyConnected with biases
+    ///
+    /// - Parameter size: The size of the input data.
+    /// - Returns: The built model.
+    ///
     static func build(_ size: Int) -> Model
     {
         let context = ModelContext(name: "ModelTest1", curID: 0)
@@ -93,8 +105,20 @@ class ModelTest1
     }
 }
 
+/// Model to test against PyTorch.
 class ModelTest2
 {
+    ///
+    /// Create the model and import weights from PyTorch.
+    ///
+    /// Principle features:
+    ///   - Convolution with batch normalization and no biases
+    ///   - MaxPool with overlapping
+    ///   - ResNet like shortcut
+    ///
+    /// - Parameter size: The size of the input data.
+    /// - Returns: The built model.
+    ///
     static func build(_ size: Int) -> Model
     {
         let context = ModelContext(name: "ModelTest2", curID: 0)

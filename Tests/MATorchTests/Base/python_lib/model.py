@@ -2,13 +2,32 @@ import torch
 
 
 class ModelTest1(torch.nn.Module):
+    """
+    Model to test.
+    Principle features:
+        - Convolution with stride and biases
+        - MaxPool with ceil_model
+        - Linear with biases
+    """
+
     def __init__(self):
         super().__init__()
         self.features = torch.nn.Sequential(
-            torch.nn.Conv2d(3, 5, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=True),
+            torch.nn.Conv2d(
+                3, 5,
+                kernel_size=(7, 7), stride=(2, 2), padding=(3, 3),
+                bias=True
+            ),
             torch.nn.ReLU(),
-            torch.nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True),
-            torch.nn.Conv2d(5, 10, kernel_size=(1, 1), stride=(2, 2), bias=True),
+            torch.nn.MaxPool2d(
+                kernel_size=2, stride=2,
+                ceil_mode=True
+            ),
+            torch.nn.Conv2d(
+                5, 10,
+                kernel_size=(1, 1), stride=(2, 2),
+                bias=True
+            ),
             torch.nn.ReLU(),
         )
         self.avgpool = torch.nn.AdaptiveAvgPool2d((7, 7))
@@ -22,13 +41,35 @@ class ModelTest1(torch.nn.Module):
 
     @staticmethod
     def weight_init(module: torch.nn.Module):
-        if isinstance(module, torch.nn.Conv2d) or isinstance(module, torch.nn.Linear):
+        """
+        Initialize weights and biases.
+
+        Parameters
+        ----------
+        module: torch.nn.Module
+            The module to initialize.
+        """
+        if isinstance(module, torch.nn.Conv2d) or \
+           isinstance(module, torch.nn.Linear):
             torch.nn.init.normal_(module.weight)
 
             if module.bias is not None:
                 torch.nn.init.normal_(module.bias)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass.
+
+        Parameters
+        ----------
+        x: torch.Tensor
+            The input tensor.
+
+        Returns
+        -------
+        _: torch.Tensor
+            The output tensor.
+        """
         x = self.features(x)
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
@@ -37,16 +78,35 @@ class ModelTest1(torch.nn.Module):
 
 
 class ModelTest2(torch.nn.Module):
+    """
+    Model to test.
+    Principle features:
+        - Convolution with batch normalization and no biases
+        - MaxPool with overlapping and no ceil_mode
+        - ResNet like shortcut
+    """
+
     def __init__(self):
         super().__init__()
         self.features1 = torch.nn.Sequential(
-            torch.nn.Conv2d(3, 5, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False),
+            torch.nn.Conv2d(
+                3, 5,
+                kernel_size=(7, 7), stride=(2, 2), padding=(3, 3),
+                bias=False
+            ),
             torch.nn.BatchNorm2d(5),
             torch.nn.ReLU(),
-            torch.nn.MaxPool2d(kernel_size=3, stride=2, padding=(1, 1), ceil_mode=False),
+            torch.nn.MaxPool2d(
+                kernel_size=3, stride=2, padding=(1, 1),
+                ceil_mode=False
+            ),
         )
         self.features2 = torch.nn.Sequential(
-            torch.nn.Conv2d(5, 5, kernel_size=(3, 3), padding=(1, 1), bias=False),
+            torch.nn.Conv2d(
+                5, 5,
+                kernel_size=(3, 3), padding=(1, 1),
+                bias=False
+            ),
             torch.nn.BatchNorm2d(5),
             torch.nn.ReLU(),
         )
@@ -62,7 +122,16 @@ class ModelTest2(torch.nn.Module):
 
     @staticmethod
     def weight_init(module: torch.nn.Module):
-        if isinstance(module, torch.nn.Conv2d) or isinstance(module, torch.nn.Linear):
+        """
+        Initialize weights and biases.
+
+        Parameters
+        ----------
+        module: torch.nn.Module
+            The module to initialize.
+        """
+        if isinstance(module, torch.nn.Conv2d) or \
+                isinstance(module, torch.nn.Linear):
             torch.nn.init.normal_(module.weight)
 
             if module.bias is not None:
@@ -75,6 +144,19 @@ class ModelTest2(torch.nn.Module):
             torch.nn.init.uniform_(module.running_var)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass.
+
+        Parameters
+        ----------
+        x: torch.Tensor
+            The input tensor.
+
+        Returns
+        -------
+        _: torch.Tensor
+            The output tensor.
+        """
         x = self.features1(x)
         x = x + self.features2(x)
         x = self.avgpool(x)

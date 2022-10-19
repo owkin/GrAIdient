@@ -8,6 +8,7 @@
 import XCTest
 import MAKit
 
+/// Compare models created by MAKit and PyTorch.
 final class MATorchTests: XCTestCase
 {
     /// Size of one image (height and width are the same).
@@ -21,6 +22,13 @@ final class MATorchTests: XCTestCase
         MAKit.Opti.GPU = true
     }
     
+    ///
+    /// Compute gradient norm and compare with PyTorch.
+    ///
+    /// - Parameters:
+    ///     - model: The model we want to evaludate the gradient norm.
+    ///     - expectedNorm: The gradient norm computed in the Python environment.
+    ///
     func _compareGradientNorm(_ model: Model, expectedNorm: Double)
     {
         let context = ModelContext(name: "ModelTest", models: [model])
@@ -63,8 +71,7 @@ final class MATorchTests: XCTestCase
         XCTAssert(diffPercent < 1.0)
     }
     
-    // Test loading weights from PyTorch, transforming target layer and
-    // back propagating gradients to the first layer.
+    /// Test that model1 backward pass returns the same gradient norm in MAKit and PyTorch.
     func testModel1()
     {
         let model = ModelTest1.build(_size)
@@ -72,8 +79,7 @@ final class MATorchTests: XCTestCase
         _compareGradientNorm(model, expectedNorm: expectedNorm)
     }
     
-    // Test loading weights from PyTorch, transforming target layer and
-    // back propagating gradients to the first layer.
+    /// Test that model2 backward pass returns the same gradient norm in MAKit and PyTorch.
     func testModel2()
     {
         let model = ModelTest2.build(_size)

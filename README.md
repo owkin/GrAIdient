@@ -3,7 +3,7 @@
 Maximal Activation Kit. 
 A deep-learning framework for computer vision.
 
-It aims at promoting a total control and understanding of the main 
+This framework aims at promoting a total control and understanding of the main 
 operations needed to train deep learning models. 
 
 The `Layer` is the essential component needed to build an explicit graph of 
@@ -21,6 +21,47 @@ The API explicitly exposes the following functions:
 ## Model
 
 ## Layer
+
+# MATorchTests
+
+`MATorchTests` contains integration tests that allow to compare `MAKit` models 
+with their equivalent in `PyTorch`.
+
+The goal is to demonstrate a good level of reproducibility and 
+interoperability with `PyTorch`.
+
+## Setup
+
+These tests require a special `Python` environment. 
+
+```bash
+conda create --name matorch python=3.7
+conda activate matorch
+cd Tests/MATorchTests/Base
+pip install -e .
+```
+
+You should be able to run the tests right from XCode or 
+with a `bash` command:
+
+```bash
+swift test --filter MATorchTests
+```
+
+You may eventually clean the environment with:
+
+```bash     
+conda deactivate
+conda env remove --name matorch
+```
+
+## Steps 
+
+1. Create a model in `MAKit` and `PyTorch`.
+2. Get the weigths from the `PyTorch` model and load them  in the `MAKit` model.
+3. Load data from `PyTorch` and set it on both models.
+4. Compute forward, apply dummy loss then the backward pass.
+5. Compare the gradient norm on the very first layer in both models.
 
 # MAExamples
 
@@ -42,7 +83,7 @@ We want to train the model to discriminate between 2 labels
 
 ### Setup
 
-This example has some Python dependencies. In order to run 
+This example has some `Python` dependencies. In order to run 
 the example, we first have to setup the environment: 
 
 ```bash
@@ -57,6 +98,12 @@ with a `bash` command:
 
 ```bash
 swift test --filter MAExamples
+```
+
+Or to run the tests in the production model: 
+
+```bash
+swift test -c release --filter MAExamples
 ```
 
 You may eventually clean the environment with:

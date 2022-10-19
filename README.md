@@ -58,10 +58,10 @@ conda env remove --name matorch
 ## Steps 
 
 1. Create a model in `MAKit` and `PyTorch`.
-2. Get the weigths from the `PyTorch` model and load them  in the `MAKit` model.
-3. Load data from `PyTorch` and set it on both models.
-4. Compute forward, apply dummy loss then the backward pass.
-5. Compare the gradient norm on the very first layer in both models.
+1. Get the weigths from the `PyTorch` model and load them  in the `MAKit` model.
+1. Load data from `PyTorch` and set it on both models.
+1. Compute forward, apply dummy loss then the backward pass.
+1. Compare the gradient norm on the very first layer in both models.
 
 # MAExamples
 
@@ -116,7 +116,7 @@ conda env remove --name maexamples
 ### Steps
 
 1. Dump the training and testing datasets.
-2. Evaluate a random model on the testing dataset: watch a bad performance.  
-3. Train a model on the training dataset.
-4. Evaluate the trained model on the testing dataset: 
+1. Evaluate a random model on the testing dataset: watch a bad performance.  
+1. Train a model on the training dataset.
+1. Evaluate the trained model on the testing dataset: 
    watch a better performance.

@@ -7,3 +7,8 @@ DerivedData/
 .swiftpm/config/registries.json
 .swiftpm/xcode/package.xcworkspace/*
 .netrc
+
+.idea/
+*.egg-info/
+__pycache__/
+

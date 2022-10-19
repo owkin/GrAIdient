@@ -149,12 +149,38 @@ final class VGGExample: XCTestCase
     }
     
     ///
+    /// Load a model from the disk.
+    ///
+    /// - Parameter modelPath: The model path on the disk.
+    /// - Returns: the model loaded.
+    ///
+    func _loadModel(_ modelPath: String) -> Model
+    {
+        // Load model from the disk.
+        let data = try! Data(
+            contentsOf: URL(fileURLWithPath: modelPath)
+        )
+        
+        // Decode it as a base model
+        // (model where `layerPrev` links are not initialized).
+        let baseModel = try! PropertyListDecoder().decode(
+            BaseModel.self,
+            from: data
+        )
+        
+        // Create a model with initialized links
+        // with no previous model dependencies.
+        let vgg = Model(model: baseModel, modelsPrev: [])
+        return vgg
+    }
+    
+    ///
     /// Evaluate a model on the testing CIFAR dataset.
     ///
     /// - Parameter model: The model to evaluate.
-    /// - Returns: (Number of correct predictions, Total number of tests)/
+    /// - Returns: The ratio (in percent) of good predictions.
     ///
-    func _evaluateModel(_ model: Model) -> (Int, Int)
+    func _evaluateModel(_ model: Model) -> Int
     {
         let cifar8 = CIFAR.loadDataset(
             datasetPath: _outputDir + "/datasetTest8",
@@ -167,6 +193,10 @@ final class VGGExample: XCTestCase
         
         cifar8.initSamples(batchSize: _batchSize)
         cifar5.initSamples(batchSize: _batchSize)
+        
+        // We keep a subset of the dataset to have a quicker evaluation.
+        cifar8.keep(100)
+        cifar5.keep(100)
         
         let firstLayer: Input2D = model.layers.first as! Input2D
         let lastLayer: MSE1D = model.layers.last as! MSE1D
@@ -229,7 +259,8 @@ final class VGGExample: XCTestCase
             }
         }
         
-        return (nbRight, nbTotal)
+        let ratio = Int(Double(nbRight) / Double(nbTotal) * 100)
+        return ratio
     }
     
     /// Test1: dump CIFAR train and test datasets for labels 8 and 5.
@@ -262,17 +293,26 @@ final class VGGExample: XCTestCase
     {
         // Build a model with randomly initialized weights.
         let vgg = _buildModel(bn: true)
+        
         // Initialize for inference.
         vgg.initKernel(phase: .Inference)
         
         // Evaluate model on CIFAR testing dataset.
-        let (nbRight, nbTotal) = _evaluateModel(vgg)
+        let ratio = _evaluateModel(vgg)
         
-        let ratio = Int(Double(nbRight) / Double(nbTotal) * 100)
         print(
             "Ratio of good predictions: \(ratio)%."
         )
         XCTAssert(ratio < 60)
+        
+        // Encode the model.
+        let encoder = PropertyListEncoder()
+        let data = try! encoder.encode(vgg)
+        
+        // Save it to the disk.
+        try! data.write(
+            to: URL(fileURLWithPath: _outputDir + "/vgg1.plist")
+        )
     }
     
     /// Test3: train a simple model.
@@ -296,7 +336,7 @@ final class VGGExample: XCTestCase
         cifar8.initSamples(batchSize: _batchSize / 2)
         cifar5.initSamples(batchSize: _batchSize / 2)
         
-        // We keep a subset of the dataset to have a quicker training.
+        // Keep a subset of the dataset to have a quicker training.
         cifar8.keep(500)
         cifar5.keep(500)
         
@@ -307,8 +347,9 @@ final class VGGExample: XCTestCase
         cifar8.keep(nbWholeBatches)
         cifar5.keep(nbWholeBatches)
         
-        // Build model.
-        let vgg = _buildModel(bn: true)
+        // Load previous model from the disk.
+        let vgg = _loadModel(_outputDir + "vgg1.plist")
+        
         // Initialize for training.
         vgg.initialize(params: params, phase: .Training)
         
@@ -410,38 +451,31 @@ final class VGGExample: XCTestCase
         
         // Save it to the disk.
         try! data.write(
-            to: URL(fileURLWithPath: _outputDir + "/vgg.plist")
+            to: URL(fileURLWithPath: _outputDir + "/vgg2.plist")
         )
     }
     
     /// Test4: test that the previous trained model makes better predictions than the untrained model.
-    func test4_TrainedModel()
+    func test4_CompareModels()
     {
         // Load previous model from the disk.
-        let data = try! Data(
-            contentsOf: URL(fileURLWithPath: _outputDir + "/vgg.plist")
-        )
+        let vgg1 = _loadModel(_outputDir + "/vgg1.plist")
+        let vgg2 = _loadModel(_outputDir + "/vgg2.plist")
         
-        // Decode it as a base model (model where `layerPrev` links are not
-        // initialized).
-        let baseModel = try! PropertyListDecoder().decode(
-            BaseModel.self,
-            from: data
-        )
-        
-        // Create a model with initialized links
-        // with no previous model dependencies.
-        let vgg = Model(model: baseModel, modelsPrev: [])
         // Initialize for inference.
-        vgg.initKernel(phase: .Inference)
+        vgg1.initKernel(phase: .Inference)
+        vgg2.initKernel(phase: .Inference)
         
         // Evaluate model on CIFAR testing dataset.
-        let (nbRight, nbTotal) = _evaluateModel(vgg)
+        let ratio1 = _evaluateModel(vgg1)
+        let ratio2 = _evaluateModel(vgg2)
         
-        let ratio = Int(Double(nbRight) / Double(nbTotal) * 100)
         print(
-            "Ratio of good predictions: \(ratio)%."
+            "Ratio of good predictions before training: \(ratio1)%."
         )
-        XCTAssert(ratio >= 60)
+        print(
+            "Ratio of good predictions after training: \(ratio2)%."
+        )
+        XCTAssert(ratio2 > ratio1)
     }
 }

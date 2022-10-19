@@ -3,7 +3,7 @@
 Maximal Activation Kit. 
 A deep-learning framework for computer vision.
 
-It aims at promoting a total control and understanding of the main 
+This framework aims at promoting a total control and understanding of the main 
 operations needed to train deep learning models. 
 
 The `Layer` is the essential component needed to build an explicit graph of 
@@ -21,6 +21,47 @@ The API explicitly exposes the following functions:
 ## Model
 
 ## Layer
+
+# MATorchTests
+
+`MATorchTests` contains integration tests that allow to compare `MAKit` models 
+with their equivalent in `PyTorch`.
+
+The goal is to demonstrate a good level of reproducibility and 
+interoperability with `PyTorch`.
+
+## Setup
+
+These tests require a special `Python` environment. 
+
+```bash
+conda create --name matorch python=3.7
+conda activate matorch
+cd Tests/MATorchTests/Base
+pip install -e .
+```
+
+You should be able to run the tests right from XCode or 
+with a `bash` command:
+
+```bash
+swift test --filter MATorchTests
+```
+
+You may eventually clean the environment with:
+
+```bash     
+conda deactivate
+conda env remove --name matorch
+```
+
+## Steps 
+
+1. Create a model in `MAKit` and `PyTorch`.
+1. Get the weigths from the `PyTorch` model and load them  in the `MAKit` model.
+1. Load data from `PyTorch` and set it on both models.
+1. Compute forward, apply dummy loss then the backward pass.
+1. Compare the gradient norm on the very first layer in both models.
 
 # MAExamples
 
@@ -42,7 +83,7 @@ We want to train the model to discriminate between 2 labels
 
 ### Setup
 
-This example has some Python dependencies. In order to run 
+This example has some `Python` dependencies. In order to run 
 the example, we first have to setup the environment: 
 
 ```bash
@@ -59,6 +100,12 @@ with a `bash` command:
 swift test --filter MAExamples
 ```
 
+Or to run the tests in the production model: 
+
+```bash
+swift test -c release --filter MAExamples
+```
+
 You may eventually clean the environment with:
 
 ```bash     
@@ -69,7 +116,7 @@ conda env remove --name maexamples
 ### Steps
 
 1. Dump the training and testing datasets.
-2. Evaluate a random model on the testing dataset: watch a bad performance.  
-3. Train a model on the training dataset.
-4. Evaluate the trained model on the testing dataset: 
+1. Evaluate a random model on the testing dataset: watch a bad performance.  
+1. Train a model on the training dataset.
+1. Evaluate the trained model on the testing dataset: 
    watch a better performance.

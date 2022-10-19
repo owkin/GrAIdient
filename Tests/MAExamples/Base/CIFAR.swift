@@ -46,12 +46,12 @@ class CIFAR: DataSamplerImpl<UInt8>
         label: Int,
         size: Int)
     {
-        let cifar = Python.import("cifar")
+        let pythonLib = Python.import("python_lib")
         
         var dataset = [UInt8]()
         for dataFile in 1...5
         {
-            let data = cifar.load_CIFAR_data(dataFile, label, size)
+            let data = pythonLib.load_CIFAR_data(dataFile, label, size)
             dataset += Array<UInt8>(data)!
         }
         
@@ -75,10 +75,10 @@ class CIFAR: DataSamplerImpl<UInt8>
         label: Int,
         size: Int)
     {
-        let cifar = Python.import("cifar")
+        let pythonLib = Python.import("python_lib")
         
         var dataset = [UInt8]()
-        let data = cifar.load_CIFAR_test(label, size)
+        let data = pythonLib.load_CIFAR_test(label, size)
         dataset += Array<UInt8>(data)!
         
         let datasetData = Data(

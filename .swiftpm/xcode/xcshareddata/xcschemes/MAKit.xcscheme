@@ -104,6 +104,20 @@
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "MAKit_MATorchTests"
+               BuildableName = "MAKit_MATorchTests"
+               BlueprintName = "MAKit_MATorchTests"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -129,6 +143,16 @@
                BlueprintIdentifier = "MAExamples"
                BuildableName = "MAExamples"
                BlueprintName = "MAExamples"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "MATorchTests"
+               BuildableName = "MATorchTests"
+               BlueprintName = "MATorchTests"
                ReferencedContainer = "container:">
             </BuildableReference>
          </TestableReference>

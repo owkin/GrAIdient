@@ -73,14 +73,17 @@ class ModelTest1
         
         let model = Model(model: context.model, modelsPrev: [])
         
+        // Load weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
         let data = pythonLib.load_test1_weights()
         
         let weights = [[Float]](data.tuple2.0)!
         
+        // Apply weights on the `MAKit` model's layers.
         var cur = 0
         for num_layer in 0..<model.layers.count
         {
+            // Load weights and biases.
             if let convLayer = model.layers[num_layer] as? Convolution2D
             {
                 let weightsTmp: [Float] = weights[cur]
@@ -90,6 +93,7 @@ class ModelTest1
                 
                 convLayer.weightsCPU = weightsTmp + biases
             }
+            // Load weights and biases.
             else if let flLayer = model.layers[num_layer] as? FullyConnected
             {
                 let weightsTmp: [Float] = weights[cur]
@@ -132,6 +136,8 @@ class ModelTest2
             params: params
         )
         
+        // Note that as we use batch normalization, the biases are
+        // redundant: do not update them.
         layer = Convolution2D(
             layerPrev: layer,
             size: 7, nbChannels: 5, stride: 2,
@@ -171,6 +177,7 @@ class ModelTest2
             params: params
         )
         
+        // Load weights from `PyTorch`.
         let model = Model(model: context.model, modelsPrev: [])
         
         let pythonLib = Python.import("python_lib")
@@ -178,9 +185,12 @@ class ModelTest2
         
         let weights = [[Float]](data.tuple2.0)!
         
+        // Apply weights on the `MAKit` model's layers.
         var cur = 0
         for num_layer in 0..<model.layers.count
         {
+            // Load weights, the batch normalization's weights and biases
+            // and the batch normalization's running average and deviation.
             if let convLayer = model.layers[num_layer] as? Convolution2D
             {
                 let weightsTmp: [Float] = weights[cur]
@@ -198,6 +208,7 @@ class ModelTest2
                 convLayer.weightsCPU = weightsTmp + Ɣ + β
                 convLayer.statsCPU = Eμ + Eσ2
             }
+            // Load weights and biases.
             else if let flLayer = model.layers[num_layer] as? FullyConnected
             {
                 let weightsTmp: [Float] = weights[cur]

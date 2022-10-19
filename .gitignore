@@ -10,4 +10,5 @@ DerivedData/
 
 .idea/
 *.egg-info/
+__pycache__/
 

@@ -40,6 +40,10 @@ let package = Package(
             dependencies: ["MAKit", "MATestsUtils"]
         ),
         .testTarget(
+            name: "MATorchTests",
+            dependencies: ["MAKit", "PythonKit"]
+        ),
+        .testTarget(
             name: "MAExamples",
             dependencies: ["MAKit", "PythonKit"]
         ),

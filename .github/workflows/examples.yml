@@ -37,7 +37,7 @@ jobs:
       - name: Test
         run: |
           conda activate maexamples-ci
-          swift test --filter MAExamples
+          swift test -c release --filter MAExamples
       
       - name: Remove Conda Environment
         if: always()

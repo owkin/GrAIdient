@@ -51,7 +51,7 @@ MAKit.Opti.GPU = true
 ```
 
 Optionally, you can specify external GPU to be used in a desired order 
-(first one to be used with top priority) with: 
+(first in the list will be used with top priority): 
 
 ```swift
 MAKit.Opti.gpuNamedPriority = ["<GPU name1>", "<GPU name2>", ...]
@@ -83,7 +83,8 @@ deep learning model.
   second layer executes backward, first layer executes backward
 
 Plus, as a convenient wrapping arount the layers, the `Model` routes the 
-execution mode so that the CPU vs GPU is only exposed in the `Layer` component.
+execution mode so that the CPU and GPU are only exposed 
+in the `Layer` component.
 
 So now, how do we create a model ?
 
@@ -97,7 +98,8 @@ without any operations being resolved at runtime.
 
 The `ModelContext` is used in order to build this graph of layers. 
 Once created, you are naturally editing a graph of layers where each layer 
-receiving the context will be appended to the list of layers of the same model. 
+that receives the context will be appended 
+to the list of layers of the same model. 
 
 <ins>Example</ins>: 
 
@@ -106,7 +108,6 @@ let context = ModelContext(name: "MyModel", models: [])
 let params = MAKit.Model.Params(context: context)
 
 var layer: Layer1D = Input1D(nbNeurons: 1, params: params)
-
 layer = FullyConnected(
     layerPrev: layer, nbNeurons: 5,
     activation: ReLU.str, biases: true,
@@ -139,7 +140,7 @@ let cnn = context.model
 context = ModelContext(name: "Classifier", models: [cnn])
 params = MAKit.Model.Params(context: context)
 
-var head: Layer1D = FullyConnected(
+let head: Layer1D = FullyConnected(
     layerPrev: layer, nbNeurons: 1,
     activation: ReLU.str, biases: true, params: params
 )
@@ -162,9 +163,9 @@ layerB1 -> layerB2 -> ... -> layerB42 \
 layerC1 -> layerC2 -> ... -> layerC42
 
 where 
-layerA1.id == 0, layerA2.id == 1, ... layeerA42 == 41 \
-layerB1.id == 0, layerB2.id == 1, ... layeerB42 == 41 \
-layerC1.id == 0, layerC2.id == 1, ... layeerC42 == 41
+layerA1.id == 0, layerA2.id == 1, ... layerA42 == 41 \
+layerB1.id == 0, layerB2.id == 1, ... layerB42 == 41 \
+layerC1.id == 0, layerC2.id == 1, ... layerC42 == 41
 
 The `id` serves as a way to find the links between the layers when we 
 dump a model on the disk and try to load it later. 
@@ -200,6 +201,22 @@ let baseClassifier = try! PropertyListDecoder().decode(
 let cnnFromDisk = Model(model: baseCNN, modelsPrev: [])
 let classifierFromDisk = Model(model: baseClassifier, modelsPrev: [cnnFromDisk])
 ```
+
+## Optimizer
+
+### Optimizer Scheduler
+
+### Variable Scheduler
+
+## Gradient Checking
+
+## How to Extend ?
+
+### Create a New Layer
+
+### Craete a New Activation Function
+
+# MAKitTests
 
 # MATorchTests
 

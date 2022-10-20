@@ -192,8 +192,6 @@ open class GradTrainer: Trainer
                 model.incStep()
                 numLoop += 1
             }
-            
-            model.incEpoch()
             epoch += 1
         }
     }
@@ -333,9 +331,6 @@ open class FlowTrainer: Trainer
                 modelGPU.incStep()
                 numLoop += 1
             }
-            
-            modelCPU.incEpoch()
-            modelGPU.incEpoch()
             epoch += 1
         }
     }
@@ -479,9 +474,6 @@ open class FlowReverseTrainer: FlowTrainer
                 modelGPU.incStep()
                 numLoop += 1
             }
-            
-            modelCPU.incEpoch()
-            modelGPU.incEpoch()
             epoch += 1
         }
     }
@@ -878,8 +870,6 @@ open class NormTrainer: Trainer
                 model.incStep()
                 numLoop += 1
             }
-            
-            model.incEpoch()
             epoch += 1
         }
     }

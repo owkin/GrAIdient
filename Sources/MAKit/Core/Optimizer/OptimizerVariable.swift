@@ -34,15 +34,13 @@ class OptimizerVariable
     ///
     /// - Parameters:
     ///     - step: The current step.
-    ///     - epoch: The current epoch.
     ///     - nbLoops: The number of steps per epoch.
     /// - Returns: The variable value.
     ///
-    func getValue(step: Int, epoch: Int, nbLoops: Int) -> Double?
+    func getValue(step: Int, nbLoops: Int) -> Double?
     {
         return time.getValue(
             step: step,
-            epoch: epoch,
             nbLoops: nbLoops
         )
     }
@@ -52,15 +50,13 @@ class OptimizerVariable
     ///
     /// - Parameters:
     ///     - step: The current step.
-    ///     - epoch: The current epoch.
     ///     - nbLoops: The number of steps per epoch.
     /// - Returns: The variable percent value.
     ///
-    func getPercent(step: Int, epoch: Int, nbLoops: Int) -> Double?
+    func getPercent(step: Int, nbLoops: Int) -> Double?
     {
         return time.getPercent(
             step: step,
-            epoch: epoch,
             nbLoops: nbLoops
         )
     }
@@ -74,22 +70,20 @@ public protocol TimeVariable: HandleTime
     ///
     /// - Parameters:
     ///     - step: The current step.
-    ///     - epoch: The current epoch.
     ///     - nbLoops: The number of steps per epoch.
     /// - Returns: The variable value.
     ///
-    func getValue(step: Int, epoch: Int, nbLoops: Int) -> Double?
+    func getValue(step: Int, nbLoops: Int) -> Double?
     
     ///
     /// Get the variable percent value.
     ///
     /// - Parameters:
     ///     - step: The current step.
-    ///     - epoch: The current epoch.
     ///     - nbLoops: The number of steps per epoch.
     /// - Returns: The variable percent value.
     ///
-    func getPercent(step: Int, epoch: Int, nbLoops: Int) -> Double?
+    func getPercent(step: Int, nbLoops: Int) -> Double?
 }
 
 /// A variable that will always have the same value.
@@ -114,15 +108,13 @@ public class ConstEpochsVar: ConstEpochsTime, TimeVariable
     ///
     /// - Parameters:
     ///     - step: The current step.
-    ///     - epoch: The current epoch.
     ///     - nbLoops: The number of steps per epoch.
     /// - Returns: The variable value.
     ///
-    public func getValue(step: Int, epoch: Int, nbLoops: Int) -> Double?
+    public func getValue(step: Int, nbLoops: Int) -> Double?
     {
         let progress = getProgressRatio(
             step: step,
-            epoch: epoch,
             nbLoops: nbLoops
         )
         return _value.getValue(progress: progress)
@@ -133,15 +125,13 @@ public class ConstEpochsVar: ConstEpochsTime, TimeVariable
     ///
     /// - Parameters:
     ///     - step: The current step.
-    ///     - epoch: The current epoch.
     ///     - nbLoops: The number of steps per epoch.
     /// - Returns: The variable percent value.
     ///
-    public func getPercent(step: Int, epoch: Int, nbLoops: Int) -> Double?
+    public func getPercent(step: Int, nbLoops: Int) -> Double?
     {
         let progress = getProgressRatio(
             step: step,
-            epoch: epoch,
             nbLoops: nbLoops
         )
         return _value.getPercent(progress: progress)
@@ -173,15 +163,13 @@ public class MultEpochsVar: MultEpochsTime, TimeVariable
     ///
     /// - Parameters:
     ///     - step: The current step.
-    ///     - epoch: The current epoch.
     ///     - nbLoops: The number of steps per epoch.
     /// - Returns: The variable value.
     ///
-    public func getValue(step: Int, epoch: Int, nbLoops: Int) -> Double?
+    public func getValue(step: Int, nbLoops: Int) -> Double?
     {
         let progress = getProgressRatio(
             step: step,
-            epoch: epoch,
             nbLoops: nbLoops
         )
         return _value.getValue(progress: progress)
@@ -192,15 +180,13 @@ public class MultEpochsVar: MultEpochsTime, TimeVariable
     ///
     /// - Parameters:
     ///     - step: The current step.
-    ///     - epoch: The current epoch.
     ///     - nbLoops: The number of steps per epoch.
     /// - Returns: The variable percent value.
     ///
-    public func getPercent(step: Int, epoch: Int, nbLoops: Int) -> Double?
+    public func getPercent(step: Int, nbLoops: Int) -> Double?
     {
         let progress = getProgressRatio(
             step: step,
-            epoch: epoch,
             nbLoops: nbLoops
         )
         return _value.getPercent(progress: progress)
@@ -234,17 +220,16 @@ public class ListEpochsVar: ListEpochsTime, TimeVariable
     ///
     /// - Parameters:
     ///     - step: The current step.
-    ///     - epoch: The current epoch.
     ///     - nbLoops: The number of steps per epoch.
     /// - Returns: The variable value.
     ///
-    public func getValue(step: Int, epoch: Int, nbLoops: Int) -> Double?
+    public func getValue(step: Int, nbLoops: Int) -> Double?
     {
+        let epoch = step / nbLoops
         let (_, _, epochIndex) = getEpochTarget(epoch: epoch)
         
         let progress = getProgressRatio(
             step: step,
-            epoch: epoch,
             nbLoops: nbLoops
         )
         return _values[epochIndex].getValue(progress: progress)
@@ -255,17 +240,16 @@ public class ListEpochsVar: ListEpochsTime, TimeVariable
     ///
     /// - Parameters:
     ///     - step: The current step.
-    ///     - epoch: The current epoch.
     ///     - nbLoops: The number of steps per epoch.
     /// - Returns: The variable percent value.
     ///
-    public func getPercent(step: Int, epoch: Int, nbLoops: Int) -> Double?
+    public func getPercent(step: Int, nbLoops: Int) -> Double?
     {
+        let epoch = step / nbLoops
         let (_, _, epochIndex) = getEpochTarget(epoch: epoch)
         
         let progress = getProgressRatio(
             step: step,
-            epoch: epoch,
             nbLoops: nbLoops
         )
         return _values[epochIndex].getPercent(progress: progress)

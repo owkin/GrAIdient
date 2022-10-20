@@ -454,12 +454,6 @@ public class OptimizerAlgorithm
         _optimizer.incStep()
     }
     
-    /// Increment internal epoch state.
-    func incEpoch()
-    {
-        _optimizer.incEpoch()
-    }
-    
     ///
     /// Clip the weights'  gradients in the CPU execution context.
     ///

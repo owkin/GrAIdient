@@ -98,11 +98,11 @@ class MSE1DCase: XCTestCase
         
         if MAKit.Opti.GPU
         {
-            try! lastLayer.applyGradientGPU(gt)
+            try! lastLayer.lossDerivativeGPU(gt)
         }
         else
         {
-            try! lastLayer.applyGradientCPU(gt)
+            try! lastLayer.lossDerivativeCPU(gt)
         }
         return gt
     }

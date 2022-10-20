@@ -41,7 +41,7 @@ final class MATorchTests: XCTestCase
             layerPrev: model.layers.last! as! Layer1D,
             params: params
         )
-        lastLayer.coeff = -1.0 / 2.0
+        lastLayer.coeff = 1.0 / 2.0
         
         // The final model contains the layers of `model` and the loss layer.
         // Initialize the model with the links (`layerPrev` updated).
@@ -76,7 +76,7 @@ final class MATorchTests: XCTestCase
         try! finalModel.forward()
         
         // Apply loss derivative.
-        try! lastLayer.applyGradientGPU(groundTruth)
+        try! lastLayer.lossDerivativeGPU(groundTruth)
         
         // Backward.
         try! finalModel.backward()

@@ -570,9 +570,9 @@ private class MetalDevice
             ],
             "Layer1D": [
                 "MSE1DLoss",
-                "MSE1DApplyGradient",
+                "MSE1DLossDerivative",
                 "linearErrorLoss",
-                "linearErrorApplyGradient",
+                "linearErrorLossDerivative",
                 "selectNeurons1DForward",
                 "selectNeurons1DBackward",
             ],

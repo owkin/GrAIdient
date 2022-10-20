@@ -113,6 +113,18 @@ conda deactivate
 conda env remove --name maexamples
 ```
 
+### Known Issues
+
+The following error may follow on local setup: 
+`UnpicklingError: invalid load key, ‘v’`.
+
+This may occur when lfs data files are not pulled. 
+To fix this: 
+
+```bash     
+git lfs pull
+```
+
 ### Steps
 
 1. Dump the training and testing datasets.

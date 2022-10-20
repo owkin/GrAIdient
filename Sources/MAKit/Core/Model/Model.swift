@@ -759,12 +759,6 @@ public class Model: BaseModel
         _kernel.incStep()
     }
     
-    /// Notify optimizer tthat a new epoch has begun.
-    public func incEpoch()
-    {
-        _kernel.incEpoch()
-    }
-    
     ///
     /// Apply the forward pass of the Gradient Checking.
     ///

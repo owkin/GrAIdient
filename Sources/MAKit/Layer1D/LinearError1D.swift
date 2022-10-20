@@ -243,11 +243,17 @@ public class LinearError1D: LayerOutput1D
     }
     
     ///
-    /// Apply the gradient in the CPU execution context.
+    /// Compute the derivative of the loss in the CPU execution context.
+    ///
+    /// This function is necessary to initialize the backward pass !
+    /// In a way, it plays a similar role as the `setData` of the first layer.
+    ///
+    /// The `setData` API sets data to the first layer to initialize the forward pass.
+    /// Here we initialize the backward pass.
     ///
     /// Throw an error if batch size or ground truth are incoherent.
     ///
-    public func applyGradientCPU() throws
+    public func lossDerivativeCPU() throws
     {
         if batchSize <= 0 || batchSize > neurons.get(0)!.v.count
         {
@@ -270,11 +276,17 @@ public class LinearError1D: LayerOutput1D
     }
     
     ///
-    /// Apply the gradient in the GPU execution context.
+    /// Compute the derivative of the loss in the GPU execution context.
+    ///
+    /// This function is necessary to initialize the backward pass !
+    /// In a way, it plays a similar role as the `setData` of the first layer.
+    ///
+    /// The `setData` API sets data to the first layer to initialize the forward pass.
+    /// Here we initialize the backward pass.
     ///
     /// Throw an error if batch size or ground truth are incoherent.
     ///
-    public func applyGradientGPU() throws
+    public func lossDerivativeGPU() throws
     {
         if let layerPrev = self.layerPrev as? Layer1D
         {
@@ -293,7 +305,7 @@ public class LinearError1D: LayerOutput1D
             }
             
             let command = MetalKernel.get.createCommand(
-                "linearErrorApplyGradient", deviceID: deviceID
+                "linearErrorLossDerivative", deviceID: deviceID
             )
             command.setBuffer(outs.metal, atIndex: 0)
             command.setBytes(pNbNeurons, atIndex: 1)

@@ -99,7 +99,7 @@ The `ModelContext` is used in order to build this graph of layers.
 Once created, you are naturally editing a graph of layers where each layer 
 receiving the context will be appended to the list of layers of the same model. 
 
-Example: 
+<ins>Example</ins>: 
 
 ```swift
 let context = ModelContext(name: "MyModel", models: [])
@@ -120,7 +120,7 @@ let model = context.model
 Please note that the notion of graph of layers goes beyond the models. 
 We could design a graph of layers composed of several models. 
 
-Example: 
+<ins>Example</ins>: 
 
 ```swift
 var context = ModelContext(name: "CNN", models: [])
@@ -155,15 +155,15 @@ That being said, we could have multiple copies of graph of layers in which
 the `id` are unique in their graph but duplicated in the other graphs.
 This is typically handy for multi GPU setup.
 
-Example: 
+<ins>Example</ins>: 
 
-layerA1 -> layerA2 -> ... -> layerA42
-layerB1 -> layerB2 -> ... -> layerB42
+layerA1 -> layerA2 -> ... -> layerA42 \
+layerB1 -> layerB2 -> ... -> layerB42 \
 layerC1 -> layerC2 -> ... -> layerC42
 
 where 
-layerA1.id == 0, layerA2.id == 1, ... layeerA42 == 41
-layerB1.id == 0, layerB2.id == 1, ... layeerB42 == 41
+layerA1.id == 0, layerA2.id == 1, ... layeerA42 == 41 \
+layerB1.id == 0, layerB2.id == 1, ... layeerB42 == 41 \
 layerC1.id == 0, layerC2.id == 1, ... layeerC42 == 41
 
 The `id` serves as a way to find the links between the layers when we 
@@ -176,7 +176,9 @@ main APIs and we must create a `Model` out of this base model. During the
 creation of this model, the links `layerPrev` of the different layers 
 will be initialized and the full API will be available for this model.
 
-Example with CNN and Classifier from the previous paragraph: 
+<ins>Example</ins>: \
+Let us take the CNN and Classifier from the 
+[previous paragraph](#graph-of-layers): 
 
 ```swift
 let encoder = PropertyListEncoder()

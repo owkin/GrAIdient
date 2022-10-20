@@ -48,7 +48,7 @@ kernel void MSE1DLoss(
     losses[elem] = tmp;
 }
 
-kernel void MSE1DApplyGradient(
+kernel void MSE1DLossDerivative(
     const device float * outs,
     const device float * groundTruth,
     constant uint * pNbNeurons,
@@ -127,7 +127,7 @@ kernel void linearErrorLoss(
     losses[elem] = tmp;
 }
 
-kernel void linearErrorApplyGradient(
+kernel void linearErrorLossDerivative(
     const device float * outs,
     constant uint * pNbNeurons,
     constant float * pCoeff,

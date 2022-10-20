@@ -98,11 +98,11 @@ class LinearError1DCase: XCTestCase
         
         if MAKit.Opti.GPU
         {
-            try! lastLayer.applyGradientGPU()
+            try! lastLayer.lossDerivativeGPU()
         }
         else
         {
-            try! lastLayer.applyGradientCPU()
+            try! lastLayer.lossDerivativeCPU()
         }
         return gt
     }

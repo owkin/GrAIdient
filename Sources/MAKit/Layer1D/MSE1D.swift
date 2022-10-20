@@ -242,13 +242,19 @@ public class MSE1D: LayerOutput1D
     }
     
     ///
-    /// Apply the gradient in the CPU execution context.
+    /// Compute the derivative of the loss in the CPU execution context.
+    ///
+    /// This function is necessary to initialize the backward pass !
+    /// In a way, it plays a similar role as the `setData` of the first layer.
+    ///
+    /// The `setData` API sets data to the first layer to initialize the forward pass.
+    /// Here we use the `groundTruth` to initialize the backward pass.
     ///
     /// Throw an error if batch size or ground truth are incoherent.
     ///
     /// - Parameter groundTruth: The ground truth.
     ///
-    public func applyGradientCPU(_ groundTruth: [[Double]]) throws
+    public func lossDerivativeCPU(_ groundTruth: [[Double]]) throws
     {
         let batchSize = groundTruth.count
         if batchSize != self.batchSize ||
@@ -282,13 +288,19 @@ public class MSE1D: LayerOutput1D
     }
     
     ///
-    /// Apply the gradient in the GPU execution context.
+    /// Compute the derivative of the loss in the GPU execution context.
+    ///
+    /// This function is necessary to initialize the backward pass !
+    /// In a way, it plays a similar role as the `setData` of the first layer.
+    ///
+    /// The `setData` API sets data to the first layer to initialize the forward pass.
+    /// Here we use the `groundTruth` to initialize the backward pass.
     ///
     /// Throw an error if batch size or ground truth are incoherent.
     ///
     /// - Parameter groundTruth: The ground truth.
     ///
-    public func applyGradientGPU(_ groundTruth: [[Double]]) throws
+    public func lossDerivativeGPU(_ groundTruth: [[Double]]) throws
     {
         let batchSize = groundTruth.count
         if self.groundTruth == nil
@@ -313,14 +325,20 @@ public class MSE1D: LayerOutput1D
         }
         MetalKernel.get.upload([self.groundTruth])
         
-        try applyGradientGPU(
+        try lossDerivativeGPU(
             self.groundTruth,
             batchSize: groundTruth.count
         )
     }
     
     ///
-    /// Apply the gradient in the GPU execution context.
+    /// Compute the derivative of the loss in the GPU execution context.
+    ///
+    /// This function is necessary to initialize the backward pass !
+    /// In a way, it plays a similar role as the `setData` of the first layer.
+    ///
+    /// The `setData` API sets data to the first layer to initialize the forward pass.
+    /// Here we use the `groundTruth` to initialize the backward pass.
     ///
     /// Throw an error if batch size or ground truth are incoherent.
     ///
@@ -328,7 +346,7 @@ public class MSE1D: LayerOutput1D
     ///     -  groundTruth: The ground truth.
     ///     - batchSize: The batch size of data.
     ///
-    public func applyGradientGPU(
+    public func lossDerivativeGPU(
         _ groundTruth: MetalBuffer<Float>,
         batchSize: Int) throws
     {
@@ -358,7 +376,7 @@ public class MSE1D: LayerOutput1D
             }
             
             let command = MetalKernel.get.createCommand(
-                "MSE1DApplyGradient", deviceID: deviceID
+                "MSE1DLossDerivative", deviceID: deviceID
             )
             command.setBuffer(outs.metal, atIndex: 0)
             command.setBuffer(groundTruth.metal, atIndex: 1)

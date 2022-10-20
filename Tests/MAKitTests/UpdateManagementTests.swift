@@ -109,7 +109,7 @@ class UpdateManagementTests: XCTestCase
         try! model1.forward()
         try! model2.forward()
         
-        try! lastLayer.applyGradientCPU(groundTruth)
+        try! lastLayer.lossDerivativeCPU(groundTruth)
         
         try! model2.backward()
         try! model1.backward()
@@ -135,7 +135,7 @@ class UpdateManagementTests: XCTestCase
         try! model1.forward()
         try! model2.forward()
         
-        try! lastLayer.applyGradientCPU(groundTruth)
+        try! lastLayer.lossDerivativeCPU(groundTruth)
         
         try! model2.backward()
         try! model1.backward()
@@ -160,7 +160,7 @@ class UpdateManagementTests: XCTestCase
         try! model1.forward()
         try! model2.forward()
         
-        try! lastLayer.applyGradientCPU(groundTruth)
+        try! lastLayer.lossDerivativeCPU(groundTruth)
         
         try! model2.backward()
         try! model1.backward()
@@ -272,7 +272,7 @@ class UpdateManagementTests: XCTestCase
         try! model1.forward()
         try! model2.forward()
         
-        try! lastLayer.applyGradientGPU(groundTruth, batchSize: 1)
+        try! lastLayer.lossDerivativeGPU(groundTruth, batchSize: 1)
         
         try! model2.backward()
         try! model1.backward()
@@ -298,7 +298,7 @@ class UpdateManagementTests: XCTestCase
         try! model1.forward()
         try! model2.forward()
         
-        try! lastLayer.applyGradientGPU(groundTruth, batchSize: 1)
+        try! lastLayer.lossDerivativeGPU(groundTruth, batchSize: 1)
         
         try! model2.backward()
         try! model1.backward()
@@ -323,7 +323,7 @@ class UpdateManagementTests: XCTestCase
         try! model1.forward()
         try! model2.forward()
         
-        try! lastLayer.applyGradientGPU(groundTruth, batchSize: 1)
+        try! lastLayer.lossDerivativeGPU(groundTruth, batchSize: 1)
         
         try! model2.backward()
         try! model1.backward()
@@ -434,7 +434,7 @@ class UpdateManagementTests: XCTestCase
         try! model1.forward()
         try! model2.forward()
         
-        try! lastLayer.applyGradientCPU(groundTruth)
+        try! lastLayer.lossDerivativeCPU(groundTruth)
         
         try! model2.backward()
         try! model1.backward()
@@ -460,7 +460,7 @@ class UpdateManagementTests: XCTestCase
         try! model1.forward()
         try! model2.forward()
         
-        try! lastLayer.applyGradientCPU(groundTruth)
+        try! lastLayer.lossDerivativeCPU(groundTruth)
         
         try! model2.backward()
         try! model1.backward()
@@ -485,7 +485,7 @@ class UpdateManagementTests: XCTestCase
         try! model1.forward()
         try! model2.forward()
         
-        try! lastLayer.applyGradientCPU(groundTruth)
+        try! lastLayer.lossDerivativeCPU(groundTruth)
         
         try! model2.backward()
         try! model1.backward()
@@ -599,7 +599,7 @@ class UpdateManagementTests: XCTestCase
         try! model1.forward()
         try! model2.forward()
         
-        try! lastLayer.applyGradientGPU(groundTruth, batchSize: 1)
+        try! lastLayer.lossDerivativeGPU(groundTruth, batchSize: 1)
         
         try! model2.backward()
         try! model1.backward()
@@ -625,7 +625,7 @@ class UpdateManagementTests: XCTestCase
         try! model1.forward()
         try! model2.forward()
         
-        try! lastLayer.applyGradientGPU(groundTruth, batchSize: 1)
+        try! lastLayer.lossDerivativeGPU(groundTruth, batchSize: 1)
         
         try! model2.backward()
         try! model1.backward()
@@ -650,7 +650,7 @@ class UpdateManagementTests: XCTestCase
         try! model1.forward()
         try! model2.forward()
         
-        try! lastLayer.applyGradientGPU(groundTruth, batchSize: 1)
+        try! lastLayer.lossDerivativeGPU(groundTruth, batchSize: 1)
         
         try! model2.backward()
         try! model1.backward()

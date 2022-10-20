@@ -253,8 +253,6 @@ public class MAKit
             var t: Int = 0
             /// Step of the model training.
             public var step: Int = 0
-            /// Epoch of the model training.
-            public var epoch: Int = 0
             
             /// Number of steps per epoch.
             public var nbLoops: Int = -1

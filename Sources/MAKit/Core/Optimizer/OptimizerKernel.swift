@@ -45,7 +45,6 @@ public class OptimizerKernel
     {
         return variable.getValue(
             step: params.step,
-            epoch: params.epoch,
             nbLoops: params.nbLoops
         )
     }
@@ -59,7 +58,6 @@ public class OptimizerKernel
     {
         return variable.getPercent(
             step: params.step,
-            epoch: params.epoch,
             nbLoops: params.nbLoops
         )
     }
@@ -69,15 +67,11 @@ public class OptimizerKernel
     {
         params.t += 1
     }
+    
     /// Increment internal step state.
     func incStep()
     {
         params.step += 1
-    }
-    /// Increment internal epoch state.
-    func incEpoch()
-    {
-        params.epoch += 1
     }
 }
 
@@ -98,11 +92,10 @@ public protocol HandleTime
     ///
     /// - Parameters:
     ///     - step: The current step.
-    ///     - epoch: The current epoch.
     ///     - nbLoops: The number of loops per epoch.
     /// - Returns: The progress ratio.
     ///
-    func getProgressRatio(step: Int, epoch: Int, nbLoops: Int) -> Double
+    func getProgressRatio(step: Int, nbLoops: Int) -> Double
 }
 
 extension HandleTime
@@ -113,14 +106,13 @@ extension HandleTime
     ///
     /// - Parameters:
     ///     - step: The current step.
-    ///     - epoch: The current epoch.
     ///     - nbLoops: The number of loops per epoch.
     /// - Returns: The progress ratio.
     ///
-    public func getProgressRatio(step: Int, epoch: Int, nbLoops: Int) -> Double
+    public func getProgressRatio(step: Int, nbLoops: Int) -> Double
     {
-        let t = step
-        var td = Double(t % nbLoops)
+        let epoch = step / nbLoops
+        var td = Double(step % nbLoops)
         td /= Double(nbLoops)
         
         let (epochTarget, epochBlock) = getEpochTarget(epoch: epoch)
@@ -318,7 +310,8 @@ public class ListEpochsScheduler: ListEpochsTime, TimeScheduler
     ///
     public func buildOptimizer(kernel: OptimizerKernel) -> OptimizerAlgorithm
     {
-        let (_, _, epochIndex) = getEpochTarget(epoch: kernel.params.epoch)
+        let epoch = kernel.params.step / kernel.params.nbLoops
+        let (_, _, epochIndex) = getEpochTarget(epoch: epoch)
         return _listHandleOptimizer[epochIndex].build(kernel: kernel)
     }
 }

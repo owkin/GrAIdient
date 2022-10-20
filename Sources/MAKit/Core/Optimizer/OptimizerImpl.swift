@@ -142,12 +142,6 @@ class OptimizerImpl
     {
         _kernel.incStep()
     }
-    
-    /// Increment internal epoch state.
-    func incEpoch()
-    {
-        _kernel.incEpoch()
-    }
 }
 
 /// Simple SGD optimizer.

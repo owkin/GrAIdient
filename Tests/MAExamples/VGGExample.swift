@@ -413,7 +413,7 @@ final class VGGExample: XCTestCase
                 try! vgg.forward()
                 
                 // Apply loss derivative.
-                try! lastLayer.applyGradientGPU(
+                try! lastLayer.lossDerivativeGPU(
                     groundTruth,
                     batchSize: _batchSize
                 )
@@ -439,10 +439,6 @@ final class VGGExample: XCTestCase
                 // optimizer scheduler: see `_getOptimizerParams`.
                 vgg.incStep()
             }
-            // Update internal epoch.
-            // This is not mandatory except if we used another
-            // optimizer scheduler: see `_getOptimizerParams`.
-            vgg.incEpoch()
         }
     
         // Encode the trained model.

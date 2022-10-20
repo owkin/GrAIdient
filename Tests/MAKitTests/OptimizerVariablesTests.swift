@@ -109,8 +109,6 @@ class OptimizerVariablesTests: XCTestCase
                 
                 model.incStep()
             }
-            
-            model.incEpoch()
         }
         
         var listAlpha2 = [Double]()

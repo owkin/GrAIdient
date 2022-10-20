@@ -119,7 +119,7 @@ def _compute_grad_norm(model: torch.nn.Module, size: int) -> float:
     x = model(x)
 
     x = x[0, 0].mean()
-    loss = -1.0 / 2.0 * x * x
+    loss = 1.0 / 2.0 * x * x
     loss.backward()
 
     gradient_norm = gradient.gradient_norm

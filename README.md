@@ -217,7 +217,7 @@ let baseClassifier = try! PropertyListDecoder().decode(
 )
 
 let cnn = Model(model: baseCNN, modelsPrev: [])
-let classifier = Model(model: baseClassifier, modelsPrev: [cnnFromDisk])
+let classifier = Model(model: baseClassifier, modelsPrev: [cnn])
 ```
 
 ### Initialize Weights
@@ -258,8 +258,8 @@ classifier.weights = myClassifierWeights
 ### Advanced Transformations
 
 In some scenario, we need to transform the model and preserve the 
-"hard resources" to avoid initializing resources that 
-are independent from the transformation concerned. Hence, the use of 
+"hard resources" to avoid losing time initializing resources that 
+are independent of the transformation concerned. Hence, the use of 
 `inPlace`.
 
 <ins>Example</ins>: 
@@ -277,10 +277,10 @@ newCNN = Model.resize(
 
 Let us consider a model containing the graph of layers:  
 
-layer1 -> layer2 -> ... -> layer42 \
+layer1 -> layer2 -> ... -> layer42
 
-Let us suppose that model links are initialized so as its "hard resources".
-We want to go through the typical training flow. 
+Let us suppose that the model links are initialized so as its "hard resources".
+We want to go through the typical training flow: 
 
 ```swift
 // Let us assume data is defined.
@@ -320,7 +320,7 @@ First note that the `setData`, `lossDerivative` and `getLoss` are not exposed
 at the model level. They are specific to the concerned layer. As a low level 
 component, beware not to forget the `GPU` in the API name.
 
-Then note as the `setData` enables the forward pass while 
+Then note that the `setData` enables the forward pass while 
 `lossDerivative` enables the backward pass. 
 
 `getLoss` is a just an indicator but has no real role in the training flow.

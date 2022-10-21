@@ -46,17 +46,17 @@ public class LinearError1D: LayerOutput1D
     /// - Parameter groundTruth: The ground truth.
     /// - Returns: The estimated gradients of weights.
     ///
-    public func collectGradientsApprox(
-        _ groundTruth: [[Double]]) throws -> [Double]
+    public func collectGradientsApprox<T: BinaryFloatingPoint>(
+        _ groundTruth: [[T]]) throws -> [T]
     {
-        var gradients = [Double]()
+        var gradients = [T]()
         let nbGradients = neurons.get(0)!.nbGC / 2
         for elem in 0..<nbGradients
         {
             let loss1 = try getLossGC(groundTruth, elem: 2 * elem)
             let loss2 = try getLossGC(groundTruth, elem: 2 * elem + 1)
             
-            let gradient = (loss1 - loss2) / Double(2 * Ɛ)
+            let gradient = (loss1 - loss2) / T(2 * Ɛ)
             gradients.append(gradient)
         }
         return gradients
@@ -72,7 +72,9 @@ public class LinearError1D: LayerOutput1D
     ///     - elem: The modified weight for which we collect the resulting loss.
     /// - Returns: The loss value.
     ///
-    func getLossGC(_ groundTruth: [[Double]], elem: Int) throws -> Double
+    func getLossGC<T: BinaryFloatingPoint>(
+        _ groundTruth: [[T]],
+        elem: Int) throws -> T
     {
         let batchSize = groundTruth.count
         if batchSize != self.batchSize ||
@@ -81,7 +83,7 @@ public class LinearError1D: LayerOutput1D
             throw LayerError.BatchSize
         }
         
-        var losses = [Double](repeating: 0.0, count: batchSize)
+        var losses = [T](repeating: 0.0, count: batchSize)
         for batch in 0..<batchSize
         {
             let gt = groundTruth[batch]
@@ -92,14 +94,14 @@ public class LinearError1D: LayerOutput1D
             
             for depth in 0..<nbNeurons
             {
-                let out = neurons.get(depth)!.gc[batch][elem].out
+                let out = T(neurons.get(depth)!.gc[batch][elem].out)
                 let diff = out - gt[depth]
                 
                 losses[batch] += diff
             }
         }
-        return Double(coeff) * losses.reduce(0, +) /
-               Double(nbNeurons * batchSize)
+        return T(coeff) * losses.reduce(0, +) /
+               T(nbNeurons * batchSize)
     }
     
     ///
@@ -110,7 +112,8 @@ public class LinearError1D: LayerOutput1D
     /// - Parameter groundTruth: The ground truth.
     /// - Returns: The loss value.
     ///
-    public func getLossCPU(_ groundTruth: [[Double]]) throws -> Double
+    public func getLossCPU<T: BinaryFloatingPoint>(
+        _ groundTruth: [[T]]) throws -> T
     {
         let batchSize = groundTruth.count
         if batchSize != self.batchSize ||
@@ -119,7 +122,7 @@ public class LinearError1D: LayerOutput1D
             throw LayerError.BatchSize
         }
         
-        var losses = [Double](repeating: 0.0, count: batchSize)
+        var losses = [T](repeating: 0.0, count: batchSize)
         for elem in 0..<batchSize
         {
             let gt = groundTruth[elem]
@@ -130,14 +133,14 @@ public class LinearError1D: LayerOutput1D
             
             for depth in 0..<nbNeurons
             {
-                let out = neurons.get(depth)!.v[elem].out
+                let out = T(neurons.get(depth)!.v[elem].out)
                 let diff = out - gt[depth]
                 
                 losses[elem] += diff
             }
         }
-        return Double(coeff) * losses.reduce(0, +) /
-               Double(nbNeurons * batchSize)
+        return T(coeff) * losses.reduce(0, +) /
+               T(nbNeurons * batchSize)
     }
     
     ///
@@ -148,7 +151,8 @@ public class LinearError1D: LayerOutput1D
     /// - Parameter groundTruth: The ground truth.
     /// - Returns: The loss value.
     ///
-    public func getLossGPU(_ groundTruth: [[Double]]) throws -> Float
+    public func getLossGPU<T: BinaryFloatingPoint>(
+        _ groundTruth: [[T]]) throws -> T
     {
         let batchSize = groundTruth.count
         if self.groundTruth == nil
@@ -173,10 +177,10 @@ public class LinearError1D: LayerOutput1D
         }
         MetalKernel.get.upload([self.groundTruth])
         
-        return try getLossGPU(
+        return try T(getLossGPU(
             self.groundTruth,
             batchSize: groundTruth.count
-        )
+        ))
     }
     
     ///

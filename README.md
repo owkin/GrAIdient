@@ -149,7 +149,7 @@ _ = MSE1D(layerPrev: head, params: params)
 let classifier = context.model
 ```
 
-### Layer `id` and `layerPrev`
+### Initialize Links
 
 Each layer has an `id` which must be unique in the graph of layers. 
 That being said, we could have multiple copies of graph of layers in which 
@@ -167,19 +167,32 @@ layerA1.id == 0, layerA2.id == 1, ... layerA42 == 41 \
 layerB1.id == 0, layerB2.id == 1, ... layerB42 == 41 \
 layerC1.id == 0, layerC2.id == 1, ... layerC42 == 41
 
-The `id` serves as a way to find the links between the layers when we 
-dump a model on the disk and try to load it later. 
+The `id` serves as a way to find the links between the layers. 
+One could have stored the direct links `layerPrev` instead of the `id` but 
+then we would have issues to serialize and deserialize the model. 
 
-This is a two step use case: we first have to load the model from the disk. 
-We obtain a `BaseModel` with a list of layers where each layer's `id` is 
+Thus, initializing the links is a two steps process.
+
+1. We first deal with a `BaseModel` object. This object may be 
+directly retrieved through the graph of layers 
+(example: `let classifier = context.model` 
+in the [previous paragraph](#graph-of-layers)) or loaded from the disk 
+(we will see an example of that later). This base model consists in 
+a list of layers where each layer's `id` is 
 well defined but not their `layerPrev`. This base model does not expose the 
-main APIs and we must create a `Model` out of this base model. During the 
+main APIs. 
+
+1. In order to get access to the main APIs we must create a `Model` 
+out of the previous base model. During the 
 creation of this model, the links `layerPrev` of the different layers 
-will be initialized and the full API will be available for this model.
+will be initialized and the full API will be available.
 
 <ins>Example</ins>: \
 Let us take the CNN and Classifier from the 
 [previous paragraph](#graph-of-layers): 
+
+Let us imagine the two models have been trained and we want to save them 
+to the disk: 
 
 ```swift
 let encoder = PropertyListEncoder()
@@ -188,7 +201,12 @@ var data = try! encoder.encode(cnn)
 try! data.write(to: URL(fileURLWithPath: "/path/to/model1.plist"))
 data = try! encoder.encode(classifier)
 try! data.write(to: URL(fileURLWithPath: "/path/to/model2.plist"))
+```
 
+Then we want to be able to load the 2 models from the disk and get access 
+to the full `Model` API:
+
+```swift
 data = try! Data(contentsOf: URL(fileURLWithPath: "/path/to/model1.plist"))
 let baseCNN = try! PropertyListDecoder().decode(
     BaseModel.self, from: data
@@ -198,9 +216,114 @@ let baseClassifier = try! PropertyListDecoder().decode(
     BaseModel.self, from: data
 )
 
-let cnnFromDisk = Model(model: baseCNN, modelsPrev: [])
-let classifierFromDisk = Model(model: baseClassifier, modelsPrev: [cnnFromDisk])
+let cnn = Model(model: baseCNN, modelsPrev: [])
+let classifier = Model(model: baseClassifier, modelsPrev: [cnnFromDisk])
 ```
+
+### Initialize Weights
+
+Once the links have been initialized, it is nearly time 
+to train or run the model in the GPU execution mode 
+(or just test/debug it on the CPU). 
+
+Still, there is one last heavy operation to do: initialize "hard resources".
+These resources may be time consuming depending on the size of the model, 
+they are:  
+
+- the weights & biases
+- the batch normalization (weights, biases and stats) 
+
+To trigger the process: 
+
+```swift
+cnn.initKernel(.Training)
+classifier.initKernel(.Training)
+``` 
+
+or 
+
+```swift
+cnn.initKernel(.Inference)
+classifier.initKernel(.Inference)
+``` 
+
+These calls will initialize the weights randomly except if particular values 
+for weights, biases have been set beforehand:
+
+```swift
+cnn.weights = myCNNWeights
+classifier.weights = myClassifierWeights
+```
+
+### Advanced Transformations
+
+In some scenario, we need to transform the model and preserve the 
+"hard resources" to avoid initializing resources that 
+are independent from the transformation concerned. Hence, the use of 
+`inPlace`.
+
+<ins>Example</ins>: 
+
+```swift
+newCNN = Model.resize(
+    models: [cnn],
+    imageWidth: 256,
+    imageHeight: 256,
+    inPlace: true
+)[0]
+```
+
+## Training Flow
+
+Let us consider a model containing the graph of layers:  
+
+layer1 -> layer2 -> ... -> layer42 \
+
+Let us suppose that model links are initialized so as its "hard resources".
+We want to go through the typical training flow. 
+
+```swift
+// Let us assume data is defined.
+let data: [[Double]]
+// Let us assume groundTruth is defined.
+let groundTruth: [[Double]]
+// Let us assume model is defined.
+let model: Model
+
+let firstLayer = layer1 as! Input1D
+let lastLayer = layer42 as! MSE1D
+
+// Set data.
+try! firstLayer.setDataGPU(data)
+
+// Reset gradient validity inside the kernel
+// for backward pass and update the batch size
+model.updateKernel(batchSize: data.count)
+
+// Forward.
+try! model.forward()
+
+// Apply loss derivative.
+try! lastLayer.lossDerivativeGPU(groundTruth)
+
+// Backward.
+try! model.backward()
+
+// Update weights.
+try! model.update()
+
+// Get loss result.
+let loss = try! lastLayer.getLossGPU(groundTruth)
+```
+
+First note that the `setData`, `lossDerivative` and `getLoss` are not exposed 
+at the model level. They are specific to the concerned layer. As a low level 
+component, beware not to forget the `GPU` in the API name.
+
+Then note as the `setData` enables the forward pass while 
+`lossDerivative` enables the backward pass. 
+
+`getLoss` is a just an indicator but has no real role in the training flow.
 
 ## Optimizer
 

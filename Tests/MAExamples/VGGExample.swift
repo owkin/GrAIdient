@@ -426,7 +426,7 @@ final class VGGExample: XCTestCase
                 
                 // Get loss result.
                 // Note that backward is explicitly
-                // trickered by `applyGradient` whereas `getLoss` is
+                // enabled by `applyGradient` whereas `getLoss` is
                 // just an indicator.
                 let loss = try! lastLayer.getLossGPU(
                     groundTruth,

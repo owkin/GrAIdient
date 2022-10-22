@@ -1,4 +1,18 @@
-# MAKit
+
+<div align="center">
+<h1>MAKit</h1>
+
+[![tests](
+https://github.com/owkin/MAKit/actions/workflows/unit-tests.yml/badge.svg?branch=master
+)](https://github.com/owkin/MAKit/actions/workflows/unit-tests.yml) 
+[![tests](
+https://github.com/owkin/MAKit/actions/workflows/integration-tests.yml/badge.svg?branch=master
+)](https://github.com/owkin/MAKit/actions/workflows/integration-tests.yml) 
+[![tests](
+https://github.com/owkin/MAKit/actions/workflows/examples.yml/badge.svg?branch=master
+)](https://github.com/owkin/MAKit/actions/workflows/examples.yml) 
+
+</div>
 
 Maximal Activation Kit. \
 A deep-learning framework for computer vision.

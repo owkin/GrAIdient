@@ -537,9 +537,11 @@ The dataset used is CIFAR 10.
 We want to train the model to discriminate between 2 labels 
 (not the 10 available).
 
-<table align="center">
+Here is a subset of images we find for the label 8 (ships) vs label 5 (dogs).
+
+<table align="center" cellspacing="0" cellpadding="0" style="border: none;">
     <tr>
-        <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/data/out/CIFAR5_0.png" alt=""></td>
+        <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/data/out/CIFAR8_0.png" alt=""></td>
         <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/data/out/CIFAR8_1.png" alt=""></td>
         <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/data/out/CIFAR8_2.png" alt=""></td>
         <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/data/out/CIFAR8_3.png" alt=""></td>

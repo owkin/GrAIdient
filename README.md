@@ -539,7 +539,7 @@ We want to train the model to discriminate between 2 labels
 
 Here is a subset of images we find for the label 8 (ships) vs label 5 (dogs).
 
-<table align="center" cellspacing="0" cellpadding="0" style="border: none;">
+<table align="center" cellspacing="0" cellpadding="0" style="border-collapse: collapse; border: none;">
     <tr style="border: none;">
         <td style="border: none;"><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/data/out/CIFAR8_0.png" alt=""></td>
         <td style="border: none;"><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/data/out/CIFAR8_1.png" alt=""></td>

@@ -1,11 +1,28 @@
 
-# MAKit &middot; [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/owkin/MAKit/blob/main/LICENSE) [![tests](https://github.com/owkin/MAKit/actions/workflows/unit-tests.yml/badge.svg?branch=master)](https://github.com/owkin/MAKit/actions/workflows/unit-tests.yml) [![tests](https://github.com/owkin/MAKit/actions/workflows/integration-tests.yml/badge.svg?branch=master)](https://github.com/owkin/MAKit/actions/workflows/integration-tests.yml) [![tests](https://github.com/owkin/MAKit/actions/workflows/examples.yml/badge.svg?branch=master)](https://github.com/owkin/MAKit/actions/workflows/examples.yml)
+# MAKit
+
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)]
+(https://github.com/owkin/MAKit/blob/main/LICENSE) 
+[![tests](https://github.com/owkin/MAKit/actions/workflows/unit-tests.yml/badge.svg?branch=master)]
+(https://github.com/owkin/MAKit/actions/workflows/unit-tests.yml) 
+[![tests](https://github.com/owkin/MAKit/actions/workflows/integration-tests.yml/badge.svg?branch=master)]
+(https://github.com/owkin/MAKit/actions/workflows/integration-tests.yml) 
+[![tests](https://github.com/owkin/MAKit/actions/workflows/examples.yml/badge.svg?branch=master)]
+(https://github.com/owkin/MAKit/actions/workflows/examples.yml)
 
 Maximal Activation Kit. \
 A deep-learning framework for computer vision.
 
 This framework aims at promoting full control and understanding of the main 
 operations needed to train deep learning models. 
+
+## Swift Package Manager
+
+Add the following dependency to your `Package.swift` manifest:
+
+```swift
+.package(url: "https://github.com/owkin/MAKit.git", .branch("main")),
+```
 
 ## Layer
 
@@ -466,9 +483,9 @@ according to their forward API. We want the following difference to be
 very small: 
  
 $$ 
-\frac{\left\Vert \delta w^{approx} - \delta w^{ILearn} \right\Vert_{2}}
+\frac{\left\Vert \delta w^{approx} - \delta w^{MAKit} \right\Vert_{2}}
 {\left\Vert \delta w^{approx} \right\Vert_{2} + 
- \left\Vert \delta w^{ILearn} \right\Vert_{2}} = \epsilon 
+ \left\Vert \delta w^{MAKit} \right\Vert_{2}} = \epsilon 
 $$
 
 ## How to Extend ?

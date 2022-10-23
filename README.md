@@ -1,14 +1,14 @@
 
 # MAKit
 
-[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)]
-(https://github.com/owkin/MAKit/blob/main/LICENSE) 
-[![tests](https://github.com/owkin/MAKit/actions/workflows/unit-tests.yml/badge.svg?branch=master)]
-(https://github.com/owkin/MAKit/actions/workflows/unit-tests.yml) 
-[![tests](https://github.com/owkin/MAKit/actions/workflows/integration-tests.yml/badge.svg?branch=master)]
-(https://github.com/owkin/MAKit/actions/workflows/integration-tests.yml) 
-[![tests](https://github.com/owkin/MAKit/actions/workflows/examples.yml/badge.svg?branch=master)]
-(https://github.com/owkin/MAKit/actions/workflows/examples.yml)
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](
+https://github.com/owkin/MAKit/blob/main/LICENSE) 
+[![tests](https://github.com/owkin/MAKit/actions/workflows/unit-tests.yml/badge.svg?branch=master)](
+https://github.com/owkin/MAKit/actions/workflows/unit-tests.yml) 
+[![tests](https://github.com/owkin/MAKit/actions/workflows/integration-tests.yml/badge.svg?branch=master)](
+https://github.com/owkin/MAKit/actions/workflows/integration-tests.yml) 
+[![tests](https://github.com/owkin/MAKit/actions/workflows/examples.yml/badge.svg?branch=master)](
+https://github.com/owkin/MAKit/actions/workflows/examples.yml)
 
 Maximal Activation Kit. \
 A deep-learning framework for computer vision.

@@ -288,8 +288,53 @@ final class VGGExample: XCTestCase
         )
     }
     
-    /// Test2: test that an untrained model makes bad predictions.
-    func test2_UntrainedModel()
+    /// Test2: dump CIFAR images for labels 8 and 5.
+    func test2_DumpImages()
+    {
+        let batchSize = 16
+        let cifar8 = CIFAR.loadDataset(
+            datasetPath: _outputDir + "/datasetTest8",
+            size: _size
+        )
+        let cifar5 = CIFAR.loadDataset(
+            datasetPath: _outputDir + "/datasetTest5",
+            size: _size
+        )
+        cifar8.initSamples(batchSize: batchSize)
+        cifar5.initSamples(batchSize: batchSize)
+        
+        let samples8 = cifar8.getSamples()!
+        let samples5 = cifar5.getSamples()!
+        
+        let pixels8 = getPixels(
+            samples8, width: _size, height: _size, imageFormat: .Neuron
+        )
+        let pixels5 = getPixels(
+            samples5, width: _size, height: _size, imageFormat: .Neuron
+        )
+        
+        for elem in 0..<batchSize
+        {
+            var image = getImage(
+                pixels: pixels8[elem], width: _size, height: _size
+            )
+            saveImage(
+                image,
+                url: URL(fileURLWithPath: _outputDir + "CIFAR8_\(elem).png")
+            )
+            
+            image = getImage(
+                pixels: pixels5[elem], width: _size, height: _size
+            )
+            saveImage(
+                image,
+                url: URL(fileURLWithPath: _outputDir + "CIFAR5_\(elem).png")
+            )
+        }
+    }
+    
+    /// Test3: test that an untrained model makes bad predictions.
+    func test3_UntrainedModel()
     {
         // Build a model with randomly initialized weights.
         let vgg = _buildModel(bn: true)
@@ -315,8 +360,8 @@ final class VGGExample: XCTestCase
         )
     }
     
-    /// Test3: train a simple model.
-    func test3_TrainVGG()
+    /// Test4: train a simple model.
+    func test4_TrainVGG()
     {
         let cifar8 = CIFAR.loadDataset(
             datasetPath: _outputDir + "/datasetTrain8",
@@ -451,8 +496,8 @@ final class VGGExample: XCTestCase
         )
     }
     
-    /// Test4: test that the previous trained model makes better predictions than the untrained model.
-    func test4_CompareModels()
+    /// Test5: test that the previous trained model makes better predictions than the untrained model.
+    func test5_CompareModels()
     {
         // Load previous model from the disk.
         let vgg1 = _loadModel(_outputDir + "/vgg1.plist")

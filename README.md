@@ -454,6 +454,22 @@ model.step()
 
 ## Gradient Checking
 
+Gradient checking is a way to estimage the gradient of weights 
+thanks to the following approximation: 
+
+$$ \delta w = \nabla_{w}Loss \approx \frac{Loss(w+h) - Loss(w-h)}{2h} $$
+
+This estimation allows to challenge the theoretical gradients given 
+by `MAKit` during the backward pass.
+
+`MAKit` implements gradient checking tests for the different available layers 
+to ensure their backward API to operate the right gradient formula 
+according to their forward API. We want the following difference to be 
+very small: 
+ 
+$$ \frac{\left\Vert \delta w^{approx} - \delta w^{ILearn} \right\Vert_{2}}{\left\Vert \delta w^{approx} \right\Vert_{2} + \left\Vert \delta w^{ILearn} \right\Vert_{2}} = \epsilon $$
+
+
 ## How to Extend ?
 
 ### Create a New Layer
@@ -521,6 +537,54 @@ The dataset used is CIFAR 10.
 We want to train the model to discriminate between 2 labels 
 (not the 10 available).
 
+<table align="center">
+    <tr>
+        <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/out/CIFAR8_0" alt=""></td>
+        <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/out/CIFAR8_1" alt=""></td>
+        <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/out/CIFAR8_2" alt=""></td>
+        <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/out/CIFAR8_3" alt=""></td>
+        <td> </td>
+        <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/out/CIFAR5_0" alt=""></td>
+        <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/out/CIFAR5_1" alt=""></td>
+        <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/out/CIFAR5_2" alt=""></td>
+        <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/out/CIFAR5_3" alt=""></td>
+    </tr>
+    <tr>
+        <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/out/CIFAR8_4" alt=""></td>
+        <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/out/CIFAR8_5" alt=""></td>
+        <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/out/CIFAR8_6" alt=""></td>
+        <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/out/CIFAR8_7" alt=""></td>
+        <td> </td>
+        <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/out/CIFAR5_4" alt=""></td>
+        <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/out/CIFAR5_5" alt=""></td>
+        <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/out/CIFAR5_6" alt=""></td>
+        <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/out/CIFAR5_7" alt=""></td>
+    </tr>
+        <tr>
+        <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/out/CIFAR8_8" alt=""></td>
+        <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/out/CIFAR8_9" alt=""></td>
+        <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/out/CIFAR8_10" alt=""></td>
+        <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/out/CIFAR8_11" alt=""></td>
+        <td> </td>
+        <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/out/CIFAR5_8" alt=""></td>
+        <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/out/CIFAR5_9" alt=""></td>
+        <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/out/CIFAR5_10" alt=""></td>
+        <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/out/CIFAR5_11" alt=""></td>
+    </tr>
+    </tr>
+        <tr>
+        <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/out/CIFAR8_12" alt=""></td>
+        <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/out/CIFAR8_13" alt=""></td>
+        <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/out/CIFAR8_14" alt=""></td>
+        <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/out/CIFAR8_15" alt=""></td>
+        <td> </td>
+        <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/out/CIFAR5_12" alt=""></td>
+        <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/out/CIFAR5_13" alt=""></td>
+        <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/out/CIFAR5_14" alt=""></td>
+        <td><img src="https://github.com/owkin/MAKit/blob/jfr/docs/Tests/MAExamples/Base/out/CIFAR5_15" alt=""></td>
+    </tr>
+</table>
+
 ### Setup
 
 This example has some `Python` dependencies. In order to run 
@@ -568,6 +632,8 @@ git lfs pull
 ### Steps
 
 1. Dump the training and testing datasets.
+1. Dump some images corresponding to the 2 labels 
+   we want to discriminate against.
 1. Evaluate a random model on the testing dataset: watch a bad performance.  
 1. Train a model on the training dataset.
 1. Evaluate the trained model on the testing dataset: 

@@ -1,8 +1,7 @@
 
 # MAKit
 
-[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](
-https://github.com/owkin/MAKit/blob/main/LICENSE) 
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) 
 [![tests](https://github.com/owkin/MAKit/actions/workflows/unit-tests.yml/badge.svg?branch=master)](
 https://github.com/owkin/MAKit/actions/workflows/unit-tests.yml) 
 [![tests](https://github.com/owkin/MAKit/actions/workflows/integration-tests.yml/badge.svg?branch=master)](
@@ -24,53 +23,31 @@ Add the following dependency to your `Package.swift` manifest:
 .package(url: "https://github.com/owkin/MAKit.git", .branch("main")),
 ```
 
-## Main Concepts
+## Documentation
 
-[Main Concepts](Docs/Concepts/CONCEPTS.md)
+The documentation is divided into several sections: 
 
-## Examples 
+- [Main Concepts](Docs/Concepts/CONCEPTS.md)
+- [Examples](Docs/Examples/EXAMPLES.md)
+- [Architecture](Docs/Architecture/ARCHITECTURE.md)
 
-[Examples](Docs/Examples/EXAMPLES.md)
+## Contributing
 
-# MAKitTests
+Read below to learn how you can take part in improving MAKit.
 
-# MATorchTests
+### Code of Conduct
 
-`MATorchTests` contains integration tests that allow to compare `MAKit` models 
-with their equivalent in `PyTorch`.
+MAKit has adopted a Code of Conduct that we expect 
+project participants to adhere to. 
+Please read the [full text](Docs/Contributing/CODE_OF_CONDUCT.md)
+so that you can understand what actions will and will not be tolerated.
 
-The goal is to demonstrate a good level of reproducibility and 
-interoperability with `PyTorch`.
+### Contributing Guide
 
-## Setup
+Read our [contributing guide](Docs/Contributing/CONTRIBUTING.md) 
+to learn about our development process 
+and how to build and test your changes to MAKit.
 
-These tests require a special `Python` environment. 
+### Licence
 
-```bash
-conda create --name matorch python=3.7
-conda activate matorch
-cd Tests/MATorchTests/Base
-pip install -e .
-```
-
-You should be able to run the tests right from XCode or 
-with a `bash` command:
-
-```bash
-swift test --filter MATorchTests
-```
-
-You may eventually clean the environment with:
-
-```bash     
-conda deactivate
-conda env remove --name matorch
-```
-
-## Steps 
-
-1. Create a model in `MAKit` and `PyTorch`.
-1. Get the weigths from the `PyTorch` model and load them  in the `MAKit` model.
-1. Load data from `PyTorch` and set it on both models.
-1. Compute forward, apply dummy loss then the backward pass.
-1. Compare the gradient norm on the very first layer in both models.
+MAKit is [MIT licenced](LICENSE).

@@ -8,6 +8,7 @@
 import XCTest
 import MAKit
 
+/// Test scheduler for optimizer and variables.
 class OptimizerVariablesTests: XCTestCase
 {
     var optimizerParams = MAKit.Optimizer.Params()

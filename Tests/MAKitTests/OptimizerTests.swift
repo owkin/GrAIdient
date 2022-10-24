@@ -8,6 +8,10 @@
 import MAKit
 import MATestsUtils
 
+// -----------------------------------------------------------------------------
+// Compare GPU gradients with CPU ones through time.
+// We expect to see errors ~ 1e-7 and less.
+// -----------------------------------------------------------------------------
 class OptimizerTests: Input1DMSE1DCase
 {
     override func setUp()

@@ -1,6 +1,11 @@
 # MAKitTests
 
-`MAKitTests` contains unit tests of `MAKit`: 
+`MAKitTests` contains unit tests of `MAKit`. 
+
+Some of them are systematic and repeated over many different setup to ensure 
+that every layer, optimizer, activation function ... is tested.
+
+## Systematic Tests
 
 - gradient checking tests: compare gradients of weights 
   computed through `backward` to an estimation computed through `forwardGC`
@@ -22,5 +27,11 @@
   
 - norm tests: test that we can clip the gradient of weights
 
-These tests are running on different setup to ensure that: 
-every layer, optimizer, activation function ... is tested.
+## Other Tests 
+
+Other tests are not repeated over many different setup. 
+They concern some specific components:
+
+- `MetalKernelTests`: ensure that every Metal kernel compiles
+- `OptimizerVariablesTests`: test scheduler for optimizer and variables
+- `UpdateManagementTests`: test we can control the training flow

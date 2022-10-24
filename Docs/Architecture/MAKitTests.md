@@ -23,5 +23,4 @@
 - norm tests: test that we can clip the gradient of weights
 
 These tests are running on different setup to ensure that: 
-
 every layer, optimizer, activation function ... is tested.

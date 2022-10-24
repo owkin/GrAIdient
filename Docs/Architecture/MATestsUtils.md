@@ -2,4 +2,4 @@
 
 `MATestsUtils` contains utils to enable the testing of plugins of `MAKit`.
 
-To know more about plugins, see [this doc](../Concepts/PLUGIN.md).
+To know more about plugins, see [this documentation](../Concepts/PLUGIN.md).

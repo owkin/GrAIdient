@@ -36,4 +36,4 @@ The GPU execution mode is the official way to go.
 
 ## Next Chapter
 
-Next chapter: [GPU Model](GPU.md).
+Next chapter: [GPU Mode](GPU.md).

@@ -204,5 +204,5 @@ newCNN = Model.resize(
 
 ## Next Chapter
 
-Previous chapter: [GPU Model](GPU.md). \
+Previous chapter: [GPU Mode](GPU.md). \
 Next chapter: [Training Flow](TRAINING.md).

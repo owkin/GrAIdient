@@ -21,5 +21,5 @@ $$
 
 ## Next Chapter
 
-Previous chapter: [Optimizer](OPTIMIZER.md).
+Previous chapter: [Optimizer](OPTIMIZER.md). \
 Next chapter: [Plugin](PLUGIN.md).

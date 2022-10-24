@@ -52,5 +52,5 @@ Then note that the `setData` enables the forward pass while
 
 ## Next Chapter
 
-Previous chapter: [Model](MODEL.md).
+Previous chapter: [Model](MODEL.md). \
 Next chapter: [Optimizer](OPTIMIZER.md).

@@ -27,5 +27,5 @@ Let us wrap these different layers into a `Model`.
 
 ## Next Chapter
 
-Previous chapter: [Layer](LAYER.md).
+Previous chapter: [Layer](LAYER.md). \
 Next chapter: [Model](MODEL.md).

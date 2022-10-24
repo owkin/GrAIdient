@@ -124,5 +124,5 @@ model.step()
 
 ## Next Chapter
 
-Previous chapter: [Training Flow](TRAINING.md).
+Previous chapter: [Training Flow](TRAINING.md). \
 Next chapter: [Gradient Checking](GRADIENT_CHECKING.md).

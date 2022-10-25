@@ -608,7 +608,7 @@ public class SoftReLU: ActivationFunction
 }
 
 /// Factory API to build an activation function.
-public protocol IActivationKernel
+public protocol ActivationKernel
 {
     ///
     /// Build an activation function.
@@ -620,9 +620,9 @@ public protocol IActivationKernel
 }
 
 /// Factory to build an activation function.
-class ActivationKernel: IActivationKernel
+class ActivationKernelImpl: ActivationKernel
 {
-    static let _kernels: [String:ActivationKernel] =
+    static let _kernels: [String:ActivationKernelImpl] =
     [
         ReLU.str: ReLUKernel(),
         LeakyReLU.str: LeakyReLUKernel(),
@@ -637,7 +637,7 @@ class ActivationKernel: IActivationKernel
     ///
     func build(_ name: String) -> ActivationFunction?
     {
-        for (nameTmp, kernel) in ActivationKernel._kernels
+        for (nameTmp, kernel) in ActivationKernelImpl._kernels
         {
             if nameTmp == name
             {
@@ -655,7 +655,7 @@ class ActivationKernel: IActivationKernel
 }
 
 /// Factory to build a ReLU function.
-private class ReLUKernel: ActivationKernel
+private class ReLUKernel: ActivationKernelImpl
 {
     /// Build a ReLU function.
     override func build() -> ActivationFunction
@@ -665,7 +665,7 @@ private class ReLUKernel: ActivationKernel
 }
 
 /// Factory to build a ReLU function.
-private class LeakyReLUKernel: ActivationKernel
+private class LeakyReLUKernel: ActivationKernelImpl
 {
     /// Build a LeakyReLU function.
     override func build() -> ActivationFunction
@@ -675,7 +675,7 @@ private class LeakyReLUKernel: ActivationKernel
 }
 
 /// Factory to build a ReLU function.
-private class SoftReLUKernel: ActivationKernel
+private class SoftReLUKernel: ActivationKernelImpl
 {
     /// Build a SoftReLU function.
     override func build() -> ActivationFunction

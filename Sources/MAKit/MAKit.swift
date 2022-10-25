@@ -182,7 +182,7 @@ public class MAKit
             ///
             /// - Parameter kernel: A factory to build activation functions..
             ///
-            public static func append(kernel: IActivationKernel)
+            public static func append(kernel: ActivationKernel)
             {
                 getCtx.activationKernels.append(kernel)
             }
@@ -448,7 +448,7 @@ fileprivate class MAKitContext
     // MODEL
     //--------------------------------------------------------------------------
     /// Activation function factories.
-    var activationKernels: [IActivationKernel] = [ActivationKernel()]
+    var activationKernels: [ActivationKernel] = [ActivationKernelImpl()]
     /// Serializable activation function registry.
     var activationRegistries: [[String: Codable.Type]] = [ACTIVATION_REGISTRY]
     

@@ -148,16 +148,16 @@ public class TanH: ActivationFunction
 Let us create a small factory for it: 
 
 ```swift
-class ActivationKernel: IActivationKernel
+class ActivationKernelImpl: ActivationKernel
 {
-    static let _kernels: [String:ActivationKernel] =
+    static let _kernels: [String:ActivationKernelImpl] =
     [
         TanH.str: TanHKernel(),
     ]
     
     func build(_ name: String) -> ActivationFunction?
     {
-        for (nameTmp, kernel) in ActivationKernel._kernels
+        for (nameTmp, kernel) in ActivationKernelImpl._kernels
         {
             if nameTmp == name
             {
@@ -173,7 +173,7 @@ class ActivationKernel: IActivationKernel
     }
 }
 
-private class TanHKernel: ActivationKernel
+private class TanHKernel: ActivationKernelImpl
 {
     override func build() -> ActivationFunction
     {
@@ -191,7 +191,7 @@ MAKit.Model.Activation.append(registry: buildRegistry([
     TanH.self,
 ]))
 // Enable to use the activation function inside existing layers.
-MAKit.Model.Activation.append(kernel: ActivationKernel())
+MAKit.Model.Activation.append(kernel: ActivationKernelImpl())
 ```
 
 Let us see the example corresponding to the Metal kernels:

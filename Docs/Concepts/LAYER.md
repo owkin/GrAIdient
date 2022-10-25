@@ -10,23 +10,25 @@ operations as pure mathematical objects.
 Said differently, the layer is the only object that can 
 be handled and appended to a model. A layer may be composed of many 
 internal operations (for example the batch normalization) but these 
-operations can not be mixed into any model.
+operations can not be mixed into any model without being previously wrapped 
+inside a layer.
 
 ## Shape
 
 The layer shape is the equivalent of a PyTorch `Tensor`. It 
-characterizes the layer internal state, the `neural structure`. 
-For now there are only two available shapes: `1D` or `2D` that are visible 
-in the layer name.
+characterizes the layer internal state, its `neural structure`. 
+For now there are only two available shapes: `1D` or `2D`. These suffix 
+are often visible in the layer name itself: example `Layer1D`, `Layer2D`.
 
 ## API
 
 The layer exposes 3 main APIs: 
 
-- forward: the direct propagation of data from the first layers to the last ones
-- backward: the retro propagation of gradients 
+- `forward`: the direct propagation of data from the first layers 
+  to the last ones
+- `backward`: the retro propagation of gradients 
   from the last layers to the first ones
-- forwardGC: the direct propagation of data to evaluate the gradients 
+- `forwardGC`: the direct propagation of data to evaluate the gradients 
   during the gradient checking
   
 Each of these API can be run in the CPU or GPU.

@@ -1,4 +1,4 @@
-# GPU Mode
+# 📚 GPU Mode
 
 In order to enforce GPU execution model, use: 
 

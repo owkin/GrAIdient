@@ -1,4 +1,4 @@
-# Layer
+# 📚 Layer
 
 The `Layer` is the essential component of `MAKit`. 
 A layer has 2 principle characteristics: an operation and a shape. 

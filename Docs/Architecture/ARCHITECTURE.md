@@ -1,4 +1,4 @@
-# Architecture
+# 👷 Architecture
 
 Here are the different components of MAKit: 
 

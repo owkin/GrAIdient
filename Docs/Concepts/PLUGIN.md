@@ -1,4 +1,4 @@
-# Plugin
+# 📚 Plugin
 
 It is possible to extend MAKit with custom new layers or activation functions. 
 

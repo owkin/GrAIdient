@@ -1,4 +1,4 @@
-# MATorchTests
+# 👷 MATorchTests
 
 `MATorchTests` contains integration tests that allow to compare `MAKit` models 
 with their equivalent in `PyTorch`.

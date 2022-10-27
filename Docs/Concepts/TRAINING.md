@@ -1,4 +1,4 @@
-# Training Flow
+# 📚 Training Flow
 
 Let us consider a model containing the graph of layers:  
 

@@ -1,4 +1,4 @@
-# Optimizer
+# 📚 Optimizer
 
 The `Optimizer` is responsible for using the gradients of weights 
 in order to update the weights values. 

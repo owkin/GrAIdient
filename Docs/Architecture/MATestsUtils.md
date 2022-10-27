@@ -1,4 +1,4 @@
-# MATestsUtils
+# 👷 MATestsUtils
 
 `MATestsUtils` contains utils to enable the testing of plugins of `MAKit`.
 

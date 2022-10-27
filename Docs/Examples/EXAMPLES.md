@@ -1,4 +1,4 @@
-# Examples
+# 🚀 Examples
 
 `MAExamples` contains examples that show how to interact with `MAKit`. 
 The examples are organised as tests so as to demonstrate some capabilities. 

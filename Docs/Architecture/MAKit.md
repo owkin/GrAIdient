@@ -1,4 +1,4 @@
-# MAKit
+# 👷 MAKit
 
 `MAKit` contains the different API needed to train models and interact 
 with them.

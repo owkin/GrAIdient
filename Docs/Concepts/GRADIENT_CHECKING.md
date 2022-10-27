@@ -1,4 +1,4 @@
-# Gradient Checking
+# 📚 Gradient Checking
 
 Gradient checking is a way to estimage the gradient of weights 
 thanks to the following approximation: 

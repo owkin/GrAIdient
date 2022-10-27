@@ -1,4 +1,4 @@
-# Model
+# 📚 Model
 
 The `Model` is a convenient way to consider a list of layers. 
 It allows to call the different APIs with the special logic of any 

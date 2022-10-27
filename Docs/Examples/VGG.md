@@ -1,4 +1,4 @@
-# VGG Example
+# 🚀 VGG Example
 
 This example trains a simple model on the GPU. 
 The dataset used is CIFAR 10. 

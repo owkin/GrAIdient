@@ -1,4 +1,4 @@
-# MAExamples
+# 👷 MAExamples
 
 `MAExamples` contains examples that show how to interact with `MAKit`. 
 

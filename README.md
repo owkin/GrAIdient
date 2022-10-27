@@ -50,4 +50,7 @@ and how to build and test your changes to MAKit.
 
 ### Licence
 
-MAKit is [MIT licenced](LICENSE).
+MAKit, MATestUtils and MAKitTests are [MIT licenced](LICENSE).
+
+MAExamples and MATorchTests both depend on PythonKit and are 
+[Apache 2.0 licensed](Tests/LICENSE). 

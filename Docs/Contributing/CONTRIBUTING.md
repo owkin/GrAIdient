@@ -18,7 +18,7 @@ reviewing and sending PR requests, all contributions are welcome.
     - [Commit Message with Body](#commit-message-with-body)
     - [Commit Message with Scope](#commit-message-with-scope)
     - [Commit Message with both ! and BREAKING CHANGE Footer](
-      #commit-message-with-both-!-and-breaking-change-footer)
+      #commit-message-with-both--and-breaking-change-footer)
 - [Versioning](#versioning)
 - [Release on GitHub](#release-on-github)
   - [Before you Start](#before-you-start)

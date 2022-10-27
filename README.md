@@ -15,7 +15,7 @@ A deep-learning framework for computer vision.
 This framework aims at promoting full control and understanding of the main 
 operations needed to train deep learning models. 
 
-## Swift Package Manager
+## 📦 Swift Package Manager
 
 Add the following dependency to your `Package.swift` manifest:
 
@@ -23,7 +23,7 @@ Add the following dependency to your `Package.swift` manifest:
 .package(url: "https://github.com/owkin/MAKit.git", .branch("main")),
 ```
 
-## Documentation
+## 📚 Documentation
 
 The documentation is divided into several sections: 
 
@@ -31,7 +31,7 @@ The documentation is divided into several sections:
 - [Examples](Docs/Examples/EXAMPLES.md)
 - [Architecture](Docs/Architecture/ARCHITECTURE.md)
 
-## Contributing
+## 👨‍💻 Contributing
 
 Read below to learn how you can take part in improving MAKit.
 

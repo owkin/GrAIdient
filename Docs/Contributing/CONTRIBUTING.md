@@ -1,4 +1,4 @@
-# Contributing
+# 👨‍💻 Contributing
 
 Thank you for your interest in contributing to MAKit! From commenting to 
 reviewing and sending PR requests, all contributions are welcome. 
@@ -18,7 +18,7 @@ reviewing and sending PR requests, all contributions are welcome.
     - [Commit Message with Body](#commit-message-with-body)
     - [Commit Message with Scope](#commit-message-with-scope)
     - [Commit Message with both ! and BREAKING CHANGE Footer](
-      #commit-message-with-both-and-breaking-change-footer)
+      #commit-message-with-both-!-and-breaking-change-footer)
 - [Versioning](#versioning)
 - [Release on GitHub](#release-on-github)
   - [Before you Start](#before-you-start)
@@ -26,9 +26,8 @@ reviewing and sending PR requests, all contributions are welcome.
   - [Step 2. Create a Pull Request](#step-2-create-a-pull-request)
   - [Step 3. Review and Merge the Pull Request](
     #step-3-review-and-merge-the-pull-request)
-  - [Step 4. Create a Github release "X.Y.Z" from "main" 
-    (tag automatically created)](
-    #step-4-create-a-github-release-xyz-from-main-tag-automatically-created)
+  - [Step 4. Create a Github release "X.Y.Z" from "main"](
+    #step-4-create-a-github-release-xyz-from-main)
     
 ________________________________________________________________________________
 
@@ -217,8 +216,7 @@ Ensure all [end-to-end tests](#ci) pass on `release_1`.
 
 ### Step 3. Review and Merge the Pull Request
 
-### Step 4. Create a GitHub release "X.Y.Z" from "main" (tag automatically 
-    created)
+### Step 4. Create a GitHub release "X.Y.Z" from "main"
     
 - GitHub > Releases > Draft new Release
   - **Choose a tag**: X.Y.Z (this will create the tag)

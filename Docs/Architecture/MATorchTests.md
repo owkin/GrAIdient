@@ -7,7 +7,7 @@ The goal is to demonstrate a good level of reproducibility and
 interoperability with `PyTorch`.
 
 These tests are run when branches are merged to the release branches.
-Once a MR is ready to be merged, please run these tests via the action trigger 
+Once a PR is ready to be merged, please run these tests via the action trigger 
 in GitHub.
 
 ## Setup

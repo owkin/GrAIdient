@@ -192,7 +192,7 @@ cnn.weights = myCNNWeights
 classifier.weights = myClassifierWeights
 ```
 
-### Load a Model from the Disk
+### Model Loaded from the Disk
 
 When a model has been loaded from the disk 
 (see [previous paragraph](#initialize-links)), there is no need to use 
@@ -226,7 +226,7 @@ What happens is that the cache that has been set earlier will now
 be fully loaded into the kernel of the different layers. 
 
 - CPU mode: the weights, biases... will be loaded into 
-  the objects used for forward and backward pass
+  the layers' objects needed for computing the forward and the backward pass
 - GPU mode: the weights, biases... will be uploaded 
   to the GPU device
 
@@ -240,6 +240,9 @@ To cap it all, the `weights` API is not necessary in the following situations:
 
 - The model has been loaded from the disk 
 - We want to train a model from scratch
+
+But the `initKernel` is always necessary for the model to be ready to 
+train/run.
 
 ## Model Transformation
 

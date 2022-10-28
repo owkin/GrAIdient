@@ -7,7 +7,7 @@ MAKit.Opti.GPU = true
 ```
 
 Optionally, you can also set the following global variable in order to 
-precise the list of external GPU to use 
+precise the list of external GPU devices to use 
 (first in the list will be used with top priority): 
 
 ```swift

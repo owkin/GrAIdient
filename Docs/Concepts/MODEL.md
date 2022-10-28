@@ -28,8 +28,8 @@ without any hidden operations occuring at runtime.
 
 The `ModelContext` is used to build this graph of layers. 
 Once created, the model context object allows to edit the graph of layers: 
-the model context is given to each newly created layers as a parameter 
-for these layers to being appended to the list of layers of the model context. 
+the model context is given to every newly created layers as a parameter 
+for these layers to be appended to the list of layers of the model context. 
 
 <ins>Example</ins>: 
 
@@ -54,8 +54,7 @@ layer = MSE1D(layerPrev: layer, params: params)
 let model = context.model
 ```
 
-Please note that the notion of graph of layers goes beyond the models. 
-We could design a graph of layers that is composed of several models. 
+Please note that the notion of graph of layers can include several models. 
 This will prove usefull for complex training such as GAN.
 
 <ins>Example</ins>: 
@@ -95,7 +94,7 @@ let classifier = context.model
 Each layer has an `id` which must be unique in the graph of layers. 
 That being said, we could have multiple copies of graph of layers in which 
 the `id` are unique in their graph but duplicated in the other graphs.
-This is typically handy for multi GPU setup.
+This is typically handy for a multi GPU setup.
 
 <ins>Example</ins>: 
 
@@ -103,7 +102,7 @@ layerA1 -> layerA2 -> ... -> layerA42 \
 layerB1 -> layerB2 -> ... -> layerB42 \
 layerC1 -> layerC2 -> ... -> layerC42
 
-where 
+where \
 layerA1.id == 0, layerA2.id == 1, ... layerA42 == 41 \
 layerB1.id == 0, layerB2.id == 1, ... layerB42 == 41 \
 layerC1.id == 0, layerC2.id == 1, ... layerC42 == 41

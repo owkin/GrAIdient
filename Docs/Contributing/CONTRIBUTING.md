@@ -67,7 +67,7 @@ are not run systematically,
 neither are the [examples](../Architecture/MAExamples.md). \
 Once a PR is "ready to review", please trigger the workflows on 
 [GitHub](https://github.com/owkin/MAKit/actions) 
-to ensure these additional tests have completed. 
+to ensure these additional tests have succeeded. 
 
 ### Local 
 
@@ -83,10 +83,13 @@ Follow the previous links to know more about.
 - Git workflow: we use the Github Flow. 
   Tags are used to indicate which commit can be used in production.
 
-- The Main branch is always protected, 
-  all updates to this branch arrive via pull requests (PRs).
+- The Main branch is always protected so as the Release branches. 
+  All updates to these branches arrive via pull requests (PRs).
 
 - The name of the Main branch is `main`.
+
+- The names of the Release branches are `release_N`, with N the number of the 
+  current release. They should contain the code under development.
 
 - Each PR :
 
@@ -136,7 +139,7 @@ the list of people with these roles.
 
 **Person** who has [admin right](
 https://docs.github.com/en/organizations/managing-access-to-your-organizations-repositories/repository-roles-for-an-organization) 
-for a repo on GitHub.
+for a repository on GitHub.
 "She/he has full access to the project, including sensitive and 
 destructive actions like managing security or deleting a repository",
 this is why it needs to be limited to a maximum of 3 people. 
@@ -156,16 +159,14 @@ everybody can suggest new code owners.
 
 ## Author
 
-Person or organization that has written and merged at least one PR on MAKit.
+Person or organization that has written and merged at least one PR into MAKit.
 Authors are added to [this file](../../AUTHORS).
 
 ## Commit Message
 
 The commit message must follow the 
 [conventional commits](https://www.conventionalcommits.org/en/v1.0.0) 
-specification. 
-
-Please also use mind the following 
+specification, so as the following 
 [conventional emoji commits](
 https://gist.github.com/parmentf/359667bf23e08a1bd8241fbf47ecdef0).
 
@@ -231,7 +232,7 @@ commits to merge into the `main` branch.
 
 1. Review and Merge the Pull Request
 
-1. Create a GitHub release "X.Y.Z" from "main": 
+1. Create a GitHub release "X.Y.Z" from `main`: 
      - GitHub > Releases > Draft new Release
        - **Choose a tag**: X.Y.Z (this will create a tag)
        - **Target**: main

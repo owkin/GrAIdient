@@ -89,7 +89,8 @@ Follow the previous links to know more about.
 - The name of the Main branch is `main`.
 
 - The names of the Release branches are `release_N`, with N the number of the 
-  current release. They should contain the code under development.
+  current release. 
+  The last Release branch should contain the code under development.
 
 - Each PR :
 
@@ -214,27 +215,27 @@ BREAKING CHANGE: deprecate GPU variable
 
 ## Release on GitHub
 
-Let say we want to make a release for the branch `release_1` containing the 
-commits to merge into the `main` branch.
+Let say we want to make the release X.Y.Z for the branch `release_N` 
+containing the commits to merge into the `main` branch.
 
-1. Before you start: ensure all [end-to-end tests](#ci) pass on `release_1`.
+1. Ensure all [end-to-end tests](#ci) pass on `release_N`.
 
 1. Update the Changelog
-    - Create a branch from `release_1`.
+    - Create a branch from `release_N`.
     - Edit the changelog to create a new section 
       corresponding to the new release. 
       Use [git-cliff](https://github.com/orhun/git-cliff) for that.
     - Commit and push the changes.
-    - Squash and merge the new branch into `release_1` with commit message \
+    - Squash and merge the new branch into `release_N` with commit message \
       🔧 chore: release X.Y.Z
       
 1. Create a Pull Request
 
 1. Review and Merge the Pull Request
 
-1. Create a GitHub release "X.Y.Z" from `main`: 
+1. Create a GitHub release X.Y.Z from `main`: 
      - GitHub > Releases > Draft new Release
        - **Choose a tag**: X.Y.Z (this will create a tag)
        - **Target**: main
        - **Release title**: X.Y.Z
-       - **Describe this release:** formatted copy of the changelog.
+       - **Describe this release**: formatted copy of the changelog.

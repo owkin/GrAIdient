@@ -14,7 +14,7 @@ precise the list of external GPU to use
 MAKit.Opti.gpuNamedPriority = ["<GPU name1>", "<GPU name2>", ...]
 ```
 
-Then, it is time to initialize the GPU kernel: 
+Then, in order to initialize the GPU kernel, run: 
 
 ```swift
 _ = MetalKernel.get

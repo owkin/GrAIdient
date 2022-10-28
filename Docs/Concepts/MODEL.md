@@ -11,9 +11,10 @@ deep learning model.
 - Backward pass logic: last layer in the list executes backward, ..., 
   second layer executes backward, first layer executes backward
 
-Plus, as a convenient wrapping arount the layers, the `Model` routes the 
-execution mode so that the CPU and GPU are only exposed 
-in the `Layer` component.
+As a container of layers, the `Model` also routes the 
+execution mode, taking into account the `MAKit.Opti.GPU` global variable 
+defined in the [previous chapter](GPU.md). 
+This way, CPU and GPU are only exposed in the `Layer` component.
 
 So now, how do we create a model ?
 

@@ -132,7 +132,7 @@ with extended rights for security purposes.
 We detail below the responsibilities of each role and the processes to update 
 the list of people with these roles.
 
-#### Admin
+### Admin
 
 **Person** who has [admin right](
 https://docs.github.com/en/organizations/managing-access-to-your-organizations-repositories/repository-roles-for-an-organization) 
@@ -141,7 +141,7 @@ for a repo on GitHub.
 destructive actions like managing security or deleting a repository",
 this is why it needs to be limited to a maximum of 3 people. 
 
-#### Code Owner
+### Code Owner
 
 **Person** who knows well the code base and who is able to judge whether 
 this can be merged in `main` or not.
@@ -154,7 +154,7 @@ Code owners are added to
 [this file](../../CODEOWNERS) by existing code owners, 
 everybody can suggest new code owners. 
 
-### Author
+## Author
 
 Person or organization that has written and merged at least one PR on MAKit.
 Authors are added to [this file](../../AUTHORS).

@@ -102,12 +102,12 @@ layerA1 -> layerA2 -> ... -> layerA42 \
 layerB1 -> layerB2 -> ... -> layerB42 \
 layerC1 -> layerC2 -> ... -> layerC42
 
-where \
+where: \
 layerA1.id == 0, layerA2.id == 1, ... layerA42 == 41 \
 layerB1.id == 0, layerB2.id == 1, ... layerB42 == 41 \
 layerC1.id == 0, layerC2.id == 1, ... layerC42 == 41
 
-The `id` serves as a way to find the links between the layers. 
+The `id` serves as a way to match the links between the layers. 
 One could have stored the direct links `layerPrev` instead of the `id` but 
 then we would have issues to serialize and deserialize the model. 
 
@@ -177,13 +177,35 @@ let classifier = Model(model: baseClassifier, modelsPrev: [cnn])
 
 Once the links have been initialized, it is nearly time 
 to train or run the model in the GPU execution mode 
-(or just test/debug it on the CPU). 
+(or just test/debug on the CPU). 
 
-Still, there is one last heavy operation to do: initialize "hard resources".
-These resources may be time consuming depending on the size of the model, 
-they are:  
+### Set Model's Weights
 
-- the weights & biases
+One of the `Model`'s APIs is `weights`. It allows to set the values 
+of weights and biases for the different layers of the model. 
+
+Yet, it does not load these values into the layers. Consider it as a cache 
+for later use: 
+
+```swift
+cnn.weights = myCNNWeights
+classifier.weights = myClassifierWeights
+```
+
+### Load a Model from the Disk
+
+When a model has been loaded from the disk 
+(see [previous paragraph](#initialize-links)), there is no need to use 
+the `weights` API: the cache for the weights and biases values is already set 
+with the values loaded from the disk.
+
+### Initialize "Hard Resources"
+ 
+The last thing to do is to initialize the "hard resources".
+These are resources that may be time consuming to initialize 
+depending on the size of the model:  
+
+- the weights and biases
 - the batch normalization (weights, biases and stats) 
 
 To trigger the process: 
@@ -200,13 +222,23 @@ cnn.initKernel(.Inference)
 classifier.initKernel(.Inference)
 ``` 
 
-These calls will initialize the weights randomly except if particular values 
-for weights, biases have been set beforehand:
+What happens now is that the cache that has been set earlier will now 
+be fully loaded into the kernel of the different layers. 
 
-```swift
-cnn.weights = myCNNWeights
-classifier.weights = myClassifierWeights
-```
+- In the CPU execution context: the weights, biases... will be loaded into 
+  the objects used for forward and backward pass
+- In the GPU execution context: the weights, biases... will be uploaded 
+  to the GPU
+
+So now, what would have happen if the cache for weights and biases had 
+not been set ?
+
+The values chosen would have been initialized with random strategies. 
+
+To cap it all, the `weights` is not necessary in the following situations: 
+
+- The model has been loaded from the disk 
+- We want to train a model from scratch
 
 ## Advanced Transformations
 

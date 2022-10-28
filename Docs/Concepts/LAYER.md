@@ -17,24 +17,28 @@ inside a layer.
 
 The layer shape is the equivalent of a PyTorch `Tensor`. It 
 characterizes the layer internal state, its `neural structure`. 
-For now there are only two available shapes: `1D` or `2D`. These suffix 
-are often visible in the layer name itself: example `Layer1D`, `Layer2D`.
+For now there are only two available shapes: `1D` or `2D`. These suffixes 
+appear most of the time in the layer name itself: example `Layer1D`, `Layer2D`.
 
 ## API
 
 The layer exposes 3 main APIs: 
 
-- `forward`: the direct propagation of data from the first layers 
-  to the last ones
+- `forward`: the direct propagation of data from the first layer 
+  to the last one
 - `backward`: the retro propagation of gradients 
-  from the last layers to the first ones
+  from the last layer to the first one
 - `forwardGC`: the direct propagation of data to evaluate the gradients 
   during the gradient checking
   
-Each of these API can be run in the CPU or GPU.
+Each of these API can be run in two execution contexts: CPU or GPU. 
+
+As a low-level component, the layer in fact exposes this execution context 
+in the name of the 3 previous APIs: `forwardCPU`, `forwardGPU`, 
+`backwardCPU`, `backwardGPU`, forwardGCCPU` and `forwardGCGPU`.
 
 The CPU execution mode should only be run for debug or testing. 
-The GPU execution mode is the official way to go. 
+The GPU execution mode is the standard way to go. 
 
 ## Next Chapter
 

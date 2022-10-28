@@ -1,31 +1,35 @@
 # 📚 Optimizer
 
 The `Optimizer` is responsible for using the gradients of weights 
-in order to update the weights values. 
+in order to update the weights values in the different layers that have them. 
 
 The gradients of weights are computed during the backward pass.
 
 ## Optimizer Scheduler
 
-In order to setup the optimizer: 
+Here, we setup the optimizer of a model: 
 
 ```swift 
 var optimizerParams: MAKit.Optimizer.Params()
+// Initialize one optimizer for the whole training loop: Adam.
 optimizerParams.optimizer = ConstEpochsScheduler(.Adam)
 
 model.setupOptimizers(params: optimizerParams)
 ```
 
-It is also possible to setup an optimizer that is scheduled upon step: 
+It is also possible to setup optimizers that are scheduled upon 
+the training loop current step: 
 
 ```swift 
-// Let us assume nbLoops is defined: the number of setps per epoch.
+// Let us assume nbLoops is defined: the number of steps per epoch.
 let nLoops: Int 
 let epoch1 = 5
 let epoch2 = 10
 
 var optimizerParams: MAKit.Optimizer.Params()
 optimizerParams.nbLoops = nbLoops
+// Initialize optimizers Adam and SGD to be used according to the current step 
+// of the training loop.
 optimizerParams.optimizer = ListEpochsScheduler(
     epochs: [epoch1, epoch2],
     optimizers: [.Adam, .SGD]
@@ -35,7 +39,7 @@ model.setupOptimizers(params: optimizerParams)
 ```
 
 If defined as so, do not forget to inform the optimizer about the step 
-evolution: 
+evolution during the training loop: 
 
 ```swift 
 model.step()
@@ -43,7 +47,7 @@ model.step()
 
 ## Variable Scheduler
 
-The different variables that a defined for the different optimizers are 
+The different variables that are defined for the optimizers are 
 visible in the `OptimizerImpl` component.
 
 For example at `OptimizerImpl.initVariables` the variables `alpha` and 
@@ -56,6 +60,7 @@ of the [previous paragraph](#optimizer-scheduler).
 var optimizerParams: MAKit.Optimizer.Params()
 optimizerParams.optimizer = ConstEpochsScheduler(.Adam)
 
+// Initialize alpha value to be constant over time.
 optimizerParams.variables["alpha"] = ConstEpochsVar(
     value: ConstVal(0.05)
 )
@@ -63,7 +68,7 @@ optimizerParams.variables["alpha"] = ConstEpochsVar(
 model.setupOptimizers(params: optimizerParams)
 ```
 
-It is also possible to define scheduler for variables: 
+It is also possible to define a scheduler for the values of these variables: 
 
 ```swift
 // Let us assume nbLoops is defined: the number of setps per epoch.
@@ -72,8 +77,10 @@ let nbEpochs: 10
 
 var optimizerParams: MAKit.Optimizer.Params()
 optimizerParams.nbLoops = nbLoops
+// Initialize optimizer to be constant over time.
 optimizerParams.optimizer = ConstEpochsScheduler(.Adam)
 
+// Initialize alpha value to follow a trigonometric ascending function.
 optimizerParams.variables["alpha"] = MultEpochsVar(
     epoch0: nbEpochs,
     epochMul: 1,
@@ -96,8 +103,11 @@ let epoch2 = 10
 
 var optimizerParams: MAKit.Optimizer.Params()
 optimizerParams.nbLoops = nbLoops
+// Initialize optimizer to be constant over time.
 optimizerParams.optimizer = ConstEpochsScheduler(.Adam)
 
+// Initialize alpha value to follow an exponential ascending function 
+// for some steps then change for a linear descending function.
 optimizerParams.variables["alpha"] = ListEpochsVar(
     epochs: [epoch1, epoch2],
     values: [

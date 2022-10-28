@@ -16,7 +16,8 @@ The goal of such layers is to give access to API that sets data:
 
 Note that this layer could also be an intermediate layer. 
 As such, the layer has access to `computeForward` which allows 
-(when set to `true`) to rely on its own `layerPrev` `forward` to pass data. 
+(when set to `true`) to rely on its own `layerPrev` layer's `forward` API 
+to pass data. 
 By default `computeForward = false` and the data must be set via the 
 `setData` API.
 
@@ -29,14 +30,14 @@ The goal of such layers is to give access to API that sets ground truth:
 - `collectGradientsApprox` to evaluate gradient estimations 
    during gradient checking
 - `getLossCPU`, `getLossGPU` to retrieve the loss indicator
-- `lossDerivativeCPU`, `lossDerivativeGPU` to initialize backward pass with 
-  the derivative of loss
+- `lossDerivativeCPU`, `lossDerivativeGPU` to initialize the backward pass 
+  thanks to the derivative of loss
  
 ### Custom "Merge" Layer
 
 Extend `LayerMerge2D`. 
 
-The goal of such layers is to compute an operation that depends of 2 or 
+The goal of such layers is to compute an operation that depends on 2 or 
 more previous layers.
 
 They get access to the `getMergedGraph` API to help define the 
@@ -60,8 +61,10 @@ In order to do that, one has to implement the different API of `LayerUpdate`:
 - `accumulateDeltaWeights`: allows to accumulate the gradients of weights 
   through different steps
 - `initWeightsCPU`, `initWeightsGPU`: initialize weights (randomly or 
-  already set with `weightsCPU` and `weightsGPU`)
-- `collectWeightsCPU`, `collectWeightsGPU`: retrieve the different weights
+  set by `weightsCPU` and `weightsGPU`)
+- `collectWeightsCPU`, `collectWeightsGPU`: retrieve the different weights 
+  (for updating them during training or comparing their gradients 
+   with estimations during gradient checking)
 
 ### Plugin Layer 
 
@@ -75,7 +78,7 @@ MAKit.Model.Layer.append(registry: buildRegistry([
 ```
 
 If some new Metal operations have to be loaded to run `MyLayer`, declare 
-them to the `MetalKernel`: 
+them to `MetalKernel`: 
 
 ```swift
 let metalLib = Bundle.main.url(

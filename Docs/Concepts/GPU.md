@@ -19,11 +19,7 @@ Then, in order to initialize the GPU kernel:
 _ = MetalKernel.get
 ```
 
-For now we have considered the most low level elements of `MAKit`: the layers 
-and their 3 main APIs which are in fact 6 if we consider the execution mode: 
-CPU or GPU.
-
-Let us wrap these different layers into a `Model`.
+Let us wrap our different layers into a `Model`.
 
 ## Next Chapter
 

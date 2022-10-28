@@ -4,7 +4,7 @@ Thank you for your interest in contributing to MAKit! From commenting to
 reviewing and sending PR requests, all contributions are welcome. 
 
 - [Developer Environment](#developer-environment)
-  - [Setup XCode](#setup-xcode)
+  - [Setup Xcode](#setup-xcode)
   - [Setup Conda](#setup-conda)
   - [Coding Style](#coding-style)
 - [Testing](#testing)
@@ -25,9 +25,9 @@ reviewing and sending PR requests, all contributions are welcome.
 
 ## Developer Environment
 
-### Setup XCode
+### Setup Xcode
 
-Install XCode from 
+Install Xcode from 
 [Apple developer website](https://developer.apple.com/download/) 
 or the App Store on your Mac.
 
@@ -53,7 +53,7 @@ brew install --cask anaconda
 
 ### Coding Style
 
-Go to XCode preferences > Text editing tab > Page guide at column: 80.
+Go to Xcode preferences > Text editing tab > Page guide at column: 80.
 
 ## Testing
 
@@ -72,7 +72,7 @@ to ensure these additional tests have succeeded.
 ### Local 
 
 Testing the [unit tests](../Architecture/MAKitTests.md) 
-on XCode is straight forward.
+on Xcode is straight forward.
 
 Testing the [integration tests](../Architecture/MATorchTests.md) 
 and the [examples](../Architecture/MAExamples.md) require an additional setup. 

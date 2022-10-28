@@ -1,9 +1,9 @@
 # 🚀 VGG Example
 
-This example trains a simple model on the GPU. 
-The dataset used is CIFAR 10. 
+This example trains a simple model (simplified from the VGG architecture) 
+on the GPU. The dataset used is CIFAR 10. 
 We want to train the model to discriminate between 2 labels 
-(not the 10 available).
+(not the 10 available): the 8 (ships) against the 5 (dogs).
 
 Here is a subset of images we find for the label 8 (ships) vs label 5 (dogs).
 
@@ -66,20 +66,14 @@ cd Tests/MAExamples/Base
 pip install -e .
 ```
 
-Then you should be able to run the tests right from XCode or 
-with a `bash` command:
-
-```bash
-swift test --filter MAExamples
-```
-
-Or to run the tests in the production model: 
+Now, let us run the tests from Xcode or a `bash` command (here with compiler 
+optimization):
 
 ```bash
 swift test -c release --filter MAExamples
 ```
 
-You may eventually clean the environment with:
+It is finally possible to clean the environment 🌍
 
 ```bash     
 conda deactivate

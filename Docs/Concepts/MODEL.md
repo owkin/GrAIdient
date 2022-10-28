@@ -21,14 +21,14 @@ So now, how do we create a model ?
 
 As we saw in the [previous paragraph](#model), the order in which the layers 
 appear in the model is very important. This order has to be defined 
-explicitly by the designer of the deep learning model. Once more, this enforces 
+explicitly by the designer of the deep learning model. This enforces 
 one model where layers are clearly chained from the beginning to the end 
-without any operations being resolved at runtime.
+without any hidden operations occuring at runtime.
 
-The `ModelContext` is used in order to build this graph of layers. 
-Once created, you are naturally editing a graph of layers where each layer 
-that receives the context will be appended 
-to the list of layers of the same model. 
+The `ModelContext` is used to build this graph of layers. 
+Once created, the model context object allows to edit the graph of layers: 
+the model context is given to each newly created layers as a parameter 
+for these layers to being appended to the list of layers of the model context. 
 
 <ins>Example</ins>: 
 
@@ -36,23 +36,31 @@ to the list of layers of the same model.
 let context = ModelContext(name: "MyModel", models: [])
 let params = MAKit.Model.Params(context: context)
 
+// First layer to be appended to the list of layers of the context model.
 var layer: Layer1D = Input1D(nbNeurons: 1, params: params)
+
+// Second layer to be appended.
 layer = FullyConnected(
     layerPrev: layer, nbNeurons: 5,
     activation: ReLU.str, biases: true,
     params: params
 )
+
+// Last layer.
 layer = MSE1D(layerPrev: layer, params: params)
 
+// Get back the model that actually contains the list of layers.
 let model = context.model
 ```
 
 Please note that the notion of graph of layers goes beyond the models. 
-We could design a graph of layers composed of several models. 
+We could design a graph of layers that is composed of several models. 
+This will prove usefull for complex training such as GAN.
 
 <ins>Example</ins>: 
 
 ```swift
+// Create first model context.
 var context = ModelContext(name: "CNN", models: [])
 var params = MAKit.Model.Params(context: context)
 
@@ -64,8 +72,10 @@ layer = Convolution2D(
     activation: ReLU.str, biases: false, bn: true, params: params
 )
 
+// Get our first model.
 let cnn = context.model
 
+// Note that cnn is a dependency for our second model context.
 context = ModelContext(name: "Classifier", models: [cnn])
 params = MAKit.Model.Params(context: context)
 
@@ -75,6 +85,7 @@ let head: Layer1D = FullyConnected(
 )
 _ = MSE1D(layerPrev: head, params: params)
 
+// Get our second model.
 let classifier = context.model
 ```
 
@@ -103,7 +114,7 @@ then we would have issues to serialize and deserialize the model.
 Thus, initializing the links is a two steps process.
 
 1. We first deal with a `BaseModel` object. This object may be 
-directly retrieved through the graph of layers 
+directly retrieved through the model context 
 (example: `let classifier = context.model` 
 in the [previous paragraph](#graph-of-layers)) or loaded from the disk 
 (we will see an example of that later). This base model consists in 
@@ -114,7 +125,7 @@ main APIs.
 1. In order to get access to the main APIs we must create a `Model` 
 out of the previous base model. During the 
 creation of this model, the links `layerPrev` of the different layers 
-will be initialized and the full API will be available.
+will be initialized and the full API will become available.
 
 <ins>Example</ins>: \
 Let us take the CNN and Classifier from the 
@@ -126,9 +137,14 @@ to the disk:
 ```swift
 let encoder = PropertyListEncoder()
 
+// Encode first model.
 var data = try! encoder.encode(cnn)
+// Save first model to the disk.
 try! data.write(to: URL(fileURLWithPath: "/path/to/model1.plist"))
+
+// Encode second model.
 data = try! encoder.encode(classifier)
+// Save second model to the disk.
 try! data.write(to: URL(fileURLWithPath: "/path/to/model2.plist"))
 ```
 
@@ -136,16 +152,24 @@ Then we want to be able to load the 2 models from the disk and get access
 to the full `Model` API:
 
 ```swift
+// Load the data of our first model from the disk.
 data = try! Data(contentsOf: URL(fileURLWithPath: "/path/to/model1.plist"))
+// Initialize a base model out of it.
 let baseCNN = try! PropertyListDecoder().decode(
     BaseModel.self, from: data
 )
+
+// Load the data of our second model from the disk.
 data = try! Data(contentsOf: URL(fileURLWithPath: "/path/to/model2.plist"))
+// Initialize a base model ouf of it.
 let baseClassifier = try! PropertyListDecoder().decode(
     BaseModel.self, from: data
 )
 
+// Initialize the links of our first model.
 let cnn = Model(model: baseCNN, modelsPrev: [])
+// Initialize the links of our second model, taking into account 
+// its dependency on the first model.
 let classifier = Model(model: baseClassifier, modelsPrev: [cnn])
 ```
 
@@ -188,8 +212,8 @@ classifier.weights = myClassifierWeights
 
 In some scenario, we need to transform the model and preserve the 
 "hard resources" to avoid losing time initializing resources that 
-are independent of the transformation concerned. Hence, the use of 
-`inPlace`.
+are independent of the transformation concerned. Hence, the use of the 
+`inPlace` parameter.
 
 <ins>Example</ins>: 
 

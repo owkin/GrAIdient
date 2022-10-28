@@ -6,9 +6,9 @@ with their equivalent in `PyTorch`.
 The goal is to demonstrate a good level of reproducibility and 
 interoperability with `PyTorch`.
 
-These tests are run when branches are merged to the release branches.
-Once a PR is ready to be merged, please run these tests via the action trigger 
-in GitHub.
+These tests are run when branches are merged to the Release branches.
+Once a PR is "ready to review", please run these tests via the action trigger 
+in [GitHub](https://github.com/owkin/MAKit/actions) .
 
 ## Setup
 
@@ -21,14 +21,13 @@ cd Tests/MATorchTests/Base
 pip install -e .
 ```
 
-You should be able to run the tests right from XCode or 
-with a `bash` command:
+Now, let us run the tests from Xcode or a `bash` command:
 
 ```bash
 swift test --filter MATorchTests
 ```
 
-You may eventually clean the environment with:
+It is finally possible to clean the environment 🌍
 
 ```bash     
 conda deactivate

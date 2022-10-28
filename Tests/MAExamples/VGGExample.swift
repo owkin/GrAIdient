@@ -442,8 +442,7 @@ final class VGGExample: XCTestCase
                     imageFormat: .Neuron
                 )
                 
-                // Reset gradient validity inside the kernel
-                // for backward pass
+                // Reset gradient validity for backward pass
                 // and update the batch size (although here it stays the same).
                 vgg.updateKernel(batchSize: _batchSize)
                 

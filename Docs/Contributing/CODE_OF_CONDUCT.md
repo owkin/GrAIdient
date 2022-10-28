@@ -1,5 +1,14 @@
 # 👨‍💻 Code of Conduct
 
+- [Our Pledge](#our-pledge)
+- [Our Standards](#our-standards)
+- [Our Responsabilities](#our-responsabilities)
+- [Scope](#scope)
+- [Enforcement](#enforcement)
+- [Attribution](#attribution)
+    
+________________________________________________________________________________
+
 ## Our Pledge
 
 In the interest of fostering an open and welcoming environment, we as 

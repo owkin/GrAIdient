@@ -64,8 +64,8 @@ are run after each push on the repository.
 
 The [integration tests](../Architecture/MATorchTests.md) 
 are not run systematically, 
-neither are the [examples](../Architecture/MAExamples.md).
-Once the PR is "ready to review", please trigger the workflows on 
+neither are the [examples](../Architecture/MAExamples.md). \
+Once a PR is "ready to review", please trigger the workflows on 
 [GitHub](https://github.com/owkin/MAKit/actions) 
 to ensure these additional tests have completed. 
 
@@ -80,7 +80,7 @@ Follow the previous links to know more about.
 
 ## Git Workflow
 
-- Git workflow: we use the Github Flow, with the modification. 
+- Git workflow: we use the Github Flow. 
   Tags are used to indicate which commit can be used in production.
 
 - The Main branch is always protected, 
@@ -91,7 +91,7 @@ Follow the previous links to know more about.
 - Each PR :
 
   - Must be reviewed by at least one maintainer of the repo, 
-    implemented as code owners in GitHub (see below).
+    implemented as code owners in GitHub (see [below](#code-owner)).
 
   - Should be as small and focused as possible.
 
@@ -103,19 +103,19 @@ Follow the previous links to know more about.
   even if the PR is not yet ready for accepting reviews. 
   In this case, use the DRAFT status.
 
-- TODOs can be left in the code if another/others PR deals with them. 
-  In that case, add the link to this/those PR in the description. 
-  If no PR deals with them, 
+- TODOs can be left in the code if other PR deal with them. 
+  In that case, add the link to those PR in the description. 
+  If no PR deal with them, 
   it is better to use Github issues for small changes / improvements.
 
 - In case of a new feature or bug fix, 
   unit tests should be added to cover all the use cases. 
-  They should help the reviewers to understand the PR.
+  They should help reviewers understanding the PR.
   If such tests already exist, they should be mentioned in the description.
 
 - Each important PR should update the CHANGELOG 
-  (format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)), 
-  or any other documentation (docstring, contributing, readme, ...)
+  (format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)) 
+  or any other documentation (docstring, contributing, readme, ...).
 
 - Squash before merge.
 
@@ -144,19 +144,19 @@ this is why it needs to be limited to a maximum of 3 people.
 #### Code Owner
 
 **Person** who knows well the code base and who is able to judge whether 
-this can be merged in main or not.
+this can be merged in `main` or not.
 The code owners have the following responsibilities:
 
-- review PR before it can be merged into the main branch.
+- review PR before they can be merged into the `main` branch.
 - handle GitHub Issues lifecycle.
 
-Code owners are added by existing code owners, 
-everybody can suggest new code owners. New code owners are added to 
-[this file](../../CODEOWNERS).
+Code owners are added to 
+[this file](../../CODEOWNERS) by existing code owners, 
+everybody can suggest new code owners. 
 
 ### Author
 
-**Person** that has written and merged at least one PR on MAKit.
+Person or organization that has written and merged at least one PR on MAKit.
 Authors are added to [this file](../../AUTHORS).
 
 ## Commit Message

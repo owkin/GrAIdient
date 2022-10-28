@@ -4,34 +4,55 @@ Thank you for your interest in contributing to MAKit! From commenting to
 reviewing and sending PR requests, all contributions are welcome. 
 
 - [Developer Environment](#developer-environment)
-  - [Setup](#setup)
+  - [Setup XCode](#setup-xcode)
+  - [Setup Conda](#setup-conda)
   - [Coding Style](#coding-style)
 - [Testing](#testing)
   - [CI](#ci)
   - [Local](#local)
 - [Git Workflow](#git-workflow)
-- [Repo Admins and Code Owners](#repo-admins-and-code-owners)
+- [Repo Admins, Code Owners, Authors](#repo-admins-code-owners-authors)
   - [Admin](#admin)
   - [Code Owner](#code-owner)
 - [Comit Message](#commit-message)
-  - [Commit Message with Body](#commit-message-with-body)
-  - [Commit Message with Scope](#commit-message-with-scope)
-  - [Commit Message with both ! and BREAKING CHANGE Footer](
-     #commit-message-with-both--and-breaking-change-footer)
+  - [With a Body](#with-a-body)
+  - [With a Scope](#with-a-scope)
+  - [With both ! and BREAKING CHANGE Footer](
+    #with-both--and-breaking-change-footer)
 - [Versioning](#versioning)
 - [Release on GitHub](#release-on-github)
-    
-________________________________________________________________________________
 
 ## Developer Environment
 
-### Setup
+### Setup XCode
 
-Install XCode with command line tools.
+Install XCode from 
+[Apple developer website](https://developer.apple.com/download/) 
+or the App Store on your Mac.
+
+Then install Xcode Command Line Tools from the terminal: 
+
+```
+xcode-select --install
+```
+
+You can verify you have successfully installed Xcode Command Line Tools: 
+
+```
+xcode-select -p
+```
+
+### Setup Conda
+
+Install anaconda from brew with: 
+
+```
+brew install --cask anaconda
+```
 
 ### Coding Style
 
-Go to XCode preferences -> Text editing tab -> Page guide at column: 80.
+Go to XCode preferences > Text editing tab > Page guide at column: 80.
 
 ## Testing
 
@@ -101,7 +122,7 @@ Follow the previous links to know more about.
   if using `push force` then do it with lease and be careful about it 
   if several people work on the PR.
 
-## Repo Admins and Code Owners
+## Repo Admins, Code Owners, Authors
 
 The key principle that is applied to grant roles to users is:
 making sure workflow is smooth while limiting the number of people 
@@ -112,7 +133,7 @@ the list of people with these roles.
 
 #### Admin
 
-Person who has [admin right](
+**Person** who has [admin right](
 https://docs.github.com/en/organizations/managing-access-to-your-organizations-repositories/repository-roles-for-an-organization) 
 for a repo on GitHub.
 "She/he has full access to the project, including sensitive and 
@@ -129,7 +150,13 @@ The code owners have the following responsibilities:
 - handle GitHub Issues lifecycle.
 
 Code owners are added by existing code owners, 
-everybody can suggest new code owners.
+everybody can suggest new code owners. New code owners are added to 
+[this file](../../CODEOWNERS).
+
+### Author
+
+**Person** that has written and merged at least one PR on MAKit.
+Authors are added to [this file](../../AUTHORS).
 
 ## Commit Message
 
@@ -151,7 +178,7 @@ On top of the specification, we apply the following rules:
 
 <ins>Examples</ins>: 
 
-### Commit Message with Body
+### With a Body
 
 ```
 ✨ feat: add options for auto batching in the CLI
@@ -160,13 +187,13 @@ Lorem ipsum dolor sit amet. Est soluta dolores rem itaque suscipit qui
 soluta porro 33 galisum rerum aut numquam voluptates qui Quis deserunt. 
 ```
 
-### Commit Message with Scope
+### With a Scope
 
 ```
 🐛 fix(core): add unique constraint on tag name
 ```
 
-### Commit Message with both ! and BREAKING CHANGE Footer
+### With both ! and BREAKING CHANGE Footer
 
 ```
 🔨 refactor!: remove GPU variable

@@ -6,8 +6,6 @@
 - [Scope](#scope)
 - [Enforcement](#enforcement)
 - [Attribution](#attribution)
-    
-________________________________________________________________________________
 
 ## Our Pledge
 

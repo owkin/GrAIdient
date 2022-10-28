@@ -38,7 +38,7 @@ optimizerParams.optimizer = ListEpochsScheduler(
 model.setupOptimizers(params: optimizerParams)
 ```
 
-If defined as so, do not forget to inform the optimizer about the step 
+If defined so, do not forget to inform the optimizer about the step 
 evolution during the training loop: 
 
 ```swift 
@@ -53,8 +53,7 @@ visible in the `OptimizerImpl` component.
 For example at `OptimizerImpl.initVariables` the variables `alpha` and 
 `lambda` are initialized with default values. 
 
-It is possible to override the default variables with the optimizer parameters 
-of the [previous paragraph](#optimizer-scheduler).
+It is possible to override the default variables with the optimizer parameters:
 
 ```swift
 var optimizerParams: MAKit.Optimizer.Params()
@@ -125,7 +124,7 @@ optimizerParams.variables["alpha"] = ListEpochsVar(
 model.setupOptimizers(params: optimizerParams)
 ```
 
-If defined as so, do not forget to inform the optimizer about the step 
+If defined so, do not forget to inform the optimizer about the step 
 evolution: 
 
 ```swift 

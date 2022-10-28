@@ -27,7 +27,7 @@ solution is that the whole estimation logic appears at the `Model` level.
 The current solution prefers to deletage the weight modification on the 
 `Layer` component because the `Layer` is already 
 the low level component where the signal flows `forward` and `backward`. 
-Thus, the `forwardGC` only appears as a new way to make the signal flow.
+Thus, `forwardGC` appears as a new way to make the signal flow.
 
 ## Next Chapter
 

@@ -1,6 +1,8 @@
 # 📚 Plugin
 
-It is possible to extend MAKit with custom new layers or activation functions. 
+It is possible to create a new repository that depends on MAKit and 
+to create custom new layers and activation functions that extend the ones 
+in MAKit.
 
 ## Create a New Layer
 
@@ -69,7 +71,8 @@ In order to do that, one has to implement the different API of `LayerUpdate`:
 ### Plugin Layer 
 
 Once the new layer, say `MyLayer` has been implemented, declare it on the 
-registry so that it can be serialized/deserialized from the disk: 
+registry so that it can be serialized/deserialized from the disk among any 
+other layers of the model: 
 
 ```swift
 MAKit.Model.Layer.append(registry: buildRegistry([

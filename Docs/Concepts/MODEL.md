@@ -222,25 +222,26 @@ cnn.initKernel(.Inference)
 classifier.initKernel(.Inference)
 ``` 
 
-What happens now is that the cache that has been set earlier will now 
+What happens is that the cache that has been set earlier will now 
 be fully loaded into the kernel of the different layers. 
 
-- In the CPU execution context: the weights, biases... will be loaded into 
+- CPU mode: the weights, biases... will be loaded into 
   the objects used for forward and backward pass
-- In the GPU execution context: the weights, biases... will be uploaded 
-  to the GPU
+- GPU mode: the weights, biases... will be uploaded 
+  to the GPU device
 
-So now, what would have happen if the cache for weights and biases had 
-not been set ?
+So now, what would have happened if the cache for weights and biases had 
+not been set earlier ?
 
-The values chosen would have been initialized with random strategies. 
+=> The values for weights would have been initialized "randomly" 
+while the values for biases would have been initialized to 0. 
 
-To cap it all, the `weights` is not necessary in the following situations: 
+To cap it all, the `weights` API is not necessary in the following situations: 
 
 - The model has been loaded from the disk 
 - We want to train a model from scratch
 
-## Advanced Transformations
+## Model Transformation
 
 In some scenario, we need to transform the model and preserve the 
 "hard resources" to avoid losing time initializing resources that 
@@ -257,6 +258,8 @@ newCNN = Model.resize(
     inPlace: true
 )[0]
 ```
+
+In this situation, we do not need to call the `initKernel` API.
 
 ## Next Chapter
 

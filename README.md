@@ -28,8 +28,8 @@ Add the following dependency to your `Package.swift` manifest:
 The documentation is divided into several sections: 
 
 - [Main Concepts](Docs/Concepts/CONCEPTS.md)
-- [Examples](Docs/Examples/EXAMPLES.md)
 - [Architecture](Docs/Architecture/ARCHITECTURE.md)
+- [Examples](Docs/Examples/EXAMPLES.md)
 
 ## 👨‍💻 Contributing
 

@@ -40,4 +40,4 @@ conda env remove --name matorch
 1. Get the weigths from the `PyTorch` model and load them  in the `MAKit` model.
 1. Load data from `PyTorch` and set it on both models.
 1. Compute forward, apply dummy loss then the backward pass.
-1. Compare the gradient norm on the very first layer in both models.
+1. Compare the gradient norm in the very first layer of both models.

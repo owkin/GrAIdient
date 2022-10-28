@@ -5,7 +5,7 @@ Let us consider a model containing the following graph of layers:
 layer1 -> layer2 -> ... -> layer42
 
 Let us suppose that the model links are initialized so as its "hard resources".
-We want to go through the typical training flow: 
+We want to go through one typical step of the training flow: 
 
 ```swift
 // Let us assume data is defined.
@@ -41,11 +41,11 @@ try! model.update()
 let loss = try! lastLayer.getLossGPU(groundTruth)
 ```
 
-Please note that the `setData`, `lossDerivative` and `getLoss` are not exposed 
+Please note that `setData`, `lossDerivative` and `getLoss` are not exposed 
 at the model level. They are specific to some layers. 
-So beware not to forget the `GPU` in the API name.
+Beware not to forget the `GPU` in the API name.
 
-Also note how the `setData` enables the forward pass while 
+Also note how `setData` enables the forward pass while 
 `lossDerivative` enables the backward pass. 
 
 Finally, `getLoss` is a just an indicator 

@@ -35,6 +35,11 @@ The documentation is divided into several sections:
 
 Read below to learn how to take part in improving MAKit.
 
+### Changelog
+
+All notable changes to MAKit will be documented in 
+[this file](Docs/Contributing/CHANGELOG.md).
+
 ### Contributing Guide
 
 Read our [contributing guide](Docs/Contributing/CONTRIBUTING.md) 

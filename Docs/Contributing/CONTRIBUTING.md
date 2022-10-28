@@ -240,7 +240,7 @@ containing the commits to merge into the `main` branch.
 
 1. Update the Changelog
     - Create a branch from `release_N`.
-    - Edit the changelog to create a new section 
+    - Edit the [changelog](CHANGELOG.md) to create a new section 
       corresponding to the new release. 
       Move all the "Unreleased" items to this new section.
       Do not delete the "Unreleased" section title: future PRs will insert 

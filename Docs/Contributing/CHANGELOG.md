@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🔧 **chore:** rollback changelog ([#16](https://github.com/owkin/MAKit/pull/16))\
+🔧 **chore:** fix badges in the readme ([#15](https://github.com/owkin/MAKit/pull/15))
+
 ## 0.1.0 (2022-10-28)
 
 ### Features
@@ -23,7 +26,6 @@ All notable changes to this project will be documented in this file.
 
 ### Miscellaneous Tasks
 
-🔧 **chore:** fix badges in the readme ([#15](https://github.com/owkin/MAKit/pull/15))\
 🔧 **chore:** release 0.1.0 ([#13](https://github.com/owkin/MAKit/pull/13))\
 🚀 **test:** reproducibility with PyTorch ([#10](https://github.com/owkin/MAKit/pull/10))\
 🪜 **test:** layer2d ([#8](https://github.com/owkin/MAKit/pull/8))\

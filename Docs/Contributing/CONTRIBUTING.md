@@ -22,6 +22,7 @@ reviewing and sending PR requests, all contributions are welcome.
     #with-both--and-breaking-change-footer)
 - [Versioning](#versioning)
 - [Release on GitHub](#release-on-github)
+- [CHANGELOG template](#changelog-template)
 
 ## Developer Environment
 
@@ -164,6 +165,22 @@ everybody can suggest new code owners.
 Person or organization that has written and merged at least one PR into MAKit.
 Authors are added to [this file](../../AUTHORS).
 
+Any author "MyName" is entitled to append the header of files where she/he had 
+an impact: 
+
+```swift
+// 
+// File.swift
+// MAKit
+//
+// Created by ... on 28/10/2022.
+// Modified by MyName on 28/10/2022.
+//
+```
+
+Avoid to append your change if your name is already the latest appended and 
+the last modification date is recent enough (< 1 month from now).
+
 ## Commit Message
 
 The commit message must follow the 
@@ -225,7 +242,9 @@ containing the commits to merge into the `main` branch.
     - Create a branch from `release_N`.
     - Edit the changelog to create a new section 
       corresponding to the new release. 
-      Use [git-cliff](https://github.com/orhun/git-cliff) for that.
+      Move all the "Unreleased" items to this new section.
+      Do not delete the "Unreleased" section title: future PRs will insert 
+      changelog items in this section.
     - Commit and push the changes.
     - Squash and merge the new branch into `release_N` with commit message \
       🔧 chore: release X.Y.Z
@@ -239,4 +258,20 @@ containing the commits to merge into the `main` branch.
        - **Choose a tag**: X.Y.Z (this will create a tag)
        - **Target**: main
        - **Release title**: X.Y.Z
-       - **Describe this release**: formatted copy of the changelog.
+       - **Describe this release**: formatted copy of the changelog 
+         using the template provided in the 
+         [changelog template](#changelog-template)
+
+## CHANGELOG template
+
+```md
+## 0.Y.Z (2022-10-28)
+
+### Features
+
+### Bug Fixes
+
+### Documentation
+
+### Mischellaneous Tasks
+```

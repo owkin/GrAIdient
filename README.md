@@ -37,8 +37,8 @@ Read below to learn how to take part in improving MAKit.
 
 ### Changelog
 
-All notable changes to MAKit will be documented in 
-[this file](Docs/Contributing/CHANGELOG.md).
+All notable changes to MAKit will be documented in the
+[changelog](Docs/Contributing/CHANGELOG.md).
 
 ### Contributing Guide
 

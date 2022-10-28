@@ -22,7 +22,7 @@ reviewing and sending PR requests, all contributions are welcome.
     #with-both--and-breaking-change-footer)
 - [Versioning](#versioning)
 - [Release on GitHub](#release-on-github)
-- [CHANGELOG template](#changelog-template)
+- [Changelog Template](#changelog-template)
 
 ## Developer Environment
 
@@ -119,9 +119,9 @@ Follow the previous links to know more about.
   They should help reviewers understanding the PR.
   If such tests already exist, they should be mentioned in the description.
 
-- Each important PR should update the [CHANGELOG](CHANGELOG.md)
+- Each important PR should update the [changelog](CHANGELOG.md)
   or any other documentation 
-  (docstring, CONTRIBUTING, [README](../../README.md), ...).
+  (docstring, contributing, [readme](../../README.md), ...).
 
 - Squash before merge.
 
@@ -263,7 +263,7 @@ containing the commits to merge into the `main` branch.
          using the template provided in the 
          [changelog template](#changelog-template)
 
-## CHANGELOG template
+## Changelog Template
 
 ```md
 ## X.Y.Z (2022-10-28)

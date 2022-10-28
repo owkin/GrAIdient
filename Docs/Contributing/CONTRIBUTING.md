@@ -14,6 +14,7 @@ reviewing and sending PR requests, all contributions are welcome.
 - [Repo Admins, Code Owners, Authors](#repo-admins-code-owners-authors)
   - [Admin](#admin)
   - [Code Owner](#code-owner)
+  - [Author](#author)
 - [Comit Message](#commit-message)
   - [With a Body](#with-a-body)
   - [With a Scope](#with-a-scope)
@@ -64,8 +65,8 @@ are run after each push on the repository.
 The [integration tests](../Architecture/MATorchTests.md) 
 are not run systematically, 
 neither are the [examples](../Architecture/MAExamples.md).
-
-Once the PR is "ready to review", please trigger the workflows on GitHub 
+Once the PR is "ready to review", please trigger the workflows on 
+[GitHub](https://github.com/owkin/MAKit/actions) 
 to ensure these additional tests have completed. 
 
 ### Local 

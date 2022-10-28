@@ -14,20 +14,12 @@ reviewing and sending PR requests, all contributions are welcome.
   - [Admin](#admin)
   - [Code Owner](#code-owner)
 - [Comit Message](#commit-message)
-  - [Examples](#examples)
-    - [Commit Message with Body](#commit-message-with-body)
-    - [Commit Message with Scope](#commit-message-with-scope)
-    - [Commit Message with both ! and BREAKING CHANGE Footer](
-      #commit-message-with-both--and-breaking-change-footer)
+  - [Commit Message with Body](#commit-message-with-body)
+  - [Commit Message with Scope](#commit-message-with-scope)
+  - [Commit Message with both ! and BREAKING CHANGE Footer](
+     #commit-message-with-both--and-breaking-change-footer)
 - [Versioning](#versioning)
 - [Release on GitHub](#release-on-github)
-  - [Before you Start](#before-you-start)
-  - [Step 1. Update the Changelog](#step-1-update-the-changelog)
-  - [Step 2. Create a Pull Request](#step-2-create-a-pull-request)
-  - [Step 3. Review and Merge the Pull Request](
-    #step-3-review-and-merge-the-pull-request)
-  - [Step 4. Create a Github release "X.Y.Z" from "main"](
-    #step-4-create-a-github-release-xyz-from-main)
     
 ________________________________________________________________________________
 
@@ -157,9 +149,9 @@ On top of the specification, we apply the following rules:
 - for breaking change, the commit must include 
   a footer with `BREAKING CHANGE:` and `!` after the type/scope
 
-### Examples
+<ins>Examples</ins>: 
 
-#### Commit Message with Body
+### Commit Message with Body
 
 ```
 ✨ feat: add options for auto batching in the CLI
@@ -168,13 +160,13 @@ Lorem ipsum dolor sit amet. Est soluta dolores rem itaque suscipit qui
 soluta porro 33 galisum rerum aut numquam voluptates qui Quis deserunt. 
 ```
 
-#### Commit Message with Scope
+### Commit Message with Scope
 
 ```
 🐛 fix(core): add unique constraint on tag name
 ```
 
-#### Commit Message with both ! and BREAKING CHANGE Footer
+### Commit Message with both ! and BREAKING CHANGE Footer
 
 ```
 🔨 refactor!: remove GPU variable
@@ -196,30 +188,24 @@ BREAKING CHANGE: deprecate GPU variable
 Let say we want to make a release for the branch `release_1` containing the 
 commits to merge into the `main` branch.
 
-### Before you Start
+1. Before you start: ensure all [end-to-end tests](#ci) pass on `release_1`.
 
-Ensure all [end-to-end tests](#ci) pass on `release_1`.
+1. Update the Changelog
+  1. Create a branch from `release_1`.
+  1. Edit the changelog to create a new section 
+     corresponding to the new release. 
+     Use [git-cliff](https://github.com/orhun/git-cliff) for that.
+  1. Commit and push the changes.
+  1. Squash and merge the new branch into `release_1` with commit message 
+     "🔧 chore: release X.Y.Z".
 
-### Step 1. Update the Changelog
+1. Create a Pull Request
 
-1. Create a branch from `release_1`.
+1. Review and Merge the Pull Request
 
-1. Edit the changelog to create a new section corresponding to the new release. 
-   Use [git-cliff](https://github.com/orhun/git-cliff) for that.
-  
-1. Commit and push the changes.
-
-1. Squash and merge the new branch into `release_1` with commit message 
-   "🔧 chore: release X.Y.Z".
-
-### Step 2. Create a Pull Request
-
-### Step 3. Review and Merge the Pull Request
-
-### Step 4. Create a GitHub release "X.Y.Z" from "main"
-    
-- GitHub > Releases > Draft new Release
-  - **Choose a tag**: X.Y.Z (this will create the tag)
-  - **Target**: main
-  - **Release title**: X.Y.Z
-  - **Describe this release:** formatted copy of the changelog.
+1. Create a GitHub release "X.Y.Z" from "main": \
+   GitHub > Releases > Draft new Release
+     - **Choose a tag**: X.Y.Z (this will create the tag)
+     - **Target**: main
+     - **Release title**: X.Y.Z
+     - **Describe this release:** formatted copy of the changelog.

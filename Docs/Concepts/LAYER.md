@@ -33,9 +33,9 @@ The layer exposes 3 main APIs:
 Each of these API can be run in two execution contexts: CPU or GPU. 
 
 As a low-level component, the layer exposes this execution context 
-in the name of the 3 previous APIs, which in fact gives 6 APIs: 
+in the name of the 3 previous APIs, which in fact results in the 6 final APIs: 
 `forwardCPU`, `forwardGPU`, 
-`backwardCPU`, `backwardGPU`, forwardGCCPU` and `forwardGCGPU`.
+`backwardCPU`, `backwardGPU`, `forwardGCCPU` and `forwardGCGPU`.
 
 The CPU execution mode should only be run for debug or testing. 
 The GPU execution mode is the standard way to go. 

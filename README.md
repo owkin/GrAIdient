@@ -33,7 +33,13 @@ The documentation is divided into several sections:
 
 ## 👨‍💻 Contributing
 
-Read below to learn how you can take part in improving MAKit.
+Read below to learn how to take part in improving MAKit.
+
+### Contributing Guide
+
+Read our [contributing guide](Docs/Contributing/CONTRIBUTING.md) 
+to learn about our development process 
+and how to build and test your changes to MAKit.
 
 ### Code of Conduct
 
@@ -41,12 +47,6 @@ MAKit has adopted a Code of Conduct that we expect
 project participants to adhere to. 
 Please read the [full text](Docs/Contributing/CODE_OF_CONDUCT.md)
 so that you can understand what actions will and will not be tolerated.
-
-### Contributing Guide
-
-Read our [contributing guide](Docs/Contributing/CONTRIBUTING.md) 
-to learn about our development process 
-and how to build and test your changes to MAKit.
 
 ### Licence
 

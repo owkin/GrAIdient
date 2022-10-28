@@ -265,7 +265,7 @@ containing the commits to merge into the `main` branch.
 ## CHANGELOG template
 
 ```md
-## 0.Y.Z (2022-10-28)
+## X.Y.Z (2022-10-28)
 
 ### Features
 

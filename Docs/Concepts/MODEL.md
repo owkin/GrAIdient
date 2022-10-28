@@ -241,7 +241,7 @@ To cap it all, the `weights` API is not necessary in the following situations:
 - The model has been loaded from the disk 
 - We want to train a model from scratch
 
-But the `initKernel` is always necessary for the model to be ready to 
+But the `initKernel` API is always necessary for the model to be ready to 
 train/run.
 
 ## Model Transformation

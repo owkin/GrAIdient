@@ -20,7 +20,7 @@ So now, how do we create a model ?
 
 ## Graph of Layers
 
-As we saw in the [previous paragraph](#model), the order in which the layers 
+As we saw in the [previous paragraph](#-model), the order in which the layers 
 appear in the model is very important. This order has to be defined 
 explicitly by the designer of the deep learning model. This enforces 
 one model where layers are clearly chained from the beginning to the end 

@@ -178,7 +178,7 @@ an impact:
 //
 ```
 
-Avoid to append your change if your name is already the latest appended and 
+Avoid to append your change if it is already the latest appended and 
 the last modification date is recent enough (< 1 month from now).
 
 ## Commit Message

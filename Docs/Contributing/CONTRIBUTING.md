@@ -75,13 +75,14 @@ Testing the [unit tests](../Architecture/MAKitTests.md)
 on Xcode is straight forward.
 
 Testing the [integration tests](../Architecture/MATorchTests.md) 
-and the [examples](../Architecture/MAExamples.md) require an additional setup. 
+and the [examples](../Architecture/MAExamples.md) requires an additional setup. 
 Follow the previous links to know more about.
 
 ## Git Workflow
 
-- Git workflow: we use the Github Flow. 
-  Tags are used to indicate which commit can be used in production.
+- We use the Github Flow. 
+  Tags are used to indicate which commit of the Main branch 
+  can be used in production.
 
 - The Main branch is always protected so as the Release branches. 
   All updates to these branches arrive via pull requests (PRs).
@@ -90,7 +91,7 @@ Follow the previous links to know more about.
 
 - The names of the Release branches are `release_N`, with N the number of the 
   current release. 
-  The last Release branch should contain the code under development.
+  The last Release branch contains the code under development.
 
 - Each PR :
 
@@ -129,7 +130,7 @@ Follow the previous links to know more about.
 
 ## Repo Admins, Code Owners, Authors
 
-The key principle that is applied to grant roles to users is:
+The key principle to grant roles to users is:
 making sure workflow is smooth while limiting the number of people 
 with extended rights for security purposes.
 
@@ -206,8 +207,8 @@ BREAKING CHANGE: deprecate GPU variable
 
 ## Versioning
 
-- This project adheres to [Semantic Versioning](https://semver.org).
-- To bump the release version, MAKit follows the rules below:
+- MAKit adheres to [Semantic Versioning](https://semver.org).
+- To bump the release version, follow the rules below:
   - X is at zero (MAKit is in development phase)
   - Y is bumped for new features, architecture changes 
     and non backwards compatible fixes

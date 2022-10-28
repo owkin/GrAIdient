@@ -255,9 +255,9 @@ containing the commits to merge into the `main` branch.
 
 1. Create a GitHub release X.Y.Z from `main`: 
      - GitHub > Releases > Draft new Release
-       - **Choose a tag**: X.Y.Z (this will create a tag)
+       - **Choose a tag**: vX.Y.Z (this will create a tag)
        - **Target**: main
-       - **Release title**: X.Y.Z
+       - **Release title**: vX.Y.Z
        - **Describe this release**: formatted copy of the 
          [changelog](CHANGELOG.md) 
          using the template provided in the 

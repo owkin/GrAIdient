@@ -2,11 +2,11 @@
 # MAKit
 
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) 
-[![tests](https://github.com/owkin/MAKit/actions/workflows/unit-tests.yml/badge.svg?branch=master)](
+[![tests](https://github.com/owkin/MAKit/actions/workflows/unit-tests.yml/badge.svg)](
 https://github.com/owkin/MAKit/actions/workflows/unit-tests.yml) 
-[![tests](https://github.com/owkin/MAKit/actions/workflows/integration-tests.yml/badge.svg?branch=master)](
+[![tests](https://github.com/owkin/MAKit/actions/workflows/integration-tests.yml/badge.svg)](
 https://github.com/owkin/MAKit/actions/workflows/integration-tests.yml) 
-[![tests](https://github.com/owkin/MAKit/actions/workflows/examples.yml/badge.svg?branch=master)](
+[![tests](https://github.com/owkin/MAKit/actions/workflows/examples.yml/badge.svg)](
 https://github.com/owkin/MAKit/actions/workflows/examples.yml)
 
 Maximal Activation Kit. \

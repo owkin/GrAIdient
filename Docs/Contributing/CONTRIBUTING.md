@@ -191,21 +191,21 @@ commits to merge into the `main` branch.
 1. Before you start: ensure all [end-to-end tests](#ci) pass on `release_1`.
 
 1. Update the Changelog
-  1. Create a branch from `release_1`.
-  1. Edit the changelog to create a new section 
-     corresponding to the new release. 
-     Use [git-cliff](https://github.com/orhun/git-cliff) for that.
-  1. Commit and push the changes.
-  1. Squash and merge the new branch into `release_1` with commit message 
-     "🔧 chore: release X.Y.Z".
+  - Create a branch from `release_1`.
+  - Edit the changelog to create a new section 
+    corresponding to the new release. 
+    Use [git-cliff](https://github.com/orhun/git-cliff) for that.
+  - Commit and push the changes.
+  - Squash and merge the new branch into `release_1` with commit message \
+    🔧 chore: release X.Y.Z
 
 1. Create a Pull Request
 
 1. Review and Merge the Pull Request
 
-1. Create a GitHub release "X.Y.Z" from "main": \
-   GitHub > Releases > Draft new Release
-     - **Choose a tag**: X.Y.Z (this will create the tag)
-     - **Target**: main
-     - **Release title**: X.Y.Z
-     - **Describe this release:** formatted copy of the changelog.
+1. Create a GitHub release "X.Y.Z" from "main": 
+     - GitHub > Releases > Draft new Release
+       - **Choose a tag**: X.Y.Z (this will create the tag)
+       - **Target**: main
+       - **Release title**: X.Y.Z
+       - **Describe this release:** formatted copy of the changelog.

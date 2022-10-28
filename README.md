@@ -13,7 +13,7 @@ Maximal Activation Kit. \
 A deep-learning framework for computer vision.
 
 This framework aims at promoting full control and understanding of the main 
-operations needed to train deep learning models. 
+operations needed to train deep learning models in the computer vision area. 
 
 ## 📦 Swift Package Manager
 

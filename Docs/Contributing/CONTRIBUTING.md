@@ -119,9 +119,9 @@ Follow the previous links to know more about.
   They should help reviewers understanding the PR.
   If such tests already exist, they should be mentioned in the description.
 
-- Each important PR should update the CHANGELOG 
-  (format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)) 
-  or any other documentation (docstring, contributing, readme, ...).
+- Each important PR should update the [CHANGELOG](CHANGELOG.md)
+  or any other documentation 
+  (docstring, CONTRIBUTING, [README](../../README.md), ...).
 
 - Squash before merge.
 
@@ -258,7 +258,8 @@ containing the commits to merge into the `main` branch.
        - **Choose a tag**: X.Y.Z (this will create a tag)
        - **Target**: main
        - **Release title**: X.Y.Z
-       - **Describe this release**: formatted copy of the changelog 
+       - **Describe this release**: formatted copy of the 
+         [changelog](CHANGELOG.md) 
          using the template provided in the 
          [changelog template](#changelog-template)
 

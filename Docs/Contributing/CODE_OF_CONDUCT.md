@@ -1,4 +1,4 @@
-# Code of Conduct
+# 👨‍💻 Code of Conduct
 
 ## Our Pledge
 
@@ -12,7 +12,7 @@ or sexual identity and orientation.
 
 ## Our Standards
 
-Examples of behavior that contributes to creating a positive environment 
+Examples of behavior that contribute to creating a positive environment 
 include:
 
 - Using welcoming and inclusive language
@@ -63,7 +63,7 @@ on the project or its community.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior 
-may be reported by contacting the project team at #TODO. 
+may be reported by contacting the project team. 
 All complaints will be reviewed and investigated and will result in a response 
 that is deemed necessary and appropriate to the circumstances. 
 The project team is obligated to maintain confidentiality with regard 

@@ -1,134 +1,56 @@
+
 # MAKit
 
-Maximal Activation Kit. 
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) 
+[![tests](https://github.com/owkin/MAKit/actions/workflows/unit-tests.yml/badge.svg?branch=master)](
+https://github.com/owkin/MAKit/actions/workflows/unit-tests.yml) 
+[![tests](https://github.com/owkin/MAKit/actions/workflows/integration-tests.yml/badge.svg?branch=master)](
+https://github.com/owkin/MAKit/actions/workflows/integration-tests.yml) 
+[![tests](https://github.com/owkin/MAKit/actions/workflows/examples.yml/badge.svg?branch=master)](
+https://github.com/owkin/MAKit/actions/workflows/examples.yml)
+
+Maximal Activation Kit. \
 A deep-learning framework for computer vision.
 
-This framework aims at promoting a total control and understanding of the main 
-operations needed to train deep learning models. 
+This framework aims at promoting full control and understanding of the main 
+operations needed to train deep learning models in the computer vision area. 
 
-The `Layer` is the essential component needed to build an explicit graph of 
-operations from the data input to the ground truth. 
+## 📦 Swift Package Manager
 
-The `Model` is a component that wraps the different layers together to 
-call functions in a simple way. 
+Add the following dependency to your `Package.swift` manifest:
 
-The API explicitly exposes the following functions: 
-
-- forward pass
-- backward pass
-- forward pass for the gradient checking.
-
-## Model
-
-## Layer
-
-# MATorchTests
-
-`MATorchTests` contains integration tests that allow to compare `MAKit` models 
-with their equivalent in `PyTorch`.
-
-The goal is to demonstrate a good level of reproducibility and 
-interoperability with `PyTorch`.
-
-## Setup
-
-These tests require a special `Python` environment. 
-
-```bash
-conda create --name matorch python=3.7
-conda activate matorch
-cd Tests/MATorchTests/Base
-pip install -e .
+```swift
+.package(url: "https://github.com/owkin/MAKit.git", .branch("main")),
 ```
 
-You should be able to run the tests right from XCode or 
-with a `bash` command:
+## 📚 Documentation
 
-```bash
-swift test --filter MATorchTests
-```
+The documentation is divided into several sections: 
 
-You may eventually clean the environment with:
+- [Main Concepts](Docs/Concepts/CONCEPTS.md)
+- [Architecture](Docs/Architecture/ARCHITECTURE.md)
+- [Examples](Docs/Examples/EXAMPLES.md)
 
-```bash     
-conda deactivate
-conda env remove --name matorch
-```
+## 👨‍💻 Contributing
 
-## Steps 
+Read below to learn how to take part in improving MAKit.
 
-1. Create a model in `MAKit` and `PyTorch`.
-1. Get the weigths from the `PyTorch` model and load them  in the `MAKit` model.
-1. Load data from `PyTorch` and set it on both models.
-1. Compute forward, apply dummy loss then the backward pass.
-1. Compare the gradient norm on the very first layer in both models.
+### Contributing Guide
 
-# MAExamples
+Read our [contributing guide](Docs/Contributing/CONTRIBUTING.md) 
+to learn about our development process 
+and how to build and test your changes to MAKit.
 
-`MAExamples` contains examples that show how to interact with `MAKit`. 
-The examples are organised as tests so as to demonstrate some capabilities. 
-They may be run in local (Xcode or command line) 
-or in the CI (release/main branches or explicit trigger).
+### Code of Conduct
 
-The following examples are currently available: 
+MAKit has adopted a Code of Conduct that we expect 
+project participants to adhere to. 
+Please read the [full text](Docs/Contributing/CODE_OF_CONDUCT.md)
+so that you can understand what actions will and will not be tolerated.
 
-- VGGExample
+### Licence
 
-## VGG Example
+MAKit, MATestUtils and MAKitTests are [MIT licenced](LICENSE).
 
-This example trains a simple model on the GPU. 
-The dataset used is CIFAR 10. 
-We want to train the model to discriminate between 2 labels 
-(not the 10 available).
-
-### Setup
-
-This example has some `Python` dependencies. In order to run 
-the example, we first have to setup the environment: 
-
-```bash
-conda create --name maexamples python=3.7
-conda activate maexamples
-cd Tests/MAExamples/Base
-pip install -e .
-```
-
-Then you should be able to run the tests right from XCode or 
-with a `bash` command:
-
-```bash
-swift test --filter MAExamples
-```
-
-Or to run the tests in the production model: 
-
-```bash
-swift test -c release --filter MAExamples
-```
-
-You may eventually clean the environment with:
-
-```bash     
-conda deactivate
-conda env remove --name maexamples
-```
-
-### Known Issues
-
-The following error may follow on local setup: 
-`UnpicklingError: invalid load key, ‘v’`.
-
-This may occur when lfs data files are not pulled. 
-To fix this: 
-
-```bash     
-git lfs pull
-```
-
-### Steps
-
-1. Dump the training and testing datasets.
-1. Evaluate a random model on the testing dataset: watch a bad performance.  
-1. Train a model on the training dataset.
-1. Evaluate the trained model on the testing dataset: 
-   watch a better performance.
+MAExamples and MATorchTests both depend on PythonKit and are 
+[Apache 2.0 licensed](Tests/LICENSE). 

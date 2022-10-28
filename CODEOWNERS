@@ -1,6 +1,12 @@
-# Below is a list of MAKit code owners who should review changes
-# before delivering into the release.
 #
-# Code owning should propagate to contributers upon request.
+# Below is a list of MAKit code owners.
+# They are responsible for:
+#
+# - reviewing PR before it can be merged into the main branch
+# - handle GitHub Issues lifecycle
+#
+# Code owneers are added by existing code owners,
+# everybody can suggeset new code owners.
+#
 
 * @jean-francoisreboud

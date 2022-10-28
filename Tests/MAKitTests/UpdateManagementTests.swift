@@ -9,6 +9,7 @@ import XCTest
 import MAKit
 import MATestsUtils
 
+/// Test we can control the training flow.
 class UpdateManagementTests: XCTestCase
 {
     var optimizerParams = MAKit.Optimizer.Params()

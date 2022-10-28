@@ -41,17 +41,17 @@ let package = Package(
             name: "MATorchTests",
             dependencies: ["MAKit", "PythonKit"],
             resources: [
-                .process("Base/python_lib"),
-                .process("Base/setup.py")
+                .copy("Base/python_lib"),
+                .copy("Base/setup.py")
             ]
         ),
         .testTarget(
             name: "MAExamples",
             dependencies: ["MAKit", "PythonKit"],
             resources: [
-                .process("Base/data"),
-                .process("Base/python_lib"),
-                .process("Base/setup.py")
+                .copy("Base/data"),
+                .copy("Base/python_lib"),
+                .copy("Base/setup.py")
             ]
         ),
     ]

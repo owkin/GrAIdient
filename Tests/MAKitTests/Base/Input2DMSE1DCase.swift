@@ -155,22 +155,28 @@ class Input2DMSE1DCase: MSE1DCase
         let lastLayer = model.layers.last as! MSE1D
         let layersGraph = model.getGraph(lastLayer)
         
-        retryNumeric(nbRetry: nbRetry)
-        {
-            () throws in
-            try trainer.run(
-                layersGraph: layersGraph,
-                setData: self.setData,
-                setLoss: self.setLoss,
-                getGradientsApprox: self.getGradientsApprox)
+        retryNumeric(
+            nbRetry: nbRetry,
             {
-                (gradDiff: Double) in
-                if gradDiff > diffThreshold
+                () throws in
+                try trainer.run(
+                    layersGraph: layersGraph,
+                    setData: self.setData,
+                    setLoss: self.setLoss,
+                    getGradientsApprox: self.getGradientsApprox)
                 {
-                    throw TestError.Numeric
+                    (gradDiff: Double) in
+                    if gradDiff > diffThreshold
+                    {
+                        throw TestError.Numeric
+                    }
                 }
+            },
+            {
+                () in
+                XCTAssert(false)
             }
-        }
+        )
     }
     
     ///
@@ -189,20 +195,26 @@ class Input2DMSE1DCase: MSE1DCase
         nbRetry: Int = NB_RETRY,
         diffThreshold: Double = 0.000001)
     {
-        retryNumeric(nbRetry: nbRetry)
-        {
-            () throws in
-            try trainer.run(
-                setData: self.setData,
-                setLoss: self.setLoss)
+        retryNumeric(
+            nbRetry: nbRetry,
             {
-                (gradDiff: Double) in
-                if gradDiff > diffThreshold
+                () throws in
+                try trainer.run(
+                    setData: self.setData,
+                    setLoss: self.setLoss)
                 {
-                    throw TestError.Numeric
+                    (gradDiff: Double) in
+                    if gradDiff > diffThreshold
+                    {
+                        throw TestError.Numeric
+                    }
                 }
+            },
+            {
+                () in
+                XCTAssert(false)
             }
-        }
+        )
     }
     
     ///
@@ -221,20 +233,26 @@ class Input2DMSE1DCase: MSE1DCase
         nbRetry: Int = NB_RETRY,
         diffThreshold: Double = 0.000001)
     {
-        retryNumeric(nbRetry: nbRetry)
-        {
-            () throws in
-            try trainer.run(
-                setData: self.setData,
-                setLoss: self.setLoss)
+        retryNumeric(
+            nbRetry: nbRetry,
             {
-                (gradDiff: Double) in
-                if gradDiff > diffThreshold
+                () throws in
+                try trainer.run(
+                    setData: self.setData,
+                    setLoss: self.setLoss)
                 {
-                    throw TestError.Numeric
+                    (gradDiff: Double) in
+                    if gradDiff > diffThreshold
+                    {
+                        throw TestError.Numeric
+                    }
                 }
+            },
+            {
+                () in
+                XCTAssert(false)
             }
-        }
+        )
     }
     
     ///
@@ -253,20 +271,26 @@ class Input2DMSE1DCase: MSE1DCase
         nbRetry: Int = NB_RETRY,
         diffThreshold: Double = 0.000001)
     {
-        retryNumeric(nbRetry: nbRetry)
-        {
-            () throws in
-            try trainer.run(
-                setData: self.setData,
-                setLoss: self.setLoss)
+        retryNumeric(
+            nbRetry: nbRetry,
             {
-                (gradDiff: Double) in
-                if gradDiff > diffThreshold
+                () throws in
+                try trainer.run(
+                    setData: self.setData,
+                    setLoss: self.setLoss)
                 {
-                    throw TestError.Numeric
+                    (gradDiff: Double) in
+                    if gradDiff > diffThreshold
+                    {
+                        throw TestError.Numeric
+                    }
                 }
+            },
+            {
+                () in
+                XCTAssert(false)
             }
-        }
+        )
     }
     
     ///
@@ -285,21 +309,27 @@ class Input2DMSE1DCase: MSE1DCase
         nbRetry: Int = NB_RETRY,
         diffThreshold: Double = 0.001)
     {
-        retryNumeric(nbRetry: nbRetry)
-        {
-            () throws in
-            try trainer.run(
-                setData: self.setData,
-                setLoss: self.setLoss,
-                getLoss: self.getLoss)
+        retryNumeric(
+            nbRetry: nbRetry,
             {
-                (lossDiff: Double) in
-                if lossDiff > diffThreshold
+                () throws in
+                try trainer.run(
+                    setData: self.setData,
+                    setLoss: self.setLoss,
+                    getLoss: self.getLoss)
                 {
-                    throw TestError.Numeric
+                    (lossDiff: Double) in
+                    if lossDiff > diffThreshold
+                    {
+                        throw TestError.Numeric
+                    }
                 }
+            },
+            {
+                () in
+                XCTAssert(false)
             }
-        }
+        )
     }
     
     ///
@@ -318,25 +348,31 @@ class Input2DMSE1DCase: MSE1DCase
         nbRetry: Int = NB_RETRY,
         diffThreshold: Double = 0.001)
     {
-        retryNumeric(nbRetry: nbRetry)
-        {
-            () throws in
-            try trainer.run(
-                setData: self.setData,
-                setLoss: self.setLoss,
-                getLoss: self.getLoss)
+        retryNumeric(
+            nbRetry: nbRetry,
             {
-                (diffCPU: Double, diffGPU: Double) in
-                if diffCPU > diffThreshold
+                () throws in
+                try trainer.run(
+                    setData: self.setData,
+                    setLoss: self.setLoss,
+                    getLoss: self.getLoss)
                 {
-                    throw TestError.Numeric
+                    (diffCPU: Double, diffGPU: Double) in
+                    if diffCPU > diffThreshold
+                    {
+                        throw TestError.Numeric
+                    }
+                    if diffGPU > diffThreshold
+                    {
+                        throw TestError.Numeric
+                    }
                 }
-                if diffGPU > diffThreshold
-                {
-                    throw TestError.Numeric
-                }
+            },
+            {
+                () in
+                XCTAssert(false)
             }
-        }
+        )
     }
     
     ///
@@ -355,26 +391,32 @@ class Input2DMSE1DCase: MSE1DCase
         nbRetry: Int = NB_RETRY,
         diffThreshold: Double = 0.001)
     {
-        retryNumeric(nbRetry: nbRetry)
-        {
-            () throws in
-            try trainer.run(
-                transform: self.copy,
-                setData: self.setData,
-                setLoss: self.setLoss,
-                getLoss: self.getLoss)
+        retryNumeric(
+            nbRetry: nbRetry,
             {
-                (diffCPU: Double, diffGPU: Double) in
-                if diffCPU > diffThreshold
+                () throws in
+                try trainer.run(
+                    transform: self.copy,
+                    setData: self.setData,
+                    setLoss: self.setLoss,
+                    getLoss: self.getLoss)
                 {
-                    throw TestError.Numeric
+                    (diffCPU: Double, diffGPU: Double) in
+                    if diffCPU > diffThreshold
+                    {
+                        throw TestError.Numeric
+                    }
+                    if diffGPU > diffThreshold
+                    {
+                        throw TestError.Numeric
+                    }
                 }
-                if diffGPU > diffThreshold
-                {
-                    throw TestError.Numeric
-                }
+            },
+            {
+                () in
+                XCTAssert(false)
             }
-        }
+        )
     }
     
     ///
@@ -393,26 +435,32 @@ class Input2DMSE1DCase: MSE1DCase
         nbRetry: Int = NB_RETRY,
         diffThreshold: Double = 0.001)
     {
-        retryNumeric(nbRetry: nbRetry)
-        {
-            () throws in
-            try trainer.run(
-                transform: self.copyInPlace,
-                setData: self.setData,
-                setLoss: self.setLoss,
-                getLoss: self.getLoss)
+        retryNumeric(
+            nbRetry: nbRetry,
             {
-                (diffCPU: Double, diffGPU: Double) throws in
-                if diffCPU > diffThreshold
+                () throws in
+                try trainer.run(
+                    transform: self.copyInPlace,
+                    setData: self.setData,
+                    setLoss: self.setLoss,
+                    getLoss: self.getLoss)
                 {
-                    throw TestError.Numeric
+                    (diffCPU: Double, diffGPU: Double) throws in
+                    if diffCPU > diffThreshold
+                    {
+                        throw TestError.Numeric
+                    }
+                    if diffGPU > diffThreshold
+                    {
+                        throw TestError.Numeric
+                    }
                 }
-                if diffGPU > diffThreshold
-                {
-                    throw TestError.Numeric
-                }
+            },
+            {
+                () in
+                XCTAssert(false)
             }
-        }
+        )
     }
     
     ///
@@ -431,26 +479,32 @@ class Input2DMSE1DCase: MSE1DCase
         nbRetry: Int = NB_RETRY,
         diffThreshold: Double = 0.001)
     {
-        retryNumeric(nbRetry: nbRetry)
-        {
-            () throws in
-            try trainer.run(
-                transform: self.resize,
-                setData: self.setData,
-                setLoss: self.setLoss,
-                getLoss: self.getLoss)
+        retryNumeric(
+            nbRetry: nbRetry,
             {
-                (diffCPU: Double, diffGPU: Double) in
-                if diffCPU > diffThreshold
+                () throws in
+                try trainer.run(
+                    transform: self.resize,
+                    setData: self.setData,
+                    setLoss: self.setLoss,
+                    getLoss: self.getLoss)
                 {
-                    throw TestError.Numeric
+                    (diffCPU: Double, diffGPU: Double) in
+                    if diffCPU > diffThreshold
+                    {
+                        throw TestError.Numeric
+                    }
+                    if diffGPU > diffThreshold
+                    {
+                        throw TestError.Numeric
+                    }
                 }
-                if diffGPU > diffThreshold
-                {
-                    throw TestError.Numeric
-                }
+            },
+            {
+                () in
+                XCTAssert(false)
             }
-        }
+        )
     }
     
     ///
@@ -469,26 +523,32 @@ class Input2DMSE1DCase: MSE1DCase
         nbRetry: Int = NB_RETRY,
         diffThreshold: Double = 0.001)
     {
-        retryNumeric(nbRetry: nbRetry)
-        {
-            () throws in
-            try trainer.run(
-                transform: self.resizeInPlace,
-                setData: self.setData,
-                setLoss: self.setLoss,
-                getLoss: self.getLoss)
+        retryNumeric(
+            nbRetry: nbRetry,
             {
-                (diffCPU: Double, diffGPU: Double) throws in
-                if diffCPU > diffThreshold
+                () throws in
+                try trainer.run(
+                    transform: self.resizeInPlace,
+                    setData: self.setData,
+                    setLoss: self.setLoss,
+                    getLoss: self.getLoss)
                 {
-                    throw TestError.Numeric
+                    (diffCPU: Double, diffGPU: Double) throws in
+                    if diffCPU > diffThreshold
+                    {
+                        throw TestError.Numeric
+                    }
+                    if diffGPU > diffThreshold
+                    {
+                        throw TestError.Numeric
+                    }
                 }
-                if diffGPU > diffThreshold
-                {
-                    throw TestError.Numeric
-                }
+            },
+            {
+                () in
+                XCTAssert(false)
             }
-        }
+        )
     }
     
     ///
@@ -512,19 +572,25 @@ class Input2DMSE1DCase: MSE1DCase
         optimizerParams.normThreshold = normClipping
         trainer.optimizerParams = optimizerParams
         
-        retryNumeric(nbRetry: nbRetry)
-        {
-            () throws in
-            try trainer.run(
-                setData: self.setData,
-                setLoss: self.setLoss)
+        retryNumeric(
+            nbRetry: nbRetry,
             {
-                (normDiff: Double) throws in
-                if normDiff > diffThreshold
+                () throws in
+                try trainer.run(
+                    setData: self.setData,
+                    setLoss: self.setLoss)
                 {
-                    throw TestError.Numeric
+                    (normDiff: Double) throws in
+                    if normDiff > diffThreshold
+                    {
+                        throw TestError.Numeric
+                    }
                 }
+            },
+            {
+                () in
+                XCTAssert(false)
             }
-        }
+        )
     }
 }

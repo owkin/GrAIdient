@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import XCTest
 import MAKit
 
 ///
@@ -68,13 +67,19 @@ extension TestError: CustomStringConvertible
 ///
 /// Function used to retry flaky numeric tests.
 ///
-/// This function ensures test fails when internal function did not complete.
+/// This function is used to assert failure when internal function did not complete.
+/// Note that we do not import XCTest to avoid linking difficulties when importing MAKit into
+/// other projects. Hence the use of blockFail.
 ///
 /// - Parameters:
 ///     - nbRetry: Number maximal of retries.
 ///     - block: Function to execute.
+///     - blockFail: Function to execute in case of fail.
 ///
-public func retryNumeric(nbRetry: Int, _ block: @escaping () throws -> ())
+public func retryNumeric(
+    nbRetry: Int,
+    _ block: @escaping () throws -> (),
+    _ blockFail: ()->())
 {
     var iter = 0
     while iter < nbRetry
@@ -93,7 +98,7 @@ public func retryNumeric(nbRetry: Int, _ block: @escaping () throws -> ())
     }
     if iter == nbRetry
     {
-        XCTAssert(false)
+        blockFail()
     }
 }
 

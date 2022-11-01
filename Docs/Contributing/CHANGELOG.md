@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+👷 **ci:** remove LFS ([#17](https://github.com/owkin/MAKit/pull/17))\
 🔧 **chore:** rollback changelog ([#16](https://github.com/owkin/MAKit/pull/16))\
 🔧 **chore:** fix badges in the readme ([#15](https://github.com/owkin/MAKit/pull/15))
 

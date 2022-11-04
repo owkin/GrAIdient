@@ -12,7 +12,7 @@ import MAKit
 /// Python library default path.
 let PYTHON_LIB =
     FileManager.default.homeDirectoryForCurrentUser.path +
-    "/opt/anaconda3/envs/maexamples/lib/libpython3.7m.dylib"
+    "/opt/anaconda3/envs/maexamples/lib/libpython3.9.dylib"
 
 /// Set the Python library path.
 func setPythonLib()
@@ -36,7 +36,7 @@ func setPythonLib()
             var url = URL(fileURLWithPath: output)
             url = url.deletingLastPathComponent().deletingLastPathComponent()
             url = url.appendingPathComponent("lib")
-            url = url.appendingPathComponent("libpython3.7m.dylib")
+            url = url.appendingPathComponent("libpython3.9.dylib")
             setenv("PYTHON_LIBRARY", url.path, 1)
         }
         else

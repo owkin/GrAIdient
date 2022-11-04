@@ -588,7 +588,7 @@ open class LoadTrainer: FlowTrainer
         let modelGPUPath =
             folderURL.appendingPathComponent("testGPU.plist").path
         
-        let encoder = PropertyListEncoder()
+        let encoder = JSONEncoder()
         
         MAKit.Opti.CPU = true
         var data = try! encoder.encode(modelCPU)
@@ -625,11 +625,11 @@ open class LoadTrainer: FlowTrainer
         // 4. Load models from the disk.
         
         data = try! Data(contentsOf: URL(fileURLWithPath: modelCPUPath))
-        let baseModelCPU = try! PropertyListDecoder().decode(BaseModel.self,
-                                                             from: data)
+        let baseModelCPU = try! JSONDecoder().decode(BaseModel.self,
+                                                     from: data)
         data = try! Data(contentsOf: URL(fileURLWithPath: modelGPUPath))
-        let baseModelGPU = try! PropertyListDecoder().decode(BaseModel.self,
-                                                             from: data)
+        let baseModelGPU = try! JSONDecoder().decode(BaseModel.self,
+                                                     from: data)
         
         let modelCPU = Model(model: baseModelCPU, layersPrev: [])
         let modelGPU = Model(model: baseModelGPU, layersPrev: [])

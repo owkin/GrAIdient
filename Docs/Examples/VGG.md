@@ -60,7 +60,7 @@ This example has some `Python` dependencies. In order to run
 the example, we first have to setup the environment: 
 
 ```bash
-conda create --name maexamples python=3.7
+conda create --name maexamples python=3.9
 conda activate maexamples
 cd Tests/MAExamples/Base
 pip install -e .

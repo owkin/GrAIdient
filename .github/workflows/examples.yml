@@ -19,7 +19,7 @@ jobs:
           
       - name: Setup Conda Environment
         run: |
-          conda create --name maexamples-ci python=3.7
+          conda create --name maexamples-ci python=3.9
           conda env list
 
       - name: Install Python Library

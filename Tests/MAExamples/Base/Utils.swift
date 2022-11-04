@@ -36,7 +36,7 @@ func setPythonLib()
             var url = URL(fileURLWithPath: output)
             url = url.deletingLastPathComponent().deletingLastPathComponent()
             url = url.appendingPathComponent("lib")
-            url = url.appendingPathComponent("libpython3.7m.dylib")
+            url = url.appendingPathComponent("libpython3.9.dylib")
             setenv("PYTHON_LIBRARY", url.path, 1)
         }
         else

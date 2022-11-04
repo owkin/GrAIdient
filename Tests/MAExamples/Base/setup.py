@@ -7,8 +7,8 @@ setup(
     author='Jean-François Reboud',
     license='MIT',
     install_requires=[
-        "numpy==1.17.5",
-        "opencv-python==4.1.2.30"
+        "numpy==1.23.1",
+        "opencv-python==4.6.0.66"
     ],
     packages=find_packages(exclude="tests"),
     python_requires='>=3.7'

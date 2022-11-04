@@ -15,7 +15,7 @@ in [GitHub](https://github.com/owkin/MAKit/actions) .
 These tests require a special `Python` environment. 
 
 ```bash
-conda create --name matorch python=3.7
+conda create --name matorch python=3.9
 conda activate matorch
 cd Tests/MATorchTests/Base
 pip install -e .

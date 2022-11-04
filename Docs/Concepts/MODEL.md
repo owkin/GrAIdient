@@ -135,7 +135,7 @@ Let us imagine the two models have been trained and we want to save them
 to the disk: 
 
 ```swift
-let encoder = PropertyListEncoder()
+let encoder = JSONEncoder()
 
 // Encode first model.
 var data = try! encoder.encode(cnn)
@@ -155,14 +155,14 @@ to the full `Model` API:
 // Load the data of our first model from the disk.
 data = try! Data(contentsOf: URL(fileURLWithPath: "/path/to/model1.plist"))
 // Initialize a base model out of it.
-let baseCNN = try! PropertyListDecoder().decode(
+let baseCNN = try! JSONDecoder().decode(
     BaseModel.self, from: data
 )
 
 // Load the data of our second model from the disk.
 data = try! Data(contentsOf: URL(fileURLWithPath: "/path/to/model2.plist"))
 // Initialize a base model ouf of it.
-let baseClassifier = try! PropertyListDecoder().decode(
+let baseClassifier = try! JSONDecoder().decode(
     BaseModel.self, from: data
 )
 

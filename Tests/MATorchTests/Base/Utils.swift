@@ -12,7 +12,7 @@ import MAKit
 /// Python library default path.
 let PYTHON_LIB =
     FileManager.default.homeDirectoryForCurrentUser.path +
-    "/opt/anaconda3/envs/matorch/lib/libpython3.7m.dylib"
+    "/opt/anaconda3/envs/matorch/lib/libpython3.9.dylib"
 
 /// Set the Python library path.
 func setPythonLib()

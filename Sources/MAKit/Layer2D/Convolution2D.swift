@@ -1291,11 +1291,12 @@ public class Convolution2D: BN2D
             command.setBytes(pNbBatch, atIndex: 10)
             command.setBuffer(outs.metal, atIndex: 11)
             
-            let threads = command.threadExecutionWidth
-            let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
+            let w = command.threadExecutionWidth
+            let h = command.maxThreadsPerThreadgroup / w
+            let threadsPerThreadgroup = MTLSizeMake(w, h, 1)
             let threadsPerGrid = MTLSize(
-                width: batchSize * nbChannels * height * width,
-                height: 1,
+                width: nbChannels * width,
+                height: batchSize * height,
                 depth: 1
             )
             command.dispatchThreads(

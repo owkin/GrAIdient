@@ -228,7 +228,7 @@ kernel void convBatchDerWeights(
     constant uint * pNbBatch,
     constant uint * pAccumulate,
     device float * grads,
-    uint2 id [[ thread_position_in_grid ]])
+    uint id [[ thread_position_in_grid ]])
 {
     uint height, width;
     uint heightPrev, widthPrev;
@@ -264,13 +264,15 @@ kernel void convBatchDerWeights(
     else
         return ;
     
-    int weightsI = id[1] / nbChannelsPrev;
-    int weightsJ = id[0] / nbChannels;
-    uint depth = id[0] % nbChannels;
-    uint depthPrev = id[1] % nbChannelsPrev;
+    uint remains = id;
+    uint depth = remains / (nbChannelsPrev * weightHeight * weightWidth);
+    remains = remains % (nbChannelsPrev * weightHeight * weightWidth);
+    uint depthPrev = remains / (weightHeight * weightWidth);
+    remains = remains % (weightHeight * weightWidth);
+    int weightsI = remains / weightWidth;
+    int weightsJ = remains % weightWidth;
     
-    if (id[0] >= nbChannels * weightWidth ||
-        id[1] >= nbChannelsPrev * weightHeight ||
+    if (id >= nbChannels * nbChannelsPrev * weightHeight * weightWidth ||
         weightsI + startI > endI || weightsJ + startJ > endJ)
     {
         return ;
@@ -387,7 +389,7 @@ kernel void convDerWeights(
     constant uint * pDimWeights,
     constant uint * pNbBatch,
     device float * deltaWeights,
-    uint3 id [[ thread_position_in_grid ]])
+    uint id [[ thread_position_in_grid ]])
 {
     uint height, width;
     uint heightPrev, widthPrev;
@@ -421,15 +423,20 @@ kernel void convDerWeights(
     else
         return ;
     
-    int weightsI = id[1] / nbChannelsPrev;
-    int weightsJ = id[0] / nbChannels;
-    uint depth = id[0] % nbChannels;
-    uint depthPrev = id[1] % nbChannelsPrev;
-    uint elem = id[2];
+    uint remains = id;
+    uint elem = remains /
+        (nbChannels * nbChannelsPrev * weightHeight * weightWidth);
+    remains = remains %
+        (nbChannels * nbChannelsPrev * weightHeight * weightWidth);
+    uint depth = remains / (nbChannelsPrev * weightHeight * weightWidth);
+    remains = remains % (nbChannelsPrev * weightHeight * weightWidth);
+    uint depthPrev = remains / (weightHeight * weightWidth);
+    remains = remains % (weightHeight * weightWidth);
+    int weightsI = remains / weightWidth;
+    int weightsJ = remains % weightWidth;
     
-    if (id[0] >= nbChannels * weightWidth ||
-        id[1] >= nbChannelsPrev * weightHeight ||
-        elem >= nbBatch ||
+    if (id >= nbBatch * nbChannels * nbChannelsPrev *
+              weightHeight * weightWidth ||
         weightsI + startI > endI || weightsJ + startJ > endJ)
     {
         return ;
@@ -521,7 +528,7 @@ kernel void convReduceWeights(
     constant uint * pNbBatch,
     constant uint * pAccumulate,
     device float * grads,
-    uint2 id [[ thread_position_in_grid ]])
+    uint id [[ thread_position_in_grid ]])
 {
     uint nbChannels;
     uint nbChannelsPrev;
@@ -542,13 +549,15 @@ kernel void convReduceWeights(
     else
         return ;
     
-    uint weightsI = id[1] / nbChannelsPrev;
-    uint weightsJ = id[0] / nbChannels;
-    uint depth = id[0] % nbChannels;
-    uint depthPrev = id[1] % nbChannelsPrev;
+    uint remains = id;
+    uint depth = remains / (nbChannelsPrev * weightHeight * weightWidth);
+    remains = remains % (nbChannelsPrev * weightHeight * weightWidth);
+    uint depthPrev = remains / (weightHeight * weightWidth);
+    remains = remains % (weightHeight * weightWidth);
+    int weightsI = remains / weightWidth;
+    int weightsJ = remains % weightWidth;
     
-    if (id[0] >= nbChannels * weightWidth ||
-        id[1] >= nbChannelsPrev * weightHeight)
+    if (id >= nbChannels * nbChannelsPrev * weightHeight * weightWidth)
     {
         return ;
     }

@@ -112,7 +112,7 @@ kernel void convBackward(
     constant uint * pNbBatch,
     constant uint * pDirty,
     device float * deltaPrev,
-    uint id [[ thread_position_in_grid ]])
+    uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
     uint heightPrev, widthPrev;
@@ -148,15 +148,13 @@ kernel void convBackward(
     else
         return ;
     
-    uint remains = id;
-    uint elem = remains / (nbChannelsPrev * heightPrev * widthPrev);
-    remains = remains % (nbChannelsPrev * heightPrev * widthPrev);
-    uint depthPrev = remains / (heightPrev * widthPrev);
-    remains = remains % (heightPrev * widthPrev);
-    uint i = remains / widthPrev;
-    uint j = remains % widthPrev;
+    uint depthPrev = id[0] / widthPrev;
+    uint elem = id[1] / heightPrev;
+    uint i = id[1] % heightPrev;
+    uint j = id[0] % widthPrev;
     
-    if (id >= nbBatch * nbChannelsPrev * heightPrev * widthPrev)
+    if (i * elem >= heightPrev * nbBatch ||
+        j * nbChannels >= widthPrev * nbChannelsPrev)
     {
         return ;
     }

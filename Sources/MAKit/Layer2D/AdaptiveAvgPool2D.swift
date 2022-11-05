@@ -593,7 +593,7 @@ public class AdaptiveAvgPool2D: Layer2D
                 command.setBytes(pNbElems, atIndex: 0)
                 command.setBuffer(_nbElems.metal, atIndex: 1)
                 
-                let threads = command.maxThreadsPerThreadgroup
+                let threads = command.threadExecutionWidth
                 var threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
                 var threadsPerGrid = MTLSize(width: nbElems,
                                              height: 1,
@@ -790,7 +790,7 @@ public class AdaptiveAvgPool2D: Layer2D
                 command.setBytes(pNbElems, atIndex: 0)
                 command.setBuffer(layerPrev.delta.metal, atIndex: 1)
                 
-                let threads = command.maxThreadsPerThreadgroup
+                let threads = command.threadExecutionWidth
                 let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
                 let threadsPerGrid = MTLSize(width: nbElems,
                                              height: 1,

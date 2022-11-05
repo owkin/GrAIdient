@@ -1291,7 +1291,7 @@ public class Convolution2D: BN2D
             command.setBytes(pNbBatch, atIndex: 10)
             command.setBuffer(outs.metal, atIndex: 11)
             
-            let threads = command.maxThreadsPerThreadgroup
+            let threads = command.threadExecutionWidth
             let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
             let threadsPerGrid = MTLSize(
                 width: batchSize * nbChannels * height * width,
@@ -1480,7 +1480,7 @@ public class Convolution2D: BN2D
             command.setBytes(pDirty, atIndex: 10)
             command.setBuffer(layerPrev.delta.metal, atIndex: 11)
             
-            let threads = command.maxThreadsPerThreadgroup
+            let threads = command.threadExecutionWidth
             let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
             let threadsPerGrid = MTLSize(
                 width: batchSize * nbChannelsPrev *
@@ -1565,7 +1565,7 @@ public class Convolution2D: BN2D
                     command.setBytes(pAccumulate, atIndex: 4)
                     command.setBuffer(_bBuffers.g.metal, atIndex: 5)
                     
-                    let threads = command.maxThreadsPerThreadgroup
+                    let threads = command.threadExecutionWidth
                     threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
                     threadsPerGrid = MTLSize(width: nbChannels,
                                              height: 1,
@@ -1597,7 +1597,7 @@ public class Convolution2D: BN2D
                 command.setBytes(pNbBatch, atIndex: 9)
                 command.setBuffer(_wDeltaWeights.metal, atIndex: 10)
                 
-                var threads = command.maxThreadsPerThreadgroup
+                var threads = command.threadExecutionWidth
                 threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
                 threadsPerGrid = MTLSize(
                     width: batchSize * nbChannels * nbChannelsPrev *
@@ -1647,7 +1647,7 @@ public class Convolution2D: BN2D
                 command.setBytes(pAccumulate, atIndex: 5)
                 command.setBuffer(_wBuffers.g.metal, atIndex: 6)
                 
-                threads = command.maxThreadsPerThreadgroup
+                threads = command.threadExecutionWidth
                 threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
                 threadsPerGrid = MTLSize(
                     width: nbChannels * nbChannelsPrev *

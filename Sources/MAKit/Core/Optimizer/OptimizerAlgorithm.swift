@@ -244,7 +244,7 @@ public class OptimizerAlgorithm
                     command.setBytes(pFactor, atIndex: 1)
                     command.setBuffer(buffers.g.metal, atIndex: 2)
                     
-                    let threads = command.maxThreadsPerThreadgroup
+                    let threads = command.threadExecutionWidth
                     let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
                     let threadsPerGrid = MTLSize(width: nbElems,
                                                  height: 1,
@@ -537,7 +537,7 @@ public class OptimizerAlgorithm
                     command.setBytes(pNormThreshold, atIndex: 2)
                     command.setBuffer(buffers.g.metal, atIndex: 3)
                     
-                    let threads = command.maxThreadsPerThreadgroup
+                    let threads = command.threadExecutionWidth
                     let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
                     let threadsPerGrid = MTLSize(width: nbElems,
                                                  height: 1,

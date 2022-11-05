@@ -787,7 +787,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
         command.setBuffer(_μ.metal, atIndex: 5)
         command.setBuffer(_Eμ.metal, atIndex: 6)
         
-        let threads = command.maxThreadsPerThreadgroup
+        let threads = command.threadExecutionWidth
         let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
         let threadsPerGrid = MTLSize(width: _nbNeurons, height: 1, depth: 1)
         command.dispatchThreads(
@@ -827,7 +827,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
         command.setBuffer(_σ2.metal, atIndex: 6)
         command.setBuffer(_Eσ2.metal, atIndex: 7)
         
-        let threads = command.maxThreadsPerThreadgroup
+        let threads = command.threadExecutionWidth
         let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
         let threadsPerGrid = MTLSize(width: _nbNeurons, height: 1, depth: 1)
         command.dispatchThreads(
@@ -971,7 +971,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
         command.setBuffer(_ƔBuffers.g.metal, atIndex: 9)
         command.setBuffer(_βBuffers.g.metal, atIndex: 10)
         
-        let threads = command.maxThreadsPerThreadgroup
+        let threads = command.threadExecutionWidth
         let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
         let threadsPerGrid = MTLSize(width: _nbNeurons, height: 1, depth: 1)
         command.dispatchThreads(

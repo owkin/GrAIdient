@@ -1119,7 +1119,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                     command.setBytes(pAccumulate, atIndex: 3)
                     command.setBuffer(_bBuffers.g.metal, atIndex: 4)
                     
-                    let threads = command.maxThreadsPerThreadgroup
+                    let threads = command.threadExecutionWidth
                     threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
                     threadsPerGrid = MTLSize(width: nbNeurons,
                                              height: 1,
@@ -1211,7 +1211,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                     command.setBytes(pAccumulate, atIndex: 3)
                     command.setBuffer(_bBuffers.g.metal, atIndex: 4)
                     
-                    let threads = command.maxThreadsPerThreadgroup
+                    let threads = command.threadExecutionWidth
                     threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
                     threadsPerGrid = MTLSize(width: nbNeurons,
                                              height: 1,

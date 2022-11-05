@@ -258,7 +258,7 @@ public class Activation2D: Layer2D
             command.setBytes(pNbElems, atIndex: 1)
             command.setBuffer(outs.metal, atIndex: 2)
             
-            let threads = command.maxThreadsPerThreadgroup
+            let threads = command.threadExecutionWidth
             let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
             let threadsPerGrid = MTLSize(width: nbElems,
                                          height: 1,
@@ -338,7 +338,7 @@ public class Activation2D: Layer2D
             command.setBytes(pNbElems, atIndex: 1)
             command.setBuffer(layerPrev.delta.metal, atIndex: 2)
             
-            let threads = command.maxThreadsPerThreadgroup
+            let threads = command.threadExecutionWidth
             let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
             let threadsPerGrid = MTLSize(width: nbElems,
                                          height: 1,

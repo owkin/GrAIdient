@@ -1543,14 +1543,10 @@ public class Convolution2D: BN2D
                 command.setBytes(pAccumulate, atIndex: 10)
                 command.setBuffer(_wBuffers.g.metal, atIndex: 11)
                 
-                let threads = command.threadExecutionWidth
-                threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
-                threadsPerGrid = MTLSize(
-                    width: nbChannels * nbChannelsPrev *
-                           weightHeight * weightWidth,
-                    height: 1,
-                    depth: 1
-                )
+                threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
+                threadsPerGrid = MTLSize(width: nbChannels * weightWidth,
+                                         height: nbChannelsPrev * weightHeight,
+                                         depth: 1)
                 command.dispatchThreads(
                     threadsPerGrid: threadsPerGrid,
                     threadsPerThreadgroup: threadsPerThreadgroup

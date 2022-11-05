@@ -226,7 +226,7 @@ public class MSE1D: LayerOutput1D
         command.setBytes(pNbBatch, atIndex: 3)
         command.setBuffer(loss.metal, atIndex: 4)
         
-        let threads = command.threadExecutionWidth
+        let threads = command.maxThreadsPerThreadgroup
         let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
         let threadsPerGrid = MTLSize(width: batchSize, height: 1, depth: 1)
         command.dispatchThreads(

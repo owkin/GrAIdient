@@ -188,7 +188,7 @@ class SGDOptimizer: OptimizerImpl
         command.setBytes(pLambda, atIndex: 3)
         command.setBuffer(weights.w.metal, atIndex: 4)
         
-        let threads = command.threadExecutionWidth
+        let threads = command.maxThreadsPerThreadgroup
         let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
         let threadsPerGrid = MTLSize(width: nbElems, height: 1, depth: 1)
         command.dispatchThreads(
@@ -249,7 +249,7 @@ class SGDMomentumOptimizer: OptimizerImpl
         command.setBuffer(weights.w.metal, atIndex: 4)
         command.setBuffer(weights.m.metal, atIndex: 5)
         
-        let threads = command.threadExecutionWidth
+        let threads = command.maxThreadsPerThreadgroup
         let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
         let threadsPerGrid = MTLSize(width: nbElems, height: 1, depth: 1)
         command.dispatchThreads(
@@ -325,7 +325,7 @@ class AdamOptimizer: OptimizerImpl
         command.setBuffer(weights.m.metal, atIndex: 6)
         command.setBuffer(weights.v.metal, atIndex: 7)
         
-        let threads = command.threadExecutionWidth
+        let threads = command.maxThreadsPerThreadgroup
         let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
         let threadsPerGrid = MTLSize(width: nbElems, height: 1, depth: 1)
         command.dispatchThreads(
@@ -404,7 +404,7 @@ class AMSGradOptimizer: OptimizerImpl
         command.setBuffer(weights.v.metal, atIndex: 7)
         command.setBuffer(weights.vHat.metal, atIndex: 8)
         
-        let threads = command.threadExecutionWidth
+        let threads = command.maxThreadsPerThreadgroup
         let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
         let threadsPerGrid = MTLSize(width: nbElems, height: 1, depth: 1)
         command.dispatchThreads(
@@ -492,7 +492,7 @@ class AdamRectifiedOptimizer: OptimizerImpl
         command.setBuffer(weights.m.metal, atIndex: 6)
         command.setBuffer(weights.v.metal, atIndex: 7)
         
-        let threads = command.threadExecutionWidth
+        let threads = command.maxThreadsPerThreadgroup
         let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
         let threadsPerGrid = MTLSize(width: nbElems, height: 1, depth: 1)
         command.dispatchThreads(
@@ -636,7 +636,7 @@ class AdaBoundOptimizer: BoundOptimizer
         command.setBuffer(weights.m.metal, atIndex: 8)
         command.setBuffer(weights.v.metal, atIndex: 9)
         
-        let threads = command.threadExecutionWidth
+        let threads = command.maxThreadsPerThreadgroup
         let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
         let threadsPerGrid = MTLSize(width: nbElems, height: 1, depth: 1)
         command.dispatchThreads(
@@ -727,7 +727,7 @@ class AMSBoundOptimizer: BoundOptimizer
         command.setBuffer(weights.v.metal, atIndex: 9)
         command.setBuffer(weights.vHat.metal, atIndex: 10)
         
-        let threads = command.threadExecutionWidth
+        let threads = command.maxThreadsPerThreadgroup
         let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
         let threadsPerGrid = MTLSize(width: nbElems, height: 1, depth: 1)
         command.dispatchThreads(

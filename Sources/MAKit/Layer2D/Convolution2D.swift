@@ -1565,7 +1565,7 @@ public class Convolution2D: BN2D
                     command.setBytes(pAccumulate, atIndex: 4)
                     command.setBuffer(_bBuffers.g.metal, atIndex: 5)
                     
-                    let threads = command.threadExecutionWidth
+                    let threads = command.maxThreadsPerThreadgroup
                     threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
                     threadsPerGrid = MTLSize(width: nbChannels,
                                              height: 1,
@@ -1664,7 +1664,7 @@ public class Convolution2D: BN2D
                     command.setBytes(pAccumulate, atIndex: 3)
                     command.setBuffer(_bBuffers.g.metal, atIndex: 4)
                     
-                    let threads = command.threadExecutionWidth
+                    let threads = command.maxThreadsPerThreadgroup
                     threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
                     threadsPerGrid = MTLSize(width: nbChannels,
                                              height: 1,

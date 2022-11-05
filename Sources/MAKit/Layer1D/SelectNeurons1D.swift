@@ -290,9 +290,7 @@ public class SelectNeurons1D: Layer1D
                 command.setBytes(pNbElems, atIndex: 0)
                 command.setBuffer(layerPrev.delta.metal, atIndex: 1)
                 
-                let threads = command.maxThreadsPerThreadgroup >= nbElems ?
-                    command.threadExecutionWidth :
-                    command.maxThreadsPerThreadgroup
+                let threads = command.maxThreadsPerThreadgroup
                 let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
                 let threadsPerGrid = MTLSize(width: nbElems,
                                              height: 1,

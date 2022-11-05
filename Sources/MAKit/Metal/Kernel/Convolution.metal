@@ -21,7 +21,7 @@ kernel void convForward(
     constant uint * pDimWeights,
     constant uint * pNbBatch,
     device float * outs,
-    uint id [[ thread_position_in_grid ]])
+    uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
     uint heightPrev, widthPrev;
@@ -55,33 +55,28 @@ kernel void convForward(
     else
         return ;
     
-    //uint i = id[1];
-    //uint j = id[0];
-    uint depth = id % nbChannels;
-    uint elem = id / nbChannels;
+    uint i = id[1];
+    uint j = id[0];
+    //uint depth = id % nbChannels;
+    //uint elem = id / nbChannels;
     
-    if (id >= nbChannels * nbBatch)
+    if (i >= height || j >= width) // || id[2] >= nbChannels * nbBatch)
     {
         return ;
     }
-    /*if (i >= height || j >= width ||
-        id[2] >= nbChannels * nbBatch)
-    {
-        return ;
-    }*/
     
-    uint offsetStart = (depth+nbChannels*elem)*height;
-    
-    for (uint i=0; i<height; i++) {
-    for (uint j=0; j<width; j++)
+    for (uint elem=0; elem<nbBatch; elem++) {
+    for (uint depth=0; depth<nbChannels; depth++)
     {
+        uint offsetStart = (depth+nbChannels*elem)*height;
+        
         float tmp = biases[depth];
         for (uint depthPrev=0; depthPrev<nbChannelsPrev; depthPrev++)
         {
             uint offsetStartPrev =
-                (depthPrev + nbChannelsPrev*elem) * heightPrev;
+            (depthPrev + nbChannelsPrev*elem) * heightPrev;
             uint offsetStartWeights =
-                (depthPrev + nbChannelsPrev * depth) * weightHeight;
+            (depthPrev + nbChannelsPrev * depth) * weightHeight;
             
             for (int k=startI; k<=endI; k++){
             for (int l=startJ; l<=endJ; l++)
@@ -90,11 +85,11 @@ kernel void convForward(
                     && (int)(stride*i)+k >= 0 && stride*i+k < heightPrev)
                 {
                     uint offsetPrev = stride*j+l +
-                        (offsetStartPrev + stride*i+k)*widthPrev;
+                    (offsetStartPrev + stride*i+k)*widthPrev;
                     float outPrev = outsPrev[offsetPrev];
                     
                     uint offsetWeights = l-startJ +
-                        (offsetStartWeights + k-startI) * weightWidth;
+                    (offsetStartWeights + k-startI) * weightWidth;
                     float w = weights[offsetWeights];
                     
                     tmp += outPrev * w;

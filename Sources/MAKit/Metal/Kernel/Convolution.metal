@@ -383,7 +383,7 @@ kernel void convDerWeights(
     constant uint * pDimWeights,
     constant uint * pNbBatch,
     device float * deltaWeights,
-    uint id [[ thread_position_in_grid ]])
+    uint3 id [[ thread_position_in_grid ]])
 {
     uint height, width;
     uint heightPrev, widthPrev;
@@ -417,20 +417,15 @@ kernel void convDerWeights(
     else
         return ;
     
-    uint remains = id;
-    uint elem = remains /
-        (nbChannels * nbChannelsPrev * weightHeight * weightWidth);
-    remains = remains %
-        (nbChannels * nbChannelsPrev * weightHeight * weightWidth);
-    uint depth = remains / (nbChannelsPrev * weightHeight * weightWidth);
-    remains = remains % (nbChannelsPrev * weightHeight * weightWidth);
-    uint depthPrev = remains / (weightHeight * weightWidth);
-    remains = remains % (weightHeight * weightWidth);
-    int weightsI = remains / weightWidth;
-    int weightsJ = remains % weightWidth;
+    int weightsI = id[1] / nbChannelsPrev;
+    int weightsJ = id[0] / nbChannels;
+    uint depth = id[0] % nbChannels;
+    uint depthPrev = id[1] % nbChannelsPrev;
+    uint elem = id[2];
     
-    if (id >= nbBatch * nbChannels * nbChannelsPrev *
-              weightHeight * weightWidth ||
+    if (id[0] >= nbChannels * weightWidth ||
+        id[1] >= nbChannelsPrev * weightHeight ||
+        elem >= nbBatch ||
         weightsI + startI > endI || weightsJ + startJ > endJ)
     {
         return ;
@@ -522,7 +517,7 @@ kernel void convReduceWeights(
     constant uint * pNbBatch,
     constant uint * pAccumulate,
     device float * grads,
-    uint id [[ thread_position_in_grid ]])
+    uint2 id [[ thread_position_in_grid ]])
 {
     uint nbChannels;
     uint nbChannelsPrev;
@@ -543,15 +538,13 @@ kernel void convReduceWeights(
     else
         return ;
     
-    uint remains = id;
-    uint depth = remains / (nbChannelsPrev * weightHeight * weightWidth);
-    remains = remains % (nbChannelsPrev * weightHeight * weightWidth);
-    uint depthPrev = remains / (weightHeight * weightWidth);
-    remains = remains % (weightHeight * weightWidth);
-    int weightsI = remains / weightWidth;
-    int weightsJ = remains % weightWidth;
+    uint weightsI = id[1] / nbChannelsPrev;
+    uint weightsJ = id[0] / nbChannels;
+    uint depth = id[0] % nbChannels;
+    uint depthPrev = id[1] % nbChannelsPrev;
     
-    if (id >= nbChannels * nbChannelsPrev * weightHeight * weightWidth)
+    if (id[0] >= nbChannels * weightWidth ||
+        id[1] >= nbChannelsPrev * weightHeight)
     {
         return ;
     }

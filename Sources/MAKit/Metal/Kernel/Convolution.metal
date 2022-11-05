@@ -154,7 +154,7 @@ kernel void convBackward(
     uint j = id[0] % widthPrev;
     
     if (i * elem >= heightPrev * nbBatch ||
-        j * nbChannels >= widthPrev * nbChannelsPrev)
+        j * depthPrev >= widthPrev * nbChannelsPrev)
     {
         return ;
     }

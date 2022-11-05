@@ -21,7 +21,7 @@ kernel void convForward(
     constant uint * pDimWeights,
     constant uint * pNbBatch,
     device float * outs,
-    uint2 id [[ thread_position_in_grid ]])
+    uint id [[ thread_position_in_grid ]])
 {
     uint height, width;
     uint heightPrev, widthPrev;
@@ -55,51 +55,50 @@ kernel void convForward(
     else
         return ;
     
-    uint i = id[1];
-    uint j = id[0];
-    //uint depth = id % nbChannels;
-    //uint elem = id / nbChannels;
+    uint remains = id;
+    uint elem = remains / (nbChannels * height * width);
+    remains = remains % (nbChannels * height * width);
+    uint depth = remains / (height * width);
+    remains = remains % (height * width);
+    uint i = remains / width;
+    uint j = remains % width;
     
-    if (i >= height || j >= width) // || id[2] >= nbChannels * nbBatch)
+    if (id >= nbBatch * nbChannels * height * width)
     {
         return ;
     }
     
-    for (uint elem=0; elem<nbBatch; elem++) {
-    for (uint depth=0; depth<nbChannels; depth++)
+    uint offsetStart = (depth+nbChannels*elem)*height;
+    
+    float tmp = biases[depth];
+    for (uint depthPrev=0; depthPrev<nbChannelsPrev; depthPrev++)
     {
-        uint offsetStart = (depth+nbChannels*elem)*height;
+        uint offsetStartPrev =
+        (depthPrev + nbChannelsPrev*elem) * heightPrev;
+        uint offsetStartWeights =
+        (depthPrev + nbChannelsPrev * depth) * weightHeight;
         
-        float tmp = biases[depth];
-        for (uint depthPrev=0; depthPrev<nbChannelsPrev; depthPrev++)
+        for (int k=startI; k<=endI; k++){
+        for (int l=startJ; l<=endJ; l++)
         {
-            uint offsetStartPrev =
-            (depthPrev + nbChannelsPrev*elem) * heightPrev;
-            uint offsetStartWeights =
-            (depthPrev + nbChannelsPrev * depth) * weightHeight;
-            
-            for (int k=startI; k<=endI; k++){
-            for (int l=startJ; l<=endJ; l++)
+            if ((int)(stride*j)+l >= 0 && stride*j+l < widthPrev
+                && (int)(stride*i)+k >= 0 && stride*i+k < heightPrev)
             {
-                if ((int)(stride*j)+l >= 0 && stride*j+l < widthPrev
-                    && (int)(stride*i)+k >= 0 && stride*i+k < heightPrev)
-                {
-                    uint offsetPrev = stride*j+l +
-                    (offsetStartPrev + stride*i+k)*widthPrev;
-                    float outPrev = outsPrev[offsetPrev];
-                    
-                    uint offsetWeights = l-startJ +
-                    (offsetStartWeights + k-startI) * weightWidth;
-                    float w = weights[offsetWeights];
-                    
-                    tmp += outPrev * w;
-                }
-            }}
-        }
-        
-        uint offset = j + (offsetStart + i)*width;
-        outs[offset] = tmp;
-    }}
+                uint offsetPrev = stride*j+l +
+                (offsetStartPrev + stride*i+k)*widthPrev;
+                float outPrev = outsPrev[offsetPrev];
+                
+                uint offsetWeights = l-startJ +
+                (offsetStartWeights + k-startI) * weightWidth;
+                float w = weights[offsetWeights];
+                
+                tmp += outPrev * w;
+            }
+        }}
+    }
+    
+    uint offset = j + (offsetStart + i)*width;
+    outs[offset] = tmp;
 }
 
 kernel void convBackward(

@@ -1291,17 +1291,9 @@ public class Convolution2D: BN2D
             command.setBytes(pNbBatch, atIndex: 10)
             command.setBuffer(outs.metal, atIndex: 11)
             
-            let w = command.threadExecutionWidth
-            let h = command.maxThreadsPerThreadgroup / w
-            let threadsPerThreadgroup = MTLSizeMake(w, h, 1)
-            let threadsPerGrid = MTLSize(
-                width: nbChannels * width,
-                height: batchSize * height,
-                depth: 1
-            )
             command.dispatchThreads(
-                threadsPerGrid: threadsPerGrid,
-                threadsPerThreadgroup: threadsPerThreadgroup
+                width: nbChannels * width,
+                height: batchSize * height
             )
             command.enqueue()
         }
@@ -1481,17 +1473,9 @@ public class Convolution2D: BN2D
             command.setBytes(pDirty, atIndex: 10)
             command.setBuffer(layerPrev.delta.metal, atIndex: 11)
             
-            let w = command.threadExecutionWidth
-            let h = command.maxThreadsPerThreadgroup / w
-            let threadsPerThreadgroup = MTLSizeMake(w, h, 1)
-            let threadsPerGrid = MTLSize(
-                width: nbChannelsPrev * layerPrev.width,
-                height: batchSize * layerPrev.height,
-                depth: 1
-            )
             command.dispatchThreads(
-                threadsPerGrid: threadsPerGrid,
-                threadsPerThreadgroup: threadsPerThreadgroup
+                width: nbChannelsPrev * layerPrev.width,
+                height: batchSize * layerPrev.height
             )
             command.enqueue()
             
@@ -1544,16 +1528,6 @@ public class Convolution2D: BN2D
                 command.setBytes(pAccumulate, atIndex: 10)
                 command.setBuffer(_wBuffers.g.metal, atIndex: 11)
                 
-                /*threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
-                threadsPerGrid = MTLSize(
-                    width: nbChannels * weightWidth,
-                    height: nbChannelsPrev * weightHeight,
-                    depth: 1
-                )
-                command.dispatchThreads(
-                    threadsPerGrid: threadsPerGrid,
-                    threadsPerThreadgroup: threadsPerThreadgroup
-                )*/
                 command.dispatchThreads(
                     width: nbChannels * weightWidth,
                     height: nbChannelsPrev * weightHeight

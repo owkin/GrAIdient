@@ -9,9 +9,9 @@
 using namespace metal;
 
 kernel void convForward(
-    const device float * outsPrev,
-    const device float * weights,
-    const device float * biases,
+    constant float * outsPrev,
+    constant float * weights,
+    constant float * biases,
     constant int * pStart,
     constant uint * pStride,
     constant uint * pNbChannels,
@@ -100,8 +100,8 @@ kernel void convForward(
 }
 
 kernel void convBackward(
-    const device float * delta,
-    const device float * weights,
+    constant float * delta,
+    constant float * weights,
     constant int * pStart,
     constant uint * pStride,
     constant uint * pNbChannels,

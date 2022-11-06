@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🚀 **perf(metal):** systematic dispatchThreads API ([#19](https://github.com/owkin/MAKit/pull/19))\
 🔧 **chore:** bump Python dependencies versions ([#18](https://github.com/owkin/MAKit/pull/18))\
 👷 **ci:** remove LFS ([#17](https://github.com/owkin/MAKit/pull/17))\
 🔧 **chore:** rollback changelog ([#16](https://github.com/owkin/MAKit/pull/16))\

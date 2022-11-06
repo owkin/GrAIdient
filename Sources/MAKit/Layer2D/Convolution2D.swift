@@ -1547,7 +1547,7 @@ public class Convolution2D: BN2D
                 let w = command.threadExecutionWidth
                 let h = command.maxThreadsPerThreadgroup / w
                 if nbChannels * weightWidth < w ||
-                   nbChannelsPrev * weightHeight <h
+                   nbChannelsPrev * weightHeight < h
                 {
                     print("COUCOU")
                 }

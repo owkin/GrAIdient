@@ -1083,7 +1083,7 @@ public class MetalCommand
     ///
     public func dispatchThreads(_ nbThreads: Int)
     {
-        let threads = maxThreadsPerThreadgroup // threadExecutionWidth
+        let threads = threadExecutionWidth
         let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
         let threadsPerGrid = MTLSize(width: nbThreads, height: 1, depth: 1)
         dispatchThreads(

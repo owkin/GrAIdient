@@ -5,7 +5,7 @@
 // Created by Jean-François Reboud on 10/10/2022.
 //
 
-import MetalKit
+import Foundation
 
 ///
 /// Layer with a 1D shape neural structure, weights and biases and an activation function.
@@ -1123,13 +1123,9 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                 command.setBytes(pNbBatch, atIndex: 4)
                 command.setBuffer(_wDeltaWeights.metal, atIndex: 5)
                 
-                let threadsPerThreadgroup = MTLSizeMake(8, 8, 8)
-                let threadsPerGrid = MTLSize(width: nbNeurons,
-                                             height: weightWidth,
-                                             depth: batchSize)
                 command.dispatchThreads(
-                    threadsPerGrid: threadsPerGrid,
-                    threadsPerThreadgroup: threadsPerThreadgroup
+                    width: nbNeurons * batchSize,
+                    height: weightWidth
                 )
                 command.enqueue()
                 

@@ -138,7 +138,7 @@ kernel void forwardBNConvTraining(
     constant uint * pDimensions,
     device float * tmps,
     device float * xHat,
-    uint3 id [[ thread_position_in_grid ]])
+    uint2 id [[ thread_position_in_grid ]])
 {
     uint nbChannels;
     uint nbBatch;
@@ -157,13 +157,13 @@ kernel void forwardBNConvTraining(
     else
         return ;
     
-    uint i = id[1];
-    uint j = id[0];
-    uint depth = id[2] % nbChannels;
-    uint elem = id[2] / nbChannels;
+    uint depth = id[0] / width;
+    uint elem = id[1] / height;
+    uint i = id[1] % height;
+    uint j = id[0] % width;
     
-    if (i >= height || j >= width ||
-        id[2] >= nbChannels * nbBatch)
+    if (i * elem >= height * nbBatch ||
+        j * depth >= width * nbChannels)
     {
         return ;
     }
@@ -188,7 +188,7 @@ kernel void forwardBNConvInference(
     constant uint * pM,
     constant uint * pDimensions,
     device float * tmps,
-    uint3 id [[ thread_position_in_grid ]])
+    uint2 id [[ thread_position_in_grid ]])
 {
     uint nbChannels;
     uint nbBatch;
@@ -209,13 +209,13 @@ kernel void forwardBNConvInference(
     else
         return ;
     
-    uint i = id[1];
-    uint j = id[0];
-    uint depth = id[2] % nbChannels;
-    uint elem = id[2] / nbChannels;
+    uint depth = id[0] / width;
+    uint elem = id[1] / height;
+    uint i = id[1] % height;
+    uint j = id[0] % width;
     
-    if (i >= height || j >= width ||
-        id[2] >= nbChannels * nbBatch)
+    if (i * elem >= height * nbBatch ||
+        j * depth >= width * nbChannels)
     {
         return ;
     }
@@ -318,7 +318,7 @@ kernel void backwardBNConvTraining(
     constant uint * pNbBatch,
     constant uint * pDimensions,
     device float * delta,
-    uint3 id [[ thread_position_in_grid ]])
+    uint2 id [[ thread_position_in_grid ]])
 {
     uint nbChannels;
     uint nbBatch;
@@ -337,14 +337,14 @@ kernel void backwardBNConvTraining(
     else
         return ;
     
-    uint i = id[1];
-    uint j = id[0];
-    uint depth = id[2] % nbChannels;
-    uint elem = id[2] / nbChannels;
+    uint depth = id[0] / width;
+    uint elem = id[1] / height;
+    uint i = id[1] % height;
+    uint j = id[0] % width;
     uint nbElems = nbBatch * width * height;
     
-    if (i >= height || j >= width ||
-        id[2] >= nbChannels * nbBatch)
+    if (i * elem >= height * nbBatch ||
+        j * depth >= width * nbChannels)
     {
         return ;
     }
@@ -369,7 +369,7 @@ kernel void backwardBNConvInference(
     constant uint * pM,
     constant uint * pDimensions,
     device float * delta,
-    uint3 id [[ thread_position_in_grid ]])
+    uint2 id [[ thread_position_in_grid ]])
 {
     uint nbChannels;
     uint nbBatch;
@@ -390,13 +390,13 @@ kernel void backwardBNConvInference(
     else
         return ;
     
-    uint i = id[1];
-    uint j = id[0];
-    uint depth = id[2] % nbChannels;
-    uint elem = id[2] / nbChannels;
+    uint depth = id[0] / width;
+    uint elem = id[1] / height;
+    uint i = id[1] % height;
+    uint j = id[0] % width;
     
-    if (i >= height || j >= width ||
-        id[2] >= nbChannels * nbBatch)
+    if (i * elem >= height * nbBatch ||
+        j * depth >= width * nbChannels)
     {
         return ;
     }

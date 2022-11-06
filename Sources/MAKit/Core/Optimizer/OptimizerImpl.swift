@@ -5,7 +5,7 @@
 // Created by Jean-François Reboud on 08/10/2022.
 //
 
-import MetalKit
+import Foundation
 
 /// Abstract part of the implementation of the weight update algorithm.
 class OptimizerImpl

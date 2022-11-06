@@ -221,7 +221,7 @@ kernel void flDerWeights(
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     device float * deltaWeights,
-    uint3 id [[ thread_position_in_grid ]])
+    uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
     uint nbNeuronsPrev;
@@ -237,11 +237,12 @@ kernel void flDerWeights(
     else
         return ;
     
-    uint depth = id[0];
+    uint elem = id[0] / nbNeurons;
+    uint depth = id[0] % nbNeurons;
     uint depthPrev = id[1];
-    uint elem = id[2];
     
-    if (depth >= nbNeurons || depthPrev >= nbNeuronsPrev || elem >= nbBatch)
+    if (depth * elem >= nbNeurons * nbBatch ||
+        depthPrev >= nbNeuronsPrev)
     {
         return ;
     }

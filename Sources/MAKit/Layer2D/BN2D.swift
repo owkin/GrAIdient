@@ -5,8 +5,6 @@
 // Created by Jean-François Reboud on 14/10/2022.
 //
 
-import MetalKit
-
 /// Layer with a 2D shape neural structure, an activation function and batch normalization units.
 public class BN2D: Activation2D, LayerUpdate, LayerExtract
 {

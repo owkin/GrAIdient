@@ -5,8 +5,6 @@
 // Created by Jean-François Reboud on 14/10/2022.
 //
 
-import MetalKit
-
 ///
 /// Layer with a 2D shape neural structure.
 ///

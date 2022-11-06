@@ -61,7 +61,7 @@ kernel void convForward(
     uint j = id[0] % width;
     
     if (i * elem >= height * nbBatch ||
-        j * nbChannels >= width * nbChannels)
+        j * depth >= width * nbChannels)
     {
         return ;
     }
@@ -383,7 +383,7 @@ kernel void convDerWeights(
     constant uint * pDimWeights,
     constant uint * pNbBatch,
     device float * deltaWeights,
-    uint3 id [[ thread_position_in_grid ]])
+    uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
     uint heightPrev, widthPrev;
@@ -417,15 +417,16 @@ kernel void convDerWeights(
     else
         return ;
     
+    uint remains = id[0];
+    uint elem = remains / (weightWidth * nbChannels);
+    remains = remains % (weightWidth * nbChannels);
     int weightsI = id[1] / nbChannelsPrev;
-    int weightsJ = id[0] / nbChannels;
-    uint depth = id[0] % nbChannels;
+    int weightsJ = remains / nbChannels;
+    uint depth = remains % nbChannels;
     uint depthPrev = id[1] % nbChannelsPrev;
-    uint elem = id[2];
     
-    if (id[0] >= nbChannels * weightWidth ||
+    if (id[0] >= nbBatch * nbChannels * weightWidth ||
         id[1] >= nbChannelsPrev * weightHeight ||
-        elem >= nbBatch ||
         weightsI + startI > endI || weightsJ + startJ > endJ)
     {
         return ;

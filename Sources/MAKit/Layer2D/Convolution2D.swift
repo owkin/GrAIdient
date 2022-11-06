@@ -5,7 +5,7 @@
 // Created by Jean-François Reboud on 14/10/2022.
 //
 
-import MetalKit
+import Foundation
 
 ///
 /// Layer with a 2D shape neural structure, weights and biases,  an activation function and
@@ -1567,15 +1567,9 @@ public class Convolution2D: BN2D
                 command.setBytes(pNbBatch, atIndex: 9)
                 command.setBuffer(_wDeltaWeights.metal, atIndex: 10)
                 
-                let threadsPerThreadgroup = MTLSizeMake(8, 8, 8)
-                let threadsPerGrid = MTLSize(
-                    width: nbChannels * weightWidth,
-                    height: nbChannelsPrev * weightHeight,
-                    depth: batchSize
-                )
                 command.dispatchThreads(
-                    threadsPerGrid: threadsPerGrid,
-                    threadsPerThreadgroup: threadsPerThreadgroup
+                    width: batchSize * nbChannels * weightWidth,
+                    height: nbChannelsPrev * weightHeight
                 )
                 command.enqueue()
             

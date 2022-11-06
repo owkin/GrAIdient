@@ -5,8 +5,6 @@
 // Created by Jean-François Reboud on 14/10/2022.
 //
 
-import MetalKit
-
 /// API for something that can be copied as is.
 public protocol Cloneable
 {
@@ -860,13 +858,9 @@ class BatchNormalizationGPU: BatchNormalizationBase
         command.setBuffer(layer.outs.metal, atIndex: 7)
         command.setBuffer(_xHat.metal, atIndex: 8)
         
-        let threadsPerThreadgroup = MTLSizeMake(8, 8, 8)
-        let threadsPerGrid = MTLSize(width: width,
-                                     height: height,
-                                     depth: _nbNeurons * batchSize)
         command.dispatchThreads(
-            threadsPerGrid: threadsPerGrid,
-            threadsPerThreadgroup: threadsPerThreadgroup
+            width: _nbNeurons * width,
+            height: batchSize * height
         )
         command.enqueue()
         
@@ -901,14 +895,10 @@ class BatchNormalizationGPU: BatchNormalizationBase
         command.setBytes(pM, atIndex: 6)
         command.setBytes(pDimensions, atIndex: 7)
         command.setBuffer(layer.outs.metal, atIndex: 8)
-        
-        let threadsPerThreadgroup = MTLSizeMake(8, 8, 8)
-        let threadsPerGrid = MTLSize(width: width,
-                                     height: height,
-                                     depth: _nbNeurons * batchSize)
+    
         command.dispatchThreads(
-            threadsPerGrid:threadsPerGrid,
-            threadsPerThreadgroup: threadsPerThreadgroup
+            width: _nbNeurons * width,
+            height: batchSize * height
         )
         command.enqueue()
     }
@@ -989,13 +979,9 @@ class BatchNormalizationGPU: BatchNormalizationBase
         command.setBytes(pDimensions, atIndex: 7)
         command.setBuffer(layer.delta.metal, atIndex: 8)
         
-        let threadsPerThreadgroup = MTLSizeMake(8, 8, 8)
-        let threadsPerGrid = MTLSize(width: width,
-                                     height: height,
-                                     depth: _nbNeurons * batchSize)
         command.dispatchThreads(
-            threadsPerGrid: threadsPerGrid,
-            threadsPerThreadgroup: threadsPerThreadgroup
+            width: _nbNeurons * width,
+            height: batchSize * height
         )
         command.enqueue()
     }
@@ -1023,13 +1009,9 @@ class BatchNormalizationGPU: BatchNormalizationBase
         command.setBytes(pDimensions, atIndex: 5)
         command.setBuffer(layer.delta.metal, atIndex: 6)
         
-        let threadsPerThreadgroup = MTLSizeMake(8, 8, 8)
-        let threadsPerGrid = MTLSize(width: width,
-                                     height: height,
-                                     depth: _nbNeurons * batchSize)
         command.dispatchThreads(
-            threadsPerGrid: threadsPerGrid,
-            threadsPerThreadgroup: threadsPerThreadgroup
+            width: _nbNeurons * width,
+            height: batchSize * height
         )
         command.enqueue()
     }

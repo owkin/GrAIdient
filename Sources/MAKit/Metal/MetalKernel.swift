@@ -6,7 +6,6 @@
 //
 
 import Foundation
-
 import Metal
 
 /// Main class to interact with GPU.
@@ -1102,31 +1101,37 @@ public class MetalCommand
     ///
     public func dispatchThreads(width: Int, height: Int)
     {
-        let maxDim = max(width, height)
-        let minDim = min(width, height)
-        var ratio = Int(round(Double(maxDim) / Double(minDim)))
-        let maxRatio = maxThreadsPerThreadgroup / 64
-        ratio = min(ratio, maxRatio)
-        let threadsPerThreadgroup = width == maxDim ?
-            MTLSizeMake(
-                8 * ratio,
-                8,
-                1
-            ) :
-            MTLSizeMake(
-                8,
-                8 * ratio,
-                1
+        if width == 1
+        {
+            dispatchThreads(height)
+        }
+        else if height == 1
+        {
+            dispatchThreads(width)
+        }
+        else
+        {
+            let maxDim = max(width, height)
+            let minDim = min(width, height)
+            
+            var ratio = Int(round(Double(maxDim) / Double(minDim)))
+            let maxRatio = maxThreadsPerThreadgroup / 64
+            ratio = min(ratio, maxRatio)
+            
+            let threadsPerThreadgroup = width == maxDim ?
+            MTLSizeMake(8 * ratio, 8, 1) :
+            MTLSizeMake(8, 8 * ratio, 1)
+            
+            let threadsPerGrid = MTLSize(
+                width: width,
+                height: height,
+                depth: 1
             )
-        let threadsPerGrid = MTLSize(
-            width: width,
-            height: height,
-            depth: 1
-        )
-        dispatchThreads(
-            threadsPerGrid: threadsPerGrid,
-            threadsPerThreadgroup: threadsPerThreadgroup
-        )
+            dispatchThreads(
+                threadsPerGrid: threadsPerGrid,
+                threadsPerThreadgroup: threadsPerThreadgroup
+            )
+        }
     }
     
     ///

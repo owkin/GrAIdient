@@ -5,7 +5,7 @@
 // Created by Jean-François Reboud on 14/10/2022.
 //
 
-import MetalKit
+import Foundation
 
 ///
 /// Layer with a 2D shape neural structure.
@@ -573,13 +573,9 @@ public class AdaptiveAvgPool2D: Layer2D
                 command.setBytes(pNbBatch, atIndex: 4)
                 command.setBuffer(outs.metal, atIndex: 5)
                 
-                let threadsPerThreadgroup = MTLSizeMake(8, 8, 8)
-                let threadsPerGrid = MTLSize(width: width,
-                                             height: height,
-                                             depth: nbChannels * batchSize)
                 command.dispatchThreads(
-                    threadsPerGrid: threadsPerGrid,
-                    threadsPerThreadgroup: threadsPerThreadgroup
+                    width: width * nbChannels,
+                    height: height * batchSize
                 )
                 command.enqueue()
             }

@@ -5,7 +5,7 @@
 // Created by Jean-François Reboud on 08/10/2022.
 //
 
-import MetalKit
+import Foundation
 
 /// Error occuring on a bad request to a `LayerUpdate`.
 public enum UpdateError: Error

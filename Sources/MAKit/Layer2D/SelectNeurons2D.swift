@@ -5,8 +5,6 @@
 // Created by Jean-François Reboud on 14/10/2022.
 //
 
-import MetalKit
-
 ///
 /// Layer with a 1D shape neural structure.
 ///
@@ -354,13 +352,9 @@ public class SelectNeurons2D: Layer1D, LayerResize
             command.setBytes(pDirty, atIndex: 5)
             command.setBuffer(layerPrev.delta.metal, atIndex: 6)
             
-            let threadsPerThreadgroup = MTLSizeMake(8, 8, 8)
-            let threadsPerGrid = MTLSize(width: widthPrev,
-                                         height: heightPrev,
-                                         depth: nbNeurons * batchSize)
             command.dispatchThreads(
-                threadsPerGrid: threadsPerGrid,
-                threadsPerThreadgroup: threadsPerThreadgroup
+                width: widthPrev * nbNeurons,
+                height: heightPrev * batchSize
             )
             command.enqueue()
         }

@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import MetalKit
 
 ///
 /// Layer with a 2D shape neural structure, weights and biases,  an activation function and
@@ -1292,21 +1291,10 @@ public class Convolution2D: BN2D
             command.setBytes(pNbBatch, atIndex: 10)
             command.setBuffer(outs.metal, atIndex: 11)
             
-            let threads = command.maxThreadsPerThreadgroup
-            let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
-            let threadsPerGrid = MTLSize(
-                width: batchSize * nbChannels * height * width,
-                height: 1,
-                depth: 1
-            )
             command.dispatchThreads(
-                threadsPerGrid: threadsPerGrid,
-                threadsPerThreadgroup: threadsPerThreadgroup
-            )
-            /*command.dispatchThreads(
                 width: nbChannels * width,
                 height: batchSize * height
-            )*/
+            )
             command.enqueue()
         }
     }
@@ -1485,21 +1473,9 @@ public class Convolution2D: BN2D
             command.setBytes(pDirty, atIndex: 10)
             command.setBuffer(layerPrev.delta.metal, atIndex: 11)
             
-            /*command.dispatchThreads(
+            command.dispatchThreads(
                 width: nbChannelsPrev * layerPrev.width,
                 height: batchSize * layerPrev.height
-            )*/
-            let threads = command.maxThreadsPerThreadgroup
-            let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
-            let threadsPerGrid = MTLSize(
-                width: batchSize * nbChannelsPrev *
-                       layerPrev.height * layerPrev.width,
-                height: 1,
-                depth: 1
-            )
-            command.dispatchThreads(
-                threadsPerGrid: threadsPerGrid,
-                threadsPerThreadgroup: threadsPerThreadgroup
             )
             command.enqueue()
             

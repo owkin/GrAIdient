@@ -5,8 +5,6 @@
 // Created by Jean-François Reboud on 10/10/2022.
 //
 
-import MetalKit
-
 /// Last layer with a 1D shape neural structure and a loss that computes mean squared error.
 public class MSE1D: LayerOutput1D
 {
@@ -226,13 +224,7 @@ public class MSE1D: LayerOutput1D
         command.setBytes(pNbBatch, atIndex: 3)
         command.setBuffer(loss.metal, atIndex: 4)
         
-        let threads = command.threadExecutionWidth
-        let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
-        let threadsPerGrid = MTLSize(width: batchSize, height: 1, depth: 1)
-        command.dispatchThreads(
-            threadsPerGrid: threadsPerGrid,
-            threadsPerThreadgroup: threadsPerThreadgroup
-        )
+        command.dispatchThreads(batchSize)
         command.enqueue()
         
         MetalKernel.get.download([loss])
@@ -391,13 +383,9 @@ public class MSE1D: LayerOutput1D
             command.setBytes(pNbBatch, atIndex: 4)
             command.setBuffer(layerPrev.delta.metal, atIndex: 5)
             
-            let threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
-            let threadsPerGrid = MTLSize(width: nbNeurons,
-                                         height: batchSize,
-                                         depth: 1)
             command.dispatchThreads(
-                threadsPerGrid: threadsPerGrid,
-                threadsPerThreadgroup: threadsPerThreadgroup
+                width: nbNeurons,
+                height: batchSize
             )
             command.enqueue()
             

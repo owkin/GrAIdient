@@ -579,15 +579,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
             command.setBytes(pNbElems, atIndex: 1)
             command.setBuffer(outs.metal, atIndex: 2)
             
-            let threads = command.threadExecutionWidth
-            let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
-            let threadsPerGrid = MTLSize(width: nbElems,
-                                         height: 1,
-                                         depth: 1)
-            command.dispatchThreads(
-                threadsPerGrid: threadsPerGrid,
-                threadsPerThreadgroup: threadsPerThreadgroup
-            )
+            command.dispatchThreads(nbElems)
             command.enqueue()
             
             _bnGPU!.forward(self)
@@ -662,15 +654,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
             command.setBytes(pNbElems, atIndex: 1)
             command.setBuffer(layerPrev.delta.metal, atIndex: 2)
             
-            let threads = command.threadExecutionWidth
-            let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
-            let threadsPerGrid = MTLSize(width: nbElems,
-                                         height: 1,
-                                         depth: 1)
-            command.dispatchThreads(
-                threadsPerGrid: threadsPerGrid,
-                threadsPerThreadgroup: threadsPerThreadgroup
-            )
+            command.dispatchThreads(nbElems)
             command.enqueue()
             
             propagateDirty()

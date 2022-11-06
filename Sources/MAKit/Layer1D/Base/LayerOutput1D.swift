@@ -5,8 +5,6 @@
 // Created by Jean-François Reboud on 09/10/2022.
 //
 
-import MetalKit
-
 /// Last layer of a model.
 open class LayerOutput1D: Layer1D
 {
@@ -169,13 +167,7 @@ open class LayerOutput1D: Layer1D
             command.setBytes(pNbElems, atIndex: 1)
             command.setBuffer(outs.metal, atIndex: 2)
             
-            let threads = command.threadExecutionWidth
-            let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
-            let threadsPerGrid = MTLSize(width: nbElems, height: 1, depth: 1)
-            command.dispatchThreads(
-                threadsPerGrid: threadsPerGrid,
-                threadsPerThreadgroup: threadsPerThreadgroup
-            )
+            command.dispatchThreads(nbElems)
             command.enqueue()
         }
     }
@@ -240,15 +232,7 @@ open class LayerOutput1D: Layer1D
             command.setBytes(pNbElems, atIndex: 1)
             command.setBuffer(layerPrev.delta.metal, atIndex: 2)
             
-            let threads = command.threadExecutionWidth
-            let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
-            let threadsPerGrid = MTLSize(width: nbElems,
-                                         height: 1,
-                                         depth: 1)
-            command.dispatchThreads(
-                threadsPerGrid: threadsPerGrid,
-                threadsPerThreadgroup: threadsPerThreadgroup
-            )
+            command.dispatchThreads(nbElems)
             command.enqueue()
             
             propagateDirty()

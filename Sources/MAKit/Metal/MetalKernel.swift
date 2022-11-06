@@ -1078,7 +1078,23 @@ public class MetalCommand
     }
     
     ///
-    /// The grid of threads on the GPU.
+    /// Dipsatch a "line" of parallel operations on the GPU.
+    ///
+    /// - Parameter nbThreads: The number of parallel operations.
+    ///
+    public func dispatchThreads(_ nbThreads: Int)
+    {
+        let threads = threadExecutionWidth
+        let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
+        let threadsPerGrid = MTLSize(width: nbThreads, height: 1, depth: 1)
+        dispatchThreads(
+            threadsPerGrid: threadsPerGrid,
+            threadsPerThreadgroup: threadsPerThreadgroup
+        )
+    }
+    
+    ///
+    /// Dispatch a "grid" of parallel operations on the GPU.
     ///
     /// - Parameters:
     ///     - width: The grid's width.
@@ -1114,7 +1130,7 @@ public class MetalCommand
     }
     
     ///
-    /// The grid of threads on the GPU.
+    /// Dispatch a "volume" of parallel operations on the GPU.
     ///
     /// A thread group contains multiple threads. The size of a thread group cannot exceed
     /// `maxThreadsPerThreadgroup`. This upper limit is usually shortened because

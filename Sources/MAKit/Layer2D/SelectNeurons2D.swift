@@ -279,13 +279,9 @@ public class SelectNeurons2D: Layer1D, LayerResize
             command.setBytes(pNbBatch, atIndex: 4)
             command.setBuffer(outs.metal, atIndex: 5)
             
-            let threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
-            let threadsPerGrid = MTLSize(width: nbNeurons,
-                                         height: batchSize,
-                                         depth: 1)
             command.dispatchThreads(
-                threadsPerGrid: threadsPerGrid,
-                threadsPerThreadgroup: threadsPerThreadgroup
+                width: nbNeurons,
+                height: batchSize
             )
             command.enqueue()
         }

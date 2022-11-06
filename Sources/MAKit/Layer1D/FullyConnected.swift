@@ -915,13 +915,9 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
         command.setBytes(pNbBatch, atIndex: 5)
         command.setBuffer(outs.metal, atIndex: 6)
         
-        let threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
-        let threadsPerGrid = MTLSize(width: nbNeurons,
-                                     height: batchSize,
-                                     depth: 1)
         command.dispatchThreads(
-            threadsPerGrid: threadsPerGrid,
-            threadsPerThreadgroup: threadsPerThreadgroup
+            width: nbNeurons,
+            height: batchSize
         )
         command.enqueue()
     }
@@ -1055,13 +1051,9 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
             command.setBytes(pDirty, atIndex: 5)
             command.setBuffer(deltaPrev!.metal, atIndex: 6)
             
-            let threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
-            let threadsPerGrid = MTLSize(width: weightWidth,
-                                         height: batchSize,
-                                         depth: 1)
             command.dispatchThreads(
-                threadsPerGrid: threadsPerGrid,
-                threadsPerThreadgroup: threadsPerThreadgroup
+                width: weightWidth,
+                height: batchSize
             )
             command.enqueue()
             
@@ -1079,9 +1071,6 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
             let pAccumulate: [UInt32] = accumulateDeltaWeights ? [1] : [0]
             
             var command: MetalCommand
-            var threadsPerThreadgroup: MTLSize
-            var threadsPerGrid: MTLSize
-            
             if MAKit.Gradient.batch
             {
                 // -------------------------------------------------------------
@@ -1098,13 +1087,9 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                 command.setBytes(pAccumulate, atIndex: 5)
                 command.setBuffer(_wBuffers.g.metal, atIndex: 6)
                 
-                threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
-                threadsPerGrid = MTLSize(width: nbNeurons,
-                                         height: weightWidth,
-                                         depth: 1)
                 command.dispatchThreads(
-                    threadsPerGrid: threadsPerGrid,
-                    threadsPerThreadgroup: threadsPerThreadgroup
+                    width: nbNeurons,
+                    height: weightWidth
                 )
                 command.enqueue()
                 
@@ -1119,15 +1104,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                     command.setBytes(pAccumulate, atIndex: 3)
                     command.setBuffer(_bBuffers.g.metal, atIndex: 4)
                     
-                    let threads = command.threadExecutionWidth
-                    threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
-                    threadsPerGrid = MTLSize(width: nbNeurons,
-                                             height: 1,
-                                             depth: 1)
-                    command.dispatchThreads(
-                        threadsPerGrid: threadsPerGrid,
-                        threadsPerThreadgroup: threadsPerThreadgroup
-                    )
+                    command.dispatchThreads(nbNeurons)
                     command.enqueue()
                 }
             }
@@ -1146,10 +1123,10 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                 command.setBytes(pNbBatch, atIndex: 4)
                 command.setBuffer(_wDeltaWeights.metal, atIndex: 5)
                 
-                threadsPerThreadgroup = MTLSizeMake(8, 8, 8)
-                threadsPerGrid = MTLSize(width: nbNeurons,
-                                         height: weightWidth,
-                                         depth: batchSize)
+                let threadsPerThreadgroup = MTLSizeMake(8, 8, 8)
+                let threadsPerGrid = MTLSize(width: nbNeurons,
+                                             height: weightWidth,
+                                             depth: batchSize)
                 command.dispatchThreads(
                     threadsPerGrid: threadsPerGrid,
                     threadsPerThreadgroup: threadsPerThreadgroup
@@ -1166,13 +1143,9 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                     command.setBytes(pNbBatch, atIndex: 2)
                     command.setBuffer(_bDeltaWeights.metal, atIndex: 3)
                     
-                    threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
-                    threadsPerGrid = MTLSize(width: nbNeurons,
-                                             height: batchSize,
-                                             depth: 1)
                     command.dispatchThreads(
-                        threadsPerGrid: threadsPerGrid,
-                        threadsPerThreadgroup: threadsPerThreadgroup
+                        width: nbNeurons,
+                        height: batchSize
                     )
                     command.enqueue()
                 }
@@ -1190,13 +1163,9 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                 command.setBytes(pAccumulate, atIndex: 4)
                 command.setBuffer(_wBuffers.g.metal, atIndex: 5)
                 
-                threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
-                threadsPerGrid = MTLSize(width: nbNeurons,
-                                         height: nbNeuronsPrev,
-                                         depth: 1)
                 command.dispatchThreads(
-                    threadsPerGrid: threadsPerGrid,
-                    threadsPerThreadgroup: threadsPerThreadgroup
+                    width: nbNeurons,
+                    height: nbNeuronsPrev
                 )
                 command.enqueue()
                 
@@ -1211,15 +1180,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
                     command.setBytes(pAccumulate, atIndex: 3)
                     command.setBuffer(_bBuffers.g.metal, atIndex: 4)
                     
-                    let threads = command.threadExecutionWidth
-                    threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
-                    threadsPerGrid = MTLSize(width: nbNeurons,
-                                             height: 1,
-                                             depth: 1)
-                    command.dispatchThreads(
-                        threadsPerGrid: threadsPerGrid,
-                        threadsPerThreadgroup: threadsPerThreadgroup
-                    )
+                    command.dispatchThreads(nbNeurons)
                     command.enqueue()
                 }
             }

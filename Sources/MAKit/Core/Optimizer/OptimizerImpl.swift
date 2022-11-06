@@ -188,13 +188,7 @@ class SGDOptimizer: OptimizerImpl
         command.setBytes(pLambda, atIndex: 3)
         command.setBuffer(weights.w.metal, atIndex: 4)
         
-        let threads = command.threadExecutionWidth
-        let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
-        let threadsPerGrid = MTLSize(width: nbElems, height: 1, depth: 1)
-        command.dispatchThreads(
-            threadsPerGrid: threadsPerGrid,
-            threadsPerThreadgroup: threadsPerThreadgroup
-        )
+        command.dispatchThreads(nbElems)
         command.enqueue()
     }
 }
@@ -249,13 +243,7 @@ class SGDMomentumOptimizer: OptimizerImpl
         command.setBuffer(weights.w.metal, atIndex: 4)
         command.setBuffer(weights.m.metal, atIndex: 5)
         
-        let threads = command.threadExecutionWidth
-        let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
-        let threadsPerGrid = MTLSize(width: nbElems, height: 1, depth: 1)
-        command.dispatchThreads(
-            threadsPerGrid: threadsPerGrid,
-            threadsPerThreadgroup: threadsPerThreadgroup
-        )
+        command.dispatchThreads(nbElems)
         command.enqueue()
     }
 }
@@ -325,13 +313,7 @@ class AdamOptimizer: OptimizerImpl
         command.setBuffer(weights.m.metal, atIndex: 6)
         command.setBuffer(weights.v.metal, atIndex: 7)
         
-        let threads = command.threadExecutionWidth
-        let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
-        let threadsPerGrid = MTLSize(width: nbElems, height: 1, depth: 1)
-        command.dispatchThreads(
-            threadsPerGrid: threadsPerGrid,
-            threadsPerThreadgroup: threadsPerThreadgroup
-        )
+        command.dispatchThreads(nbElems)
         command.enqueue()
     }
 }
@@ -404,13 +386,7 @@ class AMSGradOptimizer: OptimizerImpl
         command.setBuffer(weights.v.metal, atIndex: 7)
         command.setBuffer(weights.vHat.metal, atIndex: 8)
         
-        let threads = command.threadExecutionWidth
-        let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
-        let threadsPerGrid = MTLSize(width: nbElems, height: 1, depth: 1)
-        command.dispatchThreads(
-            threadsPerGrid: threadsPerGrid,
-            threadsPerThreadgroup: threadsPerThreadgroup
-        )
+        command.dispatchThreads(nbElems)
         command.enqueue()
     }
 }
@@ -492,13 +468,7 @@ class AdamRectifiedOptimizer: OptimizerImpl
         command.setBuffer(weights.m.metal, atIndex: 6)
         command.setBuffer(weights.v.metal, atIndex: 7)
         
-        let threads = command.threadExecutionWidth
-        let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
-        let threadsPerGrid = MTLSize(width: nbElems, height: 1, depth: 1)
-        command.dispatchThreads(
-            threadsPerGrid: threadsPerGrid,
-            threadsPerThreadgroup: threadsPerThreadgroup
-        )
+        command.dispatchThreads(nbElems)
         command.enqueue()
     }
 }
@@ -636,13 +606,7 @@ class AdaBoundOptimizer: BoundOptimizer
         command.setBuffer(weights.m.metal, atIndex: 8)
         command.setBuffer(weights.v.metal, atIndex: 9)
         
-        let threads = command.threadExecutionWidth
-        let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
-        let threadsPerGrid = MTLSize(width: nbElems, height: 1, depth: 1)
-        command.dispatchThreads(
-            threadsPerGrid: threadsPerGrid,
-            threadsPerThreadgroup: threadsPerThreadgroup
-        )
+        command.dispatchThreads(nbElems)
         command.enqueue()
     }
 }
@@ -727,13 +691,7 @@ class AMSBoundOptimizer: BoundOptimizer
         command.setBuffer(weights.v.metal, atIndex: 9)
         command.setBuffer(weights.vHat.metal, atIndex: 10)
         
-        let threads = command.threadExecutionWidth
-        let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
-        let threadsPerGrid = MTLSize(width: nbElems, height: 1, depth: 1)
-        command.dispatchThreads(
-            threadsPerGrid: threadsPerGrid,
-            threadsPerThreadgroup: threadsPerThreadgroup
-        )
+        command.dispatchThreads(nbElems)
         command.enqueue()
     }
 }

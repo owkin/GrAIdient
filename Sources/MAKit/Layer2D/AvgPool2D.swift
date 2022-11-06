@@ -180,13 +180,9 @@ public class AvgPool2D: Layer1D
             command.setBytes(pNbBatch, atIndex: 3)
             command.setBuffer(outs.metal, atIndex: 4)
             
-            let threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
-            let threadsPerGrid = MTLSize(width: nbNeurons,
-                                         height: batchSize,
-                                         depth: 1)
             command.dispatchThreads(
-                threadsPerGrid: threadsPerGrid,
-                threadsPerThreadgroup: threadsPerThreadgroup
+                width: nbNeurons,
+                height: batchSize
             )
             command.enqueue()
         }

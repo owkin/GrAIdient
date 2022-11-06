@@ -593,15 +593,7 @@ public class AdaptiveAvgPool2D: Layer2D
                 command.setBytes(pNbElems, atIndex: 0)
                 command.setBuffer(_nbElems.metal, atIndex: 1)
                 
-                let threads = command.threadExecutionWidth
-                var threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
-                var threadsPerGrid = MTLSize(width: nbElems,
-                                             height: 1,
-                                             depth: 1)
-                command.dispatchThreads(
-                    threadsPerGrid: threadsPerGrid,
-                    threadsPerThreadgroup: threadsPerThreadgroup
-                )
+                command.dispatchThreads(nbElems)
                 command.enqueue()
                 
                 nbElems = outs.nbElems
@@ -612,13 +604,7 @@ public class AdaptiveAvgPool2D: Layer2D
                 command.setBytes(pNbElems, atIndex: 0)
                 command.setBuffer(outs.metal, atIndex: 1)
                 
-                threadsPerGrid = MTLSize(width: nbElems,
-                                         height: 1,
-                                         depth: 1)
-                command.dispatchThreads(
-                    threadsPerGrid: threadsPerGrid,
-                    threadsPerThreadgroup: threadsPerThreadgroup
-                )
+                command.dispatchThreads(nbElems)
                 command.enqueue()
                 
                 command = metalKernel.createCommand(
@@ -632,13 +618,9 @@ public class AdaptiveAvgPool2D: Layer2D
                 command.setBuffer(_nbElems.metal, atIndex: 5)
                 command.setBuffer(outs.metal, atIndex: 6)
                 
-                threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
-                threadsPerGrid = MTLSize(width: nbChannels,
-                                         height: batchSize,
-                                         depth: 1)
                 command.dispatchThreads(
-                    threadsPerGrid: threadsPerGrid,
-                    threadsPerThreadgroup: threadsPerThreadgroup
+                    width: nbChannels,
+                    height: batchSize
                 )
                 command.enqueue()
             }
@@ -790,15 +772,7 @@ public class AdaptiveAvgPool2D: Layer2D
                 command.setBytes(pNbElems, atIndex: 0)
                 command.setBuffer(layerPrev.delta.metal, atIndex: 1)
                 
-                let threads = command.threadExecutionWidth
-                let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
-                let threadsPerGrid = MTLSize(width: nbElems,
-                                             height: 1,
-                                             depth: 1)
-                command.dispatchThreads(
-                    threadsPerGrid: threadsPerGrid,
-                    threadsPerThreadgroup: threadsPerThreadgroup
-                )
+                command.dispatchThreads(nbElems)
                 command.enqueue()
             }
             
@@ -814,13 +788,9 @@ public class AdaptiveAvgPool2D: Layer2D
                 command.setBytes(pNbBatch, atIndex: 4)
                 command.setBuffer(layerPrev.delta.metal, atIndex: 5)
                 
-                let threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
-                let threadsPerGrid = MTLSize(width: nbChannels,
-                                             height: batchSize,
-                                             depth: 1)
                 command.dispatchThreads(
-                    threadsPerGrid: threadsPerGrid,
-                    threadsPerThreadgroup: threadsPerThreadgroup
+                    width: nbChannels,
+                    height: batchSize
                 )
                 command.enqueue()
             }
@@ -837,13 +807,9 @@ public class AdaptiveAvgPool2D: Layer2D
                 command.setBytes(pNbBatch, atIndex: 5)
                 command.setBuffer(layerPrev.delta.metal, atIndex: 6)
                 
-                let threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
-                let threadsPerGrid = MTLSize(width: nbChannels,
-                                             height: batchSize,
-                                             depth: 1)
                 command.dispatchThreads(
-                    threadsPerGrid: threadsPerGrid,
-                    threadsPerThreadgroup: threadsPerThreadgroup
+                    width: nbChannels,
+                    height: batchSize
                 )
                 command.enqueue()
             }

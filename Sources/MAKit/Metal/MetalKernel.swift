@@ -1077,6 +1077,39 @@ public class MetalCommand
         _encoder.setTexture(texture, index: index)
     }
     
+    public func dispatchThreads(width: Int, height: Int)
+    {
+        let maxDim = max(width, height)
+        let minDim = min(width, height)
+        var ratio = Int(round(Double(maxDim) / Double(minDim)))
+        let maxRatio = maxThreadsPerThreadgroup / 64
+        ratio = min(ratio, maxRatio)
+        if ratio > 1
+        {
+            print("COUCOU")
+        }
+        let threadsPerThreadgroup = width == maxDim ?
+            MTLSizeMake(
+                8 * ratio,
+                8,
+                1
+            ) :
+            MTLSizeMake(
+                8,
+                8 * ratio,
+                1
+            )
+        let threadsPerGrid = MTLSize(
+            width: width,
+            height: height,
+            depth: 1
+        )
+        dispatchThreads(
+            threadsPerGrid: threadsPerGrid,
+            threadsPerThreadgroup: threadsPerThreadgroup
+        )
+    }
+    
     ///
     /// The grid of threads on the GPU.
     ///
@@ -1123,4 +1156,24 @@ public class MetalCommand
             _command.waitUntilCompleted()
         }
     }
+}
+
+fileprivate func euclide(_ a: UInt, _ b: UInt) -> UInt
+{
+    var max = max(a, b)
+    var min = min(a, b)
+    var tmp: UInt
+    while min != 0
+    {
+        tmp = min
+        min = max % min
+        max = tmp
+    }
+    return max
+}
+
+fileprivate func ppcm(_ a: UInt, _ b: UInt) -> UInt
+{
+    let pgcd = euclide(a, b)
+    return a * b / pgcd
 }

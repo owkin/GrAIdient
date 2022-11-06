@@ -1101,13 +1101,19 @@ public class MetalCommand
     ///
     public func dispatchThreads(width: Int, height: Int)
     {
-        if width == 1
-        {
-            dispatchThreads(height)
-        }
-        else if height == 1
+        if height == 1
         {
             dispatchThreads(width)
+        }
+        else if width == 1
+        {
+            let threads = threadExecutionWidth
+            let threadsPerThreadgroup = MTLSizeMake(1, threads, 1)
+            let threadsPerGrid = MTLSize(width: 1, height: height, depth: 1)
+            dispatchThreads(
+                threadsPerGrid: threadsPerGrid,
+                threadsPerThreadgroup: threadsPerThreadgroup
+            )
         }
         else
         {

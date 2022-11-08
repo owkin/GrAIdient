@@ -1128,7 +1128,11 @@ public class MetalCommand
             MTLSizeMake(8 * ratio, 8, 1) :
             MTLSizeMake(8, 8 * ratio, 1)*/
             
-            let threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
+            let threadsPerThreadgroup = MTLSizeMake(
+                threadExecutionWidth,
+                maxThreadsPerThreadgroup / threadExecutionWidth,
+                1
+            )
             
             let threadsPerGrid = MTLSize(
                 width: width,

@@ -1122,12 +1122,12 @@ public class MetalCommand
             
             var ratio = Int(Double(maxDim) / Double(minDim))
             let maxRatio = maxThreadsPerThreadgroup / 64
-            ratio = min(ratio, maxRatio, 4)
+            ratio = min(ratio, maxRatio, 4) // 4 is an hyper parameter
+            // to try to optimize between local and eGPU.
             
             let threadsPerThreadgroup = width == maxDim ?
             MTLSizeMake(8 * ratio, 8, 1) :
             MTLSizeMake(8, 8 * ratio, 1)
-            //let threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
             
             let threadsPerGrid = MTLSize(
                 width: width,

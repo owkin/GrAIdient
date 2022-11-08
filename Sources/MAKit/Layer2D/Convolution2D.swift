@@ -1526,20 +1526,10 @@ public class Convolution2D: BN2D
                 command.setBytes(pAccumulate, atIndex: 10)
                 command.setBuffer(_wBuffers.g.metal, atIndex: 11)
                 
-                let threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
-                let threadsPerGrid = MTLSize(
-                    width: nbChannels * weightWidth,
-                    height: nbChannelsPrev * weightHeight,
-                    depth: 1
-                )
                 command.dispatchThreads(
-                    threadsPerGrid: threadsPerGrid,
-                    threadsPerThreadgroup: threadsPerThreadgroup
-                )
-                /*command.dispatchThreads(
                     width: nbChannels * weightWidth,
                     height: nbChannelsPrev * weightHeight
-                )*/
+                )
                 command.enqueue()
                 
                 if _updateBiases

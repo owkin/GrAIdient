@@ -1129,8 +1129,8 @@ public class MetalCommand
             MTLSizeMake(8, 8 * ratio, 1)
             
             let threadsPerGrid = MTLSize(
-                width: width,
-                height: height,
+                width: 8, //width,
+                height: 8, //height,
                 depth: 1
             )
             dispatchThreads(

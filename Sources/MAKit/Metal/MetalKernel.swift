@@ -1117,7 +1117,7 @@ public class MetalCommand
         }
         else
         {
-            /*let maxDim = max(width, height)
+            let maxDim = max(width, height)
             let minDim = min(width, height)
             
             var ratio = Int(round(Double(maxDim) / Double(minDim)))
@@ -1126,8 +1126,8 @@ public class MetalCommand
             
             let threadsPerThreadgroup = width == maxDim ?
             MTLSizeMake(8 * ratio, 8, 1) :
-            MTLSizeMake(8, 8 * ratio, 1)*/
-            let threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
+            MTLSizeMake(8, 8 * ratio, 1)
+            //let threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
             
             let threadsPerGrid = MTLSize(
                 width: width,

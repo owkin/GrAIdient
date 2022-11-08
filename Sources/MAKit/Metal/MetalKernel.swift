@@ -1122,7 +1122,7 @@ public class MetalCommand
             
             var ratio = Int(Double(maxDim) / Double(minDim))
             let maxRatio = maxThreadsPerThreadgroup / 64
-            ratio = min(ratio, maxRatio, 2)
+            ratio = min(ratio, maxRatio, 3)
             
             let threadsPerThreadgroup = width == maxDim ?
             MTLSizeMake(8 * ratio, 8, 1) :

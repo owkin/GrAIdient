@@ -1124,13 +1124,15 @@ public class MetalCommand
             let maxRatio = maxThreadsPerThreadgroup / 64
             ratio = min(ratio, maxRatio)
             
-            let threadsPerThreadgroup = width == maxDim ?
+            /*let threadsPerThreadgroup = width == maxDim ?
             MTLSizeMake(8 * ratio, 8, 1) :
-            MTLSizeMake(8, 8 * ratio, 1)
+            MTLSizeMake(8, 8 * ratio, 1)*/
+            
+            let threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
             
             let threadsPerGrid = MTLSize(
-                width: 8, //width,
-                height: 8, //height,
+                width: width,
+                height: height,
                 depth: 1
             )
             dispatchThreads(

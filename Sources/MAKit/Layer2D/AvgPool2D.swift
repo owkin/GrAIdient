@@ -5,8 +5,6 @@
 // Created by Jean-François Reboud on 14/10/2022.
 //
 
-import MetalKit
-
 ///
 /// Layer with a 1D shape neural structure.
 ///
@@ -180,13 +178,9 @@ public class AvgPool2D: Layer1D
             command.setBytes(pNbBatch, atIndex: 3)
             command.setBuffer(outs.metal, atIndex: 4)
             
-            let threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
-            let threadsPerGrid = MTLSize(width: nbNeurons,
-                                         height: batchSize,
-                                         depth: 1)
             command.dispatchThreads(
-                threadsPerGrid: threadsPerGrid,
-                threadsPerThreadgroup: threadsPerThreadgroup
+                width: nbNeurons,
+                height: batchSize
             )
             command.enqueue()
         }
@@ -257,13 +251,9 @@ public class AvgPool2D: Layer1D
             command.setBytes(pDirty, atIndex: 4)
             command.setBuffer(layerPrev.delta.metal, atIndex: 5)
             
-            let threadsPerThreadgroup = MTLSizeMake(8, 8, 8)
-            let threadsPerGrid = MTLSize(width: widthPrev,
-                                         height: heightPrev,
-                                         depth: nbNeurons * batchSize)
             command.dispatchThreads(
-                threadsPerGrid: threadsPerGrid,
-                threadsPerThreadgroup: threadsPerThreadgroup
+                width: widthPrev * nbNeurons,
+                height: heightPrev * batchSize
             )
             command.enqueue()
             

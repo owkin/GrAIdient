@@ -5,7 +5,7 @@
 // Created by Jean-François Reboud on 08/10/2022.
 //
 
-import MetalKit
+import Foundation
 
 /// Error occuring on a bad request to a `LayerUpdate`.
 public enum UpdateError: Error
@@ -244,15 +244,7 @@ public class OptimizerAlgorithm
                     command.setBytes(pFactor, atIndex: 1)
                     command.setBuffer(buffers.g.metal, atIndex: 2)
                     
-                    let threads = command.threadExecutionWidth
-                    let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
-                    let threadsPerGrid = MTLSize(width: nbElems,
-                                                 height: 1,
-                                                 depth: 1)
-                    command.dispatchThreads(
-                        threadsPerGrid: threadsPerGrid,
-                        threadsPerThreadgroup: threadsPerThreadgroup
-                    )
+                    command.dispatchThreads(nbElems)
                     command.enqueue()
                 }
             }
@@ -537,15 +529,7 @@ public class OptimizerAlgorithm
                     command.setBytes(pNormThreshold, atIndex: 2)
                     command.setBuffer(buffers.g.metal, atIndex: 3)
                     
-                    let threads = command.threadExecutionWidth
-                    let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
-                    let threadsPerGrid = MTLSize(width: nbElems,
-                                                 height: 1,
-                                                 depth: 1)
-                    command.dispatchThreads(
-                        threadsPerGrid: threadsPerGrid,
-                        threadsPerThreadgroup: threadsPerThreadgroup
-                    )
+                    command.dispatchThreads(nbElems)
                     command.enqueue()
                 }
             }

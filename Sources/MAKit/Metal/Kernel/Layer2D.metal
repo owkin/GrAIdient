@@ -61,7 +61,7 @@ kernel void avgPoolBackward(
     constant uint * pNbBatch,
     constant uint * pDirty,
     device float * deltaPrev,
-    uint3 id [[ thread_position_in_grid ]])
+    uint2 id [[ thread_position_in_grid ]])
 {
     uint heightPrev, widthPrev;
     uint nbNeurons;
@@ -80,13 +80,13 @@ kernel void avgPoolBackward(
     else
         return ;
     
-    uint i = id[1];
-    uint j = id[0];
-    uint depthPrev = id[2] % nbNeurons;
-    uint elem = id[2] / nbNeurons;
+    uint depthPrev = id[0] / widthPrev;
+    uint elem = id[1] / heightPrev;
+    uint i = id[1] % heightPrev;
+    uint j = id[0] % widthPrev;
     
-    if (i >= heightPrev || j >= widthPrev ||
-        id[2] >= nbNeurons * nbBatch)
+    if (i * elem >= heightPrev * nbBatch ||
+        j * depthPrev >= widthPrev * nbNeurons)
     {
         return ;
     }
@@ -117,7 +117,7 @@ kernel void maxPoolForward(
     constant uint * pNbBatch,
     device float * outs,
     device int * indicesMax,
-    uint3 id [[ thread_position_in_grid ]])
+    uint2 id [[ thread_position_in_grid ]])
 {
     int start, end;
     uint stride;
@@ -142,13 +142,13 @@ kernel void maxPoolForward(
     else
         return ;
     
-    uint i = id[1];
-    uint j = id[0];
-    uint depth = id[2] % nbChannels;
-    uint elem = id[2] / nbChannels;
+    uint depth = id[0] / width;
+    uint elem = id[1] / height;
+    uint i = id[1] % height;
+    uint j = id[0] % width;
     
-    if (i >= height || j >= width ||
-        id[2] >= nbChannels * nbBatch)
+    if (i * elem >= height * nbBatch ||
+        j * depth >= width * nbChannels)
     {
         return ;
     }
@@ -193,7 +193,7 @@ kernel void maxPoolBackward(
     constant uint * pNbBatch,
     constant uint * pDirty,
     device float * deltaPrev,
-    uint3 id [[ thread_position_in_grid ]])
+    uint2 id [[ thread_position_in_grid ]])
 {
     int start, end;
     uint stride;
@@ -220,13 +220,13 @@ kernel void maxPoolBackward(
     else
         return ;
     
-    uint i = id[1];
-    uint j = id[0];
-    uint depth = id[2] % nbChannels;
-    uint elem = id[2] / nbChannels;
+    uint depth = id[0] / widthPrev;
+    uint elem = id[1] / heightPrev;
+    uint i = id[1] % heightPrev;
+    uint j = id[0] % widthPrev;
     
-    if (i >= heightPrev || j >= widthPrev ||
-        id[2] >= nbChannels * nbBatch)
+    if (i * elem >= heightPrev * nbBatch ||
+        j * depth >= widthPrev * nbChannels)
     {
         return ;
     }
@@ -296,7 +296,7 @@ kernel void adaptiveAvgPoolForward1(
     constant uint * pDimensionsPrev,
     constant uint * pNbBatch,
     device float * outs,
-    uint3 id [[ thread_position_in_grid ]])
+    uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
     uint heightPrev, widthPrev;
@@ -316,13 +316,13 @@ kernel void adaptiveAvgPoolForward1(
     else
         return ;
     
-    uint i = id[1];
-    uint j = id[0];
-    uint depth = id[2] % nbChannels;
-    uint elem = id[2] / nbChannels;
+    uint depth = id[0] / width;
+    uint elem = id[1] / height;
+    uint i = id[1] % height;
+    uint j = id[0] % width;
     
-    if (i >= height || j >= width ||
-        id[2] >= nbChannels * nbBatch)
+    if (i * elem >= height * nbBatch ||
+        j * depth >= width * nbChannels)
     {
         return ;
     }
@@ -597,7 +597,7 @@ kernel void selectNeurons2DBackward(
     constant uint * pNbBatch,
     constant uint * pDirty,
     device float * deltaPrev,
-    uint3 id [[ thread_position_in_grid ]])
+    uint2 id [[ thread_position_in_grid ]])
 {
     uint targetI, targetJ;
     uint heightPrev, widthPrev;
@@ -619,13 +619,13 @@ kernel void selectNeurons2DBackward(
     else
         return ;
     
-    uint i = id[1];
-    uint j = id[0];
-    uint prevDepth = id[2] % nbNeurons;
-    uint elem = id[2] / nbNeurons;
+    uint depthPrev = id[0] / widthPrev;
+    uint elem = id[1] / heightPrev;
+    uint i = id[1] % heightPrev;
+    uint j = id[0] % widthPrev;
     
-    if (i >= heightPrev || j >= widthPrev ||
-        id[2] >= nbNeurons * nbBatch)
+    if (i * elem >= heightPrev * nbBatch ||
+        j * depthPrev >= widthPrev * nbNeurons)
     {
         return ;
     }
@@ -633,11 +633,11 @@ kernel void selectNeurons2DBackward(
     float deltaCur = 0.0;
     if (i == targetI && j == targetJ)
     {
-        uint offset = prevDepth + nbNeurons * elem;
+        uint offset = depthPrev + nbNeurons * elem;
         deltaCur = delta[offset];
     }
     
-    uint offsetStartPrev = (prevDepth + nbNeurons * elem) * heightPrev;
+    uint offsetStartPrev = (depthPrev + nbNeurons * elem) * heightPrev;
     uint offsetPrev = j + (offsetStartPrev + i) * widthPrev;
     
     if (dirty)

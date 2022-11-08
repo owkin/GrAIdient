@@ -5,8 +5,6 @@
 // Created by Jean-François Reboud on 14/10/2022.
 //
 
-import MetalKit
-
 ///
 /// Layer with a 2D shape neural structure.
 ///
@@ -383,13 +381,9 @@ public class MaxPool2D: Layer2D
             command.setBuffer(outs.metal, atIndex: 7)
             command.setBuffer(_indicesMax.metal, atIndex: 8)
             
-            let threadsPerThreadgroup = MTLSizeMake(8, 8, 8)
-            let threadsPerGrid = MTLSize(width: width,
-                                         height: height,
-                                         depth: nbChannels * batchSize)
             command.dispatchThreads(
-                threadsPerGrid: threadsPerGrid,
-                threadsPerThreadgroup: threadsPerThreadgroup
+                width: width * nbChannels,
+                height: height * batchSize
             )
             command.enqueue()
         }
@@ -478,13 +472,9 @@ public class MaxPool2D: Layer2D
             command.setBytes(pDirty, atIndex: 8)
             command.setBuffer(layerPrev.delta.metal, atIndex: 9)
             
-            let threadsPerThreadgroup = MTLSizeMake(8, 8, 8)
-            let threadsPerGrid = MTLSize(width: widthPrev,
-                                         height: heightPrev,
-                                         depth: nbChannels * batchSize)
             command.dispatchThreads(
-                threadsPerGrid: threadsPerGrid,
-                threadsPerThreadgroup: threadsPerThreadgroup
+                width: widthPrev * nbChannels,
+                height: heightPrev * batchSize
             )
             command.enqueue()
             

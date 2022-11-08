@@ -5,8 +5,6 @@
 // Created by Jean-François Reboud on 14/10/2022.
 //
 
-import MetalKit
-
 ///
 /// Layer with a 2D shape neural structure.
 ///
@@ -323,15 +321,7 @@ public class Sum2D: LayerMerge2D
             command.setBytes(pNbElems, atIndex: 1)
             command.setBuffer(outs.metal, atIndex: 2)
             
-            let threads = command.threadExecutionWidth
-            let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
-            let threadsPerGrid = MTLSize(width: nbElems,
-                                         height: 1,
-                                         depth: 1)
-            command.dispatchThreads(
-                threadsPerGrid: threadsPerGrid,
-                threadsPerThreadgroup: threadsPerThreadgroup
-            )
+            command.dispatchThreads(nbElems)
             command.enqueue()
         }
     }
@@ -423,15 +413,7 @@ public class Sum2D: LayerMerge2D
                 (_layersPrev[num] as! Layer2D).delta.metal, atIndex: 2
             )
             
-            let threads = command.threadExecutionWidth
-            let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
-            let threadsPerGrid = MTLSize(width: nbElems,
-                                         height: 1,
-                                         depth: 1)
-            command.dispatchThreads(
-                threadsPerGrid: threadsPerGrid,
-                threadsPerThreadgroup: threadsPerThreadgroup
-            )
+            command.dispatchThreads(nbElems)
             command.enqueue()
         }
         

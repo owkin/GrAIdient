@@ -536,6 +536,8 @@ private class MetalDevice
                 "backwardLeakyReLU",
                 "forwardSoftReLU",
                 "backwardSoftReLU",
+                "forwardSigmoid",
+                "backwardSigmoid",
             ],
             "Biases": [
                 "reduceBiases",

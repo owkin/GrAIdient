@@ -138,14 +138,6 @@ class LayerContainer: Codable
     }
 }
 
-/// Registry of activation function types.
-let ACTIVATION_REGISTRY: [String: Codable.Type] = buildRegistry(
-[
-    ReLU.self,
-    LeakyReLU.self,
-    SoftReLU.self
-])
-
 /// Serialize and deserialize an activation function thanks to its string type.
 class ActivationContainer: Codable
 {

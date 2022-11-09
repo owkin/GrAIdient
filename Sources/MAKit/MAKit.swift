@@ -17,6 +17,7 @@ public class MAKit
             return MAKitContext.get
         }
     }
+    
     private init() {}
     
     /// Namespace for optimization settings.

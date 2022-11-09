@@ -222,6 +222,40 @@ class Activation2DGradTests: Input2DMSE1DCase
         run(trainer)
     }
     
+    func testConvSigmoidNoBNCPU() throws
+    {
+        MAKit.Opti.CPU = true
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: Sigmoid.str, bn: false
+        )
+        run(trainer)
+    }
+    
+    func testConvSigmoidBNCPU() throws
+    {
+        MAKit.Opti.CPU = true
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: Sigmoid.str, bn: true
+        )
+        run(trainer)
+    }
+    
+    func testConvSigmoidNoBNGPU() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: Sigmoid.str, bn: false
+        )
+        run(trainer)
+    }
+    
+    func testConvSigmoidBNGPU() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: Sigmoid.str, bn: true
+        )
+        run(trainer)
+    }
+    
     func testReLUCPU() throws
     {
         MAKit.Opti.CPU = true
@@ -269,6 +303,23 @@ class Activation2DGradTests: Input2DMSE1DCase
     {
         let trainer = _buildTrainer(
             model: "Activation", activation: SoftReLU.str, bn: false
+        )
+        run(trainer)
+    }
+    
+    func testSigmoidCPU() throws
+    {
+        MAKit.Opti.CPU = true
+        let trainer = _buildTrainer(
+            model: "Activation", activation: Sigmoid.str, bn: false
+        )
+        run(trainer)
+    }
+    
+    func testSigmoidGPU() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Activation", activation: Sigmoid.str, bn: false
         )
         run(trainer)
     }

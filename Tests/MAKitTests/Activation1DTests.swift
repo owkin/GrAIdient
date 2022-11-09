@@ -147,6 +147,23 @@ class Activation1DGradTests: Input1DMSE1DCase
         run(trainer)
     }
     
+    func testFLSigmoidCPU() throws
+    {
+        MAKit.Opti.CPU = true
+        let trainer = _buildTrainer(
+            model: "FullyConnected", activation: Sigmoid.str
+        )
+        run(trainer)
+    }
+    
+    func testFLSigmoidGPU() throws
+    {
+        let trainer = _buildTrainer(
+            model: "FullyConnected", activation: Sigmoid.str
+        )
+        run(trainer)
+    }
+    
     func testReLUCPU() throws
     {
         MAKit.Opti.CPU = true
@@ -194,6 +211,23 @@ class Activation1DGradTests: Input1DMSE1DCase
     {
         let trainer = _buildTrainer(
             model: "Activation", activation: SoftReLU.str
+        )
+        run(trainer)
+    }
+    
+    func testSigmoidCPU() throws
+    {
+        MAKit.Opti.CPU = true
+        let trainer = _buildTrainer(
+            model: "Activation", activation: Sigmoid.str
+        )
+        run(trainer)
+    }
+    
+    func testSigmoidGPU() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Activation", activation: Sigmoid.str
         )
         run(trainer)
     }

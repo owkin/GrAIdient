@@ -1,107 +1,36 @@
 //
-// MaxPool2D.swift
+// RDFT2Image.swift
 // MAKit
 //
-// Created by Jean-François Reboud on 14/10/2022.
+// Created by Jean-François Reboud on 25/11/2022.
 //
+
+import Foundation
 
 ///
 /// Layer with a 2D shape neural structure.
 ///
-/// This layer downscales the previous layer, outputing the maximal elements contained in a moving kernel.
+/// This layer executes Reverse Discrete Fourier Transform and keeps only real result.
 ///
-public class MaxPool2D: Layer2D
+public class RDFT2Image: Layer2D
 {
-    ///
-    /// Indices of maximal elements.
-    /// Shape ~ (batch, nbChannels, height, width).
-    ///
-    var _indicesMax: MetalBuffer<Int32>! = nil
-    
-    /// Size of the maximal kernel.
-    let _size: Int
-    /// Downscale factor of the resolution (height and width).
-    let _stride: Int
-    
-    /// Downscale factor of the resolution (height and width).
-    public override var strideFactor: Double
-    {
-        get {
-            if let value = strideFactorCache
-            {
-                return value
-            }
-            else
-            {
-                let value = super.strideFactor * Double(_stride)
-                strideFactorCache = value
-                return value
-            }
-        }
-    }
-    
-    /// The size of the input image this layer is looking at.
-    public override var receptiveField: Int
-    {
-        get {
-            if let value = receptiveFieldCache
-            {
-                return value
-            }
-            else
-            {
-                let value = super.receptiveField +
-                    (_size - 1) * Int(super.strideFactor)
-                receptiveFieldCache = value
-                return value
-            }
-        }
-    }
-    
-    var _kernelIndices: (Int, Int)
-    {
-        get {
-            let sizeHalf = _size / 2
-            let start = _size % 2 == 1 ? -sizeHalf : -sizeHalf+1
-            let end = sizeHalf
-            return (start, end)
-        }
-    }
-    
-    private enum Keys: String, CodingKey
-    {
-        case size
-        case stride
-    }
-    
     ///
     /// Create a layer with a 2D shape neural structure.
     ///
     /// - Parameters:
     ///     - layerPrev: Previous layer that has been queued to the model.
-    ///     - size: The maximal kernel size.
-    ///     - stride: Downscale factor of the resolution (height and width).
     ///     - params: Contextual parameters linking to the model.
     ///
-    public init(layerPrev: Layer2D,
-                size: Int,
-                stride: Int,
-                params: MAKit.Model.Params)
+    public init(layerPrev: Layer2D, params: MAKit.Model.Params)
     {
-        _size = size
-        _stride = stride
-        
         let width = layerPrev.width
         let height = layerPrev.height
-        let widthRes = width % stride
-        let heightRes = height % stride
-        let widthNew = widthRes == 0 ? width / stride : width / stride + 1
-        let heightNew = heightRes == 0 ? height / stride : height / stride + 1
+        let nbChannels = layerPrev.nbChannels
         
         super.init(layerPrev: layerPrev,
-                   nbChannels: layerPrev.nbChannels,
-                   height: heightNew,
-                   width: widthNew,
+                   nbChannels: nbChannels / 2,
+                   height: height,
+                   width: width,
                    params: params)
     }
     
@@ -115,29 +44,7 @@ public class MaxPool2D: Layer2D
     ///
     public required init(from decoder: Decoder) throws
     {
-        let values = try decoder.container(keyedBy: Keys.self)
-        _size = try values.decode(Int.self, forKey: Keys.size)
-        _stride = try values.decode(Int.self, forKey: Keys.stride)
         try super.init(from: decoder)
-    }
-    
-    ///
-    /// Encode to the disk.
-    ///
-    /// If the value fails to encode anything, `encoder` will encode an empty
-    /// keyed container in its place.
-    ///
-    /// Throw an error if any values are invalid for the given
-    /// encoder's format.
-    ///
-    /// - Parameter encoder: The encoder to write data to.
-    ///
-    public override func encode(to encoder: Encoder) throws
-    {
-        var container = encoder.container(keyedBy: Keys.self)
-        try container.encode(_size, forKey: Keys.size)
-        try container.encode(_stride, forKey: Keys.stride)
-        try super.encode(to: encoder)
     }
     
     ///
@@ -162,71 +69,11 @@ public class MaxPool2D: Layer2D
         let params = MAKit.Model.Params(context: context)
         params.context.curID = id
             
-        let layer = MaxPool2D(
+        let layer = RDFT2Image(
             layerPrev: layerPrev,
-            size: _size,
-            stride: _stride,
             params: params
         )
         return layer
-    }
-    
-    ///
-    /// Clean state resources in the CPU execution context.
-    ///
-    /// We clean the neurons' state (forward and backward).
-    ///
-    public override func resetKernelCPU()
-    {
-        super.resetKernelCPU()
-        _indicesMax = nil
-    }
-    
-    ///
-    /// Clean state resources in the GPU execution context.
-    ///
-    /// We clean the neurons' state (forward and backward).
-    ///
-    public override func resetKernelGPU()
-    {
-        super.resetKernelGPU()
-        _indicesMax = nil
-    }
-    
-    ///
-    /// Initialize state resources in the CPU execution context.
-    ///
-    /// We initialize the neurons' state (forward and backward).
-    ///
-    public override func checkStateCPU(batchSize: Int) throws
-    {
-        try super.checkStateCPU(batchSize: batchSize)
-        
-        if _indicesMax == nil
-        {
-            _indicesMax = MetalSharedBuffer<Int32>(
-                batchSize * nbChannels * height * width * 2,
-                deviceID: deviceID
-            )
-        }
-    }
-    
-    ///
-    /// Initialize state resources in the GPU execution context.
-    ///
-    /// We initialize the neurons' forward state.
-    ///
-    public override func checkStateForwardGPU(batchSize: Int) throws
-    {
-        try super.checkStateForwardGPU(batchSize: batchSize)
-        
-        if _indicesMax == nil
-        {
-            _indicesMax = MetalPrivateBuffer<Int32>(
-                batchSize * nbChannels * width * height,
-                deviceID: deviceID
-            )
-        }
     }
     
     ///
@@ -254,8 +101,6 @@ public class MaxPool2D: Layer2D
             }
             
             let neuronsPrev = layerPrev.neurons
-            let (start, end) = _kernelIndices
-            
             for batch in 0..<batchSize {
             for elem in 0..<nbGC {
             for depth in 0..<nbChannels
@@ -263,18 +108,22 @@ public class MaxPool2D: Layer2D
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    var maxOutPrev: Double = -10000.0
-                    for k in start...end {
-                    for l in start...end
+                    var sum: Double = 0.0
+                    for k in 0..<height {
+                    for l in 0..<width
                     {
-                        if let outPrev = neuronsPrev[depth]
-                           .get(_stride*i+k, _stride*j+l)?.gc[batch][elem].out,
-                           outPrev > maxOutPrev
-                        {
-                            maxOutPrev = outPrev
-                        }
+                        let realPrev = neuronsPrev[2 * depth].get(k, l)!
+                            .gc[batch][elem].out
+                        let imPrev = neuronsPrev[2 * depth + 1].get(k, l)!
+                            .gc[batch][elem].out
+                        var angle = 2.0 * Double.pi
+                        angle *=
+                            (Double(i) / Double(height) * Double(k) +
+                             Double(j) / Double(width) * Double(l))
+                        sum += realPrev * cos(angle) - imPrev * sin(angle)
                     }}
-                    neurons[depth].get(i, j)!.gc[batch][elem].out = maxOutPrev
+                    sum /= Double(height * width)
+                    neurons[depth].get(i, j)!.gc[batch][elem].out = sum
                 }}
             }}}
         }
@@ -302,46 +151,28 @@ public class MaxPool2D: Layer2D
             try checkStateCPU(batchSize: batchSize)
             
             let neuronsPrev = layerPrev.neurons
-            let (start, end) = _kernelIndices
-            let indicesMaxPtr =
-                (_indicesMax as! MetalSharedBuffer<Int32>).buffer
-            
             for elem in 0..<batchSize {
             for depth in 0..<nbChannels
             {
-                let offsetStart = (depth + nbChannels * elem) * height
-                
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    var maxI = -1
-                    var maxJ = -1
-                    var maxOutPrev: Double = -10000.0
-                    for k in start...end {
-                    for l in start...end
+                    var sum: Double = 0.0
+                    for k in 0..<height {
+                    for l in 0..<width
                     {
-                        if let outPrev = neuronsPrev[depth]
-                            .get(_stride*i+k, _stride*j+l)?.v[elem].out,
-                           outPrev > maxOutPrev
-                        {
-                            maxOutPrev = outPrev
-                            maxI = _stride*i+k
-                            maxJ = _stride*j+l
-                        }
+                        let realPrev =
+                            neuronsPrev[2 * depth].get(k, l)!.v[elem].out
+                        let imPrev =
+                            neuronsPrev[2 * depth + 1].get(k, l)!.v[elem].out
+                        var angle = 2.0 * Double.pi
+                        angle *=
+                            (Double(i) / Double(height) * Double(k) +
+                             Double(j) / Double(width) * Double(l))
+                        sum += realPrev * cos(angle) - imPrev * sin(angle)
                     }}
-                    
-                    if maxI >= 0 && maxJ >= 0
-                    {
-                        let offset = j + (offsetStart + i) * width
-                        
-                        neurons[depth].get(i, j)!.v[elem].out = maxOutPrev
-                        indicesMaxPtr[2 * offset] = Int32(maxI)
-                        indicesMaxPtr[2 * offset + 1] = Int32(maxJ)
-                    }
-                    else
-                    {
-                        fatalError("Unreachable.")
-                    }
+                    sum /= Double(height * width)
+                    neurons[depth].get(i, j)!.v[elem].out = sum
                 }}
             }}
         }
@@ -352,7 +183,7 @@ public class MaxPool2D: Layer2D
     ///
     /// Throw an error if batch size is greater than the first batch size.
     ///
-    public override func forwardGPU() throws
+    /*public override func forwardGPU() throws
     {
         if let layerPrev = self.layerPrev as? Layer2D
         {
@@ -389,7 +220,7 @@ public class MaxPool2D: Layer2D
             )
             command.enqueue()
         }
-    }
+    }*/
     
     /// Apply the backward pass in the CPU execution context.
     public override func backwardCPU()
@@ -397,40 +228,43 @@ public class MaxPool2D: Layer2D
         if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
             let neuronsPrev = layerPrev.neurons
-            let heightPrev = layerPrev.height
-            let widthPrev = layerPrev.width
-            let indicesMaxPtr =
-                (_indicesMax as! MetalSharedBuffer<Int32>).buffer
-            
-            if layerPrev.dirty
-            {
-                for elem in 0..<batchSize {
-                for depth in 0..<nbChannels
-                {
-                    for i in 0..<heightPrev {
-                    for j in 0..<widthPrev
-                    {
-                        neuronsPrev[depth].get(i, j)!.v[elem].delta = 0.0
-                    }}
-                }}
-            }
-            
             for elem in 0..<batchSize {
             for depth in 0..<nbChannels
             {
-                let offsetStart = (depth + nbChannels * elem) * height
-                
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    let offset = j + (offsetStart + i) * width
+                    var sum1: Double = 0.0
+                    var sum2: Double = 0.0
+                    for k in 0..<height {
+                    for l in 0..<width
+                    {
+                        let delta =
+                            neurons[depth].get(k, l)!.v[elem].delta
+                        var angle = 2.0 * Double.pi
+                        angle *=
+                            (Double(i) / Double(height) * Double(k) +
+                             Double(j) / Double(width) * Double(l))
+                        sum1 += delta * cos(angle)
+                        sum2 -= delta * sin(angle)
+                    }}
+                    sum1 /= Double(height * width)
+                    sum2 /= Double(height * width)
                     
-                    let maxI = Int(indicesMaxPtr[2 * offset])
-                    let maxJ = Int(indicesMaxPtr[2 * offset + 1])
-                    
-                    let deltaCur = neurons[depth].get(i, j)!.v[elem].delta
-                    neuronsPrev[depth].get(maxI, maxJ)!.v[elem].delta +=
-                        deltaCur
+                    if layerPrev.dirty
+                    {
+                        neuronsPrev[2 * depth].get(i, j)!
+                            .v[elem].delta = sum1
+                        neuronsPrev[2 * depth + 1].get(i, j)!
+                            .v[elem].delta = sum2
+                    }
+                    else
+                    {
+                        neuronsPrev[2 * depth].get(i, j)!
+                            .v[elem].delta += sum1
+                        neuronsPrev[2 * depth + 1].get(i, j)!
+                            .v[elem].delta += sum2
+                    }
                 }}
             }}
         }
@@ -441,7 +275,7 @@ public class MaxPool2D: Layer2D
     ///
     /// Throw an error if batch size is greater than the first batch size.
     ///
-    public override func backwardGPU() throws
+    /*public override func backwardGPU() throws
     {
         if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
@@ -482,5 +316,5 @@ public class MaxPool2D: Layer2D
             
             propagateDirty()
         }
-    }
+    }*/
 }

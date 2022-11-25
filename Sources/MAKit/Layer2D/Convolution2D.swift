@@ -787,8 +787,10 @@ public class Convolution2D: BN2D
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    neurons[depth].get(i, j)!.initGC(batchSize: batchSize,
-                                                      nbGC: newGC)
+                    neurons[depth].get(i, j)!.initGC(
+                        batchSize: batchSize,
+                        nbGC: newGC
+                    )
                 }}
             }
             
@@ -977,8 +979,10 @@ public class Convolution2D: BN2D
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    neurons[depth].get(i, j)!.initGC(batchSize: batchSize,
-                                                      nbGC: newGC)
+                    neurons[depth].get(i, j)!.initGC(
+                        batchSize: batchSize,
+                        nbGC: newGC
+                    )
                 }}
             }
             

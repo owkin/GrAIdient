@@ -153,6 +153,14 @@ class Layer2DGradTests: Input2DMSE1DCase
                 params: params
             )
             
+        case "RDFT2Image":
+            layer = Convolution2D(
+                layerPrev: layer, size: 2, nbChannels: 6, stride: 2,
+                activation: SoftReLU.str, biases: true, bn: bn, params: params
+            )
+            
+            layer = RDFT2Image(layerPrev: layer, params: params)
+            
         default:
             fatalError("Unreachable.")
         }
@@ -431,6 +439,13 @@ class Layer2DGradTests: Input2DMSE1DCase
     func testSelectNeuronsGPU() throws
     {
         let trainer = _buildTrainer(model: "SelectNeurons", bn: false)
+        run(trainer)
+    }
+    
+    func testRDFT2ImageCPU() throws
+    {
+        MAKit.Opti.CPU = true
+        let trainer = _buildTrainer(model: "RDFT2Image", bn: false)
         run(trainer)
     }
 }

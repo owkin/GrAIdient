@@ -246,8 +246,10 @@ public class MaxPool2D: Layer2D
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    neurons[depth].get(i, j)!.initGC(batchSize: batchSize,
-                                                      nbGC: nbGC)
+                    neurons[depth].get(i, j)!.initGC(
+                        batchSize: batchSize,
+                        nbGC: nbGC
+                    )
                 }}
             }
             

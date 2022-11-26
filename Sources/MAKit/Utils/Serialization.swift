@@ -40,6 +40,7 @@ let LAYER_REGISTRY: [String: Codable.Type] = buildRegistry(
     LinearError1D.self,
     MaxPool2D.self,
     MSE1D.self,
+    RDFT2Image.self,
     Sum2D.self,
     SelectNeurons1D.self,
     SelectNeurons2D.self,

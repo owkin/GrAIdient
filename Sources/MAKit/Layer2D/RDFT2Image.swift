@@ -10,7 +10,7 @@ import Foundation
 ///
 /// Layer with a 2D shape neural structure.
 ///
-/// This layer executes Reverse Discrete Fourier Transform and keeps only real result.
+/// This layer executes Reverse Discrete Fourier Transform and keeps only real results.
 ///
 public class RDFT2Image: Layer2D
 {
@@ -183,36 +183,24 @@ public class RDFT2Image: Layer2D
     ///
     /// Throw an error if batch size is greater than the first batch size.
     ///
-    /*public override func forwardGPU() throws
+    public override func forwardGPU() throws
     {
         if let layerPrev = self.layerPrev as? Layer2D
         {
             try checkStateForwardGPU(batchSize: batchSize)
             
-            let widthPrev = layerPrev.width
-            let heightPrev = layerPrev.height
-            let (start, end) = _kernelIndices
-            
-            let pStart: [Int32] = [Int32(start), Int32(end)]
-            let pStride: [UInt32] = [UInt32(_stride)]
             let pNbChannels: [UInt32] = [UInt32(nbChannels)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
-            let pDimensionsPrev: [UInt32] = [UInt32(widthPrev),
-                                             UInt32(heightPrev)]
             
             let command = MetalKernel.get.createCommand(
-                "maxPoolForward", deviceID: deviceID
+                "RDFT2ImageForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
-            command.setBytes(pStart, atIndex: 1)
-            command.setBytes(pStride, atIndex: 2)
-            command.setBytes(pNbChannels, atIndex: 3)
-            command.setBytes(pDimensions, atIndex: 4)
-            command.setBytes(pDimensionsPrev, atIndex: 5)
-            command.setBytes(pNbBatch, atIndex: 6)
-            command.setBuffer(outs.metal, atIndex: 7)
-            command.setBuffer(_indicesMax.metal, atIndex: 8)
+            command.setBytes(pNbChannels, atIndex: 1)
+            command.setBytes(pDimensions, atIndex: 2)
+            command.setBytes(pNbBatch, atIndex: 3)
+            command.setBuffer(outs.metal, atIndex: 4)
             
             command.dispatchThreads(
                 width: width * nbChannels,
@@ -220,7 +208,7 @@ public class RDFT2Image: Layer2D
             )
             command.enqueue()
         }
-    }*/
+    }
     
     /// Apply the backward pass in the CPU execution context.
     public override func backwardCPU()
@@ -275,46 +263,34 @@ public class RDFT2Image: Layer2D
     ///
     /// Throw an error if batch size is greater than the first batch size.
     ///
-    /*public override func backwardGPU() throws
+    public override func backwardGPU() throws
     {
         if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
             try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
             
-            let widthPrev = layerPrev.width
-            let heightPrev = layerPrev.height
-            let (start, end) = _kernelIndices
-            
-            let pStart: [Int32] = [Int32(start), Int32(end)]
-            let pStride: [UInt32] = [UInt32(_stride)]
             let pNbChannels: [UInt32] = [UInt32(nbChannels)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
-            let pDimensionsPrev: [UInt32] = [UInt32(widthPrev),
-                                             UInt32(heightPrev)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
             let command = MetalKernel.get.createCommand(
-                "maxPoolBackward", deviceID: deviceID
+                "RDFT2ImageBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
-            command.setBuffer(_indicesMax.metal, atIndex: 1)
-            command.setBytes(pStart, atIndex: 2)
-            command.setBytes(pStride, atIndex: 3)
-            command.setBytes(pNbChannels, atIndex: 4)
-            command.setBytes(pDimensions, atIndex: 5)
-            command.setBytes(pDimensionsPrev, atIndex: 6)
-            command.setBytes(pNbBatch, atIndex: 7)
-            command.setBytes(pDirty, atIndex: 8)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 9)
+            command.setBytes(pNbChannels, atIndex: 1)
+            command.setBytes(pDimensions, atIndex: 2)
+            command.setBytes(pNbBatch, atIndex: 3)
+            command.setBytes(pDirty, atIndex: 4)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 5)
             
             command.dispatchThreads(
-                width: widthPrev * nbChannels,
-                height: heightPrev * batchSize
+                width: width * nbChannels,
+                height: height * batchSize
             )
             command.enqueue()
             
             propagateDirty()
         }
-    }*/
+    }
 }

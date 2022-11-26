@@ -649,3 +649,130 @@ kernel void selectNeurons2DBackward(
         deltaPrev[offsetPrev] += deltaCur;
     }
 }
+
+kernel void RDFT2ImageForward(
+    const device float * outsPrev,
+    constant uint * pNbChannels,
+    constant uint * pDimensions,
+    constant uint * pNbBatch,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint height, width;
+    uint nbChannels;
+    uint nbBatch;
+    
+    if (pNbChannels && pDimensions && pNbBatch && outsPrev && outs)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        nbChannels = *pNbChannels;
+        nbBatch = *pNbBatch;
+    }
+    else
+        return ;
+    
+    uint depth = id[0] / width;
+    uint elem = id[1] / height;
+    uint i = id[1] % height;
+    uint j = id[0] % width;
+    
+    if (i * elem >= height * nbBatch ||
+        j * depth >= width * nbChannels)
+    {
+        return ;
+    }
+        
+    uint offsetStartRealPrev = (2 * depth + 2 * nbChannels * elem) * height;
+    uint offsetStartImPrev = (2 * depth + 1 + 2 * nbChannels * elem) * height;
+    uint offsetStart = (depth + nbChannels * elem) * height;
+    uint offset = j + (offsetStart + i) * width;
+    
+    float sum = 0.0;
+    for (uint k=0; k<height; k++){
+    for (uint l=0; l<width; l++)
+    {
+        uint offsetRealPrev = l + (offsetStartRealPrev + k) * width;
+        uint offsetImPrev = l + (offsetStartImPrev + k) * width;
+        
+        float angle = 2.0 * M_PI_F;
+        angle *= (float(i) / height * k + float(j) / width * l);
+        
+        sum += outsPrev[offsetRealPrev] * cos(angle) -
+            outsPrev[offsetImPrev] * sin(angle);
+    }}
+    sum /= float(height * width);
+    outs[offset] = sum;
+}
+
+kernel void RDFT2ImageBackward(
+    const device float * delta,
+    constant uint * pNbChannels,
+    constant uint * pDimensions,
+    constant uint * pNbBatch,
+    constant uint * pDirty,
+    device float * deltaPrev,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint height, width;
+    uint nbChannels;
+    uint nbBatch;
+    uint dirty;
+    
+    if (pNbChannels && pDimensions &&
+        pNbBatch && pDirty && delta && deltaPrev)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        nbChannels = *pNbChannels;
+        nbBatch = *pNbBatch;
+        dirty = *pDirty;
+    }
+    else
+        return ;
+    
+    uint depth = id[0] / width;
+    uint elem = id[1] / height;
+    uint i = id[1] % height;
+    uint j = id[0] % width;
+    
+    if (i * elem >= height * nbBatch ||
+        j * depth >= width * nbChannels)
+    {
+        return ;
+    }
+    
+    uint offsetStartRealPrev = (2 * depth + 2 * nbChannels * elem) * height;
+    uint offsetStartImPrev = (2 * depth + 1 + 2 * nbChannels * elem) * height;
+    uint offsetStart = (depth + nbChannels * elem) * height;
+    uint offsetRealPrev = j + (offsetStartRealPrev + i) * width;
+    uint offsetImPrev = j + (offsetStartImPrev + i) * width;
+    
+    float sum1 = 0.0;
+    float sum2 = 0.0;
+    for (uint k=0; k<height; k++){
+    for (uint l=0; l<width; l++)
+    {
+        uint offset = l + (offsetStart + k) * width;
+        float deltaCur = delta[offset];
+        
+        float angle = 2.0 * M_PI_F;
+        angle *= (float(i) / height * k + float(j) / width * l);
+        
+        sum1 += deltaCur * cos(angle);
+        sum2 -= deltaCur * sin(angle);
+    }}
+    sum1 /= float(height * width);
+    sum2 /= float(height * width);
+    
+    if (dirty)
+    {
+        deltaPrev[offsetRealPrev] = sum1;
+        deltaPrev[offsetImPrev] = sum2;
+    }
+    else
+    {
+        deltaPrev[offsetRealPrev] += sum1;
+        deltaPrev[offsetImPrev] += sum2;
+    }
+}

@@ -448,6 +448,12 @@ class Layer2DGradTests: Input2DMSE1DCase
         let trainer = _buildTrainer(model: "RDFT2Image", bn: false)
         run(trainer)
     }
+    
+    func testRDFT2ImageGPU() throws
+    {
+        let trainer = _buildTrainer(model: "RDFT2Image", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -590,6 +596,14 @@ class Layer2DFlowTests: Input2DMSE1DCase
                 targetI: 1, targetJ: 3,
                 params: params
             )
+            
+        case "RDFT2Image":
+            layer = Convolution2D(
+                layerPrev: layer, size: 2, nbChannels: 6, stride: 2,
+                activation: SoftReLU.str, biases: true, bn: bn, params: params
+            )
+            
+            layer = RDFT2Image(layerPrev: layer, params: params)
             
         default:
             fatalError("Unreachable.")
@@ -743,6 +757,12 @@ class Layer2DFlowTests: Input2DMSE1DCase
     func testSelectNeurons() throws
     {
         let trainer = _buildTrainer(model: "SelectNeurons", bn: false)
+        run(trainer)
+    }
+    
+    func testRDFT2Image() throws
+    {
+        let trainer = _buildTrainer(model: "RDFT2Image", bn: false)
         run(trainer)
     }
 }
@@ -917,6 +937,12 @@ class Layer2DFlowResetTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "SelectNeurons", bn: false)
         run(trainer)
     }
+    
+    override func testRDFT2Image() throws
+    {
+        let trainer = _buildTrainer(model: "RDFT2Image", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -1089,6 +1115,12 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "SelectNeurons", bn: false)
         run(trainer)
     }
+    
+    override func testRDFT2Image() throws
+    {
+        let trainer = _buildTrainer(model: "RDFT2Image", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -1259,6 +1291,12 @@ class Layer2DInferenceTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "SelectNeurons", bn: false)
         run(trainer)
     }
+    
+    override func testRDFT2Image() throws
+    {
+        let trainer = _buildTrainer(model: "RDFT2Image", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -1422,6 +1460,12 @@ class Layer2DLoadTests: Layer2DFlowTests
     override func testSelectNeurons() throws
     {
         let trainer = _buildTrainer(model: "SelectNeurons", bn: false)
+        run(trainer)
+    }
+    
+    override func testRDFT2Image() throws
+    {
+        let trainer = _buildTrainer(model: "RDFT2Image", bn: false)
         run(trainer)
     }
 }
@@ -2016,6 +2060,30 @@ class Layer2DTransformTests: Layer2DFlowTests
     func testSelectNeuronsResizeInPlace() throws
     {
         let trainer = _buildTrainer(model: "SelectNeurons", bn: false)
+        runResizeInPlace(trainer)
+    }
+    
+    override func testRDFT2Image() throws
+    {
+        let trainer = _buildTrainer(model: "RDFT2Image", bn: false)
+        runCopy(trainer)
+    }
+    
+    func testRDFT2ImageCopyInPlace() throws
+    {
+        let trainer = _buildTrainer(model: "RDFT2Image", bn: false)
+        runCopyInPlace(trainer)
+    }
+    
+    func testRDFT2ImageResize() throws
+    {
+        let trainer = _buildTrainer(model: "RDFT2Image", bn: false)
+        runResize(trainer)
+    }
+    
+    func testRDFT2ImageResizeInPlace() throws
+    {
+        let trainer = _buildTrainer(model: "RDFT2Image", bn: false)
         runResizeInPlace(trainer)
     }
 }

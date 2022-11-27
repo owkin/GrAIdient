@@ -34,6 +34,7 @@ let LAYER_REGISTRY: [String: Codable.Type] = buildRegistry(
     AvgPool2D.self,
     BN2D.self,
     Convolution2D.self,
+    DecorelateColor2D.self,
     FullyConnected.self,
     Input1D.self,
     Input2D.self,

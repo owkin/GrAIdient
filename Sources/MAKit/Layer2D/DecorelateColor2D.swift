@@ -1,19 +1,24 @@
 //
-// RDFT2Image.swift
+// DecorelateColor2D.swift
 // MAKit
 //
-// Created by Jean-François Reboud on 25/11/2022.
+// Created by Jean-François Reboud on 26/11/2022.
 //
-
-import Foundation
 
 ///
 /// Layer with a 2D shape neural structure.
 ///
 /// This layer executes Reverse Discrete Fourier Transform and keeps only real results.
 ///
-public class RDFT2Image: Layer2D
+public class DecorelateColor2D: Layer2D
 {
+    let _correlation: [Double]
+    
+    private enum Keys: String, CodingKey
+    {
+        case correlation
+    }
+    
     ///
     /// Create a layer with a 2D shape neural structure.
     ///
@@ -21,14 +26,22 @@ public class RDFT2Image: Layer2D
     ///     - layerPrev: Previous layer that has been queued to the model.
     ///     - params: Contextual parameters linking to the model.
     ///
-    public init(layerPrev: Layer2D, params: MAKit.Model.Params)
+    public init(layerPrev: Layer2D,
+                correlation: [Double],
+                params: MAKit.Model.Params)
     {
+        _correlation = correlation
+        
         let width = layerPrev.width
         let height = layerPrev.height
         let nbChannels = layerPrev.nbChannels
         
+        if nbChannels != 3
+        {
+            fatalError("DecorelateColor2D can only be used with 3 channels.")
+        }
         super.init(layerPrev: layerPrev,
-                   nbChannels: nbChannels / 2,
+                   nbChannels: nbChannels,
                    height: height,
                    width: width,
                    params: params)
@@ -44,7 +57,29 @@ public class RDFT2Image: Layer2D
     ///
     public required init(from decoder: Decoder) throws
     {
+        let values = try decoder.container(keyedBy: Keys.self)
+        _correlation = try values.decode(
+            [Double].self, forKey: Keys.correlation
+        )
         try super.init(from: decoder)
+    }
+    
+    ///
+    /// Encode to the disk.
+    ///
+    /// If the value fails to encode anything, `encoder` will encode an empty
+    /// keyed container in its place.
+    ///
+    /// Throw an error if any values are invalid for the given
+    /// encoder's format.
+    ///
+    /// - Parameter encoder: The encoder to write data to.
+    ///
+    public override func encode(to encoder: Encoder) throws
+    {
+        var container = encoder.container(keyedBy: Keys.self)
+        try container.encode(_correlation, forKey: Keys.correlation)
+        try super.encode(to: encoder)
     }
     
     ///
@@ -69,8 +104,9 @@ public class RDFT2Image: Layer2D
         let params = MAKit.Model.Params(context: context)
         params.context.curID = id
             
-        let layer = RDFT2Image(
+        let layer = DecorelateColor2D(
             layerPrev: layerPrev,
+            correlation: _correlation,
             params: params
         )
         return layer
@@ -105,24 +141,20 @@ public class RDFT2Image: Layer2D
             for elem in 0..<nbGC {
             for depth in 0..<nbChannels
             {
+                let block = depth / 3
+                let res = depth % 3
+                
                 for i in 0..<height {
                 for j in 0..<width
                 {
                     var sum: Double = 0.0
-                    for k in 0..<height {
-                    for l in 0..<width
+                    for k in 0..<3
                     {
-                        let realPrev = neuronsPrev[2 * depth].get(k, l)!
-                            .gc[batch][elem].out
-                        let imPrev = neuronsPrev[2 * depth + 1].get(k, l)!
-                            .gc[batch][elem].out
-                        var angle = 2.0 * Double.pi
-                        angle *=
-                            (Double(i) / Double(height) * Double(k) +
-                             Double(j) / Double(width) * Double(l))
-                        sum += realPrev * cos(angle) - imPrev * sin(angle)
-                    }}
-                    sum /= Double(height * width)
+                        sum +=
+                            neuronsPrev[block * 3 + k].get(i, j)!
+                                .gc[batch][elem].out *
+                            _correlation[res * 3 + k]
+                    }
                     neurons[depth].get(i, j)!.gc[batch][elem].out = sum
                 }}
             }}}
@@ -154,24 +186,19 @@ public class RDFT2Image: Layer2D
             for elem in 0..<batchSize {
             for depth in 0..<nbChannels
             {
+                let block = depth / 3
+                let res = depth % 3
+                
                 for i in 0..<height {
                 for j in 0..<width
                 {
                     var sum: Double = 0.0
-                    for k in 0..<height {
-                    for l in 0..<width
+                    for k in 0..<3
                     {
-                        let realPrev =
-                            neuronsPrev[2 * depth].get(k, l)!.v[elem].out
-                        let imPrev =
-                            neuronsPrev[2 * depth + 1].get(k, l)!.v[elem].out
-                        var angle = 2.0 * Double.pi
-                        angle *=
-                            (Double(i) / Double(height) * Double(k) +
-                             Double(j) / Double(width) * Double(l))
-                        sum += realPrev * cos(angle) - imPrev * sin(angle)
-                    }}
-                    sum /= Double(height * width)
+                        sum +=
+                            neuronsPrev[block * 3 + k].get(i, j)!.v[elem].out *
+                            _correlation[res * 3 + k]
+                    }
                     neurons[depth].get(i, j)!.v[elem].out = sum
                 }}
             }}
@@ -183,7 +210,7 @@ public class RDFT2Image: Layer2D
     ///
     /// Throw an error if batch size is greater than the first batch size.
     ///
-    public override func forwardGPU() throws
+    /*public override func forwardGPU() throws
     {
         if let layerPrev = self.layerPrev as? Layer2D
         {
@@ -208,7 +235,7 @@ public class RDFT2Image: Layer2D
             )
             command.enqueue()
         }
-    }
+    }*/
     
     /// Apply the backward pass in the CPU execution context.
     public override func backwardCPU()
@@ -219,39 +246,26 @@ public class RDFT2Image: Layer2D
             for elem in 0..<batchSize {
             for depth in 0..<nbChannels
             {
+                let block = depth / 3
+                let res = depth % 3
+                
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    var sum1: Double = 0.0
-                    var sum2: Double = 0.0
-                    for k in 0..<height {
-                    for l in 0..<width
+                    var sum: Double = 0.0
+                    for k in 0..<3
                     {
-                        let delta =
-                            neurons[depth].get(k, l)!.v[elem].delta
-                        var angle = 2.0 * Double.pi
-                        angle *=
-                            (Double(i) / Double(height) * Double(k) +
-                             Double(j) / Double(width) * Double(l))
-                        sum1 += delta * cos(angle)
-                        sum2 -= delta * sin(angle)
-                    }}
-                    sum1 /= Double(height * width)
-                    sum2 /= Double(height * width)
+                        sum += _correlation[k * 3 + res] *
+                            neurons[block * 3 + k].get(i, j)!.v[elem].delta
+                    }
                     
                     if layerPrev.dirty
                     {
-                        neuronsPrev[2 * depth].get(i, j)!
-                            .v[elem].delta = sum1
-                        neuronsPrev[2 * depth + 1].get(i, j)!
-                            .v[elem].delta = sum2
+                        neuronsPrev[depth].get(i, j)!.v[elem].delta = sum
                     }
                     else
                     {
-                        neuronsPrev[2 * depth].get(i, j)!
-                            .v[elem].delta += sum1
-                        neuronsPrev[2 * depth + 1].get(i, j)!
-                            .v[elem].delta += sum2
+                        neuronsPrev[depth].get(i, j)!.v[elem].delta += sum
                     }
                 }}
             }}
@@ -264,7 +278,7 @@ public class RDFT2Image: Layer2D
     ///
     /// Throw an error if batch size is greater than the first batch size.
     ///
-    public override func backwardGPU() throws
+    /*public override func backwardGPU() throws
     {
         if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
@@ -293,5 +307,5 @@ public class RDFT2Image: Layer2D
             
             propagateDirty()
         }
-    }
+    }*/
 }

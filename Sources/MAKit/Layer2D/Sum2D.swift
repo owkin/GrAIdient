@@ -367,7 +367,6 @@ public class Sum2D: LayerMerge2D
                 }}
             }}
         }
-        
         propagateDirty()
     }
     
@@ -420,7 +419,6 @@ public class Sum2D: LayerMerge2D
             command.dispatchThreads(nbElems)
             command.enqueue()
         }
-        
         propagateDirty()
     }
 }

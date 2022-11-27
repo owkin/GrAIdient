@@ -161,6 +161,17 @@ class Layer2DGradTests: Input2DMSE1DCase
             
             layer = RDFT2Image(layerPrev: layer, params: params)
             
+        case "DecorelateColor2D":
+            layer = DecorelateColor2D(
+                layerPrev: layer,
+                correlation: [
+                    0.26, 0.26, 0.27,
+                    0.09, 0.00, -0.09,
+                    0.02, -0.05, 0.03
+                ].map { $0 / 0.4619524 },
+                params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -452,6 +463,13 @@ class Layer2DGradTests: Input2DMSE1DCase
     func testRDFT2ImageGPU() throws
     {
         let trainer = _buildTrainer(model: "RDFT2Image", bn: false)
+        run(trainer)
+    }
+    
+    func testDecorelateColor2DCPU() throws
+    {
+        MAKit.Opti.CPU = true
+        let trainer = _buildTrainer(model: "DecorelateColor2D", bn: false)
         run(trainer)
     }
 }

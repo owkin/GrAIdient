@@ -289,7 +289,6 @@ public class Activation2D: Layer2D
                     }
                 }}}
             }
-            
             propagateDirty()
         }
     }

@@ -317,6 +317,7 @@ public class SelectNeurons2D: Layer1D, LayerResize
                     neuronPrev.v[elem].delta += delta
                 }
             }
+            propagateDirty()
         }
     }
     
@@ -357,6 +358,8 @@ public class SelectNeurons2D: Layer1D, LayerResize
                 height: heightPrev * batchSize
             )
             command.enqueue()
+            
+            propagateDirty()
         }
     }
 }

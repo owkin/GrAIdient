@@ -733,7 +733,6 @@ public class AdaptiveAvgPool2D: Layer2D
                     }}
                 }}
             }
-            
             propagateDirty()
         }
     }

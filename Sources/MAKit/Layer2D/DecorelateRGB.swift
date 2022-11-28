@@ -8,7 +8,7 @@
 ///
 /// Layer with a 2D shape neural structure.
 ///
-/// This layer executes Reverse Discrete Fourier Transform and keeps only real results.
+/// This layer decorelates RGB color of an image.
 ///
 public class DecorelateRGB: Layer2D
 {

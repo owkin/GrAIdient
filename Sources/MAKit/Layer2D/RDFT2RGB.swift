@@ -10,7 +10,8 @@ import Foundation
 ///
 /// Layer with a 2D shape neural structure.
 ///
-/// This layer executes Reverse Discrete Fourier Transform and keeps only real results.
+/// This layer executes Reverse Discrete Fourier Transform and keeps only the real results that correspond
+/// to an RGB image.
 ///
 public class RDFT2RGB: Layer2D
 {

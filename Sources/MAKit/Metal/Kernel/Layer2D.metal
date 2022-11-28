@@ -650,7 +650,7 @@ kernel void selectNeurons2DBackward(
     }
 }
 
-kernel void RDFT2ImageForward(
+kernel void RDFT2RGBForward(
     const device float * outsPrev,
     constant uint * pNbChannels,
     constant uint * pDimensions,
@@ -705,7 +705,7 @@ kernel void RDFT2ImageForward(
     outs[offset] = sum;
 }
 
-kernel void RDFT2ImageBackward(
+kernel void RDFT2RGBBackward(
     const device float * delta,
     constant uint * pNbChannels,
     constant uint * pDimensions,
@@ -774,5 +774,120 @@ kernel void RDFT2ImageBackward(
     {
         deltaPrev[offsetRealPrev] += sum1;
         deltaPrev[offsetImPrev] += sum2;
+    }
+}
+
+kernel void decorelateRGBForward(
+    const device float * outsPrev,
+    constant float * correlation,
+    constant uint * pNbChannels,
+    constant uint * pDimensions,
+    constant uint * pNbBatch,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint height, width;
+    uint nbChannels;
+    uint nbBatch;
+    
+    if (pNbChannels && pDimensions && pNbBatch &&
+        outsPrev && correlation && outs)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        nbChannels = *pNbChannels;
+        nbBatch = *pNbBatch;
+    }
+    else
+        return ;
+    
+    uint depth = id[0] / width;
+    uint elem = id[1] / height;
+    uint i = id[1] % height;
+    uint j = id[0] % width;
+    
+    if (i * elem >= height * nbBatch ||
+        j * depth >= width * nbChannels)
+    {
+        return ;
+    }
+    
+    uint block = depth / 3;
+    uint res = depth % 3;
+        
+    uint offsetStart = (depth + nbChannels * elem) * height;
+    uint offset = j + (offsetStart + i) * width;
+    
+    float sum = 0.0;
+    for (uint k=0; k<3; k++)
+    {
+        uint offsetStartPrev = (block * 3 + k + nbChannels * elem) * height;
+        uint offsetPrev = j + (offsetStartPrev + i) * width;
+        
+        sum += outsPrev[offsetPrev] * correlation[res * 3 + k];
+    }
+    outs[offset] = sum;
+}
+
+kernel void decorelateRGBBackward(
+    const device float * delta,
+    constant float * correlation,
+    constant uint * pNbChannels,
+    constant uint * pDimensions,
+    constant uint * pNbBatch,
+    constant uint * pDirty,
+    device float * deltaPrev,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint height, width;
+    uint nbChannels;
+    uint nbBatch;
+    uint dirty;
+    
+    if (pNbChannels && pDimensions && pNbBatch && pDirty &&
+        delta && correlation && deltaPrev)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        nbChannels = *pNbChannels;
+        nbBatch = *pNbBatch;
+        dirty = *pDirty;
+    }
+    else
+        return ;
+    
+    uint depth = id[0] / width;
+    uint elem = id[1] / height;
+    uint i = id[1] % height;
+    uint j = id[0] % width;
+    
+    if (i * elem >= height * nbBatch ||
+        j * depth >= width * nbChannels)
+    {
+        return ;
+    }
+    
+    uint block = depth / 3;
+    uint res = depth % 3;
+    
+    uint offsetStartPrev = (depth + nbChannels * elem) * height;
+    uint offsetPrev = j + (offsetStartPrev + i) * width;
+    
+    float sum = 0.0;
+    for (uint k=0; k<3; k++)
+    {
+        uint offsetStart = (block * 3 + k + nbChannels * elem) * height;
+        uint offset = j + (offsetStart + i) * width;
+        
+        sum += delta[offset] * correlation[k * 3 + res];
+    }
+    
+    if (dirty)
+    {
+        deltaPrev[offsetPrev] = sum;
+    }
+    else
+    {
+        deltaPrev[offsetPrev] += sum;
     }
 }

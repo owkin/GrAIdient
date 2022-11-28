@@ -588,8 +588,10 @@ private class MetalDevice
                 "adaptiveAvgPoolBackward2",
                 "selectNeurons2DForward",
                 "selectNeurons2DBackward",
-                "RDFT2ImageForward",
-                "RDFT2ImageBackward",
+                "RDFT2RGBForward",
+                "RDFT2RGBBackward",
+                "decorelateRGBForward",
+                "decorelateRGBBackward",
             ],
             "Optimizer": [
                 "clipGradients",

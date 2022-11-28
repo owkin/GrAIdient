@@ -1,5 +1,5 @@
 //
-// DecorelateColor2D.swift
+// DecorelateRGB.swift
 // MAKit
 //
 // Created by Jean-François Reboud on 26/11/2022.
@@ -10,7 +10,7 @@
 ///
 /// This layer executes Reverse Discrete Fourier Transform and keeps only real results.
 ///
-public class DecorelateColor2D: Layer2D
+public class DecorelateRGB: Layer2D
 {
     let _correlation: [Double]
     
@@ -38,7 +38,7 @@ public class DecorelateColor2D: Layer2D
         
         if nbChannels != 3
         {
-            fatalError("DecorelateColor2D can only be used with 3 channels.")
+            fatalError("DecorelateRGB can only be used with 3 channels.")
         }
         super.init(layerPrev: layerPrev,
                    nbChannels: nbChannels,
@@ -104,7 +104,7 @@ public class DecorelateColor2D: Layer2D
         let params = MAKit.Model.Params(context: context)
         params.context.curID = id
             
-        let layer = DecorelateColor2D(
+        let layer = DecorelateRGB(
             layerPrev: layerPrev,
             correlation: _correlation,
             params: params
@@ -210,7 +210,7 @@ public class DecorelateColor2D: Layer2D
     ///
     /// Throw an error if batch size is greater than the first batch size.
     ///
-    /*public override func forwardGPU() throws
+    public override func forwardGPU() throws
     {
         if let layerPrev = self.layerPrev as? Layer2D
         {
@@ -219,15 +219,17 @@ public class DecorelateColor2D: Layer2D
             let pNbChannels: [UInt32] = [UInt32(nbChannels)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
+            let correlation: [Float] = _correlation.map { Float($0) }
             
             let command = MetalKernel.get.createCommand(
-                "RDFT2ImageForward", deviceID: deviceID
+                "decorelateRGBForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
-            command.setBytes(pNbChannels, atIndex: 1)
-            command.setBytes(pDimensions, atIndex: 2)
-            command.setBytes(pNbBatch, atIndex: 3)
-            command.setBuffer(outs.metal, atIndex: 4)
+            command.setBytes(correlation, atIndex: 1)
+            command.setBytes(pNbChannels, atIndex: 2)
+            command.setBytes(pDimensions, atIndex: 3)
+            command.setBytes(pNbBatch, atIndex: 4)
+            command.setBuffer(outs.metal, atIndex: 5)
             
             command.dispatchThreads(
                 width: width * nbChannels,
@@ -235,7 +237,7 @@ public class DecorelateColor2D: Layer2D
             )
             command.enqueue()
         }
-    }*/
+    }
     
     /// Apply the backward pass in the CPU execution context.
     public override func backwardCPU()
@@ -278,7 +280,7 @@ public class DecorelateColor2D: Layer2D
     ///
     /// Throw an error if batch size is greater than the first batch size.
     ///
-    /*public override func backwardGPU() throws
+    public override func backwardGPU() throws
     {
         if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
@@ -288,16 +290,18 @@ public class DecorelateColor2D: Layer2D
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
+            let correlation: [Float] = _correlation.map { Float($0) }
             
             let command = MetalKernel.get.createCommand(
-                "RDFT2ImageBackward", deviceID: deviceID
+                "decorelateRGBBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
-            command.setBytes(pNbChannels, atIndex: 1)
-            command.setBytes(pDimensions, atIndex: 2)
-            command.setBytes(pNbBatch, atIndex: 3)
-            command.setBytes(pDirty, atIndex: 4)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 5)
+            command.setBytes(correlation, atIndex: 1)
+            command.setBytes(pNbChannels, atIndex: 2)
+            command.setBytes(pDimensions, atIndex: 3)
+            command.setBytes(pNbBatch, atIndex: 4)
+            command.setBytes(pDirty, atIndex: 5)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 6)
             
             command.dispatchThreads(
                 width: width * nbChannels,
@@ -307,5 +311,5 @@ public class DecorelateColor2D: Layer2D
             
             propagateDirty()
         }
-    }*/
+    }
 }

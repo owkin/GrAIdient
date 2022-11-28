@@ -153,16 +153,16 @@ class Layer2DGradTests: Input2DMSE1DCase
                 params: params
             )
             
-        case "RDFT2Image":
+        case "RDFT2RGB":
             layer = Convolution2D(
                 layerPrev: layer, size: 2, nbChannels: 6, stride: 2,
                 activation: SoftReLU.str, biases: true, bn: bn, params: params
             )
             
-            layer = RDFT2Image(layerPrev: layer, params: params)
+            layer = RDFT2RGB(layerPrev: layer, params: params)
             
-        case "DecorelateColor2D":
-            layer = DecorelateColor2D(
+        case "DecorelateRGB":
+            layer = DecorelateRGB(
                 layerPrev: layer,
                 correlation: [
                     0.26, 0.26, 0.27,
@@ -453,23 +453,29 @@ class Layer2DGradTests: Input2DMSE1DCase
         run(trainer)
     }
     
-    func testRDFT2ImageCPU() throws
+    func testRDFT2RGBCPU() throws
     {
         MAKit.Opti.CPU = true
-        let trainer = _buildTrainer(model: "RDFT2Image", bn: false)
+        let trainer = _buildTrainer(model: "RDFT2RGB", bn: false)
         run(trainer)
     }
     
-    func testRDFT2ImageGPU() throws
+    func testRDFT2RGBGPU() throws
     {
-        let trainer = _buildTrainer(model: "RDFT2Image", bn: false)
+        let trainer = _buildTrainer(model: "RDFT2RGB", bn: false)
         run(trainer)
     }
     
-    func testDecorelateColor2DCPU() throws
+    func testDecorelateRGBCPU() throws
     {
         MAKit.Opti.CPU = true
-        let trainer = _buildTrainer(model: "DecorelateColor2D", bn: false)
+        let trainer = _buildTrainer(model: "DecorelateRGB", bn: false)
+        run(trainer)
+    }
+    
+    func testDecorelateRGBGPU() throws
+    {
+        let trainer = _buildTrainer(model: "DecorelateRGB", bn: false)
         run(trainer)
     }
 }
@@ -615,13 +621,24 @@ class Layer2DFlowTests: Input2DMSE1DCase
                 params: params
             )
             
-        case "RDFT2Image":
+        case "RDFT2RGB":
             layer = Convolution2D(
                 layerPrev: layer, size: 2, nbChannels: 6, stride: 2,
                 activation: SoftReLU.str, biases: true, bn: bn, params: params
             )
             
-            layer = RDFT2Image(layerPrev: layer, params: params)
+            layer = RDFT2RGB(layerPrev: layer, params: params)
+            
+        case "DecorelateRGB":
+            layer = DecorelateRGB(
+                layerPrev: layer,
+                correlation: [
+                    0.26, 0.26, 0.27,
+                    0.09, 0.00, -0.09,
+                    0.02, -0.05, 0.03
+                ].map { $0 / 0.4619524 },
+                params: params
+            )
             
         default:
             fatalError("Unreachable.")
@@ -778,9 +795,15 @@ class Layer2DFlowTests: Input2DMSE1DCase
         run(trainer)
     }
     
-    func testRDFT2Image() throws
+    func testRDFT2RGB() throws
     {
-        let trainer = _buildTrainer(model: "RDFT2Image", bn: false)
+        let trainer = _buildTrainer(model: "RDFT2RGB", bn: false)
+        run(trainer)
+    }
+    
+    func testDecorelateRGB() throws
+    {
+        let trainer = _buildTrainer(model: "DecorelateRGB", bn: false)
         run(trainer)
     }
 }
@@ -956,9 +979,15 @@ class Layer2DFlowResetTests: Layer2DFlowTests
         run(trainer)
     }
     
-    override func testRDFT2Image() throws
+    override func testRDFT2RGB() throws
     {
-        let trainer = _buildTrainer(model: "RDFT2Image", bn: false)
+        let trainer = _buildTrainer(model: "RDFT2RGB", bn: false)
+        run(trainer)
+    }
+    
+    override func testDecorelateRGB() throws
+    {
+        let trainer = _buildTrainer(model: "DecorelateRGB", bn: false)
         run(trainer)
     }
 }
@@ -1134,9 +1163,15 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
         run(trainer)
     }
     
-    override func testRDFT2Image() throws
+    override func testRDFT2RGB() throws
     {
-        let trainer = _buildTrainer(model: "RDFT2Image", bn: false)
+        let trainer = _buildTrainer(model: "RDFT2RGB", bn: false)
+        run(trainer)
+    }
+    
+    override func testDecorelateRGB() throws
+    {
+        let trainer = _buildTrainer(model: "DecorelateRGB", bn: false)
         run(trainer)
     }
 }
@@ -1310,9 +1345,15 @@ class Layer2DInferenceTests: Layer2DFlowTests
         run(trainer)
     }
     
-    override func testRDFT2Image() throws
+    override func testRDFT2RGB() throws
     {
-        let trainer = _buildTrainer(model: "RDFT2Image", bn: false)
+        let trainer = _buildTrainer(model: "RDFT2RGB", bn: false)
+        run(trainer)
+    }
+    
+    override func testDecorelateRGB() throws
+    {
+        let trainer = _buildTrainer(model: "DecorelateRGB", bn: false)
         run(trainer)
     }
 }
@@ -1481,9 +1522,15 @@ class Layer2DLoadTests: Layer2DFlowTests
         run(trainer)
     }
     
-    override func testRDFT2Image() throws
+    override func testRDFT2RGB() throws
     {
-        let trainer = _buildTrainer(model: "RDFT2Image", bn: false)
+        let trainer = _buildTrainer(model: "RDFT2RGB", bn: false)
+        run(trainer)
+    }
+    
+    override func testDecorelateRGB() throws
+    {
+        let trainer = _buildTrainer(model: "DecorelateRGB", bn: false)
         run(trainer)
     }
 }
@@ -2081,27 +2128,51 @@ class Layer2DTransformTests: Layer2DFlowTests
         runResizeInPlace(trainer)
     }
     
-    override func testRDFT2Image() throws
+    override func testRDFT2RGB() throws
     {
-        let trainer = _buildTrainer(model: "RDFT2Image", bn: false)
+        let trainer = _buildTrainer(model: "RDFT2RGB", bn: false)
         runCopy(trainer)
     }
     
-    func testRDFT2ImageCopyInPlace() throws
+    func testRDFT2RGBCopyInPlace() throws
     {
-        let trainer = _buildTrainer(model: "RDFT2Image", bn: false)
+        let trainer = _buildTrainer(model: "RDFT2RGB", bn: false)
         runCopyInPlace(trainer)
     }
     
-    func testRDFT2ImageResize() throws
+    func testRDFT2RGBResize() throws
     {
-        let trainer = _buildTrainer(model: "RDFT2Image", bn: false)
+        let trainer = _buildTrainer(model: "RDFT2RGB", bn: false)
         runResize(trainer)
     }
     
-    func testRDFT2ImageResizeInPlace() throws
+    func testRDFT2RGBResizeInPlace() throws
     {
-        let trainer = _buildTrainer(model: "RDFT2Image", bn: false)
+        let trainer = _buildTrainer(model: "RDFT2RGB", bn: false)
+        runResizeInPlace(trainer)
+    }
+    
+    override func testDecorelateRGB() throws
+    {
+        let trainer = _buildTrainer(model: "DecorelateRGB", bn: false)
+        runCopy(trainer)
+    }
+    
+    func testDecorelateRGBCopyInPlace() throws
+    {
+        let trainer = _buildTrainer(model: "DecorelateRGB", bn: false)
+        runCopyInPlace(trainer)
+    }
+    
+    func testDecorelateRGBResize() throws
+    {
+        let trainer = _buildTrainer(model: "DecorelateRGB", bn: false)
+        runResize(trainer)
+    }
+    
+    func testDecorelateRGBResizeInPlace() throws
+    {
+        let trainer = _buildTrainer(model: "DecorelateRGB", bn: false)
         runResizeInPlace(trainer)
     }
 }

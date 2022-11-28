@@ -1,26 +1,22 @@
 //
-// Activation2D.swift
+// DecorelateRGB.swift
 // MAKit
 //
-// Created by Jean-François Reboud on 14/10/2022.
+// Created by Jean-François Reboud on 26/11/2022.
 //
 
-/// Layer with a 2D shape neural structure and an activation function.
-public class Activation2D: Layer2D
+///
+/// Layer with a 2D shape neural structure.
+///
+/// This layer decorelates RGB color of an image.
+///
+public class DecorelateRGB: Layer2D
 {
-    /// The activation function.
-    let _activation: ActivationFunction?
-    
-    ///
-    /// Pre output buffer (result of the forward pass before applying activation)
-    /// used in the GPU execution context.
-    /// Shape ~ (batch, nbChannels, height, width).
-    ///
-    var _tmp: MetalPrivateBuffer<Float>! = nil
+    let _correlation: [Double]
     
     private enum Keys: String, CodingKey
     {
-        case activation
+        case correlation
     }
     
     ///
@@ -28,45 +24,22 @@ public class Activation2D: Layer2D
     ///
     /// - Parameters:
     ///     - layerPrev: Previous layer that has been queued to the model.
-    ///     - activation: The activation function.
     ///     - params: Contextual parameters linking to the model.
     ///
-    public init(layerPrev: Layer2D, activation: String,
+    public init(layerPrev: Layer2D,
+                correlation: [Double],
                 params: MAKit.Model.Params)
     {
-        _activation = MAKit.Model.Activation.build(activation)
+        _correlation = correlation
         
-        super.init(layerPrev: layerPrev,
-                   nbChannels: layerPrev.nbChannels,
-                   height: layerPrev.height,
-                   width: layerPrev.width,
-                   params: params)
-    }
-    
-    ///
-    /// Create a layer with a 2D shape neural structure.
-    ///
-    /// - Parameters:
-    ///     - layerPrev: Previous layer that has been queued to the model.
-    ///     - nbChannels: Number of channels.
-    ///     - height: Height of each channel.
-    ///     - width: Width of each channel.
-    ///     - activation: The activation function.
-    ///     - params: Contextual parameters linking to the model.
-    ///
-    public init(layerPrev: Layer?,
-                nbChannels: Int, height: Int, width: Int, activation: String?,
-                params: MAKit.Model.Params)
-    {
-        if let activationStr = activation
-        {
-            _activation = MAKit.Model.Activation.build(activationStr)
-        }
-        else
-        {
-            _activation = nil
-        }
+        let width = layerPrev.width
+        let height = layerPrev.height
+        let nbChannels = layerPrev.nbChannels
         
+        if nbChannels != 3
+        {
+            fatalError("DecorelateRGB can only be used with 3 channels.")
+        }
         super.init(layerPrev: layerPrev,
                    nbChannels: nbChannels,
                    height: height,
@@ -84,10 +57,10 @@ public class Activation2D: Layer2D
     ///
     public required init(from decoder: Decoder) throws
     {
-        let container = try decoder.container(keyedBy: Keys.self)
-        _activation =
-            try container.decodeIfPresent(ActivationContainer.self,
-                                          forKey: .activation)?.activation
+        let values = try decoder.container(keyedBy: Keys.self)
+        _correlation = try values.decode(
+            [Double].self, forKey: Keys.correlation
+        )
         try super.init(from: decoder)
     }
     
@@ -105,11 +78,7 @@ public class Activation2D: Layer2D
     public override func encode(to encoder: Encoder) throws
     {
         var container = encoder.container(keyedBy: Keys.self)
-        if let activation = _activation
-        {
-            try container.encode(ActivationContainer(activation),
-                                 forKey: Keys.activation)
-        }
+        try container.encode(_correlation, forKey: Keys.correlation)
         try super.encode(to: encoder)
     }
     
@@ -134,24 +103,13 @@ public class Activation2D: Layer2D
         
         let params = MAKit.Model.Params(context: context)
         params.context.curID = id
-        
-        let layer = Activation2D(
+            
+        let layer = DecorelateRGB(
             layerPrev: layerPrev,
-            activation: _activation!.name,
+            correlation: _correlation,
             params: params
         )
         return layer
-    }
-    
-    ///
-    /// Clean state resources in the GPU execution context.
-    ///
-    /// State resources are the resources that are dependent on the batch size.
-    ///
-    public override func resetKernelGPU()
-    {
-        super.resetKernelGPU()
-        _tmp = nil
     }
     
     ///
@@ -161,39 +119,45 @@ public class Activation2D: Layer2D
     ///
     public override func forwardGCCPU() throws
     {
-        try _forwardGC()
-        _activation!.forwardGC(self)
-    }
-    
-    ///
-    /// Apply the forward pass (until the activation function) of the Gradient Checking.
-    ///
-    /// Throw an error if batch size is greater than the first batch size.
-    ///
-    private func _forwardGC() throws
-    {
         if let layerPrev = self.layerPrev as? Layer2D
         {
             try checkStateCPU(batchSize: batchSize)
             
             let nbGC = layerPrev.nbGC
-            for j in 0..<nbChannels
+            for depth in 0..<nbChannels
             {
-                neurons[j].initGC(batchSize: batchSize, nbGC: nbGC)
+                for i in 0..<height {
+                for j in 0..<width
+                {
+                    neurons[depth].get(i, j)!.initGC(
+                        batchSize: batchSize,
+                        nbGC: nbGC
+                    )
+                }}
             }
             
             let neuronsPrev = layerPrev.neurons
             for batch in 0..<batchSize {
-            for elem in 0..<nbGC
+            for elem in 0..<nbGC {
+            for depth in 0..<nbChannels
             {
-                for depth in 0..<nbChannels {
+                let block = depth / 3
+                let res = depth % 3
+                
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    neurons[depth].get(i, j)!.gc[batch][elem].out =
-                        neuronsPrev[depth].get(i, j)!.gc[batch][elem].out
-                }}}
-            }}
+                    var sum: Double = 0.0
+                    for k in 0..<3
+                    {
+                        sum +=
+                            neuronsPrev[block * 3 + k].get(i, j)!
+                                .gc[batch][elem].out *
+                            _correlation[res * 3 + k]
+                    }
+                    neurons[depth].get(i, j)!.gc[batch][elem].out = sum
+                }}
+            }}}
         }
     }
     
@@ -204,8 +168,7 @@ public class Activation2D: Layer2D
     ///
     public override func forwardGCGPU() throws
     {
-        try _forwardGC()
-        _activation!.forwardGC(self)
+        try forwardGCCPU()
     }
     
     ///
@@ -220,18 +183,25 @@ public class Activation2D: Layer2D
             try checkStateCPU(batchSize: batchSize)
             
             let neuronsPrev = layerPrev.neurons
-            for elem in 0..<batchSize
+            for elem in 0..<batchSize {
+            for depth in 0..<nbChannels
             {
-                for depth in 0..<nbChannels {
+                let block = depth / 3
+                let res = depth % 3
+                
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    neurons[depth].get(i, j)!.v[elem].out =
-                        neuronsPrev[depth].get(i, j)!.v[elem].out
-                }}}
-            }
-            
-            _activation!.forwardCPU(self)
+                    var sum: Double = 0.0
+                    for k in 0..<3
+                    {
+                        sum +=
+                            neuronsPrev[block * 3 + k].get(i, j)!.v[elem].out *
+                            _correlation[res * 3 + k]
+                    }
+                    neurons[depth].get(i, j)!.v[elem].out = sum
+                }}
+            }}
         }
     }
     
@@ -246,49 +216,61 @@ public class Activation2D: Layer2D
         {
             try checkStateForwardGPU(batchSize: batchSize)
             
-            let nbElems = outs.nbElems
-            let pNbElems: [UInt32] = [UInt32(nbElems)]
+            let pNbChannels: [UInt32] = [UInt32(nbChannels)]
+            let pNbBatch: [UInt32] = [UInt32(batchSize)]
+            let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
+            let correlation: [Float] = _correlation.map { Float($0) }
             
             let command = MetalKernel.get.createCommand(
-                "sum1", deviceID: deviceID
+                "decorelateRGBForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
-            command.setBytes(pNbElems, atIndex: 1)
-            command.setBuffer(outs.metal, atIndex: 2)
+            command.setBytes(correlation, atIndex: 1)
+            command.setBytes(pNbChannels, atIndex: 2)
+            command.setBytes(pDimensions, atIndex: 3)
+            command.setBytes(pNbBatch, atIndex: 4)
+            command.setBuffer(outs.metal, atIndex: 5)
             
-            command.dispatchThreads(nbElems)
+            command.dispatchThreads(
+                width: width * nbChannels,
+                height: height * batchSize
+            )
             command.enqueue()
-            
-            _activation!.forwardGPU(self)
         }
     }
     
     /// Apply the backward pass in the CPU execution context.
     public override func backwardCPU()
     {
-        _activation!.backwardCPU(self)
-        
         if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
             let neuronsPrev = layerPrev.neurons
-            for elem in 0..<batchSize
+            for elem in 0..<batchSize {
+            for depth in 0..<nbChannels
             {
-                for depth in 0..<nbChannels {
+                let block = depth / 3
+                let res = depth % 3
+                
                 for i in 0..<height {
                 for j in 0..<width
                 {
+                    var sum: Double = 0.0
+                    for k in 0..<3
+                    {
+                        sum += _correlation[k * 3 + res] *
+                            neurons[block * 3 + k].get(i, j)!.v[elem].delta
+                    }
+                    
                     if layerPrev.dirty
                     {
-                        neuronsPrev[depth].get(i, j)!.v[elem].delta =
-                            neurons[depth].get(i, j)!.v[elem].delta
+                        neuronsPrev[depth].get(i, j)!.v[elem].delta = sum
                     }
                     else
                     {
-                        neuronsPrev[depth].get(i, j)!.v[elem].delta +=
-                            neurons[depth].get(i, j)!.v[elem].delta
+                        neuronsPrev[depth].get(i, j)!.v[elem].delta += sum
                     }
-                }}}
-            }
+                }}
+            }}
             propagateDirty()
         }
     }
@@ -300,34 +282,31 @@ public class Activation2D: Layer2D
     ///
     public override func backwardGPU() throws
     {
-        _activation!.backwardGPU(self)
-        
         if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
             try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
             
-            let nbElems = delta.nbElems
-            let pNbElems: [UInt32] = [UInt32(nbElems)]
+            let pNbChannels: [UInt32] = [UInt32(nbChannels)]
+            let pNbBatch: [UInt32] = [UInt32(batchSize)]
+            let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
+            let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
+            let correlation: [Float] = _correlation.map { Float($0) }
             
-            let command: MetalCommand
-            if layerPrev.dirty
-            {
-                command = MetalKernel.get.createCommand(
-                    "sum1", deviceID: deviceID
-                )
-            }
-            else
-            {
-                command = MetalKernel.get.createCommand(
-                    "sum2", deviceID: deviceID
-                )
-            }
-            
+            let command = MetalKernel.get.createCommand(
+                "decorelateRGBBackward", deviceID: deviceID
+            )
             command.setBuffer(delta.metal, atIndex: 0)
-            command.setBytes(pNbElems, atIndex: 1)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 2)
+            command.setBytes(correlation, atIndex: 1)
+            command.setBytes(pNbChannels, atIndex: 2)
+            command.setBytes(pDimensions, atIndex: 3)
+            command.setBytes(pNbBatch, atIndex: 4)
+            command.setBytes(pDirty, atIndex: 5)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 6)
             
-            command.dispatchThreads(nbElems)
+            command.dispatchThreads(
+                width: width * nbChannels,
+                height: height * batchSize
+            )
             command.enqueue()
             
             propagateDirty()

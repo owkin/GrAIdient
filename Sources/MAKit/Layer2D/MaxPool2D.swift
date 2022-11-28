@@ -433,6 +433,7 @@ public class MaxPool2D: Layer2D
                         deltaCur
                 }}
             }}
+            propagateDirty()
         }
     }
     

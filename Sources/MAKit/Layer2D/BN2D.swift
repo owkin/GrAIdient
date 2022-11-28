@@ -612,7 +612,6 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
                     }
                 }}}
             }
-            
             propagateDirty()
         }
     }

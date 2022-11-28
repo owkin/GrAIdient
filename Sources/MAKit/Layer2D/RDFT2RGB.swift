@@ -1,5 +1,5 @@
 //
-// RDFT2Image.swift
+// RDFT2RGB.swift
 // MAKit
 //
 // Created by Jean-François Reboud on 25/11/2022.
@@ -10,9 +10,10 @@ import Foundation
 ///
 /// Layer with a 2D shape neural structure.
 ///
-/// This layer executes Reverse Discrete Fourier Transform and keeps only real results.
+/// This layer executes Reverse Discrete Fourier Transform and keeps only the real results that correspond
+/// to an RGB image.
 ///
-public class RDFT2Image: Layer2D
+public class RDFT2RGB: Layer2D
 {
     ///
     /// Create a layer with a 2D shape neural structure.
@@ -27,6 +28,10 @@ public class RDFT2Image: Layer2D
         let height = layerPrev.height
         let nbChannels = layerPrev.nbChannels
         
+        if nbChannels != 6
+        {
+            fatalError("RDFT2RGB input channels should be 6.")
+        }
         super.init(layerPrev: layerPrev,
                    nbChannels: nbChannels / 2,
                    height: height,
@@ -69,7 +74,7 @@ public class RDFT2Image: Layer2D
         let params = MAKit.Model.Params(context: context)
         params.context.curID = id
             
-        let layer = RDFT2Image(
+        let layer = RDFT2RGB(
             layerPrev: layerPrev,
             params: params
         )
@@ -194,7 +199,7 @@ public class RDFT2Image: Layer2D
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             
             let command = MetalKernel.get.createCommand(
-                "RDFT2ImageForward", deviceID: deviceID
+                "RDFT2RGBForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(pNbChannels, atIndex: 1)
@@ -255,6 +260,7 @@ public class RDFT2Image: Layer2D
                     }
                 }}
             }}
+            propagateDirty()
         }
     }
     
@@ -275,7 +281,7 @@ public class RDFT2Image: Layer2D
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
             let command = MetalKernel.get.createCommand(
-                "RDFT2ImageBackward", deviceID: deviceID
+                "RDFT2RGBBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBytes(pNbChannels, atIndex: 1)

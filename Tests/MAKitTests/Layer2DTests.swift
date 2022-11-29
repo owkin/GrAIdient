@@ -153,22 +153,30 @@ class Layer2DGradTests: Input2DMSE1DCase
                 params: params
             )
             
-        case "RDFT2RGB":
+        case "IRDFT2RGB":
             layer = Convolution2D(
                 layerPrev: layer, size: 2, nbChannels: 6, stride: 2,
                 activation: SoftReLU.str, biases: true, bn: bn, params: params
             )
             
-            layer = RDFT2RGB(layerPrev: layer, params: params)
+            layer = IRDFT2RGB(layerPrev: layer, params: params)
             
-        case "DecorelateRGB":
-            layer = DecorelateRGB(
+        case "DecorrelateRGB":
+            layer = DecorrelateRGB(
                 layerPrev: layer,
                 correlation: [
                     0.26, 0.26, 0.27,
                     0.09, 0.00, -0.09,
                     0.02, -0.05, 0.03
                 ].map { $0 / 0.4619524 },
+                params: params
+            )
+            
+        case "LinearScale2D":
+            layer = LinearScale2D(
+                layerPrev: layer,
+                weight: 2.0,
+                bias: 3.0,
                 params: params
             )
             
@@ -453,29 +461,42 @@ class Layer2DGradTests: Input2DMSE1DCase
         run(trainer)
     }
     
-    func testRDFT2RGBCPU() throws
+    func testIRDFT2RGBCPU() throws
     {
         MAKit.Opti.CPU = true
-        let trainer = _buildTrainer(model: "RDFT2RGB", bn: false)
+        let trainer = _buildTrainer(model: "IRDFT2RGB", bn: false)
         run(trainer)
     }
     
-    func testRDFT2RGBGPU() throws
+    func testIRDFT2RGBGPU() throws
     {
-        let trainer = _buildTrainer(model: "RDFT2RGB", bn: false)
+        let trainer = _buildTrainer(model: "IRDFT2RGB", bn: false)
         run(trainer)
     }
     
-    func testDecorelateRGBCPU() throws
+    func testDecorrelateRGBCPU() throws
     {
         MAKit.Opti.CPU = true
-        let trainer = _buildTrainer(model: "DecorelateRGB", bn: false)
+        let trainer = _buildTrainer(model: "DecorrelateRGB", bn: false)
         run(trainer)
     }
     
-    func testDecorelateRGBGPU() throws
+    func testDecorrelateRGBGPU() throws
     {
-        let trainer = _buildTrainer(model: "DecorelateRGB", bn: false)
+        let trainer = _buildTrainer(model: "DecorrelateRGB", bn: false)
+        run(trainer)
+    }
+    
+    func testLinearScale2DCPU() throws
+    {
+        MAKit.Opti.CPU = true
+        let trainer = _buildTrainer(model: "LinearScale2D", bn: false)
+        run(trainer)
+    }
+    
+    func testLinearScale2DGPU() throws
+    {
+        let trainer = _buildTrainer(model: "LinearScale2D", bn: false)
         run(trainer)
     }
 }
@@ -621,22 +642,30 @@ class Layer2DFlowTests: Input2DMSE1DCase
                 params: params
             )
             
-        case "RDFT2RGB":
+        case "IRDFT2RGB":
             layer = Convolution2D(
                 layerPrev: layer, size: 2, nbChannels: 6, stride: 2,
                 activation: SoftReLU.str, biases: true, bn: bn, params: params
             )
             
-            layer = RDFT2RGB(layerPrev: layer, params: params)
+            layer = IRDFT2RGB(layerPrev: layer, params: params)
             
-        case "DecorelateRGB":
-            layer = DecorelateRGB(
+        case "DecorrelateRGB":
+            layer = DecorrelateRGB(
                 layerPrev: layer,
                 correlation: [
                     0.26, 0.26, 0.27,
                     0.09, 0.00, -0.09,
                     0.02, -0.05, 0.03
                 ].map { $0 / 0.4619524 },
+                params: params
+            )
+            
+        case "LinearScale2D":
+            layer = LinearScale2D(
+                layerPrev: layer,
+                weight: 2.0,
+                bias: 3.0,
                 params: params
             )
             
@@ -795,15 +824,21 @@ class Layer2DFlowTests: Input2DMSE1DCase
         run(trainer)
     }
     
-    func testRDFT2RGB() throws
+    func testIRDFT2RGB() throws
     {
-        let trainer = _buildTrainer(model: "RDFT2RGB", bn: false)
+        let trainer = _buildTrainer(model: "IRDFT2RGB", bn: false)
         run(trainer)
     }
     
-    func testDecorelateRGB() throws
+    func testDecorrelateRGB() throws
     {
-        let trainer = _buildTrainer(model: "DecorelateRGB", bn: false)
+        let trainer = _buildTrainer(model: "DecorrelateRGB", bn: false)
+        run(trainer)
+    }
+    
+    func testLinearScale2D() throws
+    {
+        let trainer = _buildTrainer(model: "LinearScale2D", bn: false)
         run(trainer)
     }
 }
@@ -979,15 +1014,21 @@ class Layer2DFlowResetTests: Layer2DFlowTests
         run(trainer)
     }
     
-    override func testRDFT2RGB() throws
+    override func testIRDFT2RGB() throws
     {
-        let trainer = _buildTrainer(model: "RDFT2RGB", bn: false)
+        let trainer = _buildTrainer(model: "IRDFT2RGB", bn: false)
         run(trainer)
     }
     
-    override func testDecorelateRGB() throws
+    override func testDecorrelateRGB() throws
     {
-        let trainer = _buildTrainer(model: "DecorelateRGB", bn: false)
+        let trainer = _buildTrainer(model: "DecorrelateRGB", bn: false)
+        run(trainer)
+    }
+    
+    override func testLinearScale2D() throws
+    {
+        let trainer = _buildTrainer(model: "LinearScale2D", bn: false)
         run(trainer)
     }
 }
@@ -1163,15 +1204,21 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
         run(trainer)
     }
     
-    override func testRDFT2RGB() throws
+    override func testIRDFT2RGB() throws
     {
-        let trainer = _buildTrainer(model: "RDFT2RGB", bn: false)
+        let trainer = _buildTrainer(model: "IRDFT2RGB", bn: false)
         run(trainer)
     }
     
-    override func testDecorelateRGB() throws
+    override func testDecorrelateRGB() throws
     {
-        let trainer = _buildTrainer(model: "DecorelateRGB", bn: false)
+        let trainer = _buildTrainer(model: "DecorrelateRGB", bn: false)
+        run(trainer)
+    }
+    
+    override func testLinearScale2D() throws
+    {
+        let trainer = _buildTrainer(model: "LinearScale2D", bn: false)
         run(trainer)
     }
 }
@@ -1345,15 +1392,21 @@ class Layer2DInferenceTests: Layer2DFlowTests
         run(trainer)
     }
     
-    override func testRDFT2RGB() throws
+    override func testIRDFT2RGB() throws
     {
-        let trainer = _buildTrainer(model: "RDFT2RGB", bn: false)
+        let trainer = _buildTrainer(model: "IRDFT2RGB", bn: false)
         run(trainer)
     }
     
-    override func testDecorelateRGB() throws
+    override func testDecorrelateRGB() throws
     {
-        let trainer = _buildTrainer(model: "DecorelateRGB", bn: false)
+        let trainer = _buildTrainer(model: "DecorrelateRGB", bn: false)
+        run(trainer)
+    }
+    
+    override func testLinearScale2D() throws
+    {
+        let trainer = _buildTrainer(model: "LinearScale2D", bn: false)
         run(trainer)
     }
 }
@@ -1522,15 +1575,21 @@ class Layer2DLoadTests: Layer2DFlowTests
         run(trainer)
     }
     
-    override func testRDFT2RGB() throws
+    override func testIRDFT2RGB() throws
     {
-        let trainer = _buildTrainer(model: "RDFT2RGB", bn: false)
+        let trainer = _buildTrainer(model: "IRDFT2RGB", bn: false)
         run(trainer)
     }
     
-    override func testDecorelateRGB() throws
+    override func testDecorrelateRGB() throws
     {
-        let trainer = _buildTrainer(model: "DecorelateRGB", bn: false)
+        let trainer = _buildTrainer(model: "DecorrelateRGB", bn: false)
+        run(trainer)
+    }
+    
+    override func testLinearScale2D() throws
+    {
+        let trainer = _buildTrainer(model: "LinearScale2D", bn: false)
         run(trainer)
     }
 }
@@ -2128,51 +2187,75 @@ class Layer2DTransformTests: Layer2DFlowTests
         runResizeInPlace(trainer)
     }
     
-    override func testRDFT2RGB() throws
+    override func testIRDFT2RGB() throws
     {
-        let trainer = _buildTrainer(model: "RDFT2RGB", bn: false)
+        let trainer = _buildTrainer(model: "IRDFT2RGB", bn: false)
         runCopy(trainer)
     }
     
-    func testRDFT2RGBCopyInPlace() throws
+    func testIRDFT2RGBCopyInPlace() throws
     {
-        let trainer = _buildTrainer(model: "RDFT2RGB", bn: false)
+        let trainer = _buildTrainer(model: "IRDFT2RGB", bn: false)
         runCopyInPlace(trainer)
     }
     
-    func testRDFT2RGBResize() throws
+    func testIRDFT2RGBResize() throws
     {
-        let trainer = _buildTrainer(model: "RDFT2RGB", bn: false)
+        let trainer = _buildTrainer(model: "IRDFT2RGB", bn: false)
         runResize(trainer)
     }
     
-    func testRDFT2RGBResizeInPlace() throws
+    func testIRDFT2RGBResizeInPlace() throws
     {
-        let trainer = _buildTrainer(model: "RDFT2RGB", bn: false)
+        let trainer = _buildTrainer(model: "IRDFT2RGB", bn: false)
         runResizeInPlace(trainer)
     }
     
-    override func testDecorelateRGB() throws
+    override func testDecorrelateRGB() throws
     {
-        let trainer = _buildTrainer(model: "DecorelateRGB", bn: false)
+        let trainer = _buildTrainer(model: "DecorrelateRGB", bn: false)
         runCopy(trainer)
     }
     
-    func testDecorelateRGBCopyInPlace() throws
+    func testDecorrelateRGBCopyInPlace() throws
     {
-        let trainer = _buildTrainer(model: "DecorelateRGB", bn: false)
+        let trainer = _buildTrainer(model: "DecorrelateRGB", bn: false)
         runCopyInPlace(trainer)
     }
     
-    func testDecorelateRGBResize() throws
+    func testDecorrelateRGBResize() throws
     {
-        let trainer = _buildTrainer(model: "DecorelateRGB", bn: false)
+        let trainer = _buildTrainer(model: "DecorrelateRGB", bn: false)
         runResize(trainer)
     }
     
-    func testDecorelateRGBResizeInPlace() throws
+    func testDecorrelateRGBResizeInPlace() throws
     {
-        let trainer = _buildTrainer(model: "DecorelateRGB", bn: false)
+        let trainer = _buildTrainer(model: "DecorrelateRGB", bn: false)
+        runResizeInPlace(trainer)
+    }
+    
+    override func testLinearScale2D() throws
+    {
+        let trainer = _buildTrainer(model: "LinearScale2D", bn: false)
+        runCopy(trainer)
+    }
+    
+    func testLinearScale2DCopyInPlace() throws
+    {
+        let trainer = _buildTrainer(model: "LinearScale2D", bn: false)
+        runCopyInPlace(trainer)
+    }
+    
+    func testLinearScale2DResize() throws
+    {
+        let trainer = _buildTrainer(model: "LinearScale2D", bn: false)
+        runResize(trainer)
+    }
+    
+    func testLinearScale2DResizeInPlace() throws
+    {
+        let trainer = _buildTrainer(model: "LinearScale2D", bn: false)
         runResizeInPlace(trainer)
     }
 }

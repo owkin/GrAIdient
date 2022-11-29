@@ -650,7 +650,7 @@ kernel void selectNeurons2DBackward(
     }
 }
 
-kernel void RDFT2RGBForward(
+kernel void IRDFT2RGBForward(
     const device float * outsPrev,
     constant uint * pNbChannels,
     constant uint * pDimensions,
@@ -705,7 +705,7 @@ kernel void RDFT2RGBForward(
     outs[offset] = sum;
 }
 
-kernel void RDFT2RGBBackward(
+kernel void IRDFT2RGBBackward(
     const device float * delta,
     constant uint * pNbChannels,
     constant uint * pDimensions,
@@ -777,7 +777,7 @@ kernel void RDFT2RGBBackward(
     }
 }
 
-kernel void decorelateRGBForward(
+kernel void decorrelateRGBForward(
     const device float * outsPrev,
     constant float * correlation,
     constant uint * pNbChannels,
@@ -829,7 +829,7 @@ kernel void decorelateRGBForward(
     outs[offset] = sum;
 }
 
-kernel void decorelateRGBBackward(
+kernel void decorrelateRGBBackward(
     const device float * delta,
     constant float * correlation,
     constant uint * pNbChannels,
@@ -889,5 +889,97 @@ kernel void decorelateRGBBackward(
     else
     {
         deltaPrev[offsetPrev] += sum;
+    }
+}
+
+kernel void linearScale2DForward(
+    const device float * outsPrev,
+    constant float * weights,
+    constant uint * pNbChannels,
+    constant uint * pDimensions,
+    constant uint * pNbBatch,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint height, width;
+    uint nbChannels;
+    uint nbBatch;
+    
+    if (pNbChannels && pDimensions && pNbBatch &&
+        outsPrev && weights && outs)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        nbChannels = *pNbChannels;
+        nbBatch = *pNbBatch;
+    }
+    else
+        return ;
+    
+    uint depth = id[0] / width;
+    uint elem = id[1] / height;
+    uint i = id[1] % height;
+    uint j = id[0] % width;
+    
+    if (i * elem >= height * nbBatch ||
+        j * depth >= width * nbChannels)
+    {
+        return ;
+    }
+        
+    uint offsetStart = (depth + nbChannels * elem) * height;
+    uint offset = j + (offsetStart + i) * width;
+    
+    outs[offset] = weights[0] * outsPrev[offset] + weights[1];
+}
+
+kernel void linearScale2DBackward(
+    const device float * delta,
+    constant float * weights,
+    constant uint * pNbChannels,
+    constant uint * pDimensions,
+    constant uint * pNbBatch,
+    constant uint * pDirty,
+    device float * deltaPrev,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint height, width;
+    uint nbChannels;
+    uint nbBatch;
+    uint dirty;
+    
+    if (pNbChannels && pDimensions && pNbBatch && pDirty &&
+        delta && weights && deltaPrev)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        nbChannels = *pNbChannels;
+        nbBatch = *pNbBatch;
+        dirty = *pDirty;
+    }
+    else
+        return ;
+    
+    uint depth = id[0] / width;
+    uint elem = id[1] / height;
+    uint i = id[1] % height;
+    uint j = id[0] % width;
+    
+    if (i * elem >= height * nbBatch ||
+        j * depth >= width * nbChannels)
+    {
+        return ;
+    }
+    
+    uint offsetStartPrev = (depth + nbChannels * elem) * height;
+    uint offsetPrev = j + (offsetStartPrev + i) * width;
+    
+    if (dirty)
+    {
+        deltaPrev[offsetPrev] = delta[offsetPrev] * weights[0];
+    }
+    else
+    {
+        deltaPrev[offsetPrev] += delta[offsetPrev] * weights[0];
     }
 }

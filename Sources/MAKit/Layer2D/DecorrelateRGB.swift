@@ -1,20 +1,24 @@
 //
-// RDFT2RGB.swift
+// DecorrelateRGB.swift
 // MAKit
 //
-// Created by Jean-François Reboud on 25/11/2022.
+// Created by Jean-François Reboud on 26/11/2022.
 //
-
-import Foundation
 
 ///
 /// Layer with a 2D shape neural structure.
 ///
-/// This layer executes Reverse Discrete Fourier Transform and keeps only the real results that correspond
-/// to an RGB image.
+/// This layer decorelates RGB color of an image.
 ///
-public class RDFT2RGB: Layer2D
+public class DecorrelateRGB: Layer2D
 {
+    let _correlation: [Double]
+    
+    private enum Keys: String, CodingKey
+    {
+        case correlation
+    }
+    
     ///
     /// Create a layer with a 2D shape neural structure.
     ///
@@ -22,18 +26,22 @@ public class RDFT2RGB: Layer2D
     ///     - layerPrev: Previous layer that has been queued to the model.
     ///     - params: Contextual parameters linking to the model.
     ///
-    public init(layerPrev: Layer2D, params: MAKit.Model.Params)
+    public init(layerPrev: Layer2D,
+                correlation: [Double],
+                params: MAKit.Model.Params)
     {
+        _correlation = correlation
+        
         let width = layerPrev.width
         let height = layerPrev.height
         let nbChannels = layerPrev.nbChannels
         
-        if nbChannels != 6
+        if nbChannels != 3
         {
-            fatalError("RDFT2RGB input channels should be 6.")
+            fatalError("DecorrelateRGB can only be used with 3 channels.")
         }
         super.init(layerPrev: layerPrev,
-                   nbChannels: nbChannels / 2,
+                   nbChannels: nbChannels,
                    height: height,
                    width: width,
                    params: params)
@@ -49,7 +57,29 @@ public class RDFT2RGB: Layer2D
     ///
     public required init(from decoder: Decoder) throws
     {
+        let values = try decoder.container(keyedBy: Keys.self)
+        _correlation = try values.decode(
+            [Double].self, forKey: Keys.correlation
+        )
         try super.init(from: decoder)
+    }
+    
+    ///
+    /// Encode to the disk.
+    ///
+    /// If the value fails to encode anything, `encoder` will encode an empty
+    /// keyed container in its place.
+    ///
+    /// Throw an error if any values are invalid for the given
+    /// encoder's format.
+    ///
+    /// - Parameter encoder: The encoder to write data to.
+    ///
+    public override func encode(to encoder: Encoder) throws
+    {
+        var container = encoder.container(keyedBy: Keys.self)
+        try container.encode(_correlation, forKey: Keys.correlation)
+        try super.encode(to: encoder)
     }
     
     ///
@@ -74,8 +104,9 @@ public class RDFT2RGB: Layer2D
         let params = MAKit.Model.Params(context: context)
         params.context.curID = id
             
-        let layer = RDFT2RGB(
+        let layer = DecorrelateRGB(
             layerPrev: layerPrev,
+            correlation: _correlation,
             params: params
         )
         return layer
@@ -110,24 +141,20 @@ public class RDFT2RGB: Layer2D
             for elem in 0..<nbGC {
             for depth in 0..<nbChannels
             {
+                let block = depth / 3
+                let res = depth % 3
+                
                 for i in 0..<height {
                 for j in 0..<width
                 {
                     var sum: Double = 0.0
-                    for k in 0..<height {
-                    for l in 0..<width
+                    for k in 0..<3
                     {
-                        let realPrev = neuronsPrev[2 * depth].get(k, l)!
-                            .gc[batch][elem].out
-                        let imPrev = neuronsPrev[2 * depth + 1].get(k, l)!
-                            .gc[batch][elem].out
-                        var angle = 2.0 * Double.pi
-                        angle *=
-                            (Double(i) / Double(height) * Double(k) +
-                             Double(j) / Double(width) * Double(l))
-                        sum += realPrev * cos(angle) - imPrev * sin(angle)
-                    }}
-                    sum /= Double(height * width)
+                        sum +=
+                            neuronsPrev[block * 3 + k].get(i, j)!
+                                .gc[batch][elem].out *
+                            _correlation[res * 3 + k]
+                    }
                     neurons[depth].get(i, j)!.gc[batch][elem].out = sum
                 }}
             }}}
@@ -159,24 +186,19 @@ public class RDFT2RGB: Layer2D
             for elem in 0..<batchSize {
             for depth in 0..<nbChannels
             {
+                let block = depth / 3
+                let res = depth % 3
+                
                 for i in 0..<height {
                 for j in 0..<width
                 {
                     var sum: Double = 0.0
-                    for k in 0..<height {
-                    for l in 0..<width
+                    for k in 0..<3
                     {
-                        let realPrev =
-                            neuronsPrev[2 * depth].get(k, l)!.v[elem].out
-                        let imPrev =
-                            neuronsPrev[2 * depth + 1].get(k, l)!.v[elem].out
-                        var angle = 2.0 * Double.pi
-                        angle *=
-                            (Double(i) / Double(height) * Double(k) +
-                             Double(j) / Double(width) * Double(l))
-                        sum += realPrev * cos(angle) - imPrev * sin(angle)
-                    }}
-                    sum /= Double(height * width)
+                        sum +=
+                            neuronsPrev[block * 3 + k].get(i, j)!.v[elem].out *
+                            _correlation[res * 3 + k]
+                    }
                     neurons[depth].get(i, j)!.v[elem].out = sum
                 }}
             }}
@@ -197,15 +219,17 @@ public class RDFT2RGB: Layer2D
             let pNbChannels: [UInt32] = [UInt32(nbChannels)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
+            let correlation: [Float] = _correlation.map { Float($0) }
             
             let command = MetalKernel.get.createCommand(
-                "RDFT2RGBForward", deviceID: deviceID
+                "decorrelateRGBForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
-            command.setBytes(pNbChannels, atIndex: 1)
-            command.setBytes(pDimensions, atIndex: 2)
-            command.setBytes(pNbBatch, atIndex: 3)
-            command.setBuffer(outs.metal, atIndex: 4)
+            command.setBytes(correlation, atIndex: 1)
+            command.setBytes(pNbChannels, atIndex: 2)
+            command.setBytes(pDimensions, atIndex: 3)
+            command.setBytes(pNbBatch, atIndex: 4)
+            command.setBuffer(outs.metal, atIndex: 5)
             
             command.dispatchThreads(
                 width: width * nbChannels,
@@ -224,39 +248,26 @@ public class RDFT2RGB: Layer2D
             for elem in 0..<batchSize {
             for depth in 0..<nbChannels
             {
+                let block = depth / 3
+                let res = depth % 3
+                
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    var sum1: Double = 0.0
-                    var sum2: Double = 0.0
-                    for k in 0..<height {
-                    for l in 0..<width
+                    var sum: Double = 0.0
+                    for k in 0..<3
                     {
-                        let delta =
-                            neurons[depth].get(k, l)!.v[elem].delta
-                        var angle = 2.0 * Double.pi
-                        angle *=
-                            (Double(i) / Double(height) * Double(k) +
-                             Double(j) / Double(width) * Double(l))
-                        sum1 += delta * cos(angle)
-                        sum2 -= delta * sin(angle)
-                    }}
-                    sum1 /= Double(height * width)
-                    sum2 /= Double(height * width)
+                        sum += _correlation[k * 3 + res] *
+                            neurons[block * 3 + k].get(i, j)!.v[elem].delta
+                    }
                     
                     if layerPrev.dirty
                     {
-                        neuronsPrev[2 * depth].get(i, j)!
-                            .v[elem].delta = sum1
-                        neuronsPrev[2 * depth + 1].get(i, j)!
-                            .v[elem].delta = sum2
+                        neuronsPrev[depth].get(i, j)!.v[elem].delta = sum
                     }
                     else
                     {
-                        neuronsPrev[2 * depth].get(i, j)!
-                            .v[elem].delta += sum1
-                        neuronsPrev[2 * depth + 1].get(i, j)!
-                            .v[elem].delta += sum2
+                        neuronsPrev[depth].get(i, j)!.v[elem].delta += sum
                     }
                 }}
             }}
@@ -279,16 +290,18 @@ public class RDFT2RGB: Layer2D
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
+            let correlation: [Float] = _correlation.map { Float($0) }
             
             let command = MetalKernel.get.createCommand(
-                "RDFT2RGBBackward", deviceID: deviceID
+                "decorrelateRGBBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
-            command.setBytes(pNbChannels, atIndex: 1)
-            command.setBytes(pDimensions, atIndex: 2)
-            command.setBytes(pNbBatch, atIndex: 3)
-            command.setBytes(pDirty, atIndex: 4)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 5)
+            command.setBytes(correlation, atIndex: 1)
+            command.setBytes(pNbChannels, atIndex: 2)
+            command.setBytes(pDimensions, atIndex: 3)
+            command.setBytes(pNbBatch, atIndex: 4)
+            command.setBytes(pDirty, atIndex: 5)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 6)
             
             command.dispatchThreads(
                 width: width * nbChannels,

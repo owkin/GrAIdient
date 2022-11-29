@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🪜 **layer_2d**: LinearScale2D ([#24](https://github.com/owkin/MAKit/pull/24))\
 🪜 **layer_2d**: DecorelateRGB ([#23](https://github.com/owkin/MAKit/pull/23))\
 🪜 **layer_2d**: RDFT2Image ([#22](https://github.com/owkin/MAKit/pull/22))\
 🪜 **core:** Sigmoid activation ([#21](https://github.com/owkin/MAKit/pull/21))\

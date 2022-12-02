@@ -760,7 +760,7 @@ kernel void IRDFT2RGBBackward(
         angle *= (float(i) / height * k + float(j) / width * l);
         
         sum1 += deltaCur * cos(angle);
-        sum2 -= deltaCur * sin(angle);
+        sum2 += deltaCur * sin(angle);
     }}
     sum1 /= float(height * width);
     sum2 /= float(height * width);

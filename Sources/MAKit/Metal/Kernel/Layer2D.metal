@@ -983,3 +983,80 @@ kernel void linearScale2DBackward(
         deltaPrev[offsetPrev] += delta[offsetPrev] * weights[0];
     }
 }
+
+float _getScaleValue(
+    const uint i,
+    const uint j,
+    const uint dimension)
+{
+    float freq = sqrt(float(i * i + j * j)) / float(dimension);
+    freq = max(freq, 1.0 / float(dimension));
+    return (1.0 / freq) * float(dimension);
+}
+
+kernel void setDataFTFrequences2D(
+    constant uint * pNbChannels,
+    constant uint * pDimension,
+    constant uint * pNbBatch,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint dimension;
+    uint nbChannels;
+    uint nbBatch;
+    
+    if (pNbChannels && pDimension && pNbBatch && outs)
+    {
+        dimension = *pDimension;
+        nbChannels = *pNbChannels;
+        nbBatch = *pNbBatch;
+    }
+    else
+        return ;
+    
+    uint depth = id[0] / dimension;
+    uint elem = id[1] / dimension;
+    uint i = id[1] % dimension;
+    uint j = id[0] % dimension;
+    
+    if (i * elem >= dimension * nbBatch ||
+        j * depth >= dimension * nbChannels)
+    {
+        return ;
+    }
+        
+    uint end = dimension % 2 == 0 ? dimension / 2 : (dimension - 1) / 2;
+    uint jTmp = j;
+    uint iTmp = i;
+    if (dimension % 2 == 0)
+    {
+        if (jTmp >= end)
+        {
+            jTmp = jTmp - end + 1;
+            jTmp = end + 1 - jTmp;
+        }
+        if (iTmp >= end)
+        {
+            iTmp = iTmp - end + 1;
+            iTmp = end + 1 - iTmp;
+        }
+    }
+    else
+    {
+        if (jTmp > end)
+        {
+            jTmp = jTmp - end;
+            jTmp = end + 1 - jTmp;
+        }
+        if (iTmp > end)
+        {
+            iTmp = iTmp - end;
+            iTmp = end + 1 - iTmp;
+        }
+    }
+    
+    uint offsetStart = (depth + nbChannels * elem) * dimension;
+    uint offset = j + (offsetStart + i) * dimension;
+
+    outs[offset] = _getScaleValue(iTmp, jTmp, dimension);
+}

@@ -594,6 +594,13 @@ private class MetalDevice
                 "decorrelateRGBBackward",
                 "linearScale2DForward",
                 "linearScale2DBackward",
+                "setDataFTFrequences2D",
+            ],
+            "Merge": [
+                "sum1",
+                "sum2",
+                "multiplyForward",
+                "multiplyBackward",
             ],
             "Optimizer": [
                 "clipGradients",
@@ -608,10 +615,6 @@ private class MetalDevice
             ],
             "Reset": [
                 "reset"
-            ],
-            "Sum": [
-                "sum1",
-                "sum2",
             ]
         ]
         

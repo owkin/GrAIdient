@@ -131,13 +131,21 @@ class Layer2DGradTests: Input2DMSE1DCase
             )
             
         case "Sum":
-            let otherLayer: Layer2D = Convolution2D(
+            let otherLayer1: Layer2D = Convolution2D(
+                layerPrev: firstLayer, size: 1, nbChannels: 3, stride: 1,
+                activation: SoftReLU.str, biases: true, bn: false,
+                params: params
+            )
+            let otherLayer2: Layer2D = Convolution2D(
                 layerPrev: firstLayer, size: 1, nbChannels: 3, stride: 1,
                 activation: SoftReLU.str, biases: true, bn: false,
                 params: params
             )
             
-            layer = Sum2D(layersPrev: [layer, otherLayer], params: params)
+            layer = Sum2D(
+                layersPrev: [layer, otherLayer1, otherLayer2],
+                params: params
+            )
             
         case "Activation":
             layer = Activation2D(
@@ -172,11 +180,28 @@ class Layer2DGradTests: Input2DMSE1DCase
                 params: params
             )
             
-        case "LinearScale2D":
+        case "LinearScale":
             layer = LinearScale2D(
                 layerPrev: layer,
                 weight: 2.0,
                 bias: 3.0,
+                params: params
+            )
+            
+        case "Multiply":
+            let otherLayer1: Layer2D = Convolution2D(
+                layerPrev: firstLayer, size: 1, nbChannels: 3, stride: 1,
+                activation: SoftReLU.str, biases: true, bn: false,
+                params: params
+            )
+            let otherLayer2: Layer2D = Convolution2D(
+                layerPrev: firstLayer, size: 1, nbChannels: 3, stride: 1,
+                activation: SoftReLU.str, biases: true, bn: false,
+                params: params
+            )
+            
+            layer = Multiply2D(
+                layersPrev: [layer, otherLayer1, otherLayer2],
                 params: params
             )
             
@@ -490,13 +515,26 @@ class Layer2DGradTests: Input2DMSE1DCase
     func testLinearScale2DCPU() throws
     {
         MAKit.Opti.CPU = true
-        let trainer = _buildTrainer(model: "LinearScale2D", bn: false)
+        let trainer = _buildTrainer(model: "LinearScale", bn: false)
         run(trainer)
     }
     
     func testLinearScale2DGPU() throws
     {
-        let trainer = _buildTrainer(model: "LinearScale2D", bn: false)
+        let trainer = _buildTrainer(model: "LinearScale", bn: false)
+        run(trainer)
+    }
+    
+    func testMultiply2DCPU() throws
+    {
+        MAKit.Opti.CPU = true
+        let trainer = _buildTrainer(model: "Multiply", bn: false)
+        run(trainer)
+    }
+    
+    func testMultiply2DGPU() throws
+    {
+        let trainer = _buildTrainer(model: "Multiply", bn: false)
         run(trainer)
     }
 }
@@ -620,13 +658,21 @@ class Layer2DFlowTests: Input2DMSE1DCase
             )
             
         case "Sum":
-            let otherLayer: Layer2D = Convolution2D(
+            let otherLayer1: Layer2D = Convolution2D(
+                layerPrev: firstLayer, size: 1, nbChannels: 3, stride: 1,
+                activation: LeakyReLU.str, biases: true, bn: false,
+                params: params
+            )
+            let otherLayer2: Layer2D = Convolution2D(
                 layerPrev: firstLayer, size: 1, nbChannels: 3, stride: 1,
                 activation: LeakyReLU.str, biases: true, bn: false,
                 params: params
             )
             
-            layer = Sum2D(layersPrev: [layer, otherLayer], params: params)
+            layer = Sum2D(
+                layersPrev: [layer, otherLayer1, otherLayer2],
+                params: params
+            )
             
         case "Activation":
             layer = Activation2D(
@@ -661,11 +707,28 @@ class Layer2DFlowTests: Input2DMSE1DCase
                 params: params
             )
             
-        case "LinearScale2D":
+        case "LinearScale":
             layer = LinearScale2D(
                 layerPrev: layer,
                 weight: 2.0,
                 bias: 3.0,
+                params: params
+            )
+            
+        case "Multiply":
+            let otherLayer1: Layer2D = Convolution2D(
+                layerPrev: firstLayer, size: 1, nbChannels: 3, stride: 1,
+                activation: LeakyReLU.str, biases: true, bn: false,
+                params: params
+            )
+            let otherLayer2: Layer2D = Convolution2D(
+                layerPrev: firstLayer, size: 1, nbChannels: 3, stride: 1,
+                activation: LeakyReLU.str, biases: true, bn: false,
+                params: params
+            )
+            
+            layer = Multiply2D(
+                layersPrev: [layer, otherLayer1, otherLayer2],
                 params: params
             )
             
@@ -838,7 +901,13 @@ class Layer2DFlowTests: Input2DMSE1DCase
     
     func testLinearScale2D() throws
     {
-        let trainer = _buildTrainer(model: "LinearScale2D", bn: false)
+        let trainer = _buildTrainer(model: "LinearScale", bn: false)
+        run(trainer)
+    }
+    
+    func testMultiply2D() throws
+    {
+        let trainer = _buildTrainer(model: "Multiply", bn: false)
         run(trainer)
     }
 }
@@ -1028,7 +1097,13 @@ class Layer2DFlowResetTests: Layer2DFlowTests
     
     override func testLinearScale2D() throws
     {
-        let trainer = _buildTrainer(model: "LinearScale2D", bn: false)
+        let trainer = _buildTrainer(model: "LinearScale", bn: false)
+        run(trainer)
+    }
+    
+    override func testMultiply2D() throws
+    {
+        let trainer = _buildTrainer(model: "Multiply", bn: false)
         run(trainer)
     }
 }
@@ -1218,7 +1293,13 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
     
     override func testLinearScale2D() throws
     {
-        let trainer = _buildTrainer(model: "LinearScale2D", bn: false)
+        let trainer = _buildTrainer(model: "LinearScale", bn: false)
+        run(trainer)
+    }
+    
+    override func testMultiply2D() throws
+    {
+        let trainer = _buildTrainer(model: "Multiply", bn: false)
         run(trainer)
     }
 }
@@ -1406,7 +1487,13 @@ class Layer2DInferenceTests: Layer2DFlowTests
     
     override func testLinearScale2D() throws
     {
-        let trainer = _buildTrainer(model: "LinearScale2D", bn: false)
+        let trainer = _buildTrainer(model: "LinearScale", bn: false)
+        run(trainer)
+    }
+    
+    override func testMultiply2D() throws
+    {
+        let trainer = _buildTrainer(model: "Multiply", bn: false)
         run(trainer)
     }
 }
@@ -1589,7 +1676,13 @@ class Layer2DLoadTests: Layer2DFlowTests
     
     override func testLinearScale2D() throws
     {
-        let trainer = _buildTrainer(model: "LinearScale2D", bn: false)
+        let trainer = _buildTrainer(model: "LinearScale", bn: false)
+        run(trainer)
+    }
+    
+    override func testMultiply2D() throws
+    {
+        let trainer = _buildTrainer(model: "Multiply", bn: false)
         run(trainer)
     }
 }
@@ -2237,25 +2330,49 @@ class Layer2DTransformTests: Layer2DFlowTests
     
     override func testLinearScale2D() throws
     {
-        let trainer = _buildTrainer(model: "LinearScale2D", bn: false)
+        let trainer = _buildTrainer(model: "LinearScale", bn: false)
         runCopy(trainer)
     }
     
     func testLinearScale2DCopyInPlace() throws
     {
-        let trainer = _buildTrainer(model: "LinearScale2D", bn: false)
+        let trainer = _buildTrainer(model: "LinearScale", bn: false)
         runCopyInPlace(trainer)
     }
     
     func testLinearScale2DResize() throws
     {
-        let trainer = _buildTrainer(model: "LinearScale2D", bn: false)
+        let trainer = _buildTrainer(model: "LinearScale", bn: false)
         runResize(trainer)
     }
     
     func testLinearScale2DResizeInPlace() throws
     {
-        let trainer = _buildTrainer(model: "LinearScale2D", bn: false)
+        let trainer = _buildTrainer(model: "LinearScale", bn: false)
+        runResizeInPlace(trainer)
+    }
+    
+    override func testMultiply2D() throws
+    {
+        let trainer = _buildTrainer(model: "Multiply", bn: false)
+        run(trainer)
+    }
+    
+    func testMultiply2DCopyInPlace() throws
+    {
+        let trainer = _buildTrainer(model: "Multiply", bn: false)
+        runCopyInPlace(trainer)
+    }
+    
+    func testMultiply2DResize() throws
+    {
+        let trainer = _buildTrainer(model: "Multiply", bn: false)
+        runResize(trainer)
+    }
+    
+    func testMultiply2DResizeInPlace() throws
+    {
+        let trainer = _buildTrainer(model: "Multiply", bn: false)
         runResizeInPlace(trainer)
     }
 }

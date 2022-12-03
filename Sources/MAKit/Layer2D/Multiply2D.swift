@@ -1,17 +1,17 @@
 //
-// Sum2D.swift
+// Multiply2D.swift
 // MAKit
 //
-// Created by Jean-François Reboud on 14/10/2022.
+// Created by Jean-François Reboud on 03/12/2022.
 //
 
 ///
 /// Layer with a 2D shape neural structure.
 ///
-/// This layer merges multiple 2D layers togeter, summing the neurons at the same localization
-/// in the input grids (pixelwise sum).
+/// This layer merges multiple 2D layers togeter, multipliying the neurons at the same localization
+/// in the input grids (pixelwise multiplication).
 ///
-public class Sum2D: LayerMerge2D
+public class Multiply2D: LayerMerge2D
 {
     ///
     /// Create a layer with a 2D shape neural structure.
@@ -79,7 +79,7 @@ public class Sum2D: LayerMerge2D
             layersPrev.append(mapping[idPrev] as! Layer2D)
         }
         
-        let layer = Sum2D(layersPrev: layersPrev, params: params)
+        let layer = Multiply2D(layersPrev: layersPrev, params: params)
         return layer
     }
     
@@ -119,14 +119,14 @@ public class Sum2D: LayerMerge2D
             for i in 0..<height {
             for j in 0..<width
             {
-                var sum = 0.0
+                var mult = 1.0
                 for num in 0..<_layersPrev.count
                 {
                     let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
-                    sum += neuronsPrev[depth].get(i, j)!.gc[batch][elem].out
+                    mult *= neuronsPrev[depth].get(i, j)!.gc[batch][elem].out
                 }
                 
-                neurons[depth].get(i, j)!.gc[batch][elem].out = sum
+                neurons[depth].get(i, j)!.gc[batch][elem].out = mult
             }}
         }}}
     
@@ -141,24 +141,24 @@ public class Sum2D: LayerMerge2D
             for i in 0..<height {
             for j in 0..<width
             {
-                var sum = 0.0
+                var mult = 1.0
                 for num in 0..<_layersPrev.count
                 {
                     let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
                     
                     if num == index
                     {
-                        sum += neuronsPrev[depth].get(i, j)!
+                        mult *= neuronsPrev[depth].get(i, j)!
                             .gc[batch][nbLastElems[index]+elem].out
                     }
                     else
                     {
-                        sum += neuronsPrev[depth].get(i, j)!.v[batch].out
+                        mult *= neuronsPrev[depth].get(i, j)!.v[batch].out
                     }
                 }
                 
                 neurons[depth].get(i, j)!
-                    .gc[batch][offset+elem].out = sum
+                    .gc[batch][offset+elem].out = mult
             }}
         }}
             
@@ -208,14 +208,14 @@ public class Sum2D: LayerMerge2D
             for i in 0..<height {
             for j in 0..<width
             {
-                var sum = 0.0
+                var mult = 1.0
                 for num in 0..<_layersPrev.count
                 {
                     let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
-                    sum += neuronsPrev[depth].get(i, j)!.gc[batch][elem].out
+                    mult *= neuronsPrev[depth].get(i, j)!.gc[batch][elem].out
                 }
                 
-                neurons[depth].get(i, j)!.gc[batch][elem].out = sum
+                neurons[depth].get(i, j)!.gc[batch][elem].out = mult
             }}
         }}}
         
@@ -230,7 +230,7 @@ public class Sum2D: LayerMerge2D
             for i in 0..<height {
             for j in 0..<width
             {
-                var sum = 0.0
+                var mult = 1.0
                 for num in 0..<_layersPrev.count
                 {
                     let outsPrevPtr =
@@ -240,7 +240,7 @@ public class Sum2D: LayerMerge2D
                     
                     if num == index
                     {
-                        sum += neuronsPrev[depth].get(i, j)!
+                        mult *= neuronsPrev[depth].get(i, j)!
                             .gc[batch][nbLastElems[index]+elem].out
                     }
                     else
@@ -248,11 +248,11 @@ public class Sum2D: LayerMerge2D
                         let offsetStart = (depth + nbChannels * batch) * height
                         let offsetTmp = j + (offsetStart + i) * width
                         
-                        sum += Double(outsPrevPtr[offsetTmp])
+                        mult *= Double(outsPrevPtr[offsetTmp])
                     }
                 }
                 
-                neurons[depth].get(i, j)!.gc[batch][offset+elem].out = sum
+                neurons[depth].get(i, j)!.gc[batch][offset+elem].out = mult
             }}
         }}
             
@@ -276,15 +276,15 @@ public class Sum2D: LayerMerge2D
             for i in 0..<height {
             for j in 0..<width
             {
-                var sum = 0.0
+                var mult = 1.0
                 for num in 0..<_layersPrev.count
                 {
                     let neuronsPrev =
                         (_layersPrev[num] as! Layer2D).neurons
-                    sum += neuronsPrev[depth].get(i, j)!.v[elem].out
+                    mult *= neuronsPrev[depth].get(i, j)!.v[elem].out
                 }
                 
-                neurons[depth].get(i, j)!.v[elem].out = sum
+                neurons[depth].get(i, j)!.v[elem].out = mult
             }}
         }}
     }
@@ -315,7 +315,7 @@ public class Sum2D: LayerMerge2D
             else
             {
                 command = MetalKernel.get.createCommand(
-                    "sum2", deviceID: deviceID
+                    "multiplyForward", deviceID: deviceID
                 )
             }
             
@@ -352,17 +352,19 @@ public class Sum2D: LayerMerge2D
                 for i in 0..<height {
                 for j in 0..<width
                 {
+                    let out = neurons[depth].get(i, j)!.v[elem].out
+                    let tmp = out / neuronsPrev[depth].get(i, j)!.v[elem].out
                     let deltaCur = neurons[depth].get(i, j)!.v[elem].delta
                     
                     if _layersPrev[num].dirty
                     {
                         neuronsPrev[depth].get(i, j)!.v[elem].delta =
-                            deltaCur
+                            deltaCur * tmp
                     }
                     else
                     {
                         neuronsPrev[depth].get(i, j)!.v[elem].delta +=
-                            deltaCur
+                            deltaCur * tmp
                     }
                 }}
             }}
@@ -388,33 +390,23 @@ public class Sum2D: LayerMerge2D
             {
                 continue
             }
+            let layerPrev = _layersPrev[num] as! Layer2D
             
-            try (_layersPrev[num] as! Layer2D).checkStateBackwardGPU(
-                batchSize: batchSize
-            )
+            try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
             
             let nbElems = delta.nbElems
             let pNbElems: [UInt32] = [UInt32(nbElems)]
+            let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
-            let command: MetalCommand
-            if _layersPrev[num].dirty
-            {
-                command = MetalKernel.get.createCommand(
-                    "sum1", deviceID: deviceID
-                )
-            }
-            else
-            {
-                command = MetalKernel.get.createCommand(
-                    "sum2", deviceID: deviceID
-                )
-            }
-            
-            command.setBuffer(delta.metal, atIndex: 0)
-            command.setBytes(pNbElems, atIndex: 1)
-            command.setBuffer(
-                (_layersPrev[num] as! Layer2D).delta.metal, atIndex: 2
+            let command = MetalKernel.get.createCommand(
+                "multiplyBackward", deviceID: deviceID
             )
+            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+            command.setBuffer(outs.metal, atIndex: 1)
+            command.setBuffer(delta.metal, atIndex: 2)
+            command.setBytes(pNbElems, atIndex: 3)
+            command.setBytes(pDirty, atIndex: 4)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 5)
             
             command.dispatchThreads(nbElems)
             command.enqueue()

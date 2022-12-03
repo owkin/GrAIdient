@@ -596,6 +596,12 @@ private class MetalDevice
                 "linearScale2DBackward",
                 "setDataFTFrequences2D",
             ],
+            "Merge": [
+                "sum1",
+                "sum2",
+                "multiplyForward",
+                "multiplyBackward",
+            ],
             "Optimizer": [
                 "clipGradients",
                 "multiplyGradients",
@@ -609,10 +615,6 @@ private class MetalDevice
             ],
             "Reset": [
                 "reset"
-            ],
-            "Sum": [
-                "sum1",
-                "sum2",
             ]
         ]
         

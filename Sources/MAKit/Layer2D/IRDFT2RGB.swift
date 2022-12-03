@@ -238,7 +238,7 @@ public class IRDFT2RGB: Layer2D
                             (Double(i) / Double(height) * Double(k) +
                              Double(j) / Double(width) * Double(l))
                         sum1 += delta * cos(angle)
-                        sum2 += delta * sin(angle)
+                        sum2 -= delta * sin(angle)
                     }}
                     sum1 /= Double(height * width)
                     sum2 /= Double(height * width)

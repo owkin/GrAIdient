@@ -594,6 +594,7 @@ private class MetalDevice
                 "decorrelateRGBBackward",
                 "linearScale2DForward",
                 "linearScale2DBackward",
+                "setDataFTFrequences2D",
             ],
             "Optimizer": [
                 "clipGradients",

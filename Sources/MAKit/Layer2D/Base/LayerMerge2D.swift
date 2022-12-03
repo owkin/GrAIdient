@@ -190,7 +190,7 @@ open class LayerMerge2D: Layer2D
     ///
     private func _getMergedGraph() -> ([Layer], [Int])
     {
-        var layersBranches = [Layer]()
+        var layersBranches = [Layer?]()
         for layer in _layersPrev
         {
             layersBranches.append(layer)
@@ -214,21 +214,28 @@ open class LayerMerge2D: Layer2D
         var layers = [Layer]()
         while !layersEqual()
         {
-            var idMax = 0
+            var idMax = -1
             var indexMax = -1
             
             for (index, layer) in layersBranches.enumerated()
             {
-                let id = layer.id
-                if id > idMax
+                if let layerTmp = layer
                 {
-                    idMax = id
-                    indexMax = index
+                    let id = layerTmp.id
+                    if id > idMax
+                    {
+                        idMax = id
+                        indexMax = index
+                    }
                 }
             }
+            if indexMax < 0
+            {
+                break
+            }
             
-            let layerMax = layersBranches[indexMax]
-            layersBranches[indexMax] = layerMax.layerPrev!
+            let layerMax = layersBranches[indexMax]!
+            layersBranches[indexMax] = layerMax.layerPrev
             
             layersIndex.append(indexMax)
             layers.append(layerMax)
@@ -274,8 +281,11 @@ open class LayerMerge2D: Layer2D
     {
         var (layersMerged, layersIndex) = _getMergedGraph()
         
-        let sameLayer = layersMerged.last!.layerPrev!
-        let nbSameElems = sameLayer.nbGC
+        var nbSameElems = 0
+        if let commonAncestor = layersMerged.last!.layerPrev
+        {
+            nbSameElems = commonAncestor.nbGC
+        }
         
         layersMerged = layersMerged.reversed()
         layersIndex = layersIndex.reversed()

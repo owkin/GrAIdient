@@ -8,7 +8,7 @@
 ///
 /// Layer with a 2D shape neural structure.
 ///
-/// This layer merges multiple 2D layers togeter, summing the neurons at the same localization
+/// This layer merges multiple 2D layers together, summing the neurons at the same localization
 /// in the input grids (pixelwise sum).
 ///
 public class Sum2D: LayerMerge2D

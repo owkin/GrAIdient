@@ -8,7 +8,7 @@
 ///
 /// Layer with a 2D shape neural structure.
 ///
-/// This layer merges multiple 2D layers togeter, multipliying the neurons at the same localization
+/// This layer merges multiple 2D layers together, multipliying the neurons at the same localization
 /// in the input grids (pixelwise multiplication).
 ///
 public class Multiply2D: LayerMerge2D

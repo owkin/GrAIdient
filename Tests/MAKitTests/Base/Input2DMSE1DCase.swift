@@ -15,8 +15,8 @@ import MATestsUtils
 ///
 class Input2DMSE1DCase: MSE1DCase
 {
-    let height = 6
-    let width = 6
+    var height = 6
+    var width = 6
     
     ///
     /// A function to create/set data to the model.

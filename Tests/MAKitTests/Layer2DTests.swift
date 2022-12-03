@@ -2433,15 +2433,32 @@ class FTFrequences2DGradTests: FTFrequences2DMSE1DCase
         head = MSE1D(layerPrev: head, params: params)
     }
     
-    func testCPU() throws
+    func testEvenCPU() throws
     {
         MAKit.Opti.CPU = true
         let trainer = _buildTrainer()
         run(trainer)
     }
     
-    func testGPU() throws
+    func testEvenGPU() throws
     {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+    
+    func testOddCPU() throws
+    {
+        height = 7
+        width = 7
+        MAKit.Opti.CPU = true
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+    
+    func testOddGPU() throws
+    {
+        height = 7
+        width = 7
         let trainer = _buildTrainer()
         run(trainer)
     }
@@ -2495,8 +2512,16 @@ class FTFrequences2DFlowTests: FTFrequences2DMSE1DCase
         head = MSE1D(layerPrev: head, params: params)
     }
     
-    func test() throws
+    func testEven() throws
     {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+    
+    func testOdd() throws
+    {
+        height = 7
+        width = 7
         let trainer = _buildTrainer()
         run(trainer)
     }
@@ -2522,8 +2547,16 @@ class FTFrequences2DFlowResetTests: FTFrequences2DFlowTests
         return trainer
     }
     
-    override func test() throws
+    override func testEven() throws
     {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+    
+    override func testOdd() throws
+    {
+        height = 7
+        width = 7
         let trainer = _buildTrainer()
         run(trainer)
     }
@@ -2549,8 +2582,16 @@ class FTFrequences2DFlowReverseTests: FTFrequences2DFlowTests
         return trainer
     }
     
-    override func test() throws
+    override func testEven() throws
     {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+    
+    override func testOdd() throws
+    {
+        height = 7
+        width = 7
         let trainer = _buildTrainer()
         run(trainer)
     }
@@ -2576,8 +2617,16 @@ class FTFrequences2DFlowInferenceTests: FTFrequences2DFlowTests
         return trainer
     }
     
-    override func test() throws
+    override func testEven() throws
     {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+    
+    override func testOdd() throws
+    {
+        height = 7
+        width = 7
         let trainer = _buildTrainer()
         run(trainer)
     }
@@ -2604,8 +2653,16 @@ class FTFrequences2DLoadTests: FTFrequences2DFlowTests
         return trainer
     }
     
-    override func test() throws
+    override func testEven() throws
     {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+    
+    override func testOdd() throws
+    {
+        height = 7
+        width = 7
         let trainer = _buildTrainer()
         run(trainer)
     }
@@ -2632,26 +2689,58 @@ class FTFrequences2DTransformTests: FTFrequences2DFlowTests
         return trainer
     }
     
-    override func test() throws
+    override func testEven() throws
     {
         let trainer = _buildTrainer()
         runCopy(trainer)
     }
     
-    func testCopyInPlace() throws
+    func testEvenCopyInPlace() throws
     {
         let trainer = _buildTrainer()
         runCopyInPlace(trainer)
     }
     
-    func testResize() throws
+    func testEvenResize() throws
     {
         let trainer = _buildTrainer()
         runResize(trainer)
     }
     
-    func testResizeInPlace() throws
+    func testEvenResizeInPlace() throws
     {
+        let trainer = _buildTrainer()
+        runResizeInPlace(trainer)
+    }
+    
+    override func testOdd() throws
+    {
+        height = 7
+        width = 7
+        let trainer = _buildTrainer()
+        runCopy(trainer)
+    }
+    
+    func testOddCopyInPlace() throws
+    {
+        height = 7
+        width = 7
+        let trainer = _buildTrainer()
+        runCopyInPlace(trainer)
+    }
+    
+    func testOddResize() throws
+    {
+        height = 7
+        width = 7
+        let trainer = _buildTrainer()
+        runResize(trainer)
+    }
+    
+    func testOddResizeInPlace() throws
+    {
+        height = 7
+        width = 7
         let trainer = _buildTrainer()
         runResizeInPlace(trainer)
     }

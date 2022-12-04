@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🚨 **layer_2d**: add tests for non dirty status ([#27](https://github.com/owkin/MAKit/pull/27))\
 🔨 **tests**: factorize transform tests ([#26](https://github.com/owkin/MAKit/pull/26))\
 🪜 **layer_2d**: FTFrequences2D & Multiply2D ([#25](https://github.com/owkin/MAKit/pull/25))\
 🪜 **layer_2d**: LinearScale2D ([#24](https://github.com/owkin/MAKit/pull/24))\

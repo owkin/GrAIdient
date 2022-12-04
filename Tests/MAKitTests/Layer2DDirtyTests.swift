@@ -107,15 +107,15 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
             )
             
         case "IRDFT2RGB":
-            secondLayer = Convolution2D(
+            firstLayer = Convolution2D(
                 layerPrev: layer, size: 1, nbChannels: 6, stride: 1,
                 activation: SoftReLU.str, biases: true, bn: false,
                 params: params
             )
-            secondLayer = IRDFT2RGB(layerPrev: secondLayer, params: params)
+            secondLayer = IRDFT2RGB(layerPrev: firstLayer, params: params)
             
             secondLayer = Convolution2D(
-                layerPrev: secondLayer, size: 1, nbChannels: 3, stride: 1,
+                layerPrev: secondLayer, size: 1, nbChannels: 6, stride: 1,
                 activation: SoftReLU.str, biases: true, bn: false,
                 params: params
             )
@@ -340,7 +340,7 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
             
         case "BN":
             secondLayer = BN2D(
-                layerPrev: layer, activation: SoftReLU.str, params: params
+                layerPrev: layer, activation: LeakyReLU.str, params: params
             )
             
         case "MaxPool":
@@ -359,20 +359,20 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
         case "Activation":
             secondLayer = Activation2D(
                 layerPrev: layer,
-                activation: SoftReLU.str,
+                activation: LeakyReLU.str,
                 params: params
             )
             
         case "IRDFT2RGB":
-            secondLayer = Convolution2D(
+            firstLayer = Convolution2D(
                 layerPrev: layer, size: 1, nbChannels: 6, stride: 1,
                 activation: LeakyReLU.str, biases: true, bn: false,
                 params: params
             )
-            secondLayer = IRDFT2RGB(layerPrev: secondLayer, params: params)
+            secondLayer = IRDFT2RGB(layerPrev: firstLayer, params: params)
             
             secondLayer = Convolution2D(
-                layerPrev: secondLayer, size: 1, nbChannels: 3, stride: 1,
+                layerPrev: secondLayer, size: 1, nbChannels: 6, stride: 1,
                 activation: LeakyReLU.str, biases: true, bn: false,
                 params: params
             )
@@ -406,7 +406,7 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
         
         var head: Layer1D = FullyConnected(
             layerPrev: layer, nbNeurons: 1,
-            activation: SoftReLU.str, biases: true, params: params
+            activation: LeakyReLU.str, biases: true, params: params
         )
         
         head = MSE1D(layerPrev: head, params: params)

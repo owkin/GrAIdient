@@ -327,17 +327,17 @@ class Input1DMSE1DCase: MSE1DCase
     }
     
     ///
-    /// Run Copy test.
+    /// Run Transform tests.
     ///
     /// The goal is to compare the losses computed in the CPU execution
-    /// after copying the model and do the same in the GPU execution context.
+    /// after transforming the model and do the same in the GPU execution context.
     ///
     /// - Parameters:
     ///     - trainer: The testing pipeline to run.
     ///     - nbRetry: The maximum number we can retry the test.
     ///     - diffThreshold: The threshold above which the relative difference is too high.
     ///
-    func runCopy(
+    func run(
         _ trainer: TransformTrainer,
         nbRetry: Int = NB_RETRY,
         diffThreshold: Double = 0.001)
@@ -347,56 +347,12 @@ class Input1DMSE1DCase: MSE1DCase
             {
                 () throws in
                 try trainer.run(
-                    transform: self.copy,
+                    transforms: [self.copy, self.copyInPlace],
                     setData: self.setData,
                     setLoss: self.setLoss,
                     getLoss: self.getLoss)
                 {
                     (diffCPU: Double, diffGPU: Double) in
-                    if diffCPU > diffThreshold
-                    {
-                        throw TestError.Numeric
-                    }
-                    if diffGPU > diffThreshold
-                    {
-                        throw TestError.Numeric
-                    }
-                }
-            },
-            {
-                () in
-                XCTAssert(false)
-            }
-        )
-    }
-    
-    ///
-    /// Run Copy In Place test.
-    ///
-    /// The goal is to compare the losses computed in the CPU execution
-    /// after copying the model in place and do the same in the GPU execution context.
-    ///
-    /// - Parameters:
-    ///     - trainer: The testing pipeline to run.
-    ///     - nbRetry: The maximum number we can retry the test.
-    ///     - diffThreshold: The threshold above which the relative difference is too high.
-    ///
-    func runCopyInPlace(
-        _ trainer: TransformTrainer,
-        nbRetry: Int = NB_RETRY,
-        diffThreshold: Double = 0.001)
-    {
-        retryNumeric(
-            nbRetry: nbRetry,
-            {
-                () throws in
-                try trainer.run(
-                    transform: self.copyInPlace,
-                    setData: self.setData,
-                    setLoss: self.setLoss,
-                    getLoss: self.getLoss)
-                {
-                    (diffCPU: Double, diffGPU: Double) throws in
                     if diffCPU > diffThreshold
                     {
                         throw TestError.Numeric

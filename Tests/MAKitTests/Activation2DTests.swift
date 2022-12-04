@@ -18,7 +18,7 @@ class Activation2DGradTests: Input2DMSE1DCase
     {
         super.setUp()
         
-        optimizerParams.nbLoops = 1
+        optimizerParams.nbLoops = 2
         MAKit.Loop.gradientChecking = true
     }
     

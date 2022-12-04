@@ -248,7 +248,7 @@ containing the commits to merge into the `main` branch.
     - Commit and push the changes.
     - Squash and merge the new branch into `release_N`.
       
-1. Create a Pull Request
+1. Create a Pull Request for `release_N` targeting the `main` branch.
 
 1. Review and Merge the Pull Request, change the commit 
    message \

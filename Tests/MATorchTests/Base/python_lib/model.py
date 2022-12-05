@@ -228,7 +228,7 @@ class ModelTest3(torch.nn.Module):
     Principle features:
         - 2D Frequences & scale
         - IRFFT
-        (- Decorrelate color)
+        - Decorrelate color
     """
 
     def __init__(self, size):
@@ -254,7 +254,7 @@ class ModelTest3(torch.nn.Module):
         """
         x = x * self.scale
         x = _irfft_image(x)
-        # x = _linear_decorrelate_color(x)
+        x = _linear_decorrelate_color(x)
         x = torch.nn.Sigmoid()(x)
         x = -1 + 2 * x
         x = x[None]

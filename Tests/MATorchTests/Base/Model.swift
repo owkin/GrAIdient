@@ -233,7 +233,7 @@ class ModelTest3
     /// Principle features:
     ///   - 2D Frequences & scale
     ///   - IRDFT
-    ///   - (Decorrelate color)
+    ///   - Decorrelate color
     ///
     /// - Parameter size: The size of the input data.
     /// - Returns: The built model.
@@ -269,18 +269,15 @@ class ModelTest3
             params: params
         )
         
-        /*
-         Introduces float rounding approximation issues!
          layer = DecorrelateRGB(
             layerPrev: layer,
             correlation: [
-                0.26, 0.26, 0.27,
+                0.26, 0.27, 0.27,
                 0.09, 0.00, -0.09,
                 0.02, -0.05, 0.03
             ].map { $0 / 0.4619524 },
             params: params
         )
-        */
         
         layer = Activation2D(
             layerPrev: layer,

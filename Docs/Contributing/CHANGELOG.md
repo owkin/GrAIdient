@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🚨 **integration**: test IDFT and complex numbers ([#28](https://github.com/owkin/MAKit/pull/28))\
 🚨 **layer_2d**: add tests for non dirty status ([#27](https://github.com/owkin/MAKit/pull/27))\
 🔨 **tests**: factorize transform tests ([#26](https://github.com/owkin/MAKit/pull/26))\
 🪜 **layer_2d**: FTFrequences2D & Multiply2D ([#25](https://github.com/owkin/MAKit/pull/25))\

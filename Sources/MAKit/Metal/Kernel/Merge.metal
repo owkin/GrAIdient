@@ -78,7 +78,6 @@ kernel void multiplyForward(
 }
 
 kernel void multiplyBackward(
-    const device float * outsPrev,
     const device float * outs,
     const device float * delta,
     constant uint * pNbElems,
@@ -89,7 +88,7 @@ kernel void multiplyBackward(
     uint nbElems;
     uint dirty;
     
-    if (pNbElems && pDirty && outsPrev && outs && delta && deltaPrev)
+    if (pNbElems && pDirty && outs && delta && deltaPrev)
     {
         nbElems = pNbElems[0];
         dirty = *pDirty;
@@ -102,7 +101,7 @@ kernel void multiplyBackward(
         return ;
     }
     
-    float tmp = outs[id] / outsPrev[id];
+    float tmp = outs[id];
     float deltaCur = delta[id];
     
     if (dirty)

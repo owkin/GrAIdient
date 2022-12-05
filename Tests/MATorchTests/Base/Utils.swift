@@ -60,6 +60,19 @@ func getInputData(_ size: Int) -> [Float]
 }
 
 ///
+/// Get data "complex" image from Python.
+///
+/// - Parameter size: The size of the image.
+/// - Returns: The data image.
+///
+func getComplexData(_ size: Int) -> [Float]
+{
+    let pythonLib = Python.import("python_lib")
+    let data = pythonLib.get_complex_data(size)
+    return [Float](data)!
+}
+
+///
 /// Get gradient norm computed with PyTorch for ModelTest1.
 ///
 /// - Parameter size: The size of the input data.
@@ -82,6 +95,19 @@ func computeTest2GradNorm(_ size: Int) -> Float
 {
     let pythonLib = Python.import("python_lib")
     let data = pythonLib.compute_test2_grad_norm(size)
+    return Float(data)!
+}
+
+///
+/// Get gradient norm computed with PyTorch for ModelTest3.
+///
+/// - Parameter size: The size of the input data.
+/// - Returns: The gradient norm.
+///
+func computeTest3GradNorm(_ size: Int) -> Float
+{
+    let pythonLib = Python.import("python_lib")
+    let data = pythonLib.compute_test3_grad_norm(size)
     return Float(data)!
 }
 

@@ -841,10 +841,6 @@ public class Model: BaseModel
                     MAKit.Time.start()
                     
                     try layer.backwardGPU()
-                    if layer.mustComputeBackward
-                    {
-                        layer.propagateDirty()
-                    }
                     
                     try MAKit.Time.stop(id: "BackwardGPU", description: desc)
                 }
@@ -861,10 +857,6 @@ public class Model: BaseModel
                     MAKit.Time.start()
                     
                     layer.backwardCPU()
-                    if layer.mustComputeBackward
-                    {
-                        layer.propagateDirty()
-                    }
                     
                     try MAKit.Time.stop(id: "BackwardCPU", description: desc)
                 }

@@ -14,6 +14,12 @@
 public class Multiply2D: LayerMerge2D
 {
     ///
+    /// List of output buffers.
+    /// Shape ~ (batch, nbChannels, height, width).
+    ///
+    var _otherOuts: [MetalBuffer<Float>] = []
+    
+    ///
     /// Create a layer with a 2D shape neural structure.
     ///
     /// - Parameters:
@@ -81,6 +87,72 @@ public class Multiply2D: LayerMerge2D
         
         let layer = Multiply2D(layersPrev: layersPrev, params: params)
         return layer
+    }
+    
+    ///
+    /// Clean state resources in the CPU execution context.
+    ///
+    /// We clean the neurons' state (forward and backward).
+    ///
+    public override func resetKernelCPU()
+    {
+        super.resetKernelCPU()
+        _otherOuts = []
+    }
+    
+    ///
+    /// Clean state resources in the GPU execution context.
+    ///
+    /// We clean the neurons' state (forward and backward).
+    ///
+    public override func resetKernelGPU()
+    {
+        super.resetKernelGPU()
+        _otherOuts = []
+    }
+    
+    ///
+    /// Initialize state resources in the CPU execution context.
+    ///
+    /// We initialize the neurons' state (forward and backward).
+    ///
+    public override func checkStateCPU(batchSize: Int) throws
+    {
+        try super.checkStateCPU(batchSize: batchSize)
+        
+        if _otherOuts.count == 0
+        {
+            for _ in 0..<_layersPrev.count
+            {
+                let buffer = MetalSharedBuffer<Float>(
+                    batchSize * nbChannels * height * width,
+                    deviceID: deviceID
+                )
+                _otherOuts.append(buffer)
+            }
+        }
+    }
+    
+    ///
+    /// Initialize state resources in the GPU execution context.
+    ///
+    /// We initialize the neurons' forward state.
+    ///
+    public override func checkStateForwardGPU(batchSize: Int) throws
+    {
+        try super.checkStateForwardGPU(batchSize: batchSize)
+        
+        if _otherOuts.count == 0
+        {
+            for _ in 0..<_layersPrev.count
+            {
+                let buffer = MetalPrivateBuffer<Float>(
+                    batchSize * nbChannels * height * width,
+                    deviceID: deviceID
+                )
+                _otherOuts.append(buffer)
+            }
+        }
     }
     
     ///
@@ -273,9 +345,13 @@ public class Multiply2D: LayerMerge2D
         for elem in 0..<batchSize {
         for depth in 0..<nbChannels
         {
+            let offsetStart = (depth + nbChannels * elem) * height
+            
             for i in 0..<height {
             for j in 0..<width
             {
+                let offset = j + (offsetStart + i) * width
+                
                 var mult = 1.0
                 for num in 0..<_layersPrev.count
                 {
@@ -283,8 +359,23 @@ public class Multiply2D: LayerMerge2D
                         (_layersPrev[num] as! Layer2D).neurons
                     mult *= neuronsPrev[depth].get(i, j)!.v[elem].out
                 }
-                
                 neurons[depth].get(i, j)!.v[elem].out = mult
+                
+                for num1 in 0..<_layersPrev.count
+                {
+                    let buffer = (_otherOuts[num1] as! MetalSharedBuffer).buffer
+                    
+                    mult = 1.0
+                    for num2 in 0..<_layersPrev.count {
+                    if num2 != num1
+                    {
+                        let neuronsPrev =
+                            (_layersPrev[num2] as! Layer2D).neurons
+                        mult *= neuronsPrev[depth].get(i, j)!.v[elem].out
+                    }}
+                    
+                    buffer[offset] = Float(mult)
+                }
             }}
         }}
     }
@@ -298,19 +389,19 @@ public class Multiply2D: LayerMerge2D
     {
         try checkStateForwardGPU(batchSize: batchSize)
         
-        var first = true
-        for num in 0..<_layersPrev.count
+        var first1 = true
+        for num1 in 0..<_layersPrev.count
         {
-            let nbElems = (_layersPrev[num] as! Layer2D).outs.nbElems
+            let nbElems = (_layersPrev[num1] as! Layer2D).outs.nbElems
             let pNbElems: [UInt32] = [UInt32(nbElems)]
             
-            let command: MetalCommand
-            if first
+            var command: MetalCommand
+            if first1
             {
                 command = MetalKernel.get.createCommand(
                     "sum1", deviceID: deviceID
                 )
-                first = false
+                first1 = false
             }
             else
             {
@@ -320,13 +411,41 @@ public class Multiply2D: LayerMerge2D
             }
             
             command.setBuffer(
-                (_layersPrev[num] as! Layer2D).outs.metal, atIndex: 0
+                (_layersPrev[num1] as! Layer2D).outs.metal, atIndex: 0
             )
             command.setBytes(pNbElems, atIndex: 1)
             command.setBuffer(outs.metal, atIndex: 2)
             
             command.dispatchThreads(nbElems)
             command.enqueue()
+            
+            var first2 = true
+            for num2 in 0..<_layersPrev.count {
+            if num2 != num1
+            {
+                if first2
+                {
+                    command = MetalKernel.get.createCommand(
+                        "sum1", deviceID: deviceID
+                    )
+                    first2 = false
+                }
+                else
+                {
+                    command = MetalKernel.get.createCommand(
+                        "multiplyForward", deviceID: deviceID
+                    )
+                }
+                
+                command.setBuffer(
+                    (_layersPrev[num2] as! Layer2D).outs.metal, atIndex: 0
+                )
+                command.setBytes(pNbElems, atIndex: 1)
+                command.setBuffer(_otherOuts[num1].metal, atIndex: 2)
+                
+                command.dispatchThreads(nbElems)
+                command.enqueue()
+            }}
         }
     }
     
@@ -346,14 +465,19 @@ public class Multiply2D: LayerMerge2D
             }
             
             let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
+            let buffer = (_otherOuts[num] as! MetalSharedBuffer).buffer
+            
             for elem in 0..<batchSize {
             for depth in 0..<nbChannels
             {
+                let offsetStart = (depth + nbChannels * elem) * height
+                
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    let out = neurons[depth].get(i, j)!.v[elem].out
-                    let tmp = out / neuronsPrev[depth].get(i, j)!.v[elem].out
+                    let offset = j + (offsetStart + i) * width
+                    
+                    let tmp = Double(buffer[offset])
                     let deltaCur = neurons[depth].get(i, j)!.v[elem].delta
                     
                     if _layersPrev[num].dirty
@@ -401,12 +525,11 @@ public class Multiply2D: LayerMerge2D
             let command = MetalKernel.get.createCommand(
                 "multiplyBackward", deviceID: deviceID
             )
-            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
-            command.setBuffer(outs.metal, atIndex: 1)
-            command.setBuffer(delta.metal, atIndex: 2)
-            command.setBytes(pNbElems, atIndex: 3)
-            command.setBytes(pDirty, atIndex: 4)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 5)
+            command.setBuffer(_otherOuts[num].metal, atIndex: 0)
+            command.setBuffer(delta.metal, atIndex: 1)
+            command.setBytes(pNbElems, atIndex: 2)
+            command.setBytes(pDirty, atIndex: 3)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 4)
             
             command.dispatchThreads(nbElems)
             command.enqueue()

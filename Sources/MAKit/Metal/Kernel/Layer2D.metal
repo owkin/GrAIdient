@@ -1060,3 +1060,124 @@ kernel void setDataFTFrequences2D(
 
     outs[offset] = _getScaleValue(iTmp, jTmp, dimension);
 }
+
+kernel void pad2DForward(
+    const device float * outsPrev,
+    constant uint * pNbChannels,
+    constant uint * pDimensions,
+    constant uint * pPadDimension,
+    constant float * pPadValue,
+    constant uint * pNbBatch,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint height, width;
+    uint heightPrev, widthPrev;
+    uint nbChannels;
+    uint padDimension;
+    float padValue;
+    uint nbBatch;
+    
+    if (pNbChannels && pDimensions && pNbBatch &&
+        pPadDimension && pPadValue && outsPrev && outs)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        nbChannels = *pNbChannels;
+        padDimension = *pPadDimension;
+        padValue = *pPadValue;
+        widthPrev = width - 2 * padDimension;
+        heightPrev = height - 2 * padDimension;
+        nbBatch = *pNbBatch;
+    }
+    else
+        return ;
+    
+    uint depth = id[0] / width;
+    uint elem = id[1] / height;
+    uint i = id[1] % height;
+    uint j = id[0] % width;
+    
+    if (i * elem >= height * nbBatch ||
+        j * depth >= width * nbChannels)
+    {
+        return ;
+    }
+        
+    uint offsetStart = (depth + nbChannels * elem) * height;
+    uint offset = j + (offsetStart + i) * width;
+    
+    if (i < padDimension || i >= height - padDimension ||
+        j < padDimension || j >= width - padDimension)
+    {
+        outs[offset] = padValue;
+    }
+    else
+    {
+        uint offsetStartPrev = (depth + nbChannels * elem) * heightPrev;
+        uint offsetPrev = j-padDimension +
+            (offsetStartPrev + i-padDimension) * widthPrev;
+        
+        outs[offset] = outsPrev[offsetPrev];
+    }
+}
+
+kernel void pad2DBackward(
+    const device float * delta,
+    constant uint * pNbChannels,
+    constant uint * pDimensions,
+    constant uint * pPadDimension,
+    constant uint * pNbBatch,
+    constant uint * pDirty,
+    device float * deltaPrev,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint height, width;
+    uint heightPrev, widthPrev;
+    uint nbChannels;
+    uint padDimension;
+    uint nbBatch;
+    uint dirty;
+    
+    if (pNbChannels && pDimensions && pPadDimension && pNbBatch && pDirty &&
+        delta && deltaPrev)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        nbChannels = *pNbChannels;
+        padDimension = *pPadDimension;
+        widthPrev = width - 2 * padDimension;
+        heightPrev = height - 2 * padDimension;
+        nbBatch = *pNbBatch;
+        dirty = *pDirty;
+    }
+    else
+        return ;
+    
+    uint depth = id[0] / widthPrev;
+    uint elem = id[1] / heightPrev;
+    uint i = id[1] % heightPrev;
+    uint j = id[0] % widthPrev;
+    
+    if (i * elem >= heightPrev * nbBatch ||
+        j * depth >= widthPrev * nbChannels)
+    {
+        return ;
+    }
+    
+    uint offsetStartPrev = (depth + nbChannels * elem) * heightPrev;
+    uint offsetPrev = j + (offsetStartPrev + i) * widthPrev;
+    
+    uint offsetStart = (depth + nbChannels * elem) * height;
+    uint offset = j+padDimension +
+        (offsetStart + i+padDimension) * width;
+    
+    if (dirty)
+    {
+        deltaPrev[offsetPrev] = delta[offset];
+    }
+    else
+    {
+        deltaPrev[offsetPrev] += delta[offset];
+    }
+}

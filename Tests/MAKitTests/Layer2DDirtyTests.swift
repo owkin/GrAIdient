@@ -139,6 +139,16 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
                 params: params
             )
             
+        case "Pad":
+            secondLayer = Pad2D(
+                layerPrev: layer,
+                padDimension: 3, padValue: 0.5,
+                params: params
+            )
+            secondLayer = AdaptiveAvgPool2D(
+                layerPrev: secondLayer, size: width, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -271,6 +281,19 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
         let trainer = _buildTrainer(model: "LinearScale")
         run(trainer)
     }
+    
+    func testPad2DCPU() throws
+    {
+        MAKit.Opti.CPU = true
+        let trainer = _buildTrainer(model: "Pad")
+        run(trainer)
+    }
+    
+    func testPad2DGPU() throws
+    {
+        let trainer = _buildTrainer(model: "Pad")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -396,6 +419,16 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
                 params: params
             )
             
+        case "Pad":
+            secondLayer = Pad2D(
+                layerPrev: layer,
+                padDimension: 3, padValue: 0.5,
+                params: params
+            )
+            secondLayer = AdaptiveAvgPool2D(
+                layerPrev: secondLayer, size: width, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -463,6 +496,12 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
     func testLinearScale2D() throws
     {
         let trainer = _buildTrainer(model: "LinearScale")
+        run(trainer)
+    }
+    
+    func testPad2D() throws
+    {
+        let trainer = _buildTrainer(model: "Pad")
         run(trainer)
     }
 }

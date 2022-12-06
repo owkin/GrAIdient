@@ -1,22 +1,24 @@
 //
-// DecorrelateRGB.swift
+// Pad2D.swift
 // MAKit
 //
-// Created by Jean-François Reboud on 26/11/2022.
+// Created by Jean-François Reboud on 06/12/2022.
 //
 
 ///
 /// Layer with a 2D shape neural structure.
 ///
-/// This layer decorelates RGB color of an image.
+/// Add constant values on the borders of input grids.
 ///
-public class DecorrelateRGB: Layer2D
+public class Pad2D: Layer2D
 {
-    let _correlation: [Double]
+    let _padDimension: Int
+    let _padValue: Double
     
     private enum Keys: String, CodingKey
     {
-        case correlation
+        case padDimension
+        case padValue
     }
     
     ///
@@ -24,23 +26,22 @@ public class DecorrelateRGB: Layer2D
     ///
     /// - Parameters:
     ///     - layerPrev: Previous layer that has been queued to the model.
-    ///     - correlation: Color correlation matrix.
+    ///     - padDimension: Dimension to add on each border of the input grids.
+    ///     - padValue: Value to set on the created borders.
     ///     - params: Contextual parameters linking to the model.
     ///
     public init(layerPrev: Layer2D,
-                correlation: [Double],
+                padDimension: Int,
+                padValue: Double,
                 params: MAKit.Model.Params)
     {
-        _correlation = correlation
+        _padValue = padValue
+        _padDimension = padDimension
         
-        let width = layerPrev.width
-        let height = layerPrev.height
+        let width = layerPrev.width + 2 * padDimension
+        let height = layerPrev.height + 2 * padDimension
         let nbChannels = layerPrev.nbChannels
         
-        if nbChannels != 3
-        {
-            fatalError("DecorrelateRGB can only be used with 3 channels.")
-        }
         super.init(layerPrev: layerPrev,
                    nbChannels: nbChannels,
                    height: height,
@@ -59,8 +60,11 @@ public class DecorrelateRGB: Layer2D
     public required init(from decoder: Decoder) throws
     {
         let values = try decoder.container(keyedBy: Keys.self)
-        _correlation = try values.decode(
-            [Double].self, forKey: Keys.correlation
+        _padDimension = try values.decode(
+            Int.self, forKey: Keys.padDimension
+        )
+        _padValue = try values.decode(
+            Double.self, forKey: Keys.padValue
         )
         try super.init(from: decoder)
     }
@@ -79,7 +83,8 @@ public class DecorrelateRGB: Layer2D
     public override func encode(to encoder: Encoder) throws
     {
         var container = encoder.container(keyedBy: Keys.self)
-        try container.encode(_correlation, forKey: Keys.correlation)
+        try container.encode(_padDimension, forKey: Keys.padDimension)
+        try container.encode(_padValue, forKey: Keys.padValue)
         try super.encode(to: encoder)
     }
     
@@ -105,9 +110,10 @@ public class DecorrelateRGB: Layer2D
         let params = MAKit.Model.Params(context: context)
         params.context.curID = id
             
-        let layer = DecorrelateRGB(
+        let layer = Pad2D(
             layerPrev: layerPrev,
-            correlation: _correlation,
+            padDimension: _padDimension,
+            padValue: _padValue,
             params: params
         )
         return layer
@@ -142,21 +148,22 @@ public class DecorrelateRGB: Layer2D
             for elem in 0..<nbGC {
             for depth in 0..<nbChannels
             {
-                let block = depth / 3
-                let res = depth % 3
-                
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    var sum: Double = 0.0
-                    for k in 0..<3
+                    if i < _padDimension || i >= height - _padDimension ||
+                       j < _padDimension || j >= width - _padDimension
                     {
-                        sum +=
-                            neuronsPrev[block * 3 + k].get(i, j)!
-                                .gc[batch][elem].out *
-                            _correlation[res * 3 + k]
+                        neurons[depth].get(i, j)!.gc[batch][elem].out =
+                            _padValue
                     }
-                    neurons[depth].get(i, j)!.gc[batch][elem].out = sum
+                    else
+                    {
+                        neurons[depth].get(i, j)!.gc[batch][elem].out =
+                            neuronsPrev[depth].get(i-_padDimension,
+                                                   j-_padDimension)!
+                                .gc[batch][elem].out
+                    }
                 }}
             }}}
         }
@@ -187,20 +194,21 @@ public class DecorrelateRGB: Layer2D
             for elem in 0..<batchSize {
             for depth in 0..<nbChannels
             {
-                let block = depth / 3
-                let res = depth % 3
-                
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    var sum: Double = 0.0
-                    for k in 0..<3
+                    if i < _padDimension || i >= height - _padDimension ||
+                       j < _padDimension || j >= width - _padDimension
                     {
-                        sum +=
-                            neuronsPrev[block * 3 + k].get(i, j)!.v[elem].out *
-                            _correlation[res * 3 + k]
+                        neurons[depth].get(i, j)!.v[elem].out = _padValue
                     }
-                    neurons[depth].get(i, j)!.v[elem].out = sum
+                    else
+                    {
+                        neurons[depth].get(i, j)!.v[elem].out =
+                            neuronsPrev[depth].get(
+                                i-_padDimension,
+                                j-_padDimension)!.v[elem].out
+                    }
                 }}
             }}
         }
@@ -220,17 +228,19 @@ public class DecorrelateRGB: Layer2D
             let pNbChannels: [UInt32] = [UInt32(nbChannels)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
-            let correlation: [Float] = _correlation.map { Float($0) }
+            let pPadDimension: [UInt32] = [UInt32(_padDimension)]
+            let pPadValue: [Float] = [Float(_padValue)]
             
             let command = MetalKernel.get.createCommand(
-                "decorrelateRGBForward", deviceID: deviceID
+                "pad2DForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
-            command.setBytes(correlation, atIndex: 1)
-            command.setBytes(pNbChannels, atIndex: 2)
-            command.setBytes(pDimensions, atIndex: 3)
-            command.setBytes(pNbBatch, atIndex: 4)
-            command.setBuffer(outs.metal, atIndex: 5)
+            command.setBytes(pNbChannels, atIndex: 1)
+            command.setBytes(pDimensions, atIndex: 2)
+            command.setBytes(pPadDimension, atIndex: 3)
+            command.setBytes(pPadValue, atIndex: 4)
+            command.setBytes(pNbBatch, atIndex: 5)
+            command.setBuffer(outs.metal, atIndex: 6)
             
             command.dispatchThreads(
                 width: width * nbChannels,
@@ -245,30 +255,27 @@ public class DecorrelateRGB: Layer2D
     {
         if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
+            let widthPrev = layerPrev.width
+            let heightPrev = layerPrev.height
             let neuronsPrev = layerPrev.neurons
+            
             for elem in 0..<batchSize {
             for depth in 0..<nbChannels
             {
-                let block = depth / 3
-                let res = depth % 3
-                
-                for i in 0..<height {
-                for j in 0..<width
+                for i in 0..<heightPrev {
+                for j in 0..<widthPrev
                 {
-                    var sum: Double = 0.0
-                    for k in 0..<3
-                    {
-                        sum += _correlation[k * 3 + res] *
-                            neurons[block * 3 + k].get(i, j)!.v[elem].delta
-                    }
-                    
                     if layerPrev.dirty
                     {
-                        neuronsPrev[depth].get(i, j)!.v[elem].delta = sum
+                        neuronsPrev[depth].get(i, j)!.v[elem].delta =
+                            neurons[depth].get(i+_padDimension,
+                                               j+_padDimension)!.v[elem].delta
                     }
                     else
                     {
-                        neuronsPrev[depth].get(i, j)!.v[elem].delta += sum
+                        neuronsPrev[depth].get(i, j)!.v[elem].delta +=
+                            neurons[depth].get(i+_padDimension,
+                                               j+_padDimension)!.v[elem].delta
                     }
                 }}
             }}
@@ -290,23 +297,23 @@ public class DecorrelateRGB: Layer2D
             let pNbChannels: [UInt32] = [UInt32(nbChannels)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
+            let pPadDimension: [UInt32] = [UInt32(_padDimension)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
-            let correlation: [Float] = _correlation.map { Float($0) }
             
             let command = MetalKernel.get.createCommand(
-                "decorrelateRGBBackward", deviceID: deviceID
+                "pad2DBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
-            command.setBytes(correlation, atIndex: 1)
-            command.setBytes(pNbChannels, atIndex: 2)
-            command.setBytes(pDimensions, atIndex: 3)
+            command.setBytes(pNbChannels, atIndex: 1)
+            command.setBytes(pDimensions, atIndex: 2)
+            command.setBytes(pPadDimension, atIndex: 3)
             command.setBytes(pNbBatch, atIndex: 4)
             command.setBytes(pDirty, atIndex: 5)
             command.setBuffer(layerPrev.delta.metal, atIndex: 6)
             
             command.dispatchThreads(
-                width: width * nbChannels,
-                height: height * batchSize
+                width: layerPrev.width * nbChannels,
+                height: layerPrev.height * batchSize
             )
             command.enqueue()
             

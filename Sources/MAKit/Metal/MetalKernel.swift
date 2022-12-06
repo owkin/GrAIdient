@@ -595,6 +595,8 @@ private class MetalDevice
                 "linearScale2DForward",
                 "linearScale2DBackward",
                 "setDataFTFrequences2D",
+                "pad2DForward",
+                "pad2DBackward",
             ],
             "Merge": [
                 "sum1",

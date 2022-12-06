@@ -205,6 +205,13 @@ class Layer2DGradTests: Input2DMSE1DCase
                 params: params
             )
             
+        case "Pad":
+            layer = Pad2D(
+                layerPrev: layer,
+                padDimension: 3, padValue: 0.5,
+                params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -537,6 +544,19 @@ class Layer2DGradTests: Input2DMSE1DCase
         let trainer = _buildTrainer(model: "Multiply", bn: false)
         run(trainer)
     }
+    
+    func testPad2DCPU() throws
+    {
+        MAKit.Opti.CPU = true
+        let trainer = _buildTrainer(model: "Pad", bn: false)
+        run(trainer)
+    }
+    
+    func testPad2DGPU() throws
+    {
+        let trainer = _buildTrainer(model: "Pad", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -732,6 +752,13 @@ class Layer2DFlowTests: Input2DMSE1DCase
                 params: params
             )
             
+        case "Pad":
+            layer = Pad2D(
+                layerPrev: layer,
+                padDimension: 3, padValue: 0.5,
+                params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -908,6 +935,12 @@ class Layer2DFlowTests: Input2DMSE1DCase
     func testMultiply2D() throws
     {
         let trainer = _buildTrainer(model: "Multiply", bn: false)
+        run(trainer)
+    }
+    
+    func testPad2D() throws
+    {
+        let trainer = _buildTrainer(model: "Pad", bn: false)
         run(trainer)
     }
 }
@@ -1106,6 +1139,12 @@ class Layer2DFlowResetTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "Multiply", bn: false)
         run(trainer)
     }
+    
+    override func testPad2D() throws
+    {
+        let trainer = _buildTrainer(model: "Pad", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -1302,6 +1341,12 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "Multiply", bn: false)
         run(trainer)
     }
+    
+    override func testPad2D() throws
+    {
+        let trainer = _buildTrainer(model: "Pad", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -1496,6 +1541,12 @@ class Layer2DInferenceTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "Multiply", bn: false)
         run(trainer)
     }
+    
+    override func testPad2D() throws
+    {
+        let trainer = _buildTrainer(model: "Pad", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -1685,6 +1736,12 @@ class Layer2DLoadTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "Multiply", bn: false)
         run(trainer)
     }
+    
+    override func testPad2D() throws
+    {
+        let trainer = _buildTrainer(model: "Pad", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -1872,6 +1929,12 @@ class Layer2DTransformTests: Layer2DFlowTests
     override func testMultiply2D() throws
     {
         let trainer = _buildTrainer(model: "Multiply", bn: false)
+        run(trainer)
+    }
+    
+    override func testPad2D() throws
+    {
+        let trainer = _buildTrainer(model: "Pad", bn: false)
         run(trainer)
     }
 }

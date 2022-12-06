@@ -1,22 +1,29 @@
 //
-// DecorrelateRGB.swift
+// Jitter2D.swift
 // MAKit
 //
-// Created by Jean-François Reboud on 26/11/2022.
+// Created by Jean-François Reboud on 06/12/2022.
 //
 
 ///
 /// Layer with a 2D shape neural structure.
 ///
-/// This layer decorelates RGB color of an image.
+/// Crop an output grid inside of a taller input one.
 ///
-public class DecorrelateRGB: Layer2D
+public class Jitter2D: Layer2D
 {
-    let _correlation: [Double]
+    let _jitterDimension: Int
+    
+    var _offsetI: Int = 0
+    var _offsetJ: Int = 0
+    var _doNotRandom: Bool = false
     
     private enum Keys: String, CodingKey
     {
-        case correlation
+        case jitterDimension
+        case doNotRandom
+        case offsetI
+        case offsetJ
     }
     
     ///
@@ -24,22 +31,72 @@ public class DecorrelateRGB: Layer2D
     ///
     /// - Parameters:
     ///     - layerPrev: Previous layer that has been queued to the model.
-    ///     - correlation: Color correlation matrix.
+    ///     - jitterDimension: Dimension to remove on each border of the input grids.
     ///     - params: Contextual parameters linking to the model.
     ///
     public init(layerPrev: Layer2D,
-                correlation: [Double],
+                jitterDimension: Int,
                 params: MAKit.Model.Params)
     {
-        _correlation = correlation
+        _jitterDimension = jitterDimension
         
-        let width = layerPrev.width
-        let height = layerPrev.height
+        let width = layerPrev.width - jitterDimension
+        let height = layerPrev.height - jitterDimension
         let nbChannels = layerPrev.nbChannels
         
-        if nbChannels != 3
+        if width <= 0 || height <= 0
         {
-            fatalError("DecorrelateRGB can only be used with 3 channels.")
+            fatalError(
+                "`jitterDimension` should be lower than width and height"
+            )
+        }
+        super.init(layerPrev: layerPrev,
+                   nbChannels: nbChannels,
+                   height: height,
+                   width: width,
+                   params: params)
+    }
+    
+    ///
+    /// Create a layer with a 2D shape neural structure.
+    ///
+    /// - Parameters:
+    ///     - layerPrev: Previous layer that has been queued to the model.
+    ///     - jitterDimension: Dimension to remove on each border of the input grids.
+    ///     - offsetI: Height offset.
+    ///     - offsetJ: Width offset.
+    ///     - params: Contextual parameters linking to the model.
+    ///
+    public init(layerPrev: Layer2D,
+                jitterDimension: Int,
+                offsetI: Int,
+                offsetJ: Int,
+                params: MAKit.Model.Params)
+    {
+        _doNotRandom = true
+        _offsetI = offsetI
+        _offsetJ = offsetJ
+        _jitterDimension = jitterDimension
+        
+        let width = layerPrev.width - jitterDimension
+        let height = layerPrev.height - jitterDimension
+        let nbChannels = layerPrev.nbChannels
+        
+        if width <= 0 || height <= 0
+        {
+            fatalError(
+                "`jitterDimension` should be lower than width and height."
+            )
+        }
+        if offsetI < 0 || offsetJ < 0 ||
+           offsetI >= jitterDimension || offsetJ >= jitterDimension
+        {
+            fatalError(
+                """
+                `offsetI` and `offsetJ` should be lower than `jitterDimension`
+                and higher than 0.
+                """
+            )
         }
         super.init(layerPrev: layerPrev,
                    nbChannels: nbChannels,
@@ -59,9 +116,12 @@ public class DecorrelateRGB: Layer2D
     public required init(from decoder: Decoder) throws
     {
         let values = try decoder.container(keyedBy: Keys.self)
-        _correlation = try values.decode(
-            [Double].self, forKey: Keys.correlation
+        _jitterDimension = try values.decode(
+            Int.self, forKey: Keys.jitterDimension
         )
+        _doNotRandom = try values.decode(Bool.self, forKey: Keys.doNotRandom)
+        _offsetI = try values.decode(Int.self, forKey: Keys.offsetI)
+        _offsetJ = try values.decode(Int.self, forKey: Keys.offsetJ)
         try super.init(from: decoder)
     }
     
@@ -79,7 +139,10 @@ public class DecorrelateRGB: Layer2D
     public override func encode(to encoder: Encoder) throws
     {
         var container = encoder.container(keyedBy: Keys.self)
-        try container.encode(_correlation, forKey: Keys.correlation)
+        try container.encode(_jitterDimension, forKey: Keys.jitterDimension)
+        try container.encode(_doNotRandom, forKey: Keys.doNotRandom)
+        try container.encode(_offsetI, forKey: Keys.offsetI)
+        try container.encode(_offsetJ, forKey: Keys.offsetJ)
         try super.encode(to: encoder)
     }
     
@@ -105,11 +168,25 @@ public class DecorrelateRGB: Layer2D
         let params = MAKit.Model.Params(context: context)
         params.context.curID = id
             
-        let layer = DecorrelateRGB(
-            layerPrev: layerPrev,
-            correlation: _correlation,
-            params: params
-        )
+        let layer: Jitter2D
+        if !_doNotRandom
+        {
+            layer = Jitter2D(
+                layerPrev: layerPrev,
+                jitterDimension: _jitterDimension,
+                params: params
+            )
+        }
+        else
+        {
+            layer = Jitter2D(
+                layerPrev: layerPrev,
+                jitterDimension: _jitterDimension,
+                offsetI: _offsetI,
+                offsetJ: _offsetJ,
+                params: params
+            )
+        }
         return layer
     }
     
@@ -142,21 +219,12 @@ public class DecorrelateRGB: Layer2D
             for elem in 0..<nbGC {
             for depth in 0..<nbChannels
             {
-                let block = depth / 3
-                let res = depth % 3
-                
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    var sum: Double = 0.0
-                    for k in 0..<3
-                    {
-                        sum +=
-                            neuronsPrev[block * 3 + k].get(i, j)!
-                                .gc[batch][elem].out *
-                            _correlation[res * 3 + k]
-                    }
-                    neurons[depth].get(i, j)!.gc[batch][elem].out = sum
+                    neurons[depth].get(i, j)!.gc[batch][elem].out =
+                        neuronsPrev[depth].get(i+_offsetI,
+                                               j+_offsetJ)!.gc[batch][elem].out
                 }}
             }}}
         }
@@ -183,24 +251,23 @@ public class DecorrelateRGB: Layer2D
         {
             try checkStateCPU(batchSize: batchSize)
             
+            if !_doNotRandom
+            {
+                _offsetI = Int.random(in: 0..<_jitterDimension)
+                _offsetJ = Int.random(in: 0..<_jitterDimension)
+            }
+            
             let neuronsPrev = layerPrev.neurons
             for elem in 0..<batchSize {
             for depth in 0..<nbChannels
             {
-                let block = depth / 3
-                let res = depth % 3
-                
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    var sum: Double = 0.0
-                    for k in 0..<3
-                    {
-                        sum +=
-                            neuronsPrev[block * 3 + k].get(i, j)!.v[elem].out *
-                            _correlation[res * 3 + k]
-                    }
-                    neurons[depth].get(i, j)!.v[elem].out = sum
+                    neurons[depth].get(i, j)!.v[elem].out =
+                        neuronsPrev[depth].get(
+                            i+_offsetI,
+                            j+_offsetJ)!.v[elem].out
                 }}
             }}
         }
@@ -217,20 +284,28 @@ public class DecorrelateRGB: Layer2D
         {
             try checkStateForwardGPU(batchSize: batchSize)
             
+            if !_doNotRandom
+            {
+                _offsetI = Int.random(in: 0..<_jitterDimension)
+                _offsetJ = Int.random(in: 0..<_jitterDimension)
+            }
+            
             let pNbChannels: [UInt32] = [UInt32(nbChannels)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
-            let correlation: [Float] = _correlation.map { Float($0) }
+            let pJitterDimension: [UInt32] = [UInt32(_jitterDimension)]
+            let pJitterOffsets: [UInt32] = [UInt32(_offsetI), UInt32(_offsetJ)]
             
             let command = MetalKernel.get.createCommand(
-                "decorrelateRGBForward", deviceID: deviceID
+                "jitter2DForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
-            command.setBytes(correlation, atIndex: 1)
-            command.setBytes(pNbChannels, atIndex: 2)
-            command.setBytes(pDimensions, atIndex: 3)
-            command.setBytes(pNbBatch, atIndex: 4)
-            command.setBuffer(outs.metal, atIndex: 5)
+            command.setBytes(pNbChannels, atIndex: 1)
+            command.setBytes(pDimensions, atIndex: 2)
+            command.setBytes(pJitterDimension, atIndex: 3)
+            command.setBytes(pJitterOffsets, atIndex: 4)
+            command.setBytes(pNbBatch, atIndex: 5)
+            command.setBuffer(outs.metal, atIndex: 6)
             
             command.dispatchThreads(
                 width: width * nbChannels,
@@ -245,30 +320,34 @@ public class DecorrelateRGB: Layer2D
     {
         if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
+            let widthPrev = layerPrev.width
+            let heightPrev = layerPrev.height
             let neuronsPrev = layerPrev.neurons
+            
             for elem in 0..<batchSize {
             for depth in 0..<nbChannels
             {
-                let block = depth / 3
-                let res = depth % 3
-                
-                for i in 0..<height {
-                for j in 0..<width
+                for i in 0..<heightPrev {
+                for j in 0..<widthPrev
                 {
-                    var sum: Double = 0.0
-                    for k in 0..<3
+                    if layerPrev.dirty &&
+                      (i < _offsetI || i >= height + _offsetI ||
+                       j < _offsetJ || j >= width + _offsetJ)
                     {
-                        sum += _correlation[k * 3 + res] *
-                            neurons[block * 3 + k].get(i, j)!.v[elem].delta
+                        neuronsPrev[depth].get(i, j)!.v[elem].delta = 0.0
                     }
-                    
-                    if layerPrev.dirty
+                    else if layerPrev.dirty
                     {
-                        neuronsPrev[depth].get(i, j)!.v[elem].delta = sum
+                        neuronsPrev[depth].get(i, j)!.v[elem].delta =
+                            neurons[depth].get(
+                                i-_offsetI, j-_offsetJ)!.v[elem].delta
                     }
-                    else
+                    else if i >= _offsetI && i < height + _offsetI &&
+                            j >= _offsetJ && j < width + _offsetJ
                     {
-                        neuronsPrev[depth].get(i, j)!.v[elem].delta += sum
+                        neuronsPrev[depth].get(i, j)!.v[elem].delta +=
+                            neurons[depth].get(
+                                i-_offsetI, j-_offsetJ)!.v[elem].delta
                     }
                 }}
             }}
@@ -290,23 +369,25 @@ public class DecorrelateRGB: Layer2D
             let pNbChannels: [UInt32] = [UInt32(nbChannels)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
+            let pJitterDimension: [UInt32] = [UInt32(_jitterDimension)]
+            let pJitterOffsets: [UInt32] = [UInt32(_offsetI), UInt32(_offsetJ)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
-            let correlation: [Float] = _correlation.map { Float($0) }
             
             let command = MetalKernel.get.createCommand(
-                "decorrelateRGBBackward", deviceID: deviceID
+                "jitter2DBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
-            command.setBytes(correlation, atIndex: 1)
-            command.setBytes(pNbChannels, atIndex: 2)
-            command.setBytes(pDimensions, atIndex: 3)
-            command.setBytes(pNbBatch, atIndex: 4)
-            command.setBytes(pDirty, atIndex: 5)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 6)
+            command.setBytes(pNbChannels, atIndex: 1)
+            command.setBytes(pDimensions, atIndex: 2)
+            command.setBytes(pJitterDimension, atIndex: 3)
+            command.setBytes(pJitterOffsets, atIndex: 4)
+            command.setBytes(pNbBatch, atIndex: 5)
+            command.setBytes(pDirty, atIndex: 6)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 7)
             
             command.dispatchThreads(
-                width: width * nbChannels,
-                height: height * batchSize
+                width: layerPrev.width * nbChannels,
+                height: layerPrev.height * batchSize
             )
             command.enqueue()
             

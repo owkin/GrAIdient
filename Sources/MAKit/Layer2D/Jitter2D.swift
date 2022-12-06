@@ -21,6 +21,9 @@ public class Jitter2D: Layer2D
     private enum Keys: String, CodingKey
     {
         case jitterDimension
+        case doNotRandom
+        case offsetI
+        case offsetJ
     }
     
     ///
@@ -116,6 +119,9 @@ public class Jitter2D: Layer2D
         _jitterDimension = try values.decode(
             Int.self, forKey: Keys.jitterDimension
         )
+        _doNotRandom = try values.decode(Bool.self, forKey: Keys.doNotRandom)
+        _offsetI = try values.decode(Int.self, forKey: Keys.offsetI)
+        _offsetJ = try values.decode(Int.self, forKey: Keys.offsetJ)
         try super.init(from: decoder)
     }
     
@@ -134,6 +140,9 @@ public class Jitter2D: Layer2D
     {
         var container = encoder.container(keyedBy: Keys.self)
         try container.encode(_jitterDimension, forKey: Keys.jitterDimension)
+        try container.encode(_doNotRandom, forKey: Keys.doNotRandom)
+        try container.encode(_offsetI, forKey: Keys.offsetI)
+        try container.encode(_offsetJ, forKey: Keys.offsetJ)
         try super.encode(to: encoder)
     }
     

@@ -149,6 +149,16 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
                 layerPrev: secondLayer, size: width, params: params
             )
             
+        case "Jitter":
+            secondLayer = Jitter2D(
+                layerPrev: layer,
+                jitterDimension: 3,
+                params: params
+            )
+            secondLayer = AdaptiveAvgPool2D(
+                layerPrev: secondLayer, size: width, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -294,6 +304,19 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
         let trainer = _buildTrainer(model: "Pad")
         run(trainer)
     }
+    
+    func testJitter2DCPU() throws
+    {
+        MAKit.Opti.CPU = true
+        let trainer = _buildTrainer(model: "Jitter")
+        run(trainer)
+    }
+    
+    func testJitter2DGPU() throws
+    {
+        let trainer = _buildTrainer(model: "Jitter")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -429,6 +452,18 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
                 layerPrev: secondLayer, size: width, params: params
             )
             
+        case "Jitter":
+            secondLayer = Jitter2D(
+                layerPrev: layer,
+                jitterDimension: 3,
+                offsetI: 2,
+                offsetJ: 2,
+                params: params
+            )
+            secondLayer = AdaptiveAvgPool2D(
+                layerPrev: secondLayer, size: width, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -502,6 +537,12 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
     func testPad2D() throws
     {
         let trainer = _buildTrainer(model: "Pad")
+        run(trainer)
+    }
+    
+    func testJitter2D() throws
+    {
+        let trainer = _buildTrainer(model: "Jitter")
         run(trainer)
     }
 }

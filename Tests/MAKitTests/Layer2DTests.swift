@@ -212,6 +212,13 @@ class Layer2DGradTests: Input2DMSE1DCase
                 params: params
             )
             
+        case "Jitter":
+            layer = Jitter2D(
+                layerPrev: layer,
+                jitterDimension: 3,
+                params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -557,6 +564,19 @@ class Layer2DGradTests: Input2DMSE1DCase
         let trainer = _buildTrainer(model: "Pad", bn: false)
         run(trainer)
     }
+    
+    func testJitter2DCPU() throws
+    {
+        MAKit.Opti.CPU = true
+        let trainer = _buildTrainer(model: "Jitter", bn: false)
+        run(trainer)
+    }
+    
+    func testJitter2DGPU() throws
+    {
+        let trainer = _buildTrainer(model: "Jitter", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -759,6 +779,15 @@ class Layer2DFlowTests: Input2DMSE1DCase
                 params: params
             )
             
+        case "Jitter":
+            layer = Jitter2D(
+                layerPrev: layer,
+                jitterDimension: 3,
+                offsetI: 2,
+                offsetJ: 2,
+                params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -941,6 +970,12 @@ class Layer2DFlowTests: Input2DMSE1DCase
     func testPad2D() throws
     {
         let trainer = _buildTrainer(model: "Pad", bn: false)
+        run(trainer)
+    }
+    
+    func testJitter2D() throws
+    {
+        let trainer = _buildTrainer(model: "Jitter", bn: false)
         run(trainer)
     }
 }
@@ -1145,6 +1180,12 @@ class Layer2DFlowResetTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "Pad", bn: false)
         run(trainer)
     }
+    
+    override func testJitter2D() throws
+    {
+        let trainer = _buildTrainer(model: "Jitter", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -1347,6 +1388,12 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "Pad", bn: false)
         run(trainer)
     }
+    
+    override func testJitter2D() throws
+    {
+        let trainer = _buildTrainer(model: "Jitter", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -1547,6 +1594,12 @@ class Layer2DInferenceTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "Pad", bn: false)
         run(trainer)
     }
+    
+    override func testJitter2D() throws
+    {
+        let trainer = _buildTrainer(model: "Jitter", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -1742,6 +1795,12 @@ class Layer2DLoadTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "Pad", bn: false)
         run(trainer)
     }
+    
+    override func testJitter2D() throws
+    {
+        let trainer = _buildTrainer(model: "Jitter", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -1935,6 +1994,12 @@ class Layer2DTransformTests: Layer2DFlowTests
     override func testPad2D() throws
     {
         let trainer = _buildTrainer(model: "Pad", bn: false)
+        run(trainer)
+    }
+    
+    override func testJitter2D() throws
+    {
+        let trainer = _buildTrainer(model: "Jitter", bn: false)
         run(trainer)
     }
 }

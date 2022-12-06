@@ -1181,3 +1181,131 @@ kernel void pad2DBackward(
         deltaPrev[offsetPrev] += delta[offset];
     }
 }
+
+kernel void jitter2DForward(
+    const device float * outsPrev,
+    constant uint * pNbChannels,
+    constant uint * pDimensions,
+    constant uint * pJitterDimension,
+    constant uint * pJitterOffsets,
+    constant uint * pNbBatch,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint height, width;
+    uint heightPrev, widthPrev;
+    uint nbChannels;
+    uint jitterDimension;
+    uint offsetI, offsetJ;
+    uint nbBatch;
+    
+    if (pNbChannels && pDimensions && pNbBatch &&
+        pJitterDimension && pJitterOffsets && outsPrev && outs)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        nbChannels = *pNbChannels;
+        jitterDimension = *pJitterDimension;
+        offsetI = pJitterOffsets[0];
+        offsetJ = pJitterOffsets[1];
+        widthPrev = width + jitterDimension;
+        heightPrev = height + jitterDimension;
+        nbBatch = *pNbBatch;
+    }
+    else
+        return ;
+    
+    uint depth = id[0] / width;
+    uint elem = id[1] / height;
+    uint i = id[1] % height;
+    uint j = id[0] % width;
+    
+    if (i * elem >= height * nbBatch ||
+        j * depth >= width * nbChannels)
+    {
+        return ;
+    }
+        
+    uint offsetStartPrev = (depth + nbChannels * elem) * heightPrev;
+    uint offsetPrev = j+offsetJ +
+        (offsetStartPrev + i+offsetI) * widthPrev;
+    
+    uint offsetStart = (depth + nbChannels * elem) * height;
+    uint offset = j + (offsetStart + i) * width;
+    
+    outs[offset] = outsPrev[offsetPrev];
+}
+
+kernel void jitter2DBackward(
+    const device float * delta,
+    constant uint * pNbChannels,
+    constant uint * pDimensions,
+    constant uint * pJitterDimension,
+    constant uint * pJitterOffsets,
+    constant uint * pNbBatch,
+    constant uint * pDirty,
+    device float * deltaPrev,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint height, width;
+    uint heightPrev, widthPrev;
+    uint nbChannels;
+    uint jitterDimension;
+    uint offsetI, offsetJ;
+    uint nbBatch;
+    uint dirty;
+    
+    if (pNbChannels && pDimensions && pNbBatch &&
+        pJitterDimension && pJitterOffsets && pDirty &&
+        delta && deltaPrev)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        nbChannels = *pNbChannels;
+        jitterDimension = *pJitterDimension;
+        offsetI = pJitterOffsets[0];
+        offsetJ = pJitterOffsets[1];
+        widthPrev = width + jitterDimension;
+        heightPrev = height + jitterDimension;
+        nbBatch = *pNbBatch;
+        dirty = *pDirty;
+    }
+    else
+        return ;
+    
+    uint depth = id[0] / widthPrev;
+    uint elem = id[1] / heightPrev;
+    uint i = id[1] % heightPrev;
+    uint j = id[0] % widthPrev;
+    
+    if (i * elem >= heightPrev * nbBatch ||
+        j * depth >= widthPrev * nbChannels)
+    {
+        return ;
+    }
+    
+    uint offsetStartPrev = (depth + nbChannels * elem) * heightPrev;
+    uint offsetPrev = j + (offsetStartPrev + i) * widthPrev;
+    
+    if (dirty &&
+        (i < offsetI || i >= height + offsetI ||
+         j < offsetJ || j >= width + offsetJ))
+    {
+        deltaPrev[offsetPrev] = 0.0;
+    }
+    else if (dirty)
+    {
+        uint offsetStart = (depth + nbChannels * elem) * height;
+        uint offset = j-offsetJ + (offsetStart + i-offsetI) * width;
+        
+        deltaPrev[offsetPrev] = delta[offset];
+    }
+    else if (i >= offsetI && i < height + offsetI &&
+             j >= offsetJ && j < width + offsetJ)
+    {
+        uint offsetStart = (depth + nbChannels * elem) * height;
+        uint offset = j-offsetJ + (offsetStart + i-offsetI) * width;
+        
+        deltaPrev[offsetPrev] += delta[offset];
+    }
+}

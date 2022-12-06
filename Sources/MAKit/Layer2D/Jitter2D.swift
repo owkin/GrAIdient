@@ -159,11 +159,25 @@ public class Jitter2D: Layer2D
         let params = MAKit.Model.Params(context: context)
         params.context.curID = id
             
-        let layer = Jitter2D(
-            layerPrev: layerPrev,
-            jitterDimension: _jitterDimension,
-            params: params
-        )
+        let layer: Jitter2D
+        if !_doNotRandom
+        {
+            layer = Jitter2D(
+                layerPrev: layerPrev,
+                jitterDimension: _jitterDimension,
+                params: params
+            )
+        }
+        else
+        {
+            layer = Jitter2D(
+                layerPrev: layerPrev,
+                jitterDimension: _jitterDimension,
+                offsetI: _offsetI,
+                offsetJ: _offsetJ,
+                params: params
+            )
+        }
         return layer
     }
     

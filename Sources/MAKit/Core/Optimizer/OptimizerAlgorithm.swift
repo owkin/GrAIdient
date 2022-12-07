@@ -184,9 +184,6 @@ public class OptimizerAlgorithm
     {
         for layer in layers
         {
-            let desc = layer.description + String(layer.id)
-            MAKit.Time.start()
-            
             if let layerUpdate = layer as? LayerUpdate,
                 layerUpdate.computeDeltaWeights
             {
@@ -201,8 +198,6 @@ public class OptimizerAlgorithm
                     arrays.g[i] *= factor
                 }}
             }
-            
-            try MAKit.Time.stop(id: "MultiplyGradientCPU", description: desc)
         }
     }
     
@@ -219,9 +214,6 @@ public class OptimizerAlgorithm
     {
         for layer in layers
         {
-            let desc = layer.description + String(layer.id)
-            MAKit.Time.start()
-            
             if let layerUpdate = layer as? LayerUpdate,
                 layerUpdate.computeDeltaWeights
             {
@@ -248,8 +240,6 @@ public class OptimizerAlgorithm
                     command.enqueue()
                 }
             }
-            
-            try MAKit.Time.stop(id: "MultiplyGradientGPU", description: desc)
         }
     }
     
@@ -266,9 +256,6 @@ public class OptimizerAlgorithm
         var gradientSquaredNorm: Double = 0.0
         for layer in layers
         {
-            let desc = layer.description + String(layer.id)
-            MAKit.Time.start()
-            
             if let layerUpdate = layer as? LayerUpdate,
                layerUpdate.computeDeltaWeights
             {
@@ -283,8 +270,6 @@ public class OptimizerAlgorithm
                     gradientSquaredNorm += g * g
                 }}
             }
-            
-            try MAKit.Time.stop(id: "GetGradientNormCPU", description: desc)
         }
         return sqrt(gradientSquaredNorm)
     }
@@ -302,9 +287,6 @@ public class OptimizerAlgorithm
         var partialGradSum: Float = 0.0
         for layer in layers
         {
-            let desc = layer.description + String(layer.id)
-            MAKit.Time.start()
-            
             if let layerUpdate = layer as? LayerUpdate,
                layerUpdate.computeDeltaWeights
             {
@@ -338,8 +320,6 @@ public class OptimizerAlgorithm
                     }
                 }
             }
-            
-            try MAKit.Time.stop(id: "GetGradientNormGPU", description: desc)
         }
         return sqrt(partialGradSum)
     }
@@ -357,9 +337,6 @@ public class OptimizerAlgorithm
         var gradients = [Double]()
         for layer in layers
         {
-            let desc = layer.description + String(layer.id)
-            MAKit.Time.start()
-            
             if let layerUpdate = layer as? LayerUpdate,
                layerUpdate.computeDeltaWeights
             {
@@ -374,8 +351,6 @@ public class OptimizerAlgorithm
                     gradients.append(g)
                 }}
             }
-            
-            try MAKit.Time.stop(id: "GetGradientsCPU", description: desc)
         }
         return gradients
     }
@@ -393,9 +368,6 @@ public class OptimizerAlgorithm
         var gradients = [Float]()
         for layer in layers
         {
-            let desc = layer.description + String(layer.id)
-            MAKit.Time.start()
-            
             if let layerUpdate = layer as? LayerUpdate,
                layerUpdate.computeDeltaWeights
             {
@@ -428,8 +400,6 @@ public class OptimizerAlgorithm
                     }
                 }
             }
-            
-            try MAKit.Time.stop(id: "GetGradientsGPU", description: desc)
         }
         return gradients
     }
@@ -463,9 +433,6 @@ public class OptimizerAlgorithm
         if gradientNorm > normThreshold {
         for layer in layers
         {
-            let desc = layer.description + String(layer.id)
-            MAKit.Time.start()
-            
             if let layerUpdate = layer as? LayerUpdate,
                layerUpdate.computeDeltaWeights
             {
@@ -480,8 +447,6 @@ public class OptimizerAlgorithm
                     arrays.g[i] *= normThreshold / gradientNorm
                 }}
             }
-            
-            try MAKit.Time.stop(id: "ClipGradientCPU", description: desc)
         }}
     }
     
@@ -502,9 +467,6 @@ public class OptimizerAlgorithm
         if gradientNorm > Float(normThreshold) {
         for layer in layers
         {
-            let desc = layer.description + String(layer.id)
-            MAKit.Time.start()
-            
             if let layerUpdate = layer as? LayerUpdate,
                layerUpdate.computeDeltaWeights
             {
@@ -533,8 +495,6 @@ public class OptimizerAlgorithm
                     command.enqueue()
                 }
             }
-            
-            try MAKit.Time.stop(id: "ClipGradientGPU", description: desc)
         }}
     }
     
@@ -549,9 +509,6 @@ public class OptimizerAlgorithm
     {
         for layer in layers
         {
-            let desc = layer.description + String(layer.id)
-            MAKit.Time.start()
-            
             if let layerUpdate = layer as? LayerUpdate,
                layerUpdate.computeDeltaWeights
             {
@@ -562,8 +519,6 @@ public class OptimizerAlgorithm
                 
                 stepCPU(layerUpdate.collectWeightsCPU())
             }
-            
-            try MAKit.Time.stop(id: "UpdateWeightsCPU", description: desc)
         }
     }
     
@@ -578,9 +533,6 @@ public class OptimizerAlgorithm
     {
         for layer in layers
         {
-            let desc = layer.description + String(layer.id)
-            MAKit.Time.start()
-            
             if let layerUpdate = layer as? LayerUpdate,
                layerUpdate.computeDeltaWeights
             {
@@ -591,8 +543,6 @@ public class OptimizerAlgorithm
                 
                 stepGPU(layerUpdate.collectWeightsGPU())
             }
-            
-            try MAKit.Time.stop(id: "UpdateWeightsGPU", description: desc)
         }
     }
     

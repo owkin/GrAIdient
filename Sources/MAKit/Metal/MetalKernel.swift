@@ -1195,11 +1195,5 @@ public class MetalCommand
         
         // Start job.
         _command.commit()
-        
-        if MAKit.Time.track
-        {
-            // Wait for GPU to end.
-            _command.waitUntilCompleted()
-        }
     }
 }

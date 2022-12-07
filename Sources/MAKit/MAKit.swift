@@ -344,68 +344,6 @@ public class MAKit
             }
         }
     }
-    
-    /// Namespace for time tracking settings.
-    public class Time
-    {
-        /// Get/Set track time.
-        public static var track: Bool
-        {
-            get {
-                return getCtx.trackTime
-            }
-            set {
-                getCtx.trackTime = newValue
-            }
-        }
-        
-        /// Start trackking time.
-        public static func start()
-        {
-            if track
-            {
-                TimeTransaction.get.start()
-            }
-        }
-        
-        ///
-        /// Stop tracking time.
-        ///
-        /// Throw an error when time is not being tracked or the output cannot be written.
-        ///
-        /// - Parameters:
-        ///     - id: The id of the function tracked.
-        ///     - description: A short description of the function.
-        ///
-        public static func stop(id: String, description: String) throws
-        {
-            if track
-            {
-                try TimeTransaction.get.stop(id: id, description: description)
-            }
-        }
-        
-        ///
-        /// Dump aggreegated tracked time.
-        ///
-        /// Throw an error when time is not being tracked.
-        ///
-        /// - Parameters:
-        ///     - id: The id of the function tracked.
-        ///     - description: A short description of the function.
-        ///
-        public static func dumpStacked() throws
-        {
-            if track
-            {
-                try TimeTransaction.get.dumpStacked()
-            }
-            else
-            {
-                throw TimeError.TrackTime
-            }
-        }
-    }
 }
 
 /// A global context with stored variables.
@@ -471,12 +409,6 @@ fileprivate class MAKitContext
     var outputDir: URL! = nil
     /// Dirctory wheeree to read and write models.
     var modeleDir: URL! = nil
-    
-    //--------------------------------------------------------------------------
-    // TIME
-    //--------------------------------------------------------------------------
-    /// Time tracking variable.
-    var trackTime = false
 }
 
 ///

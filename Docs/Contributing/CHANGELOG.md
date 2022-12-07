@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🔨 **refactor**: remove transaction ([#31](https://github.com/owkin/MAKit/pull/31))\
 🪜 **layer_2d**: Pad2D & Jitter2D ([#30](https://github.com/owkin/MAKit/pull/30))\
 🚨 **integration**: activate DecorrelateRGB in test ([#29](https://github.com/owkin/MAKit/pull/29))\
 🚨 **integration**: test IDFT and complex numbers ([#28](https://github.com/owkin/MAKit/pull/28))\

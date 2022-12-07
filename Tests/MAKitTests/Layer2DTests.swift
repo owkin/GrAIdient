@@ -219,6 +219,16 @@ class Layer2DGradTests: Input2DMSE1DCase
                 params: params
             )
             
+        case "ResizeBilinear":
+            layer = ResizeBilinear(
+                layerPrev: layer,
+                scalesList: [0.8, 1.2],
+                params: params
+            )
+            layer = AdaptiveAvgPool2D(
+                layerPrev: layer, size: width, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -577,6 +587,19 @@ class Layer2DGradTests: Input2DMSE1DCase
         let trainer = _buildTrainer(model: "Jitter", bn: false)
         run(trainer)
     }
+    
+    func testResizeBilinearCPU() throws
+    {
+        MAKit.Opti.CPU = true
+        let trainer = _buildTrainer(model: "ResizeBilinear", bn: false)
+        run(trainer)
+    }
+    
+    func testResizeBilinearGPU() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinear", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -788,6 +811,26 @@ class Layer2DFlowTests: Input2DMSE1DCase
                 params: params
             )
             
+        case "ResizeBilinear1":
+            layer = ResizeBilinear(
+                layerPrev: layer,
+                scalesList: [0.8],
+                params: params
+            )
+            layer = AdaptiveAvgPool2D(
+                layerPrev: layer, size: width, params: params
+            )
+            
+        case "ResizeBilinear2":
+            layer = ResizeBilinear(
+                layerPrev: layer,
+                scalesList: [1.2],
+                params: params
+            )
+            layer = AdaptiveAvgPool2D(
+                layerPrev: layer, size: width, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -976,6 +1019,18 @@ class Layer2DFlowTests: Input2DMSE1DCase
     func testJitter2D() throws
     {
         let trainer = _buildTrainer(model: "Jitter", bn: false)
+        run(trainer)
+    }
+    
+    func testResizeBilinear1() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinear1", bn: false)
+        run(trainer)
+    }
+    
+    func testResizeBilinear2() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinear2", bn: false)
         run(trainer)
     }
 }
@@ -1186,6 +1241,18 @@ class Layer2DFlowResetTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "Jitter", bn: false)
         run(trainer)
     }
+    
+    override func testResizeBilinear1() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinear1", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinear2() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinear2", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -1394,6 +1461,18 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "Jitter", bn: false)
         run(trainer)
     }
+    
+    override func testResizeBilinear1() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinear1", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinear2() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinear2", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -1600,6 +1679,18 @@ class Layer2DInferenceTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "Jitter", bn: false)
         run(trainer)
     }
+    
+    override func testResizeBilinear1() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinear1", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinear2() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinear2", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -1801,6 +1892,18 @@ class Layer2DLoadTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "Jitter", bn: false)
         run(trainer)
     }
+    
+    override func testResizeBilinear1() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinear1", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinear2() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinear2", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -2000,6 +2103,18 @@ class Layer2DTransformTests: Layer2DFlowTests
     override func testJitter2D() throws
     {
         let trainer = _buildTrainer(model: "Jitter", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinear1() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinear1", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinear2() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinear2", bn: false)
         run(trainer)
     }
 }

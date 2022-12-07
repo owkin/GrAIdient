@@ -139,6 +139,43 @@ public class ResizeBilinear: Layer2D
     }
     
     ///
+    /// Initialize state resources in the GPU execution context.
+    ///
+    /// We initialize the neurons' backward state.
+    ///
+    public override func checkStateBackwardGPU(batchSize: Int) throws
+    {
+        let widthBackup = width
+        let heightBackup = height
+        
+        //
+        // WARNING: dangerous behavior.
+        // - update dimension structure
+        // - build inner structure
+        //
+        if let layerPrev = layerPrev as? Layer2D, delta == nil
+        {
+            let widthPrev = layerPrev.width
+            let heightPrev = layerPrev.height
+            
+            var width: Int = 0
+            var height: Int = 0
+            for scale in _scalesList
+            {
+                width = max(width, Int(round(scale * Double(widthPrev))))
+                height = max(height, Int(round(scale * Double(heightPrev))))
+            }
+            self.width = width
+            self.height = height
+        }
+        
+        try super.checkStateBackwardGPU(batchSize: batchSize)
+        
+        width = widthBackup
+        height = heightBackup
+    }
+    
+    ///
     /// Apply the forward pass of the Gradient Checking in CPU execution context.
     ///
     /// Throw an error if batch size is greater than the first batch size.

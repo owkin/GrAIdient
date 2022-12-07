@@ -4,17 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
-🪜 **layer_2d**: ResizeBilinear ([#32](https://github.com/owkin/MAKit/pull/32))\
-🔨 **refactor**: remove transaction ([#31](https://github.com/owkin/MAKit/pull/31))\
-🪜 **layer_2d**: Pad2D & Jitter2D ([#30](https://github.com/owkin/MAKit/pull/30))\
-🚨 **integration**: activate DecorrelateRGB in test ([#29](https://github.com/owkin/MAKit/pull/29))\
-🚨 **integration**: test IDFT and complex numbers ([#28](https://github.com/owkin/MAKit/pull/28))\
-🪜 **layer_2d**: add tests for non dirty status ([#27](https://github.com/owkin/MAKit/pull/27))\
-🔨 **tests**: factorize transform tests ([#26](https://github.com/owkin/MAKit/pull/26))\
-🪜 **layer_2d**: FTFrequences2D & Multiply2D ([#25](https://github.com/owkin/MAKit/pull/25))\
-🪜 **layer_2d**: LinearScale2D ([#24](https://github.com/owkin/MAKit/pull/24))\
-🪜 **layer_2d**: DecorelateRGB ([#23](https://github.com/owkin/MAKit/pull/23))\
-🪜 **layer_2d**: RDFT2Image ([#22](https://github.com/owkin/MAKit/pull/22))\
+🐛 **fix:** build max delta in ResizeBilinear ([#33](https://github.com/owkin/MAKit/pull/33))\
+🪜 **layer_2d:** ResizeBilinear ([#32](https://github.com/owkin/MAKit/pull/32))\
+🔨 **refactor:** remove transaction ([#31](https://github.com/owkin/MAKit/pull/31))\
+🪜 **layer_2d:** Pad2D & Jitter2D ([#30](https://github.com/owkin/MAKit/pull/30))\
+🚨 **integration:** activate DecorrelateRGB in test ([#29](https://github.com/owkin/MAKit/pull/29))\
+🚨 **integration:** test IDFT and complex numbers ([#28](https://github.com/owkin/MAKit/pull/28))\
+🪜 **layer_2d:** add tests for non dirty status ([#27](https://github.com/owkin/MAKit/pull/27))\
+🔨 **tests:** factorize transform tests ([#26](https://github.com/owkin/MAKit/pull/26))\
+🪜 **layer_2d:** FTFrequences2D & Multiply2D ([#25](https://github.com/owkin/MAKit/pull/25))\
+🪜 **layer_2d:** LinearScale2D ([#24](https://github.com/owkin/MAKit/pull/24))\
+🪜 **layer_2d:** DecorelateRGB ([#23](https://github.com/owkin/MAKit/pull/23))\
+🪜 **layer_2d:** RDFT2Image ([#22](https://github.com/owkin/MAKit/pull/22))\
 🪜 **core:** Sigmoid activation ([#21](https://github.com/owkin/MAKit/pull/21))\
 👷 **ci:** remove swift action ([#20](https://github.com/owkin/MAKit/pull/20))\
 🚀 **metal:** systematic dispatchThreads API ([#19](https://github.com/owkin/MAKit/pull/19))\

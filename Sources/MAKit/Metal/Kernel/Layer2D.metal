@@ -1309,3 +1309,144 @@ kernel void jitter2DBackward(
         deltaPrev[offsetPrev] += delta[offset];
     }
 }
+
+kernel void resizeBilinearForward(
+    const device float * outsPrev,
+    constant uint * pNbChannels,
+    constant uint * pDimensions,
+    constant uint * pDimensionsPrev,
+    constant float * pRatioInOut,
+    constant uint * pNbBatch,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint height, width;
+    uint heightPrev, widthPrev;
+    uint nbChannels;
+    float ratioInOutI, ratioInOutJ;
+    uint nbBatch;
+    
+    if (pNbChannels && pDimensions && pDimensionsPrev &&
+        pRatioInOut && pNbBatch && outsPrev && outs)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        widthPrev = pDimensionsPrev[0];
+        heightPrev = pDimensionsPrev[1];
+        ratioInOutJ = pRatioInOut[0];
+        ratioInOutI = pRatioInOut[1];
+        nbChannels = *pNbChannels;
+        nbBatch = *pNbBatch;
+    }
+    else
+        return ;
+    
+    uint depth = id[0] / width;
+    uint elem = id[1] / height;
+    uint i = id[1] % height;
+    uint j = id[0] % width;
+    
+    if (i * elem >= height * nbBatch ||
+        j * depth >= width * nbChannels)
+    {
+        return ;
+    }
+    
+    float iPrev = float(i) * ratioInOutI;
+    float jPrev = float(j) * ratioInOutJ;
+    
+    uint iPrevInf = floor(iPrev);
+    uint iPrevSup = ceil(iPrev);
+    uint jPrevInf = floor(jPrev);
+    uint jPrevSup = ceil(jPrev);
+    
+    float iWeight = ratioInOutI * float(i) - float(iPrevInf);
+    float jWeight = ratioInOutJ * float(j) - float(jPrevInf);
+    
+    uint offsetStartPrev = (depth + nbChannels * elem) * heightPrev;
+    uint offsetPrev11 = jPrevInf + (offsetStartPrev + iPrevInf) * widthPrev;
+    uint offsetPrev12 = jPrevSup + (offsetStartPrev + iPrevInf) * widthPrev;
+    uint offsetPrev21 = jPrevInf + (offsetStartPrev + iPrevSup) * widthPrev;
+    uint offsetPrev22 = jPrevSup + (offsetStartPrev + iPrevSup) * widthPrev;
+    
+    float out = outsPrev[offsetPrev11] * (1.0 - iWeight) * (1.0 - jWeight);
+    out += outsPrev[offsetPrev12] * (1.0 - iWeight) * jWeight;
+    out += outsPrev[offsetPrev21] * iWeight * (1.0 - jWeight);
+    out += outsPrev[offsetPrev22] * iWeight * jWeight;
+    
+    uint offsetStart = (depth + nbChannels * elem) * height;
+    uint offset = j + (offsetStart + i) * width;
+    
+    outs[offset] = out;
+}
+
+kernel void resizeBilinearBackward(
+    const device float * delta,
+    constant uint * pNbChannels,
+    constant uint * pDimensions,
+    constant uint * pDimensionsPrev,
+    constant float * pRatioInOut,
+    constant uint * pNbBatch,
+    device float * deltaPrev,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint height, width;
+    uint heightPrev, widthPrev;
+    uint nbChannels;
+    float ratioInOutI, ratioInOutJ;
+    uint nbBatch;
+    
+    if (pNbChannels && pDimensions && pDimensionsPrev &&
+        pRatioInOut && pNbBatch && delta && deltaPrev)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        widthPrev = pDimensionsPrev[0];
+        heightPrev = pDimensionsPrev[1];
+        ratioInOutJ = pRatioInOut[0];
+        ratioInOutI = pRatioInOut[1];
+        nbChannels = *pNbChannels;
+        nbBatch = *pNbBatch;
+    }
+    else
+        return ;
+    
+    uint depth = id[0];
+    uint elem = id[1];
+    
+    if (elem >= nbBatch || depth >= nbChannels)
+    {
+        return ;
+    }
+    
+    uint offsetStart = (depth + nbChannels * elem) * height;
+    uint offsetStartPrev = (depth + nbChannels * elem) * heightPrev;
+    
+    for (uint i = 0; i < height; i++) {
+    for (uint j = 0; j < width; j++)
+    {
+        float iPrev = float(i) * ratioInOutI;
+        float jPrev = float(j) * ratioInOutJ;
+        
+        uint iPrevInf = floor(iPrev);
+        uint iPrevSup = ceil(iPrev);
+        uint jPrevInf = floor(jPrev);
+        uint jPrevSup = ceil(jPrev);
+        
+        float iWeight = ratioInOutI * float(i) - float(iPrevInf);
+        float jWeight = ratioInOutJ * float(j) - float(jPrevInf);
+        
+        uint offset = j + (offsetStart + i) * width;
+        float deltaCur = delta[offset];
+        
+        uint offsetPrev11 = jPrevInf + (offsetStartPrev + iPrevInf) * widthPrev;
+        uint offsetPrev12 = jPrevSup + (offsetStartPrev + iPrevInf) * widthPrev;
+        uint offsetPrev21 = jPrevInf + (offsetStartPrev + iPrevSup) * widthPrev;
+        uint offsetPrev22 = jPrevSup + (offsetStartPrev + iPrevSup) * widthPrev;
+        
+        deltaPrev[offsetPrev11] += deltaCur * (1.0 - iWeight) * (1.0 - jWeight);
+        deltaPrev[offsetPrev12] += deltaCur * (1.0 - iWeight) * jWeight;
+        deltaPrev[offsetPrev21] += deltaCur * iWeight * (1.0 - jWeight);
+        deltaPrev[offsetPrev22] += deltaCur * iWeight * jWeight;
+    }}
+}

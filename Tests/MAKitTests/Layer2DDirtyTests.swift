@@ -159,6 +159,16 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
                 layerPrev: secondLayer, size: width, params: params
             )
             
+        case "ResizeBilinear":
+            secondLayer = ResizeBilinear(
+                layerPrev: layer,
+                scalesList: [0.8, 1.2],
+                params: params
+            )
+            secondLayer = AdaptiveAvgPool2D(
+                layerPrev: secondLayer, size: width, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -317,6 +327,19 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
         let trainer = _buildTrainer(model: "Jitter")
         run(trainer)
     }
+    
+    func testResizeBilinearCPU() throws
+    {
+        MAKit.Opti.CPU = true
+        let trainer = _buildTrainer(model: "ResizeBilinear")
+        run(trainer)
+    }
+    
+    func testResizeBilinearGPU() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinear")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -464,6 +487,16 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
                 layerPrev: secondLayer, size: width, params: params
             )
             
+        case "ResizeBilinear":
+            secondLayer = ResizeBilinear(
+                layerPrev: layer,
+                scalesList: [0.8],
+                params: params
+            )
+            secondLayer = AdaptiveAvgPool2D(
+                layerPrev: secondLayer, size: width, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -543,6 +576,12 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
     func testJitter2D() throws
     {
         let trainer = _buildTrainer(model: "Jitter")
+        run(trainer)
+    }
+    
+    func testResizeBilinear() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinear")
         run(trainer)
     }
 }

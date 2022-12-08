@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
-🐛 **fix:** build max delta in ResizeBilinear ([#33](https://github.com/owkin/MAKit/pull/33))\
+🐛 **fix:** ResizeBilinear to output deterministic dimensions ([#33](https://github.com/owkin/MAKit/pull/33))\
 🪜 **layer_2d:** ResizeBilinear ([#32](https://github.com/owkin/MAKit/pull/32))\
 🔨 **refactor:** remove transaction ([#31](https://github.com/owkin/MAKit/pull/31))\
 🪜 **layer_2d:** Pad2D & Jitter2D ([#30](https://github.com/owkin/MAKit/pull/30))\

@@ -25,9 +25,9 @@ open class Layer2D: Layer
     /// Number of channels.
     public let nbChannels: Int
     /// Height of each channel.
-    public internal(set) var height: Int
+    public let height: Int
     /// Width of each channel.
-    public internal(set) var width: Int
+    public let width: Int
     
     /// Number of different weigths for which we are estimating the gradient during Gradient Checking.
     public override var nbGC: Int

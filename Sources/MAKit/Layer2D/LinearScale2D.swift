@@ -2,13 +2,13 @@
 // LinearScale2D.swift
 // MAKit
 //
-// Created by Jean-François REBOUD on 29/11/2022.
+// Created by Jean-François Reboud on 29/11/2022.
 //
 
 ///
 /// Layer with a 2D shape neural structure.
 ///
-/// This layer decorelates RGB color of an image.
+/// This layer scales the input with a multiplicative weight and an additive bias.
 ///
 public class LinearScale2D: Layer2D
 {
@@ -24,6 +24,8 @@ public class LinearScale2D: Layer2D
     ///
     /// - Parameters:
     ///     - layerPrev: Previous layer that has been queued to the model.
+    ///     - weight: Multiplicative number to scale the input.
+    ///     - bias: Additive number to scale the input.
     ///     - params: Contextual parameters linking to the model.
     ///
     public init(layerPrev: Layer2D,

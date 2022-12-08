@@ -162,7 +162,7 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
         case "ResizeBilinear":
             secondLayer = ResizeBilinear(
                 layerPrev: layer,
-                scalesList: [0.8, 1.2],
+                scalesList: [0.8, 1.2], padValue: 0.5,
                 params: params
             )
             secondLayer = AdaptiveAvgPool2D(
@@ -490,7 +490,7 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
         case "ResizeBilinear":
             secondLayer = ResizeBilinear(
                 layerPrev: layer,
-                scalesList: [0.8],
+                scalesList: [0.8], padValue: 0.5,
                 params: params
             )
             secondLayer = AdaptiveAvgPool2D(

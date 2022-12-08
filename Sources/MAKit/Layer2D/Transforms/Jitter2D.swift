@@ -8,7 +8,10 @@
 ///
 /// Layer with a 2D shape neural structure.
 ///
-/// Crop an output grid inside of a taller input one.
+/// Extract output grids that fit into taller input ones.
+///
+/// Note that his layer can be called in a deterministic way thanks to the `offsetI` & `offsetJ`
+/// parameters.
 ///
 public class Jitter2D: Layer2D
 {
@@ -59,6 +62,9 @@ public class Jitter2D: Layer2D
     
     ///
     /// Create a layer with a 2D shape neural structure.
+    ///
+    /// This API enables to build a deterministic layer where `offsetI` & `offsetJ` specify
+    /// where to select the "inner window".
     ///
     /// - Parameters:
     ///     - layerPrev: Previous layer that has been queued to the model.

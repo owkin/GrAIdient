@@ -47,6 +47,7 @@ let LAYER_REGISTRY: [String: Codable.Type] = buildRegistry(
     MSE1D.self,
     Multiply2D.self,
     Pad2D.self,
+    ResizeBilinearJitter.self,
     ResizeBilinear.self,
     Rotate2D.self,
     Sum2D.self,

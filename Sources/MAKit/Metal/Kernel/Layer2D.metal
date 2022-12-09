@@ -1357,8 +1357,8 @@ kernel void resizeBilinearForward(
     
     float ratioInOutI = float(heightPrev - 1) / float(heightResize - 1);
     float ratioInOutJ = float(widthPrev - 1) / float(widthResize - 1);
-    float padDimensionI = (width - widthResize) / 2;
-    float padDimensionJ = (height - heightResize) / 2;
+    float padDimensionI = (height - heightResize) / 2;
+    float padDimensionJ = (width - widthResize) / 2;
     
     uint offsetStart = (depth + nbChannels * elem) * height;
     uint offset = j + (offsetStart + i) * width;
@@ -1443,8 +1443,8 @@ kernel void resizeBilinearBackward(
     
     float ratioInOutI = float(heightPrev - 1) / float(heightResize - 1);
     float ratioInOutJ = float(widthPrev - 1) / float(widthResize - 1);
-    float padDimensionI = (width - widthResize) / 2;
-    float padDimensionJ = (height - heightResize) / 2;
+    float padDimensionI = (height - heightResize) / 2;
+    float padDimensionJ = (width - widthResize) / 2;
     
     uint offsetStart = (depth + nbChannels * elem) * height;
     uint offsetStartPrev = (depth + nbChannels * elem) * heightPrev;

@@ -236,6 +236,16 @@ class Layer2DGradTests: Input2DMSE1DCase
                 params: params
             )
             
+        case "ResizeBilinearJitter":
+            layer = ResizeBilinearJitter(
+                layerPrev: layer,
+                scalesList: [0.8, 1.2],
+                params: params
+            )
+            layer = AdaptiveAvgPool2D(
+                layerPrev: layer, size: width, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -618,6 +628,13 @@ class Layer2DGradTests: Input2DMSE1DCase
     func testRotateGPU() throws
     {
         let trainer = _buildTrainer(model: "Rotate", bn: false)
+        run(trainer)
+    }
+    
+    func testResizeBilinearJitterCPU() throws
+    {
+        MAKit.Opti.CPU = true
+        let trainer = _buildTrainer(model: "ResizeBilinearJitter", bn: false)
         run(trainer)
     }
 }

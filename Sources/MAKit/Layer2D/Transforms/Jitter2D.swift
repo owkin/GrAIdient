@@ -272,8 +272,7 @@ public class Jitter2D: Layer2D
                 {
                     neurons[depth].get(i, j)!.v[elem].out =
                         neuronsPrev[depth].get(
-                            i+_offsetI,
-                            j+_offsetJ)!.v[elem].out
+                            i+_offsetI, j+_offsetJ)!.v[elem].out
                 }}
             }}
         }

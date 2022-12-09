@@ -1,8 +1,8 @@
 //
-// ResizeBilinearJitter.swift
+// ResizeBilinearPad.swift
 // MAKit
 //
-// Created by Jean-François Reboud on 09/12/2022.
+// Created by Jean-François Reboud on 07/12/2022.
 //
 
 import Foundation
@@ -10,19 +10,15 @@ import Foundation
 ///
 /// Layer with a 2D shape neural structure.
 ///
-/// Bilnear resize input grids.
+/// Bilnear resize input grids, then pad missing values.
 ///
 /// Note that this layer enforces deterministic dimensions for the output grids.
-/// The final dimensions being the maximal scale of the dimensions of the input grids.
-/// For intermediate scales, padding is used in order to complete the missing values.
+/// The final dimensions being the maximal scale of the dimensions of the input grids
 ///
-public class ResizeBilinearJitter: Layer2D
+public class ResizeBilinearPad: Layer2D
 {
     let _scalesList: [Double]
-    
-    var _offsetI: Int = 0
-    var _offsetJ: Int = 0
-    var _doNotRandom: Bool = false
+    let _padValue: Double
     
     var _widthResize: Int = 0
     var _heightResize: Int = 0
@@ -30,10 +26,7 @@ public class ResizeBilinearJitter: Layer2D
     private enum Keys: String, CodingKey
     {
         case scalesList
-        case jitterDimension
-        case doNotRandom
-        case offsetI
-        case offsetJ
+        case padValue
     }
     
     ///
@@ -42,12 +35,15 @@ public class ResizeBilinearJitter: Layer2D
     /// - Parameters:
     ///     - layerPrev: Previous layer that has been queued to the model.
     ///     - scalesList: List of scales to apply to (heightPrev, widthPrev) dimensions.
+    ///     - padValue: Value to set on the created borders.
     ///     - params: Contextual parameters linking to the model.
     ///
     public init(layerPrev: Layer2D,
                 scalesList: [Double],
+                padValue: Double,
                 params: MAKit.Model.Params)
     {
+        _padValue = padValue
         _scalesList = scalesList
         
         if scalesList.count == 0
@@ -66,66 +62,13 @@ public class ResizeBilinearJitter: Layer2D
         let heightPrev = layerPrev.height
         let widthPrev = layerPrev.width
         
-        var width: Int = 10000
-        var height: Int = 10000
+        var width: Int = 0
+        var height: Int = 0
         for scale in scalesList
         {
-            width = min(width, Int(round(scale * Double(widthPrev))))
-            height = min(height, Int(round(scale * Double(heightPrev))))
+            width = max(width, Int(round(scale * Double(widthPrev))))
+            height = max(height, Int(round(scale * Double(heightPrev))))
         }
-        
-        super.init(layerPrev: layerPrev,
-                   nbChannels: nbChannels,
-                   height: height,
-                   width: width,
-                   params: params)
-    }
-    
-    ///
-    /// Create a layer with a 2D shape neural structure.
-    ///
-    /// - Parameters:
-    ///     - layerPrev: Previous layer that has been queued to the model.
-    ///     - scalesList: List of scales to apply to (heightPrev, widthPrev) dimensions.
-    ///     - offsetI: Height offset.
-    ///     - offsetJ: Width offset.
-    ///     - params: Contextual parameters linking to the model.
-    ///
-    public init(layerPrev: Layer2D,
-                scalesList: [Double],
-                offsetI: Int,
-                offsetJ: Int,
-                params: MAKit.Model.Params)
-    {
-        _scalesList = scalesList
-        _doNotRandom = true
-        _offsetI = offsetI
-        _offsetJ = offsetJ
-        
-        if scalesList.count == 0
-        {
-            fatalError("`scalesList` should have at least one element.")
-        }
-        for scale in scalesList
-        {
-            if scale == 0
-            {
-                fatalError("Only non 0 scales are possible.")
-            }
-        }
-        
-        let nbChannels = layerPrev.nbChannels
-        let heightPrev = layerPrev.height
-        let widthPrev = layerPrev.width
-        
-        var width: Int = 10000
-        var height: Int = 10000
-        for scale in scalesList
-        {
-            width = min(width, Int(round(scale * Double(widthPrev))))
-            height = min(height, Int(round(scale * Double(heightPrev))))
-        }
-        
         super.init(layerPrev: layerPrev,
                    nbChannels: nbChannels,
                    height: height,
@@ -147,9 +90,9 @@ public class ResizeBilinearJitter: Layer2D
         _scalesList = try values.decode(
             [Double].self, forKey: Keys.scalesList
         )
-        _doNotRandom = try values.decode(Bool.self, forKey: Keys.doNotRandom)
-        _offsetI = try values.decode(Int.self, forKey: Keys.offsetI)
-        _offsetJ = try values.decode(Int.self, forKey: Keys.offsetJ)
+        _padValue = try values.decode(
+            Double.self, forKey: Keys.padValue
+        )
         try super.init(from: decoder)
     }
     
@@ -168,9 +111,7 @@ public class ResizeBilinearJitter: Layer2D
     {
         var container = encoder.container(keyedBy: Keys.self)
         try container.encode(_scalesList, forKey: Keys.scalesList)
-        try container.encode(_doNotRandom, forKey: Keys.doNotRandom)
-        try container.encode(_offsetI, forKey: Keys.offsetI)
-        try container.encode(_offsetJ, forKey: Keys.offsetJ)
+        try container.encode(_padValue, forKey: Keys.padValue)
         try super.encode(to: encoder)
     }
     
@@ -196,25 +137,12 @@ public class ResizeBilinearJitter: Layer2D
         let params = MAKit.Model.Params(context: context)
         params.context.curID = id
             
-        let layer: ResizeBilinearJitter
-        if !_doNotRandom
-        {
-            layer = ResizeBilinearJitter(
-                layerPrev: layerPrev,
-                scalesList: _scalesList,
-                params: params
-            )
-        }
-        else
-        {
-            layer = ResizeBilinearJitter(
-                layerPrev: layerPrev,
-                scalesList: _scalesList,
-                offsetI: _offsetI,
-                offsetJ: _offsetJ,
-                params: params
-            )
-        }
+        let layer = ResizeBilinearPad(
+            layerPrev: layerPrev,
+            scalesList: _scalesList,
+            padValue: _padValue,
+            params: params
+        )
         return layer
     }
     
@@ -241,9 +169,13 @@ public class ResizeBilinearJitter: Layer2D
                     )
                 }}
             }
-        
-            let ratioInOutI = Double(_heightResize - 1) / Double(height - 1)
-            let ratioInOutJ = Double(_widthResize - 1) / Double(width - 1)
+            
+            let heightPrev = layerPrev.height
+            let widthPrev = layerPrev.width
+            let ratioInOutI = Double(heightPrev - 1) / Double(_heightResize - 1)
+            let ratioInOutJ = Double(widthPrev - 1) / Double(_widthResize - 1)
+            let padDimensionI = (height - _heightResize) / 2
+            let padDimensionJ = (width - _widthResize) / 2
             
             let neuronsPrev = layerPrev.neurons
             for batch in 0..<batchSize {
@@ -253,36 +185,44 @@ public class ResizeBilinearJitter: Layer2D
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    let iPrev = Double(i) * ratioInOutI
-                    let jPrev = Double(j) * ratioInOutJ
-                    
-                    let iPrevInf = Int(floor(iPrev))
-                    let iPrevSup = Int(ceil(iPrev))
-                    let jPrevInf = Int(floor(jPrev))
-                    let jPrevSup = Int(ceil(jPrev))
-                    
-                    let iWeight = ratioInOutI * Double(i) - Double(iPrevInf)
-                    let jWeight = ratioInOutJ * Double(j) - Double(jPrevInf)
-                    
-                    let outPrev11 = neuronsPrev[depth].get(
-                        iPrevInf+_offsetI, jPrevInf+_offsetJ
-                    )!.gc[batch][elem].out
-                    let outPrev12 = neuronsPrev[depth].get(
-                        iPrevInf+_offsetI, jPrevSup+_offsetJ
-                    )!.gc[batch][elem].out
-                    let outPrev21 = neuronsPrev[depth].get(
-                        iPrevSup+_offsetI, jPrevInf+_offsetJ
-                    )!.gc[batch][elem].out
-                    let outPrev22 = neuronsPrev[depth].get(
-                        iPrevSup+_offsetI, jPrevSup+_offsetJ
-                    )!.gc[batch][elem].out
-                    
-                    var out = outPrev11 * (1.0 - jWeight) * (1.0 - iWeight)
-                    out += outPrev12 * jWeight * (1.0 - iWeight)
-                    out += outPrev21 * (1.0 - jWeight) * iWeight
-                    out += outPrev22 * jWeight * iWeight
-                    
-                    neurons[depth].get(i, j)!.gc[batch][elem].out = out
+                    if i < padDimensionI || i >= height - padDimensionI ||
+                       j < padDimensionJ || j >= width - padDimensionJ
+                    {
+                        neurons[depth].get(i, j)!.gc[batch][elem].out =
+                            _padValue
+                    }
+                    else
+                    {
+                        let I = i-padDimensionI
+                        let J = j-padDimensionJ
+                        
+                        let iPrev = Double(I) * ratioInOutI
+                        let jPrev = Double(J) * ratioInOutJ
+                        
+                        let iPrevInf = Int(floor(iPrev))
+                        let iPrevSup = Int(ceil(iPrev))
+                        let jPrevInf = Int(floor(jPrev))
+                        let jPrevSup = Int(ceil(jPrev))
+                        
+                        let iWeight = ratioInOutI * Double(I) - Double(iPrevInf)
+                        let jWeight = ratioInOutJ * Double(J) - Double(jPrevInf)
+                        
+                        let outPrev11 = neuronsPrev[depth].get(
+                            iPrevInf, jPrevInf)!.gc[batch][elem].out
+                        let outPrev12 = neuronsPrev[depth].get(
+                            iPrevInf, jPrevSup)!.gc[batch][elem].out
+                        let outPrev21 = neuronsPrev[depth].get(
+                            iPrevSup, jPrevInf)!.gc[batch][elem].out
+                        let outPrev22 = neuronsPrev[depth].get(
+                            iPrevSup, jPrevSup)!.gc[batch][elem].out
+                        
+                        var out = outPrev11 * (1.0 - jWeight) * (1.0 - iWeight)
+                        out += outPrev12 * jWeight * (1.0 - iWeight)
+                        out += outPrev21 * (1.0 - jWeight) * iWeight
+                        out += outPrev22 * jWeight * iWeight
+                        
+                        neurons[depth].get(i, j)!.gc[batch][elem].out = out
+                    }
                 }}
             }}}
         }
@@ -319,34 +259,14 @@ public class ResizeBilinearJitter: Layer2D
                 let randIndex = Int.random(in: 0..<_scalesList.count)
                 let ratioInOut = _scalesList[randIndex]
                 
-                _widthResize = Int(round(Double(width) / ratioInOut))
-                _heightResize = Int(round(Double(height) / ratioInOut))
+                _widthResize = Int(round(ratioInOut * Double(widthPrev)))
+                _heightResize = Int(round(ratioInOut * Double(heightPrev)))
             }
             
-            let ratioInOutI = Double(_heightResize - 1) / Double(height - 1)
-            let ratioInOutJ = Double(_widthResize - 1) / Double(width - 1)
-            let jitterDimensionI = heightPrev - _heightResize
-            let jitterDimensionJ = widthPrev - _heightResize
-            
-            if !_doNotRandom
-            {
-                if jitterDimensionI == 0
-                {
-                    _offsetI = 0
-                }
-                else
-                {
-                    _offsetI = Int.random(in: 0..<jitterDimensionI)
-                }
-                if jitterDimensionJ == 0
-                {
-                    _offsetJ = 0
-                }
-                else
-                {
-                    _offsetJ = Int.random(in: 0..<jitterDimensionJ)
-                }
-            }
+            let ratioInOutI = Double(heightPrev - 1) / Double(_heightResize - 1)
+            let ratioInOutJ = Double(widthPrev - 1) / Double(_widthResize - 1)
+            let padDimensionI = (height - _heightResize) / 2
+            let padDimensionJ = (width - _widthResize) / 2
             
             let neuronsPrev = layerPrev.neurons
             for elem in 0..<batchSize {
@@ -355,32 +275,43 @@ public class ResizeBilinearJitter: Layer2D
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    let iPrev = Double(i) * ratioInOutI
-                    let jPrev = Double(j) * ratioInOutJ
-                    
-                    let iPrevInf = Int(floor(iPrev))
-                    let iPrevSup = Int(ceil(iPrev))
-                    let jPrevInf = Int(floor(jPrev))
-                    let jPrevSup = Int(ceil(jPrev))
-                    
-                    let iWeight = ratioInOutI * Double(i) - Double(iPrevInf)
-                    let jWeight = ratioInOutJ * Double(j) - Double(jPrevInf)
-                    
-                    let outPrev11 = neuronsPrev[depth].get(
-                        iPrevInf+_offsetI, jPrevInf+_offsetJ)!.v[elem].out
-                    let outPrev12 = neuronsPrev[depth].get(
-                        iPrevInf+_offsetI, jPrevSup+_offsetJ)!.v[elem].out
-                    let outPrev21 = neuronsPrev[depth].get(
-                        iPrevSup+_offsetI, jPrevInf+_offsetJ)!.v[elem].out
-                    let outPrev22 = neuronsPrev[depth].get(
-                        iPrevSup+_offsetI, jPrevSup+_offsetJ)!.v[elem].out
-                    
-                    var out = outPrev11 * (1.0 - iWeight) * (1.0 - jWeight)
-                    out += outPrev12 * (1.0 - iWeight) * jWeight
-                    out += outPrev21 * iWeight * (1.0 - jWeight)
-                    out += outPrev22 * iWeight * jWeight
-                    
-                    neurons[depth].get(i, j)!.v[elem].out = out
+                    if i < padDimensionI || i >= height - padDimensionI ||
+                       j < padDimensionJ || j >= width - padDimensionJ
+                    {
+                        neurons[depth].get(i, j)!.v[elem].out = _padValue
+                    }
+                    else
+                    {
+                        let I = i-padDimensionI
+                        let J = j-padDimensionJ
+                        
+                        let iPrev = Double(I) * ratioInOutI
+                        let jPrev = Double(J) * ratioInOutJ
+                        
+                        let iPrevInf = Int(floor(iPrev))
+                        let iPrevSup = Int(ceil(iPrev))
+                        let jPrevInf = Int(floor(jPrev))
+                        let jPrevSup = Int(ceil(jPrev))
+                        
+                        let iWeight = ratioInOutI * Double(I) - Double(iPrevInf)
+                        let jWeight = ratioInOutJ * Double(J) - Double(jPrevInf)
+                        
+                        let outPrev11 = neuronsPrev[depth].get(
+                            iPrevInf, jPrevInf)!.v[elem].out
+                        let outPrev12 = neuronsPrev[depth].get(
+                            iPrevInf, jPrevSup)!.v[elem].out
+                        let outPrev21 = neuronsPrev[depth].get(
+                            iPrevSup, jPrevInf)!.v[elem].out
+                        let outPrev22 = neuronsPrev[depth].get(
+                            iPrevSup, jPrevSup)!.v[elem].out
+                        
+                        var out = outPrev11 * (1.0 - iWeight) * (1.0 - jWeight)
+                        out += outPrev12 * (1.0 - iWeight) * jWeight
+                        out += outPrev21 * iWeight * (1.0 - jWeight)
+                        out += outPrev22 * iWeight * jWeight
+                        
+                        neurons[depth].get(i, j)!.v[elem].out = out
+                    }
                 }}
             }}
         }
@@ -407,31 +338,8 @@ public class ResizeBilinearJitter: Layer2D
                 let randIndex = Int.random(in: 0..<_scalesList.count)
                 let ratioInOut = _scalesList[randIndex]
                 
-                _widthResize = Int(round(Double(width) / ratioInOut))
-                _heightResize = Int(round(Double(height) / ratioInOut))
-            }
-            
-            let jitterDimensionI = heightPrev - _heightResize
-            let jitterDimensionJ = widthPrev - _heightResize
-            
-            if !_doNotRandom
-            {
-                if jitterDimensionI == 0
-                {
-                    _offsetI = 0
-                }
-                else
-                {
-                    _offsetI = Int.random(in: 0..<jitterDimensionI)
-                }
-                if jitterDimensionJ == 0
-                {
-                    _offsetJ = 0
-                }
-                else
-                {
-                    _offsetJ = Int.random(in: 0..<jitterDimensionJ)
-                }
+                _widthResize = Int(round(ratioInOut * Double(widthPrev)))
+                _heightResize = Int(round(ratioInOut * Double(heightPrev)))
             }
             
             let pNbChannels: [UInt32] = [UInt32(nbChannels)]
@@ -443,17 +351,17 @@ public class ResizeBilinearJitter: Layer2D
             let pDimensionsResize: [UInt32] = [
                 UInt32(_widthResize), UInt32(_heightResize)
             ]
-            let pCropOffsets: [UInt32] = [UInt32(_offsetJ), UInt32(_offsetI)]
+            let pPadValue: [Float] = [Float(_padValue)]
             
             let command = MetalKernel.get.createCommand(
-                "resizeBilinearCropForward", deviceID: deviceID
+                "resizeBilinearPadForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(pNbChannels, atIndex: 1)
             command.setBytes(pDimensions, atIndex: 2)
             command.setBytes(pDimensionsPrev, atIndex: 3)
             command.setBytes(pDimensionsResize, atIndex: 4)
-            command.setBytes(pCropOffsets, atIndex: 5)
+            command.setBytes(pPadValue, atIndex: 5)
             command.setBytes(pNbBatch, atIndex: 6)
             command.setBuffer(outs.metal, atIndex: 7)
             
@@ -487,14 +395,16 @@ public class ResizeBilinearJitter: Layer2D
                 }}
             }
             
-            let ratioInOutI = Double(_heightResize - 1) / Double(height - 1)
-            let ratioInOutJ = Double(_widthResize - 1) / Double(width - 1)
+            let ratioInOutI = Double(heightPrev - 1) / Double(_heightResize - 1)
+            let ratioInOutJ = Double(widthPrev - 1) / Double(_widthResize - 1)
+            let padDimensionI = (height - _heightResize) / 2
+            let padDimensionJ = (width - _widthResize) / 2
             
             for elem in 0..<batchSize {
             for depth in 0..<nbChannels
             {
-                for i in 0..<height {
-                for j in 0..<width
+                for i in 0..<_heightResize {
+                for j in 0..<_widthResize
                 {
                     let iPrev = Double(i) * ratioInOutI
                     let jPrev = Double(j) * ratioInOutJ
@@ -507,20 +417,17 @@ public class ResizeBilinearJitter: Layer2D
                     let iWeight = ratioInOutI * Double(i) - Double(iPrevInf)
                     let jWeight = ratioInOutJ * Double(j) - Double(jPrevInf)
                     
-                    let delta = neurons[depth].get(i, j)!.v[elem].delta
+                    let delta = neurons[depth].get(
+                        i+padDimensionI, j+padDimensionJ)!.v[elem].delta
                     
-                    neuronsPrev[depth].get(
-                        iPrevInf+_offsetI, jPrevInf+_offsetJ
-                    )!.v[elem].delta += delta * (1.0-iWeight) * (1.0-jWeight)
-                    neuronsPrev[depth].get(
-                        iPrevInf+_offsetI, jPrevSup+_offsetJ
-                    )!.v[elem].delta += delta * (1.0 - iWeight) * jWeight
-                    neuronsPrev[depth].get(
-                        iPrevSup+_offsetI, jPrevInf+_offsetJ
-                    )!.v[elem].delta += delta * iWeight * (1.0 - jWeight)
-                    neuronsPrev[depth].get(
-                        iPrevSup+_offsetI, jPrevSup+_offsetJ
-                    )!.v[elem].delta += delta * iWeight * jWeight
+                    neuronsPrev[depth].get(iPrevInf, jPrevInf)!.v[elem].delta +=
+                        delta * (1.0 - iWeight) * (1.0 - jWeight)
+                    neuronsPrev[depth].get(iPrevInf, jPrevSup)!.v[elem].delta +=
+                        delta * (1.0 - iWeight) * jWeight
+                    neuronsPrev[depth].get(iPrevSup, jPrevInf)!.v[elem].delta +=
+                        delta * iWeight * (1.0 - jWeight)
+                    neuronsPrev[depth].get(iPrevSup, jPrevSup)!.v[elem].delta +=
+                        delta * iWeight * jWeight
                 }}
             }}
             propagateDirty()
@@ -566,19 +473,17 @@ public class ResizeBilinearJitter: Layer2D
             let pDimensionsResize: [UInt32] = [
                 UInt32(_widthResize), UInt32(_heightResize)
             ]
-            let pCropOffsets: [UInt32] = [UInt32(_offsetJ), UInt32(_offsetI)]
             
             command = MetalKernel.get.createCommand(
-                "resizeBilinearCropBackward", deviceID: deviceID
+                "resizeBilinearPadBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBytes(pNbChannels, atIndex: 1)
             command.setBytes(pDimensions, atIndex: 2)
             command.setBytes(pDimensionsPrev, atIndex: 3)
             command.setBytes(pDimensionsResize, atIndex: 4)
-            command.setBytes(pCropOffsets, atIndex: 5)
-            command.setBytes(pNbBatch, atIndex: 6)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 7)
+            command.setBytes(pNbBatch, atIndex: 5)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 6)
             
             command.dispatchThreads(
                 width: widthPrev * nbChannels,

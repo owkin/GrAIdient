@@ -1182,12 +1182,12 @@ kernel void pad2DBackward(
     }
 }
 
-kernel void jitter2DForward(
+kernel void crop2DForward(
     const device float * outsPrev,
     constant uint * pNbChannels,
     constant uint * pDimensions,
-    constant uint * pJitterDimension,
-    constant uint * pJitterOffsets,
+    constant uint * pCropDimension,
+    constant uint * pCropOffsets,
     constant uint * pNbBatch,
     device float * outs,
     uint2 id [[ thread_position_in_grid ]])
@@ -1195,21 +1195,21 @@ kernel void jitter2DForward(
     uint height, width;
     uint heightPrev, widthPrev;
     uint nbChannels;
-    uint jitterDimension;
+    uint cropDimension;
     uint offsetI, offsetJ;
     uint nbBatch;
     
     if (pNbChannels && pDimensions && pNbBatch &&
-        pJitterDimension && pJitterOffsets && outsPrev && outs)
+        pCropDimension && pCropOffsets && outsPrev && outs)
     {
         width = pDimensions[0];
         height = pDimensions[1];
         nbChannels = *pNbChannels;
-        jitterDimension = *pJitterDimension;
-        offsetJ = pJitterOffsets[0];
-        offsetI = pJitterOffsets[1];
-        widthPrev = width + jitterDimension;
-        heightPrev = height + jitterDimension;
+        cropDimension = *pCropDimension;
+        offsetJ = pCropOffsets[0];
+        offsetI = pCropOffsets[1];
+        widthPrev = width + cropDimension;
+        heightPrev = height + cropDimension;
         nbBatch = *pNbBatch;
     }
     else
@@ -1236,12 +1236,12 @@ kernel void jitter2DForward(
     outs[offset] = outsPrev[offsetPrev];
 }
 
-kernel void jitter2DBackward(
+kernel void crop2DBackward(
     const device float * delta,
     constant uint * pNbChannels,
     constant uint * pDimensions,
-    constant uint * pJitterDimension,
-    constant uint * pJitterOffsets,
+    constant uint * pCropDimension,
+    constant uint * pCropOffsets,
     constant uint * pNbBatch,
     constant uint * pDirty,
     device float * deltaPrev,
@@ -1250,23 +1250,23 @@ kernel void jitter2DBackward(
     uint height, width;
     uint heightPrev, widthPrev;
     uint nbChannels;
-    uint jitterDimension;
+    uint cropDimension;
     uint offsetI, offsetJ;
     uint nbBatch;
     uint dirty;
     
     if (pNbChannels && pDimensions && pNbBatch &&
-        pJitterDimension && pJitterOffsets && pDirty &&
+        pCropDimension && pCropOffsets && pDirty &&
         delta && deltaPrev)
     {
         width = pDimensions[0];
         height = pDimensions[1];
         nbChannels = *pNbChannels;
-        jitterDimension = *pJitterDimension;
-        offsetJ = pJitterOffsets[0];
-        offsetI = pJitterOffsets[1];
-        widthPrev = width + jitterDimension;
-        heightPrev = height + jitterDimension;
+        cropDimension = *pCropDimension;
+        offsetJ = pCropOffsets[0];
+        offsetI = pCropOffsets[1];
+        widthPrev = width + cropDimension;
+        heightPrev = height + cropDimension;
         nbBatch = *pNbBatch;
         dirty = *pDirty;
     }
@@ -1310,7 +1310,7 @@ kernel void jitter2DBackward(
     }
 }
 
-kernel void resizeBilinearForward(
+kernel void resizeBilinearPadForward(
     const device float * outsPrev,
     constant uint * pNbChannels,
     constant uint * pDimensions,
@@ -1399,7 +1399,7 @@ kernel void resizeBilinearForward(
     }
 }
 
-kernel void resizeBilinearBackward(
+kernel void resizeBilinearPadBackward(
     const device float * delta,
     constant uint * pNbChannels,
     constant uint * pDimensions,

@@ -229,6 +229,13 @@ class Layer2DGradTests: Input2DMSE1DCase
                 layerPrev: layer, size: width, params: params
             )
             
+        case "Rotate":
+            layer = Rotate2D(
+                layerPrev: layer,
+                anglesList: [20.0, 350.0], padValue: 0.5,
+                params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -341,14 +348,14 @@ class Layer2DGradTests: Input2DMSE1DCase
         run(trainer)
     }
     
-    func testBN2DCPU() throws
+    func testBNCPU() throws
     {
         MAKit.Opti.CPU = true
         let trainer = _buildTrainer(model: "BN", bn: false)
         run(trainer)
     }
     
-    func testBN2DGPU() throws
+    func testBNGPU() throws
     {
         let trainer = _buildTrainer(model: "BN", bn: false)
         run(trainer)
@@ -536,53 +543,53 @@ class Layer2DGradTests: Input2DMSE1DCase
         run(trainer)
     }
     
-    func testLinearScale2DCPU() throws
+    func testLinearScaleCPU() throws
     {
         MAKit.Opti.CPU = true
         let trainer = _buildTrainer(model: "LinearScale", bn: false)
         run(trainer)
     }
     
-    func testLinearScale2DGPU() throws
+    func testLinearScaleGPU() throws
     {
         let trainer = _buildTrainer(model: "LinearScale", bn: false)
         run(trainer)
     }
     
-    func testMultiply2DCPU() throws
+    func testMultiplyCPU() throws
     {
         MAKit.Opti.CPU = true
         let trainer = _buildTrainer(model: "Multiply", bn: false)
         run(trainer)
     }
     
-    func testMultiply2DGPU() throws
+    func testMultiplyGPU() throws
     {
         let trainer = _buildTrainer(model: "Multiply", bn: false)
         run(trainer)
     }
     
-    func testPad2DCPU() throws
+    func testPadCPU() throws
     {
         MAKit.Opti.CPU = true
         let trainer = _buildTrainer(model: "Pad", bn: false)
         run(trainer)
     }
     
-    func testPad2DGPU() throws
+    func testPadGPU() throws
     {
         let trainer = _buildTrainer(model: "Pad", bn: false)
         run(trainer)
     }
     
-    func testJitter2DCPU() throws
+    func testJitterCPU() throws
     {
         MAKit.Opti.CPU = true
         let trainer = _buildTrainer(model: "Jitter", bn: false)
         run(trainer)
     }
     
-    func testJitter2DGPU() throws
+    func testJitterGPU() throws
     {
         let trainer = _buildTrainer(model: "Jitter", bn: false)
         run(trainer)
@@ -598,6 +605,19 @@ class Layer2DGradTests: Input2DMSE1DCase
     func testResizeBilinearGPU() throws
     {
         let trainer = _buildTrainer(model: "ResizeBilinear", bn: false)
+        run(trainer)
+    }
+    
+    func testRotateCPU() throws
+    {
+        MAKit.Opti.CPU = true
+        let trainer = _buildTrainer(model: "Rotate", bn: false)
+        run(trainer)
+    }
+    
+    func testRotateGPU() throws
+    {
+        let trainer = _buildTrainer(model: "Rotate", bn: false)
         run(trainer)
     }
 }
@@ -831,6 +851,13 @@ class Layer2DFlowTests: Input2DMSE1DCase
                 layerPrev: layer, size: width, params: params
             )
             
+        case "Rotate":
+            layer = Rotate2D(
+                layerPrev: layer,
+                anglesList: [20.0], padValue: 0.5,
+                params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -908,7 +935,7 @@ class Layer2DFlowTests: Input2DMSE1DCase
         run(trainer)
     }
     
-    func testBN2D() throws
+    func testBN() throws
     {
         let trainer = _buildTrainer(model: "BN", bn: false)
         run(trainer)
@@ -998,25 +1025,25 @@ class Layer2DFlowTests: Input2DMSE1DCase
         run(trainer)
     }
     
-    func testLinearScale2D() throws
+    func testLinearScale() throws
     {
         let trainer = _buildTrainer(model: "LinearScale", bn: false)
         run(trainer)
     }
     
-    func testMultiply2D() throws
+    func testMultiply() throws
     {
         let trainer = _buildTrainer(model: "Multiply", bn: false)
         run(trainer)
     }
     
-    func testPad2D() throws
+    func testPad() throws
     {
         let trainer = _buildTrainer(model: "Pad", bn: false)
         run(trainer)
     }
     
-    func testJitter2D() throws
+    func testJitter() throws
     {
         let trainer = _buildTrainer(model: "Jitter", bn: false)
         run(trainer)
@@ -1031,6 +1058,12 @@ class Layer2DFlowTests: Input2DMSE1DCase
     func testResizeBilinear2() throws
     {
         let trainer = _buildTrainer(model: "ResizeBilinear2", bn: false)
+        run(trainer)
+    }
+    
+    func testRotate() throws
+    {
+        let trainer = _buildTrainer(model: "Rotate", bn: false)
         run(trainer)
     }
 }
@@ -1128,7 +1161,7 @@ class Layer2DFlowResetTests: Layer2DFlowTests
         run(trainer)
     }
     
-    override func testBN2D() throws
+    override func testBN() throws
     {
         let trainer = _buildTrainer(model: "BN", bn: false)
         run(trainer)
@@ -1218,25 +1251,25 @@ class Layer2DFlowResetTests: Layer2DFlowTests
         run(trainer)
     }
     
-    override func testLinearScale2D() throws
+    override func testLinearScale() throws
     {
         let trainer = _buildTrainer(model: "LinearScale", bn: false)
         run(trainer)
     }
     
-    override func testMultiply2D() throws
+    override func testMultiply() throws
     {
         let trainer = _buildTrainer(model: "Multiply", bn: false)
         run(trainer)
     }
     
-    override func testPad2D() throws
+    override func testPad() throws
     {
         let trainer = _buildTrainer(model: "Pad", bn: false)
         run(trainer)
     }
     
-    override func testJitter2D() throws
+    override func testJitter() throws
     {
         let trainer = _buildTrainer(model: "Jitter", bn: false)
         run(trainer)
@@ -1251,6 +1284,12 @@ class Layer2DFlowResetTests: Layer2DFlowTests
     override func testResizeBilinear2() throws
     {
         let trainer = _buildTrainer(model: "ResizeBilinear2", bn: false)
+        run(trainer)
+    }
+    
+    override func testRotate() throws
+    {
+        let trainer = _buildTrainer(model: "Rotate", bn: false)
         run(trainer)
     }
 }
@@ -1348,7 +1387,7 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
         run(trainer)
     }
     
-    override func testBN2D() throws
+    override func testBN() throws
     {
         let trainer = _buildTrainer(model: "BN", bn: false)
         run(trainer, nbRetry: 5, diffThreshold: 0.00001)
@@ -1438,25 +1477,25 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
         run(trainer)
     }
     
-    override func testLinearScale2D() throws
+    override func testLinearScale() throws
     {
         let trainer = _buildTrainer(model: "LinearScale", bn: false)
         run(trainer)
     }
     
-    override func testMultiply2D() throws
+    override func testMultiply() throws
     {
         let trainer = _buildTrainer(model: "Multiply", bn: false)
         run(trainer)
     }
     
-    override func testPad2D() throws
+    override func testPad() throws
     {
         let trainer = _buildTrainer(model: "Pad", bn: false)
         run(trainer)
     }
     
-    override func testJitter2D() throws
+    override func testJitter() throws
     {
         let trainer = _buildTrainer(model: "Jitter", bn: false)
         run(trainer)
@@ -1471,6 +1510,12 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
     override func testResizeBilinear2() throws
     {
         let trainer = _buildTrainer(model: "ResizeBilinear2", bn: false)
+        run(trainer)
+    }
+    
+    override func testRotate() throws
+    {
+        let trainer = _buildTrainer(model: "Rotate", bn: false)
         run(trainer)
     }
 }
@@ -1566,7 +1611,7 @@ class Layer2DInferenceTests: Layer2DFlowTests
         run(trainer)
     }
     
-    override func testBN2D() throws
+    override func testBN() throws
     {
         let trainer = _buildTrainer(model: "BN", bn: false)
         run(trainer, nbRetry: 5, diffThreshold: 0.01)
@@ -1656,25 +1701,25 @@ class Layer2DInferenceTests: Layer2DFlowTests
         run(trainer)
     }
     
-    override func testLinearScale2D() throws
+    override func testLinearScale() throws
     {
         let trainer = _buildTrainer(model: "LinearScale", bn: false)
         run(trainer)
     }
     
-    override func testMultiply2D() throws
+    override func testMultiply() throws
     {
         let trainer = _buildTrainer(model: "Multiply", bn: false)
         run(trainer)
     }
     
-    override func testPad2D() throws
+    override func testPad() throws
     {
         let trainer = _buildTrainer(model: "Pad", bn: false)
         run(trainer)
     }
     
-    override func testJitter2D() throws
+    override func testJitter() throws
     {
         let trainer = _buildTrainer(model: "Jitter", bn: false)
         run(trainer)
@@ -1689,6 +1734,12 @@ class Layer2DInferenceTests: Layer2DFlowTests
     override func testResizeBilinear2() throws
     {
         let trainer = _buildTrainer(model: "ResizeBilinear2", bn: false)
+        run(trainer)
+    }
+    
+    override func testRotate() throws
+    {
+        let trainer = _buildTrainer(model: "Rotate", bn: false)
         run(trainer)
     }
 }
@@ -1779,7 +1830,7 @@ class Layer2DLoadTests: Layer2DFlowTests
         run(trainer)
     }
     
-    override func testBN2D() throws
+    override func testBN() throws
     {
         let trainer = _buildTrainer(model: "BN", bn: false)
         run(trainer)
@@ -1869,25 +1920,25 @@ class Layer2DLoadTests: Layer2DFlowTests
         run(trainer)
     }
     
-    override func testLinearScale2D() throws
+    override func testLinearScale() throws
     {
         let trainer = _buildTrainer(model: "LinearScale", bn: false)
         run(trainer)
     }
     
-    override func testMultiply2D() throws
+    override func testMultiply() throws
     {
         let trainer = _buildTrainer(model: "Multiply", bn: false)
         run(trainer)
     }
     
-    override func testPad2D() throws
+    override func testPad() throws
     {
         let trainer = _buildTrainer(model: "Pad", bn: false)
         run(trainer)
     }
     
-    override func testJitter2D() throws
+    override func testJitter() throws
     {
         let trainer = _buildTrainer(model: "Jitter", bn: false)
         run(trainer)
@@ -1902,6 +1953,12 @@ class Layer2DLoadTests: Layer2DFlowTests
     override func testResizeBilinear2() throws
     {
         let trainer = _buildTrainer(model: "ResizeBilinear2", bn: false)
+        run(trainer)
+    }
+    
+    override func testRotate() throws
+    {
+        let trainer = _buildTrainer(model: "Rotate", bn: false)
         run(trainer)
     }
 }
@@ -1992,7 +2049,7 @@ class Layer2DTransformTests: Layer2DFlowTests
         run(trainer)
     }
     
-    override func testBN2D() throws
+    override func testBN() throws
     {
         let trainer = _buildTrainer(model: "BN", bn: false)
         run(trainer)
@@ -2082,25 +2139,25 @@ class Layer2DTransformTests: Layer2DFlowTests
         run(trainer)
     }
     
-    override func testLinearScale2D() throws
+    override func testLinearScale() throws
     {
         let trainer = _buildTrainer(model: "LinearScale", bn: false)
         run(trainer)
     }
     
-    override func testMultiply2D() throws
+    override func testMultiply() throws
     {
         let trainer = _buildTrainer(model: "Multiply", bn: false)
         run(trainer)
     }
     
-    override func testPad2D() throws
+    override func testPad() throws
     {
         let trainer = _buildTrainer(model: "Pad", bn: false)
         run(trainer)
     }
     
-    override func testJitter2D() throws
+    override func testJitter() throws
     {
         let trainer = _buildTrainer(model: "Jitter", bn: false)
         run(trainer)
@@ -2115,6 +2172,12 @@ class Layer2DTransformTests: Layer2DFlowTests
     override func testResizeBilinear2() throws
     {
         let trainer = _buildTrainer(model: "ResizeBilinear2", bn: false)
+        run(trainer)
+    }
+    
+    override func testRotate() throws
+    {
+        let trainer = _buildTrainer(model: "Rotate", bn: false)
         run(trainer)
     }
 }

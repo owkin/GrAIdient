@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🪜 **layer_2d:** ResizeBilinearCrop ([#36](https://github.com/owkin/MAKit/pull/36))\
 🚀 **perf:** enhance backwardGPU for ResizeBilinear ([#35](https://github.com/owkin/MAKit/pull/35))\
 🪜 **layer_2d:** Rotate2D ([#34](https://github.com/owkin/MAKit/pull/34))\
 🐛 **fix:** ResizeBilinear to output deterministic dimensions ([#33](https://github.com/owkin/MAKit/pull/33))\

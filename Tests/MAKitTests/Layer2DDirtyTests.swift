@@ -179,7 +179,7 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
         case "ResizeBilinearCrop":
             secondLayer = ResizeBilinearCrop(
                 layerPrev: layer,
-                scalesList: [0.8, 1.2],
+                scalesList: [0.6, 0.8],
                 params: params
             )
             secondLayer = AdaptiveAvgPool2D(

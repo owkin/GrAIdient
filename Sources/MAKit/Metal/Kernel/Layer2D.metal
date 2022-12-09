@@ -1373,16 +1373,16 @@ kernel void resizeBilinearForward(
         float I = i-padDimensionI;
         float J = j-padDimensionJ;
         
-        float iPrev = float(I) * ratioInOutI;
-        float jPrev = float(J) * ratioInOutJ;
+        float iPrev = I * ratioInOutI;
+        float jPrev = J * ratioInOutJ;
         
         uint iPrevInf = floor(iPrev);
         uint iPrevSup = ceil(iPrev);
         uint jPrevInf = floor(jPrev);
         uint jPrevSup = ceil(jPrev);
         
-        float iWeight = ratioInOutI * float(I) - float(iPrevInf);
-        float jWeight = ratioInOutJ * float(J) - float(jPrevInf);
+        float iWeight = ratioInOutI * I - iPrevInf;
+        float jWeight = ratioInOutJ * J - jPrevInf;
         
         uint offsetStartPrev = (depth + nbChannels * elem) * heightPrev;
         uint offsetPrev11 = jPrevInf + (offsetStartPrev + iPrevInf) * widthPrev;
@@ -1430,10 +1430,13 @@ kernel void resizeBilinearBackward(
     else
         return ;
     
-    uint depth = id[0];
-    uint elem = id[1];
+    uint depth = id[0] / widthPrev;
+    uint elem = id[1] / heightPrev;
+    uint i = id[1] % heightPrev;
+    uint j = id[0] % widthPrev;
     
-    if (elem >= nbBatch || depth >= nbChannels)
+    if (i * elem >= heightPrev * nbBatch ||
+        j * depth >= widthPrev * nbChannels)
     {
         return ;
     }
@@ -1445,33 +1448,72 @@ kernel void resizeBilinearBackward(
     
     uint offsetStart = (depth + nbChannels * elem) * height;
     uint offsetStartPrev = (depth + nbChannels * elem) * heightPrev;
+    uint offsetPrev = j + (offsetStartPrev + i) * widthPrev;
     
-    for (uint i = 0; i < heightResize; i++) {
-    for (uint j = 0; j < widthResize; j++)
+    float kLow = (i-1.0) / ratioInOutI;
+    float kHigh = (i+1.0) / ratioInOutI;
+    float lLow = (j-1.0) / ratioInOutJ;
+    float lHigh = (j+1.0) / ratioInOutJ;
+    
+    int kStart = ceil(kLow);
+    int kEnd = floor(kHigh);
+    int lStart = ceil(lLow);
+    int lEnd = floor(lHigh);
+    
+    for (int k = kStart; k <= kEnd; k++) {
+    for (int l = lStart; l <= lEnd; l++)
     {
-        float iPrev = float(i) * ratioInOutI;
-        float jPrev = float(j) * ratioInOutJ;
-        
-        uint iPrevInf = floor(iPrev);
-        uint iPrevSup = ceil(iPrev);
-        uint jPrevInf = floor(jPrev);
-        uint jPrevSup = ceil(jPrev);
-        
-        float iWeight = ratioInOutI * float(i) - float(iPrevInf);
-        float jWeight = ratioInOutJ * float(j) - float(jPrevInf);
-        
-        uint offset = j+padDimensionJ + (offsetStart + i+padDimensionI) * width;
-        float deltaCur = delta[offset];
-        
-        uint offsetPrev11 = jPrevInf + (offsetStartPrev + iPrevInf) * widthPrev;
-        uint offsetPrev12 = jPrevSup + (offsetStartPrev + iPrevInf) * widthPrev;
-        uint offsetPrev21 = jPrevInf + (offsetStartPrev + iPrevSup) * widthPrev;
-        uint offsetPrev22 = jPrevSup + (offsetStartPrev + iPrevSup) * widthPrev;
-        
-        deltaPrev[offsetPrev11] += deltaCur * (1.0 - iWeight) * (1.0 - jWeight);
-        deltaPrev[offsetPrev12] += deltaCur * (1.0 - iWeight) * jWeight;
-        deltaPrev[offsetPrev21] += deltaCur * iWeight * (1.0 - jWeight);
-        deltaPrev[offsetPrev22] += deltaCur * iWeight * jWeight;
+        if (k >= 0 && k < (int)heightResize &&
+            l >= 0 && l < (int)widthResize)
+        {
+            float kPrev = k * ratioInOutI;
+            float lPrev = l * ratioInOutJ;
+            
+            uint kPrevInf = floor(kPrev);
+            uint kPrevSup = ceil(kPrev);
+            uint lPrevInf = floor(lPrev);
+            uint lPrevSup = ceil(lPrev);
+            
+            float kWeight = ratioInOutI * k - kPrevInf;
+            float lWeight = ratioInOutJ * l - lPrevInf;
+            
+            if (kPrevInf == i && lPrevInf == j)
+            {
+                uint offset = l+padDimensionJ +
+                    (offsetStart + k+padDimensionI) * width;
+                float deltaCur = delta[offset];
+                
+                deltaPrev[offsetPrev] +=
+                    deltaCur * (1.0 - kWeight) * (1.0 - lWeight);
+            }
+            else if (kPrevInf == i && lPrevSup == j)
+            {
+                uint offset = l+padDimensionJ +
+                    (offsetStart + k+padDimensionI) * width;
+                float deltaCur = delta[offset];
+                
+                deltaPrev[offsetPrev] +=
+                    deltaCur * (1.0 - kWeight) * lWeight;
+            }
+            else if (kPrevSup == i && lPrevInf == j)
+            {
+                uint offset = l+padDimensionJ +
+                    (offsetStart + k+padDimensionI) * width;
+                float deltaCur = delta[offset];
+                
+                deltaPrev[offsetPrev] +=
+                    deltaCur * kWeight * (1.0 - lWeight);
+            }
+            else if (kPrevSup == i && lPrevSup == j)
+            {
+                uint offset = l+padDimensionJ +
+                    (offsetStart + k+padDimensionI) * width;
+                float deltaCur = delta[offset];
+                
+                deltaPrev[offsetPrev] +=
+                    deltaCur * kWeight * lWeight;
+            }
+        }
     }}
 }
 

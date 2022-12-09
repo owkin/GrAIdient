@@ -449,7 +449,6 @@ public class ResizeBilinear: Layer2D
             try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
             
             var command: MetalCommand
-            
             if layerPrev.dirty
             {
                 let nbElems = layerPrev.delta.nbElems
@@ -489,7 +488,10 @@ public class ResizeBilinear: Layer2D
             command.setBytes(pNbBatch, atIndex: 5)
             command.setBuffer(layerPrev.delta.metal, atIndex: 6)
             
-            command.dispatchThreads(width: nbChannels, height: batchSize)
+            command.dispatchThreads(
+                width: widthPrev * nbChannels,
+                height: heightPrev * batchSize
+            )
             command.enqueue()
             
             propagateDirty()

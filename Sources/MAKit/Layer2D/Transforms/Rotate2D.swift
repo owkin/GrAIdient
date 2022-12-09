@@ -295,7 +295,6 @@ public class Rotate2D: Layer2D
             let centerJ = Double(width - 1) / 2.0
             
             let neuronsPrev = layerPrev.neurons
-            
             if layerPrev.dirty
             {
                 for elem in 0..<batchSize {
@@ -330,40 +329,8 @@ public class Rotate2D: Layer2D
                         )!.v[elem].delta +=
                             neurons[depth].get(i, j)!.v[elem].delta
                     }
-                    
-                    /*let rotJ: Double =
-                        cos(_angle) * (Double(j) - centerJ) +
-                        sin(_angle) * (Double(i) - centerI) + centerJ
-                    let rotI: Double =
-                        cos(_angle) * (Double(i) - centerI) -
-                        sin(_angle) * (Double(j) - centerJ) + centerI
-                    
-                    let kStart = Int(floor(rotI))
-                    let kEnd = Int(ceil(rotI))
-                    let lStart = Int(floor(rotJ))
-                    let lEnd = Int(ceil(rotJ))
-                    
-                    for k in kStart...kEnd {
-                    for l in lStart...lEnd
-                    {
-                        let prevL: Double =
-                            cos(-_angle) * (Double(l) - centerJ) +
-                            sin(-_angle) * (Double(k) - centerI) + centerJ
-                        let prevK: Double =
-                            cos(-_angle) * (Double(k) - centerI) -
-                            sin(-_angle) * (Double(l) - centerJ) + centerI
-                        
-                        if Int(round(prevL)) == j && Int(round(prevK)) == i &&
-                           l >= 0 && l < width &&
-                           k >= 0 && k < height
-                        {
-                            neuronsPrev[depth].get(i, j)!.v[elem].delta +=
-                                neurons[depth].get(k, l)!.v[elem].delta
-                        }
-                    }}*/
                 }}
             }}
-            
             propagateDirty()
         }
     }
@@ -380,7 +347,6 @@ public class Rotate2D: Layer2D
             try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
             
             var command: MetalCommand
-            
             if layerPrev.dirty
             {
                 let nbElems = layerPrev.delta.nbElems

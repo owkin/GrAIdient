@@ -637,6 +637,12 @@ class Layer2DGradTests: Input2DMSE1DCase
         let trainer = _buildTrainer(model: "ResizeBilinearJitter", bn: false)
         run(trainer)
     }
+    
+    func testResizeBilinearJitterGPU() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearJitter", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------

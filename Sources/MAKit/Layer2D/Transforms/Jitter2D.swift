@@ -299,7 +299,7 @@ public class Jitter2D: Layer2D
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pJitterDimension: [UInt32] = [UInt32(_jitterDimension)]
-            let pJitterOffsets: [UInt32] = [UInt32(_offsetI), UInt32(_offsetJ)]
+            let pJitterOffsets: [UInt32] = [UInt32(_offsetJ), UInt32(_offsetI)]
             
             let command = MetalKernel.get.createCommand(
                 "jitter2DForward", deviceID: deviceID
@@ -375,7 +375,7 @@ public class Jitter2D: Layer2D
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pJitterDimension: [UInt32] = [UInt32(_jitterDimension)]
-            let pJitterOffsets: [UInt32] = [UInt32(_offsetI), UInt32(_offsetJ)]
+            let pJitterOffsets: [UInt32] = [UInt32(_offsetJ), UInt32(_offsetI)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
             let command = MetalKernel.get.createCommand(

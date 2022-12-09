@@ -391,7 +391,7 @@ public class ResizeBilinearJitter: Layer2D
     ///
     /// Throw an error if batch size is greater than the first batch size.
     ///
-    /*public override func forwardGPU() throws
+    public override func forwardGPU() throws
     {
         if let layerPrev = self.layerPrev as? Layer2D
         {
@@ -407,8 +407,31 @@ public class ResizeBilinearJitter: Layer2D
                 let randIndex = Int.random(in: 0..<_scalesList.count)
                 let ratioInOut = _scalesList[randIndex]
                 
-                _widthResize = Int(round(ratioInOut * Double(widthPrev)))
-                _heightResize = Int(round(ratioInOut * Double(heightPrev)))
+                _widthResize = Int(round(Double(width) / ratioInOut))
+                _heightResize = Int(round(Double(height) / ratioInOut))
+            }
+            
+            let jitterDimensionI = heightPrev - _heightResize
+            let jitterDimensionJ = widthPrev - _heightResize
+            
+            if !_doNotRandom
+            {
+                if jitterDimensionI == 0
+                {
+                    _offsetI = 0
+                }
+                else
+                {
+                    _offsetI = Int.random(in: 0..<jitterDimensionI)
+                }
+                if jitterDimensionJ == 0
+                {
+                    _offsetJ = 0
+                }
+                else
+                {
+                    _offsetJ = Int.random(in: 0..<jitterDimensionJ)
+                }
             }
             
             let pNbChannels: [UInt32] = [UInt32(nbChannels)]
@@ -420,17 +443,17 @@ public class ResizeBilinearJitter: Layer2D
             let pDimensionsResize: [UInt32] = [
                 UInt32(_widthResize), UInt32(_heightResize)
             ]
-            let pPadValue: [Float] = [Float(_padValue)]
+            let pCropOffsets: [UInt32] = [UInt32(_offsetJ), UInt32(_offsetI)]
             
             let command = MetalKernel.get.createCommand(
-                "resizeBilinearForward", deviceID: deviceID
+                "resizeBilinearCropForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(pNbChannels, atIndex: 1)
             command.setBytes(pDimensions, atIndex: 2)
             command.setBytes(pDimensionsPrev, atIndex: 3)
             command.setBytes(pDimensionsResize, atIndex: 4)
-            command.setBytes(pPadValue, atIndex: 5)
+            command.setBytes(pCropOffsets, atIndex: 5)
             command.setBytes(pNbBatch, atIndex: 6)
             command.setBuffer(outs.metal, atIndex: 7)
             
@@ -440,7 +463,7 @@ public class ResizeBilinearJitter: Layer2D
             )
             command.enqueue()
         }
-    }*/
+    }
     
     /// Apply the backward pass in the CPU execution context.
     public override func backwardCPU()
@@ -509,7 +532,7 @@ public class ResizeBilinearJitter: Layer2D
     ///
     /// Throw an error if batch size is greater than the first batch size.
     ///
-    /*public override func backwardGPU() throws
+    public override func backwardGPU() throws
     {
         if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
@@ -543,17 +566,19 @@ public class ResizeBilinearJitter: Layer2D
             let pDimensionsResize: [UInt32] = [
                 UInt32(_widthResize), UInt32(_heightResize)
             ]
+            let pCropOffsets: [UInt32] = [UInt32(_offsetJ), UInt32(_offsetI)]
             
             command = MetalKernel.get.createCommand(
-                "resizeBilinearBackward", deviceID: deviceID
+                "resizeBilinearCropBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBytes(pNbChannels, atIndex: 1)
             command.setBytes(pDimensions, atIndex: 2)
             command.setBytes(pDimensionsPrev, atIndex: 3)
             command.setBytes(pDimensionsResize, atIndex: 4)
-            command.setBytes(pNbBatch, atIndex: 5)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 6)
+            command.setBytes(pCropOffsets, atIndex: 5)
+            command.setBytes(pNbBatch, atIndex: 6)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 7)
             
             command.dispatchThreads(
                 width: widthPrev * nbChannels,
@@ -563,5 +588,5 @@ public class ResizeBilinearJitter: Layer2D
             
             propagateDirty()
         }
-    }*/
+    }
 }

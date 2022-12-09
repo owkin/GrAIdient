@@ -169,6 +169,13 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
                 layerPrev: secondLayer, size: width, params: params
             )
             
+        case "Rotate":
+            secondLayer = Rotate2D(
+                layerPrev: layer,
+                anglesList: [20.0, 350.0], padValue: 0.5,
+                params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -211,14 +218,14 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
         run(trainer)
     }
     
-    func testBN2DCPU() throws
+    func testBNCPU() throws
     {
         MAKit.Opti.CPU = true
         let trainer = _buildTrainer(model: "BN")
         run(trainer)
     }
     
-    func testBN2DGPU() throws
+    func testBNGPU() throws
     {
         let trainer = _buildTrainer(model: "BN")
         run(trainer)
@@ -289,40 +296,40 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
         run(trainer)
     }
     
-    func testLinearScale2DCPU() throws
+    func testLinearScaleCPU() throws
     {
         MAKit.Opti.CPU = true
         let trainer = _buildTrainer(model: "LinearScale")
         run(trainer)
     }
     
-    func testLinearScale2DGPU() throws
+    func testLinearScaleGPU() throws
     {
         let trainer = _buildTrainer(model: "LinearScale")
         run(trainer)
     }
     
-    func testPad2DCPU() throws
+    func testPadCPU() throws
     {
         MAKit.Opti.CPU = true
         let trainer = _buildTrainer(model: "Pad")
         run(trainer)
     }
     
-    func testPad2DGPU() throws
+    func testPadGPU() throws
     {
         let trainer = _buildTrainer(model: "Pad")
         run(trainer)
     }
     
-    func testJitter2DCPU() throws
+    func testJitterCPU() throws
     {
         MAKit.Opti.CPU = true
         let trainer = _buildTrainer(model: "Jitter")
         run(trainer)
     }
     
-    func testJitter2DGPU() throws
+    func testJitterGPU() throws
     {
         let trainer = _buildTrainer(model: "Jitter")
         run(trainer)
@@ -338,6 +345,19 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
     func testResizeBilinearGPU() throws
     {
         let trainer = _buildTrainer(model: "ResizeBilinear")
+        run(trainer)
+    }
+    
+    func testRotateCPU() throws
+    {
+        MAKit.Opti.CPU = true
+        let trainer = _buildTrainer(model: "Rotate")
+        run(trainer)
+    }
+    
+    func testRotateGPU() throws
+    {
+        let trainer = _buildTrainer(model: "Rotate")
         run(trainer)
     }
 }
@@ -497,6 +517,13 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
                 layerPrev: secondLayer, size: width, params: params
             )
             
+        case "Rotate":
+            secondLayer = Rotate2D(
+                layerPrev: layer,
+                anglesList: [20.0], padValue: 0.5,
+                params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -525,7 +552,7 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
         run(trainer)
     }
     
-    func testBN2D() throws
+    func testBN() throws
     {
         let trainer = _buildTrainer(model: "BN")
         run(trainer)
@@ -561,19 +588,19 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
         run(trainer)
     }
     
-    func testLinearScale2D() throws
+    func testLinearScale() throws
     {
         let trainer = _buildTrainer(model: "LinearScale")
         run(trainer)
     }
     
-    func testPad2D() throws
+    func testPad() throws
     {
         let trainer = _buildTrainer(model: "Pad")
         run(trainer)
     }
     
-    func testJitter2D() throws
+    func testJitter() throws
     {
         let trainer = _buildTrainer(model: "Jitter")
         run(trainer)
@@ -582,6 +609,12 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
     func testResizeBilinear() throws
     {
         let trainer = _buildTrainer(model: "ResizeBilinear")
+        run(trainer)
+    }
+    
+    func testRotate() throws
+    {
+        let trainer = _buildTrainer(model: "Rotate")
         run(trainer)
     }
 }

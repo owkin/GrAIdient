@@ -601,6 +601,8 @@ private class MetalDevice
                 "jitter2DBackward",
                 "resizeBilinearForward",
                 "resizeBilinearBackward",
+                "rotate2DForward",
+                "rotate2DBackward",
             ],
             "Merge": [
                 "sum1",

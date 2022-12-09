@@ -1405,7 +1405,6 @@ kernel void resizeBilinearBackward(
     constant uint * pDimensions,
     constant uint * pDimensionsPrev,
     constant uint * pDimensionsResize,
-    constant float * pPadValue,
     constant uint * pNbBatch,
     device float * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
@@ -1414,11 +1413,10 @@ kernel void resizeBilinearBackward(
     uint heightPrev, widthPrev;
     uint heightResize, widthResize;
     uint nbChannels;
-    float padValue;
     uint nbBatch;
     
     if (pNbChannels && pDimensions && pDimensionsPrev && pDimensionsResize &&
-        pPadValue && pNbBatch && delta && deltaPrev)
+        pNbBatch && delta && deltaPrev)
     {
         width = pDimensions[0];
         height = pDimensions[1];
@@ -1426,7 +1424,6 @@ kernel void resizeBilinearBackward(
         heightPrev = pDimensionsPrev[1];
         widthResize = pDimensionsResize[0];
         heightResize = pDimensionsResize[1];
-        padValue = *pPadValue;
         nbChannels = *pNbChannels;
         nbBatch = *pNbBatch;
     }
@@ -1475,5 +1472,138 @@ kernel void resizeBilinearBackward(
         deltaPrev[offsetPrev12] += deltaCur * (1.0 - iWeight) * jWeight;
         deltaPrev[offsetPrev21] += deltaCur * iWeight * (1.0 - jWeight);
         deltaPrev[offsetPrev22] += deltaCur * iWeight * jWeight;
+    }}
+}
+
+kernel void rotate2DForward(
+    const device float * outsPrev,
+    constant uint * pNbChannels,
+    constant uint * pDimensions,
+    constant float * pAngle,
+    constant float * pPadValue,
+    constant uint * pNbBatch,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint height, width;
+    uint nbChannels;
+    float angle, padValue;
+    uint nbBatch;
+    
+    if (pNbChannels && pDimensions && pAngle && pPadValue && pNbBatch &&
+        outsPrev && outs)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        angle = *pAngle;
+        padValue = *pPadValue;
+        nbChannels = *pNbChannels;
+        nbBatch = *pNbBatch;
+    }
+    else
+        return ;
+    
+    uint depth = id[0] / width;
+    uint elem = id[1] / height;
+    uint i = id[1] % height;
+    uint j = id[0] % width;
+    
+    if (i * elem >= height * nbBatch ||
+        j * depth >= width * nbChannels)
+    {
+        return ;
+    }
+    
+    float centerI = float(height - 1) / 2.0;
+    float centerJ = float(width - 1) / 2.0;
+    
+    uint offsetStart = (depth + nbChannels * elem) * height;
+    uint offset = j + (offsetStart + i) * width;
+    
+    float prevJ =
+        cos(-angle) * (float(j) - centerJ) +
+        sin(-angle) * (float(i) - centerI) + centerJ;
+    float prevI =
+        cos(-angle) * (float(i) - centerI) -
+        sin(-angle) * (float(j) - centerJ) + centerI;
+    
+    if (round(prevJ) < 0 || round(prevJ) >= float(width) ||
+        round(prevI) < 0 || round(prevI) >= float(height))
+    {
+        outs[offset] = padValue;
+    }
+    else
+    {
+        uint offsetPrev = round(prevJ) + (offsetStart + round(prevI)) * width;
+        outs[offset] = outsPrev[offsetPrev];
+    }
+}
+
+kernel void rotate2DBackward(
+    const device float * delta,
+    constant uint * pNbChannels,
+    constant uint * pDimensions,
+    constant float * pAngle,
+    constant uint * pNbBatch,
+    device float * deltaPrev,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint height, width;
+    uint nbChannels;
+    float angle;
+    uint nbBatch;
+    
+    if (pNbChannels && pDimensions && pAngle && pNbBatch &&
+        delta && deltaPrev)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        angle = *pAngle;
+        nbChannels = *pNbChannels;
+        nbBatch = *pNbBatch;
+    }
+    else
+        return ;
+    
+    uint depth = id[0] / width;
+    uint elem = id[1] / height;
+    uint i = id[1] % height;
+    uint j = id[0] % width;
+    
+    if (i * elem >= height * nbBatch ||
+        j * depth >= width * nbChannels)
+    {
+        return ;
+    }
+    
+    float centerI = float(height - 1) / 2.0;
+    float centerJ = float(width - 1) / 2.0;
+    
+    uint offsetStart = (depth + nbChannels * elem) * height;
+    uint offsetPrev = j + (offsetStart + i) * width;
+    
+    float rotJ =
+        cos(angle) * (float(j) - centerJ) +
+        sin(angle) * (float(i) - centerI) + centerJ;
+    float rotI =
+        cos(angle) * (float(i) - centerI) -
+        sin(angle) * (float(j) - centerJ) + centerI;
+    
+    for (int k = floor(rotI); k <= ceil(rotI); k++) {
+    for (int l = floor(rotJ); l <= ceil(rotJ); l++)
+    {
+        float prevL =
+            cos(-angle) * (float(l) - centerJ) +
+            sin(-angle) * (float(k) - centerI) + centerJ;
+        float prevK =
+            cos(-angle) * (float(k) - centerI) -
+            sin(-angle) * (float(l) - centerJ) + centerI;
+        
+        if (round(prevL) == j && round(prevK) == i &&
+            l >= 0 && l < (int)width && k >= 0 && k < (int)height)
+        {
+            uint offset = l + (offsetStart + k) * width;
+            deltaPrev[offsetPrev] += delta[offset];
+        }
     }}
 }

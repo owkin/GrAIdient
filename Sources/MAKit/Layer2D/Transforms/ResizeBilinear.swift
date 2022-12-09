@@ -477,7 +477,6 @@ public class ResizeBilinear: Layer2D
             let pDimensionsResize: [UInt32] = [
                 UInt32(_widthResize), UInt32(_heightResize)
             ]
-            let pPadValue: [Float] = [Float(_padValue)]
             
             command = MetalKernel.get.createCommand(
                 "resizeBilinearBackward", deviceID: deviceID
@@ -487,9 +486,8 @@ public class ResizeBilinear: Layer2D
             command.setBytes(pDimensions, atIndex: 2)
             command.setBytes(pDimensionsPrev, atIndex: 3)
             command.setBytes(pDimensionsResize, atIndex: 4)
-            command.setBytes(pPadValue, atIndex: 5)
-            command.setBytes(pNbBatch, atIndex: 6)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 7)
+            command.setBytes(pNbBatch, atIndex: 5)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 6)
             
             command.dispatchThreads(width: nbChannels, height: batchSize)
             command.enqueue()

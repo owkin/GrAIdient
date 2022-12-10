@@ -10,10 +10,13 @@ import Foundation
 ///
 /// Layer with a 2D shape neural structure.
 ///
-/// Bilnear resize input grids, then pad missing values.
+/// Bilinear resize input grids then potentially pad missing values.
 ///
 /// Note that this layer enforces deterministic dimensions for the output grids.
-/// The final dimensions being the maximal scale of the dimensions of the input grids
+/// The final dimensions being the maximal scale of the dimensions of the input grids.
+///
+/// When one unique scale is used, no padding will be used and the final dimensions
+/// will correspond to the scale of the dimensions of the input grids.
 ///
 public class ResizeBilinearPad: Layer2D
 {

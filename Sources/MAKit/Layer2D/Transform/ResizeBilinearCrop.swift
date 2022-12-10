@@ -10,10 +10,17 @@ import Foundation
 ///
 /// Layer with a 2D shape neural structure.
 ///
-/// Crop in order to reduce dimension, then bilnear resize the input grids.
+/// Potentially crop in order to reduce dimension then bilinear resize the input grids.
 ///
 /// Note that this layer enforces deterministic dimensions for the output grids.
 /// The final dimensions being the minimal scale of the dimensions of the input grids.
+///
+/// When one unique scale is used, there are 2 scenario to consider.
+/// - if scale >= 1: a crop will be needed to extract patches of the input grids so that
+/// the resize of these patches match the expected scale. The final dimensions of the
+/// output grids are exactly the same as the dimensions of the input grids.
+/// - if scale < 1: no crop is needed. The final dimensions will
+/// correspond to the scale of the dimensions of the input grids.
 ///
 public class ResizeBilinearCrop: Layer2D
 {

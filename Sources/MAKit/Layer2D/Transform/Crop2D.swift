@@ -299,7 +299,7 @@ public class Crop2D: Layer2D
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pCropDimension: [UInt32] = [UInt32(_cropDimension)]
-            let pJitterOffsets: [UInt32] = [UInt32(_offsetJ), UInt32(_offsetI)]
+            let pCropOffsets: [UInt32] = [UInt32(_offsetJ), UInt32(_offsetI)]
             
             let command = MetalKernel.get.createCommand(
                 "crop2DForward", deviceID: deviceID
@@ -308,7 +308,7 @@ public class Crop2D: Layer2D
             command.setBytes(pNbChannels, atIndex: 1)
             command.setBytes(pDimensions, atIndex: 2)
             command.setBytes(pCropDimension, atIndex: 3)
-            command.setBytes(pJitterOffsets, atIndex: 4)
+            command.setBytes(pCropOffsets, atIndex: 4)
             command.setBytes(pNbBatch, atIndex: 5)
             command.setBuffer(outs.metal, atIndex: 6)
             
@@ -375,7 +375,7 @@ public class Crop2D: Layer2D
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pCropDimension: [UInt32] = [UInt32(_cropDimension)]
-            let pJitterOffsets: [UInt32] = [UInt32(_offsetJ), UInt32(_offsetI)]
+            let pCropOffsets: [UInt32] = [UInt32(_offsetJ), UInt32(_offsetI)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
             let command = MetalKernel.get.createCommand(
@@ -385,7 +385,7 @@ public class Crop2D: Layer2D
             command.setBytes(pNbChannels, atIndex: 1)
             command.setBytes(pDimensions, atIndex: 2)
             command.setBytes(pCropDimension, atIndex: 3)
-            command.setBytes(pJitterOffsets, atIndex: 4)
+            command.setBytes(pCropOffsets, atIndex: 4)
             command.setBytes(pNbBatch, atIndex: 5)
             command.setBytes(pDirty, atIndex: 6)
             command.setBuffer(layerPrev.delta.metal, atIndex: 7)

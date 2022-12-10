@@ -23,8 +23,8 @@ public class ResizeBilinearCrop: Layer2D
     var _offsetJ: Int = 0
     var _doNotRandom: Bool = false
     
-    var _widthResize: Int = 0
-    var _heightResize: Int = 0
+    var _width2Resize: Int = 0
+    var _height2Resize: Int = 0
     
     private enum Keys: String, CodingKey
     {
@@ -239,8 +239,8 @@ public class ResizeBilinearCrop: Layer2D
                 }}
             }
         
-            let ratioInOutI = Double(_heightResize - 1) / Double(height - 1)
-            let ratioInOutJ = Double(_widthResize - 1) / Double(width - 1)
+            let ratioInOutI = Double(_height2Resize - 1) / Double(height - 1)
+            let ratioInOutJ = Double(_width2Resize - 1) / Double(width - 1)
             
             let neuronsPrev = layerPrev.neurons
             for batch in 0..<batchSize {
@@ -316,16 +316,16 @@ public class ResizeBilinearCrop: Layer2D
             {
                 ratioInOut = _scalesList[0]
             }
-            _widthResize = Int(floor(Double(width) / ratioInOut))
-            _heightResize = Int(floor(Double(height) / ratioInOut))
+            _width2Resize = Int(floor(Double(width) / ratioInOut))
+            _height2Resize = Int(floor(Double(height) / ratioInOut))
             
-            let ratioInOutI = Double(_heightResize - 1) / Double(height - 1)
-            let ratioInOutJ = Double(_widthResize - 1) / Double(width - 1)
+            let ratioInOutI = Double(_height2Resize - 1) / Double(height - 1)
+            let ratioInOutJ = Double(_width2Resize - 1) / Double(width - 1)
             
             let heightPrev = layerPrev.height
             let widthPrev = layerPrev.width
-            let cropDimensionI = heightPrev - _heightResize
-            let cropDimensionJ = widthPrev - _widthResize
+            let cropDimensionI = heightPrev - _height2Resize
+            let cropDimensionJ = widthPrev - _width2Resize
             
             if !_doNotRandom
             {
@@ -415,13 +415,13 @@ public class ResizeBilinearCrop: Layer2D
             {
                 ratioInOut = _scalesList[0]
             }
-            _widthResize = Int(floor(Double(width) / ratioInOut))
-            _heightResize = Int(floor(Double(height) / ratioInOut))
+            _width2Resize = Int(floor(Double(width) / ratioInOut))
+            _height2Resize = Int(floor(Double(height) / ratioInOut))
             
             let heightPrev = layerPrev.height
             let widthPrev = layerPrev.width
-            let cropDimensionI = heightPrev - _heightResize
-            let cropDimensionJ = widthPrev - _widthResize
+            let cropDimensionI = heightPrev - _height2Resize
+            let cropDimensionJ = widthPrev - _width2Resize
             
             if !_doNotRandom
             {
@@ -458,8 +458,8 @@ public class ResizeBilinearCrop: Layer2D
             let pDimensionsPrev: [UInt32] = [
                 UInt32(widthPrev), UInt32(heightPrev)
             ]
-            let pDimensionsResize: [UInt32] = [
-                UInt32(_widthResize), UInt32(_heightResize)
+            let pDimensions2Resize: [UInt32] = [
+                UInt32(_width2Resize), UInt32(_height2Resize)
             ]
             let pCropOffsets: [UInt32] = [UInt32(_offsetJ), UInt32(_offsetI)]
             
@@ -470,7 +470,7 @@ public class ResizeBilinearCrop: Layer2D
             command.setBytes(pNbChannels, atIndex: 1)
             command.setBytes(pDimensions, atIndex: 2)
             command.setBytes(pDimensionsPrev, atIndex: 3)
-            command.setBytes(pDimensionsResize, atIndex: 4)
+            command.setBytes(pDimensions2Resize, atIndex: 4)
             command.setBytes(pCropOffsets, atIndex: 5)
             command.setBytes(pNbBatch, atIndex: 6)
             command.setBuffer(outs.metal, atIndex: 7)
@@ -505,8 +505,8 @@ public class ResizeBilinearCrop: Layer2D
                 }}
             }
             
-            let ratioInOutI = Double(_heightResize - 1) / Double(height - 1)
-            let ratioInOutJ = Double(_widthResize - 1) / Double(width - 1)
+            let ratioInOutI = Double(_height2Resize - 1) / Double(height - 1)
+            let ratioInOutJ = Double(_width2Resize - 1) / Double(width - 1)
             
             for elem in 0..<batchSize {
             for depth in 0..<nbChannels
@@ -581,8 +581,8 @@ public class ResizeBilinearCrop: Layer2D
             let pDimensionsPrev: [UInt32] = [
                 UInt32(widthPrev), UInt32(heightPrev)
             ]
-            let pDimensionsResize: [UInt32] = [
-                UInt32(_widthResize), UInt32(_heightResize)
+            let pDimensions2Resize: [UInt32] = [
+                UInt32(_width2Resize), UInt32(_height2Resize)
             ]
             let pCropOffsets: [UInt32] = [UInt32(_offsetJ), UInt32(_offsetI)]
             
@@ -593,7 +593,7 @@ public class ResizeBilinearCrop: Layer2D
             command.setBytes(pNbChannels, atIndex: 1)
             command.setBytes(pDimensions, atIndex: 2)
             command.setBytes(pDimensionsPrev, atIndex: 3)
-            command.setBytes(pDimensionsResize, atIndex: 4)
+            command.setBytes(pDimensions2Resize, atIndex: 4)
             command.setBytes(pCropOffsets, atIndex: 5)
             command.setBytes(pNbBatch, atIndex: 6)
             command.setBuffer(layerPrev.delta.metal, atIndex: 7)

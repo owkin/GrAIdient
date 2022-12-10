@@ -1652,7 +1652,7 @@ kernel void resizeBilinearCropForward(
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pDimensionsPrev,
-    constant uint * pDimensionsResize,
+    constant uint * pDimensions2Resize,
     constant uint * pCropOffsets,
     constant uint * pNbBatch,
     device float * outs,
@@ -1660,20 +1660,20 @@ kernel void resizeBilinearCropForward(
 {
     uint height, width;
     uint heightPrev, widthPrev;
-    uint heightResize, widthResize;
+    uint height2Resize, width2Resize;
     uint offsetI, offsetJ;
     uint nbChannels;
     uint nbBatch;
     
-    if (pNbChannels && pDimensions && pDimensionsPrev && pDimensionsResize &&
+    if (pNbChannels && pDimensions && pDimensionsPrev && pDimensions2Resize &&
         pCropOffsets && pNbBatch && outsPrev && outs)
     {
         width = pDimensions[0];
         height = pDimensions[1];
         widthPrev = pDimensionsPrev[0];
         heightPrev = pDimensionsPrev[1];
-        widthResize = pDimensionsResize[0];
-        heightResize = pDimensionsResize[1];
+        width2Resize = pDimensions2Resize[0];
+        height2Resize = pDimensions2Resize[1];
         offsetJ = pCropOffsets[0];
         offsetI = pCropOffsets[1];
         nbChannels = *pNbChannels;
@@ -1693,8 +1693,8 @@ kernel void resizeBilinearCropForward(
         return ;
     }
     
-    float ratioInOutI = float(heightResize - 1) / float(height - 1);
-    float ratioInOutJ = float(widthResize - 1) / float(width - 1);
+    float ratioInOutI = float(height2Resize - 1) / float(height - 1);
+    float ratioInOutJ = float(width2Resize - 1) / float(width - 1);
     
     uint offsetStart = (depth + nbChannels * elem) * height;
     uint offset = j + (offsetStart + i) * width;
@@ -1733,7 +1733,7 @@ kernel void resizeBilinearCropBackward(
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pDimensionsPrev,
-    constant uint * pDimensionsResize,
+    constant uint * pDimensions2Resize,
     constant uint * pCropOffsets,
     constant uint * pNbBatch,
     device float * deltaPrev,
@@ -1741,20 +1741,20 @@ kernel void resizeBilinearCropBackward(
 {
     uint height, width;
     uint heightPrev, widthPrev;
-    uint heightResize, widthResize;
+    uint height2Resize, width2Resize;
     uint offsetI, offsetJ;
     uint nbChannels;
     uint nbBatch;
     
-    if (pNbChannels && pDimensions && pDimensionsPrev && pDimensionsResize &&
+    if (pNbChannels && pDimensions && pDimensionsPrev && pDimensions2Resize &&
         pCropOffsets && pNbBatch && delta && deltaPrev)
     {
         width = pDimensions[0];
         height = pDimensions[1];
         widthPrev = pDimensionsPrev[0];
         heightPrev = pDimensionsPrev[1];
-        widthResize = pDimensionsResize[0];
-        heightResize = pDimensionsResize[1];
+        width2Resize = pDimensions2Resize[0];
+        height2Resize = pDimensions2Resize[1];
         offsetJ = pCropOffsets[0];
         offsetI = pCropOffsets[1];
         nbChannels = *pNbChannels;
@@ -1773,14 +1773,14 @@ kernel void resizeBilinearCropBackward(
     {
         return ;
     }
-    if (i < offsetI || i >= heightResize + offsetI ||
-        j < offsetJ || j >= widthResize + offsetJ)
+    if (i < offsetI || i >= height2Resize + offsetI ||
+        j < offsetJ || j >= width2Resize + offsetJ)
     {
         return ;
     }
     
-    float ratioInOutI = float(heightResize - 1) / float(height - 1);
-    float ratioInOutJ = float(widthResize - 1) / float(width - 1);
+    float ratioInOutI = float(height2Resize - 1) / float(height - 1);
+    float ratioInOutJ = float(width2Resize - 1) / float(width - 1);
     
     uint offsetStart = (depth + nbChannels * elem) * height;
     uint offsetStartPrev = (depth + nbChannels * elem) * heightPrev;

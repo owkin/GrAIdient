@@ -212,15 +212,15 @@ class Layer2DGradTests: Input2DMSE1DCase
                 params: params
             )
             
-        case "Jitter":
-            layer = Jitter2D(
+        case "Crop":
+            layer = Crop2D(
                 layerPrev: layer,
-                jitterDimension: 3,
+                cropDimension: 3,
                 params: params
             )
             
-        case "ResizeBilinear":
-            layer = ResizeBilinear(
+        case "ResizeBilinearPad":
+            layer = ResizeBilinearPad(
                 layerPrev: layer,
                 scalesList: [0.8, 1.2], padValue: 0.5,
                 params: params
@@ -234,6 +234,26 @@ class Layer2DGradTests: Input2DMSE1DCase
                 layerPrev: layer,
                 anglesList: [20.0, 350.0], padValue: 0.5,
                 params: params
+            )
+            
+        case "ResizeBilinearCrop1":
+            layer = ResizeBilinearCrop(
+                layerPrev: layer,
+                scalesList: [0.6, 0.8],
+                params: params
+            )
+            layer = AdaptiveAvgPool2D(
+                layerPrev: layer, size: width, params: params
+            )
+            
+        case "ResizeBilinearCrop2":
+            layer = ResizeBilinearCrop(
+                layerPrev: layer,
+                scalesList: [0.8, 1.2],
+                params: params
+            )
+            layer = AdaptiveAvgPool2D(
+                layerPrev: layer, size: width, params: params
             )
             
         default:
@@ -582,29 +602,29 @@ class Layer2DGradTests: Input2DMSE1DCase
         run(trainer)
     }
     
-    func testJitterCPU() throws
+    func testCropCPU() throws
     {
         MAKit.Opti.CPU = true
-        let trainer = _buildTrainer(model: "Jitter", bn: false)
+        let trainer = _buildTrainer(model: "Crop", bn: false)
         run(trainer)
     }
     
-    func testJitterGPU() throws
+    func testCropGPU() throws
     {
-        let trainer = _buildTrainer(model: "Jitter", bn: false)
+        let trainer = _buildTrainer(model: "Crop", bn: false)
         run(trainer)
     }
     
-    func testResizeBilinearCPU() throws
+    func testResizeBilinearPadCPU() throws
     {
         MAKit.Opti.CPU = true
-        let trainer = _buildTrainer(model: "ResizeBilinear", bn: false)
+        let trainer = _buildTrainer(model: "ResizeBilinearPad", bn: false)
         run(trainer)
     }
     
-    func testResizeBilinearGPU() throws
+    func testResizeBilinearPadGPU() throws
     {
-        let trainer = _buildTrainer(model: "ResizeBilinear", bn: false)
+        let trainer = _buildTrainer(model: "ResizeBilinearPad", bn: false)
         run(trainer)
     }
     
@@ -618,6 +638,32 @@ class Layer2DGradTests: Input2DMSE1DCase
     func testRotateGPU() throws
     {
         let trainer = _buildTrainer(model: "Rotate", bn: false)
+        run(trainer)
+    }
+    
+    func testResizeBilinearCrop1CPU() throws
+    {
+        MAKit.Opti.CPU = true
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop1", bn: false)
+        run(trainer)
+    }
+    
+    func testResizeBilinearCrop1GPU() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop1", bn: false)
+        run(trainer)
+    }
+    
+    func testResizeBilinearCrop2CPU() throws
+    {
+        MAKit.Opti.CPU = true
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop2", bn: false)
+        run(trainer)
+    }
+    
+    func testResizeBilinearCrop2GPU() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop2", bn: false)
         run(trainer)
     }
 }
@@ -822,17 +868,17 @@ class Layer2DFlowTests: Input2DMSE1DCase
                 params: params
             )
             
-        case "Jitter":
-            layer = Jitter2D(
+        case "Crop":
+            layer = Crop2D(
                 layerPrev: layer,
-                jitterDimension: 3,
+                cropDimension: 3,
                 offsetI: 2,
                 offsetJ: 2,
                 params: params
             )
             
-        case "ResizeBilinear1":
-            layer = ResizeBilinear(
+        case "ResizeBilinearPad1":
+            layer = ResizeBilinearPad(
                 layerPrev: layer,
                 scalesList: [0.8], padValue: 0.5,
                 params: params
@@ -841,8 +887,8 @@ class Layer2DFlowTests: Input2DMSE1DCase
                 layerPrev: layer, size: width, params: params
             )
             
-        case "ResizeBilinear2":
-            layer = ResizeBilinear(
+        case "ResizeBilinearPad2":
+            layer = ResizeBilinearPad(
                 layerPrev: layer,
                 scalesList: [1.2], padValue: 0.5,
                 params: params
@@ -856,6 +902,30 @@ class Layer2DFlowTests: Input2DMSE1DCase
                 layerPrev: layer,
                 anglesList: [20.0], padValue: 0.5,
                 params: params
+            )
+            
+        case "ResizeBilinearCrop1":
+            layer = ResizeBilinearCrop(
+                layerPrev: layer,
+                scale: 0.8,
+                offsetI: 0,
+                offsetJ: 0,
+                params: params
+            )
+            layer = AdaptiveAvgPool2D(
+                layerPrev: layer, size: width, params: params
+            )
+            
+        case "ResizeBilinearCrop2":
+            layer = ResizeBilinearCrop(
+                layerPrev: layer,
+                scale: 1.2,
+                offsetI: 1,
+                offsetJ: 1,
+                params: params
+            )
+            layer = AdaptiveAvgPool2D(
+                layerPrev: layer, size: width, params: params
             )
             
         default:
@@ -1043,27 +1113,39 @@ class Layer2DFlowTests: Input2DMSE1DCase
         run(trainer)
     }
     
-    func testJitter() throws
+    func testCrop() throws
     {
-        let trainer = _buildTrainer(model: "Jitter", bn: false)
+        let trainer = _buildTrainer(model: "Crop", bn: false)
         run(trainer)
     }
     
-    func testResizeBilinear1() throws
+    func testResizeBilinearPad1() throws
     {
-        let trainer = _buildTrainer(model: "ResizeBilinear1", bn: false)
+        let trainer = _buildTrainer(model: "ResizeBilinearPad1", bn: false)
         run(trainer)
     }
     
-    func testResizeBilinear2() throws
+    func testResizeBilinearPad2() throws
     {
-        let trainer = _buildTrainer(model: "ResizeBilinear2", bn: false)
+        let trainer = _buildTrainer(model: "ResizeBilinearPad2", bn: false)
         run(trainer)
     }
     
     func testRotate() throws
     {
         let trainer = _buildTrainer(model: "Rotate", bn: false)
+        run(trainer)
+    }
+    
+    func testResizeBilinearCrop1() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop1", bn: false)
+        run(trainer)
+    }
+    
+    func testResizeBilinearCrop2() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop2", bn: false)
         run(trainer)
     }
 }
@@ -1269,27 +1351,39 @@ class Layer2DFlowResetTests: Layer2DFlowTests
         run(trainer)
     }
     
-    override func testJitter() throws
+    override func testCrop() throws
     {
-        let trainer = _buildTrainer(model: "Jitter", bn: false)
+        let trainer = _buildTrainer(model: "Crop", bn: false)
         run(trainer)
     }
     
-    override func testResizeBilinear1() throws
+    override func testResizeBilinearPad1() throws
     {
-        let trainer = _buildTrainer(model: "ResizeBilinear1", bn: false)
+        let trainer = _buildTrainer(model: "ResizeBilinearPad1", bn: false)
         run(trainer)
     }
     
-    override func testResizeBilinear2() throws
+    override func testResizeBilinearPad2() throws
     {
-        let trainer = _buildTrainer(model: "ResizeBilinear2", bn: false)
+        let trainer = _buildTrainer(model: "ResizeBilinearPad2", bn: false)
         run(trainer)
     }
     
     override func testRotate() throws
     {
         let trainer = _buildTrainer(model: "Rotate", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinearCrop1() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop1", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinearCrop2() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop2", bn: false)
         run(trainer)
     }
 }
@@ -1495,27 +1589,39 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
         run(trainer)
     }
     
-    override func testJitter() throws
+    override func testCrop() throws
     {
-        let trainer = _buildTrainer(model: "Jitter", bn: false)
+        let trainer = _buildTrainer(model: "Crop", bn: false)
         run(trainer)
     }
     
-    override func testResizeBilinear1() throws
+    override func testResizeBilinearPad1() throws
     {
-        let trainer = _buildTrainer(model: "ResizeBilinear1", bn: false)
+        let trainer = _buildTrainer(model: "ResizeBilinearPad1", bn: false)
         run(trainer)
     }
     
-    override func testResizeBilinear2() throws
+    override func testResizeBilinearPad2() throws
     {
-        let trainer = _buildTrainer(model: "ResizeBilinear2", bn: false)
+        let trainer = _buildTrainer(model: "ResizeBilinearPad2", bn: false)
         run(trainer)
     }
     
     override func testRotate() throws
     {
         let trainer = _buildTrainer(model: "Rotate", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinearCrop1() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop1", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinearCrop2() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop2", bn: false)
         run(trainer)
     }
 }
@@ -1719,27 +1825,39 @@ class Layer2DInferenceTests: Layer2DFlowTests
         run(trainer)
     }
     
-    override func testJitter() throws
+    override func testCrop() throws
     {
-        let trainer = _buildTrainer(model: "Jitter", bn: false)
+        let trainer = _buildTrainer(model: "Crop", bn: false)
         run(trainer)
     }
     
-    override func testResizeBilinear1() throws
+    override func testResizeBilinearPad1() throws
     {
-        let trainer = _buildTrainer(model: "ResizeBilinear1", bn: false)
+        let trainer = _buildTrainer(model: "ResizeBilinearPad1", bn: false)
         run(trainer)
     }
     
-    override func testResizeBilinear2() throws
+    override func testResizeBilinearPad2() throws
     {
-        let trainer = _buildTrainer(model: "ResizeBilinear2", bn: false)
+        let trainer = _buildTrainer(model: "ResizeBilinearPad2", bn: false)
         run(trainer)
     }
     
     override func testRotate() throws
     {
         let trainer = _buildTrainer(model: "Rotate", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinearCrop1() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop1", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinearCrop2() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop2", bn: false)
         run(trainer)
     }
 }
@@ -1938,27 +2056,39 @@ class Layer2DLoadTests: Layer2DFlowTests
         run(trainer)
     }
     
-    override func testJitter() throws
+    override func testCrop() throws
     {
-        let trainer = _buildTrainer(model: "Jitter", bn: false)
+        let trainer = _buildTrainer(model: "Crop", bn: false)
         run(trainer)
     }
     
-    override func testResizeBilinear1() throws
+    override func testResizeBilinearPad1() throws
     {
-        let trainer = _buildTrainer(model: "ResizeBilinear1", bn: false)
+        let trainer = _buildTrainer(model: "ResizeBilinearPad1", bn: false)
         run(trainer)
     }
     
-    override func testResizeBilinear2() throws
+    override func testResizeBilinearPad2() throws
     {
-        let trainer = _buildTrainer(model: "ResizeBilinear2", bn: false)
+        let trainer = _buildTrainer(model: "ResizeBilinearPad2", bn: false)
         run(trainer)
     }
     
     override func testRotate() throws
     {
         let trainer = _buildTrainer(model: "Rotate", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinearCrop1() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop1", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinearCrop2() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop2", bn: false)
         run(trainer)
     }
 }
@@ -2157,27 +2287,39 @@ class Layer2DTransformTests: Layer2DFlowTests
         run(trainer)
     }
     
-    override func testJitter() throws
+    override func testCrop() throws
     {
-        let trainer = _buildTrainer(model: "Jitter", bn: false)
+        let trainer = _buildTrainer(model: "Crop", bn: false)
         run(trainer)
     }
     
-    override func testResizeBilinear1() throws
+    override func testResizeBilinearPad1() throws
     {
-        let trainer = _buildTrainer(model: "ResizeBilinear1", bn: false)
+        let trainer = _buildTrainer(model: "ResizeBilinearPad1", bn: false)
         run(trainer)
     }
     
-    override func testResizeBilinear2() throws
+    override func testResizeBilinearPad2() throws
     {
-        let trainer = _buildTrainer(model: "ResizeBilinear2", bn: false)
+        let trainer = _buildTrainer(model: "ResizeBilinearPad2", bn: false)
         run(trainer)
     }
     
     override func testRotate() throws
     {
         let trainer = _buildTrainer(model: "Rotate", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinearCrop1() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop1", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinearCrop2() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop2", bn: false)
         run(trainer)
     }
 }

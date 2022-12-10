@@ -149,18 +149,18 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
                 layerPrev: secondLayer, size: width, params: params
             )
             
-        case "Jitter":
-            secondLayer = Jitter2D(
+        case "Crop":
+            secondLayer = Crop2D(
                 layerPrev: layer,
-                jitterDimension: 3,
+                cropDimension: 3,
                 params: params
             )
             secondLayer = AdaptiveAvgPool2D(
                 layerPrev: secondLayer, size: width, params: params
             )
             
-        case "ResizeBilinear":
-            secondLayer = ResizeBilinear(
+        case "ResizeBilinearPad":
+            secondLayer = ResizeBilinearPad(
                 layerPrev: layer,
                 scalesList: [0.8, 1.2], padValue: 0.5,
                 params: params
@@ -174,6 +174,16 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
                 layerPrev: layer,
                 anglesList: [20.0, 350.0], padValue: 0.5,
                 params: params
+            )
+            
+        case "ResizeBilinearCrop":
+            secondLayer = ResizeBilinearCrop(
+                layerPrev: layer,
+                scalesList: [0.6, 0.8],
+                params: params
+            )
+            secondLayer = AdaptiveAvgPool2D(
+                layerPrev: secondLayer, size: width, params: params
             )
             
         default:
@@ -322,29 +332,29 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
         run(trainer)
     }
     
-    func testJitterCPU() throws
+    func testCropCPU() throws
     {
         MAKit.Opti.CPU = true
-        let trainer = _buildTrainer(model: "Jitter")
+        let trainer = _buildTrainer(model: "Crop")
         run(trainer)
     }
     
-    func testJitterGPU() throws
+    func testCropGPU() throws
     {
-        let trainer = _buildTrainer(model: "Jitter")
+        let trainer = _buildTrainer(model: "Crop")
         run(trainer)
     }
     
-    func testResizeBilinearCPU() throws
+    func testResizeBilinearPadCPU() throws
     {
         MAKit.Opti.CPU = true
-        let trainer = _buildTrainer(model: "ResizeBilinear")
+        let trainer = _buildTrainer(model: "ResizeBilinearPad")
         run(trainer)
     }
     
-    func testResizeBilinearGPU() throws
+    func testResizeBilinearPadGPU() throws
     {
-        let trainer = _buildTrainer(model: "ResizeBilinear")
+        let trainer = _buildTrainer(model: "ResizeBilinearPad")
         run(trainer)
     }
     
@@ -358,6 +368,19 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
     func testRotateGPU() throws
     {
         let trainer = _buildTrainer(model: "Rotate")
+        run(trainer)
+    }
+    
+    func testResizeBilinearCropCPU() throws
+    {
+        MAKit.Opti.CPU = true
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop")
+        run(trainer)
+    }
+    
+    func testResizeBilinearCropGPU() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop")
         run(trainer)
     }
 }
@@ -495,10 +518,10 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
                 layerPrev: secondLayer, size: width, params: params
             )
             
-        case "Jitter":
-            secondLayer = Jitter2D(
+        case "Crop":
+            secondLayer = Crop2D(
                 layerPrev: layer,
-                jitterDimension: 3,
+                cropDimension: 3,
                 offsetI: 2,
                 offsetJ: 2,
                 params: params
@@ -507,8 +530,8 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
                 layerPrev: secondLayer, size: width, params: params
             )
             
-        case "ResizeBilinear":
-            secondLayer = ResizeBilinear(
+        case "ResizeBilinearPad":
+            secondLayer = ResizeBilinearPad(
                 layerPrev: layer,
                 scalesList: [0.8], padValue: 0.5,
                 params: params
@@ -522,6 +545,18 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
                 layerPrev: layer,
                 anglesList: [20.0], padValue: 0.5,
                 params: params
+            )
+            
+        case "ResizeBilinearCrop":
+            secondLayer = ResizeBilinearCrop(
+                layerPrev: layer,
+                scale: 1.2,
+                offsetI: 1,
+                offsetJ: 1,
+                params: params
+            )
+            secondLayer = AdaptiveAvgPool2D(
+                layerPrev: secondLayer, size: width, params: params
             )
             
         default:
@@ -600,21 +635,27 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
         run(trainer)
     }
     
-    func testJitter() throws
+    func testCrop() throws
     {
-        let trainer = _buildTrainer(model: "Jitter")
+        let trainer = _buildTrainer(model: "Crop")
         run(trainer)
     }
     
-    func testResizeBilinear() throws
+    func testResizeBilinearPad() throws
     {
-        let trainer = _buildTrainer(model: "ResizeBilinear")
+        let trainer = _buildTrainer(model: "ResizeBilinearPad")
         run(trainer)
     }
     
     func testRotate() throws
     {
         let trainer = _buildTrainer(model: "Rotate")
+        run(trainer)
+    }
+    
+    func testResizeBilinearCrop() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop")
         run(trainer)
     }
 }

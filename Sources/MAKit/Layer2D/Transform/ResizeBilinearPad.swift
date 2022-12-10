@@ -1,5 +1,5 @@
 //
-// ResizeBilinear.swift
+// ResizeBilinearPad.swift
 // MAKit
 //
 // Created by Jean-François Reboud on 07/12/2022.
@@ -10,13 +10,15 @@ import Foundation
 ///
 /// Layer with a 2D shape neural structure.
 ///
-/// Bilnear resize input grids.
+/// Bilinear resize input grids then potentially pad missing values.
 ///
 /// Note that this layer enforces deterministic dimensions for the output grids.
 /// The final dimensions being the maximal scale of the dimensions of the input grids.
-/// For intermediate scales, padding is used in order to complete the missing values.
 ///
-public class ResizeBilinear: Layer2D
+/// When one unique scale is used, no padding will be used and the final dimensions
+/// will correspond to the scale of the dimensions of the input grids.
+///
+public class ResizeBilinearPad: Layer2D
 {
     let _scalesList: [Double]
     let _padValue: Double
@@ -70,7 +72,6 @@ public class ResizeBilinear: Layer2D
             width = max(width, Int(round(scale * Double(widthPrev))))
             height = max(height, Int(round(scale * Double(heightPrev))))
         }
-        
         super.init(layerPrev: layerPrev,
                    nbChannels: nbChannels,
                    height: height,
@@ -139,7 +140,7 @@ public class ResizeBilinear: Layer2D
         let params = MAKit.Model.Params(context: context)
         params.context.curID = id
             
-        let layer = ResizeBilinear(
+        let layer = ResizeBilinearPad(
             layerPrev: layerPrev,
             scalesList: _scalesList,
             padValue: _padValue,
@@ -176,8 +177,8 @@ public class ResizeBilinear: Layer2D
             let widthPrev = layerPrev.width
             let ratioInOutI = Double(heightPrev - 1) / Double(_heightResize - 1)
             let ratioInOutJ = Double(widthPrev - 1) / Double(_widthResize - 1)
-            let padDimensionI = (width - _widthResize) / 2
-            let padDimensionJ = (height - _heightResize) / 2
+            let padDimensionI = (height - _heightResize) / 2
+            let padDimensionJ = (width - _widthResize) / 2
             
             let neuronsPrev = layerPrev.neurons
             for batch in 0..<batchSize {
@@ -267,8 +268,8 @@ public class ResizeBilinear: Layer2D
             
             let ratioInOutI = Double(heightPrev - 1) / Double(_heightResize - 1)
             let ratioInOutJ = Double(widthPrev - 1) / Double(_widthResize - 1)
-            let padDimensionI = (width - _widthResize) / 2
-            let padDimensionJ = (height - _heightResize) / 2
+            let padDimensionI = (height - _heightResize) / 2
+            let padDimensionJ = (width - _widthResize) / 2
             
             let neuronsPrev = layerPrev.neurons
             for elem in 0..<batchSize {
@@ -356,7 +357,7 @@ public class ResizeBilinear: Layer2D
             let pPadValue: [Float] = [Float(_padValue)]
             
             let command = MetalKernel.get.createCommand(
-                "resizeBilinearForward", deviceID: deviceID
+                "resizeBilinearPadForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(pNbChannels, atIndex: 1)
@@ -399,8 +400,8 @@ public class ResizeBilinear: Layer2D
             
             let ratioInOutI = Double(heightPrev - 1) / Double(_heightResize - 1)
             let ratioInOutJ = Double(widthPrev - 1) / Double(_widthResize - 1)
-            let padDimensionI = (width - _widthResize) / 2
-            let padDimensionJ = (height - _heightResize) / 2
+            let padDimensionI = (height - _heightResize) / 2
+            let padDimensionJ = (width - _widthResize) / 2
             
             for elem in 0..<batchSize {
             for depth in 0..<nbChannels
@@ -432,7 +433,6 @@ public class ResizeBilinear: Layer2D
                         delta * iWeight * jWeight
                 }}
             }}
-            
             propagateDirty()
         }
     }
@@ -478,7 +478,7 @@ public class ResizeBilinear: Layer2D
             ]
             
             command = MetalKernel.get.createCommand(
-                "resizeBilinearBackward", deviceID: deviceID
+                "resizeBilinearPadBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBytes(pNbChannels, atIndex: 1)

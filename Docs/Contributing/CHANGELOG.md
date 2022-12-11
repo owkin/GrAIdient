@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🔧 **chore:** update correlation matrix coeffs ([#37](https://github.com/owkin/MAKit/pull/37))\
 🪜 **layer_2d:** ResizeBilinearCrop ([#36](https://github.com/owkin/MAKit/pull/36))\
 🚀 **perf:** enhance backwardGPU for ResizeBilinear ([#35](https://github.com/owkin/MAKit/pull/35))\
 🪜 **layer_2d:** Rotate2D ([#34](https://github.com/owkin/MAKit/pull/34))\

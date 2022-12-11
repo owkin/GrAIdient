@@ -213,7 +213,7 @@ def _linear_decorrelate_color(x):
     color_correlation_normalized = \
         color_correlation_svd_sqrt / max_norm_svd_sqrt
     color_correlation_normalized = torch.Tensor(
-        color_correlation_normalized.astype("float32")
+        color_correlation_normalized.T.astype("float32")
     )
     x_flat = torch.matmul(x_flat, color_correlation_normalized)
     x = torch.reshape(x_flat, x.shape)

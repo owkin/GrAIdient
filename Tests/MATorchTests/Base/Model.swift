@@ -272,9 +272,9 @@ class ModelTest3
          layer = DecorrelateRGB(
             layerPrev: layer,
             correlation: [
-                0.26, 0.27, 0.27,
-                0.09, 0.00, -0.09,
-                0.02, -0.05, 0.03
+                0.26, 0.09, 0.02,
+                0.27, 0.00, -0.05,
+                0.27, -0.09, 0.03
             ].map { $0 / 0.4619524 },
             params: params
         )

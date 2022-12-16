@@ -72,9 +72,9 @@ kernel void convForward(
     for (uint depthPrev=0; depthPrev<nbChannelsPrev; depthPrev++)
     {
         uint offsetStartPrev =
-        (depthPrev + nbChannelsPrev*elem) * heightPrev;
+            (depthPrev + nbChannelsPrev*elem) * heightPrev;
         uint offsetStartWeights =
-        (depthPrev + nbChannelsPrev * depth) * weightHeight;
+            (depthPrev + nbChannelsPrev * depth) * weightHeight;
         
         for (int k=startI; k<=endI; k++){
         for (int l=startJ; l<=endJ; l++)
@@ -83,11 +83,11 @@ kernel void convForward(
                 && (int)(stride*i)+k >= 0 && stride*i+k < heightPrev)
             {
                 uint offsetPrev = stride*j+l +
-                (offsetStartPrev + stride*i+k)*widthPrev;
+                    (offsetStartPrev + stride*i+k)*widthPrev;
                 float outPrev = outsPrev[offsetPrev];
                 
                 uint offsetWeights = l-startJ +
-                (offsetStartWeights + k-startI) * weightWidth;
+                    (offsetStartWeights + k-startI) * weightWidth;
                 float w = weights[offsetWeights];
                 
                 tmp += outPrev * w;

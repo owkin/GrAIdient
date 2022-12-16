@@ -18,7 +18,7 @@ class Layer2DGradTests: Input2DMSE1DCase
     {
         super.setUp()
         
-        optimizerParams.nbLoops = 1
+        optimizerParams.nbLoops = 2
         MAKit.Loop.gradientChecking = true
     }
     
@@ -131,13 +131,21 @@ class Layer2DGradTests: Input2DMSE1DCase
             )
             
         case "Sum":
-            let otherLayer: Layer2D = Convolution2D(
+            let otherLayer1: Layer2D = Convolution2D(
+                layerPrev: firstLayer, size: 1, nbChannels: 3, stride: 1,
+                activation: SoftReLU.str, biases: true, bn: false,
+                params: params
+            )
+            let otherLayer2: Layer2D = Convolution2D(
                 layerPrev: firstLayer, size: 1, nbChannels: 3, stride: 1,
                 activation: SoftReLU.str, biases: true, bn: false,
                 params: params
             )
             
-            layer = Sum2D(layersPrev: [layer, otherLayer], params: params)
+            layer = Sum2D(
+                layersPrev: [layer, otherLayer1, otherLayer2],
+                params: params
+            )
             
         case "Activation":
             layer = Activation2D(
@@ -151,6 +159,101 @@ class Layer2DGradTests: Input2DMSE1DCase
                 layerPrev: layer,
                 targetI: 1, targetJ: 3,
                 params: params
+            )
+            
+        case "IRDFT2RGB":
+            layer = Convolution2D(
+                layerPrev: layer, size: 2, nbChannels: 6, stride: 2,
+                activation: SoftReLU.str, biases: true, bn: bn, params: params
+            )
+            
+            layer = IRDFT2RGB(layerPrev: layer, params: params)
+            
+        case "DecorrelateRGB":
+            layer = DecorrelateRGB(
+                layerPrev: layer,
+                correlation: [
+                    0.26, 0.26, 0.27,
+                    0.09, 0.00, -0.09,
+                    0.02, -0.05, 0.03
+                ].map { $0 / 0.4619524 },
+                params: params
+            )
+            
+        case "LinearScale":
+            layer = LinearScale2D(
+                layerPrev: layer,
+                weight: 2.0,
+                bias: 3.0,
+                params: params
+            )
+            
+        case "Multiply":
+            let otherLayer1: Layer2D = Convolution2D(
+                layerPrev: firstLayer, size: 1, nbChannels: 3, stride: 1,
+                activation: SoftReLU.str, biases: true, bn: false,
+                params: params
+            )
+            let otherLayer2: Layer2D = Convolution2D(
+                layerPrev: firstLayer, size: 1, nbChannels: 3, stride: 1,
+                activation: SoftReLU.str, biases: true, bn: false,
+                params: params
+            )
+            
+            layer = Multiply2D(
+                layersPrev: [layer, otherLayer1, otherLayer2],
+                params: params
+            )
+            
+        case "Pad":
+            layer = Pad2D(
+                layerPrev: layer,
+                padDimension: 3, padValue: 0.5,
+                params: params
+            )
+            
+        case "Crop":
+            layer = Crop2D(
+                layerPrev: layer,
+                cropDimension: 3,
+                params: params
+            )
+            
+        case "ResizeBilinearPad":
+            layer = ResizeBilinearPad(
+                layerPrev: layer,
+                scalesList: [0.8, 1.2], padValue: 0.5,
+                params: params
+            )
+            layer = AdaptiveAvgPool2D(
+                layerPrev: layer, size: width, params: params
+            )
+            
+        case "Rotate":
+            layer = Rotate2D(
+                layerPrev: layer,
+                anglesList: [20.0, 350.0], padValue: 0.5,
+                params: params
+            )
+            
+        case "ResizeBilinearCrop1":
+            layer = ResizeBilinearCrop(
+                layerPrev: layer,
+                scalesList: [0.6, 0.8],
+                params: params
+            )
+            layer = AdaptiveAvgPool2D(
+                layerPrev: layer, size: width, params: params
+            )
+            
+        case "ResizeBilinearCrop2":
+            layer = ResizeBilinearCrop(
+                layerPrev: layer,
+                scalesList: [0.8, 1.2],
+                params: params
+            )
+            layer = AdaptiveAvgPool2D(
+                layerPrev: layer, size: width, params: params
             )
             
         default:
@@ -265,14 +368,14 @@ class Layer2DGradTests: Input2DMSE1DCase
         run(trainer)
     }
     
-    func testBN2DCPU() throws
+    func testBNCPU() throws
     {
         MAKit.Opti.CPU = true
         let trainer = _buildTrainer(model: "BN", bn: false)
         run(trainer)
     }
     
-    func testBN2DGPU() throws
+    func testBNGPU() throws
     {
         let trainer = _buildTrainer(model: "BN", bn: false)
         run(trainer)
@@ -433,6 +536,136 @@ class Layer2DGradTests: Input2DMSE1DCase
         let trainer = _buildTrainer(model: "SelectNeurons", bn: false)
         run(trainer)
     }
+    
+    func testIRDFT2RGBCPU() throws
+    {
+        MAKit.Opti.CPU = true
+        let trainer = _buildTrainer(model: "IRDFT2RGB", bn: false)
+        run(trainer)
+    }
+    
+    func testIRDFT2RGBGPU() throws
+    {
+        let trainer = _buildTrainer(model: "IRDFT2RGB", bn: false)
+        run(trainer)
+    }
+    
+    func testDecorrelateRGBCPU() throws
+    {
+        MAKit.Opti.CPU = true
+        let trainer = _buildTrainer(model: "DecorrelateRGB", bn: false)
+        run(trainer)
+    }
+    
+    func testDecorrelateRGBGPU() throws
+    {
+        let trainer = _buildTrainer(model: "DecorrelateRGB", bn: false)
+        run(trainer)
+    }
+    
+    func testLinearScaleCPU() throws
+    {
+        MAKit.Opti.CPU = true
+        let trainer = _buildTrainer(model: "LinearScale", bn: false)
+        run(trainer)
+    }
+    
+    func testLinearScaleGPU() throws
+    {
+        let trainer = _buildTrainer(model: "LinearScale", bn: false)
+        run(trainer)
+    }
+    
+    func testMultiplyCPU() throws
+    {
+        MAKit.Opti.CPU = true
+        let trainer = _buildTrainer(model: "Multiply", bn: false)
+        run(trainer)
+    }
+    
+    func testMultiplyGPU() throws
+    {
+        let trainer = _buildTrainer(model: "Multiply", bn: false)
+        run(trainer)
+    }
+    
+    func testPadCPU() throws
+    {
+        MAKit.Opti.CPU = true
+        let trainer = _buildTrainer(model: "Pad", bn: false)
+        run(trainer)
+    }
+    
+    func testPadGPU() throws
+    {
+        let trainer = _buildTrainer(model: "Pad", bn: false)
+        run(trainer)
+    }
+    
+    func testCropCPU() throws
+    {
+        MAKit.Opti.CPU = true
+        let trainer = _buildTrainer(model: "Crop", bn: false)
+        run(trainer)
+    }
+    
+    func testCropGPU() throws
+    {
+        let trainer = _buildTrainer(model: "Crop", bn: false)
+        run(trainer)
+    }
+    
+    func testResizeBilinearPadCPU() throws
+    {
+        MAKit.Opti.CPU = true
+        let trainer = _buildTrainer(model: "ResizeBilinearPad", bn: false)
+        run(trainer)
+    }
+    
+    func testResizeBilinearPadGPU() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearPad", bn: false)
+        run(trainer)
+    }
+    
+    func testRotateCPU() throws
+    {
+        MAKit.Opti.CPU = true
+        let trainer = _buildTrainer(model: "Rotate", bn: false)
+        run(trainer)
+    }
+    
+    func testRotateGPU() throws
+    {
+        let trainer = _buildTrainer(model: "Rotate", bn: false)
+        run(trainer)
+    }
+    
+    func testResizeBilinearCrop1CPU() throws
+    {
+        MAKit.Opti.CPU = true
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop1", bn: false)
+        run(trainer)
+    }
+    
+    func testResizeBilinearCrop1GPU() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop1", bn: false)
+        run(trainer)
+    }
+    
+    func testResizeBilinearCrop2CPU() throws
+    {
+        MAKit.Opti.CPU = true
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop2", bn: false)
+        run(trainer)
+    }
+    
+    func testResizeBilinearCrop2GPU() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop2", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -554,13 +787,21 @@ class Layer2DFlowTests: Input2DMSE1DCase
             )
             
         case "Sum":
-            let otherLayer: Layer2D = Convolution2D(
+            let otherLayer1: Layer2D = Convolution2D(
+                layerPrev: firstLayer, size: 1, nbChannels: 3, stride: 1,
+                activation: LeakyReLU.str, biases: true, bn: false,
+                params: params
+            )
+            let otherLayer2: Layer2D = Convolution2D(
                 layerPrev: firstLayer, size: 1, nbChannels: 3, stride: 1,
                 activation: LeakyReLU.str, biases: true, bn: false,
                 params: params
             )
             
-            layer = Sum2D(layersPrev: [layer, otherLayer], params: params)
+            layer = Sum2D(
+                layersPrev: [layer, otherLayer1, otherLayer2],
+                params: params
+            )
             
         case "Activation":
             layer = Activation2D(
@@ -574,6 +815,117 @@ class Layer2DFlowTests: Input2DMSE1DCase
                 layerPrev: layer,
                 targetI: 1, targetJ: 3,
                 params: params
+            )
+            
+        case "IRDFT2RGB":
+            layer = Convolution2D(
+                layerPrev: layer, size: 2, nbChannels: 6, stride: 2,
+                activation: SoftReLU.str, biases: true, bn: bn, params: params
+            )
+            
+            layer = IRDFT2RGB(layerPrev: layer, params: params)
+            
+        case "DecorrelateRGB":
+            layer = DecorrelateRGB(
+                layerPrev: layer,
+                correlation: [
+                    0.26, 0.26, 0.27,
+                    0.09, 0.00, -0.09,
+                    0.02, -0.05, 0.03
+                ].map { $0 / 0.4619524 },
+                params: params
+            )
+            
+        case "LinearScale":
+            layer = LinearScale2D(
+                layerPrev: layer,
+                weight: 2.0,
+                bias: 3.0,
+                params: params
+            )
+            
+        case "Multiply":
+            let otherLayer1: Layer2D = Convolution2D(
+                layerPrev: firstLayer, size: 1, nbChannels: 3, stride: 1,
+                activation: LeakyReLU.str, biases: true, bn: false,
+                params: params
+            )
+            let otherLayer2: Layer2D = Convolution2D(
+                layerPrev: firstLayer, size: 1, nbChannels: 3, stride: 1,
+                activation: LeakyReLU.str, biases: true, bn: false,
+                params: params
+            )
+            
+            layer = Multiply2D(
+                layersPrev: [layer, otherLayer1, otherLayer2],
+                params: params
+            )
+            
+        case "Pad":
+            layer = Pad2D(
+                layerPrev: layer,
+                padDimension: 3, padValue: 0.5,
+                params: params
+            )
+            
+        case "Crop":
+            layer = Crop2D(
+                layerPrev: layer,
+                cropDimension: 3,
+                offsetI: 2,
+                offsetJ: 2,
+                params: params
+            )
+            
+        case "ResizeBilinearPad1":
+            layer = ResizeBilinearPad(
+                layerPrev: layer,
+                scalesList: [0.8], padValue: 0.5,
+                params: params
+            )
+            layer = AdaptiveAvgPool2D(
+                layerPrev: layer, size: width, params: params
+            )
+            
+        case "ResizeBilinearPad2":
+            layer = ResizeBilinearPad(
+                layerPrev: layer,
+                scalesList: [1.2], padValue: 0.5,
+                params: params
+            )
+            layer = AdaptiveAvgPool2D(
+                layerPrev: layer, size: width, params: params
+            )
+            
+        case "Rotate":
+            layer = Rotate2D(
+                layerPrev: layer,
+                anglesList: [20.0], padValue: 0.5,
+                params: params
+            )
+            
+        case "ResizeBilinearCrop1":
+            layer = ResizeBilinearCrop(
+                layerPrev: layer,
+                scale: 0.8,
+                offsetI: 0,
+                offsetJ: 0,
+                params: params
+            )
+            layer = AdaptiveAvgPool2D(
+                layerPrev: layer, size: width, params: params
+            )
+            
+        case "ResizeBilinearCrop2":
+            layer = ResizeBilinearCrop(
+                layerPrev: layer,
+                scale: 1.2,
+                offsetI: 1,
+                offsetJ: 1,
+                params: params
+            )
+            layer = AdaptiveAvgPool2D(
+                layerPrev: layer, size: width, params: params
             )
             
         default:
@@ -653,7 +1005,7 @@ class Layer2DFlowTests: Input2DMSE1DCase
         run(trainer)
     }
     
-    func testBN2D() throws
+    func testBN() throws
     {
         let trainer = _buildTrainer(model: "BN", bn: false)
         run(trainer)
@@ -728,6 +1080,72 @@ class Layer2DFlowTests: Input2DMSE1DCase
     func testSelectNeurons() throws
     {
         let trainer = _buildTrainer(model: "SelectNeurons", bn: false)
+        run(trainer)
+    }
+    
+    func testIRDFT2RGB() throws
+    {
+        let trainer = _buildTrainer(model: "IRDFT2RGB", bn: false)
+        run(trainer)
+    }
+    
+    func testDecorrelateRGB() throws
+    {
+        let trainer = _buildTrainer(model: "DecorrelateRGB", bn: false)
+        run(trainer)
+    }
+    
+    func testLinearScale() throws
+    {
+        let trainer = _buildTrainer(model: "LinearScale", bn: false)
+        run(trainer)
+    }
+    
+    func testMultiply() throws
+    {
+        let trainer = _buildTrainer(model: "Multiply", bn: false)
+        run(trainer)
+    }
+    
+    func testPad() throws
+    {
+        let trainer = _buildTrainer(model: "Pad", bn: false)
+        run(trainer)
+    }
+    
+    func testCrop() throws
+    {
+        let trainer = _buildTrainer(model: "Crop", bn: false)
+        run(trainer)
+    }
+    
+    func testResizeBilinearPad1() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearPad1", bn: false)
+        run(trainer)
+    }
+    
+    func testResizeBilinearPad2() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearPad2", bn: false)
+        run(trainer)
+    }
+    
+    func testRotate() throws
+    {
+        let trainer = _buildTrainer(model: "Rotate", bn: false)
+        run(trainer)
+    }
+    
+    func testResizeBilinearCrop1() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop1", bn: false)
+        run(trainer)
+    }
+    
+    func testResizeBilinearCrop2() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop2", bn: false)
         run(trainer)
     }
 }
@@ -825,7 +1243,7 @@ class Layer2DFlowResetTests: Layer2DFlowTests
         run(trainer)
     }
     
-    override func testBN2D() throws
+    override func testBN() throws
     {
         let trainer = _buildTrainer(model: "BN", bn: false)
         run(trainer)
@@ -900,6 +1318,72 @@ class Layer2DFlowResetTests: Layer2DFlowTests
     override func testSelectNeurons() throws
     {
         let trainer = _buildTrainer(model: "SelectNeurons", bn: false)
+        run(trainer)
+    }
+    
+    override func testIRDFT2RGB() throws
+    {
+        let trainer = _buildTrainer(model: "IRDFT2RGB", bn: false)
+        run(trainer)
+    }
+    
+    override func testDecorrelateRGB() throws
+    {
+        let trainer = _buildTrainer(model: "DecorrelateRGB", bn: false)
+        run(trainer)
+    }
+    
+    override func testLinearScale() throws
+    {
+        let trainer = _buildTrainer(model: "LinearScale", bn: false)
+        run(trainer)
+    }
+    
+    override func testMultiply() throws
+    {
+        let trainer = _buildTrainer(model: "Multiply", bn: false)
+        run(trainer)
+    }
+    
+    override func testPad() throws
+    {
+        let trainer = _buildTrainer(model: "Pad", bn: false)
+        run(trainer)
+    }
+    
+    override func testCrop() throws
+    {
+        let trainer = _buildTrainer(model: "Crop", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinearPad1() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearPad1", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinearPad2() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearPad2", bn: false)
+        run(trainer)
+    }
+    
+    override func testRotate() throws
+    {
+        let trainer = _buildTrainer(model: "Rotate", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinearCrop1() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop1", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinearCrop2() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop2", bn: false)
         run(trainer)
     }
 }
@@ -997,7 +1481,7 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
         run(trainer)
     }
     
-    override func testBN2D() throws
+    override func testBN() throws
     {
         let trainer = _buildTrainer(model: "BN", bn: false)
         run(trainer, nbRetry: 5, diffThreshold: 0.00001)
@@ -1072,6 +1556,72 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
     override func testSelectNeurons() throws
     {
         let trainer = _buildTrainer(model: "SelectNeurons", bn: false)
+        run(trainer)
+    }
+    
+    override func testIRDFT2RGB() throws
+    {
+        let trainer = _buildTrainer(model: "IRDFT2RGB", bn: false)
+        run(trainer)
+    }
+    
+    override func testDecorrelateRGB() throws
+    {
+        let trainer = _buildTrainer(model: "DecorrelateRGB", bn: false)
+        run(trainer)
+    }
+    
+    override func testLinearScale() throws
+    {
+        let trainer = _buildTrainer(model: "LinearScale", bn: false)
+        run(trainer)
+    }
+    
+    override func testMultiply() throws
+    {
+        let trainer = _buildTrainer(model: "Multiply", bn: false)
+        run(trainer)
+    }
+    
+    override func testPad() throws
+    {
+        let trainer = _buildTrainer(model: "Pad", bn: false)
+        run(trainer)
+    }
+    
+    override func testCrop() throws
+    {
+        let trainer = _buildTrainer(model: "Crop", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinearPad1() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearPad1", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinearPad2() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearPad2", bn: false)
+        run(trainer)
+    }
+    
+    override func testRotate() throws
+    {
+        let trainer = _buildTrainer(model: "Rotate", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinearCrop1() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop1", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinearCrop2() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop2", bn: false)
         run(trainer)
     }
 }
@@ -1167,7 +1717,7 @@ class Layer2DInferenceTests: Layer2DFlowTests
         run(trainer)
     }
     
-    override func testBN2D() throws
+    override func testBN() throws
     {
         let trainer = _buildTrainer(model: "BN", bn: false)
         run(trainer, nbRetry: 5, diffThreshold: 0.01)
@@ -1242,6 +1792,72 @@ class Layer2DInferenceTests: Layer2DFlowTests
     override func testSelectNeurons() throws
     {
         let trainer = _buildTrainer(model: "SelectNeurons", bn: false)
+        run(trainer)
+    }
+    
+    override func testIRDFT2RGB() throws
+    {
+        let trainer = _buildTrainer(model: "IRDFT2RGB", bn: false)
+        run(trainer)
+    }
+    
+    override func testDecorrelateRGB() throws
+    {
+        let trainer = _buildTrainer(model: "DecorrelateRGB", bn: false)
+        run(trainer)
+    }
+    
+    override func testLinearScale() throws
+    {
+        let trainer = _buildTrainer(model: "LinearScale", bn: false)
+        run(trainer)
+    }
+    
+    override func testMultiply() throws
+    {
+        let trainer = _buildTrainer(model: "Multiply", bn: false)
+        run(trainer)
+    }
+    
+    override func testPad() throws
+    {
+        let trainer = _buildTrainer(model: "Pad", bn: false)
+        run(trainer)
+    }
+    
+    override func testCrop() throws
+    {
+        let trainer = _buildTrainer(model: "Crop", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinearPad1() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearPad1", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinearPad2() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearPad2", bn: false)
+        run(trainer)
+    }
+    
+    override func testRotate() throws
+    {
+        let trainer = _buildTrainer(model: "Rotate", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinearCrop1() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop1", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinearCrop2() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop2", bn: false)
         run(trainer)
     }
 }
@@ -1332,7 +1948,7 @@ class Layer2DLoadTests: Layer2DFlowTests
         run(trainer)
     }
     
-    override func testBN2D() throws
+    override func testBN() throws
     {
         let trainer = _buildTrainer(model: "BN", bn: false)
         run(trainer)
@@ -1407,6 +2023,72 @@ class Layer2DLoadTests: Layer2DFlowTests
     override func testSelectNeurons() throws
     {
         let trainer = _buildTrainer(model: "SelectNeurons", bn: false)
+        run(trainer)
+    }
+    
+    override func testIRDFT2RGB() throws
+    {
+        let trainer = _buildTrainer(model: "IRDFT2RGB", bn: false)
+        run(trainer)
+    }
+    
+    override func testDecorrelateRGB() throws
+    {
+        let trainer = _buildTrainer(model: "DecorrelateRGB", bn: false)
+        run(trainer)
+    }
+    
+    override func testLinearScale() throws
+    {
+        let trainer = _buildTrainer(model: "LinearScale", bn: false)
+        run(trainer)
+    }
+    
+    override func testMultiply() throws
+    {
+        let trainer = _buildTrainer(model: "Multiply", bn: false)
+        run(trainer)
+    }
+    
+    override func testPad() throws
+    {
+        let trainer = _buildTrainer(model: "Pad", bn: false)
+        run(trainer)
+    }
+    
+    override func testCrop() throws
+    {
+        let trainer = _buildTrainer(model: "Crop", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinearPad1() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearPad1", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinearPad2() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearPad2", bn: false)
+        run(trainer)
+    }
+    
+    override func testRotate() throws
+    {
+        let trainer = _buildTrainer(model: "Rotate", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinearCrop1() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop1", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinearCrop2() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop2", bn: false)
         run(trainer)
     }
 }
@@ -1435,572 +2117,536 @@ class Layer2DTransformTests: Layer2DFlowTests
     override func testConvolution1BN() throws
     {
         let trainer = _buildTrainer(model: "Convolution1", bn: true)
-        runCopy(trainer)
-    }
-    
-    func testConvolution1BNCopyInPlace() throws
-    {
-        let trainer = _buildTrainer(model: "Convolution1", bn: true)
-        runCopyInPlace(trainer)
-    }
-    
-    func testConvolution1BNResize() throws
-    {
-        let trainer = _buildTrainer(model: "Convolution1", bn: true)
-        runResize(trainer)
-    }
-    
-    func testConvolution1BNResizeInPlace() throws
-    {
-        let trainer = _buildTrainer(model: "Convolution1", bn: true)
-        runResizeInPlace(trainer)
+        run(trainer)
     }
     
     override func testConvolution1BNSample() throws
     {
         MAKit.Gradient.sample = true
         let trainer = _buildTrainer(model: "Convolution1", bn: true)
-        runCopy(trainer)
-    }
-    
-    func testConvolution1BNSampleCopyInPlace() throws
-    {
-        MAKit.Gradient.sample = true
-        let trainer = _buildTrainer(model: "Convolution1", bn: true)
-        runCopyInPlace(trainer)
-    }
-    
-    func testConvolution1BNSampleResize() throws
-    {
-        MAKit.Gradient.sample = true
-        let trainer = _buildTrainer(model: "Convolution1", bn: true)
-        runResize(trainer)
-    }
-    
-    func testConvolution1BNSampleResizeInPlace() throws
-    {
-        MAKit.Gradient.sample = true
-        let trainer = _buildTrainer(model: "Convolution1", bn: true)
-        runResizeInPlace(trainer)
+        run(trainer)
     }
     
     override func testConvolution1NoBN() throws
     {
         let trainer = _buildTrainer(model: "Convolution1", bn: false)
-        runCopy(trainer)
-    }
-    
-    func testConvolution1NoBNCopyInPlace() throws
-    {
-        let trainer = _buildTrainer(model: "Convolution1", bn: false)
-        runCopyInPlace(trainer)
-    }
-    
-    func testConvolution1NoBNResize() throws
-    {
-        let trainer = _buildTrainer(model: "Convolution1", bn: false)
-        runResize(trainer)
-    }
-    
-    func testConvolution1NoBNResizeInPlace() throws
-    {
-        let trainer = _buildTrainer(model: "Convolution1", bn: false)
-        runResizeInPlace(trainer)
+        run(trainer)
     }
     
     override func testConvolution1NoBNSample() throws
     {
         MAKit.Gradient.sample = true
         let trainer = _buildTrainer(model: "Convolution1", bn: false)
-        runCopy(trainer)
-    }
-    
-    func testConvolution1NoBNSampleCopyInPlace() throws
-    {
-        MAKit.Gradient.sample = true
-        let trainer = _buildTrainer(model: "Convolution1", bn: false)
-        runCopyInPlace(trainer)
-    }
-    
-    func testConvolution1NoBNSampleResize() throws
-    {
-        MAKit.Gradient.sample = true
-        let trainer = _buildTrainer(model: "Convolution1", bn: false)
-        runResize(trainer)
-    }
-    
-    func testConvolution1NoBNSampleResizeInPlace() throws
-    {
-        MAKit.Gradient.sample = true
-        let trainer = _buildTrainer(model: "Convolution1", bn: false)
-        runResizeInPlace(trainer)
+        run(trainer)
     }
     
     override func testConvolution2() throws
     {
         let trainer = _buildTrainer(model: "Convolution2", bn: false)
-        runCopy(trainer)
-    }
-    
-    func testConvolution2CopyInPlace() throws
-    {
-        let trainer = _buildTrainer(model: "Convolution2", bn: false)
-        runCopyInPlace(trainer)
-    }
-    
-    func testConvolution2Resize() throws
-    {
-        let trainer = _buildTrainer(model: "Convolution2", bn: false)
-        runResize(trainer)
-    }
-    
-    func testConvolution2ResizeInPlace() throws
-    {
-        let trainer = _buildTrainer(model: "Convolution2", bn: false)
-        runResizeInPlace(trainer)
+        run(trainer)
     }
     
     override func testConvolution2Sample() throws
     {
         MAKit.Gradient.sample = true
         let trainer = _buildTrainer(model: "Convolution2", bn: false)
-        runCopy(trainer)
-    }
-    
-    func testConvolution2SampleCopyInPlace() throws
-    {
-        MAKit.Gradient.sample = true
-        let trainer = _buildTrainer(model: "Convolution2", bn: false)
-        runCopyInPlace(trainer)
-    }
-    
-    func testConvolution2SampleResize() throws
-    {
-        MAKit.Gradient.sample = true
-        let trainer = _buildTrainer(model: "Convolution2", bn: false)
-        runResize(trainer)
-    }
-    
-    func testConvolution2SampleResizeInPlace() throws
-    {
-        MAKit.Gradient.sample = true
-        let trainer = _buildTrainer(model: "Convolution2", bn: false)
-        runResizeInPlace(trainer)
+        run(trainer)
     }
     
     override func testConvolutionStride1() throws
     {
         let trainer = _buildTrainer(model: "ConvolutionStride1", bn: false)
-        runCopy(trainer)
-    }
-    
-    func testConvolutionStride1CopyInPlace() throws
-    {
-        let trainer = _buildTrainer(model: "ConvolutionStride1", bn: false)
-        runCopyInPlace(trainer)
-    }
-    
-    func testConvolutionStride1Resize() throws
-    {
-        let trainer = _buildTrainer(model: "ConvolutionStride1", bn: false)
-        runResize(trainer)
-    }
-    
-    func testConvolutionStride1ResizeInPlace() throws
-    {
-        let trainer = _buildTrainer(model: "ConvolutionStride1", bn: false)
-        runResizeInPlace(trainer)
+        run(trainer)
     }
     
     override func testConvolutionStride1Sample() throws
     {
         MAKit.Gradient.sample = true
         let trainer = _buildTrainer(model: "ConvolutionStride1", bn: false)
-        runCopy(trainer)
-    }
-    
-    func testConvolutionStride1SampleCopyInPlace() throws
-    {
-        MAKit.Gradient.sample = true
-        let trainer = _buildTrainer(model: "ConvolutionStride1", bn: false)
-        runCopyInPlace(trainer)
-    }
-    
-    func testConvolutionStride1SampleResize() throws
-    {
-        MAKit.Gradient.sample = true
-        let trainer = _buildTrainer(model: "ConvolutionStride1", bn: false)
-        runResize(trainer)
-    }
-    
-    func testConvolutionStride1SampleResizeInPlace() throws
-    {
-        MAKit.Gradient.sample = true
-        let trainer = _buildTrainer(model: "ConvolutionStride1", bn: false)
-        runResizeInPlace(trainer)
+        run(trainer)
     }
     
     override func testConvolutionStride2() throws
     {
         let trainer = _buildTrainer(model: "ConvolutionStride2", bn: false)
-        runCopy(trainer)
-    }
-    
-    func testConvolutionStride2CopyInPlace() throws
-    {
-        let trainer = _buildTrainer(model: "ConvolutionStride2", bn: false)
-        runCopyInPlace(trainer)
-    }
-    
-    func testConvolutionStride2Resize() throws
-    {
-        let trainer = _buildTrainer(model: "ConvolutionStride2", bn: false)
-        runResize(trainer)
-    }
-    
-    func testConvolutionStride2ResizeInPlace() throws
-    {
-        let trainer = _buildTrainer(model: "ConvolutionStride2", bn: false)
-        runResizeInPlace(trainer)
+        run(trainer)
     }
     
     override func testConvolutionStride2Sample() throws
     {
         MAKit.Gradient.sample = true
         let trainer = _buildTrainer(model: "ConvolutionStride2", bn: false)
-        runCopy(trainer)
+        run(trainer)
     }
     
-    func testConvolutionStride2SampleCopyInPlace() throws
-    {
-        MAKit.Gradient.sample = true
-        let trainer = _buildTrainer(model: "ConvolutionStride2", bn: false)
-        runCopyInPlace(trainer)
-    }
-    
-    func testConvolutionStride2SampleResize() throws
-    {
-        MAKit.Gradient.sample = true
-        let trainer = _buildTrainer(model: "ConvolutionStride2", bn: false)
-        runResize(trainer)
-    }
-    
-    func testConvolutionStride2SampleResizeInPlace() throws
-    {
-        MAKit.Gradient.sample = true
-        let trainer = _buildTrainer(model: "ConvolutionStride2", bn: false)
-        runResizeInPlace(trainer)
-    }
-    
-    override func testBN2D() throws
+    override func testBN() throws
     {
         let trainer = _buildTrainer(model: "BN", bn: false)
-        runCopy(trainer)
-    }
-    
-    func testBN2DCopyInPlace() throws
-    {
-        let trainer = _buildTrainer(model: "BN", bn: false)
-        runCopyInPlace(trainer)
-    }
-    
-    func testBN2DResize() throws
-    {
-        let trainer = _buildTrainer(model: "BN", bn: false)
-        runResize(trainer)
-    }
-    
-    func testBN2DResizeInPlace() throws
-    {
-        let trainer = _buildTrainer(model: "BN", bn: false)
-        runResizeInPlace(trainer)
+        run(trainer)
     }
     
     override func testMaxPool1() throws
     {
         let trainer = _buildTrainer(model: "MaxPool1", bn: false)
-        runCopy(trainer)
-    }
-    
-    func testMaxPool1CopyInPlace() throws
-    {
-        let trainer = _buildTrainer(model: "MaxPool1", bn: false)
-        runCopyInPlace(trainer)
-    }
-    
-    func testMaxPool1Resize() throws
-    {
-        let trainer = _buildTrainer(model: "MaxPool1", bn: false)
-        runResize(trainer)
-    }
-    
-    func testMaxPool1ResizeInPlace() throws
-    {
-        let trainer = _buildTrainer(model: "MaxPool1", bn: false)
-        runResizeInPlace(trainer)
+        run(trainer)
     }
     
     override func testMaxPool2() throws
     {
         let trainer = _buildTrainer(model: "MaxPool2", bn: false)
-        runCopy(trainer)
-    }
-    
-    func testMaxPool2CopyInPlace() throws
-    {
-        let trainer = _buildTrainer(model: "MaxPool2", bn: false)
-        runCopyInPlace(trainer)
-    }
-    
-    func testMaxPool2Resize() throws
-    {
-        let trainer = _buildTrainer(model: "MaxPool2", bn: false)
-        runResize(trainer)
-    }
-    
-    func testMaxPool2ResizeInPlace() throws
-    {
-        let trainer = _buildTrainer(model: "MaxPool2", bn: false)
-        runResizeInPlace(trainer)
+        run(trainer)
     }
     
     override func testMaxPool3() throws
     {
         let trainer = _buildTrainer(model: "MaxPool3", bn: false)
-        runCopy(trainer)
-    }
-    
-    func testMaxPool3CopyInPlace() throws
-    {
-        let trainer = _buildTrainer(model: "MaxPool3", bn: false)
-        runCopyInPlace(trainer)
-    }
-    
-    func testMaxPool3Resize() throws
-    {
-        let trainer = _buildTrainer(model: "MaxPool3", bn: false)
-        runResize(trainer)
-    }
-    
-    func testMaxPool3ResizeInPlace() throws
-    {
-        let trainer = _buildTrainer(model: "MaxPool3", bn: false)
-        runResizeInPlace(trainer)
+        run(trainer)
     }
     
     override func testAvgPool() throws
     {
         let trainer = _buildTrainer(model: "AvgPooling", bn: false)
-        runCopy(trainer)
-    }
-    
-    func testAvgPoolCopyInPlace() throws
-    {
-        let trainer = _buildTrainer(model: "AvgPooling", bn: false)
-        runCopyInPlace(trainer)
-    }
-    
-    func testAvgPoolResize() throws
-    {
-        let trainer = _buildTrainer(model: "AvgPooling", bn: false)
-        runResize(trainer)
-    }
-    
-    func testAvgPoolResizeInPlace() throws
-    {
-        let trainer = _buildTrainer(model: "AvgPooling", bn: false)
-        runResizeInPlace(trainer)
+        run(trainer)
     }
     
     override func testAdaptiveAvgPool1() throws
     {
         let trainer = _buildTrainer(model: "AdaptiveAvgPool1", bn: false)
-        runCopy(trainer)
-    }
-    
-    func testAdaptiveAvgPool1CopyInPlace() throws
-    {
-        let trainer = _buildTrainer(model: "AdaptiveAvgPool1", bn: false)
-        runCopyInPlace(trainer)
-    }
-    
-    func testAdaptiveAvgPool1Resize() throws
-    {
-        let trainer = _buildTrainer(model: "AdaptiveAvgPool1", bn: false)
-        runResize(trainer)
-    }
-    
-    func testAdaptiveAvgPool1ResizeInPlace() throws
-    {
-        let trainer = _buildTrainer(model: "AdaptiveAvgPool1", bn: false)
-        runResizeInPlace(trainer)
+        run(trainer)
     }
     
     override func testAdaptiveAvgPool2() throws
     {
         let trainer = _buildTrainer(model: "AdaptiveAvgPool2", bn: false)
-        runCopy(trainer)
-    }
-    
-    func testAdaptiveAvgPool2CopyInPlace() throws
-    {
-        let trainer = _buildTrainer(model: "AdaptiveAvgPool2", bn: false)
-        runCopyInPlace(trainer)
-    }
-    
-    func testAdaptiveAvgPool2Resize() throws
-    {
-        let trainer = _buildTrainer(model: "AdaptiveAvgPool2", bn: false)
-        runResize(trainer)
-    }
-    
-    func testAdaptiveAvgPool2ResizeInPlace() throws
-    {
-        let trainer = _buildTrainer(model: "AdaptiveAvgPool2", bn: false)
-        runResizeInPlace(trainer)
+        run(trainer)
     }
     
     override func testAdaptiveAvgPool3() throws
     {
         let trainer = _buildTrainer(model: "AdaptiveAvgPool3", bn: false)
-        runCopy(trainer)
-    }
-    
-    func testAdaptiveAvgPool3CopyInPlace() throws
-    {
-        let trainer = _buildTrainer(model: "AdaptiveAvgPool3", bn: false)
-        runCopyInPlace(trainer)
-    }
-    
-    func testAdaptiveAvgPool3Resize() throws
-    {
-        let trainer = _buildTrainer(model: "AdaptiveAvgPool3", bn: false)
-        runResize(trainer)
-    }
-    
-    func testAdaptiveAvgPool3ResizeInPlace() throws
-    {
-        let trainer = _buildTrainer(model: "AdaptiveAvgPool3", bn: false)
-        runResizeInPlace(trainer)
+        run(trainer)
     }
     
     override func testAdaptiveAvgPool4() throws
     {
         let trainer = _buildTrainer(model: "AdaptiveAvgPool4", bn: false)
-        runCopy(trainer)
-    }
-    
-    func testAdaptiveAvgPool4CopyInPlace() throws
-    {
-        let trainer = _buildTrainer(model: "AdaptiveAvgPool4", bn: false)
-        runCopyInPlace(trainer)
-    }
-    
-    func testAdaptiveAvgPool4Resize() throws
-    {
-        let trainer = _buildTrainer(model: "AdaptiveAvgPool4", bn: false)
-        runResize(trainer)
-    }
-    
-    func testAdaptiveAvgPool4ResizeInPlace() throws
-    {
-        let trainer = _buildTrainer(model: "AdaptiveAvgPool4", bn: false)
-        runResizeInPlace(trainer)
+        run(trainer)
     }
     
     override func testAdaptiveAvgPool5() throws
     {
         let trainer = _buildTrainer(model: "AdaptiveAvgPool5", bn: false)
-        runCopy(trainer)
-    }
-    
-    func testAdaptiveAvgPool5CopyInPlace() throws
-    {
-        let trainer = _buildTrainer(model: "AdaptiveAvgPool5", bn: false)
-        runCopyInPlace(trainer)
-    }
-    
-    func testAdaptiveAvgPool5Resize() throws
-    {
-        let trainer = _buildTrainer(model: "AdaptiveAvgPool5", bn: false)
-        runResize(trainer)
-    }
-    
-    func testAdaptiveAvgPool5ResizeInPlace() throws
-    {
-        let trainer = _buildTrainer(model: "AdaptiveAvgPool5", bn: false)
-        runResizeInPlace(trainer)
+        run(trainer)
     }
     
     override func testSum() throws
     {
         let trainer = _buildTrainer(model: "Sum", bn: false)
-        runCopy(trainer)
-    }
-    
-    func testSumCopyInPlace() throws
-    {
-        let trainer = _buildTrainer(model: "Sum", bn: false)
-        runCopyInPlace(trainer)
-    }
-    
-    func testSumResize() throws
-    {
-        let trainer = _buildTrainer(model: "Sum", bn: false)
-        runResize(trainer)
-    }
-    
-    func testResizeInPlace() throws
-    {
-        let trainer = _buildTrainer(model: "Sum", bn: false)
-        runResizeInPlace(trainer)
+        run(trainer)
     }
     
     override func testActivation() throws
     {
         let trainer = _buildTrainer(model: "Activation", bn: false)
-        runCopy(trainer)
-    }
-    
-    func testActivationCopyInPlace() throws
-    {
-        let trainer = _buildTrainer(model: "Activation", bn: false)
-        runCopyInPlace(trainer)
-    }
-    
-    func testActivationResize() throws
-    {
-        let trainer = _buildTrainer(model: "Activation", bn: false)
-        runResize(trainer)
-    }
-    
-    func testActivationResizeInPlace() throws
-    {
-        let trainer = _buildTrainer(model: "Activation", bn: false)
-        runResizeInPlace(trainer)
+        run(trainer)
     }
     
     override func testSelectNeurons() throws
     {
         let trainer = _buildTrainer(model: "SelectNeurons", bn: false)
-        runCopy(trainer)
+        run(trainer)
     }
     
-    func testSelectNeuronsCopyInPlace() throws
+    override func testIRDFT2RGB() throws
     {
-        let trainer = _buildTrainer(model: "SelectNeurons", bn: false)
-        runCopyInPlace(trainer)
+        let trainer = _buildTrainer(model: "IRDFT2RGB", bn: false)
+        run(trainer)
     }
     
-    func testSelectNeuronsResize() throws
+    override func testDecorrelateRGB() throws
     {
-        let trainer = _buildTrainer(model: "SelectNeurons", bn: false)
-        runResize(trainer)
+        let trainer = _buildTrainer(model: "DecorrelateRGB", bn: false)
+        run(trainer)
     }
     
-    func testSelectNeuronsResizeInPlace() throws
+    override func testLinearScale() throws
     {
-        let trainer = _buildTrainer(model: "SelectNeurons", bn: false)
-        runResizeInPlace(trainer)
+        let trainer = _buildTrainer(model: "LinearScale", bn: false)
+        run(trainer)
+    }
+    
+    override func testMultiply() throws
+    {
+        let trainer = _buildTrainer(model: "Multiply", bn: false)
+        run(trainer)
+    }
+    
+    override func testPad() throws
+    {
+        let trainer = _buildTrainer(model: "Pad", bn: false)
+        run(trainer)
+    }
+    
+    override func testCrop() throws
+    {
+        let trainer = _buildTrainer(model: "Crop", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinearPad1() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearPad1", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinearPad2() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearPad2", bn: false)
+        run(trainer)
+    }
+    
+    override func testRotate() throws
+    {
+        let trainer = _buildTrainer(model: "Rotate", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinearCrop1() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop1", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinearCrop2() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop2", bn: false)
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Gradient Checking
+// We expect to see errors ~ 1e-7 and less.
+// -----------------------------------------------------------------------------
+class FTFrequences2DGradTests: FTFrequences2DMSE1DCase
+{
+    override func setUp()
+    {
+        super.setUp()
+        
+        optimizerParams.nbLoops = 2
+        MAKit.Loop.gradientChecking = true
+    }
+    
+    private func _buildTrainer() -> GradTrainer
+    {
+        let trainer = GradTrainer(
+            name: "Layer2D",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            _buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    private func _buildModel(context: ModelContext)
+    {
+        let params = MAKit.Model.Params(context: context)
+        
+        var layer: Layer2D = Input2D(
+            nbChannels: 1, width: width, height: height, params: params
+        )
+        let frequences: Layer2D = FTFrequences2D(
+            nbChannels: 6, dimension: width, params: params
+        )
+        
+        layer = Convolution2D(
+            layerPrev: layer, size: 1, nbChannels: 6, stride: 1,
+            activation: SoftReLU.str, biases: true, bn: false, params: params
+        )
+        
+        layer = Multiply2D(
+            layersPrev: [layer, frequences], params: params
+        )
+        
+        var head: Layer1D = FullyConnected(
+            layerPrev: layer, nbNeurons: 1,
+            activation: SoftReLU.str, biases: true, params: params
+        )
+        
+        head = MSE1D(layerPrev: head, params: params)
+    }
+    
+    func testEvenCPU() throws
+    {
+        MAKit.Opti.CPU = true
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+    
+    func testEvenGPU() throws
+    {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+    
+    func testOddCPU() throws
+    {
+        height = 7
+        width = 7
+        MAKit.Opti.CPU = true
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+    
+    func testOddGPU() throws
+    {
+        height = 7
+        width = 7
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU gradients with CPU ones through time.
+// We expect to see errors ~ 1e-7 and less.
+// -----------------------------------------------------------------------------
+class FTFrequences2DFlowTests: FTFrequences2DMSE1DCase
+{
+    private func _buildTrainer() -> FlowTrainer
+    {
+        let trainer = FlowTrainer(
+            name: "Layer2D",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    func buildModel(context: ModelContext)
+    {
+        let params = MAKit.Model.Params(context: context)
+        
+        var layer: Layer2D = Input2D(
+            nbChannels: 1, width: width, height: height, params: params
+        )
+        let frequences: Layer2D = FTFrequences2D(
+            nbChannels: 6, dimension: width, params: params
+        )
+        
+        layer = Convolution2D(
+            layerPrev: layer, size: 1, nbChannels: 6, stride: 1,
+            activation: LeakyReLU.str, biases: true, bn: false, params: params
+        )
+        
+        layer = Multiply2D(
+            layersPrev: [layer, frequences], params: params
+        )
+        
+        var head: Layer1D = FullyConnected(
+            layerPrev: layer, nbNeurons: 1,
+            activation: LeakyReLU.str, biases: true, params: params
+        )
+        
+        head = MSE1D(layerPrev: head, params: params)
+    }
+    
+    func testEven() throws
+    {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+    
+    func testOdd() throws
+    {
+        height = 7
+        width = 7
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU gradients with CPU ones through time.
+// We expect to see errors ~ 1e-7 and less.
+// -----------------------------------------------------------------------------
+class FTFrequences2DFlowResetTests: FTFrequences2DFlowTests
+{
+    private func _buildTrainer() -> FlowResetTrainer
+    {
+        let trainer = FlowResetTrainer(
+            name: "Layer2D",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    override func testEven() throws
+    {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+    
+    override func testOdd() throws
+    {
+        height = 7
+        width = 7
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU gradients with CPU ones through time.
+// We expect to see errors ~ 1e-7 and less.
+// -----------------------------------------------------------------------------
+class FTFrequences2DFlowReverseTests: FTFrequences2DFlowTests
+{
+    private func _buildTrainer() -> FlowReverseTrainer
+    {
+        let trainer = FlowReverseTrainer(
+            name: "Layer2D",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    override func testEven() throws
+    {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+    
+    override func testOdd() throws
+    {
+        height = 7
+        width = 7
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU Loss in inference mode with CPU one.
+// We expect to see errors ~ 1e-3 and less.
+// -----------------------------------------------------------------------------
+class FTFrequences2DFlowInferenceTests: FTFrequences2DFlowTests
+{
+    private func _buildTrainer() -> InferenceTrainer
+    {
+        let trainer = InferenceTrainer(
+            name: "Layer2D",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    override func testEven() throws
+    {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+    
+    override func testOdd() throws
+    {
+        height = 7
+        width = 7
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU/CPU Losses in inference mode with the one obtained from a
+// loaded model.
+// We expect to see errors ~ 1e-3 and less.
+// -----------------------------------------------------------------------------
+class FTFrequences2DLoadTests: FTFrequences2DFlowTests
+{
+    private func _buildTrainer() -> LoadTrainer
+    {
+        let trainer = LoadTrainer(
+            name: "Layer2D",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    override func testEven() throws
+    {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+    
+    override func testOdd() throws
+    {
+        height = 7
+        width = 7
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU/CPU Losses in inference mode with the one obtained from a
+// transformed model.
+// We expect to see errors ~ 1e-3 and less.
+// -----------------------------------------------------------------------------
+class FTFrequences2DTransformTests: FTFrequences2DFlowTests
+{
+    private func _buildTrainer() -> TransformTrainer
+    {
+        let trainer = TransformTrainer(
+            name: "Layer2D",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    override func testEven() throws
+    {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+    
+    override func testOdd() throws
+    {
+        height = 7
+        width = 7
+        let trainer = _buildTrainer()
+        run(trainer)
     }
 }

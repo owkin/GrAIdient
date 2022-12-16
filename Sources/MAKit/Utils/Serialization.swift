@@ -34,12 +34,22 @@ let LAYER_REGISTRY: [String: Codable.Type] = buildRegistry(
     AvgPool2D.self,
     BN2D.self,
     Convolution2D.self,
+    Crop2D.self,
+    DecorrelateRGB.self,
+    FTFrequences2D.self,
     FullyConnected.self,
     Input1D.self,
     Input2D.self,
+    IRDFT2RGB.self,
     LinearError1D.self,
+    LinearScale2D.self,
     MaxPool2D.self,
     MSE1D.self,
+    Multiply2D.self,
+    Pad2D.self,
+    ResizeBilinearCrop.self,
+    ResizeBilinearPad.self,
+    Rotate2D.self,
     Sum2D.self,
     SelectNeurons1D.self,
     SelectNeurons2D.self,
@@ -137,14 +147,6 @@ class LayerContainer: Codable
         try container.encode(self.layer, forKey: .layer)
     }
 }
-
-/// Registry of activation function types.
-let ACTIVATION_REGISTRY: [String: Codable.Type] = buildRegistry(
-[
-    ReLU.self,
-    LeakyReLU.self,
-    SoftReLU.self
-])
 
 /// Serialize and deserialize an activation function thanks to its string type.
 class ActivationContainer: Codable

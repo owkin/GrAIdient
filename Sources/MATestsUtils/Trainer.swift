@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import XCTest
 import MAKit
 
 ///
@@ -68,13 +67,19 @@ extension TestError: CustomStringConvertible
 ///
 /// Function used to retry flaky numeric tests.
 ///
-/// This function ensures test fails when internal function did not complete.
+/// This function is used to assert failure when internal function did not complete.
+/// Note that we do not import XCTest to avoid linking difficulties when importing MAKit into
+/// other projects. Hence the use of blockFail.
 ///
 /// - Parameters:
 ///     - nbRetry: Number maximal of retries.
 ///     - block: Function to execute.
+///     - blockFail: Function to execute in case of fail.
 ///
-public func retryNumeric(nbRetry: Int, _ block: @escaping () throws -> ())
+public func retryNumeric(
+    nbRetry: Int,
+    _ block: @escaping () throws -> (),
+    _ blockFail: ()->())
 {
     var iter = 0
     while iter < nbRetry
@@ -93,7 +98,7 @@ public func retryNumeric(nbRetry: Int, _ block: @escaping () throws -> ())
     }
     if iter == nbRetry
     {
-        XCTAssert(false)
+        blockFail()
     }
 }
 
@@ -694,95 +699,98 @@ open class TransformTrainer: FlowTrainer
     /// after some transformation of the model and do the same in the GPU execution context.
     ///
     /// - Parameters:
-    ///     - transform: A function that transforms the model into another one.
+    ///     - transforms: A list of functions that transform the model into another one.
     ///     - setData: A function to create/set data to the model.
     ///     - setLoss: A function to create/set ground truth to the model.
     ///     - getLoss: A function to get the loss of the model.
     ///     - validate: A function that checks whether the relative difference is small enough.
     ///
     public func run<DataT, LossT>(
-        transform: (Model)->Model,
+        transforms: [(Model)->Model],
         setData: (DataT?, Model)->(DataT, Int),
         setLoss: (LossT?, Model)->(LossT),
         getLoss: (LossT, Model)->Double,
         validate: (Double, Double) throws -> ()) throws
     {
-        // 1. Train modelCPU and modelGPU.
-        
-        try super.run(setData: setData, setLoss: setLoss){ (Double) in }
-        
-        // 2. Run one step of Inference for modelCPU and modelGPU.
-        
-        modelCPU.phase = .Inference
-        modelGPU.phase = .Inference
-        
-        let lossCPURef: Double
-        let lossGPURef: Double
-        
-        MAKit.Opti.CPU = true
-        var (inputs, batchSize) = setData(nil, modelCPU)
-        modelCPU.updateKernel(batchSize: batchSize)
-        try! modelCPU.forward()
-        
-        var gt = setLoss(nil, modelCPU)
-        lossCPURef = getLoss(gt, modelCPU)
-        
-        MAKit.Opti.GPU = true
-        (inputs, batchSize) = setData(inputs, modelGPU)
-        modelGPU.updateKernel(batchSize: batchSize)
-        try! modelGPU.forward()
-        
-        gt = setLoss(gt, modelGPU)
-        lossGPURef = getLoss(gt, modelGPU)
-        
-        // 3. Create transformed models.
-        
-        MAKit.Opti.CPU = true
-        let modelCPU: Model = transform(modelCPU)
-        MAKit.Opti.GPU = true
-        let modelGPU: Model = transform(modelGPU)
-        
-        // 4. Run one step of Inference on the new models.
-        
-        let lossCPUNew: Double
-        let lossGPUNew: Double
-        
-        MAKit.Opti.CPU = true
-        (inputs, batchSize) = setData(inputs, modelCPU)
-        modelCPU.updateKernel(batchSize: batchSize)
-        try! modelCPU.forward()
-        
-        gt = setLoss(gt, modelCPU)
-        lossCPUNew = getLoss(gt, modelCPU)
-        
-        MAKit.Opti.GPU = true
-        (inputs, batchSize) = setData(inputs, modelGPU)
-        modelGPU.updateKernel(batchSize: batchSize)
-        try! modelGPU.forward()
-        
-        gt = setLoss(gt, modelGPU)
-        lossGPUNew = getLoss(gt, modelGPU)
-        
-        // 5. Compare results.
-        
-        let diffCPU =
+        for transform in transforms
+        {
+            // 1. Train modelCPU and modelGPU.
+            
+            try super.run(setData: setData, setLoss: setLoss){ (Double) in }
+            
+            // 2. Run one step of Inference for modelCPU and modelGPU.
+            
+            modelCPU.phase = .Inference
+            modelGPU.phase = .Inference
+            
+            let lossCPURef: Double
+            let lossGPURef: Double
+            
+            MAKit.Opti.CPU = true
+            var (inputs, batchSize) = setData(nil, modelCPU)
+            modelCPU.updateKernel(batchSize: batchSize)
+            try! modelCPU.forward()
+            
+            var gt = setLoss(nil, modelCPU)
+            lossCPURef = getLoss(gt, modelCPU)
+            
+            MAKit.Opti.GPU = true
+            (inputs, batchSize) = setData(inputs, modelGPU)
+            modelGPU.updateKernel(batchSize: batchSize)
+            try! modelGPU.forward()
+            
+            gt = setLoss(gt, modelGPU)
+            lossGPURef = getLoss(gt, modelGPU)
+            
+            // 3. Create transformed models.
+            
+            MAKit.Opti.CPU = true
+            let modelCPU: Model = transform(modelCPU)
+            MAKit.Opti.GPU = true
+            let modelGPU: Model = transform(modelGPU)
+            
+            // 4. Run one step of Inference on the new models.
+            
+            let lossCPUNew: Double
+            let lossGPUNew: Double
+            
+            MAKit.Opti.CPU = true
+            (inputs, batchSize) = setData(inputs, modelCPU)
+            modelCPU.updateKernel(batchSize: batchSize)
+            try! modelCPU.forward()
+            
+            gt = setLoss(gt, modelCPU)
+            lossCPUNew = getLoss(gt, modelCPU)
+            
+            MAKit.Opti.GPU = true
+            (inputs, batchSize) = setData(inputs, modelGPU)
+            modelGPU.updateKernel(batchSize: batchSize)
+            try! modelGPU.forward()
+            
+            gt = setLoss(gt, modelGPU)
+            lossGPUNew = getLoss(gt, modelGPU)
+            
+            // 5. Compare results.
+            
+            let diffCPU =
             (lossCPUNew - lossCPURef) * (lossCPUNew - lossCPURef) /
             (lossCPUNew * lossCPUNew + lossCPURef * lossCPURef)
-        let diffGPU =
+            let diffGPU =
             (lossGPUNew - lossGPURef) * (lossGPUNew - lossGPURef) /
             (lossGPUNew * lossGPUNew + lossGPURef * lossGPURef)
-        
-        var warning = ""
-        let maxDiff = max(diffCPU, diffGPU)
-        let maxIndex = diffCPU < diffGPU ? "GPU" : "CPU"
-        if diffCPU > 0.0000001
-        {
-            warning = "Load Check Warning " + maxIndex + " : "
+            
+            var warning = ""
+            let maxDiff = max(diffCPU, diffGPU)
+            let maxIndex = diffCPU < diffGPU ? "GPU" : "CPU"
+            if diffCPU > 0.0000001
+            {
+                warning = "Load Check Warning " + maxIndex + " : "
+            }
+            let strDump = warning + String(maxDiff)
+            print(strDump)
+            
+            try validate(diffCPU, diffGPU)
         }
-        let strDump = warning + String(maxDiff)
-        print(strDump)
-        
-        try validate(diffCPU, diffGPU)
     }
 }
 

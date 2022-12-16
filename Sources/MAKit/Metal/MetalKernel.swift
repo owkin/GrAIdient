@@ -6,7 +6,6 @@
 //
 
 import Foundation
-
 import Metal
 
 /// Main class to interact with GPU.
@@ -537,6 +536,8 @@ private class MetalDevice
                 "backwardLeakyReLU",
                 "forwardSoftReLU",
                 "backwardSoftReLU",
+                "forwardSigmoid",
+                "backwardSigmoid",
             ],
             "Biases": [
                 "reduceBiases",
@@ -587,6 +588,29 @@ private class MetalDevice
                 "adaptiveAvgPoolBackward2",
                 "selectNeurons2DForward",
                 "selectNeurons2DBackward",
+                "IRDFT2RGBForward",
+                "IRDFT2RGBBackward",
+                "decorrelateRGBForward",
+                "decorrelateRGBBackward",
+                "linearScale2DForward",
+                "linearScale2DBackward",
+                "setDataFTFrequences2D",
+                "pad2DForward",
+                "pad2DBackward",
+                "crop2DForward",
+                "crop2DBackward",
+                "resizeBilinearPadForward",
+                "resizeBilinearPadBackward",
+                "rotate2DForward",
+                "rotate2DBackward",
+                "resizeBilinearCropForward",
+                "resizeBilinearCropBackward",
+            ],
+            "Merge": [
+                "sum1",
+                "sum2",
+                "multiplyForward",
+                "multiplyBackward",
             ],
             "Optimizer": [
                 "clipGradients",
@@ -601,10 +625,6 @@ private class MetalDevice
             ],
             "Reset": [
                 "reset"
-            ],
-            "Sum": [
-                "sum1",
-                "sum2",
             ]
         ]
         
@@ -1078,7 +1098,72 @@ public class MetalCommand
     }
     
     ///
-    /// The grid of threads on the GPU.
+    /// Dipsatch a "line" of parallel operations on the GPU.
+    ///
+    /// - Parameter nbThreads: The number of parallel operations.
+    ///
+    public func dispatchThreads(_ nbThreads: Int)
+    {
+        let threads = threadExecutionWidth
+        let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
+        let threadsPerGrid = MTLSize(width: nbThreads, height: 1, depth: 1)
+        dispatchThreads(
+            threadsPerGrid: threadsPerGrid,
+            threadsPerThreadgroup: threadsPerThreadgroup
+        )
+    }
+    
+    ///
+    /// Dispatch a "grid" of parallel operations on the GPU.
+    ///
+    /// - Parameters:
+    ///     - width: The grid's width.
+    ///     - height: The grid's height.
+    ///
+    public func dispatchThreads(width: Int, height: Int)
+    {
+        if height == 1
+        {
+            dispatchThreads(width)
+        }
+        else if width == 1
+        {
+            let threads = threadExecutionWidth
+            let threadsPerThreadgroup = MTLSizeMake(1, threads, 1)
+            let threadsPerGrid = MTLSize(width: 1, height: height, depth: 1)
+            dispatchThreads(
+                threadsPerGrid: threadsPerGrid,
+                threadsPerThreadgroup: threadsPerThreadgroup
+            )
+        }
+        else
+        {
+            let maxDim = max(width, height)
+            let minDim = min(width, height)
+            
+            var ratio = Int(Double(maxDim) / Double(minDim))
+            let maxRatio = maxThreadsPerThreadgroup / 64
+            ratio = min(ratio, maxRatio, 4) // 4 is an hyper parameter
+            // to try to optimize between local and eGPU.
+            
+            let threadsPerThreadgroup = width == maxDim ?
+            MTLSizeMake(8 * ratio, 8, 1) :
+            MTLSizeMake(8, 8 * ratio, 1)
+            
+            let threadsPerGrid = MTLSize(
+                width: width,
+                height: height,
+                depth: 1
+            )
+            dispatchThreads(
+                threadsPerGrid: threadsPerGrid,
+                threadsPerThreadgroup: threadsPerThreadgroup
+            )
+        }
+    }
+    
+    ///
+    /// Dispatch a "volume" of parallel operations on the GPU.
     ///
     /// A thread group contains multiple threads. The size of a thread group cannot exceed
     /// `maxThreadsPerThreadgroup`. This upper limit is usually shortened because
@@ -1116,11 +1201,5 @@ public class MetalCommand
         
         // Start job.
         _command.commit()
-        
-        if MAKit.Time.track
-        {
-            // Wait for GPU to end.
-            _command.waitUntilCompleted()
-        }
     }
 }

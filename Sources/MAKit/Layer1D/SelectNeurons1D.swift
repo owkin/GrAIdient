@@ -5,8 +5,6 @@
 // Created by Jean-François Reboud on 10/10/2022.
 //
 
-import MetalKit
-
 ///
 /// Layer with a 1D shape neural structure.
 ///
@@ -213,13 +211,9 @@ public class SelectNeurons1D: Layer1D
             command.setBytes(pNbBatch, atIndex: 5)
             command.setBuffer(outs.metal, atIndex: 6)
             
-            let threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
-            let threadsPerGrid = MTLSize(width: nbNeurons,
-                                         height: batchSize,
-                                         depth: 1)
             command.dispatchThreads(
-                threadsPerGrid: threadsPerGrid,
-                threadsPerThreadgroup: threadsPerThreadgroup
+                width: nbNeurons,
+                height: batchSize
             )
             command.enqueue()
         }
@@ -290,17 +284,7 @@ public class SelectNeurons1D: Layer1D
                 command.setBytes(pNbElems, atIndex: 0)
                 command.setBuffer(layerPrev.delta.metal, atIndex: 1)
                 
-                let threads = command.maxThreadsPerThreadgroup >= nbElems ?
-                    command.threadExecutionWidth :
-                    command.maxThreadsPerThreadgroup
-                let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
-                let threadsPerGrid = MTLSize(width: nbElems,
-                                             height: 1,
-                                             depth: 1)
-                command.dispatchThreads(
-                    threadsPerGrid: threadsPerGrid,
-                    threadsPerThreadgroup: threadsPerThreadgroup
-                )
+                command.dispatchThreads(nbElems)
                 command.enqueue()
             }
             
@@ -315,13 +299,9 @@ public class SelectNeurons1D: Layer1D
             command.setBytes(pNbBatch, atIndex: 5)
             command.setBuffer(layerPrev.delta.metal, atIndex: 6)
             
-            let threadsPerThreadgroup = MTLSizeMake(8, 8, 1)
-            let threadsPerGrid = MTLSize(width: nbNeurons,
-                                         height: batchSize,
-                                         depth: 1)
             command.dispatchThreads(
-                threadsPerGrid: threadsPerGrid,
-                threadsPerThreadgroup: threadsPerThreadgroup
+                width: nbNeurons,
+                height: batchSize
             )
             command.enqueue()
             

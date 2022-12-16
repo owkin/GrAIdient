@@ -12,7 +12,7 @@ import MAKit
 /// Python library default path.
 let PYTHON_LIB =
     FileManager.default.homeDirectoryForCurrentUser.path +
-    "/opt/anaconda3/envs/matorch/lib/libpython3.7m.dylib"
+    "/opt/anaconda3/envs/matorch/lib/libpython3.9.dylib"
 
 /// Set the Python library path.
 func setPythonLib()
@@ -36,7 +36,7 @@ func setPythonLib()
             var url = URL(fileURLWithPath: output)
             url = url.deletingLastPathComponent().deletingLastPathComponent()
             url = url.appendingPathComponent("lib")
-            url = url.appendingPathComponent("libpython3.7m.dylib")
+            url = url.appendingPathComponent("libpython3.9.dylib")
             setenv("PYTHON_LIBRARY", url.path, 1)
         }
         else
@@ -56,6 +56,19 @@ func getInputData(_ size: Int) -> [Float]
 {
     let pythonLib = Python.import("python_lib")
     let data = pythonLib.get_input_data(size)
+    return [Float](data)!
+}
+
+///
+/// Get data "complex" image from Python.
+///
+/// - Parameter size: The size of the image.
+/// - Returns: The data image.
+///
+func getComplexData(_ size: Int) -> [Float]
+{
+    let pythonLib = Python.import("python_lib")
+    let data = pythonLib.get_complex_data(size)
     return [Float](data)!
 }
 
@@ -82,6 +95,19 @@ func computeTest2GradNorm(_ size: Int) -> Float
 {
     let pythonLib = Python.import("python_lib")
     let data = pythonLib.compute_test2_grad_norm(size)
+    return Float(data)!
+}
+
+///
+/// Get gradient norm computed with PyTorch for ModelTest3.
+///
+/// - Parameter size: The size of the input data.
+/// - Returns: The gradient norm.
+///
+func computeTest3GradNorm(_ size: Int) -> Float
+{
+    let pythonLib = Python.import("python_lib")
+    let data = pythonLib.compute_test3_grad_norm(size)
     return Float(data)!
 }
 

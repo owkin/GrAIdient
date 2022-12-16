@@ -21,7 +21,7 @@ kernel void convForward(
     constant uint * pDimWeights,
     constant uint * pNbBatch,
     device float * outs,
-    uint3 id [[ thread_position_in_grid ]])
+    uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
     uint heightPrev, widthPrev;
@@ -55,13 +55,13 @@ kernel void convForward(
     else
         return ;
     
-    uint i = id[1];
-    uint j = id[0];
-    uint depth = id[2] % nbChannels;
-    uint elem = id[2] / nbChannels;
+    uint depth = id[0] / width;
+    uint elem = id[1] / height;
+    uint i = id[1] % height;
+    uint j = id[0] % width;
     
-    if (i >= height || j >= width ||
-        id[2] >= nbChannels * nbBatch)
+    if (i * elem >= height * nbBatch ||
+        j * depth >= width * nbChannels)
     {
         return ;
     }
@@ -112,7 +112,7 @@ kernel void convBackward(
     constant uint * pNbBatch,
     constant uint * pDirty,
     device float * deltaPrev,
-    uint3 id [[ thread_position_in_grid ]])
+    uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
     uint heightPrev, widthPrev;
@@ -148,13 +148,13 @@ kernel void convBackward(
     else
         return ;
     
-    uint i = id[1];
-    uint j = id[0];
-    uint depthPrev = id[2] % nbChannelsPrev;
-    uint elem = id[2] / nbChannelsPrev;
+    uint depthPrev = id[0] / widthPrev;
+    uint elem = id[1] / heightPrev;
+    uint i = id[1] % heightPrev;
+    uint j = id[0] % widthPrev;
     
-    if (i >= heightPrev || j >= widthPrev ||
-        id[2] >= nbChannelsPrev * nbBatch)
+    if (i * elem >= heightPrev * nbBatch ||
+        j * depthPrev >= widthPrev * nbChannelsPrev)
     {
         return ;
     }
@@ -383,7 +383,7 @@ kernel void convDerWeights(
     constant uint * pDimWeights,
     constant uint * pNbBatch,
     device float * deltaWeights,
-    uint3 id [[ thread_position_in_grid ]])
+    uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
     uint heightPrev, widthPrev;
@@ -417,15 +417,16 @@ kernel void convDerWeights(
     else
         return ;
     
+    uint remains = id[0];
+    uint elem = remains / (weightWidth * nbChannels);
+    remains = remains % (weightWidth * nbChannels);
     int weightsI = id[1] / nbChannelsPrev;
-    int weightsJ = id[0] / nbChannels;
-    uint depth = id[0] % nbChannels;
+    int weightsJ = remains / nbChannels;
+    uint depth = remains % nbChannels;
     uint depthPrev = id[1] % nbChannelsPrev;
-    uint elem = id[2];
     
-    if (id[0] >= nbChannels * weightWidth ||
+    if (id[0] >= nbBatch * nbChannels * weightWidth ||
         id[1] >= nbChannelsPrev * weightHeight ||
-        elem >= nbBatch ||
         weightsI + startI > endI || weightsJ + startJ > endJ)
     {
         return ;

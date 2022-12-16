@@ -177,9 +177,9 @@ class ModelTest2
             params: params
         )
         
-        // Load weights from `PyTorch`.
         let model = Model(model: context.model, modelsPrev: [])
         
+        // Load weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
         let data = pythonLib.load_test2_weights()
         
@@ -220,6 +220,86 @@ class ModelTest2
             }
         }
         
+        return model
+    }
+}
+
+/// Model to test against PyTorch.
+class ModelTest3
+{
+    ///
+    /// Create the model.
+    ///
+    /// Principle features:
+    ///   - 2D Frequences & scale
+    ///   - IRDFT
+    ///   - Decorrelate color
+    ///
+    /// - Parameter size: The size of the input data.
+    /// - Returns: The built model.
+    ///
+    static func build(_ size: Int) -> Model
+    {
+        let context = ModelContext(name: "ModelTest2", curID: 0)
+        let params = MAKit.Model.Params(context: context)
+        
+        var layer: Layer2D
+        layer = Input2D(
+            nbChannels: 6, width: size, height: size,
+            params: params
+        )
+        let firstLayer: Layer2D = layer
+        
+        layer = FTFrequences2D(
+            nbChannels: 6, dimension: size,
+            params: params
+        )
+        
+        layer = Multiply2D(
+            layersPrev: [firstLayer, layer], params: params
+        )
+        
+        layer = IRDFT2RGB(
+            layerPrev: layer, params: params
+        )
+        
+        layer = LinearScale2D(
+            layerPrev: layer,
+            weight: 1.0 / 4.0, bias: 0.0,
+            params: params
+        )
+        
+         layer = DecorrelateRGB(
+            layerPrev: layer,
+            correlation: [
+                0.26, 0.09, 0.02,
+                0.27, 0.00, -0.05,
+                0.27, -0.09, 0.03
+            ].map { $0 / 0.4619524 },
+            params: params
+        )
+        
+        layer = Activation2D(
+            layerPrev: layer,
+            activation: Sigmoid.str,
+            params: params
+        )
+        
+        layer = LinearScale2D(
+            layerPrev: layer,
+            weight: 2.0, bias: -1.0,
+            params: params
+        )
+        
+        var head: Layer1D = AvgPool2D(
+            layerPrev: layer, params: params
+        )
+        
+        head = SelectNeurons1D(
+            layerPrev: head, neurons: [0], coeffs: [1.0], params: params
+        )
+        
+        let model = Model(model: context.model, modelsPrev: [])
         return model
     }
 }

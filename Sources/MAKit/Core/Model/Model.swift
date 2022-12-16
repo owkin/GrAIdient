@@ -793,24 +793,14 @@ public class Model: BaseModel
         {
             for layer in layers
             {
-                let desc = layer.description + String(layer.id)
-                MAKit.Time.start()
-                
                 try layer.forwardGPU()
-                
-                try MAKit.Time.stop(id: "ForwardGPU", description: desc)
             }
         }
         else
         {
             for layer in layers
             {
-                let desc = layer.description + String(layer.id)
-                MAKit.Time.start()
-                
                 try layer.forwardCPU()
-                
-                try MAKit.Time.stop(id: "ForwardCPU", description: desc)
             }
         }
     }
@@ -837,16 +827,7 @@ public class Model: BaseModel
                 // their backward pass.
                 if !layer.dirty
                 {
-                    let desc = layer.description + String(layer.id)
-                    MAKit.Time.start()
-                    
                     try layer.backwardGPU()
-                    if layer.mustComputeBackward
-                    {
-                        layer.propagateDirty()
-                    }
-                    
-                    try MAKit.Time.stop(id: "BackwardGPU", description: desc)
                 }
             }
         }
@@ -857,16 +838,7 @@ public class Model: BaseModel
                 // Same as above.
                 if !layer.dirty
                 {
-                    let desc = layer.description + String(layer.id)
-                    MAKit.Time.start()
-                    
                     layer.backwardCPU()
-                    if layer.mustComputeBackward
-                    {
-                        layer.propagateDirty()
-                    }
-                    
-                    try MAKit.Time.stop(id: "BackwardCPU", description: desc)
                 }
             }
         }

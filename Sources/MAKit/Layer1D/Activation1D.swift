@@ -5,8 +5,6 @@
 // Created by Jean-François Reboud on 10/10/2022.
 //
 
-import MetalKit
-
 /// Layer with a 1D shape neural structure and an activation function.
 public class Activation1D: Layer1D
 {
@@ -247,15 +245,7 @@ public class Activation1D: Layer1D
             command.setBytes(pNbElems, atIndex: 1)
             command.setBuffer(outs.metal, atIndex: 2)
             
-            let threads = command.threadExecutionWidth
-            let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
-            let threadsPerGrid = MTLSize(width: nbElems,
-                                         height: 1,
-                                         depth: 1)
-            command.dispatchThreads(
-                threadsPerGrid: threadsPerGrid,
-                threadsPerThreadgroup: threadsPerThreadgroup
-            )
+            command.dispatchThreads(nbElems)
             command.enqueue()
             
             _activation!.forwardGPU(self)
@@ -323,15 +313,7 @@ public class Activation1D: Layer1D
             command.setBytes(pNbElems, atIndex: 1)
             command.setBuffer(layerPrev.delta.metal, atIndex: 2)
             
-            let threads = command.threadExecutionWidth
-            let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
-            let threadsPerGrid = MTLSize(width: nbElems,
-                                         height: 1,
-                                         depth: 1)
-            command.dispatchThreads(
-                threadsPerGrid: threadsPerGrid,
-                threadsPerThreadgroup: threadsPerThreadgroup
-            )
+            command.dispatchThreads(nbElems)
             command.enqueue()
             
             propagateDirty()

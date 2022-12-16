@@ -391,38 +391,19 @@ class LinearError1DTransformTests: LinearError1DFlowTests
     override func testFL() throws
     {
         let trainer = _buildTrainer("FullyConnected")
-        runCopy(trainer)
-    }
-    
-    func testFLCopyInPlace() throws
-    {
-        let trainer = _buildTrainer("FullyConnected")
-        runCopyInPlace(trainer)
+        run(trainer)
     }
     
     override func testFLSample() throws
     {
         MAKit.Gradient.sample = true
         let trainer = _buildTrainer("FullyConnected")
-        runCopy(trainer)
-    }
-    
-    func testFLSampleCopyInPlace() throws
-    {
-        MAKit.Gradient.sample = true
-        let trainer = _buildTrainer("FullyConnected")
-        runCopyInPlace(trainer)
+        run(trainer)
     }
     
     override func testActivation() throws
     {
         let trainer = _buildTrainer("Activation")
-        runCopy(trainer)
-    }
-    
-    func testActivationCopyInPlace() throws
-    {
-        let trainer = _buildTrainer("Activation")
-        runCopyInPlace(trainer)
+        run(trainer)
     }
 }

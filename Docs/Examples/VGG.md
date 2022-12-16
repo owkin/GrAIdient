@@ -60,7 +60,7 @@ This example has some `Python` dependencies. In order to run
 the example, we first have to setup the environment: 
 
 ```bash
-conda create --name maexamples python=3.7
+conda create --name maexamples python=3.9
 conda activate maexamples
 cd Tests/MAExamples/Base
 pip install -e .
@@ -78,18 +78,6 @@ It is finally possible to clean the environment 🌍
 ```bash     
 conda deactivate
 conda env remove --name maexamples
-```
-
-## Known Issues
-
-The following error may follow on local setup: 
-`UnpicklingError: invalid load key, ‘v’`.
-
-This may occur when lfs data files are not pulled. 
-To fix this: 
-
-```bash     
-git lfs pull
 ```
 
 ## Steps

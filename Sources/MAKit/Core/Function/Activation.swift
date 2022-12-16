@@ -6,7 +6,15 @@
 //
 
 import Foundation
-import MetalKit
+
+/// Registry of activation function types.
+let ACTIVATION_REGISTRY: [String: Codable.Type] = buildRegistry(
+[
+    ReLU.self,
+    LeakyReLU.self,
+    SoftReLU.self,
+    Sigmoid.self
+])
 
 /// Activation function to be used in a layer.
 open class ActivationFunction: Codable
@@ -253,13 +261,7 @@ open class ActivationFunction: Codable
         command.setBuffer(tmp.metal, atIndex: 1)
         command.setBuffer(outs.metal, atIndex: 2)
         
-        let threads = command.threadExecutionWidth
-        let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
-        let threadsPerGrid = MTLSize(width: nbElems, height: 1, depth: 1)
-        command.dispatchThreads(
-            threadsPerGrid: threadsPerGrid,
-            threadsPerThreadgroup: threadsPerThreadgroup
-        )
+        command.dispatchThreads(nbElems)
         command.enqueue()
     }
     
@@ -326,13 +328,7 @@ open class ActivationFunction: Codable
         command.setBytes(pNbElems, atIndex: 1)
         command.setBuffer(delta.metal, atIndex: 2)
         
-        let threads = command.threadExecutionWidth
-        let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
-        let threadsPerGrid = MTLSize(width: nbElems, height: 1, depth: 1)
-        command.dispatchThreads(
-            threadsPerGrid: threadsPerGrid,
-            threadsPerThreadgroup: threadsPerThreadgroup
-        )
+        command.dispatchThreads(nbElems)
         command.enqueue()
     }
     
@@ -607,6 +603,81 @@ public class SoftReLU: ActivationFunction
     }
 }
 
+/// Sigmoid activation function.
+public class Sigmoid: ActivationFunction
+{
+    public static let str = "Sigmoid"
+    
+    /// Forward GPU kernel.
+    public override var forwardKernel: String
+    {
+        get {
+            return "forwardSigmoid"
+        }
+    }
+    /// Backward GPU kernel.
+    public override var backwardKernel: String
+    {
+        get {
+            return "backwardSigmoid"
+        }
+    }
+    
+    /// Create a Sigmoid activation function.
+    init()
+    {
+        super.init(Sigmoid.str)
+    }
+    
+    ///
+    /// Decode from the disk.
+    ///
+    /// Throw an error if reading from the decoder fails, or
+    /// if the data read is corrupted or otherwise invalid.
+    ///
+    /// - Parameter decoder: The decoder to read data from.
+    ///
+    required public init(from decoder: Decoder) throws
+    {
+        try super.init(from: decoder)
+    }
+    
+    ///
+    /// Coefficient to apply during the weights initialization.
+    ///
+    /// - Parameters:
+    ///     - nPrev: The number of input connections.
+    ///     - nCur: The number of output connections.
+    ///
+    public override func coeffInitWeights(nPrev: Int, nCur: Int) -> Double
+    {
+        return sqrt(1.0 / Double(nPrev))
+    }
+    
+    ///
+    /// Forward CPU.
+    ///
+    /// - Parameter x: The input.
+    /// - Returns: The output.
+    ///
+    public override func apply(_ x: Double) -> Double
+    {
+        return 1 / (1 + exp(-x))
+    }
+    
+    ///
+    /// Backward CPU.
+    ///
+    /// - Parameter x: The input.
+    /// - Returns: The output.
+    ///
+    public override func derivate(_ x: Double) -> Double
+    {
+        let fx = apply(x)
+        return fx * (1 - fx)
+    }
+}
+
 /// Factory API to build an activation function.
 public protocol ActivationKernel
 {
@@ -627,6 +698,7 @@ class ActivationKernelImpl: ActivationKernel
         ReLU.str: ReLUKernel(),
         LeakyReLU.str: LeakyReLUKernel(),
         SoftReLU.str: SoftReLUKernel(),
+        Sigmoid.str: SigmoidKernel()
     ]
     
     ///
@@ -664,7 +736,7 @@ private class ReLUKernel: ActivationKernelImpl
     }
 }
 
-/// Factory to build a ReLU function.
+/// Factory to build a LeakyReLU function.
 private class LeakyReLUKernel: ActivationKernelImpl
 {
     /// Build a LeakyReLU function.
@@ -674,12 +746,22 @@ private class LeakyReLUKernel: ActivationKernelImpl
     }
 }
 
-/// Factory to build a ReLU function.
+/// Factory to build a SoftReLU function.
 private class SoftReLUKernel: ActivationKernelImpl
 {
     /// Build a SoftReLU function.
     override func build() -> ActivationFunction
     {
         return SoftReLU()
+    }
+}
+
+/// Factory to build a Sigmoid function.
+private class SigmoidKernel: ActivationKernelImpl
+{
+    /// Build a Sigmoid function.
+    override func build() -> ActivationFunction
+    {
+        return Sigmoid()
     }
 }

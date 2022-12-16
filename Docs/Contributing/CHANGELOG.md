@@ -4,29 +4,36 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
-🐛 **fix:** update correlation matrix coeffs ([#37](https://github.com/owkin/MAKit/pull/37))\
+## 0.1.1 (2022-12-16)
+
+### Features
+
 🪜 **layer_2d:** ResizeBilinearCrop ([#36](https://github.com/owkin/MAKit/pull/36))\
 🚀 **perf:** enhance backwardGPU for ResizeBilinear ([#35](https://github.com/owkin/MAKit/pull/35))\
 🪜 **layer_2d:** Rotate2D ([#34](https://github.com/owkin/MAKit/pull/34))\
-🐛 **fix:** ResizeBilinear to output deterministic dimensions ([#33](https://github.com/owkin/MAKit/pull/33))\
 🪜 **layer_2d:** ResizeBilinear ([#32](https://github.com/owkin/MAKit/pull/32))\
-🔨 **refactor:** remove transaction ([#31](https://github.com/owkin/MAKit/pull/31))\
 🪜 **layer_2d:** Pad2D & Jitter2D ([#30](https://github.com/owkin/MAKit/pull/30))\
-🚨 **integration:** activate DecorrelateRGB in test ([#29](https://github.com/owkin/MAKit/pull/29))\
-🚨 **integration:** test IDFT and complex numbers ([#28](https://github.com/owkin/MAKit/pull/28))\
 🪜 **layer_2d:** add tests for non dirty status ([#27](https://github.com/owkin/MAKit/pull/27))\
-🔨 **tests:** factorize transform tests ([#26](https://github.com/owkin/MAKit/pull/26))\
 🪜 **layer_2d:** FTFrequences2D & Multiply2D ([#25](https://github.com/owkin/MAKit/pull/25))\
 🪜 **layer_2d:** LinearScale2D ([#24](https://github.com/owkin/MAKit/pull/24))\
 🪜 **layer_2d:** DecorelateRGB ([#23](https://github.com/owkin/MAKit/pull/23))\
 🪜 **layer_2d:** RDFT2Image ([#22](https://github.com/owkin/MAKit/pull/22))\
 🪜 **core:** Sigmoid activation ([#21](https://github.com/owkin/MAKit/pull/21))\
-👷 **ci:** remove swift action ([#20](https://github.com/owkin/MAKit/pull/20))\
 🚀 **metal:** systematic dispatchThreads API ([#19](https://github.com/owkin/MAKit/pull/19))\
-🔧 **chore:** bump Python dependencies versions ([#18](https://github.com/owkin/MAKit/pull/18))\
+
+### Bug Fixes 
+
+🐛 **fix:** update correlation matrix coeffs ([#37](https://github.com/owkin/MAKit/pull/37))\
+🐛 **fix:** ResizeBilinear to output deterministic dimensions ([#33](https://github.com/owkin/MAKit/pull/33))\
+
+### Miscellaneous Tasks
+
+🔨 **refactor:** remove transaction ([#31](https://github.com/owkin/MAKit/pull/31))\
+🚨 **integration:** activate DecorrelateRGB in test ([#29](https://github.com/owkin/MAKit/pull/29))\
+🚨 **integration:** test IDFT and complex numbers ([#28](https://github.com/owkin/MAKit/pull/28))\
+🔨 **tests:** factorize transform tests ([#26](https://github.com/owkin/MAKit/pull/26))\
+👷 **ci:** remove swift action ([#20](https://github.com/owkin/MAKit/pull/20))\
 👷 **ci:** remove LFS ([#17](https://github.com/owkin/MAKit/pull/17))\
-🔧 **chore:** rollback changelog ([#16](https://github.com/owkin/MAKit/pull/16))\
-🔧 **chore:** fix badges in the readme ([#15](https://github.com/owkin/MAKit/pull/15))
 
 ## 0.1.0 (2022-10-28)
 

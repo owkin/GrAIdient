@@ -12,7 +12,7 @@ https://github.com/owkin/GrAIdient/actions/workflows/examples.yml)
 Ready for the GrAIt descent ? \
 GrAIdient is the grey area between black box and white box models. 
 
-The framework aims at promoting full control and understanding of the main 
+It aims at promoting full control and understanding of the main 
 operations needed to train deep learning models in the computer vision area. 
 
 Disclaimer: If you cannot find an operation that suits your needs, 

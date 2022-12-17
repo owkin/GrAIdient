@@ -9,15 +9,14 @@ https://github.com/owkin/GrAIdient/actions/workflows/integration-tests.yml)
 [![tests](https://github.com/owkin/GrAIdient/actions/workflows/examples.yml/badge.svg?branch=main)](
 https://github.com/owkin/GrAIdient/actions/workflows/examples.yml)
 
-Ready for the GrAIt descent ?
-GrAIdient is the grey area between black box and white box deep learning models. 
+Ready for the GrAIt descent ? \
+GrAIdient is the grey area between black box and white box models. 
 
 The framework aims at promoting full control and understanding of the main 
 operations needed to train deep learning models in the computer vision area. 
 
-Disclaimer: it is not the scope of the framework to propose an implementation 
-for every possible deep learning operations. The mindset is the other way round: 
-if you cannot find an operation that suits your needs, then do it yourself. 
+Disclaimer: If you cannot find an operation that suits your needs, 
+please consider building it into the GrAIdient framework. 
 
 ## 📦 Swift Package Manager
 

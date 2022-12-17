@@ -9,14 +9,14 @@ https://github.com/owkin/GrAIdient/actions/workflows/integration-tests.yml)
 [![tests](https://github.com/owkin/GrAIdient/actions/workflows/examples.yml/badge.svg?branch=main)](
 https://github.com/owkin/GrAIdient/actions/workflows/examples.yml)
 
-Ready for the GrAIt descent ? \
+Ready for the GrAIt descent? \
 GrAIdient is the grey area between black box and white box models. 
 
 It aims at promoting full control and understanding of the main 
-operations needed to train deep learning models in the computer vision area. 
+operations needed to train deep learning models in the computer vision field. 
 
 Disclaimer: If you cannot find an operation that suits your needs, 
-please consider building it into the GrAIdient framework. 
+please consider building it into the GrAIdient framework!
 
 ## 📦 Swift Package Manager
 
@@ -58,7 +58,7 @@ so that you can understand what actions will and will not be tolerated.
 
 ### Licence
 
-GrAIdient, MATestUtils and GrAITests are [MIT licenced](LICENSE).
+GrAIdient, GrAITestsUtils and GrAITests are [MIT licenced](LICENSE).
 
-GrAIExamples and MATorchTests both depend on PythonKit and are 
+GrAIExamples and GrAITorchTests both depend on PythonKit and are 
 [Apache 2.0 licensed](Tests/LICENSE). 

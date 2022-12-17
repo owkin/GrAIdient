@@ -75,7 +75,7 @@ to ensure these additional tests have succeeded.
 Testing the [unit tests](../Architecture/GrAITests.md) 
 on Xcode is straight forward.
 
-Testing the [integration tests](../Architecture/MATorchTests.md) 
+Testing the [integration tests](../Architecture/GrAITorchTests.md) 
 and the [examples](../Architecture/GrAIExamples.md) 
 requires an additional setup. 
 Follow the previous links to know more about.

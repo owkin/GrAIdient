@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
-🎉 **refactor!:** re brand the framework ([#38](https://github.com/owkin/GrAIdient/pull/38))\
+🎉 **refactor!:** re brand the framework ([#40](https://github.com/owkin/GrAIdient/pull/40))\
 
 ## 0.1.1 (2022-12-16)
 

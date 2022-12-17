@@ -1,8 +1,8 @@
 # 📚 Plugin
 
-It is possible to create a new repository that depends on MAKit and 
+It is possible to create a new repository that depends on GrAIdient and 
 to create custom new layers and activation functions that extend the ones 
-in MAKit.
+in GrAIdient.
 
 ## Create a New Layer
 
@@ -75,7 +75,7 @@ registry so that it can be serialized/deserialized from the disk among any
 other layers of the model: 
 
 ```swift
-MAKit.Model.Layer.append(registry: buildRegistry([
+GrAI.Model.Layer.append(registry: buildRegistry([
     MyLayer.self,
 ]))
 ```
@@ -104,7 +104,7 @@ MetalKernel.get.buildKernels(
 Let us take an implementation example of a new activation function: 
 
 ```swift
-import MAKit
+import GrAIdient
 
 public class TanH: ActivationFunction
 {
@@ -193,11 +193,11 @@ be used as the underlying function of `Activation1D` or `Activation2D`:
 
 ```swift
 // Enable to serialize/deserialize the activation function.
-MAKit.Model.Activation.append(registry: buildRegistry([
+GrAI.Model.Activation.append(registry: buildRegistry([
     TanH.self,
 ]))
 // Enable to use the activation function inside existing layers.
-MAKit.Model.Activation.append(kernel: ActivationKernelImpl())
+GrAI.Model.Activation.append(kernel: ActivationKernelImpl())
 ```
 
 Let us see the example corresponding to the Metal kernels:

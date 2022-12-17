@@ -5,14 +5,14 @@
 import PackageDescription
 
 let package = Package(
-    name: "MAKit",
+    name: "GrAIdient",
     platforms: [
         .macOS(.v10_15)
     ],
     products: [
         .library(
-            name: "MAKit",
-            targets: ["MAKit", "MATestsUtils"]
+            name: "GrAIdient",
+            targets: ["GrAIdient", "GrAITestsUtils"]
         ),
     ],
     dependencies: [
@@ -23,31 +23,31 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "MAKit",
+            name: "GrAIdient",
             dependencies: [],
             resources: [
                 .copy("Metal/Kernel")
             ]
         ),
         .target(
-            name: "MATestsUtils",
-            dependencies: ["MAKit"]
+            name: "GrAITestsUtils",
+            dependencies: ["GrAIdient"]
         ),
         .testTarget(
-            name: "MAKitTests",
-            dependencies: ["MAKit", "MATestsUtils"]
+            name: "GrAITests",
+            dependencies: ["GrAIdient", "GrAITestsUtils"]
         ),
         .testTarget(
-            name: "MATorchTests",
-            dependencies: ["MAKit", "PythonKit"],
+            name: "GrAITorchTests",
+            dependencies: ["GrAIdient", "PythonKit"],
             resources: [
                 .copy("Base/python_lib"),
                 .copy("Base/setup.py")
             ]
         ),
         .testTarget(
-            name: "MAExamples",
-            dependencies: ["MAKit", "PythonKit"],
+            name: "GrAIExamples",
+            dependencies: ["GrAIdient", "PythonKit"],
             resources: [
                 .copy("Base/data"),
                 .copy("Base/python_lib"),

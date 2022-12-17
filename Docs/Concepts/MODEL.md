@@ -12,7 +12,7 @@ deep learning model.
   second layer executes backward, first layer executes backward
 
 As a container of layers, the `Model` also routes the 
-execution mode, taking into account the `MAKit.Opti.GPU` global variable 
+execution mode, taking into account the `GrAI.Opti.GPU` global variable 
 defined in the [previous chapter](GPU.md). 
 This way, CPU and GPU are only exposed in the `Layer` component.
 
@@ -35,7 +35,7 @@ for these layers to be appended to the list of layers of the model context.
 
 ```swift
 let context = ModelContext(name: "MyModel", models: [])
-let params = MAKit.Model.Params(context: context)
+let params = GrAI.Model.Params(context: context)
 
 // First layer to be appended to the list of layers of the context model.
 var layer: Layer1D = Input1D(nbNeurons: 1, params: params)
@@ -62,7 +62,7 @@ This will prove usefull for complex training such as GAN.
 ```swift
 // Create first model context.
 var context = ModelContext(name: "CNN", models: [])
-var params = MAKit.Model.Params(context: context)
+var params = GrAI.Model.Params(context: context)
 
 var layer: Layer2D = Input2D(
     nbChannels: 3, width: 256, height: 256, params: params
@@ -77,7 +77,7 @@ let cnn = context.model
 
 // Note that cnn is a dependency for our second model context.
 context = ModelContext(name: "Classifier", models: [cnn])
-params = MAKit.Model.Params(context: context)
+params = GrAI.Model.Params(context: context)
 
 let head: Layer1D = FullyConnected(
     layerPrev: layer, nbNeurons: 1,

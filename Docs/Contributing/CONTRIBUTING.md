@@ -1,6 +1,6 @@
 # 👨‍💻 Contributing
 
-Thank you for your interest in contributing to MAKit! From commenting to 
+Thank you for your interest in contributing to GrAIdient! From commenting to 
 reviewing and sending PR requests, all contributions are welcome. 
 
 - [Developer Environment](#developer-environment)
@@ -60,23 +60,24 @@ Go to Xcode preferences > Text editing tab > Page guide at column: 80.
 
 ### CI 
 
-The [unit tests](../Architecture/MAKitTests.md) 
+The [unit tests](../Architecture/GrAITests.md) 
 are run after each push on the repository. 
 
-The [integration tests](../Architecture/MATorchTests.md) 
+The [integration tests](../Architecture/GrAITorchTests.md) 
 are not run systematically, 
-neither are the [examples](../Architecture/MAExamples.md). \
+neither are the [examples](../Architecture/GrAIExamples.md). \
 Once a PR is "ready to review", please trigger the workflows on 
-[GitHub](https://github.com/owkin/MAKit/actions) 
+[GitHub](https://github.com/owkin/GrAIdient/actions) 
 to ensure these additional tests have succeeded. 
 
 ### Local 
 
-Testing the [unit tests](../Architecture/MAKitTests.md) 
+Testing the [unit tests](../Architecture/GrAITests.md) 
 on Xcode is straight forward.
 
-Testing the [integration tests](../Architecture/MATorchTests.md) 
-and the [examples](../Architecture/MAExamples.md) requires an additional setup. 
+Testing the [integration tests](../Architecture/GrAITorchTests.md) 
+and the [examples](../Architecture/GrAIExamples.md) 
+requires an additional setup. 
 Follow the previous links to know more about.
 
 ## Git Workflow
@@ -162,7 +163,8 @@ everybody can suggest new code owners.
 
 ## Author
 
-Person or organization that has written and merged at least one PR into MAKit.
+Person or organization that has written and merged at least one PR 
+into GrAIdient.
 Authors are added to [this file](../../AUTHORS).
 
 Any author "MyName" is entitled to append the header of files where she/he had 
@@ -171,7 +173,7 @@ an impact:
 ```swift
 // 
 // File.swift
-// MAKit
+// GrAIdient
 //
 // Created by ... on 28/10/2022.
 // Modified by MyName on 28/10/2022.
@@ -224,9 +226,9 @@ BREAKING CHANGE: deprecate GPU variable
 
 ## Versioning
 
-- MAKit adheres to [Semantic Versioning](https://semver.org).
+- GrAIdient adheres to [Semantic Versioning](https://semver.org).
 - To bump the release version, follow the rules below:
-  - X is at zero (MAKit is in development phase)
+  - X is at zero (GrAIdient is in development phase)
   - Y is bumped for new features, architecture changes 
     and non backwards compatible fixes
   - Z is bumped when backwards compatible bug fixes are introduced

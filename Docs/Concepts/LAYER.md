@@ -1,9 +1,9 @@
 # 📚 Layer
 
-The `Layer` is the essential component of `MAKit`. 
+The `Layer` is the essential component of `GrAIdient`. 
 A layer has 2 principle characteristics: an operation and a shape. 
 
-In `MAKit` there is a strict correlation between the two. This enforces 
+In `GrAIdient` there is a strict correlation between the two. This enforces 
 the prominent role of the layer in the framework at the expense of the 
 operations as pure mathematical objects. 
 

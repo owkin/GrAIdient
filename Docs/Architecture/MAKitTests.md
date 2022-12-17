@@ -1,6 +1,6 @@
-# 👷 MAKitTests
+# 👷 GrAITests
 
-`MAKitTests` contains unit tests of `MAKit`. 
+`GrAITests` contains unit tests of `GrAIdient`. 
 
 Some of them are systematic and repeated over many different setups to ensure 
 that every layer, optimizer, activation function ... is tested.

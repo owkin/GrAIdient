@@ -9,48 +9,48 @@ Here is a subset of images we find for the label 8 (ships) vs label 5 (dogs).
 
 <table align="center" cellspacing="0" cellpadding="0">
     <tr>
-        <td><img src="../../Tests/MAExamples/Base/data/out/CIFAR8_0.png"></td>
-        <td><img src="../../Tests/MAExamples/Base/data/out/CIFAR8_1.png"></td>
-        <td><img src="../../Tests/MAExamples/Base/data/out/CIFAR8_2.png"></td>
-        <td><img src="../../Tests/MAExamples/Base/data/out/CIFAR8_3.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_0.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_1.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_2.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_3.png"></td>
         <td> </td>
-        <td><img src="../../Tests/MAExamples/Base/data/out/CIFAR5_0.png"></td>
-        <td><img src="../../Tests/MAExamples/Base/data/out/CIFAR5_1.png"></td>
-        <td><img src="../../Tests/MAExamples/Base/data/out/CIFAR5_2.png"></td>
-        <td><img src="../../Tests/MAExamples/Base/data/out/CIFAR5_3.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR5_0.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR5_1.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR5_2.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR5_3.png"></td>
     </tr>
     <tr>
-        <td><img src="../../Tests/MAExamples/Base/data/out/CIFAR8_4.png"></td>
-        <td><img src="../../Tests/MAExamples/Base/data/out/CIFAR8_5.png"></td>
-        <td><img src="../../Tests/MAExamples/Base/data/out/CIFAR8_6.png"></td>
-        <td><img src="../../Tests/MAExamples/Base/data/out/CIFAR8_7.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_4.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_5.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_6.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_7.png"></td>
         <td> </td>
-        <td><img src="../../Tests/MAExamples/Base/data/out/CIFAR5_4.png"></td>
-        <td><img src="../../Tests/MAExamples/Base/data/out/CIFAR5_5.png"></td>
-        <td><img src="../../Tests/MAExamples/Base/data/out/CIFAR5_6.png"></td>
-        <td><img src="../../Tests/MAExamples/Base/data/out/CIFAR5_7.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR5_4.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR5_5.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR5_6.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR5_7.png"></td>
     </tr>
     <tr>
-        <td><img src="../../Tests/MAExamples/Base/data/out/CIFAR8_8.png"></td>
-        <td><img src="../../Tests/MAExamples/Base/data/out/CIFAR8_9.png"></td>
-        <td><img src="../../Tests/MAExamples/Base/data/out/CIFAR8_10.png"></td>
-        <td><img src="../../Tests/MAExamples/Base/data/out/CIFAR8_11.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_8.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_9.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_10.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_11.png"></td>
         <td> </td>
-        <td><img src="../../Tests/MAExamples/Base/data/out/CIFAR5_8.png"></td>
-        <td><img src="../../Tests/MAExamples/Base/data/out/CIFAR5_9.png"></td>
-        <td><img src="../../Tests/MAExamples/Base/data/out/CIFAR5_10.png"></td>
-        <td><img src="../../Tests/MAExamples/Base/data/out/CIFAR5_11.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR5_8.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR5_9.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR5_10.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR5_11.png"></td>
     </tr>
     <tr>
-        <td><img src="../../Tests/MAExamples/Base/data/out/CIFAR8_12.png"></td>
-        <td><img src="../../Tests/MAExamples/Base/data/out/CIFAR8_13.png"></td>
-        <td><img src="../../Tests/MAExamples/Base/data/out/CIFAR8_14.png"></td>
-        <td><img src="../../Tests/MAExamples/Base/data/out/CIFAR8_15.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_12.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_13.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_14.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_15.png"></td>
         <td> </td>
-        <td><img src="../../Tests/MAExamples/Base/data/out/CIFAR5_12.png"></td>
-        <td><img src="../../Tests/MAExamples/Base/data/out/CIFAR5_13.png"></td>
-        <td><img src="../../Tests/MAExamples/Base/data/out/CIFAR5_14.png"></td>
-        <td><img src="../../Tests/MAExamples/Base/data/out/CIFAR5_15.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR5_12.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR5_13.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR5_14.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR5_15.png"></td>
     </tr>
 </table>
 
@@ -60,9 +60,9 @@ This example has some `Python` dependencies. In order to run
 the example, we first have to setup the environment: 
 
 ```bash
-conda create --name maexamples python=3.9
-conda activate maexamples
-cd Tests/MAExamples/Base
+conda create --name graiexamples python=3.9
+conda activate graiexamples
+cd Tests/GrAIExamples/Base
 pip install -e .
 ```
 
@@ -70,14 +70,14 @@ Now, let us run the tests from Xcode or a `bash` command (here with compiler
 optimization):
 
 ```bash
-swift test -c release --filter MAExamples
+swift test -c release --filter GrAIExamples
 ```
 
 It is finally possible to clean the environment 🌍
 
 ```bash     
 conda deactivate
-conda env remove --name maexamples
+conda env remove --name graiexamples
 ```
 
 ## Steps

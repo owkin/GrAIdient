@@ -10,7 +10,7 @@ The gradients of weights are computed during the backward pass.
 Here, we setup the optimizer of a model: 
 
 ```swift 
-var optimizerParams: MAKit.Optimizer.Params()
+var optimizerParams: GrAI.Optimizer.Params()
 // Initialize one optimizer for the whole training loop: Adam.
 optimizerParams.optimizer = ConstEpochsScheduler(.Adam)
 
@@ -26,7 +26,7 @@ let nLoops: Int
 let epoch1 = 5
 let epoch2 = 10
 
-var optimizerParams: MAKit.Optimizer.Params()
+var optimizerParams: GrAI.Optimizer.Params()
 optimizerParams.nbLoops = nbLoops
 // Initialize optimizers Adam and SGD to be used according to the current step 
 // of the training loop.
@@ -56,7 +56,7 @@ For example at `OptimizerImpl.initVariables` the variables `alpha` and
 It is possible to override the default variables with the optimizer parameters:
 
 ```swift
-var optimizerParams: MAKit.Optimizer.Params()
+var optimizerParams: GrAI.Optimizer.Params()
 optimizerParams.optimizer = ConstEpochsScheduler(.Adam)
 
 // Initialize alpha value to be constant over time.
@@ -74,7 +74,7 @@ It is also possible to define a scheduler for the values of these variables:
 let nLoops: Int 
 let nbEpochs: 10
 
-var optimizerParams: MAKit.Optimizer.Params()
+var optimizerParams: GrAI.Optimizer.Params()
 optimizerParams.nbLoops = nbLoops
 // Initialize optimizer to be constant over time.
 optimizerParams.optimizer = ConstEpochsScheduler(.Adam)
@@ -100,7 +100,7 @@ let nLoops: Int
 let epoch1 = 5
 let epoch2 = 10
 
-var optimizerParams: MAKit.Optimizer.Params()
+var optimizerParams: GrAI.Optimizer.Params()
 optimizerParams.nbLoops = nbLoops
 // Initialize optimizer to be constant over time.
 optimizerParams.optimizer = ConstEpochsScheduler(.Adam)

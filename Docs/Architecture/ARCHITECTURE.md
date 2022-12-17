@@ -1,9 +1,9 @@
 # 👷 Architecture
 
-Here are the different components of MAKit: 
+Here are the different components of GrAIdient: 
 
-- [MAKit](MAKit.md)
-- [MATestsUtils](MATestsUtils.md)
-- [MAKitTests](MAKitTests.md)
-- [MATorchTests](MATorchTests.md)
-- [MAExamples](MAExamples.md)
+- [GrAIdient](GrAIdient.md)
+- [GrAITestsUtils](GrAITestsUtils.md)
+- [GrAITests](GrAITests.md)
+- [GrAITorchTests](GrAITorchTests.md)
+- [GrAIExamples](GrAIExamples.md)

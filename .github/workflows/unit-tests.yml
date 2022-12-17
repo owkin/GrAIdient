@@ -3,7 +3,7 @@ name: unit-tests
 on: [push]
 
 jobs:
-  MAKitTests:
+  GrAITests:
     runs-on: self-hosted
 
     steps:
@@ -11,4 +11,4 @@ jobs:
       - name: Build
         run: swift build
       - name: Test
-        run: swift test -c release --filter MAKitTests
+        run: swift test -c release --filter GrAITests

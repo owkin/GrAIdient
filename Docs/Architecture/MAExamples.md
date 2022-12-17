@@ -1,5 +1,5 @@
-# 👷 MAExamples
+# 👷 GrAIExamples
 
-`MAExamples` contains examples that show how to interact with `MAKit`. 
+`GrAIExamples` contains examples that show how to interact with `GrAIdient`. 
 
 See the [examples](../Examples/EXAMPLES.md) documentation for more details.

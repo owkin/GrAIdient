@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
-🎉 **refactor!:** re brand the framework ([#40](https://github.com/owkin/GrAIdient/pull/40))\
+🎉 **refactor!:** re brand the framework ([#40](https://github.com/owkin/GrAIdient/pull/40))
 
 ## 0.1.1 (2022-12-16)
 
@@ -21,12 +21,12 @@ All notable changes to this project will be documented in this file.
 🪜 **layer_2d:** DecorelateRGB ([#23](https://github.com/owkin/GrAIdient/pull/23))\
 🪜 **layer_2d:** RDFT2Image ([#22](https://github.com/owkin/GrAIdient/pull/22))\
 🪜 **core:** Sigmoid activation ([#21](https://github.com/owkin/GrAIdient/pull/21))\
-🚀 **metal:** systematic dispatchThreads API ([#19](https://github.com/owkin/GrAIdient/pull/19))\
+🚀 **metal:** systematic dispatchThreads API ([#19](https://github.com/owkin/GrAIdient/pull/19))
 
 ### Bug Fixes 
 
 🐛 **fix:** update correlation matrix coeffs ([#37](https://github.com/owkin/GrAIdient/pull/37))\
-🐛 **fix:** ResizeBilinear to output deterministic dimensions ([#33](https://github.com/owkin/GrAIdient/pull/33))\
+🐛 **fix:** ResizeBilinear to output deterministic dimensions ([#33](https://github.com/owkin/GrAIdient/pull/33))
 
 ### Miscellaneous Tasks
 
@@ -35,7 +35,7 @@ All notable changes to this project will be documented in this file.
 🚨 **integration:** test IDFT and complex numbers ([#28](https://github.com/owkin/GrAIdient/pull/28))\
 🔨 **tests:** factorize transform tests ([#26](https://github.com/owkin/GrAIdient/pull/26))\
 👷 **ci:** remove swift action ([#20](https://github.com/owkin/GrAIdient/pull/20))\
-👷 **ci:** remove LFS ([#17](https://github.com/owkin/GrAIdient/pull/17))\
+👷 **ci:** remove LFS ([#17](https://github.com/owkin/GrAIdient/pull/17))
 
 ## 0.1.0 (2022-10-28)
 

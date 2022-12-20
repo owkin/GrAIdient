@@ -1667,6 +1667,68 @@ public class Convolution2D: BN2D
     }
     
     ///
+    /// Get the weights' gradients in the GPU execution context.
+    ///
+    /// Throw an error when layer has not been updated through backward pass or
+    /// when gradients per sample have not been computed.
+    ///
+    /// - Parameter elem: The batch element to retrieve the outputs from.
+    ///
+    public func getDeltaWeightsGPU<T: BinaryFloatingPoint>(elem: Int) throws
+        -> [T]
+    {
+        if dirty
+        {
+            throw UpdateError.Dirty
+        }
+        if !GrAI.Gradient.sample
+        {
+            throw UpdateError.PerSample
+        }
+        
+        var deltaWeights = [T]()
+        MetalKernel.get.download([_wDeltaWeights])
+        var deltaWeightsPtr = _wDeltaWeights.shared.buffer
+        
+        let offsetStartGrid =
+            elem * nbChannels * nbChannelsPrev * weightHeight
+        
+        for depth in 0..<nbChannels {
+        for depthPrev in 0..<nbChannelsPrev
+        {
+            let offsetStart =
+                (depthPrev + nbChannelsPrev * depth) * weightHeight
+            
+            for i in 0..<weightHeight {
+            for j in 0..<weightWidth
+            {
+                let offset = j +
+                    (offsetStartGrid+offsetStart + i) * weightWidth
+                
+                deltaWeights.append(T(
+                    deltaWeightsPtr[offset]
+                ))
+            }}
+        }}
+        
+        if _updateBiases
+        {
+            MetalKernel.get.download([_bDeltaWeights])
+            deltaWeightsPtr = _bDeltaWeights.shared.buffer
+            
+            for depth in 0..<nbChannels
+            {
+                let offset = depth + nbChannels * elem
+                
+                deltaWeights.append(T(
+                    deltaWeightsPtr[offset]
+                ))
+            }
+        }
+        return deltaWeights
+    }
+    
+    ///
     /// Get the weights' gradients in the CPU execution context.
     ///
     /// Throw an error when layer has not been updated through backward pass.
@@ -1691,9 +1753,12 @@ public class Convolution2D: BN2D
                 ))
             }}
         }}
-        for depth in 0..<nbChannels
+        if _updateBiases
         {
-            deltaWeights.append(T(_bArrays.g[depth]))
+            for depth in 0..<nbChannels
+            {
+                deltaWeights.append(T(_bArrays.g[depth]))
+            }
         }
         return deltaWeights
     }
@@ -1711,17 +1776,22 @@ public class Convolution2D: BN2D
         }
         
         var deltaWeights = [T]()
-        MetalKernel.get.download([_wBuffers.g_p!, _bBuffers.g_p!])
-        
+        MetalKernel.get.download([_wBuffers.g_p!])
         var deltaWeightsPtr = _wBuffers.g_p!.shared.buffer
+        
         for i in 0..<_wBuffers.nbElems
         {
             deltaWeights.append(T(deltaWeightsPtr[i]))
         }
-        deltaWeightsPtr = _bBuffers.g_p!.shared.buffer
-        for i in 0..<_bBuffers.nbElems
+        if _updateBiases
         {
-            deltaWeights.append(T(deltaWeightsPtr[i]))
+            MetalKernel.get.download([_bBuffers.g_p!])
+            deltaWeightsPtr = _bBuffers.g_p!.shared.buffer
+            
+            for i in 0..<_bBuffers.nbElems
+            {
+                deltaWeights.append(T(deltaWeightsPtr[i]))
+            }
         }
         return deltaWeights
     }

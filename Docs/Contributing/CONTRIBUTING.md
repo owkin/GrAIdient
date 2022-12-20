@@ -120,7 +120,7 @@ Follow the previous links to know more about.
   They should help reviewers understanding the PR.
   If such tests already exist, they should be mentioned in the description.
 
-- Each important PR should update the [changelog](CHANGELOG.md)
+- Each important PR should update the [changelog](../../CHANGELOG.md)
   or any other documentation 
   (docstring, contributing, [readme](../../README.md), ...).
 
@@ -242,7 +242,7 @@ containing the commits to merge into the `main` branch.
 
 1. Update the Changelog
     - Create a branch from `release_N`.
-    - Edit the [changelog](CHANGELOG.md) to create a new section 
+    - Edit the [changelog](../../CHANGELOG.md) to create a new section 
       corresponding to the new release. 
       Move all the "Unreleased" items to this new section.
       Do not delete the "Unreleased" section title: future PRs will insert 
@@ -262,7 +262,7 @@ containing the commits to merge into the `main` branch.
        - **Target**: main
        - **Release title**: vX.Y.Z
        - **Describe this release**: formatted copy of the 
-         [changelog](CHANGELOG.md) 
+         [changelog](../../CHANGELOG.md) 
          using the template provided in the 
          [changelog template](#changelog-template)
 

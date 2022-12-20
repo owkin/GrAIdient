@@ -12,6 +12,10 @@ public enum UpdateError: Error
 {
     /// Layer has not been visited by any backward pass.
     case Dirty
+    
+    /// Gradient per sample has not been computed:
+    /// set GrAI.Gradient.sample = true
+    case PerSample
 }
 
 extension UpdateError: CustomStringConvertible
@@ -23,6 +27,8 @@ extension UpdateError: CustomStringConvertible
         case .Dirty:
             return "Layer internal state has not been updated " +
                    "through backward pass."
+        case .PerSample:
+            return "Gradient per sample has not been computed."
         }
     }
 }

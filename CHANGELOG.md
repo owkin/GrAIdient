@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🪜 **feat:** getDeltaWeightsGPU per sample API ([#41](https://github.com/owkin/GrAIdient/pull/41))\
 🎉 **refactor!:** re brand the framework ([#40](https://github.com/owkin/GrAIdient/pull/40))
 
 ## 0.1.1 (2022-12-16)

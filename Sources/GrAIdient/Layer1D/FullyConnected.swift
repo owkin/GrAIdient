@@ -1208,6 +1208,58 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
     }
     
     ///
+    /// Get the weights' gradients in the GPU execution context.
+    ///
+    /// Throw an error when layer has not been updated through backward pass or
+    /// when gradients per sample have not been computed.
+    ///
+    /// - Parameter elem: The batch element to retrieve the outputs from.
+    ///
+    public func getDeltaWeightsGPU<T: BinaryFloatingPoint>(elem: Int) throws
+        -> [T]
+    {
+        if dirty
+        {
+            throw UpdateError.Dirty
+        }
+        if !GrAI.Gradient.sample
+        {
+            throw UpdateError.PerSample
+        }
+        
+        var deltaWeights = [T]()
+        MetalKernel.get.download([_wDeltaWeights])
+        var deltaWeightsPtr = _wDeltaWeights.shared.buffer
+        
+        let offsetStart = elem * nbNeurons * weightWidth
+        for depth in 0..<nbNeurons {
+        for depthPrev in 0..<weightWidth
+        {
+            let offset = offsetStart + depthPrev + weightWidth * depth
+            
+            deltaWeights.append(T(
+                deltaWeightsPtr[offset]
+            ))
+        }}
+        
+        if _updateBiases
+        {
+            MetalKernel.get.download([_bDeltaWeights])
+            deltaWeightsPtr = _bDeltaWeights.shared.buffer
+            
+            for depth in 0..<nbNeurons
+            {
+                let offset = depth + nbNeurons * elem
+                
+                deltaWeights.append(T(
+                    deltaWeightsPtr[offset]
+                ))
+            }
+        }
+        return deltaWeights
+    }
+    
+    ///
     /// Get the weights' gradients in the CPU execution context.
     ///
     /// Throw an error when layer has not been updated through backward pass.
@@ -1225,9 +1277,12 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
         {
             deltaWeights.append(T(_wArrays.g(depth, depthPrev)))
         }}
-        for depth in 0..<nbNeurons
+        if _updateBiases
         {
-            deltaWeights.append(T(_bArrays.g[depth]))
+            for depth in 0..<nbNeurons
+            {
+                deltaWeights.append(T(_bArrays.g[depth]))
+            }
         }
         return deltaWeights
     }
@@ -1245,17 +1300,22 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
         }
         
         var deltaWeights = [T]()
-        MetalKernel.get.download([_wBuffers.g_p!, _bBuffers.g_p!])
-        
+        MetalKernel.get.download([_wBuffers.g_p!])
         var deltaWeightsPtr = _wBuffers.g_p!.shared.buffer
+        
         for i in 0..<_wBuffers.nbElems
         {
             deltaWeights.append(T(deltaWeightsPtr[i]))
         }
-        deltaWeightsPtr = _bBuffers.g_p!.shared.buffer
-        for i in 0..<_bBuffers.nbElems
+        if _updateBiases
         {
-            deltaWeights.append(T(deltaWeightsPtr[i]))
+            MetalKernel.get.download([_bBuffers.g_p!])
+            deltaWeightsPtr = _bBuffers.g_p!.shared.buffer
+            
+            for i in 0..<_bBuffers.nbElems
+            {
+                deltaWeights.append(T(deltaWeightsPtr[i]))
+            }
         }
         return deltaWeights
     }

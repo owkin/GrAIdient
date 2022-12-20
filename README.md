@@ -41,7 +41,7 @@ Read below to learn how to take part in improving GrAIdient.
 ### Changelog
 
 All notable changes to GrAIdient will be documented in the
-[changelog](Docs/Contributing/CHANGELOG.md).
+[changelog](CHANGELOG.md).
 
 ### Contributing Guide
 

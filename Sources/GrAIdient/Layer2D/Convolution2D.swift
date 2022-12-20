@@ -1690,6 +1690,7 @@ public class Convolution2D: BN2D
         MetalKernel.get.download([_wDeltaWeights])
         var deltaWeightsPtr = _wDeltaWeights.shared.buffer
         
+        let nbChannelsPrev = (self.layerPrev as! Layer2D).nbChannels
         let offsetStartGrid =
             elem * nbChannels * nbChannelsPrev * weightHeight
         

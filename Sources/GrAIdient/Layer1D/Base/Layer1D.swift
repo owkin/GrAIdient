@@ -15,12 +15,12 @@ open class Layer1D: Layer
     /// Output buffer (result of the forward pass) used in the GPU execution context.
     /// Shape ~ (batch, nbNeurons).
     ///
-    public internal(set) var outs: MetalPrivateBuffer<Float>! = nil
+    public var outs: MetalPrivateBuffer<Float>! = nil
     ///
     /// Gradient buffer (result of the backward pass) used in the GPU execution context.
     /// Shape ~ (batch, nbNeurons).
     ///
-    public internal(set) var delta: MetalPrivateBuffer<Float>! = nil
+    public var delta: MetalPrivateBuffer<Float>! = nil
     
     /// Number of neurons.
     public let nbNeurons: Int

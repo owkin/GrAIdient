@@ -1387,13 +1387,11 @@ public class Convolution2D: BN2D
                     
                     if layerPrev.dirty
                     {
-                        neuronsPrev[depthPrev].get(i, j)!.v[elem].delta =
-                            tmp
+                        neuronsPrev[depthPrev].get(i, j)!.v[elem].delta = tmp
                     }
                     else
                     {
-                        neuronsPrev[depthPrev].get(i, j)!.v[elem].delta +=
-                            tmp
+                        neuronsPrev[depthPrev].get(i, j)!.v[elem].delta += tmp
                     }
                 }}
             }}

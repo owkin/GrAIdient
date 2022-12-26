@@ -5,6 +5,12 @@
 // Created by Jean-François Reboud on 26/12/2022.
 //
 
+///
+/// Layer with a 2D shape neural structure, weights and biases,  an activation function and
+/// batch normalization units.
+///
+/// This allows to up sample size resolution.
+///
 public class Deconvolution2D: Convolution2D
 {
     /// Get forward pass GPU kernel.
@@ -662,250 +668,155 @@ public class Deconvolution2D: Convolution2D
         }
     }
     
-    override func _forward(_ elem: Int)
+    override func _forwardCPU() throws
     {
-        if let previousLayer = _previousLayer as? Layer2D
+        if let layerPrev = self.layerPrev as? Layer2D
         {
-            let neuronesPrev = previousLayer._neurones
+            try checkStateCPU(batchSize: batchSize)
             
-            let semiTailleX = weightWidth/2
-            let semiTailleY = weightHeight/2
-            let debutX = weightWidth % 2 == 1 ? -semiTailleX :
-                                                -semiTailleX+1
-            let finX = semiTailleX
-            let debutY = weightHeight % 2 == 1 ? -semiTailleY :
-                                                 -semiTailleY+1
-            let finY = semiTailleY
+            let neuronsPrev = layerPrev.neurons
+            let (startI, endI, startJ, endJ) = _kernelIndices
             
-            for depth in 0..<nbFilters
+            for elem in 0..<batchSize {
+            for depth in 0..<nbChannels
             {
-                let neurones = _neurones[depth]
-                
-                for x in 0..<height {
-                for y in 0..<width
+                for i in 0..<height {
+                for j in 0..<width
                 {
-                    var agregation: Double = _biases.get(depth)!._w
-                    for curPoids in 0..<nbFiltersPrev
+                    var tmp: Double = _bArrays.w[depth]
+                    for depthPrev in 0..<nbChannelsPrev
                     {
-                        let poids = _weights[nbFiltersPrev * depth + curPoids]
-                        var somme: Double = 0.0
+                        let weights =
+                            _wArrays[nbChannelsPrev * depth + depthPrev]
                         
-                        for i in debutX...finX {
-                        for j in debutY...finY
+                        for k in startI...endI {
+                        for l in startJ...endJ
                         {
-                            let neuroneTmp: Neurone?
-                            if (x+i) % _stride != 0
+                            if (i+k) % _stride == 0 && (j+l) % _stride == 0
                             {
-                                neuroneTmp = nil
-                            }
-                            else if (y+j) % _stride != 0
-                            {
-                                neuroneTmp = nil
-                            }
-                            else
-                            {
-                                let X = (x+i) / _stride
-                                let Y = (y+j) / _stride
-                                neuroneTmp = neuronesPrev[curPoids].get(X, Y)
-                            }
-                            if let sortiePrev = neuroneTmp?._var[elem].sortie,
-                               let wIJ = poids.get(i-debutX, j-debutY)?._w
-                            {
-                                somme += sortiePrev * wIJ
+                                if let outPrev = neuronsPrev[depthPrev]
+                                    .get((i+k) / _stride, (j+l) / _stride)?
+                                    .v[elem].out
+                                {
+                                    let w = weights.w(k-startI, l-startJ)
+                                    tmp += outPrev * w
+                                }
                             }
                         }}
-                        
-                        agregation += somme
                     }
-                    neurones.get(x, y)!._var[elem].sortie = agregation
+                    neurons[depth].get(i, j)!.v[elem].out = tmp
                 }}
-            }
+            }}
         }
     }
     
-    override func _backward(_ elem: Int)
+    override func _backwardCPU()
     {
-        if let previousLayer = _previousLayer as? Layer2D, mustComputeBackward
+        if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
-            let neuronesPrev = previousLayer._neurones
+            let neuronsPrev = layerPrev.neurons
+            let (startI, endI, startJ, endJ) = _kernelIndices
             
-            let semiTailleX = weightWidth/2
-            let semiTailleY = weightHeight/2
-            let debutX = weightWidth % 2 == 1 ? -semiTailleX :
-                                                -semiTailleX+1
-            let finX = semiTailleX
-            let debutY = weightHeight % 2 == 1 ? -semiTailleY :
-                                                 -semiTailleY+1
-            let finY = semiTailleY
-            
-            for prevDepth in 0..<nbFiltersPrev
+            for elem in 0..<batchSize {
+            for depthPrev in 0..<nbChannelsPrev
             {
-                for x in 0..<previousLayer.height {
-                for y in 0..<previousLayer.width
+                for i in 0..<layerPrev.height {
+                for j in 0..<layerPrev.width
                 {
-                    var miniDelta: Double = 0.0
-                    for depth in 0..<nbFilters
+                    var tmp: Double = 0.0
+                    for depth in 0..<nbChannels
                     {
-                        let neurones = _neurones[depth]
-                        let poids = _weights[nbFiltersPrev*depth+prevDepth]
-                        var somme: Double = 0.0
+                        let weights =
+                            _wArrays[nbChannelsPrev * depth + depthPrev]
                         
-                        for i in debutX...finX {
-                        for j in debutY...finY
+                        for k in startI...endI {
+                        for l in startJ...endJ
                         {
-                            if let neurone = neurones.get(
-                                _stride*x-i, _stride*y-j),
-                               let wIJ = poids.get(i-debutX, j-debutY)?._w
+                            if let deltaCur = neurons[depth].get(
+                                _stride*i-k, _stride*j-l)?.v[elem].delta
                             {
-                                somme += neurone._var[elem].miniDelta * wIJ
+                                let w = weights.w(k-startI, l-startJ)
+                                tmp += deltaCur * w
                             }
                         }}
-                        
-                        miniDelta += somme
                     }
                     
-                    if previousLayer.isDirty
+                    if layerPrev.dirty
                     {
-                    neuronesPrev[prevDepth].get(x, y)!._var[elem].miniDelta =
-                        miniDelta
+                        neuronsPrev[depthPrev].get(i, j)!.v[elem].delta = tmp
                     }
                     else
                     {
-                    neuronesPrev[prevDepth].get(x, y)!._var[elem].miniDelta +=
-                        miniDelta
+                        neuronsPrev[depthPrev].get(i, j)!.v[elem].delta += tmp
                     }
                 }}
-            }
+            }}
+            propagateDirty()
         }
     }
     
-    override func _deriveePartielle(_ elem: Int)
+    override func _backwardWeightsCPU()
     {
-        if let previousLayer = _previousLayer as? Layer2D, mustComputeUpdate
+        if let layerPrev = self.layerPrev as? Layer2D, computeDeltaWeights
         {
-            let neuronesPrev = previousLayer._neurones
+            // -----------------------------------------------------------------
+            // Compute Gradients per batch
+            // -----------------------------------------------------------------
+            let neuronsPrev = layerPrev.neurons
+            let (startI, endI, startJ, endJ) = _kernelIndices
             
-            let semiTailleX = weightWidth/2
-            let semiTailleY = weightHeight/2
-            let debutX = weightWidth % 2 == 1 ? -semiTailleX :
-                                                -semiTailleX+1
-            let finX = semiTailleX
-            let debutY = weightHeight % 2 == 1 ? -semiTailleY :
-                                                 -semiTailleY+1
-            let finY = semiTailleY
-            
-            for depth in 0..<nbFilters
+            for depth in 0..<nbChannels
             {
-                let neurones = _neurones[depth]
-                
-                for curPoids in 0..<nbFiltersPrev
+                for depthPrev in 0..<nbChannelsPrev
                 {
-                    let poids = _weights[nbFiltersPrev * depth + curPoids]
+                    let weights = _wArrays[nbChannelsPrev * depth + depthPrev]
                     
-                    for i in debutX...finX {
-                    for j in debutY...finY
+                    for i in startI...endI {
+                    for j in startJ...endJ
                     {
-                        var deriveePartielle: Double = 0.0
-                        
-                        for x in 0..<height {
-                        for y in 0..<width
+                        var tmp: Double = 0.0
+                        for elem in 0..<batchSize {
+                        for k in 0..<height {
+                        for l in 0..<width
                         {
-                            let neuroneTmp: Neurone?
-                            if (x+i) % _stride != 0
+                            if (i+k) % _stride == 0 && (j+l) % _stride == 0
                             {
-                                neuroneTmp = nil
+                                if let outPrev = neuronsPrev[depthPrev]
+                                    .get((i+k) / _stride, (j+l) / _stride)?
+                                    .v[elem].out
+                                {
+                                    let deltaCur =
+                                        neurons[depth].get(k, l)!.v[elem].delta
+                                    tmp += deltaCur * outPrev
+                                }
                             }
-                            else if (y+j) % _stride != 0
-                            {
-                                neuroneTmp = nil
-                            }
-                            else
-                            {
-                                let X = (x+i) / _stride
-                                let Y = (y+j) / _stride
-                                neuroneTmp = neuronesPrev[curPoids].get(X,Y)
-                            }
-                            if let sortiePrev = neuroneTmp?._var[elem].sortie,
-                               let miniDelta = neurones.get(x,
-                                                    y)?._var[elem].miniDelta
-                            {
-                                deriveePartielle += miniDelta * sortiePrev
-                            }
-                        }}
+                        }}}
                         
-                        poids.get(i-debutX,
-                                  j-debutY)?._var[elem].deriveePartielle =
-                            deriveePartielle
-                    }}
-                }
-                
-                if updateBiases
-                {
-                    var deriveeBiais: Double = 0.0
-                    
-                    for x in 0..<height {
-                    for y in 0..<width
-                    {
-                        let neuroneXY = neurones.get(x, y)
-                        if let miniDeltaIJ = neuroneXY?._var[elem].miniDelta
+                        if accumulateDeltaWeights
                         {
-                            deriveeBiais += miniDeltaIJ
+                            tmp += weights.g(i-startI, j-startJ)
                         }
+                        weights.g(i-startI, j-startJ, tmp)
                     }}
-                    
-                    _biases.get(depth)?._var[elem].deriveePartielle =
-                        deriveeBiais
                 }
-            }
-            
-            for depth in 0..<nbFilters
-            {
-                for curPoids in 0..<nbFiltersPrev
+                
+                if _updateBiases
                 {
-                    let poids = _weights[nbFiltersPrev * depth + curPoids]
-                    
+                    var tmp: Double = 0.0
+                    for elem in 0..<batchSize {
                     for i in 0..<height {
                     for j in 0..<width
                     {
-                        if let connexionIJ = poids.get(i, j)
-                        {
-                            var partialGrad: Double = 0.0
-                            for elem in 0..<batchSize
-                            {
-                                let deriveePartielle =
-                                    connexionIJ._var[elem].deriveePartielle
-                                partialGrad += deriveePartielle
-                            }
-                            
-                            if !accumulateWeights
-                            {
-                                connexionIJ._derivative = partialGrad
-                            }
-                            else
-                            {
-                                connexionIJ._derivative += partialGrad
-                            }
-                        }
-                    }}
-                }
-                if updateBiases, let biais = _biases.get(depth)
-                {
-                    var partialGrad: Double = 0.0
-                    for elem in 0..<batchSize
-                    {
-                        let deriveePartielle =
-                            biais._var[elem].deriveePartielle
-                        partialGrad += deriveePartielle
-                    }
+                        let deltaCur =
+                            neurons[depth].get(i, j)!.v[elem].delta
+                        tmp += deltaCur
+                    }}}
                     
-                    if !accumulateWeights
+                    if accumulateDeltaWeights
                     {
-                        biais._derivative = partialGrad
+                        tmp += _bArrays.g[depth]
                     }
-                    else
-                    {
-                        biais._derivative += partialGrad
-                    }
+                    _bArrays.g[depth] = tmp
                 }
             }
         }

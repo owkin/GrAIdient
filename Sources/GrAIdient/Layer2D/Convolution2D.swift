@@ -392,6 +392,42 @@ public class Convolution2D: BN2D
     }
     
     ///
+    /// Create a layer with a 2D shape neural structure.
+    ///
+    /// - Parameters:
+    ///     - layerPrev: Previous layer that has been queued to the model.
+    ///     - size: Size (height, weight) of the weights kernels.
+    ///     - nbChannels: Number of channels.
+    ///     - stride: Downscale factor of the resolution (height and width).
+    ///     - height: Height of the output grids.
+    ///     - width: Width of the output grids.
+    ///     - activation: The activation function.
+    ///     - biases: Whether to update biases or not.
+    ///     - bn: Whether to use batch normalization or not.
+    ///     - params: Contextual parameters linking to the model.
+    ///
+    init(layerPrev: Layer2D, size: Int, nbChannels: Int, stride: Int,
+         height: Int, width: Int,
+         activation: String?, biases: Bool, bn: Bool,
+         params: GrAI.Model.Params)
+    {
+        _stride = stride
+        
+        nbWeights = nbChannels * layerPrev.nbChannels
+        weightWidth = size
+        weightHeight = size
+        _updateBiases = biases
+        
+        super.init(layerPrev: layerPrev,
+                   nbChannels: nbChannels,
+                   height: height,
+                   width: width,
+                   activation: activation,
+                   bn: bn,
+                   params: params)
+    }
+    
+    ///
     /// Decode from the disk.
     ///
     /// Throw an error if reading from the decoder fails, or

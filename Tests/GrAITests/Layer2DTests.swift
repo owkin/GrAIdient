@@ -256,6 +256,24 @@ class Layer2DGradTests: Input2DMSE1DCase
                 layerPrev: layer, size: width, params: params
             )
             
+        case "Deconvolution1":
+            layer = MaxPool2D(
+                layerPrev: layer, size: 2, stride: 3, params: params
+            )
+            layer = Deconvolution2D(
+                layerPrev: layer, size: 3, nbChannels: 5, stride: 2,
+                activation: SoftReLU.str, biases: true, bn: bn, params: params
+            )
+            
+        case "Deconvolution2":
+            layer = MaxPool2D(
+                layerPrev: layer, size: 2, stride: 3, params: params
+            )
+            layer = Deconvolution2D(
+                layerPrev: layer, size: 2, nbChannels: 5, stride: 2,
+                activation: SoftReLU.str, biases: true, bn: bn, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -666,6 +684,66 @@ class Layer2DGradTests: Input2DMSE1DCase
         let trainer = _buildTrainer(model: "ResizeBilinearCrop2", bn: false)
         run(trainer)
     }
+    
+    func testDeconvolution1BNCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "Deconvolution1", bn: true)
+        run(trainer)
+    }
+    
+    /*func testDeconvolution1BNGPU() throws
+    {
+        let trainer = _buildTrainer(model: "Deconvolution1", bn: true)
+        run(trainer)
+    }*/
+    
+    func testDeconvolution1NoBNCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "Deconvolution1", bn: false)
+        run(trainer)
+    }
+    
+    /*func testDeconvolution1NoBNGPU() throws
+    {
+        let trainer = _buildTrainer(model: "Deconvolution1", bn: false)
+        run(trainer)
+    }*/
+    
+    /*func testDeconvolution1BatchBNGPU() throws
+    {
+        GrAI.Gradient.batch = true
+        let trainer = _buildTrainer(model: "Deconvolution1", bn: true)
+        run(trainer)
+    }*/
+    
+    /*func testDeconvolution1BatchNoBNGPU() throws
+    {
+        GrAI.Gradient.batch = true
+        let trainer = _buildTrainer(model: "Deconvolution1", bn: false)
+        run(trainer)
+    }*/
+    
+    func testDeconvolution2CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "Deconvolution2", bn: false)
+        run(trainer)
+    }
+    
+    /*func testDeconvolution2GPU() throws
+    {
+        let trainer = _buildTrainer(model: "Deconvolution2", bn: false)
+        run(trainer)
+    }*/
+    
+    /*func testDeconvolution2BatchGPU() throws
+    {
+        ILearn.Gradient.batch = true
+        let trainer = _buildTrainer(model: "Deconvolution2", bn: false)
+        run(trainer)
+    }*/
 }
 
 // -----------------------------------------------------------------------------

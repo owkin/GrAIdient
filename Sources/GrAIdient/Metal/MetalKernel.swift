@@ -560,6 +560,12 @@ private class MetalDevice
                 "convDerBiases",
                 "convReduceWeights",
             ],
+            "Deconvolution": [
+                "deconvForward",
+                "deconvBackward",
+                "deconvBatchDerWeights",
+                "deconvDerWeights",
+            ],
             "FullyConnected": [
                 "flForward",
                 "flBackward",

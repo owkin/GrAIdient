@@ -425,7 +425,7 @@ public class Deconvolution2D: Convolution2D
     {
         if let layerPrev = self.layerPrev as? Layer2D
         {
-            try checkStateForwardGPU(batchSize: batchSize)
+            try checkStateCPU(batchSize: batchSize)
             
             let nbGC = layerPrev.nbGC
             let newGC = nbGC + 2 * nbLearnedGC

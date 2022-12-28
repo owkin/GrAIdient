@@ -56,25 +56,25 @@ class Layer2DGradTests: Input2DMSE1DCase
         case "Convolution1":
             layer = Convolution2D(
                 layerPrev: layer, size: 3, nbChannels: 5, stride: 1,
-                activation: SoftReLU.str, biases: true, bn: bn, params: params
+                activation: SoftReLU.str, biases: !bn, bn: bn, params: params
             )
             
         case "Convolution2":
             layer = Convolution2D(
                 layerPrev: layer, size: 2, nbChannels: 5, stride: 1,
-                activation: SoftReLU.str, biases: true, bn: bn, params: params
+                activation: SoftReLU.str, biases: !bn, bn: bn, params: params
             )
             
         case "ConvolutionStride1":
             layer = Convolution2D(
                 layerPrev: layer, size: 3, nbChannels: 5, stride: 2,
-                activation: SoftReLU.str, biases: true, bn: bn, params: params
+                activation: SoftReLU.str, biases: !bn, bn: bn, params: params
             )
             
         case "ConvolutionStride2":
             layer = Convolution2D(
                 layerPrev: layer, size: 2, nbChannels: 5, stride: 2,
-                activation: SoftReLU.str, biases: true, bn: bn, params: params
+                activation: SoftReLU.str, biases: !bn, bn: bn, params: params
             )
             
         case "BN":
@@ -258,20 +258,20 @@ class Layer2DGradTests: Input2DMSE1DCase
             
         case "Deconvolution1":
             layer = MaxPool2D(
-                layerPrev: layer, size: 2, stride: 3, params: params
+                layerPrev: layer, size: 3, stride: 4, params: params
             )
             layer = Deconvolution2D(
                 layerPrev: layer, size: 3, nbChannels: 5, stride: 2,
-                activation: SoftReLU.str, biases: true, bn: bn, params: params
+                activation: SoftReLU.str, biases: !bn, bn: bn, params: params
             )
             
         case "Deconvolution2":
             layer = MaxPool2D(
-                layerPrev: layer, size: 2, stride: 3, params: params
+                layerPrev: layer, size: 3, stride: 4, params: params
             )
             layer = Deconvolution2D(
                 layerPrev: layer, size: 2, nbChannels: 5, stride: 2,
-                activation: SoftReLU.str, biases: true, bn: bn, params: params
+                activation: SoftReLU.str, biases: !bn, bn: bn, params: params
             )
             
         default:
@@ -695,7 +695,7 @@ class Layer2DGradTests: Input2DMSE1DCase
     func testDeconvolution1BNGPU() throws
     {
         let trainer = _buildTrainer(model: "Deconvolution1", bn: true)
-        run(trainer)
+        run(trainer, diffThreshold: 0.00001)
     }
     
     func testDeconvolution1NoBNCPU() throws
@@ -708,21 +708,21 @@ class Layer2DGradTests: Input2DMSE1DCase
     func testDeconvolution1NoBNGPU() throws
     {
         let trainer = _buildTrainer(model: "Deconvolution1", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.00001)
     }
     
     func testDeconvolution1BatchBNGPU() throws
     {
         GrAI.Gradient.batch = true
         let trainer = _buildTrainer(model: "Deconvolution1", bn: true)
-        run(trainer)
+        run(trainer, diffThreshold: 0.00001)
     }
     
     func testDeconvolution1BatchNoBNGPU() throws
     {
         GrAI.Gradient.batch = true
         let trainer = _buildTrainer(model: "Deconvolution1", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.00001)
     }
     
     func testDeconvolution2CPU() throws
@@ -735,14 +735,14 @@ class Layer2DGradTests: Input2DMSE1DCase
     func testDeconvolution2GPU() throws
     {
         let trainer = _buildTrainer(model: "Deconvolution2", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.00001)
     }
     
     func testDeconvolution2BatchGPU() throws
     {
         GrAI.Gradient.batch = true
         let trainer = _buildTrainer(model: "Deconvolution2", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.00001)
     }
 }
 
@@ -786,25 +786,25 @@ class Layer2DFlowTests: Input2DMSE1DCase
         case "Convolution1":
             layer = Convolution2D(
                 layerPrev: layer, size: 3, nbChannels: 5, stride: 1,
-                activation: LeakyReLU.str, biases: true, bn: bn, params: params
+                activation: LeakyReLU.str, biases: !bn, bn: bn, params: params
             )
             
         case "Convolution2":
             layer = Convolution2D(
                 layerPrev: layer, size: 2, nbChannels: 5, stride: 1,
-                activation: LeakyReLU.str, biases: true, bn: bn, params: params
+                activation: LeakyReLU.str, biases: !bn, bn: bn, params: params
             )
             
         case "ConvolutionStride1":
             layer = Convolution2D(
                 layerPrev: layer, size: 3, nbChannels: 5, stride: 2,
-                activation: LeakyReLU.str, biases: true, bn: bn, params: params
+                activation: LeakyReLU.str, biases: !bn, bn: bn, params: params
             )
             
         case "ConvolutionStride2":
             layer = Convolution2D(
                 layerPrev: layer, size: 2, nbChannels: 5, stride: 2,
-                activation: LeakyReLU.str, biases: true, bn: bn, params: params
+                activation: LeakyReLU.str, biases: !bn, bn: bn, params: params
             )
             
         case "BN":
@@ -1009,13 +1009,13 @@ class Layer2DFlowTests: Input2DMSE1DCase
         case "Deconvolution1":
             layer = Deconvolution2D(
                 layerPrev: layer, size: 3, nbChannels: 5, stride: 2,
-                activation: LeakyReLU.str, biases: true, bn: bn, params: params
+                activation: LeakyReLU.str, biases: !bn, bn: bn, params: params
             )
             
         case "Deconvolution2":
             layer = Deconvolution2D(
                 layerPrev: layer, size: 2, nbChannels: 5, stride: 2,
-                activation: LeakyReLU.str, biases: true, bn: bn, params: params
+                activation: LeakyReLU.str, biases: !bn, bn: bn, params: params
             )
             
         default:
@@ -1515,6 +1515,45 @@ class Layer2DFlowResetTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "ResizeBilinearCrop2", bn: false)
         run(trainer)
     }
+    
+    override func testDeconvolution1BN() throws
+    {
+        let trainer = _buildTrainer(model: "Deconvolution1", bn: true)
+        run(trainer)
+    }
+    
+    override func testDeconvolution1NoBN() throws
+    {
+        let trainer = _buildTrainer(model: "Deconvolution1", bn: false)
+        run(trainer)
+    }
+    
+    override func testDeconvolution1BatchBN() throws
+    {
+        GrAI.Gradient.batch = true
+        let trainer = _buildTrainer(model: "Deconvolution1", bn: true)
+        run(trainer)
+    }
+    
+    override func testDeconvolution1BatchNoBN() throws
+    {
+        GrAI.Gradient.batch = true
+        let trainer = _buildTrainer(model: "Deconvolution1", bn: false)
+        run(trainer)
+    }
+    
+    override func testDeconvolution2() throws
+    {
+        let trainer = _buildTrainer(model: "Deconvolution2", bn: false)
+        run(trainer)
+    }
+    
+    override func testDeconvolution2Batch() throws
+    {
+        GrAI.Gradient.batch = true
+        let trainer = _buildTrainer(model: "Deconvolution2", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -1753,6 +1792,45 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "ResizeBilinearCrop2", bn: false)
         run(trainer)
     }
+    
+    override func testDeconvolution1BN() throws
+    {
+        let trainer = _buildTrainer(model: "Deconvolution1", bn: true)
+        run(trainer)
+    }
+    
+    override func testDeconvolution1NoBN() throws
+    {
+        let trainer = _buildTrainer(model: "Deconvolution1", bn: false)
+        run(trainer)
+    }
+    
+    override func testDeconvolution1BatchBN() throws
+    {
+        GrAI.Gradient.batch = true
+        let trainer = _buildTrainer(model: "Deconvolution1", bn: true)
+        run(trainer)
+    }
+    
+    override func testDeconvolution1BatchNoBN() throws
+    {
+        GrAI.Gradient.batch = true
+        let trainer = _buildTrainer(model: "Deconvolution1", bn: false)
+        run(trainer)
+    }
+    
+    override func testDeconvolution2() throws
+    {
+        let trainer = _buildTrainer(model: "Deconvolution2", bn: false)
+        run(trainer)
+    }
+    
+    override func testDeconvolution2Batch() throws
+    {
+        GrAI.Gradient.batch = true
+        let trainer = _buildTrainer(model: "Deconvolution2", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -1989,6 +2067,45 @@ class Layer2DInferenceTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "ResizeBilinearCrop2", bn: false)
         run(trainer)
     }
+    
+    override func testDeconvolution1BN() throws
+    {
+        let trainer = _buildTrainer(model: "Deconvolution1", bn: true)
+        run(trainer)
+    }
+    
+    override func testDeconvolution1NoBN() throws
+    {
+        let trainer = _buildTrainer(model: "Deconvolution1", bn: false)
+        run(trainer)
+    }
+    
+    override func testDeconvolution1BatchBN() throws
+    {
+        GrAI.Gradient.batch = true
+        let trainer = _buildTrainer(model: "Deconvolution1", bn: true)
+        run(trainer)
+    }
+    
+    override func testDeconvolution1BatchNoBN() throws
+    {
+        GrAI.Gradient.batch = true
+        let trainer = _buildTrainer(model: "Deconvolution1", bn: false)
+        run(trainer)
+    }
+    
+    override func testDeconvolution2() throws
+    {
+        let trainer = _buildTrainer(model: "Deconvolution2", bn: false)
+        run(trainer)
+    }
+    
+    override func testDeconvolution2Batch() throws
+    {
+        GrAI.Gradient.batch = true
+        let trainer = _buildTrainer(model: "Deconvolution2", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -2220,6 +2337,45 @@ class Layer2DLoadTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "ResizeBilinearCrop2", bn: false)
         run(trainer)
     }
+    
+    override func testDeconvolution1BN() throws
+    {
+        let trainer = _buildTrainer(model: "Deconvolution1", bn: true)
+        run(trainer)
+    }
+    
+    override func testDeconvolution1NoBN() throws
+    {
+        let trainer = _buildTrainer(model: "Deconvolution1", bn: false)
+        run(trainer)
+    }
+    
+    override func testDeconvolution1BatchBN() throws
+    {
+        GrAI.Gradient.batch = true
+        let trainer = _buildTrainer(model: "Deconvolution1", bn: true)
+        run(trainer)
+    }
+    
+    override func testDeconvolution1BatchNoBN() throws
+    {
+        GrAI.Gradient.batch = true
+        let trainer = _buildTrainer(model: "Deconvolution1", bn: false)
+        run(trainer)
+    }
+    
+    override func testDeconvolution2() throws
+    {
+        let trainer = _buildTrainer(model: "Deconvolution2", bn: false)
+        run(trainer)
+    }
+    
+    override func testDeconvolution2Batch() throws
+    {
+        GrAI.Gradient.batch = true
+        let trainer = _buildTrainer(model: "Deconvolution2", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -2449,6 +2605,45 @@ class Layer2DTransformTests: Layer2DFlowTests
     override func testResizeBilinearCrop2() throws
     {
         let trainer = _buildTrainer(model: "ResizeBilinearCrop2", bn: false)
+        run(trainer)
+    }
+    
+    override func testDeconvolution1BN() throws
+    {
+        let trainer = _buildTrainer(model: "Deconvolution1", bn: true)
+        run(trainer)
+    }
+    
+    override func testDeconvolution1NoBN() throws
+    {
+        let trainer = _buildTrainer(model: "Deconvolution1", bn: false)
+        run(trainer)
+    }
+    
+    override func testDeconvolution1BatchBN() throws
+    {
+        GrAI.Gradient.batch = true
+        let trainer = _buildTrainer(model: "Deconvolution1", bn: true)
+        run(trainer)
+    }
+    
+    override func testDeconvolution1BatchNoBN() throws
+    {
+        GrAI.Gradient.batch = true
+        let trainer = _buildTrainer(model: "Deconvolution1", bn: false)
+        run(trainer)
+    }
+    
+    override func testDeconvolution2() throws
+    {
+        let trainer = _buildTrainer(model: "Deconvolution2", bn: false)
+        run(trainer)
+    }
+    
+    override func testDeconvolution2Batch() throws
+    {
+        GrAI.Gradient.batch = true
+        let trainer = _buildTrainer(model: "Deconvolution2", bn: false)
         run(trainer)
     }
 }

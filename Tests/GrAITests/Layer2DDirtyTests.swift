@@ -186,6 +186,16 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
                 layerPrev: secondLayer, size: width, params: params
             )
             
+        case "Deconvolution":
+            secondLayer = Deconvolution2D(
+                layerPrev: layer, size: 3, nbChannels: 3, stride: 2,
+                activation: SoftReLU.str, biases: true, bn: false,
+                params: params
+            )
+            secondLayer = AdaptiveAvgPool2D(
+                layerPrev: secondLayer, size: width, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -383,6 +393,19 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
         let trainer = _buildTrainer(model: "ResizeBilinearCrop")
         run(trainer)
     }
+    
+    func testDeconvolutionCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "Deconvolution")
+        run(trainer)
+    }
+    
+    func testDeconvolutionGPU() throws
+    {
+        let trainer = _buildTrainer(model: "Deconvolution")
+        run(trainer, diffThreshold: 0.00001)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -559,6 +582,16 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
                 layerPrev: secondLayer, size: width, params: params
             )
             
+        case "Deconvolution":
+            secondLayer = Deconvolution2D(
+                layerPrev: layer, size: 3, nbChannels: 3, stride: 2,
+                activation: LeakyReLU.str, biases: true, bn: false,
+                params: params
+            )
+            secondLayer = AdaptiveAvgPool2D(
+                layerPrev: secondLayer, size: width, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -656,6 +689,12 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
     func testResizeBilinearCrop() throws
     {
         let trainer = _buildTrainer(model: "ResizeBilinearCrop")
+        run(trainer)
+    }
+    
+    func testDeconvolution() throws
+    {
+        let trainer = _buildTrainer(model: "Deconvolution")
         run(trainer)
     }
 }

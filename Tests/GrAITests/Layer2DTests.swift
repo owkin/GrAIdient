@@ -713,14 +713,14 @@ class Layer2DGradTests: Input2DMSE1DCase
     func testDeconvolution1BNGPU() throws
     {
         let trainer = _buildTrainer(model: "Deconvolution1", bn: true)
-        run(trainer, diffThreshold: 0.00001)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     func testDeconvolution1BNSampleGPU() throws
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer(model: "Deconvolution1", bn: true)
-        run(trainer, diffThreshold: 0.00001)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     func testDeconvolution1NoBNCPU() throws
@@ -733,14 +733,14 @@ class Layer2DGradTests: Input2DMSE1DCase
     func testDeconvolution1NoBNGPU() throws
     {
         let trainer = _buildTrainer(model: "Deconvolution1", bn: false)
-        run(trainer, diffThreshold: 0.00001)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     func testDeconvolution1NoBNSampleGPU() throws
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer(model: "Deconvolution1", bn: false)
-        run(trainer, diffThreshold: 0.00001)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     func testDeconvolution2CPU() throws
@@ -753,14 +753,14 @@ class Layer2DGradTests: Input2DMSE1DCase
     func testDeconvolution2GPU() throws
     {
         let trainer = _buildTrainer(model: "Deconvolution2", bn: false)
-        run(trainer, diffThreshold: 0.00001)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     func testDeconvolution2SampleGPU() throws
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer(model: "Deconvolution2", bn: false)
-        run(trainer, diffThreshold: 0.00001)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     func testDeconvolutionStride1CPU() throws
@@ -773,14 +773,14 @@ class Layer2DGradTests: Input2DMSE1DCase
     func testDeconvolutionStride1GPU() throws
     {
         let trainer = _buildTrainer(model: "DeconvolutionStride1", bn: false)
-        run(trainer, diffThreshold: 0.00001)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     func testDeconvolutionStride1SampleGPU() throws
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer(model: "DeconvolutionStride1", bn: false)
-        run(trainer, diffThreshold: 0.00001)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     func testDeconvolutionStride2CPU() throws
@@ -793,14 +793,14 @@ class Layer2DGradTests: Input2DMSE1DCase
     func testDeconvolutionStride2GPU() throws
     {
         let trainer = _buildTrainer(model: "DeconvolutionStride2", bn: false)
-        run(trainer, diffThreshold: 0.00001)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     func testDeconvolutionStride2SampleGPU() throws
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer(model: "DeconvolutionStride2", bn: false)
-        run(trainer, diffThreshold: 0.00001)
+        run(trainer, diffThreshold: 0.0001)
     }
 }
 

@@ -167,4 +167,128 @@ final class GrAITorchTests: XCTestCase
             abs(gradNormOutput - expectedNorm) / expectedNorm * 100.0
         XCTAssert(diffPercent < 1.0)
     }
+    
+    /// Test that model4 backward pass returns the same gradient norm in GrAIdient and PyTorch.
+    func testModel4()
+    {
+        // Build model.
+        let model = ModelTest4.build(_size)
+        
+        // Initialize for inference.
+        model.initKernel(phase: .Inference)
+        // Avoid the compute of every gradients of weights.
+        model.computeDeltaWeights = false
+        
+        let firstLayer: Input2D = model.layers.first as! Input2D
+        // Allow backward pass go through the first layer.
+        firstLayer.computeDelta = true
+        // Allow to compute the gradients of weights for the first layer.
+        firstLayer.computeDeltaWeights = true
+        
+        // Set data.
+        let data: [Float] = getInputData(_size)
+        try! firstLayer.setDataGPU(data, batchSize: 1, format: .RGB)
+        
+        // Get the gradient norm on the first layer.
+        let expectedNorm: Double = Double(computeTest4GradNorm(_size))
+        let gradNormOutput: Double = _getGradientNorm(model)
+        
+        // Compare difference.
+        let diffPercent =
+            abs(gradNormOutput - expectedNorm) / expectedNorm * 100.0
+        XCTAssert(diffPercent < 1.0)
+    }
+    
+    /// Test that model5 backward pass returns the same gradient norm in GrAIdient and PyTorch.
+    func testModel5()
+    {
+        // Build model.
+        let model = ModelTest5.build(_size)
+        
+        // Initialize for inference.
+        model.initKernel(phase: .Inference)
+        // Avoid the compute of every gradients of weights.
+        model.computeDeltaWeights = false
+        
+        let firstLayer: Input2D = model.layers.first as! Input2D
+        // Allow backward pass go through the first layer.
+        firstLayer.computeDelta = true
+        // Allow to compute the gradients of weights for the first layer.
+        firstLayer.computeDeltaWeights = true
+        
+        // Set data.
+        let data: [Float] = getInputData(_size)
+        try! firstLayer.setDataGPU(data, batchSize: 1, format: .RGB)
+        
+        // Get the gradient norm on the first layer.
+        let expectedNorm: Double = Double(computeTest5GradNorm(_size))
+        let gradNormOutput: Double = _getGradientNorm(model)
+        
+        // Compare difference.
+        let diffPercent =
+            abs(gradNormOutput - expectedNorm) / expectedNorm * 100.0
+        XCTAssert(diffPercent < 1.0)
+    }
+    
+    /// Test that model6 backward pass returns the same gradient norm in GrAIdient and PyTorch.
+    func testModel6()
+    {
+        // Build model.
+        let model = ModelTest6.build(_size)
+        
+        // Initialize for inference.
+        model.initKernel(phase: .Inference)
+        // Avoid the compute of every gradients of weights.
+        model.computeDeltaWeights = false
+        
+        let firstLayer: Input2D = model.layers.first as! Input2D
+        // Allow backward pass go through the first layer.
+        firstLayer.computeDelta = true
+        // Allow to compute the gradients of weights for the first layer.
+        firstLayer.computeDeltaWeights = true
+        
+        // Set data.
+        let data: [Float] = getInputData(_size)
+        try! firstLayer.setDataGPU(data, batchSize: 1, format: .RGB)
+        
+        // Get the gradient norm on the first layer.
+        let expectedNorm: Double = Double(computeTest6GradNorm(_size))
+        let gradNormOutput: Double = _getGradientNorm(model)
+        
+        // Compare difference.
+        let diffPercent =
+            abs(gradNormOutput - expectedNorm) / expectedNorm * 100.0
+        XCTAssert(diffPercent < 1.0)
+    }
+    
+    /// Test that model7 backward pass returns the same gradient norm in GrAIdient and PyTorch.
+    func testModel7()
+    {
+        // Build model.
+        let model = ModelTest7.build(_size)
+        
+        // Initialize for inference.
+        model.initKernel(phase: .Inference)
+        // Avoid the compute of every gradients of weights.
+        model.computeDeltaWeights = false
+        
+        let firstLayer: Input2D = model.layers.first as! Input2D
+        // Allow backward pass go through the first layer.
+        firstLayer.computeDelta = true
+        // Allow to compute the gradients of weights for the first layer.
+        firstLayer.computeDeltaWeights = true
+        
+        // Set data.
+        let data: [Float] = getInputData(_size)
+        try! firstLayer.setDataGPU(data, batchSize: 1, format: .RGB)
+        
+        // Get the gradient norm on the first layer.
+        let expectedNorm: Double = Double(computeTest7GradNorm(_size))
+        let gradNormOutput: Double = _getGradientNorm(model)
+        
+        // Compare difference.
+        let diffPercent =
+            abs(gradNormOutput - expectedNorm) / expectedNorm * 100.0
+        XCTAssert(diffPercent < 1.0)
+    }
 }

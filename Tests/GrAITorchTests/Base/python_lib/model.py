@@ -259,3 +259,143 @@ class ModelTest3(torch.nn.Module):
         x = -1 + 2 * x
         x = x[None]
         return x
+
+
+class ModelConv(torch.nn.Module):
+    """
+    Generic convolutional model to test.
+    """
+
+    @staticmethod
+    def weight_init(module: torch.nn.Module):
+        """
+        Initialize weights and biases.
+
+        Parameters
+        ----------
+        module: torch.nn.Module
+            The module to initialize.
+        """
+        if isinstance(module, torch.nn.Conv2d) or \
+           isinstance(module, torch.nn.ConvTranspose2d) or \
+           isinstance(module, torch.nn.Linear):
+            torch.nn.init.normal_(module.weight)
+
+            if module.bias is not None:
+                torch.nn.init.normal_(module.bias)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass.
+
+        Parameters
+        ----------
+        x: torch.Tensor
+            The input tensor.
+
+        Returns
+        -------
+        _: torch.Tensor
+            The output tensor.
+        """
+        x = self.features(x)
+        x = self.avgpool(x)
+        x = torch.flatten(x, 1)
+        x = self.classifier(x)
+        return x
+
+
+class ModelTest4(ModelConv):
+    """
+    Model to test.
+    Principle features:
+        - ConvTranspose2d with odd kernel and stride
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.features = torch.nn.Sequential(
+            torch.nn.ConvTranspose2d(
+                3, 5,
+                kernel_size=(3, 3), stride=(2, 2),
+            ),
+        )
+        self.avgpool = torch.nn.AdaptiveAvgPool2d((1, 1))
+        self.classifier = torch.nn.Sequential(
+            torch.nn.Linear(in_features=5, out_features=1),
+        )
+
+        self.features.apply(self.weight_init)
+        self.classifier.apply(self.weight_init)
+
+
+class ModelTest5(ModelConv):
+    """
+    Model to test.
+    Principle features:
+        - ConvTranspose2d with even kernel and stride
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.features = torch.nn.Sequential(
+            torch.nn.ConvTranspose2d(
+                3, 5,
+                kernel_size=(2, 2), stride=(2, 2),
+            ),
+        )
+        self.avgpool = torch.nn.AdaptiveAvgPool2d((1, 1))
+        self.classifier = torch.nn.Sequential(
+            torch.nn.Linear(in_features=5, out_features=1),
+        )
+
+        self.features.apply(self.weight_init)
+        self.classifier.apply(self.weight_init)
+
+
+class ModelTest6(ModelConv):
+    """
+    Model to test.
+    Principle features:
+        - ConvTranspose2d with odd kernel and no stride
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.features = torch.nn.Sequential(
+            torch.nn.ConvTranspose2d(
+                3, 5,
+                kernel_size=(3, 3), stride=(1, 1),
+            ),
+        )
+        self.avgpool = torch.nn.AdaptiveAvgPool2d((1, 1))
+        self.classifier = torch.nn.Sequential(
+            torch.nn.Linear(in_features=5, out_features=1),
+        )
+
+        self.features.apply(self.weight_init)
+        self.classifier.apply(self.weight_init)
+
+
+class ModelTest7(ModelConv):
+    """
+    Model to test.
+    Principle features:
+        - ConvTranspose2d with even kernel and no stride
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.features = torch.nn.Sequential(
+            torch.nn.ConvTranspose2d(
+                3, 5,
+                kernel_size=(2, 2), stride=(1, 1),
+            ),
+        )
+        self.avgpool = torch.nn.AdaptiveAvgPool2d((1, 1))
+        self.classifier = torch.nn.Sequential(
+            torch.nn.Linear(in_features=5, out_features=1),
+        )
+
+        self.features.apply(self.weight_init)
+        self.classifier.apply(self.weight_init)

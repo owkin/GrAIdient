@@ -4,7 +4,15 @@ from typing import Optional, List
 from torch.autograd import Variable
 from torchvision.transforms import ToTensor
 
-from python_lib.model import ModelTest1, ModelTest2, ModelTest3
+from python_lib.model import (
+    ModelTest1,
+    ModelTest2,
+    ModelTest3,
+    ModelTest4,
+    ModelTest5,
+    ModelTest6,
+    ModelTest7
+)
 
 
 class GetGradient:
@@ -241,4 +249,88 @@ def compute_test3_grad_norm(size: int) -> float:
     img_array = _build_complex_data(size)
     img_tensor = ToTensor()(img_array).type(torch.float32)
     model = ModelTest3(size).eval().cpu()
+    return _compute_grad_norm(img_tensor, model)
+
+
+def compute_test4_grad_norm(size: int) -> float:
+    """
+    Compute gradient norm of one backward pass of ModelTest4.
+
+    Parameters
+    ----------
+    size: int
+        The size of the input data.
+
+    Returns
+    -------
+    _: float
+        The gradient norm.
+    """
+    torch.manual_seed(42)
+    img_array = _build_input_data(size)
+    img_tensor = ToTensor()(img_array).type(torch.float32)
+    model = ModelTest4().eval().cpu()
+    return _compute_grad_norm(img_tensor, model)
+
+
+def compute_test5_grad_norm(size: int) -> float:
+    """
+    Compute gradient norm of one backward pass of ModelTest5.
+
+    Parameters
+    ----------
+    size: int
+        The size of the input data.
+
+    Returns
+    -------
+    _: float
+        The gradient norm.
+    """
+    torch.manual_seed(42)
+    img_array = _build_input_data(size)
+    img_tensor = ToTensor()(img_array).type(torch.float32)
+    model = ModelTest5().eval().cpu()
+    return _compute_grad_norm(img_tensor, model)
+
+
+def compute_test6_grad_norm(size: int) -> float:
+    """
+    Compute gradient norm of one backward pass of ModelTest6.
+
+    Parameters
+    ----------
+    size: int
+        The size of the input data.
+
+    Returns
+    -------
+    _: float
+        The gradient norm.
+    """
+    torch.manual_seed(42)
+    img_array = _build_input_data(size)
+    img_tensor = ToTensor()(img_array).type(torch.float32)
+    model = ModelTest6().eval().cpu()
+    return _compute_grad_norm(img_tensor, model)
+
+
+def compute_test7_grad_norm(size: int) -> float:
+    """
+    Compute gradient norm of one backward pass of ModelTest7.
+
+    Parameters
+    ----------
+    size: int
+        The size of the input data.
+
+    Returns
+    -------
+    _: float
+        The gradient norm.
+    """
+    torch.manual_seed(42)
+    img_array = _build_input_data(size)
+    img_tensor = ToTensor()(img_array).type(torch.float32)
+    model = ModelTest7().eval().cpu()
     return _compute_grad_norm(img_tensor, model)

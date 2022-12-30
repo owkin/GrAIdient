@@ -14,6 +14,9 @@ import MetalKit
 ///
 /// This is the fundamental learning layer of a 2D model.
 ///
+/// The implementation here corresponds to the half padding version of the link below:
+/// https://github.com/vdumoulin/conv_arithmetic/blob/master/README.md
+///
 public class Convolution2D: BN2D
 {
     /// Downscale factor of the resolution (height and width).

@@ -98,7 +98,9 @@ def _extract_and_transpose_weights(
         else:
             if hasattr(module, "weight"):
                 if isinstance(module, torch.nn.ConvTranspose2d):
-                    weights = np.transpose(module.weight.detach().numpy(), (1, 0, 2, 3))
+                    weights = np.transpose(
+                        module.weight.detach().numpy(), (1, 0, 2, 3)
+                    )
                     weights_list, dims_list = _flatten_weights(weights)
 
                 else:

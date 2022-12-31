@@ -14,6 +14,9 @@ import MetalKit
 ///
 /// This is the fundamental learning layer of a 2D model.
 ///
+/// The implementation here corresponds to the half padding version of the link below:
+/// https://github.com/vdumoulin/conv_arithmetic/blob/master/README.md
+///
 public class Convolution2D: BN2D
 {
     /// Downscale factor of the resolution (height and width).
@@ -386,6 +389,42 @@ public class Convolution2D: BN2D
                    nbChannels: nbChannels,
                    height: heightNew,
                    width: widthNew,
+                   activation: activation,
+                   bn: bn,
+                   params: params)
+    }
+    
+    ///
+    /// Create a layer with a 2D shape neural structure.
+    ///
+    /// - Parameters:
+    ///     - layerPrev: Previous layer that has been queued to the model.
+    ///     - size: Size (height, weight) of the weights kernels.
+    ///     - nbChannels: Number of channels.
+    ///     - stride: Downscale factor of the resolution (height and width).
+    ///     - height: Height of the output grids.
+    ///     - width: Width of the output grids.
+    ///     - activation: The activation function.
+    ///     - biases: Whether to update biases or not.
+    ///     - bn: Whether to use batch normalization or not.
+    ///     - params: Contextual parameters linking to the model.
+    ///
+    init(layerPrev: Layer2D, size: Int, nbChannels: Int, stride: Int,
+         height: Int, width: Int,
+         activation: String?, biases: Bool, bn: Bool,
+         params: GrAI.Model.Params)
+    {
+        _stride = stride
+        
+        nbWeights = nbChannels * layerPrev.nbChannels
+        weightWidth = size
+        weightHeight = size
+        _updateBiases = biases
+        
+        super.init(layerPrev: layerPrev,
+                   nbChannels: nbChannels,
+                   height: height,
+                   width: width,
                    activation: activation,
                    bn: bn,
                    params: params)
@@ -1351,13 +1390,11 @@ public class Convolution2D: BN2D
                     
                     if layerPrev.dirty
                     {
-                        neuronsPrev[depthPrev].get(i, j)!.v[elem].delta =
-                            tmp
+                        neuronsPrev[depthPrev].get(i, j)!.v[elem].delta = tmp
                     }
                     else
                     {
-                        neuronsPrev[depthPrev].get(i, j)!.v[elem].delta +=
-                            tmp
+                        neuronsPrev[depthPrev].get(i, j)!.v[elem].delta += tmp
                     }
                 }}
             }}

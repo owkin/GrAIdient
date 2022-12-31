@@ -18,7 +18,7 @@ from python_lib.weight import (
     load_test7_weights,
 )
 
-weights_ = [
+__all__ = [
     "get_input_data",
     "get_complex_data",
     "compute_test1_grad_norm",
@@ -35,4 +35,3 @@ weights_ = [
     "load_test6_weights",
     "load_test7_weights",
 ]
-__all__ = weights_

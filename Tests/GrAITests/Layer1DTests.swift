@@ -94,6 +94,30 @@ class Layer1DGradTests: Input1DMSE1DCase
                 params: params
             )
             
+        case "Sum":
+            layer = FullyConnected(
+                layerPrev: layer, nbNeurons: 10,
+                activation: SoftReLU.str, biases: true,
+                params: params
+            )
+            
+            let otherLayer1: Layer1D = FullyConnected(
+                layerPrev: layer, nbNeurons: 10,
+                activation: SoftReLU.str, biases: true,
+                params: params
+            )
+            
+            let otherLayer2: Layer1D = FullyConnected(
+                layerPrev: layer, nbNeurons: 10,
+                activation: SoftReLU.str, biases: true,
+                params: params
+            )
+            
+            layer = Sum1D(
+                layersPrev: [layer, otherLayer1, otherLayer2],
+                params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -163,6 +187,19 @@ class Layer1DGradTests: Input1DMSE1DCase
     func testConcatGPU() throws
     {
         let trainer = _buildTrainer("Concat")
+        run(trainer)
+    }
+    
+    func testSumCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("Sum")
+        run(trainer)
+    }
+    
+    func testSumGPU() throws
+    {
+        let trainer = _buildTrainer("Sum")
         run(trainer)
     }
 }
@@ -247,6 +284,30 @@ class Layer1DFlowTests: Input1DMSE1DCase
                 params: params
             )
             
+        case "Sum":
+            layer = FullyConnected(
+                layerPrev: layer, nbNeurons: 10,
+                activation: LeakyReLU.str, biases: true,
+                params: params
+            )
+            
+            let otherLayer1: Layer1D = FullyConnected(
+                layerPrev: layer, nbNeurons: 10,
+                activation: LeakyReLU.str, biases: true,
+                params: params
+            )
+            
+            let otherLayer2: Layer1D = FullyConnected(
+                layerPrev: layer, nbNeurons: 10,
+                activation: LeakyReLU.str, biases: true,
+                params: params
+            )
+            
+            layer = Sum1D(
+                layersPrev: [layer, otherLayer1, otherLayer2],
+                params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -288,6 +349,12 @@ class Layer1DFlowTests: Input1DMSE1DCase
     func testConcat() throws
     {
         let trainer = _buildTrainer("Concat")
+        run(trainer)
+    }
+    
+    func testSum() throws
+    {
+        let trainer = _buildTrainer("Sum")
         run(trainer)
     }
 }
@@ -350,6 +417,12 @@ class Layer1DFlowResetTests: Layer1DFlowTests
         let trainer = _buildTrainer("Concat")
         run(trainer)
     }
+    
+    override func testSum() throws
+    {
+        let trainer = _buildTrainer("Sum")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -410,6 +483,12 @@ class Layer1DFlowReverseTests: Layer1DFlowTests
         let trainer = _buildTrainer("Concat")
         run(trainer)
     }
+    
+    override func testSum() throws
+    {
+        let trainer = _buildTrainer("Sum")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -460,6 +539,12 @@ class Layer1DInferenceTests: Layer1DFlowTests
     override func testConcat() throws
     {
         let trainer = _buildTrainer("Concat")
+        run(trainer)
+    }
+    
+    override func testSum() throws
+    {
+        let trainer = _buildTrainer("Sum")
         run(trainer)
     }
 }
@@ -515,6 +600,12 @@ class Layer1DLoadTests: Layer1DFlowTests
         let trainer = _buildTrainer("Concat")
         run(trainer)
     }
+    
+    override func testSum() throws
+    {
+        let trainer = _buildTrainer("Sum")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -566,6 +657,12 @@ class Layer1DTransformTests: Layer1DFlowTests
     override func testConcat() throws
     {
         let trainer = _buildTrainer("Concat")
+        run(trainer)
+    }
+    
+    override func testSum() throws
+    {
+        let trainer = _buildTrainer("Sum")
         run(trainer)
     }
 }

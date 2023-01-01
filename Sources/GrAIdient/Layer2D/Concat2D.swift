@@ -8,7 +8,7 @@
 ///
 /// Layer with a 2D shape neural structure.
 ///
-/// This layer merges multiple 2D layers together, concatenating the neurons at the same localization
+/// This layer merges multiple 2D layers, concatenating the neurons at the same localization
 /// in the input grids together.
 ///
 public class Concat2D: LayerMerge2D

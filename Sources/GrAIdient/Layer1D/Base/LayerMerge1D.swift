@@ -5,6 +5,7 @@
 // Created by Jean-François Reboud on 31/12/2022.
 //
 
+/// Layer that is connected with more than 1 previous layer.
 public class LayerMerge1D: Layer1D
 {
     /// List of links to the previous layers in the model.

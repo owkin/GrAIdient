@@ -8,7 +8,7 @@
 ///
 /// Layer with a 1D shape neural structure.
 ///
-/// This layer merges multiple 1D layers together, summing the neurons together.
+/// This layer merges multiple 1D layers, summing the neurons together.
 ///
 public class Sum1D: LayerMerge1D
 {

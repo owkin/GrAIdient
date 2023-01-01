@@ -8,7 +8,7 @@
 ///
 /// Layer with a 1D shape neural structure.
 ///
-/// This layer merges multiple 1D layers together, concatenating the neurons together.
+/// This layer merges multiple 1D layers, concatenating the neurons together.
 ///
 public class Concat1D: LayerMerge1D
 {

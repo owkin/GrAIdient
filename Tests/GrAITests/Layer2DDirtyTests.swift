@@ -625,6 +625,33 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
                 layerPrev: secondLayer, size: width, params: params
             )
             
+        case "Concat":
+            let otherLayer: Layer2D = Convolution2D(
+                layerPrev: layer, size: 1, nbChannels: 6, stride: 1,
+                activation: LeakyReLU.str, biases: true, bn: false,
+                params: params
+            )
+            secondLayer = Concat2D(
+                layersPrev: [firstLayer, otherLayer],
+                params: params
+            )
+            secondLayer = Convolution2D(
+                layerPrev: secondLayer, size: 1, nbChannels: 3, stride: 1,
+                activation: LeakyReLU.str, biases: true, bn: false,
+                params: params
+            )
+            
+        case "Sum":
+            let otherLayer: Layer2D = Convolution2D(
+                layerPrev: layer, size: 1, nbChannels: 3, stride: 1,
+                activation: LeakyReLU.str, biases: true, bn: false,
+                params: params
+            )
+            secondLayer = Sum2D(
+                layersPrev: [firstLayer, otherLayer],
+                params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -734,6 +761,18 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
     func testDeconvolutionStride() throws
     {
         let trainer = _buildTrainer(model: "DeconvolutionStride")
+        run(trainer)
+    }
+    
+    func testConcat() throws
+    {
+        let trainer = _buildTrainer(model: "Concat")
+        run(trainer)
+    }
+    
+    func testSum() throws
+    {
+        let trainer = _buildTrainer(model: "Sum")
         run(trainer)
     }
 }

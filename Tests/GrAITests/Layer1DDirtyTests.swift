@@ -234,11 +234,6 @@ class Layer1DDirtyFlowTests: Input1DMSE1DCase
                 layersPrev: [firstLayer, otherLayer],
                 params: params
             )
-            secondLayer = FullyConnected(
-                layerPrev: secondLayer, nbNeurons: 5,
-                activation: LeakyReLU.str, biases: true,
-                params: params
-            )
             
         default:
             fatalError("Unreachable.")

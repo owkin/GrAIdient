@@ -86,7 +86,6 @@ class Layer1DGradTests: Input1DMSE1DCase
                 activation: SoftReLU.str, biases: true,
                 params: params
             )
-            
             layer = Concat1D(
                 layersPrev: [layer, otherLayer1, otherLayer2],
                 params: params
@@ -108,7 +107,6 @@ class Layer1DGradTests: Input1DMSE1DCase
                 activation: SoftReLU.str, biases: true,
                 params: params
             )
-            
             layer = Sum1D(
                 layersPrev: [layer, otherLayer1, otherLayer2],
                 params: params
@@ -272,7 +270,6 @@ class Layer1DFlowTests: Input1DMSE1DCase
                 activation: LeakyReLU.str, biases: true,
                 params: params
             )
-            
             layer = Concat1D(
                 layersPrev: [layer, otherLayer1, otherLayer2],
                 params: params
@@ -294,7 +291,6 @@ class Layer1DFlowTests: Input1DMSE1DCase
                 activation: LeakyReLU.str, biases: true,
                 params: params
             )
-            
             layer = Sum1D(
                 layersPrev: [layer, otherLayer1, otherLayer2],
                 params: params

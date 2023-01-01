@@ -613,6 +613,8 @@ private class MetalDevice
                 "rotate2DBackward",
                 "resizeBilinearCropForward",
                 "resizeBilinearCropBackward",
+                "concat2DForward",
+                "concat2DBackward",
             ],
             "Merge": [
                 "sum1",

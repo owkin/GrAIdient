@@ -74,9 +74,9 @@
       <CodeCoverageTargets>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "MAKit"
-            BuildableName = "MAKit"
-            BlueprintName = "MAKit"
+            BlueprintIdentifier = "GrAIdient"
+            BuildableName = "GrAIdient"
+            BlueprintName = "GrAIdient"
             ReferencedContainer = "container:">
          </BuildableReference>
       </CodeCoverageTargets>

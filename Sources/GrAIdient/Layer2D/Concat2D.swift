@@ -1,33 +1,43 @@
 //
-// Concat1D.swift
+// Concat2D.swift
 // GrAIdient
 //
-// Created by Jean-François Reboud on 31/12/2022.
+// Created by Jean-François Reboud on 01/01/2023.
 //
 
 ///
-/// Layer with a 1D shape neural structure.
+/// Layer with a 2D shape neural structure.
 ///
-/// This layer merges multiple 1D layers together, concatenating the neurons together.
+/// This layer merges multiple 2D layers together, concatenating the neurons at the same localization
+/// in the input grids together.
 ///
-public class Concat1D: LayerMerge1D
+public class Concat2D: LayerMerge2D
 {
     ///
-    /// Create a layer with a 1D shape neural structure.
+    /// Create a layer with a2D shape neural structure.
     ///
     /// - Parameters:
     ///     - layersPrev: List of previous layers that have been queued to the model.
     ///     - params: Contextual parameters linking to the model.
     ///
-    public init(layersPrev: [Layer1D], params: GrAI.Model.Params)
+    public init(layersPrev: [Layer2D], params: GrAI.Model.Params)
     {
-        var nbNeurons = 0
-        for layer in layersPrev
+        var nbChannels = 0
+        let layer0 = layersPrev[0]
+        for layerPrev in layersPrev
         {
-            nbNeurons += layer.nbNeurons
+            nbChannels += layerPrev.nbChannels
+            
+            if layerPrev.height != layer0.height ||
+               layerPrev.width != layer0.width
+            {
+                fatalError("Layer structure error.")
+            }
         }
         super.init(layersPrev: layersPrev,
-                   nbNeurons: nbNeurons,
+                   nbChannels: nbChannels,
+                   height: layer0.height,
+                   width: layer0.width,
                    params: params)
     }
     
@@ -52,13 +62,13 @@ public class Concat1D: LayerMerge1D
         let params = GrAI.Model.Params(context: context)
         params.context.curID = id
         
-        var layersPrev = [Layer1D]()
+        var layersPrev = [Layer2D]()
         for idPrev in _idsPrev
         {
-            layersPrev.append(mapping[idPrev] as! Layer1D)
+            layersPrev.append(mapping[idPrev] as! Layer2D)
         }
         
-        let layer = Concat1D(layersPrev: layersPrev, params: params)
+        let layer = Concat2D(layersPrev: layersPrev, params: params)
         return layer
     }
     
@@ -79,9 +89,16 @@ public class Concat1D: LayerMerge1D
             nbGC += nbElemsTmp
         }
         
-        for depth in 0..<nbNeurons
+        for depth in 0..<nbChannels
         {
-            neurons.get(depth)!.initGC(batchSize: batchSize, nbGC: nbGC)
+            for i in 0..<height {
+            for j in 0..<width
+            {
+                neurons[depth].get(i, j)!.initGC(
+                    batchSize: batchSize,
+                    nbGC: nbGC
+                )
+            }}
         }
         
         for batch in 0..<batchSize {
@@ -89,16 +106,18 @@ public class Concat1D: LayerMerge1D
         var curElem = 0
         for num in 0..<_layersPrev.count
         {
-            let neuronsPrev = (_layersPrev[num] as! Layer1D).neurons
-            let nbNeurons = neuronsPrev.nbElems
+            let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
+            let nbChannels = neuronsPrev.count
             
-            for depth in 0..<nbNeurons
+            for depth in 0..<nbChannels {
+            for i in 0..<height {
+            for j in 0..<width
             {
-                let outPrev = neuronsPrev.get(depth)!.gc[batch][elem].out
-                neurons.get(curElem+depth)!.gc[batch][elem].out = outPrev
-            }
+                let outPrev = neuronsPrev[depth].get(i, j)!.gc[batch][elem].out
+                neurons[curElem+depth].get(i, j)!.gc[batch][elem].out = outPrev
+            }}}
             
-            curElem += nbNeurons
+            curElem += nbChannels
         }}}
         
         for batch in 0..<batchSize {
@@ -110,26 +129,29 @@ public class Concat1D: LayerMerge1D
         var curElem = 0
         for num in 0..<_layersPrev.count
         {
-            let neuronsPrev = (_layersPrev[num] as! Layer1D).neurons
-            let nbNeurons = neuronsPrev.nbElems
+            let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
+            let nbChannels = neuronsPrev.count
             
-            for depth in 0..<nbNeurons
+            for depth in 0..<nbChannels {
+            for i in 0..<height {
+            for j in 0..<width
             {
                 let outPrev: Double
                 if num == index
                 {
-                    outPrev = neuronsPrev.get(depth)!
+                    outPrev = neuronsPrev[depth].get(i, j)!
                         .gc[batch][nbLastElems[index]+elem].out
                 }
                 else
                 {
-                    outPrev = neuronsPrev.get(depth)!.v[batch].out
+                    outPrev = neuronsPrev[depth].get(i, j)!.v[batch].out
                 }
-                 
-                neurons.get(curElem+depth)!.gc[batch][offset+elem].out = outPrev
-            }
+                
+                neurons[curElem+depth].get(i, j)!.gc[batch][offset+elem].out =
+                    outPrev
+            }}}
             
-            curElem += nbNeurons
+            curElem += nbChannels
         }}
             
         offset += nbElemsTmp
@@ -148,7 +170,7 @@ public class Concat1D: LayerMerge1D
         
         for num in 0..<_layersPrev.count
         {
-            MetalKernel.get.download([(_layersPrev[num] as! Layer1D).outs])
+            MetalKernel.get.download([(_layersPrev[num] as! Layer2D).outs])
         }
         
         let (nbSameElems, layersIndex, nbElems) = getMergedGraph()
@@ -159,9 +181,16 @@ public class Concat1D: LayerMerge1D
             nbGC += nbElemsTmp
         }
         
-        for depth in 0..<nbNeurons
+        for depth in 0..<nbChannels
         {
-            neurons.get(depth)!.initGC(batchSize: batchSize, nbGC: nbGC)
+            for i in 0..<height {
+            for j in 0..<width
+            {
+                neurons[depth].get(i, j)!.initGC(
+                    batchSize: batchSize,
+                    nbGC: nbGC
+                )
+            }}
         }
         
         for batch in 0..<batchSize {
@@ -169,16 +198,18 @@ public class Concat1D: LayerMerge1D
         var curElem = 0
         for num in 0..<_layersPrev.count
         {
-            let neuronsPrev = (_layersPrev[num] as! Layer1D).neurons
-            let nbNeurons = neuronsPrev.nbElems
+            let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
+            let nbChannels = neuronsPrev.count
             
-            for depth in 0..<nbNeurons
+            for depth in 0..<nbChannels {
+            for i in 0..<height {
+            for j in 0..<width
             {
-                let outPrev = neuronsPrev.get(depth)!.gc[batch][elem].out
-                neurons.get(curElem+depth)!.gc[batch][elem].out = outPrev
-            }
+                let outPrev = neuronsPrev[depth].get(i, j)!.gc[batch][elem].out
+                neurons[curElem+depth].get(i, j)!.gc[batch][elem].out = outPrev
+            }}}
             
-            curElem += nbNeurons
+            curElem += nbChannels
         }}}
         
         for batch in 0..<batchSize {
@@ -190,28 +221,33 @@ public class Concat1D: LayerMerge1D
         var curElem = 0
         for num in 0..<_layersPrev.count
         {
-            let outsPrevPtr = (_layersPrev[num] as! Layer1D).outs.shared.buffer
-            let neuronsPrev = (_layersPrev[num] as! Layer1D).neurons
-            let nbNeurons = neuronsPrev.nbElems
+            let outsPrevPtr = (_layersPrev[num] as! Layer2D).outs.shared.buffer
+            let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
+            let nbChannels = neuronsPrev.count
             
-            for depth in 0..<nbNeurons
+            for depth in 0..<nbChannels {
+            for i in 0..<height {
+            for j in 0..<width
             {
                 let outPrev: Double
                 if num == index
                 {
-                    outPrev = neuronsPrev.get(depth)!
+                    outPrev = neuronsPrev[depth].get(i, j)!
                         .gc[batch][nbLastElems[index]+elem].out
                 }
                 else
                 {
-                    let offsetTmp = depth + nbNeurons * batch
+                    let offsetStart = (depth + nbChannels * batch) * height
+                    let offsetTmp = j + (offsetStart + i) * width
+                    
                     outPrev = Double(outsPrevPtr[offsetTmp])
                 }
-                 
-                neurons.get(curElem+depth)!.gc[batch][offset+elem].out = outPrev
-            }
+                
+                neurons[curElem+depth].get(i, j)!.gc[batch][offset+elem].out =
+                    outPrev
+            }}}
             
-            curElem += nbNeurons
+            curElem += nbChannels
         }}
             
         offset += nbElemsTmp
@@ -233,16 +269,18 @@ public class Concat1D: LayerMerge1D
             var curElem = 0
             for num in 0..<_layersPrev.count
             {
-                let neuronsPrev = (_layersPrev[num] as! Layer1D).neurons
-                let nbNeurons = neuronsPrev.nbElems
+                let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
+                let nbChannels = neuronsPrev.count
                 
-                for depth in 0..<nbNeurons
+                for depth in 0..<nbChannels {
+                for i in 0..<height {
+                for j in 0..<width
                 {
-                    let outPrev = neuronsPrev.get(depth)!.v[elem].out
-                    neurons.get(curElem+depth)!.v[elem].out = outPrev
-                }
+                    let outPrev = neuronsPrev[depth].get(i, j)!.v[elem].out
+                    neurons[curElem+depth].get(i, j)!.v[elem].out = outPrev
+                }}}
                 
-                curElem += nbNeurons
+                curElem += nbChannels
             }
         }
     }
@@ -256,7 +294,8 @@ public class Concat1D: LayerMerge1D
     {
         try checkStateForwardGPU(batchSize: batchSize)
         
-        let pNbNeurones: [UInt32] = [UInt32(nbNeurons)]
+        let pNbChannels: [UInt32] = [UInt32(nbChannels)]
+        let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         
         let metalKernel = MetalKernel.get
@@ -265,30 +304,31 @@ public class Concat1D: LayerMerge1D
         var globalOffset = 0
         for num in 0..<_layersPrev.count
         {
-            let nbNeuronsPrev = (_layersPrev[num] as! Layer1D).nbNeurons
+            let nbChannelsPrev = (_layersPrev[num] as! Layer2D).nbChannels
             
             let pGlobalOffset: [UInt32] = [UInt32(globalOffset)]
-            let pNbNeuronsPrev: [UInt32] = [UInt32(nbNeuronsPrev)]
+            let pNbChannelsPrev: [UInt32] = [UInt32(nbChannelsPrev)]
             
             command = metalKernel.createCommand(
-                "concat1DForward", deviceID: deviceID
+                "concat2DForward", deviceID: deviceID
             )
             command.setBuffer(
-                (_layersPrev[num] as! Layer1D).outs.metal, atIndex: 0
+                (_layersPrev[num] as! Layer2D).outs.metal, atIndex: 0
             )
             command.setBytes(pGlobalOffset, atIndex: 1)
-            command.setBytes(pNbNeurones, atIndex: 2)
-            command.setBytes(pNbNeuronsPrev, atIndex: 3)
-            command.setBytes(pNbBatch, atIndex: 4)
-            command.setBuffer(outs.metal, atIndex: 5)
+            command.setBytes(pNbChannels, atIndex: 2)
+            command.setBytes(pNbChannelsPrev, atIndex: 3)
+            command.setBytes(pDimensions, atIndex: 4)
+            command.setBytes(pNbBatch, atIndex: 5)
+            command.setBuffer(outs.metal, atIndex: 6)
             
             command.dispatchThreads(
-                width: nbNeuronsPrev,
-                height: batchSize
+                width: width * nbChannelsPrev,
+                height: height * batchSize
             )
             command.enqueue()
             
-            globalOffset += nbNeuronsPrev
+            globalOffset += nbChannelsPrev
         }
     }
     
@@ -305,31 +345,34 @@ public class Concat1D: LayerMerge1D
             var curElem = 0
             for num in 0..<_layersPrev.count
             {
-                let layerPrev = _layersPrev[num] as! Layer1D
-                let neuronsPrev = layerPrev.neurons
-                let nbNeurons = layerPrev.nbNeurons
+                let layerPrev = _layersPrev[num] as! Layer2D
+                let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
+                let nbChannels = layerPrev.nbChannels
                 
                 if !_layersPrev[num].computeDelta
                 {
-                    curElem += nbNeurons
+                    curElem += nbChannels
                     continue
                 }
                 
-                for depth in 0..<nbNeurons
+                for depth in 0..<nbChannels {
+                for i in 0..<height {
+                for j in 0..<width
                 {
-                    let deltaCur = neurons.get(curElem+depth)!.v[elem].delta
+                    let deltaCur =
+                        neurons[curElem+depth].get(i, j)!.v[elem].delta
                     
                     if layerPrev.dirty
                     {
-                        neuronsPrev.get(depth)!.v[elem].delta = deltaCur
+                        neuronsPrev[depth].get(i, j)!.v[elem].delta = deltaCur
                     }
                     else
                     {
-                        neuronsPrev.get(depth)!.v[elem].delta += deltaCur
+                        neuronsPrev[depth].get(i, j)!.v[elem].delta += deltaCur
                     }
-                }
+                }}}
                 
-                curElem += nbNeurons
+                curElem += nbChannels
             }
         }
         propagateDirty()
@@ -347,7 +390,8 @@ public class Concat1D: LayerMerge1D
             return
         }
         
-        let pNbNeurones: [UInt32] = [UInt32(nbNeurons)]
+        let pNbChannels: [UInt32] = [UInt32(nbChannels)]
+        let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         
         let metalKernel = MetalKernel.get
@@ -356,39 +400,40 @@ public class Concat1D: LayerMerge1D
         var globalOffset = 0
         for num in 0..<_layersPrev.count
         {
-            let layerPrev = _layersPrev[num] as! Layer1D
-            let nbNeuronsPrev = layerPrev.nbNeurons
+            let layerPrev = _layersPrev[num] as! Layer2D
+            let nbChannelsPrev = layerPrev.nbChannels
             
             if !_layersPrev[num].computeDelta
             {
-                globalOffset += nbNeuronsPrev
+                globalOffset += nbChannelsPrev
                 continue
             }
             
             try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
             
             let pGlobalOffset: [UInt32] = [UInt32(globalOffset)]
-            let pNbNeuronsPrev: [UInt32] = [UInt32(nbNeuronsPrev)]
+            let pNbChannelsPrev: [UInt32] = [UInt32(nbChannelsPrev)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
             command = metalKernel.createCommand(
-                "concat1DBackward", deviceID: deviceID
+                "concat2DBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBytes(pGlobalOffset, atIndex: 1)
-            command.setBytes(pNbNeurones, atIndex: 2)
-            command.setBytes(pNbNeuronsPrev, atIndex: 3)
-            command.setBytes(pNbBatch, atIndex: 4)
-            command.setBytes(pDirty, atIndex: 5)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 6)
+            command.setBytes(pNbChannels, atIndex: 2)
+            command.setBytes(pNbChannelsPrev, atIndex: 3)
+            command.setBytes(pDimensions, atIndex: 4)
+            command.setBytes(pNbBatch, atIndex: 5)
+            command.setBytes(pDirty, atIndex: 6)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 7)
             
             command.dispatchThreads(
-                width: nbNeuronsPrev,
-                height: batchSize
+                width: width * nbChannelsPrev,
+                height: height * batchSize
             )
             command.enqueue()
             
-            globalOffset += nbNeuronsPrev
+            globalOffset += nbChannelsPrev
         }
         propagateDirty()
     }

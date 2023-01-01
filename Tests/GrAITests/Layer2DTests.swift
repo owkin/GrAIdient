@@ -292,6 +292,22 @@ class Layer2DGradTests: Input2DMSE1DCase
                 activation: SoftReLU.str, biases: !bn, bn: bn, params: params
             )
             
+        case "Concat":
+            let otherLayer1: Layer2D = Convolution2D(
+                layerPrev: layer, size: 1, nbChannels: 6, stride: 1,
+                activation: SoftReLU.str, biases: true, bn: false,
+                params: params
+            )
+            let otherLayer2: Layer2D = Convolution2D(
+                layerPrev: layer, size: 1, nbChannels: 9, stride: 1,
+                activation: SoftReLU.str, biases: true, bn: false,
+                params: params
+            )
+            layer = Concat2D(
+                layersPrev: [layer, otherLayer1, otherLayer2],
+                params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -802,6 +818,19 @@ class Layer2DGradTests: Input2DMSE1DCase
         let trainer = _buildTrainer(model: "DeconvolutionStride2", bn: false)
         run(trainer, diffThreshold: 0.0001)
     }
+    
+    func testConcatCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "Concat", bn: false)
+        run(trainer)
+    }
+    
+    func testConcatGPU() throws
+    {
+        let trainer = _buildTrainer(model: "Concat", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -1088,6 +1117,22 @@ class Layer2DFlowTests: Input2DMSE1DCase
                 activation: LeakyReLU.str, biases: !bn, bn: bn, params: params
             )
             
+        case "Concat":
+            let otherLayer1: Layer2D = Convolution2D(
+                layerPrev: layer, size: 1, nbChannels: 6, stride: 1,
+                activation: LeakyReLU.str, biases: true, bn: false,
+                params: params
+            )
+            let otherLayer2: Layer2D = Convolution2D(
+                layerPrev: layer, size: 1, nbChannels: 9, stride: 1,
+                activation: LeakyReLU.str, biases: true, bn: false,
+                params: params
+            )
+            layer = Concat2D(
+                layersPrev: [layer, otherLayer1, otherLayer2],
+                params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -1371,6 +1416,12 @@ class Layer2DFlowTests: Input2DMSE1DCase
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer(model: "DeconvolutionStride2", bn: false)
+        run(trainer)
+    }
+    
+    func testConcat() throws
+    {
+        let trainer = _buildTrainer(model: "Concat", bn: false)
         run(trainer)
     }
 }
@@ -1676,6 +1727,12 @@ class Layer2DFlowResetTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "DeconvolutionStride2", bn: false)
         run(trainer)
     }
+    
+    override func testConcat() throws
+    {
+        let trainer = _buildTrainer(model: "Concat", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -1979,6 +2036,12 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "DeconvolutionStride2", bn: false)
         run(trainer)
     }
+    
+    override func testConcat() throws
+    {
+        let trainer = _buildTrainer(model: "Concat", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -2280,6 +2343,12 @@ class Layer2DInferenceTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "DeconvolutionStride2", bn: false)
         run(trainer)
     }
+    
+    override func testConcat() throws
+    {
+        let trainer = _buildTrainer(model: "Concat", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -2576,6 +2645,12 @@ class Layer2DLoadTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "DeconvolutionStride2", bn: false)
         run(trainer)
     }
+    
+    override func testConcat() throws
+    {
+        let trainer = _buildTrainer(model: "Concat", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -2870,6 +2945,12 @@ class Layer2DTransformTests: Layer2DFlowTests
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer(model: "DeconvolutionStride2", bn: false)
+        run(trainer)
+    }
+    
+    override func testConcat() throws
+    {
+        let trainer = _buildTrainer(model: "Concat", bn: false)
         run(trainer)
     }
 }

@@ -1848,3 +1848,111 @@ kernel void resizeBilinearCropBackward(
         }
     }}
 }
+
+kernel void concat2DForward(
+    const device float * outsPrev,
+    constant uint * pGlobalOffset,
+    constant uint * pNbChannels,
+    constant uint * pNbChannelsPrev,
+    constant uint * pDimensions,
+    constant uint * pNbBatch,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint height, width;
+    uint nbChannels;
+    uint nbChannelsPrev;
+    uint nbBatch;
+    uint globalOffset;
+    
+    if (pGlobalOffset && pNbChannels && pNbChannelsPrev && pDimensions &&
+        pNbBatch && outsPrev && outs)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        nbChannels = *pNbChannels;
+        nbChannelsPrev = *pNbChannelsPrev;
+        nbBatch = *pNbBatch;
+        globalOffset = *pGlobalOffset;
+    }
+    else
+        return ;
+    
+    uint depthPrev = id[0] / width;
+    uint elem = id[1] / height;
+    uint i = id[1] % height;
+    uint j = id[0] % width;
+    
+    if (i * elem >= height * nbBatch ||
+        j * depthPrev >= width * nbChannelsPrev)
+    {
+        return ;
+    }
+    
+    uint offsetStartPrev = (depthPrev + nbChannelsPrev * elem) * height;
+    uint offsetStart = (globalOffset+depthPrev + nbChannels * elem) * height;
+    
+    uint offsetPrev = j + (offsetStartPrev + i) * width;
+    uint offset = j + (offsetStart + i) * width;
+    
+    outs[offset] = outsPrev[offsetPrev];
+}
+
+kernel void concat2DBackward(
+    const device float * delta,
+    constant uint * pGlobalOffset,
+    constant uint * pNbChannels,
+    constant uint * pNbChannelsPrev,
+    constant uint * pDimensions,
+    constant uint * pNbBatch,
+    constant uint * pDirty,
+    device float * deltaPrev,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint height, width;
+    uint nbChannels;
+    uint nbChannelsPrev;
+    uint nbBatch;
+    uint globalOffset;
+    uint dirty;
+    
+    if (pGlobalOffset && pNbChannels && pNbChannelsPrev && pDimensions &&
+        pNbBatch && pDirty && delta && deltaPrev)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        nbChannels = *pNbChannels;
+        nbChannelsPrev = *pNbChannelsPrev;
+        nbBatch = *pNbBatch;
+        globalOffset = *pGlobalOffset;
+        dirty = *pDirty;
+    }
+    else
+        return ;
+    
+    uint depthPrev = id[0] / width;
+    uint elem = id[1] / height;
+    uint i = id[1] % height;
+    uint j = id[0] % width;
+    
+    if (i * elem >= height * nbBatch ||
+        j * depthPrev >= width * nbChannelsPrev)
+    {
+        return ;
+    }
+    
+    uint offsetStartPrev = (depthPrev + nbChannelsPrev * elem) * height;
+    uint offsetStart = (globalOffset+depthPrev + nbChannels * elem) * height;
+    
+    uint offsetPrev = j + (offsetStartPrev + i) * width;
+    uint offset = j + (offsetStart + i) * width;
+    
+    if (dirty)
+    {
+        deltaPrev[offsetPrev] = delta[offset];
+    }
+    else
+    {
+        deltaPrev[offsetPrev] += delta[offset];
+    }
+}

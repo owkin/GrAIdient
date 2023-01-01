@@ -582,6 +582,8 @@ private class MetalDevice
                 "linearErrorLossDerivative",
                 "selectNeurons1DForward",
                 "selectNeurons1DBackward",
+                "concat1DForward",
+                "concat1DBackward",
             ],
             "Layer2D": [
                 "avgPoolForward",
@@ -611,6 +613,8 @@ private class MetalDevice
                 "rotate2DBackward",
                 "resizeBilinearCropForward",
                 "resizeBilinearCropBackward",
+                "concat2DForward",
+                "concat2DBackward",
             ],
             "Merge": [
                 "sum1",

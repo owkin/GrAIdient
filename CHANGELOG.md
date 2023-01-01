@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🪜 **feat:** Sum1D, Concat1D, Concat2D ([#43](https://github.com/owkin/GrAIdient/pull/43))\
 🪜 **layer_2d:** Deconvolution2D ([#42](https://github.com/owkin/GrAIdient/pull/42))\
 🪜 **feat:** getDeltaWeightsGPU per sample API ([#41](https://github.com/owkin/GrAIdient/pull/41))\
 🎉 **refactor!:** re brand the framework ([#40](https://github.com/owkin/GrAIdient/pull/40))

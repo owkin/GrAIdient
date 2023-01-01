@@ -76,13 +76,11 @@ class Layer1DGradTests: Input1DMSE1DCase
                 activation: SoftReLU.str, biases: true,
                 params: params
             )
-            
             let otherLayer1: Layer1D = FullyConnected(
                 layerPrev: layer, nbNeurons: 9,
                 activation: SoftReLU.str, biases: true,
                 params: params
             )
-            
             let otherLayer2: Layer1D = FullyConnected(
                 layerPrev: layer, nbNeurons: 6,
                 activation: SoftReLU.str, biases: true,
@@ -100,13 +98,11 @@ class Layer1DGradTests: Input1DMSE1DCase
                 activation: SoftReLU.str, biases: true,
                 params: params
             )
-            
             let otherLayer1: Layer1D = FullyConnected(
                 layerPrev: layer, nbNeurons: 10,
                 activation: SoftReLU.str, biases: true,
                 params: params
             )
-            
             let otherLayer2: Layer1D = FullyConnected(
                 layerPrev: layer, nbNeurons: 10,
                 activation: SoftReLU.str, biases: true,
@@ -266,13 +262,11 @@ class Layer1DFlowTests: Input1DMSE1DCase
                 activation: LeakyReLU.str, biases: true,
                 params: params
             )
-            
             let otherLayer1: Layer1D = FullyConnected(
                 layerPrev: layer, nbNeurons: 9,
                 activation: LeakyReLU.str, biases: true,
                 params: params
             )
-            
             let otherLayer2: Layer1D = FullyConnected(
                 layerPrev: layer, nbNeurons: 6,
                 activation: LeakyReLU.str, biases: true,
@@ -290,13 +284,11 @@ class Layer1DFlowTests: Input1DMSE1DCase
                 activation: LeakyReLU.str, biases: true,
                 params: params
             )
-            
             let otherLayer1: Layer1D = FullyConnected(
                 layerPrev: layer, nbNeurons: 10,
                 activation: LeakyReLU.str, biases: true,
                 params: params
             )
-            
             let otherLayer2: Layer1D = FullyConnected(
                 layerPrev: layer, nbNeurons: 10,
                 activation: LeakyReLU.str, biases: true,

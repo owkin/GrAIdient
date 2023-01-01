@@ -399,3 +399,74 @@ class ModelTest7(ModelConv):
 
         self.features.apply(self.weight_init)
         self.classifier.apply(self.weight_init)
+
+
+class ModelTest8(torch.nn.Module):
+    """
+    Model to test.
+    Principle features:
+        - cat
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.features1 = torch.nn.Sequential(
+            torch.nn.Conv2d(
+                3, 6,
+                kernel_size=(1, 1),
+                bias=True
+            ),
+        )
+        self.features2 = torch.nn.Sequential(
+            torch.nn.Conv2d(
+                3, 9,
+                kernel_size=(1, 1),
+                bias=True
+            ),
+        )
+        self.avgpool = torch.nn.AdaptiveAvgPool2d((1, 1))
+        self.classifier = torch.nn.Sequential(
+            torch.nn.Linear(in_features=15, out_features=1)
+        )
+        self.features1.apply(self.weight_init)
+        self.features2.apply(self.weight_init)
+        self.classifier.apply(self.weight_init)
+
+    @staticmethod
+    def weight_init(module: torch.nn.Module):
+        """
+        Initialize weights and biases.
+
+        Parameters
+        ----------
+        module: torch.nn.Module
+            The module to initialize.
+        """
+        if isinstance(module, torch.nn.Conv2d) or \
+           isinstance(module, torch.nn.Linear):
+            torch.nn.init.normal_(module.weight)
+
+            if module.bias is not None:
+                torch.nn.init.normal_(module.bias)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass.
+
+        Parameters
+        ----------
+        x: torch.Tensor
+            The input tensor.
+
+        Returns
+        -------
+        _: torch.Tensor
+            The output tensor.
+        """
+        x1 = self.features1(x)
+        x2 = self.features2(x)
+        x = torch.cat([x1, x2], dim=1)
+        x = self.avgpool(x)
+        x = torch.flatten(x, 1)
+        x = self.classifier(x)
+        return x

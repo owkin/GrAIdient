@@ -164,6 +164,19 @@ func computeTest7GradNorm(_ size: Int) -> Float
 }
 
 ///
+/// Get gradient norm computed with PyTorch for ModelTest8.
+///
+/// - Parameter size: The size of the input data.
+/// - Returns: The gradient norm.
+///
+func computeTest8GradNorm(_ size: Int) -> Float
+{
+    let pythonLib = Python.import("python_lib")
+    let data = pythonLib.compute_test8_grad_norm(size)
+    return Float(data)!
+}
+
+///
 /// Get optimizer parameters for model training.
 ///
 /// - Parameter nbLoops: Number of steps per epoch.

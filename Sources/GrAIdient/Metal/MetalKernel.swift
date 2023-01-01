@@ -582,6 +582,8 @@ private class MetalDevice
                 "linearErrorLossDerivative",
                 "selectNeurons1DForward",
                 "selectNeurons1DBackward",
+                "concat1DForward",
+                "concat1DBackward",
             ],
             "Layer2D": [
                 "avgPoolForward",

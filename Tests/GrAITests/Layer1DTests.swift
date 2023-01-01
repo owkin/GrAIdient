@@ -70,6 +70,30 @@ class Layer1DGradTests: Input1DMSE1DCase
                 params: params
             )
             
+        case "Concat":
+            layer = FullyConnected(
+                layerPrev: layer, nbNeurons: 3,
+                activation: SoftReLU.str, biases: true,
+                params: params
+            )
+            
+            let otherLayer1: Layer1D = FullyConnected(
+                layerPrev: layer, nbNeurons: 9,
+                activation: SoftReLU.str, biases: true,
+                params: params
+            )
+            
+            let otherLayer2: Layer1D = FullyConnected(
+                layerPrev: layer, nbNeurons: 6,
+                activation: SoftReLU.str, biases: true,
+                params: params
+            )
+            
+            layer = Concat1D(
+                layersPrev: [layer, otherLayer1, otherLayer2],
+                params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -126,6 +150,19 @@ class Layer1DGradTests: Input1DMSE1DCase
     func testSelectNeuronsGPU() throws
     {
         let trainer = _buildTrainer("SelectNeurons")
+        run(trainer)
+    }
+    
+    func testConcatCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("Concat")
+        run(trainer)
+    }
+    
+    func testConcatGPU() throws
+    {
+        let trainer = _buildTrainer("Concat")
         run(trainer)
     }
 }
@@ -186,6 +223,30 @@ class Layer1DFlowTests: Input1DMSE1DCase
                 params: params
             )
             
+        case "Concat":
+            layer = FullyConnected(
+                layerPrev: layer, nbNeurons: 3,
+                activation: LeakyReLU.str, biases: true,
+                params: params
+            )
+            
+            let otherLayer1: Layer1D = FullyConnected(
+                layerPrev: layer, nbNeurons: 9,
+                activation: LeakyReLU.str, biases: true,
+                params: params
+            )
+            
+            let otherLayer2: Layer1D = FullyConnected(
+                layerPrev: layer, nbNeurons: 6,
+                activation: LeakyReLU.str, biases: true,
+                params: params
+            )
+            
+            layer = Concat1D(
+                layersPrev: [layer, otherLayer1, otherLayer2],
+                params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -221,6 +282,12 @@ class Layer1DFlowTests: Input1DMSE1DCase
     func testSelectNeurons() throws
     {
         let trainer = _buildTrainer("SelectNeurons")
+        run(trainer)
+    }
+    
+    func testConcat() throws
+    {
+        let trainer = _buildTrainer("Concat")
         run(trainer)
     }
 }
@@ -277,6 +344,12 @@ class Layer1DFlowResetTests: Layer1DFlowTests
         let trainer = _buildTrainer("SelectNeurons")
         run(trainer)
     }
+    
+    override func testConcat() throws
+    {
+        let trainer = _buildTrainer("Concat")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -331,6 +404,12 @@ class Layer1DFlowReverseTests: Layer1DFlowTests
         let trainer = _buildTrainer("SelectNeurons")
         run(trainer)
     }
+    
+    override func testConcat() throws
+    {
+        let trainer = _buildTrainer("Concat")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -375,6 +454,12 @@ class Layer1DInferenceTests: Layer1DFlowTests
     override func testSelectNeurons() throws
     {
         let trainer = _buildTrainer("SelectNeurons")
+        run(trainer)
+    }
+    
+    override func testConcat() throws
+    {
+        let trainer = _buildTrainer("Concat")
         run(trainer)
     }
 }
@@ -424,6 +509,12 @@ class Layer1DLoadTests: Layer1DFlowTests
         let trainer = _buildTrainer("SelectNeurons")
         run(trainer)
     }
+    
+    override func testConcat() throws
+    {
+        let trainer = _buildTrainer("Concat")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -469,6 +560,12 @@ class Layer1DTransformTests: Layer1DFlowTests
     override func testSelectNeurons() throws
     {
         let trainer = _buildTrainer("SelectNeurons")
+        run(trainer)
+    }
+    
+    override func testConcat() throws
+    {
+        let trainer = _buildTrainer("Concat")
         run(trainer)
     }
 }

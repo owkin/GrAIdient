@@ -233,3 +233,91 @@ kernel void selectNeurons1DBackward(
     uint offsetPrev = pNeurons[depth] + nbNeuronsPrev * elem;
     deltaPrev[offsetPrev] += pCoeffs[depth] * delta[offset];
 }
+
+kernel void concat1DForward(
+    const device float * outsPrev,
+    constant uint * pGlobalOffset,
+    constant uint * pNbNeurons,
+    constant uint * pNbNeuronsPrev,
+    constant uint * pNbBatch,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint nbNeurons;
+    uint nbNeuronsPrev;
+    uint nbBatch;
+    uint globalOffset;
+    
+    if (pGlobalOffset && pNbNeurons && pNbNeuronsPrev && pNbBatch &&
+        outsPrev && outs)
+    {
+        nbNeurons = *pNbNeurons;
+        nbNeuronsPrev = *pNbNeuronsPrev;
+        nbBatch = *pNbBatch;
+        globalOffset = *pGlobalOffset;
+    }
+    else
+        return ;
+    
+    uint depth = id[0];
+    uint elem = id[1];
+    
+    if (depth >= nbNeuronsPrev || elem >= nbBatch)
+    {
+        return ;
+    }
+    
+    uint offsetPrev = depth + nbNeuronsPrev * elem;
+    uint offset = globalOffset+depth + nbNeurons * elem;
+    
+    outs[offset] = outsPrev[offsetPrev];
+}
+
+kernel void concat1DBackward(
+    const device float * delta,
+    constant uint * pGlobalOffset,
+    constant uint * pNbNeurons,
+    constant uint * pNbNeuronsPrev,
+    constant uint * pNbBatch,
+    constant uint * pDirty,
+    device float * deltaPrev,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint nbNeurons;
+    uint nbNeuronsPrev;
+    uint nbBatch;
+    uint globalOffset;
+    uint dirty;
+    
+    if (pGlobalOffset && pNbNeurons && pNbNeuronsPrev && pNbBatch && pDirty &&
+        deltaPrev && delta)
+    {
+        nbNeurons = *pNbNeurons;
+        nbNeuronsPrev = *pNbNeuronsPrev;
+        nbBatch = *pNbBatch;
+        globalOffset = *pGlobalOffset;
+        dirty = *pDirty;
+    }
+    else
+        return ;
+    
+    uint depth = id[0];
+    uint elem = id[1];
+    
+    if (depth >= nbNeuronsPrev || elem >= nbBatch)
+    {
+        return ;
+    }
+    
+    uint offsetPrev = depth + nbNeuronsPrev * elem;
+    uint offset = globalOffset+depth + nbNeurons * elem;
+    
+    if (dirty)
+    {
+        deltaPrev[offsetPrev] = delta[offset];
+    }
+    else
+    {
+        deltaPrev[offsetPrev] += delta[offset];
+    }
+}

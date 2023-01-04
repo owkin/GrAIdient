@@ -25,7 +25,8 @@ final class GrAITorchTests: XCTestCase
     ///
     /// Compute the gradient norm on the first layer of the model.
     ///
-    /// - Parameter model: The model we want to evaludate the gradient norm on.
+    /// - Parameter model: The model we want to evalulate the gradient norm on.
+    /// - Returns: The gradient norm on the first layer.
     ///
     func _getGradientNorm(_ model: Model) -> Double
     {

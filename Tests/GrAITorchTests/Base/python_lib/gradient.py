@@ -18,7 +18,7 @@ from python_lib.model import (
 
 class GetGradient:
     """
-    Hook that enable to get one module's gradient during the backward pass.
+    Hook that enables to get one module's gradient during the backward pass.
 
     Parameters
     ----------
@@ -162,7 +162,7 @@ def get_complex_data(size: int) -> List[float]:
 
 def _compute_grad_norm(input: torch.Tensor, model: torch.nn.Module) -> float:
     """
-    Compute gradient norm of one backward pass in a specific context.
+    Compute the gradient norm of one backward pass in a specific context.
 
     Parameters
     ----------
@@ -192,7 +192,7 @@ def _compute_grad_norm(input: torch.Tensor, model: torch.nn.Module) -> float:
 
 def compute_test1_grad_norm(size: int) -> float:
     """
-    Compute gradient norm of one backward pass of ModelTest1.
+    Compute the gradient norm of one backward pass of ModelTest1.
 
     Parameters
     ----------
@@ -213,7 +213,7 @@ def compute_test1_grad_norm(size: int) -> float:
 
 def compute_test2_grad_norm(size: int) -> float:
     """
-    Compute gradient norm of one backward pass of ModelTest2.
+    Compute the gradient norm of one backward pass of ModelTest2.
 
     Parameters
     ----------
@@ -234,7 +234,7 @@ def compute_test2_grad_norm(size: int) -> float:
 
 def compute_test3_grad_norm(size: int) -> float:
     """
-    Compute gradient norm of one backward pass of ModelTest3.
+    Compute the gradient norm of one backward pass of ModelTest3.
 
     Parameters
     ----------
@@ -255,7 +255,7 @@ def compute_test3_grad_norm(size: int) -> float:
 
 def compute_test4_grad_norm(size: int) -> float:
     """
-    Compute gradient norm of one backward pass of ModelTest4.
+    Compute the gradient norm of one backward pass of ModelTest4.
 
     Parameters
     ----------
@@ -276,7 +276,7 @@ def compute_test4_grad_norm(size: int) -> float:
 
 def compute_test5_grad_norm(size: int) -> float:
     """
-    Compute gradient norm of one backward pass of ModelTest5.
+    Compute the gradient norm of one backward pass of ModelTest5.
 
     Parameters
     ----------
@@ -297,7 +297,7 @@ def compute_test5_grad_norm(size: int) -> float:
 
 def compute_test6_grad_norm(size: int) -> float:
     """
-    Compute gradient norm of one backward pass of ModelTest6.
+    Compute the gradient norm of one backward pass of ModelTest6.
 
     Parameters
     ----------
@@ -318,7 +318,7 @@ def compute_test6_grad_norm(size: int) -> float:
 
 def compute_test7_grad_norm(size: int) -> float:
     """
-    Compute gradient norm of one backward pass of ModelTest7.
+    Compute the gradient norm of one backward pass of ModelTest7.
 
     Parameters
     ----------
@@ -339,7 +339,7 @@ def compute_test7_grad_norm(size: int) -> float:
 
 def compute_test8_grad_norm(size: int) -> float:
     """
-    Compute gradient norm of one backward pass of ModelTest8.
+    Compute the gradient norm of one backward pass of ModelTest8.
 
     Parameters
     ----------

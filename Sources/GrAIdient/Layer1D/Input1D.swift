@@ -289,15 +289,15 @@ public class Input1D: LayerInput1D, LayerUpdate
         let batchSize = data.count
         try checkStateForwardGPU(batchSize: batchSize)
         
+        if nbNeurons != data.first!.count
+        {
+            throw LayerError.DataSize
+        }
+        
         // Wait for previous loop to end to avoid race condition with
         // didModifyRange in the following example:
         // FullyConnected.backwardWeightsGPU accesses layerPrev.outs.
         MetalKernel.get.download([outs])
-        
-        if batchSize * nbNeurons != data.count * data.first!.count
-        {
-            throw LayerError.DataSize
-        }
         
         let outsPtr = outs.shared.buffer
         for elem in 0..<batchSize
@@ -324,12 +324,7 @@ public class Input1D: LayerInput1D, LayerUpdate
         _ data: MetalPrivateBuffer<Float>,
         batchSize: Int) throws
     {
-        if batchSize * nbNeurons != data.nbElems
-        {
-            throw LayerError.DataSize
-        }
         try checkStateForwardGPU(batchSize: batchSize)
-        
         outs = data
     }
     

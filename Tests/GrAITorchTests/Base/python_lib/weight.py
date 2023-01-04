@@ -48,7 +48,7 @@ def _extract_weights(
 
     Returns
     -------
-    (_, _): List[float], List[int]
+    (_, _): List[List[float]], List[List[int]]
         The flattened weights, their shape.
     """
     model_weights = model.state_dict()
@@ -82,7 +82,7 @@ def _extract_and_transpose_weights(
 
     Returns
     -------
-    (_, _): List[float], List[int]
+    (_, _): List[List[float]], List[List[int]]
         The flattened weights, their shape.
     """
     layers_weights: List[List[float]] = []

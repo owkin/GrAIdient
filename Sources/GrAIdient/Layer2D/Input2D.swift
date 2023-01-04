@@ -352,10 +352,6 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
         batchSize: Int,
         format: ImageFormat) throws
     {
-        if batchSize * nbChannels * height * width != data.count
-        {
-            throw LayerError.DataSize
-        }
         try checkStateCPU(batchSize: batchSize)
         
         switch format
@@ -426,10 +422,6 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
         batchSize: Int,
         format: ImageFormat) throws
     {
-        if batchSize * nbChannels * height * width != data.count
-        {
-            throw LayerError.DataSize
-        }
         try checkStateForwardGPU(batchSize: batchSize)
         
         // Wait for previous loop to end to avoid race condition with
@@ -490,12 +482,7 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
         _ data: MetalPrivateBuffer<Float>,
         batchSize: Int) throws
     {
-        if batchSize * nbChannels * height * width != data.nbElems
-        {
-            throw LayerError.DataSize
-        }
         try checkStateForwardGPU(batchSize: batchSize)
-        
         outs = data
     }
     

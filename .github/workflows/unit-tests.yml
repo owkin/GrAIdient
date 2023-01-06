@@ -1,6 +1,11 @@
 name: unit-tests
 
 on: [push]
+  pull_request:
+  push:
+    branches:
+      - main
+      - release**
 
 jobs:
   GrAITests:

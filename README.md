@@ -15,9 +15,6 @@ GrAIdient is the grey area between black box and white box models.
 It aims at promoting full control and understanding of the main 
 operations needed to train deep learning models in the computer vision field. 
 
-Disclaimer: If you cannot find an operation that suits your needs, 
-please consider building it into the GrAIdient framework!
-
 ## 📦 Swift Package Manager
 
 Add the following dependency to your `Package.swift` manifest:

@@ -55,14 +55,15 @@ public class ModelContext
     public init(name: String, models: [BaseModel])
     {
         var maxId = 0
-        for model in models
+        for model in models {
+        for layer in model.layers
         {
-            let lastId = model.layers.last!.id
-            if lastId > maxId
+            let layerId = layer.id
+            if layerId > maxId
             {
-                maxId = lastId
+                maxId = layerId
             }
-        }
+        }}
         
         self.model = BaseModel(name: name)
         self.curID = maxId + 1

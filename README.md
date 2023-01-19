@@ -1,4 +1,4 @@
-
+# 
 <p align="center">
     <img src="Docs/grAIdient.png" width="600">
 </p>
@@ -11,7 +11,8 @@ https://github.com/owkin/GrAIdient/actions/workflows/integration-tests.yml)
 [![tests](https://github.com/owkin/GrAIdient/actions/workflows/examples.yml/badge.svg?branch=main)](
 https://github.com/owkin/GrAIdient/actions/workflows/examples.yml)
 
-Ready for the GrAIt descent? \
+
+Ready for the grAIt descent? \
 GrAIdient is the grey area between black box and white box models. 
 
 It aims at promoting full control and understanding of the main 

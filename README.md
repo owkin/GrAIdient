@@ -1,4 +1,7 @@
-# <img src="Docs/grAIdient.png" width="600">
+
+<p align="center">
+    <img src="Docs/grAIdient.png" width="600">
+</p>
 
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) 
 [![tests](https://github.com/owkin/GrAIdient/actions/workflows/unit-tests.yml/badge.svg?branch=main)](

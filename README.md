@@ -21,6 +21,7 @@ https://github.com/owkin/GrAIdient/actions/workflows/examples.yml)
 <br />
 Ready for the grAIt descent?
 
+
 GrAIdient is a framework that exposes the graph of layers as its unique way to 
 design deep learning models. This "flattened" vision enforces 
 great understanding, control and reproducibility with the models human interact 

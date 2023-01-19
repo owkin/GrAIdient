@@ -20,10 +20,17 @@ https://github.com/owkin/GrAIdient/actions/workflows/examples.yml)
 
 <br />
 Ready for the grAIt descent? <br />
-GrAIdient is the grey area between black box and white box models. 
 
-It aims at promoting full control and understanding of the main 
-operations needed to train deep learning models in the computer vision field. 
+GrAIdient is a framework that exposes the graph of layers as its unique way to 
+design deep learning models. This "flattened" vision enforces 
+great understanding, control and reproducibility with the models human interact 
+with. 
+
+Though deeply grounded to the data driven way of life, the goal is to challenge 
+the very understanding of deep learning models and inject human intelligence 
+to go from black box models to which box models. 
+
+Let us find our grAI between them both! 
 
 ## 📦 Swift Package Manager
 

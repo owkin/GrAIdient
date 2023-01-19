@@ -1,6 +1,6 @@
 
 <p align="center">
-    <img src="Docs/grAIdient.png">
+    <img src="Docs/grAIdient.png" width="600">
 </p>
 
 <div align="center">

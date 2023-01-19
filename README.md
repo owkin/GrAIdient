@@ -3,6 +3,8 @@
     <img src="Docs/grAIdient.png" width="600">
 </p>
 
+--------------------------------------------------------------------------------
+
 <div align="center">
 
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) 

@@ -1,3 +1,4 @@
+<br />
 
 <p align="center">
     <img src="Docs/grAIdient.png" width="600">

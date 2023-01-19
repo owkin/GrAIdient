@@ -12,7 +12,7 @@ https://github.com/owkin/GrAIdient/actions/workflows/integration-tests.yml)
 https://github.com/owkin/GrAIdient/actions/workflows/examples.yml)
 
 <br />
-Ready for the grAIt descent? \
+Ready for the grAIt descent? <br />
 GrAIdient is the grey area between black box and white box models. 
 
 It aims at promoting full control and understanding of the main 

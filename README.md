@@ -19,7 +19,7 @@ https://github.com/owkin/GrAIdient/actions/workflows/examples.yml)
 </div>
 
 <br />
-Ready for the grAIt descent? 
+Ready for the grAIt descent? <br />
 <br />
 
 GrAIdient is a framework that exposes the graph of layers as its unique way to 

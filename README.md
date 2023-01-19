@@ -1,8 +1,9 @@
 
 <p align="center">
-    <img src="Docs/grAIdient.png" width="600">
+    <img src="Docs/grAIdient.png" width="30%">
 </p>
 
+<div align="center">
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) 
 [![tests](https://github.com/owkin/GrAIdient/actions/workflows/unit-tests.yml/badge.svg?branch=main)](
 https://github.com/owkin/GrAIdient/actions/workflows/unit-tests.yml) 
@@ -10,6 +11,7 @@ https://github.com/owkin/GrAIdient/actions/workflows/unit-tests.yml)
 https://github.com/owkin/GrAIdient/actions/workflows/integration-tests.yml) 
 [![tests](https://github.com/owkin/GrAIdient/actions/workflows/examples.yml/badge.svg?branch=main)](
 https://github.com/owkin/GrAIdient/actions/workflows/examples.yml)
+</div>
 
 <br />
 Ready for the grAIt descent? <br />

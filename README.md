@@ -33,6 +33,16 @@ to go from black box models to white box models.
 
 Let us find our grAI between them both! 
 
+Key features: 
+
+- what you do is what you get
+- run natively on Mac Intel GPU, eGPU, Mac M1, M2...
+- compiled language
+- gradient checking
+- extendable design
+- PyTorch interoperability
+- compute gradients per batch & per sample (differential privacy)
+
 ## 📦 Swift Package Manager
 
 Add the following dependency to your `Package.swift` manifest:

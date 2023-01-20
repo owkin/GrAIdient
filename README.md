@@ -31,7 +31,7 @@ Though deeply grounded to the data driven way of life, the goal is to challenge
 the very understanding of deep learning models and inject human intelligence 
 to go from black box models to white box models. 
 
-Let us find our grAI between them both! 
+Let us find our grAI between them both! <br />
 <br />
 
 Key features: 

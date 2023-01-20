@@ -43,6 +43,7 @@ Key features:
 - extendable design
 - PyTorch interoperability
 - compute gradients per batch & per sample (differential privacy)
+- debugging at the neuron level
 
 ## 📦 Swift Package Manager
 

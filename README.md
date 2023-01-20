@@ -32,6 +32,7 @@ the very understanding of deep learning models and inject human intelligence
 to go from black box models to white box models. 
 
 Let us find our grAI between them both! 
+<br />
 
 Key features: 
 

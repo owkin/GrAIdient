@@ -561,7 +561,7 @@ public class Convolution2D: BN2D
     /// - Returns: A new instance of `Layer`. When `inPlace` is false, `initKernel` is
     /// necessary in order to recreate hard resources.
     ///
-    public override func extract(inPlace: Bool) -> Layer
+    public override func extractActivation(inPlace: Bool) -> Layer
     {
         let context = ModelContext(name: "", curID: 0)
         let layerPrev = self.layerPrev as! Layer2D

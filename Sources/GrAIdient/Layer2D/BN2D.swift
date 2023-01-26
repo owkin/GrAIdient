@@ -6,7 +6,7 @@
 //
 
 /// Layer with a 2D shape neural structure, an activation function and batch normalization units.
-public class BN2D: Activation2D, LayerUpdate, LayerExtract
+public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
 {
     /// Batch normalization by default or batch normalization in the CPU execution context.
     var _bn: BatchNormalizationBase? = nil
@@ -278,7 +278,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
     /// - Returns: A new instance of `Layer`. When `inPlace` is false, `initKernel` is
     /// necessary in order to recreate hard resources.
     ///
-    public func extract(inPlace: Bool) -> Layer
+    public func extractActivation(inPlace: Bool) -> Layer
     {
         let context = ModelContext(name: "", curID: 0)
         let layerPrev = self.layerPrev as! Layer2D
@@ -310,6 +310,26 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
         }
         
         return layer
+    }
+    
+    ///
+    /// Create the activation part ot this layer.
+    ///
+    /// - Parameters:
+    ///     - layerPrev: Previous layer that has been queued to the model.
+    ///     - params: Contextual parameters linking to the model.
+    ///
+    /// - Returns: A new activation layer.
+    ///
+    public func createActivation(
+        layerPrev: Layer,
+        params: GrAI.Model.Params) -> Layer
+    {
+        return Activation2D(
+            layerPrev: layerPrev as! Layer2D,
+            activation: _activation!.name,
+            params: params
+        )
     }
     
     ///

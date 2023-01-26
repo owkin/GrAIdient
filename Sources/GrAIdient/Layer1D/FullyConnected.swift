@@ -13,7 +13,7 @@ import Foundation
 /// This is the fundamental learning layer of a 1D model.
 /// Note that its previous layer may be a Layer1D or a Layer2D.
 ///
-public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
+public class FullyConnected: Activation1D, LayerWithActivation, LayerUpdate
 {
     ///
     /// Grid of weights.
@@ -403,7 +403,7 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
     /// - Returns: A new instance of `Layer`. When `inPlace` is false, `initKernel` is
     /// necessary in order to recreate hard resources.
     ///
-    public func extract(inPlace: Bool) -> Layer
+    public func extractActivation(inPlace: Bool) -> Layer
     {
         let context = ModelContext(name: "", curID: 0)
         let layerPrev = self.layerPrev!
@@ -437,6 +437,26 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
             }
         }
         return layer
+    }
+    
+    ///
+    /// Create the activation part ot this layer.
+    ///
+    /// - Parameters:
+    ///     - layerPrev: Previous layer that has been queued to the model.
+    ///     - params: Contextual parameters linking to the model.
+    ///
+    /// - Returns: A new activation layer.
+    ///
+    public func createActivation(
+        layerPrev: Layer,
+        params: GrAI.Model.Params) -> Layer
+    {
+        return Activation1D(
+            layerPrev: layerPrev as! Layer1D,
+            activation: _activation!.name,
+            params: params
+        )
     }
     
     ///

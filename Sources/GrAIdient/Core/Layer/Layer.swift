@@ -30,18 +30,29 @@ extension LayerError: CustomStringConvertible
     }
 }
 
-/// A layer that is composed of multiple operations.
-public protocol LayerExtract: Layer
+/// A layer that is composed of multiple operations, especially an activation.
+public protocol LayerWithActivation: Layer
 {
     ///
-    /// Extract main operation of this layer.
+    /// Extract main operation of this layer without the activation part.
     ///
     /// - Parameter inPlace: Whether hard resources should be copied as is.
     ///
     /// - Returns: A new layer. When `inPlace` is false, `initKernel` is
     /// necessary in order to recreate hard resources.
     ///
-    func extract(inPlace: Bool) -> Layer
+    func extractActivation(inPlace: Bool) -> Layer
+    
+    ///
+    /// Create the activation part ot this layer.
+    ///
+    /// - Parameters:
+    ///     - layerPrev: Previous layer that has been queued to the model.
+    ///     - params: Contextual parameters linking to the model.
+    ///
+    /// - Returns: A new activation layer.
+    ///
+    func createActivation(layerPrev: Layer, params: GrAI.Model.Params) -> Layer
 }
 
 /// A layer that needs image size information.

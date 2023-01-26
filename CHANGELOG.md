@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🪜 **feat:** extract & create activation layer ([#47](https://github.com/owkin/GrAIdient/pull/47))\
 🎉 **refactor:** logo ([#46](https://github.com/owkin/GrAIdient/pull/46))\
 🐛 **fix:** model context max id ([#45](https://github.com/owkin/GrAIdient/pull/45))\
 🐛 **fix:** remove error when data input may indicate lower batch size ([#44](https://github.com/owkin/GrAIdient/pull/44))\

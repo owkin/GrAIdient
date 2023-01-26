@@ -36,13 +36,31 @@ public protocol LayerWithActivation: Layer
     ///
     /// Extract main operation of this layer without the activation part.
     ///
+    /// This API will create a new layer in the same context as this.
+    ///
     /// - Parameter inPlace: Whether hard resources should be copied as is.
     ///
     /// - Returns: A new layer. When `inPlace` is false, `initKernel` is
     /// necessary in order to recreate hard resources.
     ///
     func extractActivation(inPlace: Bool) -> Layer
+    ///
+    /// Extract main operation of this layer without the activation part.
+    ///
+    /// - Parameter params: Contextual parameters linking to the model.
+    ///
+    /// - Returns: A new layer.
+    ///
+    func extractActivation(params: GrAI.Model.Params) -> Layer
     
+    ///
+    /// Create the activation part ot this layer.
+    ///
+    /// This API will create a new layer in the same context as this.
+    ///
+    /// - Returns: A new activation layer.
+    ///
+    func createActivation() -> Layer
     ///
     /// Create the activation part ot this layer.
     ///

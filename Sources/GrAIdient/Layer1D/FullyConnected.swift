@@ -442,18 +442,15 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerUpdate
     ///
     /// Create the activation part ot this layer.
     ///
-    /// - Parameters:
-    ///     - layerPrev: Previous layer that has been queued to the model.
-    ///     - params: Contextual parameters linking to the model.
+    /// - Parameter params: Contextual parameters linking to the model.
     ///
     /// - Returns: A new activation layer.
     ///
-    public func createActivation(
-        layerPrev: Layer,
-        params: GrAI.Model.Params) -> Layer
+    public func createActivation(params: GrAI.Model.Params) -> Layer
     {
+        let layerPrev = self.layerPrev as! Layer1D
         return Activation1D(
-            layerPrev: layerPrev as! Layer1D,
+            layerPrev: layerPrev,
             activation: _activation!.name,
             params: params
         )

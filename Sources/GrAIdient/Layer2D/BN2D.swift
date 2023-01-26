@@ -315,18 +315,15 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
     ///
     /// Create the activation part ot this layer.
     ///
-    /// - Parameters:
-    ///     - layerPrev: Previous layer that has been queued to the model.
-    ///     - params: Contextual parameters linking to the model.
+    /// - Parameter params: Contextual parameters linking to the model.
     ///
     /// - Returns: A new activation layer.
     ///
-    public func createActivation(
-        layerPrev: Layer,
-        params: GrAI.Model.Params) -> Layer
+    public func createActivation(params: GrAI.Model.Params) -> Layer
     {
+        let layerPrev = self.layerPrev as! Layer2D
         return Activation2D(
-            layerPrev: layerPrev as! Layer2D,
+            layerPrev: layerPrev,
             activation: _activation!.name,
             params: params
         )

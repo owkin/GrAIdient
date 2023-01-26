@@ -46,13 +46,11 @@ public protocol LayerWithActivation: Layer
     ///
     /// Create the activation part ot this layer.
     ///
-    /// - Parameters:
-    ///     - layerPrev: Previous layer that has been queued to the model.
-    ///     - params: Contextual parameters linking to the model.
+    /// - Parameter params: Contextual parameters linking to the model.
     ///
     /// - Returns: A new activation layer.
     ///
-    func createActivation(layerPrev: Layer, params: GrAI.Model.Params) -> Layer
+    func createActivation(params: GrAI.Model.Params) -> Layer
 }
 
 /// A layer that needs image size information.

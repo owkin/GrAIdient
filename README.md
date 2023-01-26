@@ -1,5 +1,12 @@
+<br />
 
-# GrAIdient
+<p align="center">
+    <img src="Docs/grAIdient.png" width="600">
+</p>
+
+--------------------------------------------------------------------------------
+
+<div align="center">
 
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) 
 [![tests](https://github.com/owkin/GrAIdient/actions/workflows/unit-tests.yml/badge.svg?branch=main)](
@@ -9,11 +16,34 @@ https://github.com/owkin/GrAIdient/actions/workflows/integration-tests.yml)
 [![tests](https://github.com/owkin/GrAIdient/actions/workflows/examples.yml/badge.svg?branch=main)](
 https://github.com/owkin/GrAIdient/actions/workflows/examples.yml)
 
-Ready for the GrAIt descent? \
-GrAIdient is the grey area between black box and white box models. 
+</div>
 
-It aims at promoting full control and understanding of the main 
-operations needed to train deep learning models in the computer vision field. 
+<br />
+Ready for the grAIt descent? <br />
+<br />
+
+GrAIdient is a framework that exposes the graph of layers as its unique way to 
+design deep learning models. This "flattened" vision enforces 
+great understanding, control and reproducibility with the models human interact 
+with. 
+
+Though deeply grounded to the data driven way of life, the goal is to challenge 
+the very understanding of deep learning models and inject human intelligence 
+to go from black box models to white box models. 
+
+Let us find our grAI between them both! <br />
+<br />
+
+Key features: 
+
+- what you do is what you get
+- run natively on Mac Intel GPU, eGPU, Mac M1, M2...
+- compiled language
+- gradient checking
+- extendable design
+- PyTorch interoperability
+- compute gradients per batch & per sample (differential privacy)
+- debugging at the neuron level
 
 ## 📦 Swift Package Manager
 

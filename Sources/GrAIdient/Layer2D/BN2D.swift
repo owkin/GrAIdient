@@ -6,7 +6,7 @@
 //
 
 /// Layer with a 2D shape neural structure, an activation function and batch normalization units.
-public class BN2D: Activation2D, LayerUpdate, LayerExtract
+public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
 {
     /// Batch normalization by default or batch normalization in the CPU execution context.
     var _bn: BatchNormalizationBase? = nil
@@ -271,14 +271,16 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
     }
     
     ///
-    /// Extract main operation of this layer.
+    /// Extract main operation of this layer without the activation part.
+    ///
+    /// This API will create a new layer in the same context as this.
     ///
     /// - Parameter inPlace: Whether hard resources should be copied as is.
     ///
     /// - Returns: A new instance of `Layer`. When `inPlace` is false, `initKernel` is
     /// necessary in order to recreate hard resources.
     ///
-    public func extract(inPlace: Bool) -> Layer
+    public func removeActivation(inPlace: Bool) -> Layer
     {
         let context = ModelContext(name: "", curID: 0)
         let layerPrev = self.layerPrev as! Layer2D
@@ -309,6 +311,33 @@ public class BN2D: Activation2D, LayerUpdate, LayerExtract
             }
         }
         
+        return layer
+    }
+    
+    ///
+    /// Extract main operation of this layer without the activation part.
+    ///
+    /// - Parameter params: Contextual parameters linking to the model.
+    ///
+    /// - Returns: A new layer.
+    ///
+    public func removeActivation(params: GrAI.Model.Params) -> Layer
+    {
+        let layerPrev = self.layerPrev as! Layer2D
+        let layer = BN2D(
+            layerPrev: layerPrev,
+            activation: nil,
+            params: params
+        )
+        // only one of them should be cloned
+        if let bn = _bnGPU
+        {
+            layer._bn = bn.clone()
+        }
+        else if let bn = _bn
+        {
+            layer._bn = bn.clone()
+        }
         return layer
     }
     

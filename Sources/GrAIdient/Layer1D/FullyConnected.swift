@@ -13,7 +13,7 @@ import Foundation
 /// This is the fundamental learning layer of a 1D model.
 /// Note that its previous layer may be a Layer1D or a Layer2D.
 ///
-public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
+public class FullyConnected: Activation1D, LayerWithActivation, LayerUpdate
 {
     ///
     /// Grid of weights.
@@ -396,14 +396,16 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
     }
     
     ///
-    /// Extract main operation of this layer.
+    /// Extract main operation of this layer without the activation part.
+    ///
+    /// This API will create a new layer in the same context as this.
     ///
     /// - Parameter inPlace: Whether hard resources should be copied as is.
     ///
     /// - Returns: A new instance of `Layer`. When `inPlace` is false, `initKernel` is
     /// necessary in order to recreate hard resources.
     ///
-    public func extract(inPlace: Bool) -> Layer
+    public func removeActivation(inPlace: Bool) -> Layer
     {
         let context = ModelContext(name: "", curID: 0)
         let layerPrev = self.layerPrev!
@@ -435,6 +437,34 @@ public class FullyConnected: Activation1D, LayerExtract, LayerUpdate
             {
                 layer.weightsCPU = weightsCPU
             }
+        }
+        return layer
+    }
+    
+    ///
+    /// Extract main operation of this layer without the activation part.
+    ///
+    /// - Parameter params: Contextual parameters linking to the model.
+    ///
+    /// - Returns: A new layer.
+    ///
+    public func removeActivation(params: GrAI.Model.Params) -> Layer
+    {
+        let layerPrev = self.layerPrev!
+        let layer = FullyConnected(
+            layerPrev: layerPrev,
+            nbNeurons: nbNeurons,
+            activation: nil,
+            biases: _updateBiases,
+            params: params
+        )
+        if GrAI.Opti.GPU
+        {
+            layer.weightsGPU = weightsGPU
+        }
+        else
+        {
+            layer.weightsCPU = weightsCPU
         }
         return layer
     }

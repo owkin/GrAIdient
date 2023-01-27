@@ -554,14 +554,16 @@ public class Convolution2D: BN2D
     }
     
     ///
-    /// Extract main operation of this layer.
+    /// Extract main operation of this layer without the activation part.
+    ///
+    /// This API will create a new layer in the same context as this.
     ///
     /// - Parameter inPlace: Whether hard resources should be copied as is.
     ///
     /// - Returns: A new instance of `Layer`. When `inPlace` is false, `initKernel` is
     /// necessary in order to recreate hard resources.
     ///
-    public override func extract(inPlace: Bool) -> Layer
+    public override func removeActivation(inPlace: Bool) -> Layer
     {
         let context = ModelContext(name: "", curID: 0)
         let layerPrev = self.layerPrev as! Layer2D
@@ -598,6 +600,37 @@ public class Convolution2D: BN2D
             {
                 layer.weightsListCPU = weightsListCPU
             }
+        }
+        return layer
+    }
+    
+    ///
+    /// Extract main operation of this layer without the activation part.
+    ///
+    /// - Parameter params: Contextual parameters linking to the model.
+    ///
+    /// - Returns: A new layer.
+    ///
+    public override func removeActivation(params: GrAI.Model.Params) -> Layer
+    {
+        let layerPrev = self.layerPrev as! Layer2D
+        let layer = Convolution2D(
+            layerPrev: layerPrev,
+            size: weightHeight,
+            nbChannels: nbChannels,
+            stride: _stride,
+            activation: nil,
+            biases: _updateBiases,
+            bn: false,
+            params: params
+        )
+        if GrAI.Opti.GPU
+        {
+            layer.weightsListGPU = weightsListGPU
+        }
+        else
+        {
+            layer.weightsListCPU = weightsListCPU
         }
         return layer
     }

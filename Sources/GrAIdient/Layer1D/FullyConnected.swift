@@ -396,16 +396,16 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerUpdate
     }
     
     ///
-    /// Extract main operation of this layer.
+    /// Extract main operation of this layer without the activation part.
     ///
     /// This API will create a new layer in the same context as this.
-    /// 
+    ///
     /// - Parameter inPlace: Whether hard resources should be copied as is.
     ///
     /// - Returns: A new instance of `Layer`. When `inPlace` is false, `initKernel` is
     /// necessary in order to recreate hard resources.
     ///
-    public func extractActivation(inPlace: Bool) -> Layer
+    public func removeActivation(inPlace: Bool) -> Layer
     {
         let context = ModelContext(name: "", curID: 0)
         let layerPrev = self.layerPrev!
@@ -448,7 +448,7 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerUpdate
     ///
     /// - Returns: A new layer.
     ///
-    public func extractActivation(params: GrAI.Model.Params) -> Layer
+    public func removeActivation(params: GrAI.Model.Params) -> Layer
     {
         let layerPrev = self.layerPrev!
         let layer = FullyConnected(
@@ -467,72 +467,6 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerUpdate
             layer.weightsCPU = weightsCPU
         }
         return layer
-    }
-    
-    ///
-    /// Create the activation part ot this layer.
-    ///
-    /// This API will create a new layer in the same context as this.
-    ///
-    /// - Returns: A new activation layer.
-    ///
-    public func createActivation() -> Layer
-    {
-        let context = ModelContext(name: "", curID: 0)
-        let params = GrAI.Model.Params(context: context)
-        params.context.curID = id
-        
-        if let layerPrev = self.layerPrev as? Layer1D
-        {
-            return Activation1D(
-                layerPrev: layerPrev,
-                activation: _activation!.name,
-                params: params
-            )
-        }
-        else if let layerPrev = self.layerPrev as? Layer2D
-        {
-            return Activation2D(
-                layerPrev: layerPrev,
-                activation: _activation!.name,
-                params: params
-            )
-        }
-        else
-        {
-            fatalError()
-        }
-    }
-    
-    ///
-    /// Create the activation part ot this layer.
-    ///
-    /// - Parameter params: Contextual parameters linking to the model.
-    ///
-    /// - Returns: A new activation layer.
-    ///
-    public func createActivation(params: GrAI.Model.Params) -> Layer
-    {
-        if let layerPrev = self.layerPrev as? Layer1D
-        {
-            return Activation1D(
-                layerPrev: layerPrev,
-                activation: _activation!.name,
-                params: params
-            )
-        }
-        else if let layerPrev = self.layerPrev as? Layer2D
-        {
-            return Activation2D(
-                layerPrev: layerPrev,
-                activation: _activation!.name,
-                params: params
-            )
-        }
-        else
-        {
-            fatalError()
-        }
     }
     
     ///

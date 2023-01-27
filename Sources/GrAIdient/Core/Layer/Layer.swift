@@ -43,7 +43,7 @@ public protocol LayerWithActivation: Layer
     /// - Returns: A new layer. When `inPlace` is false, `initKernel` is
     /// necessary in order to recreate hard resources.
     ///
-    func extractActivation(inPlace: Bool) -> Layer
+    func removeActivation(inPlace: Bool) -> Layer
     ///
     /// Extract main operation of this layer without the activation part.
     ///
@@ -51,24 +51,7 @@ public protocol LayerWithActivation: Layer
     ///
     /// - Returns: A new layer.
     ///
-    func extractActivation(params: GrAI.Model.Params) -> Layer
-    
-    ///
-    /// Create the activation part ot this layer.
-    ///
-    /// This API will create a new layer in the same context as this.
-    ///
-    /// - Returns: A new activation layer.
-    ///
-    func createActivation() -> Layer
-    ///
-    /// Create the activation part ot this layer.
-    ///
-    /// - Parameter params: Contextual parameters linking to the model.
-    ///
-    /// - Returns: A new activation layer.
-    ///
-    func createActivation(params: GrAI.Model.Params) -> Layer
+    func removeActivation(params: GrAI.Model.Params) -> Layer
 }
 
 /// A layer that needs image size information.

@@ -588,6 +588,7 @@ private class MetalDevice
                 "softmax1DBackward",
                 "dotProduct1DForward",
                 "dotProduct1DBackward",
+                "constant1DForward",
             ],
             "Layer2D": [
                 "avgPoolForward",

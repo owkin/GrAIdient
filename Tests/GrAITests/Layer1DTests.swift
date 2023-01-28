@@ -136,6 +136,21 @@ class Layer1DGradTests: Input1DMSE1DCase
                 layersPrev: [layer, otherLayer], size: 3, params: params
             )
             
+        case "Constant":
+            var otherLayer: Layer1D = Constant1D(
+                nbNeurons: 5, params: params
+            )
+            (otherLayer as! Constant1D).weightsCPU = [1.0, 2.0, 3.0, 4.0, 5.0]
+            
+            otherLayer = FullyConnected(
+                layerPrev: otherLayer, nbNeurons: 5,
+                activation: SoftReLU.str, biases: true,
+                params: params
+            )
+            layer = Sum1D(
+                layersPrev: [layer, otherLayer], params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -244,6 +259,26 @@ class Layer1DGradTests: Input1DMSE1DCase
     func testDotProductGPU() throws
     {
         let trainer = _buildTrainer("DotProduct")
+        run(trainer)
+    }
+    
+    func testConstantCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("Constant")
+        run(trainer)
+    }
+    
+    func testConstantGPU() throws
+    {
+        let trainer = _buildTrainer("Constant")
+        run(trainer)
+    }
+    
+    func testConstantSampleGPU() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("Constant")
         run(trainer)
     }
 }
@@ -370,6 +405,21 @@ class Layer1DFlowTests: Input1DMSE1DCase
                 layersPrev: [layer, otherLayer], size: 3, params: params
             )
             
+        case "Constant":
+            var otherLayer: Layer1D = Constant1D(
+                nbNeurons: 5, params: params
+            )
+            (otherLayer as! Constant1D).weightsCPU = [1.0, 2.0, 3.0, 4.0, 5.0]
+            
+            otherLayer = FullyConnected(
+                layerPrev: otherLayer, nbNeurons: 5,
+                activation: LeakyReLU.str, biases: true,
+                params: params
+            )
+            layer = Sum1D(
+                layersPrev: [layer, otherLayer], params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -429,6 +479,19 @@ class Layer1DFlowTests: Input1DMSE1DCase
     func testDotProduct() throws
     {
         let trainer = _buildTrainer("DotProduct")
+        run(trainer)
+    }
+    
+    func testConstant() throws
+    {
+        let trainer = _buildTrainer("Constant")
+        run(trainer)
+    }
+    
+    func testConstantSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("Constant")
         run(trainer)
     }
 }
@@ -509,6 +572,19 @@ class Layer1DFlowResetTests: Layer1DFlowTests
         let trainer = _buildTrainer("DotProduct")
         run(trainer)
     }
+    
+    override func testConstant() throws
+    {
+        let trainer = _buildTrainer("Constant")
+        run(trainer)
+    }
+    
+    override func testConstantSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("Constant")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -587,6 +663,19 @@ class Layer1DFlowReverseTests: Layer1DFlowTests
         let trainer = _buildTrainer("DotProduct")
         run(trainer)
     }
+    
+    override func testConstant() throws
+    {
+        let trainer = _buildTrainer("Constant")
+        run(trainer)
+    }
+    
+    override func testConstantSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("Constant")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -655,6 +744,19 @@ class Layer1DInferenceTests: Layer1DFlowTests
     override func testDotProduct() throws
     {
         let trainer = _buildTrainer("DotProduct")
+        run(trainer)
+    }
+    
+    override func testConstant() throws
+    {
+        let trainer = _buildTrainer("Constant")
+        run(trainer)
+    }
+    
+    override func testConstantSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("Constant")
         run(trainer)
     }
 }
@@ -728,6 +830,19 @@ class Layer1DLoadTests: Layer1DFlowTests
         let trainer = _buildTrainer("DotProduct")
         run(trainer)
     }
+    
+    override func testConstant() throws
+    {
+        let trainer = _buildTrainer("Constant")
+        run(trainer)
+    }
+    
+    override func testConstantSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("Constant")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -797,6 +912,19 @@ class Layer1DTransformTests: Layer1DFlowTests
     override func testDotProduct() throws
     {
         let trainer = _buildTrainer("DotProduct")
+        run(trainer)
+    }
+    
+    override func testConstant() throws
+    {
+        let trainer = _buildTrainer("Constant")
+        run(trainer)
+    }
+    
+    override func testConstantSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("Constant")
         run(trainer)
     }
 }

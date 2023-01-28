@@ -534,3 +534,33 @@ kernel void dotProduct1DBackward(
         }
     }
 }
+
+kernel void constant1DForward(
+    const device float * weights,
+    constant uint * pNbNeurons,
+    constant uint * pNbBatch,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint nbNeurons;
+    uint nbBatch;
+    
+    if (pNbNeurons && pNbBatch && weights && outs)
+    {
+        nbNeurons = *pNbNeurons;
+        nbBatch = *pNbBatch;
+    }
+    else
+        return ;
+    
+    uint depth = id[0];
+    uint elem = id[1];
+    
+    if (depth >= nbNeurons || elem >= nbBatch)
+    {
+        return ;
+    }
+    
+    uint offset = depth + nbNeurons * elem;
+    outs[offset] = weights[depth];
+}

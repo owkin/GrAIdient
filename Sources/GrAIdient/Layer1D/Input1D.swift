@@ -133,7 +133,7 @@ public class Input1D: LayerInput1D, LayerUpdate
         super.init(layerPrev: layerPrev,
                    nbNeurons: layerPrev.nbNeurons,
                    params: params)
-        computeDelta = false
+        computeDelta = true
     }
     
     ///
@@ -147,7 +147,14 @@ public class Input1D: LayerInput1D, LayerUpdate
     required init(from decoder: Decoder) throws
     {
         try super.init(from: decoder)
-        computeDelta = false
+        if idPrev > -1
+        {
+            computeDelta = true
+        }
+        else
+        {
+            computeDelta = false
+        }
     }
     
     ///

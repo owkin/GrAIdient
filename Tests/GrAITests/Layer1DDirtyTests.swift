@@ -84,7 +84,7 @@ class Layer1DDirtyGradTests: Input1DMSE1DCase
             )
             
         case "Softmax":
-            secondLayer = Softmax1D(layerPrev: layer, params: params)
+            secondLayer = Softmax1D(layerPrev: layer, size: 5, params: params)
             
         default:
             fatalError("Unreachable.")
@@ -252,7 +252,7 @@ class Layer1DDirtyFlowTests: Input1DMSE1DCase
             )
             
         case "Softmax":
-            secondLayer = Softmax1D(layerPrev: layer, params: params)
+            secondLayer = Softmax1D(layerPrev: layer, size: 5, params: params)
             
         default:
             fatalError("Unreachable.")

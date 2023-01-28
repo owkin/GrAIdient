@@ -324,16 +324,19 @@ kernel void concat1DBackward(
 
 kernel void softmax1DForward(
     const device float * outsPrev,
+    constant uint * pSize,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     device float * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
+    uint size;
     uint nbNeurons;
     uint nbBatch;
     
-    if (pNbNeurons && pNbBatch && outsPrev && outs)
+    if (pSize && pNbNeurons && pNbBatch && outsPrev && outs)
     {
+        size = *pSize;
         nbNeurons = *pNbNeurons;
         nbBatch = *pNbBatch;
     }
@@ -342,6 +345,7 @@ kernel void softmax1DForward(
     
     uint depth = id[0];
     uint elem = id[1];
+    uint block = depth / size;
     
     if (depth >= nbNeurons || elem >= nbBatch)
     {
@@ -349,9 +353,9 @@ kernel void softmax1DForward(
     }
     
     float sum1 = 0.0;
-    for (uint depth1=0; depth1<nbNeurons; depth1++)
+    for (uint j1=0; j1<size; j1++)
     {
-        uint offset1 = depth1 + nbNeurons * elem;
+        uint offset1 = j1+block*size + nbNeurons * elem;
         float outPrev = outsPrev[offset1];
         sum1 += exp(outPrev);
     }
@@ -364,18 +368,22 @@ kernel void softmax1DForward(
 kernel void softmax1DBackward(
     const device float * outsPrev,
     const device float * delta,
+    constant uint * pSize,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pDirty,
     device float * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
+    uint size;
     uint nbNeurons;
     uint nbBatch;
     uint dirty;
     
-    if (pNbNeurons && pNbBatch && pDirty && outsPrev && deltaPrev && delta)
+    if (pSize && pNbNeurons && pNbBatch && pDirty &&
+        outsPrev && deltaPrev && delta)
     {
+        size = *pSize;
         nbNeurons = *pNbNeurons;
         nbBatch = *pNbBatch;
         dirty = *pDirty;
@@ -385,6 +393,7 @@ kernel void softmax1DBackward(
     
     uint depth = id[0];
     uint elem = id[1];
+    uint block = depth / size;
     
     if (depth >= nbNeurons || elem >= nbBatch)
     {
@@ -392,9 +401,9 @@ kernel void softmax1DBackward(
     }
     
     float sum1 = 0.0;
-    for (uint depth1=0; depth1<nbNeurons; depth1++)
+    for (uint j1=0; j1<size; j1++)
     {
-        uint offset1 = depth1 + nbNeurons * elem;
+        uint offset1 = j1+block*size + nbNeurons * elem;
         float outPrev1 = outsPrev[offset1];
         sum1 += exp(outPrev1);
     }
@@ -404,9 +413,9 @@ kernel void softmax1DBackward(
     float deltaCur = delta[offset];
     
     float sum2 = 0.0;
-    for (uint depth2=0; depth2<nbNeurons; depth2++)
+    for (uint j2=0; j2<size; j2++)
     {
-        uint offset2 = depth2 + nbNeurons * elem;
+        uint offset2 = j2+block*size + nbNeurons * elem;
         float outPrev2 = outsPrev[offset2];
         float deltaCur2 = delta[offset2];
         sum2 += exp(outPrev + outPrev2) * deltaCur2;

@@ -9,10 +9,27 @@ import Foundation
 
 public class Softmax1D: Layer1D
 {
-    public init(layerPrev: Layer1D, params: GrAI.Model.Params)
+    let _size: Int
+    
+    private enum Keys: String, CodingKey
     {
+        case size
+    }
+    
+    public init(layerPrev: Layer1D, size: Int, params: GrAI.Model.Params)
+    {
+        let nbNeurons = layerPrev.nbNeurons
+        if nbNeurons % size != 0
+        {
+            fatalError(
+                "'nbNeurons' (\(nbNeurons) " +
+                "should be a multiple of size (\(size))."
+            )
+        }
+        
+        _size = size
         super.init(layerPrev: layerPrev,
-                   nbNeurons: layerPrev.nbNeurons,
+                   nbNeurons: nbNeurons,
                    params: params)
     }
     
@@ -26,7 +43,27 @@ public class Softmax1D: Layer1D
     ///
     public required init(from decoder: Decoder) throws
     {
+        let values = try decoder.container(keyedBy: Keys.self)
+        _size = try values.decode(Int.self, forKey: Keys.size)
         try super.init(from: decoder)
+    }
+    
+    ///
+    /// Encode to the disk.
+    ///
+    /// If the value fails to encode anything, `encoder` will encode an empty
+    /// keyed container in its place.
+    ///
+    /// Throw an error if any values are invalid for the given
+    /// encoder's format.
+    ///
+    /// - Parameter encoder: The encoder to write data to.
+    ///
+    public override func encode(to encoder: Encoder) throws
+    {
+        var container = encoder.container(keyedBy: Keys.self)
+        try container.encode(_size, forKey: Keys.size)
+        try super.encode(to: encoder)
     }
     
     ///
@@ -53,6 +90,7 @@ public class Softmax1D: Layer1D
             
         let layer = Softmax1D(
             layerPrev: layerPrev,
+            size: _size,
             params: params
         )
         return layer
@@ -75,21 +113,29 @@ public class Softmax1D: Layer1D
                 neurons.get(j)!.initGC(batchSize: batchSize, nbGC: nbGC)
             }
             
+            let nbBlocks = nbNeurons / _size
             let neuronsPrev = layerPrev.neurons
+            
             for batch in 0..<batchSize {
             for elem in 0..<nbGC
             {
-                var sum = 0.0
-                for depth in 0..<nbNeurons
+                for block in 0..<nbBlocks
                 {
-                    let outPrev = neuronsPrev.get(depth)!.gc[batch][elem].out
-                    sum += exp(outPrev)
-                }
-                
-                for depth in 0..<nbNeurons
-                {
-                    let outPrev = neuronsPrev.get(depth)!.gc[batch][elem].out
-                    neurons.get(depth)!.gc[batch][elem].out = exp(outPrev)/sum
+                    var sum1 = 0.0
+                    for j1 in 0..<_size
+                    {
+                        let outPrev = neuronsPrev.get(
+                            j1 + block * _size)!.gc[batch][elem].out
+                        sum1 += exp(outPrev)
+                    }
+                    
+                    for j1 in 0..<_size
+                    {
+                        let outPrev = neuronsPrev.get(
+                            j1 + block * _size)!.gc[batch][elem].out
+                        neurons.get(j1 + block * _size)!.gc[batch][elem].out =
+                            exp(outPrev) / sum1
+                    }
                 }
             }}
         }
@@ -116,20 +162,28 @@ public class Softmax1D: Layer1D
         {
             try checkStateCPU(batchSize: batchSize)
             
+            let nbBlocks = nbNeurons / _size
             let neuronsPrev = layerPrev.neurons
+            
             for elem in 0..<batchSize
             {
-                var sum1 = 0.0
-                for depth1 in 0..<nbNeurons
+                for block in 0..<nbBlocks
                 {
-                    let outPrev = neuronsPrev.get(depth1)!.v[elem].out
-                    sum1 += exp(outPrev)
-                }
-                
-                for depth1 in 0..<nbNeurons
-                {
-                    let outPrev = neuronsPrev.get(depth1)!.v[elem].out
-                    neurons.get(depth1)!.v[elem].out = exp(outPrev) / sum1
+                    var sum1 = 0.0
+                    for j1 in 0..<_size
+                    {
+                        let outPrev = neuronsPrev.get(
+                            j1 + block * _size)!.v[elem].out
+                        sum1 += exp(outPrev)
+                    }
+                    
+                    for j1 in 0..<_size
+                    {
+                        let outPrev = neuronsPrev.get(
+                            j1 + block * _size)!.v[elem].out
+                        neurons.get(j1 + block * _size)!.v[elem].out =
+                            exp(outPrev) / sum1
+                    }
                 }
             }
         }
@@ -146,6 +200,7 @@ public class Softmax1D: Layer1D
         {
             try checkStateForwardGPU(batchSize: batchSize)
             
+            let pSize: [UInt32] = [UInt32(_size)]
             let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             
@@ -153,9 +208,10 @@ public class Softmax1D: Layer1D
                 "softmax1DForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
-            command.setBytes(pNbNeurons, atIndex: 1)
-            command.setBytes(pNbBatch, atIndex: 2)
-            command.setBuffer(outs.metal, atIndex: 3)
+            command.setBytes(pSize, atIndex: 1)
+            command.setBytes(pNbNeurons, atIndex: 2)
+            command.setBytes(pNbBatch, atIndex: 3)
+            command.setBuffer(outs.metal, atIndex: 4)
             
             command.dispatchThreads(
                 width: nbNeurons,
@@ -170,40 +226,53 @@ public class Softmax1D: Layer1D
     {
         if let layerPrev = self.layerPrev as? Layer1D, mustComputeBackward
         {
+            let nbBlocks = nbNeurons / _size
             let neuronsPrev = layerPrev.neurons
+            
             for elem in 0..<batchSize
             {
-                var sum1: Double = 0.0
-                for depth1 in 0..<nbNeurons
+                for block in 0..<nbBlocks
                 {
-                    let outPrev = neuronsPrev.get(depth1)!.v[elem].out
-                    sum1 += exp(outPrev)
-                }
-                    
-                for depth1 in 0..<nbNeurons
-                {
-                    let outPrev1 = neuronsPrev.get(depth1)!.v[elem].out
-                    let deltaCur1 = neurons.get(depth1)!.v[elem].delta
-                    
-                    var sum2: Double = 0.0
-                    for depth2 in 0..<nbNeurons
+                    var sum1: Double = 0.0
+                    for j1 in 0..<_size
                     {
-                        let deltaCur2 = neurons.get(depth2)!.v[elem].delta
-                        let outPrev2 = neuronsPrev.get(depth2)!.v[elem].out
-                        sum2 += exp(outPrev1 + outPrev2) * deltaCur2
+                        let outPrev = neuronsPrev.get(
+                            j1 + block * _size)!.v[elem].out
+                        sum1 += exp(outPrev)
                     }
                     
-                    let tmp = exp(outPrev1) * deltaCur1 / sum1
-                    if layerPrev.dirty
+                    for j1 in 0..<_size
                     {
-                        neuronsPrev.get(depth1)!.v[elem].delta =
-                            -sum2 / (sum1 * sum1) + tmp
+                        let outPrev1 = neuronsPrev.get(
+                            j1 + block * _size)!.v[elem].out
+                        let deltaCur1 = neurons.get(
+                            j1 + block * _size)!.v[elem].delta
+                        
+                        var sum2: Double = 0.0
+                        for j2 in 0..<_size
+                        {
+                            let deltaCur2 = neurons.get(
+                                j2 + block * _size)!.v[elem].delta
+                            let outPrev2 = neuronsPrev.get(
+                                j2 + block * _size)!.v[elem].out
+                            sum2 += exp(outPrev1 + outPrev2) * deltaCur2
+                        }
+                        
+                        let tmp = exp(outPrev1) * deltaCur1 / sum1
+                        if layerPrev.dirty
+                        {
+                            neuronsPrev.get(
+                                j1 + block * _size)!.v[elem].delta =
+                                -sum2 / (sum1 * sum1) + tmp
+                        }
+                        else
+                        {
+                            neuronsPrev.get(
+                                j1 + block * _size)!.v[elem].delta +=
+                                -sum2 / (sum1 * sum1) + tmp
+                        }
                     }
-                    else
-                    {
-                        neuronsPrev.get(depth1)!.v[elem].delta +=
-                            -sum2 / (sum1 * sum1) + tmp
-                    }
+                    
                 }
             }
             propagateDirty()
@@ -221,6 +290,7 @@ public class Softmax1D: Layer1D
         {
             try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
             
+            let pSize: [UInt32] = [UInt32(_size)]
             let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
@@ -230,10 +300,11 @@ public class Softmax1D: Layer1D
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBuffer(delta.metal, atIndex: 1)
-            command.setBytes(pNbNeurons, atIndex: 2)
-            command.setBytes(pNbBatch, atIndex: 3)
-            command.setBytes(pDirty, atIndex: 4)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 5)
+            command.setBytes(pSize, atIndex: 2)
+            command.setBytes(pNbNeurons, atIndex: 3)
+            command.setBytes(pNbBatch, atIndex: 4)
+            command.setBytes(pDirty, atIndex: 5)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 6)
             
             command.dispatchThreads(
                 width: nbNeurons,

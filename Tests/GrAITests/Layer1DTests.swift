@@ -113,7 +113,13 @@ class Layer1DGradTests: Input1DMSE1DCase
             )
             
         case "Softmax":
-            layer = Softmax1D(layerPrev: layer, params: params)
+            layer = FullyConnected(
+                layerPrev: layer, nbNeurons: 15,
+                activation: SoftReLU.str, biases: true,
+                params: params
+            )
+            
+            layer = Softmax1D(layerPrev: layer, size: 5, params: params)
             
         default:
             fatalError("Unreachable.")
@@ -313,7 +319,13 @@ class Layer1DFlowTests: Input1DMSE1DCase
             )
             
         case "Softmax":
-            layer = Softmax1D(layerPrev: layer, params: params)
+            layer = FullyConnected(
+                layerPrev: layer, nbNeurons: 15,
+                activation: LeakyReLU.str, biases: true,
+                params: params
+            )
+            
+            layer = Softmax1D(layerPrev: layer, size: 5, params: params)
             
         default:
             fatalError("Unreachable.")

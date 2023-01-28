@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
-🪜 **feat:** Softmax1D & ToScore1D ([#49](https://github.com/owkin/GrAIdient/pull/49))\
+🪜 **feat:** Softmax1D & DotProduct1D ([#49](https://github.com/owkin/GrAIdient/pull/49))\
 🪜 **feat:** remove activation from layer ([#47](https://github.com/owkin/GrAIdient/pull/47))\
 🎉 **refactor:** logo ([#46](https://github.com/owkin/GrAIdient/pull/46))\
 🐛 **fix:** model context max id ([#45](https://github.com/owkin/GrAIdient/pull/45))\

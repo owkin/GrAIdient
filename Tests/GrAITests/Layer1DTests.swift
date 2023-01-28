@@ -71,11 +71,6 @@ class Layer1DGradTests: Input1DMSE1DCase
             )
             
         case "Concat":
-            layer = FullyConnected(
-                layerPrev: layer, nbNeurons: 3,
-                activation: SoftReLU.str, biases: true,
-                params: params
-            )
             let otherLayer1: Layer1D = FullyConnected(
                 layerPrev: layer, nbNeurons: 9,
                 activation: SoftReLU.str, biases: true,
@@ -86,23 +81,28 @@ class Layer1DGradTests: Input1DMSE1DCase
                 activation: SoftReLU.str, biases: true,
                 params: params
             )
+            layer = FullyConnected(
+                layerPrev: layer, nbNeurons: 3,
+                activation: SoftReLU.str, biases: true,
+                params: params
+            )
             layer = Concat1D(
                 layersPrev: [layer, otherLayer1, otherLayer2],
                 params: params
             )
             
         case "Sum":
-            layer = FullyConnected(
-                layerPrev: layer, nbNeurons: 10,
-                activation: SoftReLU.str, biases: true,
-                params: params
-            )
             let otherLayer1: Layer1D = FullyConnected(
                 layerPrev: layer, nbNeurons: 10,
                 activation: SoftReLU.str, biases: true,
                 params: params
             )
             let otherLayer2: Layer1D = FullyConnected(
+                layerPrev: layer, nbNeurons: 10,
+                activation: SoftReLU.str, biases: true,
+                params: params
+            )
+            layer = FullyConnected(
                 layerPrev: layer, nbNeurons: 10,
                 activation: SoftReLU.str, biases: true,
                 params: params
@@ -120,6 +120,21 @@ class Layer1DGradTests: Input1DMSE1DCase
             )
             
             layer = Softmax1D(layerPrev: layer, size: 5, params: params)
+            
+        case "DotProduct":
+            let otherLayer: Layer1D = FullyConnected(
+                layerPrev: layer, nbNeurons: 12,
+                activation: SoftReLU.str, biases: true,
+                params: params
+            )
+            layer = FullyConnected(
+                layerPrev: layer, nbNeurons: 12,
+                activation: SoftReLU.str, biases: true,
+                params: params
+            )
+            layer = DotProduct1D(
+                layersPrev: [layer, otherLayer], size: 3, params: params
+            )
             
         default:
             fatalError("Unreachable.")
@@ -218,6 +233,19 @@ class Layer1DGradTests: Input1DMSE1DCase
         let trainer = _buildTrainer("Softmax")
         run(trainer)
     }
+    
+    func testDotProductCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("DotProduct")
+        run(trainer)
+    }
+    
+    func testDotProductGPU() throws
+    {
+        let trainer = _buildTrainer("DotProduct")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -277,11 +305,6 @@ class Layer1DFlowTests: Input1DMSE1DCase
             )
             
         case "Concat":
-            layer = FullyConnected(
-                layerPrev: layer, nbNeurons: 3,
-                activation: LeakyReLU.str, biases: true,
-                params: params
-            )
             let otherLayer1: Layer1D = FullyConnected(
                 layerPrev: layer, nbNeurons: 9,
                 activation: LeakyReLU.str, biases: true,
@@ -292,23 +315,28 @@ class Layer1DFlowTests: Input1DMSE1DCase
                 activation: LeakyReLU.str, biases: true,
                 params: params
             )
+            layer = FullyConnected(
+                layerPrev: layer, nbNeurons: 3,
+                activation: LeakyReLU.str, biases: true,
+                params: params
+            )
             layer = Concat1D(
                 layersPrev: [layer, otherLayer1, otherLayer2],
                 params: params
             )
             
         case "Sum":
-            layer = FullyConnected(
-                layerPrev: layer, nbNeurons: 10,
-                activation: LeakyReLU.str, biases: true,
-                params: params
-            )
             let otherLayer1: Layer1D = FullyConnected(
                 layerPrev: layer, nbNeurons: 10,
                 activation: LeakyReLU.str, biases: true,
                 params: params
             )
             let otherLayer2: Layer1D = FullyConnected(
+                layerPrev: layer, nbNeurons: 10,
+                activation: LeakyReLU.str, biases: true,
+                params: params
+            )
+            layer = FullyConnected(
                 layerPrev: layer, nbNeurons: 10,
                 activation: LeakyReLU.str, biases: true,
                 params: params
@@ -326,6 +354,21 @@ class Layer1DFlowTests: Input1DMSE1DCase
             )
             
             layer = Softmax1D(layerPrev: layer, size: 5, params: params)
+            
+        case "DotProduct":
+            let otherLayer: Layer1D = FullyConnected(
+                layerPrev: layer, nbNeurons: 12,
+                activation: LeakyReLU.str, biases: true,
+                params: params
+            )
+            layer = FullyConnected(
+                layerPrev: layer, nbNeurons: 12,
+                activation: LeakyReLU.str, biases: true,
+                params: params
+            )
+            layer = DotProduct1D(
+                layersPrev: [layer, otherLayer], size: 3, params: params
+            )
             
         default:
             fatalError("Unreachable.")
@@ -380,6 +423,12 @@ class Layer1DFlowTests: Input1DMSE1DCase
     func testSoftmax() throws
     {
         let trainer = _buildTrainer("Softmax")
+        run(trainer)
+    }
+    
+    func testDotProduct() throws
+    {
+        let trainer = _buildTrainer("DotProduct")
         run(trainer)
     }
 }
@@ -454,6 +503,12 @@ class Layer1DFlowResetTests: Layer1DFlowTests
         let trainer = _buildTrainer("Softmax")
         run(trainer)
     }
+    
+    override func testDotProduct() throws
+    {
+        let trainer = _buildTrainer("DotProduct")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -526,6 +581,12 @@ class Layer1DFlowReverseTests: Layer1DFlowTests
         let trainer = _buildTrainer("Softmax")
         run(trainer)
     }
+    
+    override func testDotProduct() throws
+    {
+        let trainer = _buildTrainer("DotProduct")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -588,6 +649,12 @@ class Layer1DInferenceTests: Layer1DFlowTests
     override func testSoftmax() throws
     {
         let trainer = _buildTrainer("Softmax")
+        run(trainer)
+    }
+    
+    override func testDotProduct() throws
+    {
+        let trainer = _buildTrainer("DotProduct")
         run(trainer)
     }
 }
@@ -655,6 +722,12 @@ class Layer1DLoadTests: Layer1DFlowTests
         let trainer = _buildTrainer("Softmax")
         run(trainer)
     }
+    
+    override func testDotProduct() throws
+    {
+        let trainer = _buildTrainer("DotProduct")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -718,6 +791,12 @@ class Layer1DTransformTests: Layer1DFlowTests
     override func testSoftmax() throws
     {
         let trainer = _buildTrainer("Softmax")
+        run(trainer)
+    }
+    
+    override func testDotProduct() throws
+    {
+        let trainer = _buildTrainer("DotProduct")
         run(trainer)
     }
 }

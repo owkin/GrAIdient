@@ -7,6 +7,11 @@
 
 import Foundation
 
+///
+/// Layer with a 1D shape neural structure.
+///
+/// This layer computes the Softmax function per block of neurons of a 1D layer.
+///
 public class Softmax1D: Layer1D
 {
     let _size: Int
@@ -16,6 +21,14 @@ public class Softmax1D: Layer1D
         case size
     }
     
+    ///
+    /// Create a layer with a 1D shape neural structure.
+    ///
+    /// - Parameters:
+    ///     - layerPrev: Previous layer that has been queued to the model.
+    ///     - size: The number of neurons per block.
+    ///     - params: Contextual parameters linking to the model.
+    ///
     public init(layerPrev: Layer1D, size: Int, params: GrAI.Model.Params)
     {
         let nbNeurons = layerPrev.nbNeurons

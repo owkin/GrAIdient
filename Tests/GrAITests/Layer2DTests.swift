@@ -141,7 +141,6 @@ class Layer2DGradTests: Input2DMSE1DCase
                 activation: SoftReLU.str, biases: true, bn: false,
                 params: params
             )
-            
             layer = Sum2D(
                 layersPrev: [layer, otherLayer1, otherLayer2],
                 params: params
@@ -166,7 +165,6 @@ class Layer2DGradTests: Input2DMSE1DCase
                 layerPrev: layer, size: 2, nbChannels: 6, stride: 2,
                 activation: SoftReLU.str, biases: true, bn: bn, params: params
             )
-            
             layer = IRDFT2RGB(layerPrev: layer, params: params)
             
         case "DecorrelateRGB":
@@ -199,7 +197,6 @@ class Layer2DGradTests: Input2DMSE1DCase
                 activation: SoftReLU.str, biases: true, bn: false,
                 params: params
             )
-            
             layer = Multiply2D(
                 layersPrev: [layer, otherLayer1, otherLayer2],
                 params: params
@@ -962,7 +959,6 @@ class Layer2DFlowTests: Input2DMSE1DCase
                 activation: LeakyReLU.str, biases: true, bn: false,
                 params: params
             )
-            
             layer = Sum2D(
                 layersPrev: [layer, otherLayer1, otherLayer2],
                 params: params
@@ -987,7 +983,6 @@ class Layer2DFlowTests: Input2DMSE1DCase
                 layerPrev: layer, size: 2, nbChannels: 6, stride: 2,
                 activation: SoftReLU.str, biases: true, bn: bn, params: params
             )
-            
             layer = IRDFT2RGB(layerPrev: layer, params: params)
             
         case "DecorrelateRGB":
@@ -1020,7 +1015,6 @@ class Layer2DFlowTests: Input2DMSE1DCase
                 activation: LeakyReLU.str, biases: true, bn: false,
                 params: params
             )
-            
             layer = Multiply2D(
                 layersPrev: [layer, otherLayer1, otherLayer2],
                 params: params

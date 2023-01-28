@@ -254,6 +254,21 @@ class Layer1DDirtyFlowTests: Input1DMSE1DCase
         case "Softmax":
             secondLayer = Softmax1D(layerPrev: layer, size: 5, params: params)
             
+        case "DotProduct":
+            let otherLayer: Layer1D = FullyConnected(
+                layerPrev: layer, nbNeurons: 5,
+                activation: LeakyReLU.str, biases: true,
+                params: params
+            )
+            secondLayer = DotProduct1D(
+                layersPrev: [firstLayer, otherLayer], size: 5, params: params
+            )
+            secondLayer = FullyConnected(
+                layerPrev: secondLayer, nbNeurons: 5,
+                activation: LeakyReLU.str, biases: true,
+                params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -303,6 +318,12 @@ class Layer1DDirtyFlowTests: Input1DMSE1DCase
     func testSoftmax() throws
     {
         let trainer = _buildTrainer("Softmax")
+        run(trainer)
+    }
+    
+    func testDotProduct() throws
+    {
+        let trainer = _buildTrainer("DotProduct")
         run(trainer)
     }
 }

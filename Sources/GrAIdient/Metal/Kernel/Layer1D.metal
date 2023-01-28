@@ -321,3 +321,105 @@ kernel void concat1DBackward(
         deltaPrev[offsetPrev] += delta[offset];
     }
 }
+
+kernel void softmax1DForward(
+    const device float * outsPrev,
+    constant uint * pNbNeurons,
+    constant uint * pNbBatch,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint nbNeurons;
+    uint nbBatch;
+    
+    if (pNbNeurons && pNbBatch && outsPrev && outs)
+    {
+        nbNeurons = *pNbNeurons;
+        nbBatch = *pNbBatch;
+    }
+    else
+        return ;
+    
+    uint depth = id[0];
+    uint elem = id[1];
+    
+    if (depth >= nbNeurons || elem >= nbBatch)
+    {
+        return ;
+    }
+    
+    float sum1 = 0.0;
+    for (uint depth1=0; depth1<nbNeurons; depth1++)
+    {
+        uint offset1 = depth1 + nbNeurons * elem;
+        float outPrev = outsPrev[offset1];
+        sum1 += exp(outPrev);
+    }
+    
+    uint offset = depth + nbNeurons * elem;
+    float outPrev = outsPrev[offset];
+    outs[offset] = exp(outPrev) / sum1;
+}
+
+kernel void softmax1DBackward(
+    const device float * outsPrev,
+    const device float * delta,
+    constant uint * pNbNeurons,
+    constant uint * pNbBatch,
+    constant uint * pDirty,
+    device float * deltaPrev,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint nbNeurons;
+    uint nbBatch;
+    uint dirty;
+    
+    if (pNbNeurons && pNbBatch && pDirty && outsPrev && deltaPrev && delta)
+    {
+        nbNeurons = *pNbNeurons;
+        nbBatch = *pNbBatch;
+        dirty = *pDirty;
+    }
+    else
+        return ;
+    
+    uint depth = id[0];
+    uint elem = id[1];
+    
+    if (depth >= nbNeurons || elem >= nbBatch)
+    {
+        return ;
+    }
+    
+    float sum1 = 0.0;
+    for (uint depth1=0; depth1<nbNeurons; depth1++)
+    {
+        uint offset1 = depth1 + nbNeurons * elem;
+        float outPrev1 = outsPrev[offset1];
+        sum1 += exp(outPrev1);
+    }
+    
+    uint offset = depth + nbNeurons * elem;
+    float outPrev = outsPrev[offset];
+    float deltaCur = delta[offset];
+    
+    float sum2 = 0.0;
+    for (uint depth2=0; depth2<nbNeurons; depth2++)
+    {
+        uint offset2 = depth2 + nbNeurons * elem;
+        float outPrev2 = outsPrev[offset2];
+        float deltaCur2 = delta[offset2];
+        sum2 += exp(outPrev + outPrev2) * deltaCur2;
+    }
+    
+    if (dirty)
+    {
+        deltaPrev[offset] = -sum2 / (sum1 * sum1) +
+            exp(outPrev) * deltaCur / sum1;
+    }
+    else
+    {
+        deltaPrev[offset] += -sum2 / (sum1 * sum1) +
+            exp(outPrev) * deltaCur / sum1;
+    }
+}

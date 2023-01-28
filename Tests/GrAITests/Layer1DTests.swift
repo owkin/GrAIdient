@@ -112,6 +112,9 @@ class Layer1DGradTests: Input1DMSE1DCase
                 params: params
             )
             
+        case "Softmax":
+            layer = Softmax1D(layerPrev: layer, params: params)
+            
         default:
             fatalError("Unreachable.")
         }
@@ -194,6 +197,19 @@ class Layer1DGradTests: Input1DMSE1DCase
     func testSumGPU() throws
     {
         let trainer = _buildTrainer("Sum")
+        run(trainer)
+    }
+    
+    func testSoftmaxCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("Softmax")
+        run(trainer)
+    }
+    
+    func testSoftmaxGPU() throws
+    {
+        let trainer = _buildTrainer("Softmax")
         run(trainer)
     }
 }
@@ -296,6 +312,9 @@ class Layer1DFlowTests: Input1DMSE1DCase
                 params: params
             )
             
+        case "Softmax":
+            layer = Softmax1D(layerPrev: layer, params: params)
+            
         default:
             fatalError("Unreachable.")
         }
@@ -343,6 +362,12 @@ class Layer1DFlowTests: Input1DMSE1DCase
     func testSum() throws
     {
         let trainer = _buildTrainer("Sum")
+        run(trainer)
+    }
+    
+    func testSoftmax() throws
+    {
+        let trainer = _buildTrainer("Softmax")
         run(trainer)
     }
 }
@@ -411,6 +436,12 @@ class Layer1DFlowResetTests: Layer1DFlowTests
         let trainer = _buildTrainer("Sum")
         run(trainer)
     }
+    
+    override func testSoftmax() throws
+    {
+        let trainer = _buildTrainer("Softmax")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -477,6 +508,12 @@ class Layer1DFlowReverseTests: Layer1DFlowTests
         let trainer = _buildTrainer("Sum")
         run(trainer)
     }
+    
+    override func testSoftmax() throws
+    {
+        let trainer = _buildTrainer("Softmax")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -533,6 +570,12 @@ class Layer1DInferenceTests: Layer1DFlowTests
     override func testSum() throws
     {
         let trainer = _buildTrainer("Sum")
+        run(trainer)
+    }
+    
+    override func testSoftmax() throws
+    {
+        let trainer = _buildTrainer("Softmax")
         run(trainer)
     }
 }
@@ -594,6 +637,12 @@ class Layer1DLoadTests: Layer1DFlowTests
         let trainer = _buildTrainer("Sum")
         run(trainer)
     }
+    
+    override func testSoftmax() throws
+    {
+        let trainer = _buildTrainer("Softmax")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -651,6 +700,12 @@ class Layer1DTransformTests: Layer1DFlowTests
     override func testSum() throws
     {
         let trainer = _buildTrainer("Sum")
+        run(trainer)
+    }
+    
+    override func testSoftmax() throws
+    {
+        let trainer = _buildTrainer("Softmax")
         run(trainer)
     }
 }

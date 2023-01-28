@@ -83,6 +83,9 @@ class Layer1DDirtyGradTests: Input1DMSE1DCase
                 params: params
             )
             
+        case "Softmax":
+            secondLayer = Softmax1D(layerPrev: layer, params: params)
+            
         default:
             fatalError("Unreachable.")
         }
@@ -135,6 +138,19 @@ class Layer1DDirtyGradTests: Input1DMSE1DCase
     func testSelectNeuronsGPU() throws
     {
         let trainer = _buildTrainer("SelectNeurons")
+        run(trainer)
+    }
+    
+    func testSoftmaxCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("Softmax")
+        run(trainer)
+    }
+    
+    func testSoftmaxGPU() throws
+    {
+        let trainer = _buildTrainer("Softmax")
         run(trainer)
     }
 }
@@ -235,6 +251,9 @@ class Layer1DDirtyFlowTests: Input1DMSE1DCase
                 params: params
             )
             
+        case "Softmax":
+            secondLayer = Softmax1D(layerPrev: layer, params: params)
+            
         default:
             fatalError("Unreachable.")
         }
@@ -278,6 +297,12 @@ class Layer1DDirtyFlowTests: Input1DMSE1DCase
     func testSum() throws
     {
         let trainer = _buildTrainer("Sum")
+        run(trainer)
+    }
+    
+    func testSoftmax() throws
+    {
+        let trainer = _buildTrainer("Softmax")
         run(trainer)
     }
 }

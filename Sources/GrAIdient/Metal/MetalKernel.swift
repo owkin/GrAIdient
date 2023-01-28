@@ -584,6 +584,8 @@ private class MetalDevice
                 "selectNeurons1DBackward",
                 "concat1DForward",
                 "concat1DBackward",
+                "softmax1DForward",
+                "softmax1DBackward",
             ],
             "Layer2D": [
                 "avgPoolForward",

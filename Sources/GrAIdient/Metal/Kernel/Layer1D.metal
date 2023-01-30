@@ -321,3 +321,246 @@ kernel void concat1DBackward(
         deltaPrev[offsetPrev] += delta[offset];
     }
 }
+
+kernel void softmax1DForward(
+    const device float * outsPrev,
+    constant uint * pSize,
+    constant uint * pNbNeurons,
+    constant uint * pNbBatch,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint size;
+    uint nbNeurons;
+    uint nbBatch;
+    
+    if (pSize && pNbNeurons && pNbBatch && outsPrev && outs)
+    {
+        size = *pSize;
+        nbNeurons = *pNbNeurons;
+        nbBatch = *pNbBatch;
+    }
+    else
+        return ;
+    
+    uint depth = id[0];
+    uint elem = id[1];
+    uint block = depth / size;
+    
+    if (depth >= nbNeurons || elem >= nbBatch)
+    {
+        return ;
+    }
+    
+    float sum1 = 0.0;
+    for (uint j1=0; j1<size; j1++)
+    {
+        uint offset1 = j1+block*size + nbNeurons * elem;
+        float outPrev = outsPrev[offset1];
+        sum1 += exp(outPrev);
+    }
+    
+    uint offset = depth + nbNeurons * elem;
+    float outPrev = outsPrev[offset];
+    outs[offset] = exp(outPrev) / sum1;
+}
+
+kernel void softmax1DBackward(
+    const device float * outsPrev,
+    const device float * delta,
+    constant uint * pSize,
+    constant uint * pNbNeurons,
+    constant uint * pNbBatch,
+    constant uint * pDirty,
+    device float * deltaPrev,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint size;
+    uint nbNeurons;
+    uint nbBatch;
+    uint dirty;
+    
+    if (pSize && pNbNeurons && pNbBatch && pDirty &&
+        outsPrev && deltaPrev && delta)
+    {
+        size = *pSize;
+        nbNeurons = *pNbNeurons;
+        nbBatch = *pNbBatch;
+        dirty = *pDirty;
+    }
+    else
+        return ;
+    
+    uint depth = id[0];
+    uint elem = id[1];
+    uint block = depth / size;
+    
+    if (depth >= nbNeurons || elem >= nbBatch)
+    {
+        return ;
+    }
+    
+    float sum1 = 0.0;
+    for (uint j1=0; j1<size; j1++)
+    {
+        uint offset1 = j1+block*size + nbNeurons * elem;
+        float outPrev1 = outsPrev[offset1];
+        sum1 += exp(outPrev1);
+    }
+    
+    uint offset = depth + nbNeurons * elem;
+    float outPrev = outsPrev[offset];
+    float deltaCur = delta[offset];
+    
+    float sum2 = 0.0;
+    for (uint j2=0; j2<size; j2++)
+    {
+        uint offset2 = j2+block*size + nbNeurons * elem;
+        float outPrev2 = outsPrev[offset2];
+        float deltaCur2 = delta[offset2];
+        sum2 += exp(outPrev + outPrev2) * deltaCur2;
+    }
+    
+    if (dirty)
+    {
+        deltaPrev[offset] = -sum2 / (sum1 * sum1) +
+            exp(outPrev) * deltaCur / sum1;
+    }
+    else
+    {
+        deltaPrev[offset] += -sum2 / (sum1 * sum1) +
+            exp(outPrev) * deltaCur / sum1;
+    }
+}
+
+kernel void dotProduct1DForward(
+    const device float * outsPrev1,
+    const device float * outsPrev2,
+    constant int * pSize,
+    constant uint * pNbNeurons,
+    constant uint * pNbNeuronsPrev,
+    constant uint * pNbBatch,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint size;
+    uint nbNeurons;
+    uint nbNeuronsPrev;
+    uint nbBatch;
+    
+    if (pSize && pNbNeurons && pNbNeuronsPrev && pNbBatch &&
+        outsPrev1 && outsPrev2 && outs)
+    {
+        size = *pSize;
+        nbNeurons = *pNbNeurons;
+        nbNeuronsPrev = *pNbNeuronsPrev;
+        nbBatch = *pNbBatch;
+    }
+    else
+        return ;
+    
+    uint depth = id[0];
+    uint elem = id[1];
+    
+    if (depth >= nbNeurons || elem >= nbBatch)
+    {
+        return ;
+    }
+    
+    float sum = 0.0;
+    for (uint j=0; j<size; j++)
+    {
+        uint offset = j+depth*size + nbNeuronsPrev * elem;
+        float outPrev1 = outsPrev1[offset];
+        float outPrev2 = outsPrev2[offset];
+        sum += outPrev1 * outPrev2;
+    }
+    
+    uint offset = depth + nbNeurons * elem;
+    outs[offset] = sum;
+}
+
+kernel void dotProduct1DBackward(
+    const device float * outsPrev,
+    const device float * delta,
+    constant int * pSize,
+    constant uint * pNbNeurons,
+    constant uint * pNbNeuronsPrev,
+    constant uint * pNbBatch,
+    constant uint * pDirty,
+    device float * deltaPrev,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint size;
+    uint nbNeurons;
+    uint nbNeuronsPrev;
+    uint nbBatch;
+    uint dirty;
+    
+    if (pSize && pNbNeurons && pNbNeuronsPrev && pNbBatch && pDirty &&
+        outsPrev && deltaPrev && delta)
+    {
+        size = *pSize;
+        nbNeurons = *pNbNeurons;
+        nbNeuronsPrev = *pNbNeuronsPrev;
+        nbBatch = *pNbBatch;
+        dirty = *pDirty;
+    }
+    else
+        return ;
+    
+    uint depth = id[0];
+    uint elem = id[1];
+    
+    if (depth >= nbNeurons || elem >= nbBatch)
+    {
+        return ;
+    }
+    
+    for (uint j=0; j<size; j++)
+    {
+        uint offsetPrev = j+depth*size + nbNeuronsPrev * elem;
+        uint offset = depth + nbNeurons * elem;
+        
+        float outPrev = outsPrev[offsetPrev];
+        float deltaCur = delta[offset];
+        if (dirty)
+        {
+            deltaPrev[offsetPrev] = outPrev * deltaCur;
+        }
+        else
+        {
+            deltaPrev[offsetPrev] += outPrev * deltaCur;
+        }
+    }
+}
+
+kernel void constant1DForward(
+    const device float * weights,
+    constant uint * pNbNeurons,
+    constant uint * pNbBatch,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint nbNeurons;
+    uint nbBatch;
+    
+    if (pNbNeurons && pNbBatch && weights && outs)
+    {
+        nbNeurons = *pNbNeurons;
+        nbBatch = *pNbBatch;
+    }
+    else
+        return ;
+    
+    uint depth = id[0];
+    uint elem = id[1];
+    
+    if (depth >= nbNeurons || elem >= nbBatch)
+    {
+        return ;
+    }
+    
+    uint offset = depth + nbNeurons * elem;
+    outs[offset] = weights[depth];
+}

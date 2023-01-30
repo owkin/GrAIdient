@@ -13,7 +13,7 @@
 public class Sum1D: LayerMerge1D
 {
     ///
-    /// Create a layer with a 2D shape neural structure.
+    /// Create a layer with a 1D shape neural structure.
     ///
     /// - Parameters:
     ///     - layersPrev: List of previous layers that have been queued to the model.

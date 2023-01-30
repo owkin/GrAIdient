@@ -71,11 +71,6 @@ class Layer1DGradTests: Input1DMSE1DCase
             )
             
         case "Concat":
-            layer = FullyConnected(
-                layerPrev: layer, nbNeurons: 3,
-                activation: SoftReLU.str, biases: true,
-                params: params
-            )
             let otherLayer1: Layer1D = FullyConnected(
                 layerPrev: layer, nbNeurons: 9,
                 activation: SoftReLU.str, biases: true,
@@ -86,17 +81,17 @@ class Layer1DGradTests: Input1DMSE1DCase
                 activation: SoftReLU.str, biases: true,
                 params: params
             )
+            layer = FullyConnected(
+                layerPrev: layer, nbNeurons: 3,
+                activation: SoftReLU.str, biases: true,
+                params: params
+            )
             layer = Concat1D(
                 layersPrev: [layer, otherLayer1, otherLayer2],
                 params: params
             )
             
         case "Sum":
-            layer = FullyConnected(
-                layerPrev: layer, nbNeurons: 10,
-                activation: SoftReLU.str, biases: true,
-                params: params
-            )
             let otherLayer1: Layer1D = FullyConnected(
                 layerPrev: layer, nbNeurons: 10,
                 activation: SoftReLU.str, biases: true,
@@ -107,9 +102,53 @@ class Layer1DGradTests: Input1DMSE1DCase
                 activation: SoftReLU.str, biases: true,
                 params: params
             )
+            layer = FullyConnected(
+                layerPrev: layer, nbNeurons: 10,
+                activation: SoftReLU.str, biases: true,
+                params: params
+            )
             layer = Sum1D(
                 layersPrev: [layer, otherLayer1, otherLayer2],
                 params: params
+            )
+            
+        case "Softmax":
+            layer = FullyConnected(
+                layerPrev: layer, nbNeurons: 15,
+                activation: SoftReLU.str, biases: true,
+                params: params
+            )
+            
+            layer = Softmax1D(layerPrev: layer, size: 5, params: params)
+            
+        case "DotProduct":
+            let otherLayer: Layer1D = FullyConnected(
+                layerPrev: layer, nbNeurons: 12,
+                activation: SoftReLU.str, biases: true,
+                params: params
+            )
+            layer = FullyConnected(
+                layerPrev: layer, nbNeurons: 12,
+                activation: SoftReLU.str, biases: true,
+                params: params
+            )
+            layer = DotProduct1D(
+                layersPrev: [layer, otherLayer], size: 3, params: params
+            )
+            
+        case "Constant":
+            var otherLayer: Layer1D = Constant1D(
+                nbNeurons: 5, params: params
+            )
+            (otherLayer as! Constant1D).weightsCPU = [1.0, 2.0, 3.0, 4.0, 5.0]
+            
+            otherLayer = FullyConnected(
+                layerPrev: otherLayer, nbNeurons: 5,
+                activation: SoftReLU.str, biases: true,
+                params: params
+            )
+            layer = Sum1D(
+                layersPrev: [layer, otherLayer], params: params
             )
             
         default:
@@ -196,6 +235,52 @@ class Layer1DGradTests: Input1DMSE1DCase
         let trainer = _buildTrainer("Sum")
         run(trainer)
     }
+    
+    func testSoftmaxCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("Softmax")
+        run(trainer)
+    }
+    
+    func testSoftmaxGPU() throws
+    {
+        let trainer = _buildTrainer("Softmax")
+        run(trainer)
+    }
+    
+    func testDotProductCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("DotProduct")
+        run(trainer)
+    }
+    
+    func testDotProductGPU() throws
+    {
+        let trainer = _buildTrainer("DotProduct")
+        run(trainer)
+    }
+    
+    func testConstantCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("Constant")
+        run(trainer)
+    }
+    
+    func testConstantGPU() throws
+    {
+        let trainer = _buildTrainer("Constant")
+        run(trainer)
+    }
+    
+    func testConstantSampleGPU() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("Constant")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -255,11 +340,6 @@ class Layer1DFlowTests: Input1DMSE1DCase
             )
             
         case "Concat":
-            layer = FullyConnected(
-                layerPrev: layer, nbNeurons: 3,
-                activation: LeakyReLU.str, biases: true,
-                params: params
-            )
             let otherLayer1: Layer1D = FullyConnected(
                 layerPrev: layer, nbNeurons: 9,
                 activation: LeakyReLU.str, biases: true,
@@ -270,17 +350,17 @@ class Layer1DFlowTests: Input1DMSE1DCase
                 activation: LeakyReLU.str, biases: true,
                 params: params
             )
+            layer = FullyConnected(
+                layerPrev: layer, nbNeurons: 3,
+                activation: LeakyReLU.str, biases: true,
+                params: params
+            )
             layer = Concat1D(
                 layersPrev: [layer, otherLayer1, otherLayer2],
                 params: params
             )
             
         case "Sum":
-            layer = FullyConnected(
-                layerPrev: layer, nbNeurons: 10,
-                activation: LeakyReLU.str, biases: true,
-                params: params
-            )
             let otherLayer1: Layer1D = FullyConnected(
                 layerPrev: layer, nbNeurons: 10,
                 activation: LeakyReLU.str, biases: true,
@@ -291,9 +371,53 @@ class Layer1DFlowTests: Input1DMSE1DCase
                 activation: LeakyReLU.str, biases: true,
                 params: params
             )
+            layer = FullyConnected(
+                layerPrev: layer, nbNeurons: 10,
+                activation: LeakyReLU.str, biases: true,
+                params: params
+            )
             layer = Sum1D(
                 layersPrev: [layer, otherLayer1, otherLayer2],
                 params: params
+            )
+            
+        case "Softmax":
+            layer = FullyConnected(
+                layerPrev: layer, nbNeurons: 15,
+                activation: LeakyReLU.str, biases: true,
+                params: params
+            )
+            
+            layer = Softmax1D(layerPrev: layer, size: 5, params: params)
+            
+        case "DotProduct":
+            let otherLayer: Layer1D = FullyConnected(
+                layerPrev: layer, nbNeurons: 12,
+                activation: LeakyReLU.str, biases: true,
+                params: params
+            )
+            layer = FullyConnected(
+                layerPrev: layer, nbNeurons: 12,
+                activation: LeakyReLU.str, biases: true,
+                params: params
+            )
+            layer = DotProduct1D(
+                layersPrev: [layer, otherLayer], size: 3, params: params
+            )
+            
+        case "Constant":
+            var otherLayer: Layer1D = Constant1D(
+                nbNeurons: 5, params: params
+            )
+            (otherLayer as! Constant1D).weightsCPU = [1.0, 2.0, 3.0, 4.0, 5.0]
+            
+            otherLayer = FullyConnected(
+                layerPrev: otherLayer, nbNeurons: 5,
+                activation: LeakyReLU.str, biases: true,
+                params: params
+            )
+            layer = Sum1D(
+                layersPrev: [layer, otherLayer], params: params
             )
             
         default:
@@ -343,6 +467,31 @@ class Layer1DFlowTests: Input1DMSE1DCase
     func testSum() throws
     {
         let trainer = _buildTrainer("Sum")
+        run(trainer)
+    }
+    
+    func testSoftmax() throws
+    {
+        let trainer = _buildTrainer("Softmax")
+        run(trainer)
+    }
+    
+    func testDotProduct() throws
+    {
+        let trainer = _buildTrainer("DotProduct")
+        run(trainer)
+    }
+    
+    func testConstant() throws
+    {
+        let trainer = _buildTrainer("Constant")
+        run(trainer)
+    }
+    
+    func testConstantSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("Constant")
         run(trainer)
     }
 }
@@ -411,6 +560,31 @@ class Layer1DFlowResetTests: Layer1DFlowTests
         let trainer = _buildTrainer("Sum")
         run(trainer)
     }
+    
+    override func testSoftmax() throws
+    {
+        let trainer = _buildTrainer("Softmax")
+        run(trainer)
+    }
+    
+    override func testDotProduct() throws
+    {
+        let trainer = _buildTrainer("DotProduct")
+        run(trainer)
+    }
+    
+    override func testConstant() throws
+    {
+        let trainer = _buildTrainer("Constant")
+        run(trainer)
+    }
+    
+    override func testConstantSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("Constant")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -477,6 +651,31 @@ class Layer1DFlowReverseTests: Layer1DFlowTests
         let trainer = _buildTrainer("Sum")
         run(trainer)
     }
+    
+    override func testSoftmax() throws
+    {
+        let trainer = _buildTrainer("Softmax")
+        run(trainer)
+    }
+    
+    override func testDotProduct() throws
+    {
+        let trainer = _buildTrainer("DotProduct")
+        run(trainer)
+    }
+    
+    override func testConstant() throws
+    {
+        let trainer = _buildTrainer("Constant")
+        run(trainer)
+    }
+    
+    override func testConstantSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("Constant")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -533,6 +732,31 @@ class Layer1DInferenceTests: Layer1DFlowTests
     override func testSum() throws
     {
         let trainer = _buildTrainer("Sum")
+        run(trainer)
+    }
+    
+    override func testSoftmax() throws
+    {
+        let trainer = _buildTrainer("Softmax")
+        run(trainer)
+    }
+    
+    override func testDotProduct() throws
+    {
+        let trainer = _buildTrainer("DotProduct")
+        run(trainer)
+    }
+    
+    override func testConstant() throws
+    {
+        let trainer = _buildTrainer("Constant")
+        run(trainer)
+    }
+    
+    override func testConstantSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("Constant")
         run(trainer)
     }
 }
@@ -594,6 +818,31 @@ class Layer1DLoadTests: Layer1DFlowTests
         let trainer = _buildTrainer("Sum")
         run(trainer)
     }
+    
+    override func testSoftmax() throws
+    {
+        let trainer = _buildTrainer("Softmax")
+        run(trainer)
+    }
+    
+    override func testDotProduct() throws
+    {
+        let trainer = _buildTrainer("DotProduct")
+        run(trainer)
+    }
+    
+    override func testConstant() throws
+    {
+        let trainer = _buildTrainer("Constant")
+        run(trainer)
+    }
+    
+    override func testConstantSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("Constant")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -651,6 +900,31 @@ class Layer1DTransformTests: Layer1DFlowTests
     override func testSum() throws
     {
         let trainer = _buildTrainer("Sum")
+        run(trainer)
+    }
+    
+    override func testSoftmax() throws
+    {
+        let trainer = _buildTrainer("Softmax")
+        run(trainer)
+    }
+    
+    override func testDotProduct() throws
+    {
+        let trainer = _buildTrainer("DotProduct")
+        run(trainer)
+    }
+    
+    override func testConstant() throws
+    {
+        let trainer = _buildTrainer("Constant")
+        run(trainer)
+    }
+    
+    override func testConstantSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("Constant")
         run(trainer)
     }
 }

@@ -159,7 +159,7 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
                    height: layerPrev.height,
                    width: layerPrev.width,
                    params: params)
-        computeDelta = false
+        computeDelta = true
     }
     
     ///
@@ -173,7 +173,14 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
     public required init(from decoder: Decoder) throws
     {
         try super.init(from: decoder)
-        computeDelta = false
+        if idPrev > -1
+        {
+            computeDelta = true
+        }
+        else
+        {
+            computeDelta = false
+        }
     }
     
     ///

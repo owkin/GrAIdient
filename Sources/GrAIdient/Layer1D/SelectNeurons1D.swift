@@ -17,6 +17,17 @@ public class SelectNeurons1D: Layer1D
     /// List of coefficients to scale each selected neuron.
     let _coeffs: [Double]
     
+    ///
+    /// Indices of selected neurons.
+    /// Shape ~ (nbNeurons,).
+    ///
+    var _neuronsBuffer: MetalPrivateBuffer<UInt32>! = nil
+    ///
+    /// Coefficients of selected neurons.
+    /// Shape ~ (nbNeurons,).
+    ///
+    var _coeffsBuffer: MetalPrivateBuffer<Float>! = nil
+    
     private enum Keys: String, CodingKey
     {
         case neurons
@@ -111,6 +122,50 @@ public class SelectNeurons1D: Layer1D
     }
     
     ///
+    /// Clean state resources in the GPU execution context.
+    ///
+    /// We clean the neurons' state (forward and backward).
+    ///
+    public override func resetKernelGPU()
+    {
+        super.resetKernelGPU()
+        _neuronsBuffer = nil
+        _coeffsBuffer = nil
+    }
+    
+    ///
+    /// Initialize state resources in the GPU execution context.
+    ///
+    /// We initialize the neurons' forward state.
+    ///
+    public override func checkStateForwardGPU(batchSize: Int) throws
+    {
+        try super.checkStateForwardGPU(batchSize: batchSize)
+        
+        if _neuronsBuffer == nil
+        {
+            _neuronsBuffer = MetalPrivateBuffer<UInt32>(
+                nbNeurons, deviceID: deviceID
+            )
+            _coeffsBuffer = MetalPrivateBuffer<Float>(
+                nbNeurons, deviceID: deviceID
+            )
+            
+            let neuronsPtr = _neuronsBuffer.shared.buffer
+            let coeffsPtr = _coeffsBuffer.shared.buffer
+            
+            for (num, neuron) in _neurons.enumerated()
+            {
+                neuronsPtr[num] = UInt32(neuron)
+                coeffsPtr[num] = Float(_coeffs[num])
+            }
+            
+            MetalKernel.get.upload([_neuronsBuffer])
+            MetalKernel.get.upload([_coeffsBuffer])
+        }
+    }
+    
+    ///
     /// Apply the forward pass of the Gradient Checking in CPU execution context.
     ///
     /// Throw an error if batch size is greater than the first batch size.
@@ -189,16 +244,6 @@ public class SelectNeurons1D: Layer1D
             let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
             let pNbNeuronsPrev: [UInt32] = [UInt32(layerPrev.nbNeurons)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
-            var pNeurons = [UInt32]()
-            for neuron in _neurons
-            {
-                pNeurons.append(UInt32(neuron))
-            }
-            var pCoeffs = [Float]()
-            for coeff in _coeffs
-            {
-                pCoeffs.append(Float(coeff))
-            }
             
             let command = MetalKernel.get.createCommand(
                 "selectNeurons1DForward", deviceID: deviceID
@@ -206,8 +251,8 @@ public class SelectNeurons1D: Layer1D
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(pNbNeurons, atIndex: 1)
             command.setBytes(pNbNeuronsPrev, atIndex: 2)
-            command.setBytes(pNeurons, atIndex: 3)
-            command.setBytes(pCoeffs, atIndex: 4)
+            command.setBuffer(_neuronsBuffer.metal, atIndex: 3)
+            command.setBuffer(_coeffsBuffer.metal, atIndex: 4)
             command.setBytes(pNbBatch, atIndex: 5)
             command.setBuffer(outs.metal, atIndex: 6)
             
@@ -260,19 +305,8 @@ public class SelectNeurons1D: Layer1D
             let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
             let pNbNeuronsPrev: [UInt32] = [UInt32(layerPrev.nbNeurons)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
-            var pNeurons = [UInt32]()
-            for neuron in _neurons
-            {
-                pNeurons.append(UInt32(neuron))
-            }
-            var pCoeffs = [Float]()
-            for coeff in _coeffs
-            {
-                pCoeffs.append(Float(coeff))
-            }
             
             var command: MetalCommand
-            
             if layerPrev.dirty
             {
                 let nbElems = layerPrev.delta.nbElems
@@ -294,8 +328,8 @@ public class SelectNeurons1D: Layer1D
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBytes(pNbNeurons, atIndex: 1)
             command.setBytes(pNbNeuronsPrev, atIndex: 2)
-            command.setBytes(pNeurons, atIndex: 3)
-            command.setBytes(pCoeffs, atIndex: 4)
+            command.setBuffer(_neuronsBuffer.metal, atIndex: 3)
+            command.setBuffer(_coeffsBuffer.metal, atIndex: 4)
             command.setBytes(pNbBatch, atIndex: 5)
             command.setBuffer(layerPrev.delta.metal, atIndex: 6)
             

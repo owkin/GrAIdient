@@ -26,7 +26,7 @@ GrAIdient is a framework that exposes the graph of layers as its unique way to
 design deep learning models. This "flattened" vision enforces 
 great understanding, control and reproducibility over these models. 
 
-Though deeply grounded to the data driven research, the goal is to challenge 
+Though deeply grounded to the data driven pipeline, the goal is to challenge 
 the very understanding of deep learning models and inject human intelligence 
 to go from black box models to white box models. 
 

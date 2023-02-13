@@ -148,12 +148,12 @@ public class BatchNormalization: BatchNormalizationBase
     let _Ɛ: Double = 1e-5
     
     ///
-    /// Arrays of weights to scale the normalization result.
+    /// Array of weights to scale the normalization result.
     /// Shape ~ (nbNeurons,).
     ///
     var _Ɣ: WeightArrays! = nil
     ///
-    /// Arrays of biases to add to the normalization result.
+    /// Array of biases to add to the normalization result.
     /// Shape ~ (nbNeurons,).
     ///
     var _β: WeightArrays! = nil
@@ -521,15 +521,15 @@ public class BatchNormalization: BatchNormalizationBase
 class BatchNormalizationGPU: BatchNormalizationBase
 {
     ///
-    /// Buffers of weights to scale the normalization result.
+    /// Buffer of weights to scale the normalization result.
     /// Shape ~ (nbNeurons,).
     ///
-    var _ƔBuffers: IWeightBuffers! = nil
+    var _Ɣ: IWeightBuffers! = nil
     ///
-    /// Buffers of biases to add to the normalization result.
+    /// Buffer of biases to add to the normalization result.
     /// Shape ~ (nbNeurons,).
     ///
-    var _βBuffers: IWeightBuffers! = nil
+    var _β: IWeightBuffers! = nil
     
     ///
     /// Buffer of averages of data for the different independent batch normalization units.
@@ -576,16 +576,16 @@ class BatchNormalizationGPU: BatchNormalizationBase
     override var weights: [Float]
     {
         get {
-            if _ƔBuffers == nil
+            if _Ɣ == nil
             {
                 return super.weights
             }
             
-            MetalKernel.get.download([_βBuffers.w_p!, _ƔBuffers.w_p!])
+            MetalKernel.get.download([_β.w_p!, _Ɣ.w_p!])
             
             var weightsTmp = [Float]()
-            weightsTmp += _ƔBuffers.w_p!.shared.array
-            weightsTmp += _βBuffers.w_p!.shared.array
+            weightsTmp += _Ɣ.w_p!.shared.array
+            weightsTmp += _β.w_p!.shared.array
             return weightsTmp
         }
         set {
@@ -645,8 +645,8 @@ class BatchNormalizationGPU: BatchNormalizationBase
         _sum1 = nil
         _sum2 = nil
         
-        _ƔBuffers?.reset()
-        _βBuffers?.reset()
+        _Ɣ?.reset()
+        _β?.reset()
     }
     
     ///
@@ -669,11 +669,11 @@ class BatchNormalizationGPU: BatchNormalizationBase
     ///
     func initWeights()
     {
-        _βBuffers = WeightBuffers(nbElems: _nbNeurons, deviceID: _deviceID)
-        _ƔBuffers = WeightBuffers(nbElems: _nbNeurons, deviceID: _deviceID)
+        _β = WeightBuffers(nbElems: _nbNeurons, deviceID: _deviceID)
+        _Ɣ = WeightBuffers(nbElems: _nbNeurons, deviceID: _deviceID)
         
-        let βPtr = _βBuffers.w_p!.shared.buffer
-        let ƔPtr = _ƔBuffers.w_p!.shared.buffer
+        let βPtr = _β.w_p!.shared.buffer
+        let ƔPtr = _Ɣ.w_p!.shared.buffer
         
         if _weightsList.count == 0
         {
@@ -693,7 +693,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
             _weightsList = []
         }
         
-        MetalKernel.get.upload([_βBuffers.w_p!, _ƔBuffers.w_p!])
+        MetalKernel.get.upload([_β.w_p!, _Ɣ.w_p!])
     }
     
     /// Initialize stats in the GPU execution context.
@@ -848,8 +848,8 @@ class BatchNormalizationGPU: BatchNormalizationBase
         let command = MetalKernel.get.createCommand(
             "forwardBNConvTraining", deviceID: _deviceID
         )
-        command.setBuffer(_βBuffers.w.metal, atIndex: 0)
-        command.setBuffer(_ƔBuffers.w.metal, atIndex: 1)
+        command.setBuffer(_β.w.metal, atIndex: 0)
+        command.setBuffer(_Ɣ.w.metal, atIndex: 1)
         command.setBuffer(_μ.metal, atIndex: 2)
         command.setBuffer(_σ2.metal, atIndex: 3)
         command.setBytes(pNbChannels, atIndex: 4)
@@ -886,8 +886,8 @@ class BatchNormalizationGPU: BatchNormalizationBase
             "forwardBNConvInference",
             deviceID: _deviceID
         )
-        command.setBuffer(_βBuffers.w.metal, atIndex: 0)
-        command.setBuffer(_ƔBuffers.w.metal, atIndex: 1)
+        command.setBuffer(_β.w.metal, atIndex: 0)
+        command.setBuffer(_Ɣ.w.metal, atIndex: 1)
         command.setBuffer(_Eμ.metal, atIndex: 2)
         command.setBuffer(_Eσ2.metal, atIndex: 3)
         command.setBytes(pNbChannels, atIndex: 4)
@@ -939,15 +939,15 @@ class BatchNormalizationGPU: BatchNormalizationBase
         )
         command.setBuffer(layer.delta.metal, atIndex: 0)
         command.setBuffer(_xHat.metal, atIndex: 1)
-        command.setBuffer(_ƔBuffers.w.metal, atIndex: 2)
+        command.setBuffer(_Ɣ.w.metal, atIndex: 2)
         command.setBytes(pNbChannels, atIndex: 3)
         command.setBytes(pNbBatch, atIndex: 4)
         command.setBytes(pDimensions, atIndex: 5)
         command.setBytes(pAccumulate, atIndex: 6)
         command.setBuffer(_sum1.metal, atIndex: 7)
         command.setBuffer(_sum2.metal, atIndex: 8)
-        command.setBuffer(_ƔBuffers.g.metal, atIndex: 9)
-        command.setBuffer(_βBuffers.g.metal, atIndex: 10)
+        command.setBuffer(_Ɣ.g.metal, atIndex: 9)
+        command.setBuffer(_β.g.metal, atIndex: 10)
         
         command.dispatchThreads(_nbNeurons)
         command.enqueue()
@@ -971,7 +971,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
         )
         command.setBuffer(_σ2.metal, atIndex: 0)
         command.setBuffer(_xHat.metal, atIndex: 1)
-        command.setBuffer(_ƔBuffers.w.metal, atIndex: 2)
+        command.setBuffer(_Ɣ.w.metal, atIndex: 2)
         command.setBuffer(_sum1.metal, atIndex: 3)
         command.setBuffer(_sum2.metal, atIndex: 4)
         command.setBytes(pNbChannels, atIndex: 5)
@@ -1001,7 +1001,7 @@ class BatchNormalizationGPU: BatchNormalizationBase
         let command = MetalKernel.get.createCommand(
             "backwardBNConvInference", deviceID: _deviceID
         )
-        command.setBuffer(_ƔBuffers.w.metal, atIndex: 0)
+        command.setBuffer(_Ɣ.w.metal, atIndex: 0)
         command.setBuffer(_Eσ2.metal, atIndex: 1)
         command.setBytes(pNbChannels, atIndex: 2)
         command.setBytes(pNbBatch, atIndex: 3)
@@ -1019,6 +1019,6 @@ class BatchNormalizationGPU: BatchNormalizationBase
     /// Get the weights in the GPU execution context.
     func collectWeights() -> [IWeightBuffers]
     {
-        return [_ƔBuffers, _βBuffers]
+        return [_Ɣ, _β]
     }
 }

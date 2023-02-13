@@ -163,7 +163,7 @@ final class VGGExample: XCTestCase
         
         // Decode it as a base model
         // (model where `layerPrev` links are not initialized).
-        let baseModel = try! JSONDecoder().decode(
+        let baseModel = try! PropertyListDecoder().decode(
             BaseModel.self,
             from: data
         )
@@ -351,7 +351,7 @@ final class VGGExample: XCTestCase
         XCTAssert(ratio < 60)
         
         // Encode the model.
-        let encoder = JSONEncoder()
+        let encoder = PropertyListEncoder()
         let data = try! encoder.encode(vgg)
         
         // Save it to the disk.
@@ -486,7 +486,7 @@ final class VGGExample: XCTestCase
         }
     
         // Encode the trained model.
-        let encoder = JSONEncoder()
+        let encoder = PropertyListEncoder()
         let data = try! encoder.encode(vgg)
         
         // Save it to the disk.

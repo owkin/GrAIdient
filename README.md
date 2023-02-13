@@ -34,16 +34,16 @@ to go from black box models to white box models.
 Let us find our grAI between them both! <br />
 <br />
 
-Key features: 
+## ✨ Key Features
 
-- what you do is what you get
+- flat design with direct access to the graph of layers and the backward pass
 - run natively on Mac Intel GPU, eGPU, Mac M1, M2...
 - compiled language
 - gradient checking
 - extendable design
 - PyTorch interoperability
-- compute gradients per batch & per sample (differential privacy)
-- debugging at the neuron level
+- compute gradients per batch & per sample (ready for differential privacy)
+- debug at the neuron level
 
 ## 📦 Swift Package Manager
 

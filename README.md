@@ -40,9 +40,8 @@ Let us find our grAI between them both! <br />
 - run natively on Mac Intel GPU, eGPU, Mac M1, M2...
 - compiled language
 - gradient checking
-- extendable design
 - PyTorch interoperability
-- compute gradients per batch & per sample (ready for differential privacy)
+- gradients per batch & per sample (ready for differential privacy)
 - debug at the neuron level
 
 ## 📦 Swift Package Manager

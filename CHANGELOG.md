@@ -12,13 +12,13 @@ All notable changes to this project will be documented in this file.
 🪜 **feat:** remove activation from layer ([#47](https://github.com/owkin/GrAIdient/pull/47))\
 🪜 **feat:** LayerMerge1D, Sum1D, Concat1D, Concat2D ([#43](https://github.com/owkin/GrAIdient/pull/43))\
 🪜 **layer_2d:** Deconvolution2D ([#42](https://github.com/owkin/GrAIdient/pull/42))\
-🪜 **feat:** getDeltaWeightsGPU per sample API ([#41](https://github.com/owkin/GrAIdient/pull/41))\
+🪜 **feat:** getDeltaWeightsGPU per sample API ([#41](https://github.com/owkin/GrAIdient/pull/41))
 
 ### Bug Fixes
 
 🐛 **fix:** use buffers for neuron selection in SelectNeurons1D ([#50](https://github.com/owkin/GrAIdient/pull/50))\
 🐛 **fix:** model context max id ([#45](https://github.com/owkin/GrAIdient/pull/45))\
-🐛 **fix:** remove error when data input may indicate lower batch size ([#44](https://github.com/owkin/GrAIdient/pull/44))\
+🐛 **fix:** remove error when data input may indicate lower batch size ([#44](https://github.com/owkin/GrAIdient/pull/44))
 
 ### Miscellaneous Tasks
 

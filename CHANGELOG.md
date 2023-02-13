@@ -4,16 +4,26 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
-📚 **docs:** PropertyListEncoder by default ([#51](https://github.com/owkin/GrAIdient/pull/51))\
-🐛 **fix:** use buffers for neuron selection in SelectNeurons1D ([#50](https://github.com/owkin/GrAIdient/pull/50))\
+## 0.2.0 (2022-02-13)
+
+### Features
+
 🪜 **feat:** Softmax1D, DotProduct1D & Constant1D ([#49](https://github.com/owkin/GrAIdient/pull/49))\
 🪜 **feat:** remove activation from layer ([#47](https://github.com/owkin/GrAIdient/pull/47))\
-🎉 **refactor:** logo ([#46](https://github.com/owkin/GrAIdient/pull/46))\
-🐛 **fix:** model context max id ([#45](https://github.com/owkin/GrAIdient/pull/45))\
-🐛 **fix:** remove error when data input may indicate lower batch size ([#44](https://github.com/owkin/GrAIdient/pull/44))\
 🪜 **feat:** LayerMerge1D, Sum1D, Concat1D, Concat2D ([#43](https://github.com/owkin/GrAIdient/pull/43))\
 🪜 **layer_2d:** Deconvolution2D ([#42](https://github.com/owkin/GrAIdient/pull/42))\
 🪜 **feat:** getDeltaWeightsGPU per sample API ([#41](https://github.com/owkin/GrAIdient/pull/41))\
+
+### Bug Fixes
+
+🐛 **fix:** use buffers for neuron selection in SelectNeurons1D ([#50](https://github.com/owkin/GrAIdient/pull/50))\
+🐛 **fix:** model context max id ([#45](https://github.com/owkin/GrAIdient/pull/45))\
+🐛 **fix:** remove error when data input may indicate lower batch size ([#44](https://github.com/owkin/GrAIdient/pull/44))\
+
+### Miscellaneous Tasks
+
+📚 **docs:** PropertyListEncoder by default ([#51](https://github.com/owkin/GrAIdient/pull/51))\
+🎉 **refactor:** logo ([#46](https://github.com/owkin/GrAIdient/pull/46))\
 🎉 **refactor!:** re brand the framework ([#40](https://github.com/owkin/GrAIdient/pull/40))
 
 ## 0.1.1 (2022-12-16)

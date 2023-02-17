@@ -641,12 +641,10 @@ public class InstanceNorm2D: Activation2D, LayerUpdate, LayerWithActivation
     func getOutsGC(depth: Int, batch: Int, elem: Int) -> [Double]
     {
         var outs = [Double](repeating: 0.0, count: height * width)
-        let offsetStart = batch * height
-        
         for i in 0..<height {
         for j in 0..<width
         {
-            let offset = j + (offsetStart + i) * width
+            let offset = j + i * width
             outs[offset] = neurons[depth].get(i, j)!.gc[batch][elem].out
         }}
         return outs
@@ -663,11 +661,10 @@ public class InstanceNorm2D: Activation2D, LayerUpdate, LayerWithActivation
     ///
     func setOutsGC(depth: Int, batch: Int, elem: Int, outs: [Double])
     {
-        let offsetStart = batch * height
         for i in 0..<height {
         for j in 0..<width
         {
-            let offset = j + (offsetStart + i) * width
+            let offset = j + i * width
             neurons[depth].get(i, j)!.gc[batch][elem].out = outs[offset]
         }}
     }
@@ -683,12 +680,10 @@ public class InstanceNorm2D: Activation2D, LayerUpdate, LayerWithActivation
     func getOuts(depth: Int, batch: Int) -> [Double]
     {
         var outs = [Double](repeating: 0.0, count: height * width)
-        let offsetStart = batch * height
-        
         for i in 0..<height {
         for j in 0..<width
         {
-            let offset = j + (offsetStart + i) * width
+            let offset = j + i * width
             outs[offset] = neurons[depth].get(i, j)!.v[batch].out
         }}
         return outs
@@ -704,11 +699,10 @@ public class InstanceNorm2D: Activation2D, LayerUpdate, LayerWithActivation
     ///
     func setOuts(depth: Int, batch: Int, outs: [Double])
     {
-        let offsetStart = batch * height
         for i in 0..<height {
         for j in 0..<width
         {
-            let offset = j + (offsetStart + i) * width
+            let offset = j + i * width
             neurons[depth].get(i, j)!.v[batch].out = outs[offset]
         }}
     }
@@ -724,12 +718,10 @@ public class InstanceNorm2D: Activation2D, LayerUpdate, LayerWithActivation
     func getDelta(depth: Int, batch: Int) -> [Double]
     {
         var delta = [Double](repeating: 0.0, count: height * width)
-        let offsetStart = batch * height
-        
         for i in 0..<height {
         for j in 0..<width
         {
-            let offset = j + (offsetStart + i) * width
+            let offset = j + i * width
             delta[offset] = neurons[depth].get(i, j)!.v[batch].delta
         }}
         return delta
@@ -745,11 +737,10 @@ public class InstanceNorm2D: Activation2D, LayerUpdate, LayerWithActivation
     ///
     func setDelta(depth: Int, batch: Int, delta: [Double])
     {
-        let offsetStart = batch * height
         for i in 0..<height {
         for j in 0..<width
         {
-            let offset = j + (offsetStart + i) * width
+            let offset = j + i * width
             neurons[depth].get(i, j)!.v[batch].delta = delta[offset]
         }}
     }

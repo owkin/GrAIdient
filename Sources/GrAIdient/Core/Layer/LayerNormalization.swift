@@ -1360,7 +1360,7 @@ public class InstanceNormalization: LayerWeightsNormalization
             let (delta, dβ, dƔ) = Normalization.backward(
                 delta: layer.getDelta(depth: depth, batch: batch),
                 xHat: _xHat[depth + nbChannels * batch],
-                σ2: _σ2[depth],
+                σ2: _σ2[depth + nbChannels * batch],
                 Ɣ: _Ɣ.w[depth]
             )
             layer.setDelta(depth: depth, batch: batch, delta: delta)

@@ -305,6 +305,11 @@ class Layer2DGradTests: Input2DMSE1DCase
                 params: params
             )
             
+        case "InstanceNorm":
+            layer = InstanceNorm2D(
+                layerPrev: layer, activation: SoftReLU.str, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -828,6 +833,19 @@ class Layer2DGradTests: Input2DMSE1DCase
         let trainer = _buildTrainer(model: "Concat", bn: false)
         run(trainer)
     }
+    
+    func testInstanceNormCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "InstanceNorm", bn: false)
+        run(trainer)
+    }
+    
+    func testInstanceNormGPU() throws
+    {
+        let trainer = _buildTrainer(model: "InstanceNorm", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -1127,6 +1145,11 @@ class Layer2DFlowTests: Input2DMSE1DCase
                 params: params
             )
             
+        case "InstanceNorm":
+            layer = InstanceNorm2D(
+                layerPrev: layer, activation: LeakyReLU.str, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -1416,6 +1439,12 @@ class Layer2DFlowTests: Input2DMSE1DCase
     func testConcat() throws
     {
         let trainer = _buildTrainer(model: "Concat", bn: false)
+        run(trainer)
+    }
+    
+    func testInstanceNorm() throws
+    {
+        let trainer = _buildTrainer(model: "InstanceNorm", bn: false)
         run(trainer)
     }
 }
@@ -1727,6 +1756,12 @@ class Layer2DFlowResetTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "Concat", bn: false)
         run(trainer)
     }
+    
+    override func testInstanceNorm() throws
+    {
+        let trainer = _buildTrainer(model: "InstanceNorm", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -2036,6 +2071,12 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "Concat", bn: false)
         run(trainer)
     }
+    
+    override func testInstanceNorm() throws
+    {
+        let trainer = _buildTrainer(model: "InstanceNorm", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -2343,6 +2384,12 @@ class Layer2DInferenceTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "Concat", bn: false)
         run(trainer)
     }
+    
+    override func testInstanceNorm() throws
+    {
+        let trainer = _buildTrainer(model: "InstanceNorm", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -2645,6 +2692,12 @@ class Layer2DLoadTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "Concat", bn: false)
         run(trainer)
     }
+    
+    override func testInstanceNorm() throws
+    {
+        let trainer = _buildTrainer(model: "InstanceNorm", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -2945,6 +2998,12 @@ class Layer2DTransformTests: Layer2DFlowTests
     override func testConcat() throws
     {
         let trainer = _buildTrainer(model: "Concat", bn: false)
+        run(trainer)
+    }
+    
+    override func testInstanceNorm() throws
+    {
+        let trainer = _buildTrainer(model: "InstanceNorm", bn: false)
         run(trainer)
     }
 }

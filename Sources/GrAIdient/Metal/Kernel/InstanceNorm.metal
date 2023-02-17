@@ -93,7 +93,7 @@ kernel void computeInstanceNormConvσ2(
         uint offsetStart = (depth + nbChannels * elem) * height;
         uint offset = y + (offsetStart + x) * width;
             
-        float tmp = tmps[offset] - μ[depth];
+        float tmp = tmps[offset] - μ[depth + nbChannels * elem];
         sum += tmp * tmp;
     }}
     

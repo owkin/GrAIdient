@@ -142,7 +142,7 @@ public class Deconvolution2D: Convolution2D
             stride: _stride,
             activation: _activation?.name,
             biases: _updateBiases,
-            bn: _bn != nil || _bnGPU != nil,
+            bn: _norm != nil || _normGPU != nil,
             params: params
         )
         if inPlace
@@ -151,19 +151,19 @@ public class Deconvolution2D: Convolution2D
             layer._bArrays = _bArrays
             layer._wBuffers = _wBuffers
             layer._bBuffers = _bBuffers
-            layer._bn = _bn
-            layer._bnGPU = _bnGPU
+            layer._norm = _norm
+            layer._normGPU = _normGPU
         }
         else
         {
             // only one of them should be cloned
-            if let bn = _bnGPU
+            if let bn = _normGPU
             {
-                layer._bn = bn.clone()
+                layer._norm = bn.clone()
             }
-            else if let bn = _bn
+            else if let bn = _norm
             {
-                layer._bn = bn.clone()
+                layer._norm = bn.clone()
             }
             
             if GrAI.Opti.GPU
@@ -212,8 +212,8 @@ public class Deconvolution2D: Convolution2D
             layer._bArrays = _bArrays
             layer._wBuffers = _wBuffers
             layer._bBuffers = _bBuffers
-            layer._bn = nil
-            layer._bnGPU = nil
+            layer._norm = nil
+            layer._normGPU = nil
         }
         else
         {
@@ -428,7 +428,7 @@ public class Deconvolution2D: Convolution2D
             }}}}}
             
             // Prepare GC for BN weights: Ɣ and β.
-            if _bn != nil {
+            if _norm != nil {
             for batch in 0..<batchSize {
             for elem in newGC-4*nbChannels..<newGC {
             for depth in 0..<nbChannels
@@ -669,7 +669,7 @@ public class Deconvolution2D: Convolution2D
             }}}}}
             
             // Prepare GC for BN weights: Ɣ and β.
-            if _bn != nil {
+            if _norm != nil {
             for batch in 0..<batchSize {
             for elem in newGC-4*nbChannels..<newGC {
             for depth in 0..<nbChannels

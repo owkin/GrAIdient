@@ -543,8 +543,8 @@ private class MetalDevice
                 "reduceBiases",
             ],
             "BN": [
-                "computeConvμ",
-                "computeConvσ2",
+                "computeBNConvμ",
+                "computeBNConvσ2",
                 "forwardBNConvTraining",
                 "forwardBNConvInference",
                 "backwardWeightsBNConv",
@@ -574,6 +574,13 @@ private class MetalDevice
                 "flDerWeights",
                 "flDerBiases",
                 "flReduceWeights",
+            ],
+            "InstanceNorm": [
+                "computeInstanceNormConvμ",
+                "computeInstanceNormConvσ2",
+                "forwardInstanceNormConv",
+                "backwardWeightsInstanceNormConv",
+                "backwardInstanceNorm",
             ],
             "Layer1D": [
                 "MSE1DLoss",

@@ -285,7 +285,7 @@ public class Convolution2D: BN2D
             {
                 nbGC += nbChannels
             }
-            if _bn != nil || _bnGPU != nil
+            if _norm != nil || _normGPU != nil
             {
                 nbGC += 2 * nbChannels
             }
@@ -517,7 +517,7 @@ public class Convolution2D: BN2D
             stride: _stride,
             activation: _activation?.name,
             biases: _updateBiases,
-            bn: _bn != nil || _bnGPU != nil,
+            bn: _norm != nil || _normGPU != nil,
             params: params
         )
         if inPlace
@@ -526,19 +526,19 @@ public class Convolution2D: BN2D
             layer._bArrays = _bArrays
             layer._wBuffers = _wBuffers
             layer._bBuffers = _bBuffers
-            layer._bn = _bn
-            layer._bnGPU = _bnGPU
+            layer._norm = _norm
+            layer._normGPU = _normGPU
         }
         else
         {
             // only one of them should be cloned
-            if let bn = _bnGPU
+            if let bn = _normGPU
             {
-                layer._bn = bn.clone()
+                layer._norm = bn.clone()
             }
-            else if let bn = _bn
+            else if let bn = _norm
             {
-                layer._bn = bn.clone()
+                layer._norm = bn.clone()
             }
             
             if GrAI.Opti.GPU
@@ -587,8 +587,8 @@ public class Convolution2D: BN2D
             layer._bArrays = _bArrays
             layer._wBuffers = _wBuffers
             layer._bBuffers = _bBuffers
-            layer._bn = nil
-            layer._bnGPU = nil
+            layer._norm = nil
+            layer._normGPU = nil
         }
         else
         {
@@ -841,7 +841,7 @@ public class Convolution2D: BN2D
     public override func forwardGCCPU() throws
     {
         try _forwardGCCPU()
-        bn?.forwardGC(self)
+        norm?.forwardGC(self)
         _activation?.forwardGC(self)
     }
     
@@ -994,7 +994,7 @@ public class Convolution2D: BN2D
             }}}}}
             
             // Prepare GC for BN weights: Ɣ and β.
-            if _bn != nil {
+            if _norm != nil {
             for batch in 0..<batchSize {
             for elem in newGC-4*nbChannels..<newGC {
             for depth in 0..<nbChannels
@@ -1033,7 +1033,7 @@ public class Convolution2D: BN2D
     public override func forwardGCGPU() throws
     {
         try _forwardGCGPU()
-        bn?.forwardFlowGC(self)
+        norm?.forwardFlowGC(self)
         _activation?.forwardGC(self)
     }
     
@@ -1222,7 +1222,7 @@ public class Convolution2D: BN2D
             }}}}}
             
             // Prepare GC for BN weights: Ɣ and β.
-            if _bnGPU != nil {
+            if _normGPU != nil {
             for batch in 0..<batchSize {
             for elem in newGC-4*nbChannels..<newGC {
             for depth in 0..<nbChannels
@@ -1272,7 +1272,7 @@ public class Convolution2D: BN2D
     public override func forwardCPU() throws
     {
         try _forwardCPU()
-        bn?.forward(self)
+        norm?.forward(self)
         _activation?.forwardCPU(self)
     }
     
@@ -1322,7 +1322,7 @@ public class Convolution2D: BN2D
     public override func forwardGPU() throws
     {
         try _forwardGPU()
-        _bnGPU?.forward(self)
+        _normGPU?.forward(self)
         _activation?.forwardGPU(self)
     }
     
@@ -1380,7 +1380,7 @@ public class Convolution2D: BN2D
     public override func backwardCPU()
     {
         _activation?.backwardCPU(self)
-        bn?.backward(self)
+        norm?.backward(self)
         
         _backwardCPU()
         _backwardWeightsCPU()
@@ -1505,7 +1505,7 @@ public class Convolution2D: BN2D
     public override func backwardGPU() throws
     {
         _activation?.backwardGPU(self)
-        _bnGPU?.backward(self)
+        _normGPU?.backward(self)
         
         try _backwardGPU()
         _backwardWeightsGPU()
@@ -1713,7 +1713,7 @@ public class Convolution2D: BN2D
         {
             weights.append(_bArrays)
         }
-        if let bn = self.bn
+        if let bn = self.norm
         {
             weights += bn.collectWeights()
         }
@@ -1729,7 +1729,7 @@ public class Convolution2D: BN2D
         {
             weights.append(_bBuffers)
         }
-        if let bnFlow = _bnGPU
+        if let bnFlow = _normGPU
         {
             weights += bnFlow.collectWeights()
         }

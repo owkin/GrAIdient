@@ -206,6 +206,11 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
                 layerPrev: secondLayer, size: width, params: params
             )
             
+        case "InstanceNorm":
+            secondLayer = InstanceNorm2D(
+                layerPrev: layer, activation: SoftReLU.str, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -428,6 +433,19 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
     {
         let trainer = _buildTrainer(model: "DeconvolutionStride")
         run(trainer, diffThreshold: 0.0001)
+    }
+    
+    func testInstanceNormCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "InstanceNorm")
+        run(trainer)
+    }
+    
+    func testInstanceNormGPU() throws
+    {
+        let trainer = _buildTrainer(model: "InstanceNorm")
+        run(trainer)
     }
 }
 
@@ -652,6 +670,11 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
                 params: params
             )
             
+        case "InstanceNorm":
+            secondLayer = InstanceNorm2D(
+                layerPrev: layer, activation: LeakyReLU.str, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -773,6 +796,12 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
     func testSum() throws
     {
         let trainer = _buildTrainer(model: "Sum")
+        run(trainer)
+    }
+    
+    func testInstanceNorm() throws
+    {
+        let trainer = _buildTrainer(model: "InstanceNorm")
         run(trainer)
     }
 }

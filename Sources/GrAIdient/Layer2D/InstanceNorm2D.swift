@@ -119,7 +119,7 @@ public class InstanceNorm2D: Activation2D, LayerUpdate, LayerWithActivation
     {
         let values = try decoder.container(keyedBy: Keys.self)
         _norm = try values.decodeIfPresent(
-            LayerWeightsStatsNormalization.self, forKey: .norm
+            LayerWeightsNormalization.self, forKey: .norm
         )
         try super.init(from: decoder)
     }

@@ -1,17 +1,17 @@
 //
-// BN2D.swift
+// InstanceNorm2D.swift
 // GrAIdient
 //
-// Created by Jean-François Reboud on 14/10/2022.
+// Created by Jean-François Reboud on 17/02/2023.
 //
 
 /// Layer with a 2D shape neural structure, an activation function and batch normalization units.
-public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
+public class InstanceNorm2D: Activation2D, LayerUpdate, LayerWithActivation
 {
-    /// Batch normalization by default or batch normalization in the CPU execution context.
-    var _norm: LayerWeightsStatsNormalization? = nil
-    /// Batch normalization in the GPU execution context.
-    var _normGPU: BatchNormalizationGPU? = nil
+    /// Instance normalization by default or instance normalization in the CPU execution context.
+    var _norm: LayerWeightsNormalization? = nil
+    /// Instance normalization in the GPU execution context.
+    var _normGPU: InstanceNormalizationGPU? = nil
     
     /// Whether to compute weights' gradients or not.
     public var computeDeltaWeights: Bool = true
@@ -65,57 +65,11 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
         }
     }
     
-    /// Stats in the CPU execution context.
-    public var statsCPU: [Float]
+    /// Get instance normalization in the CPU execution context.
+    var norm: InstanceNormalization?
     {
         get {
-            var statsTmp = [Float]()
-            if let norm = _norm
-            {
-                statsTmp += norm.stats
-            }
-            return statsTmp
-        }
-        set {
-            if let norm = _norm
-            {
-                norm.stats = newValue
-            }
-        }
-    }
-    
-    /// Stats in the GPU execution context.
-    public var statsGPU: [Float]
-    {
-        get {
-            var statsTmp = [Float]()
-            if let norm = _normGPU
-            {
-                statsTmp += norm.stats
-            }
-            else if let norm = _norm
-            {
-                statsTmp += norm.stats
-            }
-            return statsTmp
-        }
-        set {
-            if let norm = _normGPU
-            {
-                norm.stats = newValue
-            }
-            else if let norm = _norm
-            {
-                norm.stats = newValue
-            }
-        }
-    }
-    
-    /// Get batch normalization in the CPU execution context.
-    var norm: BatchNormalization?
-    {
-        get {
-            return _norm as? BatchNormalization
+            return _norm as? InstanceNormalization
         }
     }
     
@@ -150,36 +104,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
                    activation: activation,
                    params: params)
         
-        _norm = LayerWeightsStatsNormalization(self)
-    }
-    
-    ///
-    /// Create a layer with a 2D shape neural structure.
-    ///
-    /// - Parameters:
-    ///     - layerPrev: Previous layer that has been queued to the model.
-    ///     - nbChannels: Number of channels.
-    ///     - height: Height of each channel.
-    ///     - width: Width of each channel.
-    ///     - activation: The activation function.
-    ///     - bn: Whether to use batch normalization or not.
-    ///     - params: Contextual parameters linking to the model.
-    ///
-    public init(layerPrev: Layer2D,
-                nbChannels: Int, height: Int, width: Int,
-                activation: String?, bn: Bool,
-                params: GrAI.Model.Params)
-    {
-        super.init(layerPrev: layerPrev,
-                   nbChannels: nbChannels,
-                   height: height,
-                   width: width,
-                   activation: activation,
-                   params: params)
-        if bn
-        {
-            _norm = LayerWeightsStatsNormalization(self)
-        }
+        _norm = LayerWeightsNormalization(self)
     }
     
     ///
@@ -246,7 +171,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
         let params = GrAI.Model.Params(context: context)
         params.context.curID = id
             
-        let layer = BN2D(
+        let layer = InstanceNorm2D(
             layerPrev: layerPrev,
             activation: _activation?.name,
             params: params
@@ -289,7 +214,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
         let params = GrAI.Model.Params(context: context)
         params.context.curID = id
         
-        let layer = BN2D(
+        let layer = InstanceNorm2D(
             layerPrev: layerPrev,
             activation: nil,
             params: params
@@ -325,7 +250,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
     public func removeActivation(params: GrAI.Model.Params) -> Layer
     {
         let layerPrev = self.layerPrev as! Layer2D
-        let layer = BN2D(
+        let layer = InstanceNorm2D(
             layerPrev: layerPrev,
             activation: nil,
             params: params
@@ -374,13 +299,12 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
         
         if let norm = _normGPU
         {
-            _norm = BatchNormalization(norm: norm)
+            _norm = InstanceNormalization(norm: norm)
         }
         else if let norm = _norm
         {
-            _norm = BatchNormalization(norm: norm)
+            _norm = InstanceNormalization(norm: norm)
         }
-        norm?.initKernel()
         
         if !GrAI.Loop.gradientChecking
         {
@@ -399,11 +323,11 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
         
         if let norm = _normGPU
         {
-            _normGPU = BatchNormalizationGPU(norm: norm)
+            _normGPU = InstanceNormalizationGPU(norm: norm)
         }
         else if let norm = _norm
         {
-            _normGPU = BatchNormalizationGPU(norm: norm)
+            _normGPU = InstanceNormalizationGPU(norm: norm)
         }
         _normGPU?.initKernel(deviceID: deviceID)
         
@@ -710,24 +634,21 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
     ///
     /// - Parameters:
     ///     - depth: Channel index.
+    ///     - batch: Index of sample in the mini batch.
     ///     - elem: Weight estimation index during the Gradient Checking.
     /// - Returns: The outputs.
     ///
-    func getOutsGC(depth: Int, elem: Int) -> [Double]
+    func getOutsGC(depth: Int, batch: Int, elem: Int) -> [Double]
     {
-        var outs = [Double](repeating: 0.0,
-                            count: batchSize * height * width)
-        for batch in 0..<batchSize
+        var outs = [Double](repeating: 0.0, count: height * width)
+        let offsetStart = batch * height
+        
+        for i in 0..<height {
+        for j in 0..<width
         {
-            let offsetStart = batch * height
-            
-            for i in 0..<height {
-            for j in 0..<width
-            {
-                let offset = j + (offsetStart + i) * width
-                outs[offset] = neurons[depth].get(i, j)!.gc[batch][elem].out
-            }}
-        }
+            let offset = j + (offsetStart + i) * width
+            outs[offset] = neurons[depth].get(i, j)!.gc[batch][elem].out
+        }}
         return outs
     }
     
@@ -736,45 +657,40 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
     ///
     /// - Parameters:
     ///     - depth: Channel index.
+    ///     - batch: Index sample in the mini batch.
     ///     - elem: Weight estimation index during the Gradient Checking.
     ///     - outs: The outputs to set.
     ///
-    func setOutsGC(depth: Int, elem: Int, outs: [Double])
+    func setOutsGC(depth: Int, batch: Int, elem: Int, outs: [Double])
     {
-        for batch in 0..<batchSize
+        let offsetStart = batch * height
+        for i in 0..<height {
+        for j in 0..<width
         {
-            let offsetStart = batch * height
-            
-            for i in 0..<height {
-            for j in 0..<width
-            {
-                let offset = j + (offsetStart + i) * width
-                neurons[depth].get(i, j)!.gc[batch][elem].out = outs[offset]
-            }}
-        }
+            let offset = j + (offsetStart + i) * width
+            neurons[depth].get(i, j)!.gc[batch][elem].out = outs[offset]
+        }}
     }
     
     ///
     /// Get the outputs (result of the forward pass) in the CPU execution context.
     ///
-    /// - Parameter depth: Channel index.
+    /// - Parameters:
+    ///     - depth: Channel index.
+    ///     - batch: Index sample in the mini batch.
     /// - Returns: The outputs.
     ///
-    func getOuts(_ depth: Int) -> [Double]
+    func getOuts(depth: Int, batch: Int) -> [Double]
     {
-        var outs = [Double](repeating: 0.0,
-                            count: batchSize * height * width)
-        for elem in 0..<batchSize
+        var outs = [Double](repeating: 0.0, count: height * width)
+        let offsetStart = batch * height
+        
+        for i in 0..<height {
+        for j in 0..<width
         {
-            let offsetStart = elem * height
-            
-            for i in 0..<height {
-            for j in 0..<width
-            {
-                let offset = j + (offsetStart + i) * width
-                outs[offset] = neurons[depth].get(i, j)!.v[elem].out
-            }}
-        }
+            let offset = j + (offsetStart + i) * width
+            outs[offset] = neurons[depth].get(i, j)!.v[batch].out
+        }}
         return outs
     }
     
@@ -783,44 +699,39 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
     ///
     /// - Parameters:
     ///     - depth: Channel index.
+    ///     - batch: Index sample in the mini batch.
     ///     - outs: The outputs to set.
     ///
-    func setOuts(depth: Int, outs: [Double])
+    func setOuts(depth: Int, batch: Int, outs: [Double])
     {
-        for elem in 0..<batchSize
+        let offsetStart = batch * height
+        for i in 0..<height {
+        for j in 0..<width
         {
-            let offsetStart = elem * height
-            
-            for i in 0..<height {
-            for j in 0..<width
-            {
-                let offset = j + (offsetStart + i) * width
-                neurons[depth].get(i, j)!.v[elem].out = outs[offset]
-            }}
-        }
+            let offset = j + (offsetStart + i) * width
+            neurons[depth].get(i, j)!.v[batch].out = outs[offset]
+        }}
     }
     
     ///
     /// Get the gradients (result of the backward pass) in the CPU execution context.
     ///
-    /// - Parameter depth: Channel index.
+    /// - Parameters:
+    ///     - depth: Channel index.
+    ///     - batch: Index sample in the mini batch.
     /// - Returns: The gradients.
     ///
-    func getDelta(_ depth: Int) -> [Double]
+    func getDelta(depth: Int, batch: Int) -> [Double]
     {
-        var delta = [Double](repeating: 0.0,
-                             count: batchSize * height * width)
-        for elem in 0..<batchSize
+        var delta = [Double](repeating: 0.0, count: height * width)
+        let offsetStart = batch * height
+        
+        for i in 0..<height {
+        for j in 0..<width
         {
-            let offsetStart = elem * height
-            
-            for i in 0..<height {
-            for j in 0..<width
-            {
-                let offset = j + (offsetStart + i) * width
-                delta[offset] = neurons[depth].get(i, j)!.v[elem].delta
-            }}
-        }
+            let offset = j + (offsetStart + i) * width
+            delta[offset] = neurons[depth].get(i, j)!.v[batch].delta
+        }}
         return delta
     }
     
@@ -829,20 +740,17 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
     ///
     /// - Parameters:
     ///     - depth: Channel index.
+    ///     - batch: Index sample in the mini batch.
     ///     - outs: The gradients to set.
     ///
-    func setDelta(depth: Int, delta: [Double])
+    func setDelta(depth: Int, batch: Int, delta: [Double])
     {
-        for elem in 0..<batchSize
+        let offsetStart = batch * height
+        for i in 0..<height {
+        for j in 0..<width
         {
-            let offsetStart = elem * height
-            
-            for i in 0..<height {
-            for j in 0..<width
-            {
-                let offset = j + (offsetStart + i) * width
-                neurons[depth].get(i, j)!.v[elem].delta = delta[offset]
-            }}
-        }
+            let offset = j + (offsetStart + i) * width
+            neurons[depth].get(i, j)!.v[batch].delta = delta[offset]
+        }}
     }
 }

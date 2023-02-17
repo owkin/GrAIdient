@@ -8,7 +8,7 @@
 #include <metal_stdlib>
 using namespace metal;
 
-kernel void computeConvμ(
+kernel void computeBNConvμ(
     const device float * tmps,
     constant uint * pNbChannels,
     constant uint * pNbBatch,
@@ -67,7 +67,7 @@ kernel void computeConvμ(
     }
 }
 
-kernel void computeConvσ2(
+kernel void computeBNConvσ2(
     const device float * tmps,
     const device float * μ,
     constant uint * pNbChannels,

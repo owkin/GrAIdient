@@ -30,6 +30,23 @@ public class AdaIN: LayerMerge2D
         case norm
     }
     
+    /// Whether to compute gradients of previous main layer or not.
+    var computeDeltaMain: Bool
+    {
+        get {
+            let layerFirst = _layersPrev.first as! Layer2D
+            return layerFirst.computeDelta
+        }
+    }
+    /// Whether to compute gradients of previous style layer or not.
+    var computeDeltaStyle: Bool
+    {
+        get {
+            let layerLast = _layersPrev.last as! Layer1D
+            return layerLast.computeDelta
+        }
+    }
+    
     ///
     /// Create a layer with a 2D shape neural structure.
     ///
@@ -255,18 +272,22 @@ public class AdaIN: LayerMerge2D
         for elem in 0..<nbSameElems {
         for depth in 0..<nbChannels
         {
-            for i in 0..<height {
-            for j in 0..<width
-            {
-                var mult = 1.0
-                for num in 0..<_layersPrev.count
-                {
-                    let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
-                    mult *= neuronsPrev[depth].get(i, j)!.gc[batch][elem].out
-                }
-                
-                neurons[depth].get(i, j)!.gc[batch][elem].out = mult
-            }}
+            let β = getOutStyleGC(
+                depth: depth + nbChannels, batch: batch, elem: elem
+            )
+            let Ɣ = getOutStyleGC(
+                depth: depth, batch: batch, elem: elem
+            )
+            let outs = Normalization.forwardGC(
+                outs: getOutsPrevGC(
+                    depth: depth, batch: batch, elem: elem
+                ),
+                β: β,
+                Ɣ: Ɣ
+            )
+            setOutsGC(
+                depth: depth, batch: batch, elem: elem, outs: outs
+            )
         }}}
     
         for batch in 0..<batchSize {
@@ -277,28 +298,43 @@ public class AdaIN: LayerMerge2D
         for elem in 0..<nbElemsTmp {
         for depth in 0..<nbChannels
         {
-            for i in 0..<height {
-            for j in 0..<width
+            let β, Ɣ: Double
+            var outs: [Double]
+            if index == 0
             {
-                var mult = 1.0
-                for num in 0..<_layersPrev.count
-                {
-                    let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
-                    
-                    if num == index
-                    {
-                        mult *= neuronsPrev[depth].get(i, j)!
-                            .gc[batch][nbLastElems[index]+elem].out
-                    }
-                    else
-                    {
-                        mult *= neuronsPrev[depth].get(i, j)!.v[batch].out
-                    }
-                }
+                outs = getOutsPrevGC(
+                    depth: depth, batch: batch, elem: elem
+                )
                 
-                neurons[depth].get(i, j)!
-                    .gc[batch][offset+elem].out = mult
-            }}
+                β = getOutStyle(
+                    depth: depth + nbChannels, batch: batch
+                )
+                Ɣ = getOutStyle(
+                    depth: depth, batch: batch
+                )
+            }
+            else
+            {
+                β = getOutStyleGC(
+                    depth: depth + nbChannels, batch: batch, elem: elem
+                )
+                Ɣ = getOutStyleGC(
+                    depth: depth, batch: batch, elem: elem
+                )
+                
+                outs = getOutsPrev(
+                    depth: depth, batch: batch
+                )
+            }
+            
+            outs = Normalization.forwardGC(
+                outs: outs,
+                β: β,
+                Ɣ: Ɣ
+            )
+            setOutsGC(
+                depth: depth, batch: batch, elem: elem, outs: outs
+            )
         }}
             
         offset += nbElemsTmp
@@ -315,10 +351,12 @@ public class AdaIN: LayerMerge2D
     {
         try checkStateCPU(batchSize: batchSize)
         
-        for num in 0..<_layersPrev.count
-        {
-            MetalKernel.get.download([(_layersPrev[num] as! Layer2D).outs])
-        }
+        let layerFirst = _layersPrev.first as! Layer2D
+        let layerLast = _layersPrev.last as! Layer1D
+        MetalKernel.get.download([layerFirst.outs, layerLast.outs])
+        
+        let bufferOuts = layerFirst.outs.shared.buffer
+        let bufferStyles = layerLast.outs.shared.buffer
         
         let (nbSameElems, layersIndex, nbElems) = getMergedGraph()
         
@@ -344,18 +382,22 @@ public class AdaIN: LayerMerge2D
         for elem in 0..<nbSameElems {
         for depth in 0..<nbChannels
         {
-            for i in 0..<height {
-            for j in 0..<width
-            {
-                var mult = 1.0
-                for num in 0..<_layersPrev.count
-                {
-                    let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
-                    mult *= neuronsPrev[depth].get(i, j)!.gc[batch][elem].out
-                }
-                
-                neurons[depth].get(i, j)!.gc[batch][elem].out = mult
-            }}
+            let β = getOutStyleGC(
+                depth: depth + nbChannels, batch: batch, elem: elem
+            )
+            let Ɣ = getOutStyleGC(
+                depth: depth, batch: batch, elem: elem
+            )
+            let outs = Normalization.forwardGC(
+                outs: getOutsPrevGC(
+                    depth: depth, batch: batch, elem: elem
+                ),
+                β: β,
+                Ɣ: Ɣ
+            )
+            setOutsGC(
+                depth: depth, batch: batch, elem: elem, outs: outs
+            )
         }}}
         
         for batch in 0..<batchSize {
@@ -366,33 +408,47 @@ public class AdaIN: LayerMerge2D
         for elem in 0..<nbElemsTmp {
         for depth in 0..<nbChannels
         {
-            for i in 0..<height {
-            for j in 0..<width
+            let β, Ɣ: Double
+            var outs: [Double]
+            if index == 0
             {
-                var mult = 1.0
-                for num in 0..<_layersPrev.count
-                {
-                    let outsPrevPtr =
-                        (_layersPrev[num] as! Layer2D).outs.shared.buffer
-                    let neuronsPrev =
-                        (_layersPrev[num] as! Layer2D).neurons
-                    
-                    if num == index
-                    {
-                        mult *= neuronsPrev[depth].get(i, j)!
-                            .gc[batch][nbLastElems[index]+elem].out
-                    }
-                    else
-                    {
-                        let offsetStart = (depth + nbChannels * batch) * height
-                        let offsetTmp = j + (offsetStart + i) * width
-                        
-                        mult *= Double(outsPrevPtr[offsetTmp])
-                    }
-                }
+                outs = getOutsPrevGC(
+                    depth: depth, batch: batch, elem: elem
+                )
                 
-                neurons[depth].get(i, j)!.gc[batch][offset+elem].out = mult
-            }}
+                β = getOutStyle(
+                    buffer: bufferStyles,
+                    depth: depth + nbChannels,
+                    batch: batch
+                )
+                Ɣ = getOutStyle(
+                    buffer: bufferStyles,
+                    depth: depth,
+                    batch: batch
+                )
+            }
+            else
+            {
+                β = getOutStyleGC(
+                    depth: depth + nbChannels, batch: batch, elem: elem
+                )
+                Ɣ = getOutStyleGC(
+                    depth: depth, batch: batch, elem: elem
+                )
+                
+                outs = getOutsPrev(
+                    buffer: bufferOuts, depth: depth, batch: batch
+                )
+            }
+            
+            outs = Normalization.forwardGC(
+                outs: outs,
+                β: β,
+                Ɣ: Ɣ
+            )
+            setOutsGC(
+                depth: depth, batch: batch, elem: elem, outs: outs
+            )
         }}
             
         offset += nbElemsTmp
@@ -408,43 +464,7 @@ public class AdaIN: LayerMerge2D
     public override func forwardCPU() throws
     {
         try checkStateCPU(batchSize: batchSize)
-        
-        for elem in 0..<batchSize {
-        for depth in 0..<nbChannels
-        {
-            let offsetStart = (depth + nbChannels * elem) * height
-            
-            for i in 0..<height {
-            for j in 0..<width
-            {
-                let offset = j + (offsetStart + i) * width
-                
-                var mult = 1.0
-                for num in 0..<_layersPrev.count
-                {
-                    let neuronsPrev =
-                        (_layersPrev[num] as! Layer2D).neurons
-                    mult *= neuronsPrev[depth].get(i, j)!.v[elem].out
-                }
-                neurons[depth].get(i, j)!.v[elem].out = mult
-                
-                for num1 in 0..<_layersPrev.count
-                {
-                    let buffer = (_otherOuts[num1] as! MetalSharedBuffer).buffer
-                    
-                    mult = 1.0
-                    for num2 in 0..<_layersPrev.count {
-                    if num2 != num1
-                    {
-                        let neuronsPrev =
-                            (_layersPrev[num2] as! Layer2D).neurons
-                        mult *= neuronsPrev[depth].get(i, j)!.v[elem].out
-                    }}
-                    
-                    buffer[offset] = Float(mult)
-                }
-            }}
-        }}
+        norm!.forward(self)
     }
     
     ///
@@ -455,65 +475,7 @@ public class AdaIN: LayerMerge2D
     public override func forwardGPU() throws
     {
         try checkStateForwardGPU(batchSize: batchSize)
-        
-        var first1 = true
-        for num1 in 0..<_layersPrev.count
-        {
-            let nbElems = (_layersPrev[num1] as! Layer2D).outs.nbElems
-            let pNbElems: [UInt32] = [UInt32(nbElems)]
-            
-            var command: MetalCommand
-            if first1
-            {
-                command = MetalKernel.get.createCommand(
-                    "sum1", deviceID: deviceID
-                )
-                first1 = false
-            }
-            else
-            {
-                command = MetalKernel.get.createCommand(
-                    "multiplyForward", deviceID: deviceID
-                )
-            }
-            
-            command.setBuffer(
-                (_layersPrev[num1] as! Layer2D).outs.metal, atIndex: 0
-            )
-            command.setBytes(pNbElems, atIndex: 1)
-            command.setBuffer(outs.metal, atIndex: 2)
-            
-            command.dispatchThreads(nbElems)
-            command.enqueue()
-            
-            var first2 = true
-            for num2 in 0..<_layersPrev.count {
-            if num2 != num1
-            {
-                if first2
-                {
-                    command = MetalKernel.get.createCommand(
-                        "sum1", deviceID: deviceID
-                    )
-                    first2 = false
-                }
-                else
-                {
-                    command = MetalKernel.get.createCommand(
-                        "multiplyForward", deviceID: deviceID
-                    )
-                }
-                
-                command.setBuffer(
-                    (_layersPrev[num2] as! Layer2D).outs.metal, atIndex: 0
-                )
-                command.setBytes(pNbElems, atIndex: 1)
-                command.setBuffer(_otherOuts[num1].metal, atIndex: 2)
-                
-                command.dispatchThreads(nbElems)
-                command.enqueue()
-            }}
-        }
+        _normGPU!.forward(self)
     }
     
     /// Apply the backward pass in the CPU execution context.
@@ -524,42 +486,7 @@ public class AdaIN: LayerMerge2D
             return
         }
         
-        for num in 0..<_layersPrev.count
-        {
-            if !_layersPrev[num].computeDelta
-            {
-                continue
-            }
-            
-            let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
-            let buffer = (_otherOuts[num] as! MetalSharedBuffer).buffer
-            
-            for elem in 0..<batchSize {
-            for depth in 0..<nbChannels
-            {
-                let offsetStart = (depth + nbChannels * elem) * height
-                
-                for i in 0..<height {
-                for j in 0..<width
-                {
-                    let offset = j + (offsetStart + i) * width
-                    
-                    let tmp = Double(buffer[offset])
-                    let deltaCur = neurons[depth].get(i, j)!.v[elem].delta
-                    
-                    if _layersPrev[num].dirty
-                    {
-                        neuronsPrev[depth].get(i, j)!.v[elem].delta =
-                            deltaCur * tmp
-                    }
-                    else
-                    {
-                        neuronsPrev[depth].get(i, j)!.v[elem].delta +=
-                            deltaCur * tmp
-                    }
-                }}
-            }}
-        }
+        norm!.backward(self)
         propagateDirty()
     }
     
@@ -575,32 +502,7 @@ public class AdaIN: LayerMerge2D
             return
         }
         
-        for num in 0..<_layersPrev.count
-        {
-            if !_layersPrev[num].computeDelta
-            {
-                continue
-            }
-            let layerPrev = _layersPrev[num] as! Layer2D
-            
-            try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
-            
-            let nbElems = delta.nbElems
-            let pNbElems: [UInt32] = [UInt32(nbElems)]
-            let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
-            
-            let command = MetalKernel.get.createCommand(
-                "multiplyBackward", deviceID: deviceID
-            )
-            command.setBuffer(_otherOuts[num].metal, atIndex: 0)
-            command.setBuffer(delta.metal, atIndex: 1)
-            command.setBytes(pNbElems, atIndex: 2)
-            command.setBytes(pDirty, atIndex: 3)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 4)
-            
-            command.dispatchThreads(nbElems)
-            command.enqueue()
-        }
+        _normGPU!.backward(self)
         propagateDirty()
     }
     
@@ -637,7 +539,7 @@ public class AdaIN: LayerMerge2D
     ///     - depth: Channel index.
     ///     - batch: Index of sample in the mini batch.
     ///     - elem: Weight estimation index during the Gradient Checking.
-    /// - Returns: The outputs.
+    /// - Returns: The output.
     ///
     func getOutStyleGC(depth: Int, batch: Int, elem: Int) -> Double
     {
@@ -694,7 +596,7 @@ public class AdaIN: LayerMerge2D
     /// - Parameters:
     ///     - depth: Channel index.
     ///     - batch: Index sample in the mini batch.
-    /// - Returns: The outputs.
+    /// - Returns: The output.
     ///
     func getOutStyle(depth: Int, batch: Int) -> Double
     {
@@ -718,6 +620,55 @@ public class AdaIN: LayerMerge2D
             let offset = j + i * width
             neurons[depth].get(i, j)!.v[batch].out = outs[offset]
         }}
+    }
+    
+    ///
+    /// Get the outputs of the previous main branch (result of the forward pass)
+    /// in the GPU execution context.
+    ///
+    /// - Parameters:
+    ///     - buffer: The data buffer.
+    ///     - depth: Channel index.
+    ///     - batch: Index sample in the mini batch.
+    /// - Returns: The outputs.
+    ///
+    func getOutsPrev(
+        buffer: UnsafeMutableBufferPointer<Float>,
+        depth: Int,
+        batch: Int) -> [Double]
+    {
+        var outs = [Double](repeating: 0.0, count: height * width)
+        let offsetStart = (depth + nbChannels * batch) * height
+        
+        for i in 0..<height {
+        for j in 0..<width
+        {
+            let offsetGet = j + (offsetStart + i) * width
+            let offsetSet = j + i * width
+            
+            outs[offsetSet] = Double(buffer[offsetGet])
+        }}
+        return outs
+    }
+    
+    ///
+    /// Get the output of the previous style branch (result of the forward pass)
+    /// in the CPU execution context.
+    ///
+    /// - Parameters:
+    ///     - buffer: The data buffer.
+    ///     - depth: Channel index.
+    ///     - batch: Index sample in the mini batch.
+    /// - Returns: The output.
+    ///
+    func getOutStyle(
+        buffer: UnsafeMutableBufferPointer<Float>,
+        depth: Int,
+        batch: Int) -> Double
+    {
+        let layerLast = _layersPrev.last as! Layer1D
+        let offset = depth + layerLast.nbNeurons * batch
+        return Double(buffer[offset])
     }
     
     ///
@@ -751,8 +702,12 @@ public class AdaIN: LayerMerge2D
     ///
     func setDeltaPrev(depth: Int, batch: Int, delta: [Double])
     {
-        let layerFirst = _layersPrev.first as! Layer2D
+        if !computeDeltaMain
+        {
+            return
+        }
         
+        let layerFirst = _layersPrev.first as! Layer2D
         for i in 0..<height {
         for j in 0..<width
         {
@@ -782,8 +737,12 @@ public class AdaIN: LayerMerge2D
     ///
     func setDeltaStyle(depth: Int, batch: Int, delta: Double)
     {
-        let layerLast = _layersPrev.last as! Layer1D
+        if !computeDeltaStyle
+        {
+            return
+        }
         
+        let layerLast = _layersPrev.last as! Layer1D
         if layerLast.dirty
         {
             layerLast.neurons.get(depth)!.v[batch].out = delta

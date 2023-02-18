@@ -1313,49 +1313,8 @@ public class InstanceNormalization: LayerWeightsNormalization
         }
     }
     
-    /// Apply the forward pass of the Gradient Checking in CPU execution context.
-    func forwardGC(_ layer: AdaIN)
-    {
-        let nbGC = layer.nbGC
-        let nbChannels = layer.nbChannels
-        let Ɛ = layer.Ɛ
-        
-        Concurrency.slice(nbChannels)
-        {
-            (depth: Int) in
-            
-            for batch in 0..<layer.batchSize {
-            for elem in 0..<nbGC
-            {
-                let β = layer.getOutStyleGC(
-                    depth: depth + nbChannels, batch: batch, elem: elem
-                )
-                let Ɣ = layer.getOutStyleGC(
-                    depth: depth, batch: batch, elem: elem
-                )
-                let outs = Normalization.forwardGC(
-                    outs: layer.getOutsPrevGC(
-                        depth: depth, batch: batch, elem: elem
-                    ),
-                    β: β,
-                    Ɣ: Ɣ
-                )
-                layer.setOutsGC(
-                    depth: depth, batch: batch, elem: elem, outs: outs
-                )
-            }}
-        }
-    }
-    
     /// Apply the forward pass of the Gradient Checking in GPU execution context.
     func forwardFlowGC(_ layer: InstanceNorm2D)
-    {
-        layer._normGPU?.applyWeights(norm: self)
-        forwardGC(layer)
-    }
-    
-    /// Apply the forward pass of the Gradient Checking in GPU execution context.
-    func forwardFlowGC(_ layer: AdaIN)
     {
         layer._normGPU?.applyWeights(norm: self)
         forwardGC(layer)

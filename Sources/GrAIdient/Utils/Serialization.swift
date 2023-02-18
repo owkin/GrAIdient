@@ -30,6 +30,7 @@ let LAYER_REGISTRY: [String: Codable.Type] = buildRegistry(
 [
     Activation1D.self,
     Activation2D.self,
+    AdaIN.self,
     AdaptiveAvgPool2D.self,
     AvgPool2D.self,
     BN2D.self,

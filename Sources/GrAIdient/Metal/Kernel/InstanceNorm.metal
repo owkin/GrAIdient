@@ -151,6 +151,7 @@ kernel void forwardInstanceNormConv(
 }
 
 kernel void forwardAdaIN(
+    const device float * outsPrev,
     const device float * styles,
     const device float * μ,
     const device float * σ2,
@@ -167,7 +168,7 @@ kernel void forwardAdaIN(
     uint height;
     float Ɛ = 1e-5;
     
-    if (pNbChannels && pNbBatch && pDimensions && styles &&
+    if (pNbChannels && pNbBatch && pDimensions && outsPrev && styles &&
         outs && xHat && μ && σ2)
     {
         nbChannels = *pNbChannels;
@@ -192,7 +193,7 @@ kernel void forwardAdaIN(
     uint offsetStart = (depth + nbChannels * elem) * height;
     uint offset = j + (offsetStart + i) * width;
     
-    float tmp1 = tmps[offset] - μ[depth + nbChannels * elem];
+    float tmp1 = outsPrev[offset] - μ[depth + nbChannels * elem];
     float tmp2 = sqrt(σ2[depth + nbChannels * elem] + Ɛ);
     float xhat = tmp1 / tmp2;
     xHat[offset] = xhat;
@@ -273,7 +274,7 @@ kernel void backwardWeightsInstanceNormConv(
     }
 }
 
-kernel void backwardAdaIN(
+kernel void backward2AdaIN(
     const device float * delta,
     const device float * xHat,
     const device float * outStyles,
@@ -363,7 +364,8 @@ kernel void backwardInstanceNorm(
     uint height;
     float Ɛ = 1e-5;
     
-    if (pNbChannels && pNbBatch && pDimensions && σ2 && xHat && Ɣ && delta)
+    if (pNbChannels && pNbBatch && pDimensions &&
+        σ2 && xHat && Ɣ && sum1 && sum2 && delta)
     {
         nbChannels = *pNbChannels;
         nbBatch = *pNbBatch;
@@ -396,4 +398,59 @@ kernel void backwardInstanceNorm(
     float tmp3 = xHat[offset] * sum2[depth + nbChannels * elem];
     
     delta[offset] = mult * (tmp1 - tmp2 - tmp3);
+}
+
+kernel void backward1AdaIN(
+    const device float * delta,
+    const device float * σ2,
+    const device float * xHat,
+    const device float * styles,
+    const device float * sum1,
+    const device float * sum2,
+    constant uint * pNbChannels,
+    constant uint * pNbBatch,
+    constant uint * pDimensions,
+    device float * deltaPrev,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint nbChannels;
+    uint nbBatch;
+    uint width;
+    uint height;
+    float Ɛ = 1e-5;
+    
+    if (pNbChannels && pNbBatch && pDimensions &&
+        delta && σ2 && xHat && styles && sum1 && sum2 && deltaPrev)
+    {
+        nbChannels = *pNbChannels;
+        nbBatch = *pNbBatch;
+        width = pDimensions[0];
+        height = pDimensions[1];
+    }
+    else
+        return ;
+    
+    uint depth = id[0] / width;
+    uint elem = id[1] / height;
+    uint i = id[1] % height;
+    uint j = id[0] % width;
+    uint nbElems = width * height;
+    
+    if (i * elem >= height * nbBatch ||
+        j * depth >= width * nbChannels)
+    {
+        return ;
+    }
+    
+    uint offsetStart = (depth + nbChannels * elem) * height;
+    uint offset = j + (offsetStart + i) * width;
+    
+    float mult =
+        1.0 / ((float)nbElems * sqrt(σ2[depth + nbChannels * elem] + Ɛ));
+    float dxhat = styles[depth] * delta[offset];
+    float tmp1 = nbElems * dxhat;
+    float tmp2 = sum1[depth + nbChannels * elem];
+    float tmp3 = xHat[offset] * sum2[depth + nbChannels * elem];
+    
+    deltaPrev[offset] = mult * (tmp1 - tmp2 - tmp3);
 }

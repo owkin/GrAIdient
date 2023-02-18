@@ -310,6 +310,17 @@ class Layer2DGradTests: Input2DMSE1DCase
                 layerPrev: layer, activation: SoftReLU.str, params: params
             )
             
+        case "AdaIN":
+            let otherLayer: Layer = Constant1D(
+                nbNeurons: 6, params: params
+            )
+            (otherLayer as! Constant1D).weightsCPU = [
+                0.5, -0.5, 1.5, -2.0, 3.0, 1.0
+            ]
+            layer = AdaIN(
+                layersPrev: [layer, otherLayer], params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -844,6 +855,19 @@ class Layer2DGradTests: Input2DMSE1DCase
     func testInstanceNormGPU() throws
     {
         let trainer = _buildTrainer(model: "InstanceNorm", bn: false)
+        run(trainer)
+    }
+    
+    func testAdaINCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "AdaIN", bn: false)
+        run(trainer)
+    }
+    
+    func testAdaINGPU() throws
+    {
+        let trainer = _buildTrainer(model: "AdaIN", bn: false)
         run(trainer)
     }
 }

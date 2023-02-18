@@ -1676,6 +1676,7 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         _computeμ(layer)
         _computeσ2(layer)
         
+        let layerFirst = layer._layersPrev.first as! Layer2D
         let layerLast = layer._layersPrev.last as! Layer1D
         let batchSize = layer.batchSize
         let width = layer.width
@@ -1696,14 +1697,15 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         let command = MetalKernel.get.createCommand(
             "forwardAdaIN", deviceID: _deviceID
         )
-        command.setBuffer(layerLast.outs.metal, atIndex: 0)
-        command.setBuffer(_μ.metal, atIndex: 1)
-        command.setBuffer(_σ2.metal, atIndex: 2)
-        command.setBytes(pNbChannels, atIndex: 3)
-        command.setBytes(pNbBatch, atIndex: 4)
-        command.setBytes(pDimensions, atIndex: 5)
-        command.setBuffer(layer.outs.metal, atIndex: 6)
-        command.setBuffer(_xHat.metal, atIndex: 7)
+        command.setBuffer(layerFirst.outs.metal, atIndex: 0)
+        command.setBuffer(layerLast.outs.metal, atIndex: 1)
+        command.setBuffer(_μ.metal, atIndex: 2)
+        command.setBuffer(_σ2.metal, atIndex: 3)
+        command.setBytes(pNbChannels, atIndex: 4)
+        command.setBytes(pNbBatch, atIndex: 5)
+        command.setBytes(pDimensions, atIndex: 6)
+        command.setBuffer(layer.outs.metal, atIndex: 7)
+        command.setBuffer(_xHat.metal, atIndex: 8)
         
         command.dispatchThreads(
             width: _nbNeurons * width,
@@ -1882,6 +1884,7 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
     {
         _backward(layer)
         
+        let layerFirst = layer._layersPrev.first as! Layer2D
         let layerLast = layer._layersPrev.last as! Layer1D
         let batchSize = layer.batchSize
         let width = layer.width
@@ -1892,17 +1895,18 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
         
         let command = MetalKernel.get.createCommand(
-            "backwardInstanceNorm", deviceID: _deviceID
+            "backward1AdaIN", deviceID: _deviceID
         )
-        command.setBuffer(_σ2.metal, atIndex: 0)
-        command.setBuffer(_xHat.metal, atIndex: 1)
-        command.setBuffer(layerLast.outs.metal, atIndex: 2)
-        command.setBuffer(_sum1.metal, atIndex: 3)
-        command.setBuffer(_sum2.metal, atIndex: 4)
-        command.setBytes(pNbChannels, atIndex: 5)
-        command.setBytes(pNbBatch, atIndex: 6)
-        command.setBytes(pDimensions, atIndex: 7)
-        command.setBuffer(layer.delta.metal, atIndex: 8)
+        command.setBuffer(layer.delta.metal, atIndex: 0)
+        command.setBuffer(_σ2.metal, atIndex: 1)
+        command.setBuffer(_xHat.metal, atIndex: 2)
+        command.setBuffer(layerLast.outs.metal, atIndex: 3)
+        command.setBuffer(_sum1.metal, atIndex: 4)
+        command.setBuffer(_sum2.metal, atIndex: 5)
+        command.setBytes(pNbChannels, atIndex: 6)
+        command.setBytes(pNbBatch, atIndex: 7)
+        command.setBytes(pDimensions, atIndex: 8)
+        command.setBuffer(layerFirst.delta.metal, atIndex: 9)
         
         command.dispatchThreads(
             width: _nbNeurons * width,
@@ -1976,7 +1980,7 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         }
         
         let command = MetalKernel.get.createCommand(
-            "backwardAdaIN", deviceID: _deviceID
+            "backward2AdaIN", deviceID: _deviceID
         )
         command.setBuffer(layer.delta.metal, atIndex: 0)
         command.setBuffer(_xHat.metal, atIndex: 1)

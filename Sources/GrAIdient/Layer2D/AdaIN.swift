@@ -303,7 +303,9 @@ public class AdaIN: LayerMerge2D
             if index == 0
             {
                 outs = getOutsPrevGC(
-                    depth: depth, batch: batch, elem: elem
+                    depth: depth,
+                    batch: batch,
+                    elem: nbLastElems[index]+elem
                 )
                 
                 β = getOutStyle(
@@ -316,10 +318,14 @@ public class AdaIN: LayerMerge2D
             else
             {
                 β = getOutStyleGC(
-                    depth: depth + nbChannels, batch: batch, elem: elem
+                    depth: depth + nbChannels,
+                    batch: batch,
+                    elem: nbLastElems[index]+elem
                 )
                 Ɣ = getOutStyleGC(
-                    depth: depth, batch: batch, elem: elem
+                    depth: depth,
+                    batch: batch,
+                    elem: nbLastElems[index]+elem
                 )
                 
                 outs = getOutsPrev(
@@ -333,7 +339,10 @@ public class AdaIN: LayerMerge2D
                 Ɣ: Ɣ
             )
             setOutsGC(
-                depth: depth, batch: batch, elem: elem, outs: outs
+                depth: depth,
+                batch: batch,
+                elem: offset+elem,
+                outs: outs
             )
         }}
             
@@ -413,7 +422,9 @@ public class AdaIN: LayerMerge2D
             if index == 0
             {
                 outs = getOutsPrevGC(
-                    depth: depth, batch: batch, elem: elem
+                    depth: depth,
+                    batch: batch,
+                    elem: nbLastElems[index]+elem
                 )
                 
                 β = getOutStyle(
@@ -430,10 +441,14 @@ public class AdaIN: LayerMerge2D
             else
             {
                 β = getOutStyleGC(
-                    depth: depth + nbChannels, batch: batch, elem: elem
+                    depth: depth + nbChannels,
+                    batch: batch,
+                    elem: nbLastElems[index]+elem
                 )
                 Ɣ = getOutStyleGC(
-                    depth: depth, batch: batch, elem: elem
+                    depth: depth,
+                    batch: batch,
+                    elem: nbLastElems[index]+elem
                 )
                 
                 outs = getOutsPrev(
@@ -447,7 +462,10 @@ public class AdaIN: LayerMerge2D
                 Ɣ: Ɣ
             )
             setOutsGC(
-                depth: depth, batch: batch, elem: elem, outs: outs
+                depth: depth,
+                batch: batch,
+                elem: offset+elem,
+                outs: outs
             )
         }}
             
@@ -745,11 +763,11 @@ public class AdaIN: LayerMerge2D
         let layerLast = _layersPrev.last as! Layer1D
         if layerLast.dirty
         {
-            layerLast.neurons.get(depth)!.v[batch].out = delta
+            layerLast.neurons.get(depth)!.v[batch].delta = delta
         }
         else
         {
-            layerLast.neurons.get(depth)!.v[batch].out += delta
+            layerLast.neurons.get(depth)!.v[batch].delta += delta
         }
     }
 }

@@ -581,8 +581,9 @@ private class MetalDevice
                 "forwardInstanceNormConv",
                 "forwardAdaIN",
                 "backwardWeightsInstanceNormConv",
-                "backwardAdaIN",
+                "backward2AdaIN",
                 "backwardInstanceNorm",
+                "backward1AdaIN",
             ],
             "Layer1D": [
                 "MSE1DLoss",

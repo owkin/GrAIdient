@@ -326,8 +326,8 @@ kernel void backwardBNConvTraining(
     uint height;
     float Ɛ = 1e-5;
     
-    if (pNbChannels && pNbBatch && pDimensions && σ2 && xHat && Ɣ &&
-        delta)
+    if (pNbChannels && pNbBatch && pDimensions &&
+        σ2 && xHat && Ɣ && sum1 && sum2 && delta)
     {
         nbChannels = *pNbChannels;
         nbBatch = *pNbBatch;
@@ -378,8 +378,7 @@ kernel void backwardBNConvInference(
     uint height;
     float Ɛ = 1e-5;
     
-    if (pNbChannels && pNbBatch && pM && pDimensions && Ɣ &&
-        Eσ2 && delta)
+    if (pNbChannels && pNbBatch && pM && pDimensions && Ɣ && Eσ2 && delta)
     {
         nbChannels = *pNbChannels;
         nbBatch = *pNbBatch;

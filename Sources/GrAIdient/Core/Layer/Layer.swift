@@ -91,7 +91,7 @@ open class Layer: Codable
     
     /// Whether the gradient has been updated or not.
     public var dirty = true
-    /// Whether to compute gradients of not.
+    /// Whether to compute gradients or not.
     public var computeDelta = true
     
     /// Slight modification to use during gradient checking.

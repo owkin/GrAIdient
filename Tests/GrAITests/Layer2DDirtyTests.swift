@@ -675,6 +675,18 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
                 layerPrev: layer, activation: LeakyReLU.str, params: params
             )
             
+        case "AdaIN":
+            let otherLayer: Layer = Constant1D(
+                nbNeurons: 6, params: params
+            )
+            (otherLayer as! Constant1D).weightsCPU = [
+                0.5, -0.5, 1.5, -2.0, 3.0, 1.0
+            ]
+            secondLayer = AdaIN(
+                layersPrev: [firstLayer, otherLayer],
+                params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -802,6 +814,12 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
     func testInstanceNorm() throws
     {
         let trainer = _buildTrainer(model: "InstanceNorm")
+        run(trainer)
+    }
+    
+    func testAdaIN() throws
+    {
+        let trainer = _buildTrainer(model: "AdaIN")
         run(trainer)
     }
 }

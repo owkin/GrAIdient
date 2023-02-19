@@ -829,7 +829,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
     ///
     /// - Parameters:
     ///     - depth: Channel index.
-    ///     - outs: The gradients to set.
+    ///     - delta: The gradients to set.
     ///
     func setDelta(depth: Int, delta: [Double])
     {

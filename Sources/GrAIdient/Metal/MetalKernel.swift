@@ -579,8 +579,11 @@ private class MetalDevice
                 "computeInstanceNormConvμ",
                 "computeInstanceNormConvσ2",
                 "forwardInstanceNormConv",
+                "forwardAdaIN",
                 "backwardWeightsInstanceNormConv",
+                "backward2AdaIN",
                 "backwardInstanceNorm",
+                "backward1AdaIN",
             ],
             "Layer1D": [
                 "MSE1DLoss",

@@ -733,7 +733,7 @@ public class InstanceNorm2D: Activation2D, LayerUpdate, LayerWithActivation
     /// - Parameters:
     ///     - depth: Channel index.
     ///     - batch: Index sample in the mini batch.
-    ///     - outs: The gradients to set.
+    ///     - delta: The gradients to set.
     ///
     func setDelta(depth: Int, batch: Int, delta: [Double])
     {

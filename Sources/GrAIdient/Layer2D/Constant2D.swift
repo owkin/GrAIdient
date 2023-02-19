@@ -6,7 +6,7 @@
 //
 
 /// Layer with a 1D shape neural structure and weights.
-public class Constant2D: Layer2D, LayerUpdate
+public class Constant2D: Layer2D, LayerResize, LayerUpdate
 {
     ///
     /// Grid of weights.
@@ -180,6 +180,54 @@ public class Constant2D: Layer2D, LayerUpdate
             nbChannels: nbChannels,
             height: height,
             width: width,
+            params: params
+        )
+        if inPlace
+        {
+            layer._wArrays = _wArrays
+            layer._wBuffers = _wBuffers
+        }
+        else
+        {
+            if GrAI.Opti.GPU
+            {
+                layer.weightsGPU = weightsGPU
+            }
+            else
+            {
+                layer.weightsCPU = weightsCPU
+            }
+        }
+        return layer
+    }
+    
+    ///
+    /// Resize this layer.
+    ///
+    /// - Parameters:
+    ///     - imageWidth: New size width.
+    ///     - imageHeight: New size height.
+    ///     - mapping: Dictionary allowing to find the layer associated to some id.
+    ///     This dictionary is particularly useful when the different layers cannot access
+    ///     their `layerPrev`.
+    ///
+    /// - Returns: A new instance of `Layer`. When `inPlace` is false, `initKernel` is
+    ///  necessary in order to recreate hard resources.
+    ///
+    public func resize(
+        imageWidth: Int,
+        imageHeight: Int,
+        mapping: Dictionary<Int, Layer>,
+        inPlace: Bool) -> Layer
+    {
+        let context = ModelContext(name: "", curID: 0)
+        let params = GrAI.Model.Params(context: context)
+        params.context.curID = id
+        
+        let layer = Constant2D(
+            nbChannels: nbChannels,
+            height: imageHeight,
+            width: imageWidth,
             params: params
         )
         if inPlace

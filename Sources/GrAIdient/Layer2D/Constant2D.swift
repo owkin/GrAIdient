@@ -1,28 +1,28 @@
 //
-// Constant1D.swift
+// Constant2D.swift
 // GrAIdient
 //
-// Created by Jean-François Reboud on 28/01/2023.
+// Created by Jean-François Reboud on 19/02/2023.
 //
 
 /// Layer with a 1D shape neural structure and weights.
-public class Constant1D: Layer1D, LayerUpdate
+public class Constant2D: Layer2D, LayerUpdate
 {
     ///
     /// Grid of weights.
-    /// Shape ~ (nbNeurons,).
+    /// Shape ~ (nbChannels,).
     ///
     var _wArrays: WeightArrays! = nil
     
     ///
     /// Buffer of weights.
-    /// Shape ~ (nbNeurons,).
+    /// Shape ~ (nbChannels,).
     ///
     var _wBuffers: IWeightBuffers! = nil
     
     ///
     /// Buffer of gradients per sample for biases.
-    /// Shape ~ (batch, nbNeurons).
+    /// Shape ~ (batch, nbChannels).
     ///
     var _wDeltaWeights: MetalPrivateBuffer<Float>! = nil
     
@@ -45,7 +45,7 @@ public class Constant1D: Layer1D, LayerUpdate
             }
             
             var weightsTmp = [Float]()
-            for depth in 0..<nbNeurons
+            for depth in 0..<nbChannels
             {
                 weightsTmp.append(Float(_wArrays.w[depth]))
             }
@@ -80,7 +80,7 @@ public class Constant1D: Layer1D, LayerUpdate
     var nbLearnedGC: Int
     {
         get {
-            return nbNeurons
+            return nbChannels
         }
     }
     
@@ -90,16 +90,23 @@ public class Constant1D: Layer1D, LayerUpdate
     }
     
     ///
-    /// Create a layer with a 1D shape neural structure.
+    /// Create a layer with a 2D shape neural structure.
     ///
     /// - Parameters:
-    ///     - nbNeurons: Number of neurons.
+    ///     - nbChannels: Number of channels.
+    ///     - height: Height of the output grids.
+    ///     - width: Width of the output grids.
     ///     - params: Contextual parameters linking to the model.
     ///
-    public init(nbNeurons: Int, params: GrAI.Model.Params)
+    public init(nbChannels: Int,
+                height: Int,
+                width: Int,
+                params: GrAI.Model.Params)
     {
         super.init(layerPrev: nil,
-                   nbNeurons: nbNeurons,
+                   nbChannels: nbChannels,
+                   height: height,
+                   width: width,
                    params: params)
     }
     
@@ -169,8 +176,10 @@ public class Constant1D: Layer1D, LayerUpdate
         let params = GrAI.Model.Params(context: context)
         params.context.curID = id
             
-        let layer = Constant1D(
-            nbNeurons: nbNeurons,
+        let layer = Constant2D(
+            nbChannels: nbChannels,
+            height: height,
+            width: width,
             params: params
         )
         if inPlace
@@ -227,18 +236,18 @@ public class Constant1D: Layer1D, LayerUpdate
     ///
     public func initWeightsCPU()
     {
-        _wArrays = WeightArrays(nbNeurons)
+        _wArrays = WeightArrays(nbChannels)
         
         if _weightsList.count == 0
         {
-            for depth in 0..<nbNeurons
+            for depth in 0..<nbChannels
             {
                 _wArrays.w[depth] = 0.0
             }
         }
         else
         {
-            for depth in 0..<nbNeurons
+            for depth in 0..<nbChannels
             {
                 _wArrays.w[depth] = Double(_weightsList[depth])
             }
@@ -254,21 +263,21 @@ public class Constant1D: Layer1D, LayerUpdate
     public func initWeightsGPU()
     {
         _wBuffers = WeightBuffers(
-            nbElems: nbNeurons,
+            nbElems: nbChannels,
             deviceID: deviceID
         )
         
         let weightsPtr = _wBuffers.w_p!.shared.buffer
         if _weightsList.count == 0
         {
-            for depth in 0..<nbNeurons
+            for depth in 0..<nbChannels
             {
                 weightsPtr[depth] = 0.0
             }
         }
         else
         {
-            for depth in 0..<nbNeurons
+            for depth in 0..<nbChannels
             {
                 weightsPtr[depth] = _weightsList[depth]
             }
@@ -293,7 +302,7 @@ public class Constant1D: Layer1D, LayerUpdate
            GrAI.Gradient.sample && _wDeltaWeights == nil
         {
             _wDeltaWeights = MetalPrivateBuffer<Float>(
-                batchSize * nbNeurons, deviceID: deviceID
+                batchSize * nbChannels, deviceID: deviceID
             )
         }
     }
@@ -308,16 +317,20 @@ public class Constant1D: Layer1D, LayerUpdate
         try checkStateCPU(batchSize: batchSize)
         
         let newGC = 2 * nbLearnedGC
-        for depth in 0..<nbNeurons
+        for depth in 0..<nbChannels {
+        for i in 0..<height {
+        for j in 0..<width
         {
-            neurons.get(depth)!.initGC(batchSize: batchSize, nbGC: newGC)
-        }
+            neurons[depth].get(i, j)!.initGC(batchSize: batchSize, nbGC: newGC)
+        }}}
         
         for batch in 0..<batchSize {
-        for DEPTH in 0..<nbNeurons {
+        for DEPTH in 0..<nbChannels {
         for elem in 0...1
         {
-            for depth in 0..<nbNeurons
+            for depth in 0..<nbChannels {
+            for i in 0..<height {
+            for j in 0..<width
             {
                 var tmp: Double = _wArrays.w[depth]
                 if depth == DEPTH
@@ -333,8 +346,8 @@ public class Constant1D: Layer1D, LayerUpdate
                 }
                 
                 let offset = 2 * DEPTH + elem
-                neurons.get(depth)!.gc[batch][offset].out = tmp
-            }
+                neurons[depth].get(i, j)!.gc[batch][offset].out = tmp
+            }}}
         }}}
     }
     
@@ -348,19 +361,23 @@ public class Constant1D: Layer1D, LayerUpdate
         try checkStateCPU(batchSize: batchSize)
         
         let newGC = 2 * nbLearnedGC
-        for depth in 0..<nbNeurons
+        for depth in 0..<nbChannels {
+        for i in 0..<height {
+        for j in 0..<width
         {
-            neurons.get(depth)!.initGC(batchSize: batchSize, nbGC: newGC)
-        }
+            neurons[depth].get(i, j)!.initGC(batchSize: batchSize, nbGC: newGC)
+        }}}
         
         MetalKernel.get.download([_wBuffers.w_p!])
         let weightsPtr = _wBuffers.w_p!.shared.buffer
     
         for batch in 0..<batchSize {
-        for DEPTH in 0..<nbNeurons {
+        for DEPTH in 0..<nbChannels {
         for elem in 0...1
         {
-            for depth in 0..<nbNeurons
+            for depth in 0..<nbChannels {
+            for i in 0..<height {
+            for j in 0..<width
             {
                 var tmp: Double = Double(weightsPtr[depth])
                 if depth == DEPTH
@@ -376,8 +393,8 @@ public class Constant1D: Layer1D, LayerUpdate
                 }
                 
                 let offset = 2 * DEPTH + elem
-                neurons.get(depth)!.gc[batch][offset].out = tmp
-            }
+                neurons[depth].get(i, j)!.gc[batch][offset].out = tmp
+            }}}
         }}}
     }
     
@@ -390,13 +407,13 @@ public class Constant1D: Layer1D, LayerUpdate
     {
         try checkStateCPU(batchSize: batchSize)
         
-        for elem in 0..<batchSize
+        for elem in 0..<batchSize {
+        for depth in 0..<nbChannels {
+        for i in 0..<height {
+        for j in 0..<width
         {
-            for depth in 0..<nbNeurons
-            {
-                neurons.get(depth)!.v[elem].out = _wArrays.w[depth]
-            }
-        }
+            neurons[depth].get(i, j)!.v[elem].out = _wArrays.w[depth]
+        }}}}
     }
     
     ///
@@ -408,20 +425,22 @@ public class Constant1D: Layer1D, LayerUpdate
     {
         try checkStateForwardGPU(batchSize: batchSize)
         
-        let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
+        let pNbChannels: [UInt32] = [UInt32(nbChannels)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
+        let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
         
         let command = MetalKernel.get.createCommand(
-            "constant1DForward", deviceID: deviceID
+            "constant2DForward", deviceID: deviceID
         )
         command.setBuffer(_wBuffers.w.metal, atIndex: 0)
-        command.setBytes(pNbNeurons, atIndex: 1)
-        command.setBytes(pNbBatch, atIndex: 2)
-        command.setBuffer(outs.metal, atIndex: 3)
+        command.setBytes(pNbChannels, atIndex: 1)
+        command.setBytes(pDimensions, atIndex: 2)
+        command.setBytes(pNbBatch, atIndex: 3)
+        command.setBuffer(outs.metal, atIndex: 4)
         
         command.dispatchThreads(
-            width: nbNeurons,
-            height: batchSize
+            width: width * nbChannels,
+            height: height * batchSize
         )
         command.enqueue()
     }
@@ -434,14 +453,16 @@ public class Constant1D: Layer1D, LayerUpdate
             // -----------------------------------------------------------------
             // Compute Gradients per batch
             // -----------------------------------------------------------------
-            for depth in 0..<nbNeurons
+            for depth in 0..<nbChannels
             {
                 var tmp: Double = 0.0
-                for elem in 0..<batchSize
+                for elem in 0..<batchSize {
+                for i in 0..<height {
+                for j in 0..<width
                 {
-                    let deltaCur = neurons.get(depth)!.v[elem].delta
+                    let deltaCur = neurons[depth].get(i, j)!.v[elem].delta
                     tmp += deltaCur
-                }
+                }}}
                 
                 if accumulateDeltaWeights
                 {
@@ -461,8 +482,9 @@ public class Constant1D: Layer1D, LayerUpdate
     {
         if computeDeltaWeights
         {
-            let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
+            let pNbChannels: [UInt32] = [UInt32(nbChannels)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
+            let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pAccumulate: [UInt32] = accumulateDeltaWeights ? [1] : [0]
             
             var command: MetalCommand
@@ -472,15 +494,16 @@ public class Constant1D: Layer1D, LayerUpdate
                 // Compute Gradients per batch
                 // -------------------------------------------------------------
                 command = MetalKernel.get.createCommand(
-                    "flBatchDerBiases", deviceID: deviceID
+                    "convBatchDerBiases", deviceID: deviceID
                 )
                 command.setBuffer(delta.metal, atIndex: 0)
-                command.setBytes(pNbNeurons, atIndex: 1)
-                command.setBytes(pNbBatch, atIndex: 2)
-                command.setBytes(pAccumulate, atIndex: 3)
-                command.setBuffer(_wBuffers.g.metal, atIndex: 4)
+                command.setBytes(pNbChannels, atIndex: 1)
+                command.setBytes(pDimensions, atIndex: 2)
+                command.setBytes(pNbBatch, atIndex: 3)
+                command.setBytes(pAccumulate, atIndex: 4)
+                command.setBuffer(_wBuffers.g.metal, atIndex: 5)
                 
-                command.dispatchThreads(nbNeurons)
+                command.dispatchThreads(nbChannels)
                 command.enqueue()
             }
             else
@@ -489,15 +512,16 @@ public class Constant1D: Layer1D, LayerUpdate
                 // Compute Gradients per sample
                 // -------------------------------------------------------------
                 command = MetalKernel.get.createCommand(
-                    "flDerBiases", deviceID: deviceID
+                    "convDerBiases", deviceID: deviceID
                 )
                 command.setBuffer(delta.metal, atIndex: 0)
-                command.setBytes(pNbNeurons, atIndex: 1)
-                command.setBytes(pNbBatch, atIndex: 2)
-                command.setBuffer(_wDeltaWeights.metal, atIndex: 3)
+                command.setBytes(pNbChannels, atIndex: 1)
+                command.setBytes(pDimensions, atIndex: 2)
+                command.setBytes(pNbBatch, atIndex: 3)
+                command.setBuffer(_wDeltaWeights.metal, atIndex: 4)
                 
                 command.dispatchThreads(
-                    width: nbNeurons,
+                    width: nbChannels,
                     height: batchSize
                 )
                 command.enqueue()
@@ -509,12 +533,12 @@ public class Constant1D: Layer1D, LayerUpdate
                     "reduceBiases", deviceID: deviceID
                 )
                 command.setBuffer(_wDeltaWeights.metal, atIndex: 0)
-                command.setBytes(pNbNeurons, atIndex: 1)
+                command.setBytes(pNbChannels, atIndex: 1)
                 command.setBytes(pNbBatch, atIndex: 2)
                 command.setBytes(pAccumulate, atIndex: 3)
                 command.setBuffer(_wBuffers.g.metal, atIndex: 4)
                 
-                command.dispatchThreads(nbNeurons)
+                command.dispatchThreads(nbChannels)
                 command.enqueue()
             }
         }
@@ -556,9 +580,9 @@ public class Constant1D: Layer1D, LayerUpdate
         MetalKernel.get.download([_wDeltaWeights])
         let deltaWeightsPtr = _wDeltaWeights.shared.buffer
         
-        for depth in 0..<nbNeurons
+        for depth in 0..<nbChannels
         {
-            let offset = depth + nbNeurons * elem
+            let offset = depth + nbChannels * elem
             
             deltaWeights.append(T(
                 deltaWeightsPtr[offset]
@@ -580,7 +604,7 @@ public class Constant1D: Layer1D, LayerUpdate
         }
         
         var deltaWeights = [T]()
-        for depth in 0..<nbNeurons
+        for depth in 0..<nbChannels
         {
             deltaWeights.append(T(_wArrays.g[depth]))
         }

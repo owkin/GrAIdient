@@ -1893,6 +1893,7 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         let pNbChannels: [UInt32] = [UInt32(_nbNeurons)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
+        let pDirty: [UInt32] = layerFirst.dirty ? [1] : [0]
         
         let command = MetalKernel.get.createCommand(
             "backward1AdaIN", deviceID: _deviceID
@@ -1906,7 +1907,8 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         command.setBytes(pNbChannels, atIndex: 6)
         command.setBytes(pNbBatch, atIndex: 7)
         command.setBytes(pDimensions, atIndex: 8)
-        command.setBuffer(layerFirst.delta.metal, atIndex: 9)
+        command.setBytes(pDirty, atIndex: 9)
+        command.setBuffer(layerFirst.delta.metal, atIndex: 10)
         
         command.dispatchThreads(
             width: _nbNeurons * width,

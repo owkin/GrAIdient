@@ -520,6 +520,18 @@ public class AdaIN: LayerMerge2D
             return
         }
         
+        let layerFirst = _layersPrev.first as! Layer2D
+        let layerLast = _layersPrev.last as! Layer1D
+        
+        if layerFirst.computeDelta
+        {
+            try layerFirst.checkStateBackwardGPU(batchSize: batchSize)
+        }
+        if layerLast.computeDelta
+        {
+            try layerLast.checkStateBackwardGPU(batchSize: batchSize)
+        }
+        
         _normGPU!.backward(self)
         propagateDirty()
     }

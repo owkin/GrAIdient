@@ -1174,6 +1174,17 @@ class Layer2DFlowTests: Input2DMSE1DCase
                 layerPrev: layer, activation: LeakyReLU.str, params: params
             )
             
+        case "AdaIN":
+            let otherLayer: Layer = Constant1D(
+                nbNeurons: 6, params: params
+            )
+            (otherLayer as! Constant1D).weightsCPU = [
+                0.5, -0.5, 1.5, -2.0, 3.0, 1.0
+            ]
+            layer = AdaIN(
+                layersPrev: [layer, otherLayer], params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -1469,6 +1480,12 @@ class Layer2DFlowTests: Input2DMSE1DCase
     func testInstanceNorm() throws
     {
         let trainer = _buildTrainer(model: "InstanceNorm", bn: false)
+        run(trainer)
+    }
+    
+    func testAdaIN() throws
+    {
+        let trainer = _buildTrainer(model: "AdaIN", bn: false)
         run(trainer)
     }
 }
@@ -1786,6 +1803,12 @@ class Layer2DFlowResetTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "InstanceNorm", bn: false)
         run(trainer)
     }
+    
+    override func testAdaIN() throws
+    {
+        let trainer = _buildTrainer(model: "AdaIN", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -2101,6 +2124,12 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "InstanceNorm", bn: false)
         run(trainer)
     }
+    
+    override func testAdaIN() throws
+    {
+        let trainer = _buildTrainer(model: "AdaIN", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -2414,6 +2443,12 @@ class Layer2DInferenceTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "InstanceNorm", bn: false)
         run(trainer)
     }
+    
+    override func testAdaIN() throws
+    {
+        let trainer = _buildTrainer(model: "AdaIN", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -2722,6 +2757,12 @@ class Layer2DLoadTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "InstanceNorm", bn: false)
         run(trainer)
     }
+    
+    override func testAdaIN() throws
+    {
+        let trainer = _buildTrainer(model: "AdaIN", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -3028,6 +3069,12 @@ class Layer2DTransformTests: Layer2DFlowTests
     override func testInstanceNorm() throws
     {
         let trainer = _buildTrainer(model: "InstanceNorm", bn: false)
+        run(trainer)
+    }
+    
+    override func testAdaIN() throws
+    {
+        let trainer = _buildTrainer(model: "AdaIN", bn: false)
         run(trainer)
     }
 }

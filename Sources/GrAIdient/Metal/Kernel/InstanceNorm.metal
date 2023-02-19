@@ -334,15 +334,16 @@ kernel void backward2AdaIN(
     sum1[depth + nbChannels * elem] = tmp1;
     sum2[depth + nbChannels * elem] = tmp2;
     
+    uint offset = (2 * nbChannels) * elem;
     if (dirty)
     {
-        deltaStyles[depth] = tmp3;
-        deltaStyles[depth + nbChannels] = tmp4;
+        deltaStyles[depth + offset] = tmp3;
+        deltaStyles[depth + nbChannels + offset] = tmp4;
     }
     else
     {
-        deltaStyles[depth] += tmp3;
-        deltaStyles[depth + nbChannels] += tmp4;
+        deltaStyles[depth + offset] += tmp3;
+        deltaStyles[depth + nbChannels + offset] += tmp4;
     }
 }
 
@@ -410,6 +411,7 @@ kernel void backward1AdaIN(
     constant uint * pNbChannels,
     constant uint * pNbBatch,
     constant uint * pDimensions,
+    constant uint * pDirty,
     device float * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
@@ -417,15 +419,17 @@ kernel void backward1AdaIN(
     uint nbBatch;
     uint width;
     uint height;
+    uint dirty;
     float Ɛ = 1e-5;
     
-    if (pNbChannels && pNbBatch && pDimensions &&
+    if (pNbChannels && pNbBatch && pDimensions && pDirty &&
         delta && σ2 && xHat && styles && sum1 && sum2 && deltaPrev)
     {
         nbChannels = *pNbChannels;
         nbBatch = *pNbBatch;
         width = pDimensions[0];
         height = pDimensions[1];
+        dirty = *pDirty;
     }
     else
         return ;
@@ -452,5 +456,12 @@ kernel void backward1AdaIN(
     float tmp2 = sum1[depth + nbChannels * elem];
     float tmp3 = xHat[offset] * sum2[depth + nbChannels * elem];
     
-    deltaPrev[offset] = mult * (tmp1 - tmp2 - tmp3);
+    if (dirty)
+    {
+        deltaPrev[offset] = mult * (tmp1 - tmp2 - tmp3);
+    }
+    else
+    {
+        deltaPrev[offset] += mult * (tmp1 - tmp2 - tmp3);
+    }
 }

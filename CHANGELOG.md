@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🪜 **layer_2d:** Constant2D ([#56](https://github.com/owkin/GrAIdient/pull/56))\
 🪜 **layer_2d:** AdaIN ([#55](https://github.com/owkin/GrAIdient/pull/55))\
 🪜 **layer_2d:** InstanceNorm2D & InstanceNormalization ([#54](https://github.com/owkin/GrAIdient/pull/54))
 

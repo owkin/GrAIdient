@@ -4,8 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
-🪜 **feat:** AdaIN ([#55](https://github.com/owkin/GrAIdient/pull/55))\
-🪜 **feat:** InstanceNorm2D & InstanceNormalization ([#54](https://github.com/owkin/GrAIdient/pull/54))
+🪜 **layer_2d:** AdaIN ([#55](https://github.com/owkin/GrAIdient/pull/55))\
+🪜 **layer_2d:** InstanceNorm2D & InstanceNormalization ([#54](https://github.com/owkin/GrAIdient/pull/54))
 
 ## 0.2.0 (2022-02-13)
 

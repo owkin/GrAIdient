@@ -567,101 +567,151 @@ public class FullyConnectedPatch: ActivationSeq,
     
     private func _forwardGCCPU() throws
     {
-        if let layerPrev = self.layerPrev
+        if let layerPrev = self.layerPrev as? Layer2D
         {
             try checkStateCPU(batchSize: batchSize)
             
             let nbGC = layerPrev.nbGC
             let newGC = nbGC + 2 * nbLearnedGC
             
+            for seq in 0..<sequence {
             for depth in 0..<nbNeurons
             {
-                neurons.get(depth)!.initGC(batchSize: batchSize, nbGC: newGC)
-            }
-            
-            let neuronsPrev = self.neuronsPrev
-            for batch in 0..<batchSize {
-            for elem in 0..<nbGC
-            {
-                for depth in 0..<nbNeurons
-                {
-                    var tmp: Double = _bArrays.w[depth]
-                    for depthPrev in 0..<weightWidth
-                    {
-                        let w = _wArrays.w(depth, depthPrev)
-                        let outPrev =
-                            neuronsPrev[depthPrev].gc[batch][elem].out
-                        tmp += w * outPrev
-                    }
-                    neurons.get(depth)!.gc[batch][elem].out = tmp
-                }
+                neurons.get(seq, depth)!.initGC(
+                    batchSize: batchSize, nbGC: newGC
+                )
             }}
             
+            let nbSeqPerRow = layerPrev.height / _patch
+            let nbSeqPerCol = layerPrev.width / _patch
+            let neuronsPrev = layerPrev.neurons
+            let nbChannelsPrev = layerPrev.nbChannels
+            
+            for elem in 0..<nbGC {
             for batch in 0..<batchSize {
-            for I in 0..<nbNeurons {
-            for J in 0..<weightWidth {
-            for elem in 0...1
+            for seq in 0..<sequence
             {
+                let seqI = seq / nbSeqPerCol
+                let seqJ = seq % nbSeqPerCol
+                
+                let iStart = seqI * _patch
+                let jStart = seqJ * _patch
+                
                 for depth in 0..<nbNeurons
                 {
                     var tmp: Double = _bArrays.w[depth]
-                    for depthPrev in 0..<weightWidth
+                    for depthPrev in 0..<nbChannelsPrev {
+                    for i in iStart..<iStart + _patch {
+                    for j in jStart..<jStart + _patch
                     {
-                        var w = _wArrays.w(depth, depthPrev)
-                        if depth == I && depthPrev == J
-                        {
-                            if elem % 2 == 0
-                            {
-                                w += Ɛ
-                            }
-                            else
-                            {
-                                w -= Ɛ
-                            }
-                        }
+                        let offsetWeight = j +
+                            i * _patch + depthPrev * _patch * _patch
                         
-                        let outPrev = neuronsPrev[depthPrev].v[batch].out
+                        let w = _wArrays.w(depth, offsetWeight)
+                        let outPrev = neuronsPrev[depthPrev]
+                            .get(i, j)!.gc[batch][elem].out
                         tmp += w * outPrev
-                    }
-                    
-                    let offset = nbGC + 2 * (J + weightWidth * I) + elem
-                    neurons.get(depth)!.gc[batch][offset].out = tmp
+                    }}}
+                    neurons.get(seq, depth)!.gc[batch][elem].out = tmp
                 }
-            }}}}
+            }}}
+            
+            for batch in 0..<batchSize {
+            for seq in 0..<sequence
+            {
+                let seqI = seq / nbSeqPerCol
+                let seqJ = seq % nbSeqPerCol
+                
+                let iStart = seqI * _patch
+                let jStart = seqJ * _patch
+                
+                for DEPTH in 0..<nbNeurons {
+                for DEPTHPREV in 0..<weightWidth {
+                for elem in 0...1
+                {
+                    for depth in 0..<nbNeurons
+                    {
+                        var tmp: Double = _bArrays.w[depth]
+                        for depthPrev in 0..<nbChannelsPrev {
+                        for i in iStart..<iStart + _patch {
+                        for j in jStart..<jStart + _patch
+                        {
+                            let offsetWeight = j +
+                                i * _patch + depthPrev * _patch * _patch
+                
+                            var w = _wArrays.w(depth, offsetWeight)
+                            if depth == DEPTH && offsetWeight == DEPTHPREV
+                            {
+                                if elem % 2 == 0
+                                {
+                                    w += Ɛ
+                                }
+                                else
+                                {
+                                    w -= Ɛ
+                                }
+                            }
+                            
+                            let outPrev = neuronsPrev[depthPrev]
+                                .get(i, j)!.v[batch].out
+                            tmp += w * outPrev
+                        }}}
+                        
+                        let offset = nbGC +
+                            2 * (DEPTHPREV + weightWidth * DEPTH) + elem
+                        neurons.get(seq, depth)!.gc[batch][offset].out = tmp
+                    }
+                }}}
+            }}
             
             if _updateBiases {
             for batch in 0..<batchSize {
-            for I in 0..<nbNeurons {
-            for elem in 0...1
+            for seq in 0..<sequence
             {
-                for depth in 0..<nbNeurons
+                let seqI = seq / nbSeqPerCol
+                let seqJ = seq % nbSeqPerCol
+                
+                let iStart = seqI * _patch
+                let jStart = seqJ * _patch
+                
+                for DEPTH in 0..<nbNeurons {
+                for elem in 0...1
                 {
-                    var tmp: Double = _bArrays.w[depth]
-                    if depth == I
+                    for depth in 0..<nbNeurons
                     {
-                        if elem % 2 == 0
+                        var tmp: Double = _bArrays.w[depth]
+                        if depth == DEPTH
                         {
-                            tmp += Ɛ
+                            if elem % 2 == 0
+                            {
+                                tmp += Ɛ
+                            }
+                            else
+                            {
+                                tmp -= Ɛ
+                            }
                         }
-                        else
+                        
+                        for depthPrev in 0..<nbChannelsPrev {
+                        for i in iStart..<iStart + _patch {
+                        for j in jStart..<jStart + _patch
                         {
-                            tmp -= Ɛ
-                        }
+                            let offsetWeight = j +
+                            i * _patch + depthPrev * _patch * _patch
+                            
+                            let w = _wArrays.w(depth, offsetWeight)
+                            let outPrev = neuronsPrev[depthPrev]
+                                .get(i, j)!.v[batch].out
+                            tmp += w * outPrev
+                        }}}
+                        
+                        let offset = nbGC +
+                            2 * nbNeurons * weightWidth +
+                            2 * DEPTH + elem
+                        neurons.get(seq, depth)!.gc[batch][offset].out = tmp
                     }
-                    
-                    for depthPrev in 0..<weightWidth
-                    {
-                        let w = _wArrays.w(depth, depthPrev)
-                        let outPrev = neuronsPrev[depthPrev].v[batch].out
-                        tmp += w * outPrev
-                    }
-                    
-                    let offset = nbGC +
-                                 2 * nbNeurons * weightWidth +
-                                 2 * I + elem
-                    neurons.get(depth)!.gc[batch][offset].out = tmp
-                }
-            }}}}
+                }}
+            }}}
         }
     }
     
@@ -678,117 +728,171 @@ public class FullyConnectedPatch: ActivationSeq,
     
     private func _forwardGCGPU() throws
     {
-        if let layerPrev = self.layerPrev
+        if let layerPrev = self.layerPrev as? Layer2D
         {
             try checkStateCPU(batchSize: batchSize)
             
             let nbGC = layerPrev.nbGC
             let newGC = nbGC + 2 * nbLearnedGC
             
+            for seq in 0..<sequence {
             for depth in 0..<nbNeurons
             {
-                neurons.get(depth)!.initGC(batchSize: batchSize, nbGC: newGC)
-            }
+                neurons.get(seq, depth)!.initGC(
+                    batchSize: batchSize, nbGC: newGC
+                )
+            }}
             
             MetalKernel.get.download([_wBuffers.w_p!, _bBuffers.w_p!])
-            MetalKernel.get.download([outsPrev])
+            MetalKernel.get.download([layerPrev.outs])
             
             let weightsPtr = _wBuffers.w_p!.shared.buffer
             let biasesPtr = _bBuffers.w_p!.shared.buffer
             
-            let neuronsPrev = self.neuronsPrev
+            let nbSeqPerRow = layerPrev.height / _patch
+            let nbSeqPerCol = layerPrev.width / _patch
+            let neuronsPrev = layerPrev.neurons
+            let nbChannelsPrev = layerPrev.nbChannels
+            let heightPrev = layerPrev.height
+            let widthPrev = layerPrev.width
+            
+            for elem in 0..<nbGC {
             for batch in 0..<batchSize {
-            for elem in 0..<nbGC
+            for seq in 0..<sequence
             {
+                let seqI = seq / nbSeqPerCol
+                let seqJ = seq % nbSeqPerCol
+                
+                let iStart = seqI * _patch
+                let jStart = seqJ * _patch
+                
                 for depth in 0..<nbNeurons
                 {
-                    var tmp: Double = Double(biasesPtr[depth])
-                    for depthPrev in 0..<weightWidth
+                    var tmp: Double = _bArrays.w[depth]
+                    for depthPrev in 0..<nbChannelsPrev {
+                    for i in iStart..<iStart + _patch {
+                    for j in jStart..<jStart + _patch
                     {
-                        let offsetWeights = depthPrev + weightWidth * depth
+                        let offsetWeight = j +
+                            i * _patch + depthPrev * _patch * _patch
                         
-                        let w = Double(weightsPtr[offsetWeights])
-                        let outPrev =
-                            neuronsPrev[depthPrev].gc[batch][elem].out
+                        let w = _wArrays.w(depth, offsetWeight)
+                        let outPrev = neuronsPrev[depthPrev]
+                            .get(i, j)!.gc[batch][elem].out
                         tmp += w * outPrev
-                    }
-                    neurons.get(depth)!.gc[batch][elem].out = tmp
+                    }}}
+                    neurons.get(seq, depth)!.gc[batch][elem].out = tmp
                 }
-            }}
+            }}}
             
-            let outsPrevPtr = outsPrev.shared.buffer
+            let outsPrevPtr = layerPrev.outs.shared.buffer
             
             for batch in 0..<batchSize {
-            for I in 0..<nbNeurons {
-            for J in 0..<weightWidth {
-            for elem in 0...1
+            for seq in 0..<sequence
             {
-                for depth in 0..<nbNeurons
+                let seqI = seq / nbSeqPerCol
+                let seqJ = seq % nbSeqPerCol
+                
+                let iStart = seqI * _patch
+                let jStart = seqJ * _patch
+                
+                for DEPTH in 0..<nbNeurons {
+                for DEPTHPREV in 0..<weightWidth {
+                for elem in 0...1
                 {
-                    var tmp: Double = Double(biasesPtr[depth])
-                    for depthPrev in 0..<weightWidth
+                    for depth in 0..<nbNeurons
                     {
-                        let offsetWeights = depthPrev + weightWidth * depth
-                        let offsetPrev = depthPrev + weightWidth * batch
-                        
-                        var w = Double(weightsPtr[offsetWeights])
-                        if depth == I && depthPrev == J
+                        var tmp: Double = Double(biasesPtr[depth])
+                        for depthPrev in 0..<nbChannelsPrev {
+                        for i in iStart..<iStart + _patch {
+                        for j in jStart..<jStart + _patch
                         {
-                            if elem % 2 == 0
+                            let offsetWeight = j +
+                                i * _patch + depthPrev * _patch * _patch
+                            let offsetWeights = offsetWeight +
+                                weightWidth * depth
+                            let offsetStartPrev =
+                                (depthPrev + nbChannelsPrev*batch) * heightPrev
+                            let offsetPrev = j +
+                                (offsetStartPrev + i) * widthPrev
+                
+                            var w = Double(weightsPtr[offsetWeights])
+                            if depth == DEPTH && offsetWeight == DEPTHPREV
                             {
-                                w += Ɛ
+                                if elem % 2 == 0
+                                {
+                                    w += Ɛ
+                                }
+                                else
+                                {
+                                    w -= Ɛ
+                                }
                             }
-                            else
-                            {
-                                w -= Ɛ
-                            }
-                        }
+                            
+                            let outPrev = Double(outsPrevPtr[offsetPrev])
+                            tmp += w * outPrev
+                        }}}
                         
-                        let outPrev = Double(outsPrevPtr[offsetPrev])
-                        tmp += w * outPrev
+                        let offset = nbGC +
+                            2 * (DEPTHPREV + weightWidth * DEPTH) + elem
+                        neurons.get(seq, depth)!.gc[batch][offset].out = tmp
                     }
-                    
-                    let offset = nbGC + 2 * (J + weightWidth * I) + elem
-                    neurons.get(depth)!.gc[batch][offset].out = tmp
-                }
-            }}}}
+                }}}
+            }}
             
             if _updateBiases {
             for batch in 0..<batchSize {
-            for I in 0..<nbNeurons {
-            for elem in 0...1
+            for seq in 0..<sequence
             {
-                for depth in 0..<nbNeurons
+                let seqI = seq / nbSeqPerCol
+                let seqJ = seq % nbSeqPerCol
+                
+                let iStart = seqI * _patch
+                let jStart = seqJ * _patch
+                
+                for DEPTH in 0..<nbNeurons {
+                for elem in 0...1
                 {
-                    var tmp: Double = Double(biasesPtr[depth])
-                    if depth == I
+                    for depth in 0..<nbNeurons
                     {
-                        if elem % 2 == 0
+                        var tmp: Double = Double(biasesPtr[depth])
+                        if depth == DEPTH
                         {
-                            tmp += Ɛ
+                            if elem % 2 == 0
+                            {
+                                tmp += Ɛ
+                            }
+                            else
+                            {
+                                tmp -= Ɛ
+                            }
                         }
-                        else
-                        {
-                            tmp -= Ɛ
-                        }
-                    }
-                    
-                    for depthPrev in 0..<weightWidth
-                    {
-                        let offsetWeights = depthPrev + weightWidth * depth
-                        let offsetPrev = depthPrev + weightWidth * batch
                         
-                        let w = Double(weightsPtr[offsetWeights])
-                        let outPrev = Double(outsPrevPtr[offsetPrev])
-                        tmp += w * outPrev
+                        for depthPrev in 0..<nbChannelsPrev {
+                        for i in iStart..<iStart + _patch {
+                        for j in jStart..<jStart + _patch
+                        {
+                            let offsetWeight = j +
+                                i * _patch + depthPrev * _patch * _patch
+                            let offsetWeights = offsetWeight +
+                                weightWidth * depth
+                            let offsetStartPrev =
+                                (depthPrev + nbChannelsPrev*batch) * heightPrev
+                            let offsetPrev = j +
+                                (offsetStartPrev + i) * widthPrev
+                            
+                            let w = Double(weightsPtr[offsetWeights])
+                            let outPrev = Double(outsPrevPtr[offsetPrev])
+                            tmp += w * outPrev
+                        }}}
+                        
+                        let offset = nbGC +
+                            2 * nbNeurons * weightWidth +
+                            2 * DEPTH + elem
+                        neurons.get(seq, depth)!.gc[batch][offset].out = tmp
                     }
-                    
-                    let offset = nbGC +
-                                 2 * nbNeurons * weightWidth +
-                                 2 * I + elem
-                    neurons.get(depth)!.gc[batch][offset].out = tmp
-                }
-            }}}}
+                }}
+            }}}
         }
     }
     
@@ -805,22 +909,43 @@ public class FullyConnectedPatch: ActivationSeq,
     
     private func _forwardCPU() throws
     {
-        try checkStateCPU(batchSize: batchSize)
-        
-        let neuronsPrev = self.neuronsPrev
-        for elem in 0..<batchSize
+        if let layerPrev = self.layerPrev as? Layer2D
         {
-            for depth in 0..<nbNeurons
+            try checkStateCPU(batchSize: batchSize)
+            
+            let nbSeqPerRow = layerPrev.height / _patch
+            let nbSeqPerCol = layerPrev.width / _patch
+            let neuronsPrev = layerPrev.neurons
+            let nbChannelsPrev = layerPrev.nbChannels
+            
+            for elem in 0..<batchSize {
+            for seq in 0..<sequence
             {
-                var tmp: Double = _bArrays.w[depth]
-                for depthPrev in 0..<weightWidth
+                let seqI = seq / nbSeqPerCol
+                let seqJ = seq % nbSeqPerCol
+                
+                let iStart = seqI * _patch
+                let jStart = seqJ * _patch
+                
+                for depth in 0..<nbNeurons
                 {
-                    let w = _wArrays.w(depth, depthPrev)
-                    let outPrev = neuronsPrev[depthPrev].v[elem].out
-                    tmp += w * outPrev
+                    var tmp: Double = _bArrays.w[depth]
+                    for depthPrev in 0..<nbChannelsPrev {
+                    for i in iStart..<iStart + _patch {
+                    for j in jStart..<jStart + _patch
+                    {
+                        let offsetWeight = j +
+                            i * _patch + depthPrev * _patch * _patch
+                        
+                        let w = _wArrays.w(depth, offsetWeight)
+                        let outPrev =
+                            neuronsPrev[depthPrev].get(i, j)!.v[elem].out
+                        tmp += w * outPrev
+                    }}}
+                    
+                    neurons.get(seq, depth)!.v[elem].out = tmp
                 }
-                neurons.get(depth)!.v[elem].out = tmp
-            }
+            }}
         }
     }
     

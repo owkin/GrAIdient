@@ -1048,28 +1048,46 @@ public class FullyConnectedPatch: ActivationSeq,
     
     private func _backwardWeightsCPU()
     {
-        if computeDeltaWeights
+        if let layerPrev = self.layerPrev as? Layer2D, computeDeltaWeights
         {
+            let nbSeqPerRow = layerPrev.height / _patch
+            let nbSeqPerCol = layerPrev.width / _patch
+            let neuronsPrev = layerPrev.neurons
+            
             // -----------------------------------------------------------------
             // Compute Gradients per batch
             // -----------------------------------------------------------------
-            let neuronsPrev = self.neuronsPrev
             for depth in 0..<nbNeurons {
-            for depthPrev in 0..<weightWidth
+            for offsetWeight in 0..<weightWidth
             {
+                var res = offsetWeight
+                let depthPrev = res / (_patch * _patch)
+                res -= depthPrev * _patch * _patch
+                let i = res / _patch
+                res -= i * _patch
+                let j = res
+                
                 var tmp: Double = 0.0
-                for elem in 0..<batchSize
+                for elem in 0..<batchSize {
+                for seq in 0..<sequence
                 {
-                    let deltaCur = neurons.get(depth)!.v[elem].delta
-                    let outPrev = neuronsPrev[depthPrev].v[elem].out
+                    let seqI = seq / nbSeqPerCol
+                    let seqJ = seq % nbSeqPerCol
+                    
+                    let iStart = seqI * _patch
+                    let jStart = seqJ * _patch
+                    
+                    let deltaCur = neurons.get(seq, depth)!.v[elem].delta
+                    let outPrev = neuronsPrev[depthPrev]
+                        .get(iStart + i, jStart + j)!.v[elem].out
                     tmp += outPrev * deltaCur
-                }
+                }}
                 
                 if accumulateDeltaWeights
                 {
-                    tmp += _wArrays.g(depth, depthPrev)
+                    tmp += _wArrays.g(depth, offsetWeight)
                 }
-                _wArrays.g(depth, depthPrev, tmp)
+                _wArrays.g(depth, offsetWeight, tmp)
             }}
             
             if _updateBiases
@@ -1077,11 +1095,12 @@ public class FullyConnectedPatch: ActivationSeq,
                 for depth in 0..<nbNeurons
                 {
                     var tmp: Double = 0.0
-                    for elem in 0..<batchSize
+                    for elem in 0..<batchSize {
+                    for seq in 0..<sequence
                     {
-                        let deltaCur = neurons.get(depth)!.v[elem].delta
+                        let deltaCur = neurons.get(seq, depth)!.v[elem].delta
                         tmp += deltaCur
-                    }
+                    }}
                     
                     if accumulateDeltaWeights
                     {

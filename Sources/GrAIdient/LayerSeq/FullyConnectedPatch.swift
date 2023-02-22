@@ -997,31 +997,51 @@ public class FullyConnectedPatch: ActivationSeq,
     
     private func _backwardCPU()
     {
-        if let layerPrev = self.layerPrev, mustComputeBackward
+        if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
-            let neuronsPrev = self.neuronsPrev
-            for elem in 0..<batchSize
+            let nbSeqPerRow = layerPrev.height / _patch
+            let nbSeqPerCol = layerPrev.width / _patch
+            let neuronsPrev = layerPrev.neurons
+            let nbChannelsPrev = layerPrev.nbChannels
+            
+            for elem in 0..<batchSize {
+            for seq in 0..<sequence
             {
-                for depthPrev in 0..<weightWidth
+                let seqI = seq / nbSeqPerCol
+                let seqJ = seq % nbSeqPerCol
+                
+                let iStart = seqI * _patch
+                let jStart = seqJ * _patch
+                
+                for offsetWeight in 0..<weightWidth
                 {
+                    var res = offsetWeight
+                    let depthPrev = res / (_patch * _patch)
+                    res -= depthPrev * _patch * _patch
+                    let i = res / _patch
+                    res -= i * _patch
+                    let j = res
+                    
                     var tmp: Double = 0.0
                     for depth in 0..<nbNeurons
                     {
-                        let w = _wArrays.w(depth, depthPrev)
-                        let deltaCur = neurons.get(depth)!.v[elem].delta
+                        let w = _wArrays.w(depth, offsetWeight)
+                        let deltaCur = neurons.get(seq, depth)!.v[elem].delta
                         tmp += w * deltaCur
                     }
                     
                     if layerPrev.dirty
                     {
-                        neuronsPrev[depthPrev].v[elem].delta = tmp
+                        neuronsPrev[depthPrev]
+                            .get(iStart+i, jStart+j)!.v[elem].delta = tmp
                     }
                     else
                     {
-                        neuronsPrev[depthPrev].v[elem].delta += tmp
+                        neuronsPrev[depthPrev]
+                            .get(iStart+i, jStart+j)!.v[elem].delta += tmp
                     }
                 }
-            }
+            }}
             propagateDirty()
         }
     }

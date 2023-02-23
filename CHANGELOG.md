@@ -22,7 +22,7 @@ All notable changes to this project will be documented in this file.
 
 ### Miscellaneous Tasks
 
-📚 **docs:** PropertyListEncoder by default ([#53](https://github.com/owkin/GrAIdient/pull/53))\
+📚 **docs:** PropertyListEncoder by default ([#57](https://github.com/owkin/GrAIdient/pull/57))\
 📚 **docs:** PropertyListEncoder by default ([#51](https://github.com/owkin/GrAIdient/pull/51))\
 🎉 **refactor:** logo ([#46](https://github.com/owkin/GrAIdient/pull/46))\
 🎉 **refactor!:** re brand the framework ([#40](https://github.com/owkin/GrAIdient/pull/40))

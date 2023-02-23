@@ -31,7 +31,6 @@ Though deeply grounded to the data driven pipeline, the goal is to challenge
 the very understanding of deep learning models and inject human intelligence 
 to go from black box models to white box models. 
 
-Let us find our grAI between them both! <br />
 <br />
 
 ## ✨ Key Features

@@ -22,9 +22,10 @@ https://github.com/owkin/GrAIdient/actions/workflows/examples.yml)
 Ready for the grAIt descent? <br />
 <br />
 
-GrAIdient is a framework that exposes the graph of layers as its unique way to 
-design deep learning models. This "flattened" vision enforces 
-great understanding, control and reproducibility over these models. 
+GrAIdient is a framework that allows deep learning models 
+to be developed using the internal GPU of a Mac, 
+unlocking researchers to more easily train and run AI models 
+on their own computers.
 
 Though deeply grounded to the data driven pipeline, the goal is to challenge 
 the very understanding of deep learning models and inject human intelligence 

@@ -45,6 +45,7 @@ let LAYER_REGISTRY: [String: Codable.Type] = buildRegistry(
     DotProduct1D.self,
     FTFrequences2D.self,
     FullyConnected.self,
+    FullyConnectedPatch.self,
     Input1D.self,
     Input2D.self,
     IRDFT2RGB.self,

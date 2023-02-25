@@ -575,6 +575,15 @@ private class MetalDevice
                 "flDerBiases",
                 "flReduceWeights",
             ],
+            "FullyConnectedPatch": [
+                "flPatchForward",
+                "flPatchBackward",
+                "flPatchBatchDerWeights",
+                "flPatchBatchDerBiases",
+                "flPatchDerWeights",
+                "flPatchDerBiases",
+                "flPatchReduceWeights",
+            ],
             "InstanceNorm": [
                 "computeInstanceNormConvμ",
                 "computeInstanceNormConvσ2",

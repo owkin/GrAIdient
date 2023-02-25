@@ -31,6 +31,8 @@ Though deeply grounded to the data driven pipeline, the goal is to challenge
 the very understanding of deep learning models and inject human intelligence 
 to go from black box models to white box models. 
 
+<br />
+
 ## ✨ Key Features
 
 - flat design with direct access to the graph of layers and the backward pass

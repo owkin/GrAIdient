@@ -962,28 +962,38 @@ public class FullyConnectedPatch: ActivationSeq,
     
     private func _forwardGPU() throws
     {
-        try checkStateForwardGPU(batchSize: batchSize)
-        
-        let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
-        let pNbNeuronsPrev: [UInt32] = [UInt32(nbNeuronsPrev)]
-        let pNbBatch: [UInt32] = [UInt32(batchSize)]
-        
-        let command = MetalKernel.get.createCommand(
-            "flForward", deviceID: deviceID
-        )
-        command.setBuffer(outsPrev.metal, atIndex: 0)
-        command.setBuffer(_wBuffers.w.metal, atIndex: 1)
-        command.setBuffer(_bBuffers.w.metal, atIndex: 2)
-        command.setBytes(pNbNeurons, atIndex: 3)
-        command.setBytes(pNbNeuronsPrev, atIndex: 4)
-        command.setBytes(pNbBatch, atIndex: 5)
-        command.setBuffer(outs.metal, atIndex: 6)
-        
-        command.dispatchThreads(
-            width: nbNeurons,
-            height: batchSize
-        )
-        command.enqueue()
+        if let layerPrev = self.layerPrev as? Layer2D
+        {
+            try checkStateForwardGPU(batchSize: batchSize)
+            
+            let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
+            let pNbChannelsPrev: [UInt32] = [UInt32(layerPrev.nbChannels)]
+            let pDimensionsPrev: [UInt32] = [UInt32(layerPrev.width),
+                                             UInt32(layerPrev.height)]
+            let pPatch: [UInt32] = [UInt32(_patch)]
+            let pNbBatch: [UInt32] = [UInt32(batchSize)]
+            let pSequence: [UInt32] = [UInt32(sequence)]
+            
+            let command = MetalKernel.get.createCommand(
+                "flPatchForward", deviceID: deviceID
+            )
+            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+            command.setBuffer(_wBuffers.w.metal, atIndex: 1)
+            command.setBuffer(_bBuffers.w.metal, atIndex: 2)
+            command.setBytes(pNbNeurons, atIndex: 3)
+            command.setBytes(pNbChannelsPrev, atIndex: 4)
+            command.setBytes(pDimensionsPrev, atIndex: 5)
+            command.setBytes(pPatch, atIndex: 6)
+            command.setBytes(pNbBatch, atIndex: 7)
+            command.setBytes(pSequence, atIndex: 8)
+            command.setBuffer(outs.metal, atIndex: 9)
+            
+            command.dispatchThreads(
+                width: nbNeurons,
+                height: batchSize * sequence
+            )
+            command.enqueue()
+        }
     }
     
     /// Apply the backward pass in the CPU execution context.
@@ -1127,36 +1137,36 @@ public class FullyConnectedPatch: ActivationSeq,
     
     private func _backwardGPU() throws
     {
-        if let layerPrev = self.layerPrev, mustComputeBackward
+        if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
-            if let layerPrev = self.layerPrev as? Layer1D
-            {
-                try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
-            }
-            else if let layerPrev = self.layerPrev as? Layer2D
-            {
-                try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
-            }
+            try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
             
             let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
-            let pNbNeuronsPrev: [UInt32] = [UInt32(weightWidth)]
+            let pNbChannelsPrev: [UInt32] = [UInt32(layerPrev.nbChannels)]
+            let pDimensionsPrev: [UInt32] = [UInt32(layerPrev.width),
+                                             UInt32(layerPrev.height)]
+            let pPatch: [UInt32] = [UInt32(_patch)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
+            let pSequence: [UInt32] = [UInt32(sequence)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
             let command = MetalKernel.get.createCommand(
-                "flBackward", deviceID: deviceID
+                "flPatchBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBuffer(_wBuffers.w.metal, atIndex: 1)
             command.setBytes(pNbNeurons, atIndex: 2)
-            command.setBytes(pNbNeuronsPrev, atIndex: 3)
-            command.setBytes(pNbBatch, atIndex: 4)
-            command.setBytes(pDirty, atIndex: 5)
-            command.setBuffer(deltaPrev!.metal, atIndex: 6)
+            command.setBytes(pNbChannelsPrev, atIndex: 3)
+            command.setBytes(pDimensionsPrev, atIndex: 4)
+            command.setBytes(pPatch, atIndex: 5)
+            command.setBytes(pNbBatch, atIndex: 6)
+            command.setBytes(pSequence, atIndex: 7)
+            command.setBytes(pDirty, atIndex: 8)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 9)
             
             command.dispatchThreads(
                 width: weightWidth,
-                height: batchSize
+                height: batchSize * sequence
             )
             command.enqueue()
             
@@ -1166,11 +1176,15 @@ public class FullyConnectedPatch: ActivationSeq,
     
     private func _backwardWeightsGPU()
     {
-        if computeDeltaWeights
+        if let layerPrev = self.layerPrev as? Layer2D, computeDeltaWeights
         {
             let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
-            let pNbNeuronsPrev: [UInt32] = [UInt32(weightWidth)]
+            let pNbChannelsPrev: [UInt32] = [UInt32(layerPrev.nbChannels)]
+            let pDimensionsPrev: [UInt32] = [UInt32(layerPrev.width),
+                                             UInt32(layerPrev.height)]
+            let pPatch: [UInt32] = [UInt32(_patch)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
+            let pSequence: [UInt32] = [UInt32(sequence)]
             let pAccumulate: [UInt32] = accumulateDeltaWeights ? [1] : [0]
             
             var command: MetalCommand
@@ -1180,15 +1194,18 @@ public class FullyConnectedPatch: ActivationSeq,
                 // Compute Gradients per batch
                 // -------------------------------------------------------------
                 command = MetalKernel.get.createCommand(
-                    "flBatchDerWeights", deviceID: deviceID
+                    "flPatchBatchDerWeights", deviceID: deviceID
                 )
-                command.setBuffer(outsPrev.metal, atIndex: 0)
+                command.setBuffer(layerPrev.outs.metal, atIndex: 0)
                 command.setBuffer(delta.metal, atIndex: 1)
                 command.setBytes(pNbNeurons, atIndex: 2)
-                command.setBytes(pNbNeuronsPrev, atIndex: 3)
-                command.setBytes(pNbBatch, atIndex: 4)
-                command.setBytes(pAccumulate, atIndex: 5)
-                command.setBuffer(_wBuffers.g.metal, atIndex: 6)
+                command.setBytes(pNbChannelsPrev, atIndex: 3)
+                command.setBytes(pDimensionsPrev, atIndex: 4)
+                command.setBytes(pPatch, atIndex: 5)
+                command.setBytes(pNbBatch, atIndex: 6)
+                command.setBytes(pSequence, atIndex: 7)
+                command.setBytes(pAccumulate, atIndex: 8)
+                command.setBuffer(_wBuffers.g.metal, atIndex: 9)
                 
                 command.dispatchThreads(
                     width: nbNeurons,
@@ -1199,13 +1216,14 @@ public class FullyConnectedPatch: ActivationSeq,
                 if _updateBiases
                 {
                     command = MetalKernel.get.createCommand(
-                        "flBatchDerBiases", deviceID: deviceID
+                        "flPatchBatchDerBiases", deviceID: deviceID
                     )
                     command.setBuffer(delta.metal, atIndex: 0)
                     command.setBytes(pNbNeurons, atIndex: 1)
                     command.setBytes(pNbBatch, atIndex: 2)
-                    command.setBytes(pAccumulate, atIndex: 3)
-                    command.setBuffer(_bBuffers.g.metal, atIndex: 4)
+                    command.setBytes(pSequence, atIndex: 3)
+                    command.setBytes(pAccumulate, atIndex: 4)
+                    command.setBuffer(_bBuffers.g.metal, atIndex: 5)
                     
                     command.dispatchThreads(nbNeurons)
                     command.enqueue()
@@ -1217,14 +1235,17 @@ public class FullyConnectedPatch: ActivationSeq,
                 // Compute Gradients per sample
                 // -------------------------------------------------------------
                 command = MetalKernel.get.createCommand(
-                    "flDerWeights", deviceID: deviceID
+                    "flPatchDerWeights", deviceID: deviceID
                 )
-                command.setBuffer(outsPrev.metal, atIndex: 0)
+                command.setBuffer(layerPrev.outs.metal, atIndex: 0)
                 command.setBuffer(delta.metal, atIndex: 1)
                 command.setBytes(pNbNeurons, atIndex: 2)
-                command.setBytes(pNbNeuronsPrev, atIndex: 3)
-                command.setBytes(pNbBatch, atIndex: 4)
-                command.setBuffer(_wDeltaWeights.metal, atIndex: 5)
+                command.setBytes(pNbChannelsPrev, atIndex: 3)
+                command.setBytes(pDimensionsPrev, atIndex: 4)
+                command.setBytes(pPatch, atIndex: 5)
+                command.setBytes(pNbBatch, atIndex: 6)
+                command.setBytes(pSequence, atIndex: 7)
+                command.setBuffer(_wDeltaWeights.metal, atIndex: 8)
                 
                 command.dispatchThreads(
                     width: nbNeurons * batchSize,
@@ -1235,12 +1256,13 @@ public class FullyConnectedPatch: ActivationSeq,
                 if _updateBiases
                 {
                     command = MetalKernel.get.createCommand(
-                        "flDerBiases", deviceID: deviceID
+                        "flPatchDerBiases", deviceID: deviceID
                     )
                     command.setBuffer(delta.metal, atIndex: 0)
                     command.setBytes(pNbNeurons, atIndex: 1)
                     command.setBytes(pNbBatch, atIndex: 2)
-                    command.setBuffer(_bDeltaWeights.metal, atIndex: 3)
+                    command.setBytes(pSequence, atIndex: 3)
+                    command.setBuffer(_bDeltaWeights.metal, atIndex: 4)
                     
                     command.dispatchThreads(
                         width: nbNeurons,
@@ -1253,18 +1275,19 @@ public class FullyConnectedPatch: ActivationSeq,
                 // Compute Gradients per batch
                 // -------------------------------------------------------------
                 command = MetalKernel.get.createCommand(
-                    "flReduceWeights", deviceID: deviceID
+                    "flPatchReduceWeights", deviceID: deviceID
                 )
                 command.setBuffer(_wDeltaWeights.metal, atIndex: 0)
                 command.setBytes(pNbNeurons, atIndex: 1)
-                command.setBytes(pNbNeuronsPrev, atIndex: 2)
-                command.setBytes(pNbBatch, atIndex: 3)
-                command.setBytes(pAccumulate, atIndex: 4)
-                command.setBuffer(_wBuffers.g.metal, atIndex: 5)
+                command.setBytes(pNbChannelsPrev, atIndex: 2)
+                command.setBytes(pPatch, atIndex: 3)
+                command.setBytes(pNbBatch, atIndex: 4)
+                command.setBytes(pAccumulate, atIndex: 5)
+                command.setBuffer(_wBuffers.g.metal, atIndex: 6)
                 
                 command.dispatchThreads(
                     width: nbNeurons,
-                    height: nbNeuronsPrev
+                    height: weightWidth
                 )
                 command.enqueue()
                 

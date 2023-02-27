@@ -22,14 +22,21 @@ https://github.com/owkin/GrAIdient/actions/workflows/examples.yml)
 Ready for the grAIt descent? <br />
 <br />
 
-GrAIdient is a framework that allows deep learning models 
-to be developed using the internal GPU of a Mac, 
-unlocking researchers to more easily train and run AI models 
-on their own computers.
+GrAIdient is a framework that allows deep learning models to be developed 
+using the internal GPU of a Mac, unlocking researchers to more easily train 
+and run AI models on their own computers.
+
+GrAIdient exposes the graph of layers, 
+providing a unique way to design deep learning models for greater understanding, 
+control and reproducibility. 
 
 Though deeply grounded to the data driven pipeline, the goal is to challenge 
 the very understanding of deep learning models and inject human intelligence 
-to go from black box models to white box models. 
+where relevant; to transition from black box models to white box models, 
+and all the gradients in between. 
+
+Check out this toy [VGG example](Tests/GrAIExamples/VGGExample.swift) and 
+its [documentation](Docs/Examples/VGG) to get started with GrAIdient today.
 
 ## ✨ Key Features
 

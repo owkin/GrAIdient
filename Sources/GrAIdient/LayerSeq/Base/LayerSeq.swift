@@ -125,7 +125,7 @@ open class LayerSeq: Layer
     ///
     public func checkStateCPU(batchSize: Int) throws
     {
-        if neurons.nbElems == 0
+        if neurons == nil
         {
             neurons = GridNeurons(width: nbNeurons, height: sequence)
             for neuron in neurons.all

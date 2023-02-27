@@ -66,10 +66,11 @@ kernel void flPatchForward(
         uint offsetStartPrev =
             (depthPrev + nbChannelsPrev * elem) * heightPrev;
         
-        for (uint i=iStart; i<iStart+patch; i++) {
-        for (uint j=jStart; j<jStart+patch; j++)
+        for (uint i=0; i<patch; i++) {
+        for (uint j=0; j<patch; j++)
         {
-            uint offsetPrev = j + (offsetStartPrev + i) * widthPrev;
+            uint offsetPrev = jStart+j +
+                (offsetStartPrev + iStart+i) * widthPrev;
             float outPrev = outsPrev[offsetPrev];
             
             uint offsetWeight = j + i * patch + depthPrev * patch * patch;

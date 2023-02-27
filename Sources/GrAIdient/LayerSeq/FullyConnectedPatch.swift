@@ -602,15 +602,15 @@ public class FullyConnectedPatch: ActivationSeq,
                 {
                     var tmp: Double = _bArrays.w[depth]
                     for depthPrev in 0..<nbChannelsPrev {
-                    for i in iStart..<iStart + _patch {
-                    for j in jStart..<jStart + _patch
+                    for i in 0..<_patch {
+                    for j in 0..<_patch
                     {
                         let offsetWeight = j +
                             i * _patch + depthPrev * _patch * _patch
                         
                         let w = _wArrays.w(depth, offsetWeight)
                         let outPrev = neuronsPrev[depthPrev]
-                            .get(i, j)!.gc[batch][elem].out
+                            .get(iStart+i, jStart+j)!.gc[batch][elem].out
                         tmp += w * outPrev
                     }}}
                     neurons.get(seq, depth)!.gc[batch][elem].out = tmp
@@ -634,8 +634,8 @@ public class FullyConnectedPatch: ActivationSeq,
                     {
                         var tmp: Double = _bArrays.w[depth]
                         for depthPrev in 0..<nbChannelsPrev {
-                        for i in iStart..<iStart + _patch {
-                        for j in jStart..<jStart + _patch
+                        for i in 0..<_patch {
+                        for j in 0..<_patch
                         {
                             let offsetWeight = j +
                                 i * _patch + depthPrev * _patch * _patch
@@ -654,7 +654,7 @@ public class FullyConnectedPatch: ActivationSeq,
                             }
                             
                             let outPrev = neuronsPrev[depthPrev]
-                                .get(i, j)!.v[batch].out
+                                .get(iStart+i, jStart+j)!.v[batch].out
                             tmp += w * outPrev
                         }}}
                         
@@ -694,15 +694,15 @@ public class FullyConnectedPatch: ActivationSeq,
                         }
                         
                         for depthPrev in 0..<nbChannelsPrev {
-                        for i in iStart..<iStart + _patch {
-                        for j in jStart..<jStart + _patch
+                        for i in 0..<_patch {
+                        for j in 0..<_patch
                         {
                             let offsetWeight = j +
-                            i * _patch + depthPrev * _patch * _patch
+                                i * _patch + depthPrev * _patch * _patch
                             
                             let w = _wArrays.w(depth, offsetWeight)
                             let outPrev = neuronsPrev[depthPrev]
-                                .get(i, j)!.v[batch].out
+                                .get(iStart+i, jStart+j)!.v[batch].out
                             tmp += w * outPrev
                         }}}
                         
@@ -770,15 +770,15 @@ public class FullyConnectedPatch: ActivationSeq,
                 {
                     var tmp: Double = _bArrays.w[depth]
                     for depthPrev in 0..<nbChannelsPrev {
-                    for i in iStart..<iStart + _patch {
-                    for j in jStart..<jStart + _patch
+                    for i in 0..<_patch {
+                    for j in 0..<_patch
                     {
                         let offsetWeight = j +
                             i * _patch + depthPrev * _patch * _patch
                         
                         let w = _wArrays.w(depth, offsetWeight)
                         let outPrev = neuronsPrev[depthPrev]
-                            .get(i, j)!.gc[batch][elem].out
+                            .get(iStart+i, jStart+j)!.gc[batch][elem].out
                         tmp += w * outPrev
                     }}}
                     neurons.get(seq, depth)!.gc[batch][elem].out = tmp
@@ -804,8 +804,8 @@ public class FullyConnectedPatch: ActivationSeq,
                     {
                         var tmp: Double = Double(biasesPtr[depth])
                         for depthPrev in 0..<nbChannelsPrev {
-                        for i in iStart..<iStart + _patch {
-                        for j in jStart..<jStart + _patch
+                        for i in 0..<_patch {
+                        for j in 0..<_patch
                         {
                             let offsetWeight = j +
                                 i * _patch + depthPrev * _patch * _patch
@@ -813,8 +813,8 @@ public class FullyConnectedPatch: ActivationSeq,
                                 weightWidth * depth
                             let offsetStartPrev =
                                 (depthPrev + nbChannelsPrev*batch) * heightPrev
-                            let offsetPrev = j +
-                                (offsetStartPrev + i) * widthPrev
+                            let offsetPrev = jStart+j +
+                                (offsetStartPrev + iStart+i) * widthPrev
                 
                             var w = Double(weightsPtr[offsetWeights])
                             if depth == DEPTH && offsetWeight == DEPTHPREV
@@ -869,8 +869,8 @@ public class FullyConnectedPatch: ActivationSeq,
                         }
                         
                         for depthPrev in 0..<nbChannelsPrev {
-                        for i in iStart..<iStart + _patch {
-                        for j in jStart..<jStart + _patch
+                        for i in 0..<_patch {
+                        for j in 0..<_patch
                         {
                             let offsetWeight = j +
                                 i * _patch + depthPrev * _patch * _patch
@@ -878,8 +878,8 @@ public class FullyConnectedPatch: ActivationSeq,
                                 weightWidth * depth
                             let offsetStartPrev =
                                 (depthPrev + nbChannelsPrev*batch) * heightPrev
-                            let offsetPrev = j +
-                                (offsetStartPrev + i) * widthPrev
+                            let offsetPrev = jStart+j +
+                                (offsetStartPrev + iStart+i) * widthPrev
                             
                             let w = Double(weightsPtr[offsetWeights])
                             let outPrev = Double(outsPrevPtr[offsetPrev])
@@ -930,15 +930,15 @@ public class FullyConnectedPatch: ActivationSeq,
                 {
                     var tmp: Double = _bArrays.w[depth]
                     for depthPrev in 0..<nbChannelsPrev {
-                    for i in iStart..<iStart + _patch {
-                    for j in jStart..<jStart + _patch
+                    for i in 0..<_patch {
+                    for j in 0..<_patch
                     {
                         let offsetWeight = j +
                             i * _patch + depthPrev * _patch * _patch
                         
                         let w = _wArrays.w(depth, offsetWeight)
-                        let outPrev =
-                            neuronsPrev[depthPrev].get(i, j)!.v[elem].out
+                        let outPrev = neuronsPrev[depthPrev]
+                            .get(iStart+i, jStart+j)!.v[elem].out
                         tmp += w * outPrev
                     }}}
                     

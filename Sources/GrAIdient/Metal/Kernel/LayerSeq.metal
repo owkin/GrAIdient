@@ -37,8 +37,6 @@ kernel void avgPoolSeqForward(
     {
         return ;
     }
-        
-    uint offsetStartPrev = (depth + nbNeurons * elem) * heightPrev;
     
     float tmp = 0.0;
     for (uint seq=0; seq<sequence; seq++)
@@ -86,7 +84,7 @@ kernel void avgPoolSeqBackward(
         return ;
     }
     
-    uint offset = depthPrev + nbNeurons * elem;
+    uint offset = depth + nbNeurons * elem;
     float deltaCur = delta[offset];
     
     uint offsetPrev = depth + nbNeurons * seq + nbBatch * nbNeurons * elem;

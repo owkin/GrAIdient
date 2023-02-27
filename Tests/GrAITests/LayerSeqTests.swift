@@ -62,7 +62,12 @@ class LayerSeqGradTests: Input2DMSE1DCase
             fatalError("Unreachable.")
         }
         
-        let head: Layer1D = AvgPoolSeq(layerPrev: layerSeq, params: params)
+        var head: Layer1D = AvgPoolSeq(layerPrev: layerSeq, params: params)
+        
+        head = FullyConnected(
+            layerPrev: head, nbNeurons: 1,
+            activation: SoftReLU.str, biases: true, params: params
+        )
         
         _ = MSE1D(layerPrev: head, params: params)
     }

@@ -40,9 +40,9 @@ its [documentation](Docs/Examples/VGG.md) to get started with GrAIdient today!
 
 ## ✨ Key Features
 
-- flat design with direct access to the graph of layers and the backward pass
-- run natively on Mac Intel GPU, eGPU, Mac M1, M2...
-- compiled language
+- direct access to the graph of layers and to the backward pass
+- run natively on Mac GPU (Intel GPU, eGPU, Mac M1, M2...)
+- written in Swift: a compiled language with strong typing
 - gradient checking
 - PyTorch interoperability
 - gradients per batch & per sample (ready for differential privacy)

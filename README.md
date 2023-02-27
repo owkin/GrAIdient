@@ -35,8 +35,8 @@ the very understanding of deep learning models and inject human intelligence
 where relevant; to transition from black box models to white box models, 
 and all the gradients in between. 
 
-Check out this toy [VGG example](Tests/GrAIExamples/VGGExample.swift) and 
-its [documentation](Docs/Examples/VGG.md) to get started with GrAIdient today.
+Check out this [toy VGG example](Tests/GrAIExamples/VGGExample.swift) and 
+its [documentation](Docs/Examples/VGG.md) to get started with GrAIdient today!
 
 ## ✨ Key Features
 

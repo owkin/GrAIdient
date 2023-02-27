@@ -1,6 +1,6 @@
 # 🚀 VGG Example
 
-This is the documentation of a toy [VGG model](../../Tests/GrAIExamples/VGGExample.swift) 
+This is the documentation of a [toy VGG model](../../Tests/GrAIExamples/VGGExample.swift) 
 (simplified from the VGG architecture), trained on the GPU. 
 The dataset used is CIFAR 10. 
 

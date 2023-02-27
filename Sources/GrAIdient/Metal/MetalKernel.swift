@@ -594,6 +594,10 @@ private class MetalDevice
                 "backwardInstanceNorm",
                 "backward1AdaIN",
             ],
+            "LayerSeq": [
+                "avgPoolSeqForward",
+                "avgPoolSeqBackward",
+            ],
             "Layer1D": [
                 "MSE1DLoss",
                 "MSE1DLossDerivative",

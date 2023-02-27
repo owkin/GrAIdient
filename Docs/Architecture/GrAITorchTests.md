@@ -1,7 +1,7 @@
 # 👷 GrAITorchTests
 
-`GrAITorchTests` contains integration tests that allow to compare `GrAIdient` models 
-with their equivalent in `PyTorch`.
+[`GrAITorchTests`](../../Tests/GrAITorchTests) contains integration tests 
+that allow to compare `GrAIdient` models with their equivalent in `PyTorch`.
 
 The goal is to demonstrate a good level of reproducibility and 
 interoperability with `PyTorch`.

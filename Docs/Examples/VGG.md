@@ -1,9 +1,11 @@
 # 🚀 VGG Example
 
-This example trains a simple model (simplified from the VGG architecture) 
-on the GPU. The dataset used is CIFAR 10. 
+This is the documentation of a [toy VGG model](../../Tests/GrAIExamples/VGGExample.swift) 
+(simplified from the VGG architecture), trained on the GPU. 
+The dataset used is CIFAR 10. 
+
 We want to train the model to discriminate between 2 labels 
-(not the 10 available): the 8 (ships) or the 5 (dogs).
+(not the 10 available of the CIFAR 10 dataset): the 8 (ships) or the 5 (dogs).
 
 Here is a subset of images we find for the label 8 (ships) vs label 5 (dogs).
 

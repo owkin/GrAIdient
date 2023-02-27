@@ -8,7 +8,7 @@ All notable changes to this project will be documented in this file.
 
 ### Features
 
-🪜 **feat:** Softmax1D, DotProduct1D & Constant1D ([#49](https://github.com/owkin/GrAIdient/pull/49))\
+🪜 **layer_1d:** Softmax1D, DotProduct1D & Constant1D ([#49](https://github.com/owkin/GrAIdient/pull/49))\
 🪜 **feat:** remove activation from layer ([#47](https://github.com/owkin/GrAIdient/pull/47))\
 🪜 **feat:** LayerMerge1D, Sum1D, Concat1D, Concat2D ([#43](https://github.com/owkin/GrAIdient/pull/43))\
 🪜 **layer_2d:** Deconvolution2D ([#42](https://github.com/owkin/GrAIdient/pull/42))\
@@ -22,6 +22,7 @@ All notable changes to this project will be documented in this file.
 
 ### Miscellaneous Tasks
 
+📚 **docs:** change project description and add links ([#57](https://github.com/owkin/GrAIdient/pull/57))\
 📚 **docs:** PropertyListEncoder by default ([#51](https://github.com/owkin/GrAIdient/pull/51))\
 🎉 **refactor:** logo ([#46](https://github.com/owkin/GrAIdient/pull/46))\
 🎉 **refactor!:** re brand the framework ([#40](https://github.com/owkin/GrAIdient/pull/40))

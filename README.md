@@ -22,25 +22,30 @@ https://github.com/owkin/GrAIdient/actions/workflows/examples.yml)
 Ready for the grAIt descent? <br />
 <br />
 
-GrAIdient is a framework that exposes the graph of layers as its unique way to 
-design deep learning models. This "flattened" vision enforces 
-great understanding, control and reproducibility over these models. 
+GrAIdient is a framework that allows deep learning models to be developed 
+using the internal GPU of a Mac, unlocking researchers to more easily train 
+and run AI models on their own computers.
+
+GrAIdient exposes the graph of layers, 
+providing a unique way to design deep learning models for greater understanding, 
+control and reproducibility. 
 
 Though deeply grounded to the data driven pipeline, the goal is to challenge 
 the very understanding of deep learning models and inject human intelligence 
-to go from black box models to white box models. 
+where relevant; to transition from black box models to white box models, 
+and all the gradients in between. 
 
-Let us find our grAI between them both! <br />
-<br />
+Check out this [toy VGG example](Tests/GrAIExamples/VGGExample.swift) and 
+its [documentation](Docs/Examples/VGG.md) to get started with GrAIdient today!
 
 ## ✨ Key Features
 
-- flat design with direct access to the graph of layers and the backward pass
-- run natively on Mac Intel GPU, eGPU, Mac M1, M2...
-- compiled language
-- gradient checking
+- direct access to the graph of layers and to the backward pass
+- run natively on Mac GPU (Intel GPU, eGPU, Apple Silicon)
+- written in Swift: a compiled language with strong typing
+- gradient checking to validate backward operations
 - PyTorch interoperability
-- gradients per batch & per sample (ready for differential privacy)
+- gradients per batch & per sample (needed for differential privacy)
 - debug at the neuron level
 
 ## 📦 Swift Package Manager

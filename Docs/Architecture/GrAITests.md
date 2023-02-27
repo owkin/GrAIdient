@@ -1,6 +1,6 @@
 # 👷 GrAITests
 
-`GrAITests` contains unit tests of `GrAIdient`. 
+[`GrAITests`](../../Tests/GrAITests) contains unit tests of `GrAIdient`. 
 
 Some of them are systematic and repeated over many different setups to ensure 
 that every layer, optimizer, activation function ... is tested.

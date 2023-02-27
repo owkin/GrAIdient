@@ -182,7 +182,9 @@ public class FullyConnectedPatch: ActivationSeq,
             )
         }
         
+        _patch = patch
         let nbPatches = (layerPrev.height / patch) * (layerPrev.width / patch)
+        
         weightWidth = layerPrev.nbChannels * patch * patch
         weightHeight = nbNeurons
         _updateBiases = biases
@@ -582,7 +584,6 @@ public class FullyConnectedPatch: ActivationSeq,
                 )
             }}
             
-            let nbSeqPerRow = layerPrev.height / _patch
             let nbSeqPerCol = layerPrev.width / _patch
             let neuronsPrev = layerPrev.neurons
             let nbChannelsPrev = layerPrev.nbChannels
@@ -749,7 +750,6 @@ public class FullyConnectedPatch: ActivationSeq,
             let weightsPtr = _wBuffers.w_p!.shared.buffer
             let biasesPtr = _bBuffers.w_p!.shared.buffer
             
-            let nbSeqPerRow = layerPrev.height / _patch
             let nbSeqPerCol = layerPrev.width / _patch
             let neuronsPrev = layerPrev.neurons
             let nbChannelsPrev = layerPrev.nbChannels
@@ -913,7 +913,6 @@ public class FullyConnectedPatch: ActivationSeq,
         {
             try checkStateCPU(batchSize: batchSize)
             
-            let nbSeqPerRow = layerPrev.height / _patch
             let nbSeqPerCol = layerPrev.width / _patch
             let neuronsPrev = layerPrev.neurons
             let nbChannelsPrev = layerPrev.nbChannels
@@ -1009,10 +1008,8 @@ public class FullyConnectedPatch: ActivationSeq,
     {
         if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
-            let nbSeqPerRow = layerPrev.height / _patch
             let nbSeqPerCol = layerPrev.width / _patch
             let neuronsPrev = layerPrev.neurons
-            let nbChannelsPrev = layerPrev.nbChannels
             
             for elem in 0..<batchSize {
             for seq in 0..<sequence
@@ -1060,7 +1057,6 @@ public class FullyConnectedPatch: ActivationSeq,
     {
         if let layerPrev = self.layerPrev as? Layer2D, computeDeltaWeights
         {
-            let nbSeqPerRow = layerPrev.height / _patch
             let nbSeqPerCol = layerPrev.width / _patch
             let neuronsPrev = layerPrev.neurons
             

@@ -53,7 +53,6 @@ kernel void flPatchForward(
         return ;
     }
     
-    uint nbSeqPerRow = heightPrev / patch;
     uint nbSeqPerCol = widthPrev / patch;
     uint seqI = seq / nbSeqPerCol;
     uint seqJ = seq % nbSeqPerCol;
@@ -73,8 +72,7 @@ kernel void flPatchForward(
             uint offsetPrev = j + (offsetStartPrev + i) * widthPrev;
             float outPrev = outsPrev[offsetPrev];
             
-            uint offsetWeight = j +
-                i * _patch + depthPrev * _patch * _patch;
+            uint offsetWeight = j + i * patch + depthPrev * patch * patch;
             uint offsetWeights = offsetWeight + weightWidth * depth;
             float w = weights[offsetWeights];
             
@@ -107,7 +105,7 @@ kernel void flPatchBackward(
     uint sequence;
     uint dirty;
     
-    if (pNbNeurons && pNbNeuronsPrev && pNbBatch && pDirty &&
+    if (pNbNeurons && pNbChannelsPrev && pNbBatch && pDirty &&
         deltaPrev && weights && delta)
     {
         nbNeurons = *pNbNeurons;
@@ -132,7 +130,6 @@ kernel void flPatchBackward(
         return ;
     }
     
-    uint nbSeqPerRow = heightPrev / patch;
     uint nbSeqPerCol = widthPrev / patch;
     uint seqI = seq / nbSeqPerCol;
     uint seqJ = seq % nbSeqPerCol;
@@ -218,7 +215,6 @@ kernel void flPatchBatchDerWeights(
         return ;
     }
     
-    uint nbSeqPerRow = heightPrev / patch;
     uint nbSeqPerCol = widthPrev / patch;
     
     uint res = offsetWeight;
@@ -352,7 +348,6 @@ kernel void flPatchDerWeights(
         return ;
     }
     
-    uint nbSeqPerRow = heightPrev / patch;
     uint nbSeqPerCol = widthPrev / patch;
     
     uint res = offsetWeight;
@@ -448,7 +443,7 @@ kernel void flPatchReduceWeights(
     {
         nbNeurons = *pNbNeurons;
         nbChannelsPrev = *pNbChannelsPrev;
-        nbBatch = *pNbBatch;
+        patch = *pPatch;
         nbBatch = *pNbBatch;
         accumulate = *pAccumulate;
     }

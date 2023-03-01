@@ -17,8 +17,6 @@ class LayerSeqGradTests: Input2DMSE1DCase
     override func setUp()
     {
         super.setUp()
-        
-        optimizerParams.nbLoops = 2
         GrAI.Loop.gradientChecking = true
     }
     

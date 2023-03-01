@@ -575,6 +575,15 @@ private class MetalDevice
                 "flDerBiases",
                 "flReduceWeights",
             ],
+            "FullyConnectedPatch": [
+                "flPatchForward",
+                "flPatchBackward",
+                "flPatchBatchDerWeights",
+                "flPatchBatchDerBiases",
+                "flPatchDerWeights",
+                "flPatchDerBiases",
+                "flPatchReduceWeights",
+            ],
             "InstanceNorm": [
                 "computeInstanceNormConvμ",
                 "computeInstanceNormConvσ2",
@@ -631,6 +640,10 @@ private class MetalDevice
                 "concat2DForward",
                 "concat2DBackward",
                 "constant2DForward",
+            ],
+            "LayerSeq": [
+                "avgPoolSeqForward",
+                "avgPoolSeqBackward",
             ],
             "Merge": [
                 "sum1",

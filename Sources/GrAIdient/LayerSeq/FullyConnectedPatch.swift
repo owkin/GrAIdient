@@ -10,8 +10,8 @@ import Foundation
 ///
 /// Layer with a sequential shape neural structure, weights and biases and an activation function.
 ///
-/// This is the fundamental learning layer of a 1D model.
-/// Note that its previous layer may be a Layer1D or a Layer2D.
+/// This layer transforms a 2D layer into a sequential layer, applying fully connected operation
+/// on patches of the 2D layer.
 ///
 public class FullyConnectedPatch: ActivationSeq,
                                   LayerWithActivation, LayerUpdate

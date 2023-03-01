@@ -162,3 +162,191 @@ class LayerSeqFlowTests: Input2DMSE1DCase
         run(trainer)
     }
 }
+
+// -----------------------------------------------------------------------------
+// Compare GPU gradients with CPU ones through time.
+// We expect to see errors ~ 1e-7 and less.
+// -----------------------------------------------------------------------------
+class LayerSeqFlowResetTests: LayerSeqFlowTests
+{
+    override func setUp()
+    {
+        super.setUp()
+        
+        setOptimizerParams(params: &optimizerParams,
+                           optimizerClass: .Adam)
+    }
+    
+    private func _buildTrainer(_ model: String) -> FlowResetTrainer
+    {
+        let trainer = FlowResetTrainer(
+            name: "LayerSeq",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(model: model, context: context)
+        }
+        return trainer
+    }
+    
+    override func testFullyConnectedPatch() throws
+    {
+        let trainer = _buildTrainer("FullyConnectedPatch")
+        run(trainer)
+    }
+    
+    override func testFullyConnectedPatchSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("FullyConnectedPatch")
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU gradients with CPU ones through time.
+// We expect to see errors ~ 1e-7 and less.
+// -----------------------------------------------------------------------------
+class LayerSeqFlowReverseTests: LayerSeqFlowTests
+{
+    override func setUp()
+    {
+        super.setUp()
+        
+        setOptimizerParams(params: &optimizerParams,
+                           optimizerClass: .Adam)
+    }
+    
+    private func _buildTrainer(_ model: String) -> FlowReverseTrainer
+    {
+        let trainer = FlowReverseTrainer(
+            name: "LayerSeq",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(model: model, context: context)
+        }
+        return trainer
+    }
+    
+    override func testFullyConnectedPatch() throws
+    {
+        let trainer = _buildTrainer("FullyConnectedPatch")
+        run(trainer)
+    }
+    
+    override func testFullyConnectedPatchSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("FullyConnectedPatch")
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU Loss in inference mode with CPU one.
+// We expect to see errors ~ 1e-3 and less.
+// -----------------------------------------------------------------------------
+class LayerSeqInferenceTests: LayerSeqFlowTests
+{
+    private func _buildTrainer(_ model: String) -> InferenceTrainer
+    {
+        let trainer = InferenceTrainer(
+            name: "LayerSeq",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(model: model, context: context)
+        }
+        return trainer
+    }
+    
+    override func testFullyConnectedPatch() throws
+    {
+        let trainer = _buildTrainer("FullyConnectedPatch")
+        run(trainer)
+    }
+    
+    override func testFullyConnectedPatchSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("FullyConnectedPatch")
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU/CPU Losses in inference mode with the one obtained from a
+// loaded model.
+// We expect to see errors ~ 1e-3 and less.
+// -----------------------------------------------------------------------------
+class LayerSeqLoadTests: LayerSeqFlowTests
+{
+    private func _buildTrainer(_ model: String) -> LoadTrainer
+    {
+        let trainer = LoadTrainer(
+            name: "LayerSeq",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(model: model, context: context)
+        }
+        return trainer
+    }
+    
+    override func testFullyConnectedPatch() throws
+    {
+        let trainer = _buildTrainer("FullyConnectedPatch")
+        run(trainer)
+    }
+    
+    override func testFullyConnectedPatchSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("FullyConnectedPatch")
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU/CPU Losses in inference mode with the one obtained from a
+// transformed model.
+// We expect to see errors ~ 1e-3 and less.
+// -----------------------------------------------------------------------------
+class LayerSeqTransformTests: LayerSeqFlowTests
+{
+    private func _buildTrainer(_ model: String) -> TransformTrainer
+    {
+        let trainer = TransformTrainer(
+            name: "LayerSeq",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(model: model, context: context)
+        }
+        return trainer
+    }
+    
+    override func testFullyConnectedPatch() throws
+    {
+        let trainer = _buildTrainer("FullyConnectedPatch")
+        run(trainer)
+    }
+    
+    override func testFullyConnectedPatchSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("FullyConnectedPatch")
+        run(trainer)
+    }
+}

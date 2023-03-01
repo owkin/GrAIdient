@@ -768,15 +768,16 @@ public class FullyConnectedPatch: ActivationSeq,
                 
                 for depth in 0..<nbNeurons
                 {
-                    var tmp: Double = _bArrays.w[depth]
+                    var tmp: Double = Double(biasesPtr[depth])
                     for depthPrev in 0..<nbChannelsPrev {
                     for i in 0..<_patch {
                     for j in 0..<_patch
                     {
                         let offsetWeight = j +
                             i * _patch + depthPrev * _patch * _patch
+                        let offsetWeights = offsetWeight + weightWidth * depth
                         
-                        let w = _wArrays.w(depth, offsetWeight)
+                        let w = Double(weightsPtr[offsetWeights])
                         let outPrev = neuronsPrev[depthPrev]
                             .get(iStart+i, jStart+j)!.gc[batch][elem].out
                         tmp += w * outPrev

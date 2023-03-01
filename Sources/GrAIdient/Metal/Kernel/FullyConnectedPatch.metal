@@ -81,7 +81,7 @@ kernel void flPatchForward(
         }}
     }
     
-    uint offset = depth + nbNeurons * seq + nbBatch * nbNeurons * elem;
+    uint offset = depth + nbNeurons * seq + sequence * nbNeurons * elem;
     outs[offset] = tmp;
 }
 
@@ -151,7 +151,7 @@ kernel void flPatchBackward(
         uint offsetWeights = offsetWeight + weightWidth * depth;
         float w = weights[offsetWeights];
         
-        uint offset = depth + nbNeurons * seq + nbBatch * nbNeurons * elem;
+        uint offset = depth + nbNeurons * seq + sequence * nbNeurons * elem;
         float deltaCur = delta[offset];
         
         tmp += w * deltaCur;
@@ -235,7 +235,7 @@ kernel void flPatchBatchDerWeights(
         uint iStart = seqI * patch;
         uint jStart = seqJ * patch;
         
-        uint offset = depth + nbNeurons * seq + nbBatch * nbNeurons * elem;
+        uint offset = depth + nbNeurons * seq + sequence * nbNeurons * elem;
         float deltaCur = delta[offset];
         
         uint offsetStartPrev = (depthPrev + nbChannelsPrev * elem) * heightPrev;
@@ -290,7 +290,7 @@ kernel void flPatchBatchDerBiases(
     for (uint elem=0; elem<nbBatch; elem++) {
     for (uint seq=0; seq<sequence; seq++)
     {
-        uint offset = depth + nbNeurons * seq + nbBatch * nbNeurons * elem;
+        uint offset = depth + nbNeurons * seq + sequence * nbNeurons * elem;
         tmp += delta[offset];
     }}
     
@@ -367,7 +367,7 @@ kernel void flPatchDerWeights(
         uint iStart = seqI * patch;
         uint jStart = seqJ * patch;
         
-        uint offset = depth + nbNeurons * seq + nbBatch * nbNeurons * elem;
+        uint offset = depth + nbNeurons * seq + sequence * nbNeurons * elem;
         float deltaCur = delta[offset];
         
         uint offsetStartPrev = (depthPrev + nbChannelsPrev * elem) * heightPrev;
@@ -415,7 +415,7 @@ kernel void flPatchDerBiases(
     float tmp = 0.0;
     for (uint seq=0; seq<sequence; seq++)
     {
-        uint offset = depth + nbNeurons * seq + nbBatch * nbNeurons * elem;
+        uint offset = depth + nbNeurons * seq + sequence * nbNeurons * elem;
         tmp += delta[offset];
     }
     

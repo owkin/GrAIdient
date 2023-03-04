@@ -640,6 +640,8 @@ private class MetalDevice
                 "concat2DForward",
                 "concat2DBackward",
                 "constant2DForward",
+                "MSE2DLoss",
+                "MSE2DLossDerivative",
             ],
             "LayerSeq": [
                 "avgPoolSeqForward",

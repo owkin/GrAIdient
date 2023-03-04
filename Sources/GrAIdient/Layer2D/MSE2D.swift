@@ -1,0 +1,437 @@
+//
+// MSE2D.swift
+// GrAIdient
+//
+// Created by Jean-François Reboud on 04/03/2023.
+//
+
+/// Loss layer with a 2D shape neural structure and a loss that computes mean squared error.
+public class MSE2D: LayerOutput2D
+{
+    ///
+    /// Create a layer with same values as this.
+    ///
+    /// - Parameters:
+    ///     - mapping: Dictionary allowing to find the layer associated to some id.
+    ///     This dictionary is particularly useful when the different layers cannot access
+    ///     their `layerPrev`.
+    ///     - inPlace: Whether hard resources should be copied as is.
+    ///
+    /// - Returns: A new layer. When `inPlace` is false, `initKernel` is
+    /// necessary in order to recreate hard resources.
+    ///
+    public override func copy(
+        mapping: Dictionary<Int, Layer>,
+        inPlace: Bool) -> Layer
+    {
+        let context = ModelContext(name: "", curID: 0)
+        let layerPrev = mapping[idPrev] as! Layer2D
+        
+        let params = GrAI.Model.Params(context: context)
+        params.context.curID = id
+        
+        let layer = MSE2D(layerPrev: layerPrev, params: params)
+        layer.coeff = self.coeff
+        
+        return layer
+    }
+    
+    ///
+    /// Estimate the gradients of weights thanks to Gradient Checking.
+    ///
+    /// Throw an error if batch size or ground truth are incoherent.
+    ///
+    /// - Parameters:
+    ///     - groundTruth: The ground truth.
+    ///     - batchSize: The batch size of data.
+    ///     - format: TThe data format.
+    /// - Returns: The estimated gradients of weights.
+    ///
+    public func collectGradientsApprox<T: BinaryFloatingPoint>(
+        _ groundTruth: [T],
+        batchSize: Int,
+        format: ImageFormat) throws -> [T]
+    {
+        var gradients = [T]()
+        let nbGradients = neurons.first!.get(0)!.nbGC / 2
+        for elem in 0..<nbGradients
+        {
+            let loss1 = try getLossGC(
+                groundTruth, batchSize: batchSize,
+                elem: 2 * elem, format: format
+            )
+            let loss2 = try getLossGC(
+                groundTruth, batchSize: batchSize,
+                elem: 2 * elem + 1, format: format
+            )
+            
+            let gradient = (loss1 - loss2) / T(2 * Ɛ)
+            gradients.append(gradient)
+        }
+        return gradients
+    }
+    
+    ///
+    /// Get the loss consecutive of a modified weights during the Gradient Checking process.
+    ///
+    /// Throw an error if batch size or ground truth are incoherent.
+    ///
+    /// - Parameters:
+    ///     - groundTruth: The ground truth.
+    ///     - batchSize: The batch size of data.
+    ///     - elem: The modified weight for which we collect the resulting loss.
+    ///     - format: The data format.
+    /// - Returns: The loss value.
+    ///
+    func getLossGC<T: BinaryFloatingPoint>(
+        _ groundTruth: [T],
+        batchSize: Int,
+        elem: Int,
+        format: ImageFormat) throws -> T
+    {
+        if batchSize != self.batchSize ||
+           batchSize <= 0 || batchSize > neurons.first!.get(0)!.v.count
+        {
+            throw LayerError.BatchSize
+        }
+        
+        var losses = [T](repeating: 0.0, count: batchSize)
+        switch format
+        {
+        case .RGB:
+            for batch in 0..<batchSize {
+            for depth in 0..<nbChannels
+            {
+                for i in 0..<height {
+                for j in 0..<width
+                {
+                    let offset = j + (batch * height + i) * width
+                    
+                    let out =
+                        T(neurons[depth].get(i, j)!.gc[batch][elem].out)
+                    let gt = groundTruth[nbChannels * offset + depth]
+                    let diff = out - gt
+                    
+                    losses[batch] += diff * diff
+                }}
+            }}
+        case .Neuron:
+            for batch in 0..<batchSize {
+            for depth in 0..<nbChannels
+            {
+                let offsetStart = (depth + nbChannels * batch) * height
+                
+                for i in 0..<height {
+                for j in 0..<width
+                {
+                    let offset = j + (offsetStart + i) * width
+                    
+                    let out =
+                        T(neurons[depth].get(i, j)!.gc[batch][elem].out)
+                    let gt = groundTruth[offset]
+                    let diff = out - gt
+                    
+                    losses[batch] += diff * diff
+                }}
+            }}
+        }
+        return T(coeff) * losses.reduce(0, +) /
+               T(batchSize * nbChannels * height * width)
+    }
+    
+    ///
+    /// Get loss in the CPU execution context.
+    ///
+    /// Throw an error if batch size or ground truth are incoherent.
+    ///
+    /// - Parameters:
+    ///     - groundTruth: The ground truth.
+    ///     - batchSize: The batch size of data.
+    ///     - format: The data format.
+    /// - Returns: The loss value.
+    ///
+    public func getLossCPU<T: BinaryFloatingPoint>(
+        _ groundTruth: [T],
+        batchSize: Int,
+        format: ImageFormat) throws -> T
+    {
+        if batchSize != self.batchSize ||
+           batchSize <= 0 || batchSize > neurons.first!.get(0)!.v.count
+        {
+            throw LayerError.BatchSize
+        }
+        
+        var losses = [T](repeating: 0.0, count: batchSize)
+        switch format
+        {
+        case .RGB:
+            for elem in 0..<batchSize {
+            for depth in 0..<nbChannels
+            {
+                for i in 0..<height {
+                for j in 0..<width
+                {
+                    let offset = j + (elem * height + i) * width
+                    
+                    let out = T(neurons[depth].get(i, j)!.v[elem].out)
+                    let gt = groundTruth[nbChannels * offset + depth]
+                    let diff = out - gt
+                    
+                    losses[elem] += diff * diff
+                }}
+            }}
+        case .Neuron:
+            for elem in 0..<batchSize {
+            for depth in 0..<nbChannels
+            {
+                let offsetStart = (depth + nbChannels * elem) * height
+                
+                for i in 0..<height {
+                for j in 0..<width
+                {
+                    let offset = j + (offsetStart + i) * width
+                    
+                    let out = T(neurons[depth].get(i, j)!.v[elem].out)
+                    let gt = groundTruth[offset]
+                    let diff = out - gt
+                    
+                    losses[elem] += diff * diff
+                }}
+            }}
+        }
+        return T(coeff) * losses.reduce(0, +) /
+               T(batchSize * nbChannels * height * width)
+    }
+    
+    ///
+    /// Get loss in the GPU execution context.
+    ///
+    /// Throw an error if batch size or ground truth are incoherent.
+    ///
+    /// - Parameters:
+    ///     - groundTruth: The ground truth.
+    ///     - batchSize: The batch size of data.
+    ///     - format: The data format.
+    /// - Returns: The loss value.
+    ///
+    public func getLossGPU<T: BinaryFloatingPoint>(
+        _ groundTruth: [T],
+        batchSize: Int,
+        format: ImageFormat) throws -> T
+    {
+        try checkGroundTruthGPU(
+            groundTruth, batchSize: batchSize, format: format
+        )
+        return try T(getLossGPU(
+            self.groundTruth,
+            batchSize: groundTruth.count
+        ))
+    }
+    
+    ///
+    /// Get loss in the GPU execution context.
+    ///
+    /// Throw an error if batch size or ground truth are incoherent.
+    ///
+    /// - Parameters:
+    ///     - groundTruth: The ground truth.
+    ///     - batchSize: The batch size of data.
+    /// - Returns: The loss value.
+    ///
+    public func getLossGPU(
+        _ groundTruth: MetalBuffer<Float>,
+        batchSize: Int) throws -> Float
+    {
+        try checkLossGPU(batchSize: batchSize)
+        if batchSize != self.batchSize
+        {
+            throw LayerError.BatchSize
+        }
+        
+        let pNbChannels: [UInt32] = [UInt32(nbChannels)]
+        let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
+        let pNbBatch: [UInt32] = [UInt32(batchSize)]
+        
+        let command = MetalKernel.get.createCommand(
+            "MSE2DLoss", deviceID: deviceID
+        )
+        command.setBuffer(outs.metal, atIndex: 0)
+        command.setBuffer(groundTruth.metal, atIndex: 1)
+        command.setBytes(pNbChannels, atIndex: 2)
+        command.setBytes(pDimensions, atIndex: 3)
+        command.setBytes(pNbBatch, atIndex: 4)
+        command.setBuffer(loss.metal, atIndex: 5)
+        
+        command.dispatchThreads(batchSize)
+        command.enqueue()
+        
+        MetalKernel.get.download([loss])
+        var loss: Float = 0.0
+        let lossPtr = self.loss.buffer
+        for i in 0..<batchSize
+        {
+            loss += lossPtr[i]
+        }
+        return Float(coeff) * loss /
+               Float(batchSize * nbChannels * height * width)
+    }
+    
+    ///
+    /// Compute the derivative of the loss in the CPU execution context.
+    ///
+    /// This function is necessary to initialize the backward pass !
+    /// In a way, it plays a similar role as the `setData` of the first layer.
+    ///
+    /// The `setData` API sets data to the first layer to initialize the forward pass.
+    /// Here we use the `groundTruth` to initialize the backward pass.
+    ///
+    /// Throw an error if batch size or ground truth are incoherent.
+    ///
+    /// - Parameters:
+    ///     - groundTruth: The ground truth.
+    ///     - batchSize: The batch size of data.
+    ///     - format: The data format.
+    ///
+    public func lossDerivativeCPU<T: BinaryFloatingPoint>(
+        _ groundTruth: [T],
+        batchSize: Int,
+        format: ImageFormat) throws
+    {
+        if batchSize != self.batchSize ||
+           batchSize <= 0 || batchSize > neurons.first!.get(0)!.v.count
+        {
+            throw LayerError.BatchSize
+        }
+        
+        if let layerPrev = self.layerPrev as? Layer2D
+        {
+            let neuronsPrev = layerPrev.neurons
+            switch format
+            {
+            case .RGB:
+                for elem in 0..<batchSize {
+                for depth in 0..<nbChannels
+                {
+                    for i in 0..<height {
+                    for j in 0..<width
+                    {
+                        let offset = j + (elem * height + i) * width
+                        
+                        let out = T(neurons[depth].get(i, j)!.v[elem].out)
+                        let gt = groundTruth[nbChannels * offset + depth]
+                        let diff = out - gt
+                        
+                        neuronsPrev[depth].get(i, j)!.v[elem].delta =
+                            2 * coeff * Double(diff) /
+                            Double(batchSize * nbChannels * height * width)
+                    }}
+                }}
+            case .Neuron:
+                for elem in 0..<batchSize {
+                for depth in 0..<nbChannels
+                {
+                    let offsetStart = (depth + nbChannels * elem) * height
+                    
+                    for i in 0..<height {
+                    for j in 0..<width
+                    {
+                        let offset = j + (offsetStart + i) * width
+                        
+                        let out = T(neurons[depth].get(i, j)!.v[elem].out)
+                        let gt = groundTruth[offset]
+                        let diff = out - gt
+                        
+                        neuronsPrev[depth].get(i, j)!.v[elem].delta =
+                            2 * coeff * Double(diff) /
+                            Double(batchSize * nbChannels * height * width)
+                    }}
+                }}
+            }
+            propagateDirty()
+        }
+    }
+    
+    ///
+    /// Compute the derivative of the loss in the GPU execution context.
+    ///
+    /// This function is necessary to initialize the backward pass !
+    /// In a way, it plays a similar role as the `setData` of the first layer.
+    ///
+    /// The `setData` API sets data to the first layer to initialize the forward pass.
+    /// Here we use the `groundTruth` to initialize the backward pass.
+    ///
+    /// Throw an error if batch size or ground truth are incoherent.
+    ///
+    /// - Parameters:
+    ///     - groundTruth: The ground truth.
+    ///     - batchSize: The batch size of data.
+    ///     - format: The data format.
+    ///
+    public func lossDerivativeGPU<T: BinaryFloatingPoint>(
+        _ groundTruth: [T],
+        batchSize: Int,
+        format: ImageFormat) throws
+    {
+        try checkGroundTruthGPU(
+            groundTruth, batchSize: batchSize, format: format
+        )
+        try lossDerivativeGPU(
+            self.groundTruth,
+            batchSize: groundTruth.count
+        )
+    }
+    
+    ///
+    /// Compute the derivative of the loss in the GPU execution context.
+    ///
+    /// This function is necessary to initialize the backward pass !
+    /// In a way, it plays a similar role as the `setData` of the first layer.
+    ///
+    /// The `setData` API sets data to the first layer to initialize the forward pass.
+    /// Here we use the `groundTruth` to initialize the backward pass.
+    ///
+    /// Throw an error if batch size or ground truth are incoherent.
+    ///
+    /// - Parameters:
+    ///     -  groundTruth: The ground truth.
+    ///     - batchSize: The batch size of data.
+    ///
+    public func lossDerivativeGPU(
+        _ groundTruth: MetalBuffer<Float>,
+        batchSize: Int) throws
+    {
+        if batchSize != self.batchSize
+        {
+            throw LayerError.BatchSize
+        }
+        
+        if let layerPrev = self.layerPrev as? Layer2D
+        {
+            try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
+            
+            let pNbChannels: [UInt32] = [UInt32(nbChannels)]
+            let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
+            let pCoeff: [Float] = [Float(coeff)]
+            let pNbBatch: [UInt32] = [UInt32(batchSize)]
+            
+            let command = MetalKernel.get.createCommand(
+                "MSE2DLossDerivative", deviceID: deviceID
+            )
+            command.setBuffer(outs.metal, atIndex: 0)
+            command.setBuffer(groundTruth.metal, atIndex: 1)
+            command.setBytes(pNbChannels, atIndex: 2)
+            command.setBytes(pDimensions, atIndex: 2)
+            command.setBytes(pCoeff, atIndex: 3)
+            command.setBytes(pNbBatch, atIndex: 4)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 5)
+            
+            command.dispatchThreads(
+                width: nbChannels * width,
+                height: batchSize * height
+            )
+            command.enqueue()
+            
+            propagateDirty()
+        }
+    }
+}

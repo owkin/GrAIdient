@@ -5,7 +5,7 @@
 // Created by Jean-François Reboud on 10/10/2022.
 //
 
-/// Last layer with a 1D shape neural structure and a loss function that depends linearly on its inputs.
+/// Loss layer with a 1D shape neural structure and a loss function that depends linearly on its inputs.
 public class LinearError1D: LayerOutput1D
 {
     ///
@@ -152,28 +152,7 @@ public class LinearError1D: LayerOutput1D
     public func getLossGPU<T: BinaryFloatingPoint>(
         _ groundTruth: [[T]]) throws -> T
     {
-        let batchSize = groundTruth.count
-        if self.groundTruth == nil
-        {
-            self.groundTruth = MetalSharedBuffer<Float>(
-                batchSize * nbNeurons,
-                deviceID: deviceID
-            )
-        }
-        
-        let bufferPtr = self.groundTruth.buffer
-        for (i, dataI) in groundTruth.enumerated()
-        {
-            if dataI.count != nbNeurons
-            {
-                throw LayerError.DataSize
-            }
-            for (j, dataIJ) in dataI.enumerated()
-            {
-                bufferPtr[j + i * nbNeurons] = Float(dataIJ)
-            }
-        }
-        MetalKernel.get.upload([self.groundTruth])
+        try checkGroundTruthGPU(groundTruth)
         
         return try T(getLossGPU(
             self.groundTruth,
@@ -195,26 +174,14 @@ public class LinearError1D: LayerOutput1D
         _ groundTruth: MetalBuffer<Float>,
         batchSize: Int) throws -> Float
     {
+        try checkLossGPU(batchSize: batchSize)
         if batchSize != self.batchSize
         {
             throw LayerError.BatchSize
         }
-        if batchSize * nbNeurons > groundTruth.nbElems
-        {
-            throw LayerError.DataSize
-        }
         
         let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
-        
-        if loss == nil
-        {
-            loss = MetalSharedBuffer<Float>(batchSize, deviceID: deviceID)
-        }
-        if batchSize > loss.nbElems
-        {
-            throw LayerError.BatchSize
-        }
         
         let command = MetalKernel.get.createCommand(
             "linearErrorLoss", deviceID: deviceID
@@ -286,19 +253,11 @@ public class LinearError1D: LayerOutput1D
     {
         if let layerPrev = self.layerPrev as? Layer1D
         {
+            try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
+            
             let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
             let pCoeff: [Float] = [Float(coeff)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
-            
-            if layerPrev.delta == nil
-            {
-                layerPrev.delta = MetalPrivateBuffer<Float>(
-                    batchSize * nbNeurons, deviceID: deviceID)
-            }
-            if batchSize * nbNeurons > layerPrev.delta.nbElems
-            {
-                throw LayerError.BatchSize
-            }
             
             let command = MetalKernel.get.createCommand(
                 "linearErrorLossDerivative", deviceID: deviceID

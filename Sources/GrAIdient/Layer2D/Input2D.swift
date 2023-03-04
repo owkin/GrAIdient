@@ -333,24 +333,6 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
     ///
     /// - Parameters:
     ///     - data: The data to set.
-    ///     - format: The data format.
-    ///
-    public func setDataCPU<T: BinaryFloatingPoint>(
-        _ data: [[T]],
-        format: ImageFormat) throws
-    {
-        let batchSize = data.count
-        let dataTmp = data.reduce([], +)
-        try setDataCPU(dataTmp, batchSize: batchSize, format: format)
-    }
-    
-    ///
-    /// API to set data in the CPU execution context.
-    ///
-    /// Throw an error if data size is not coherent.
-    ///
-    /// - Parameters:
-    ///     - data: The data to set.
     ///     - batchSize: The batch size of data.
     ///     - format: The data format.
     ///
@@ -394,24 +376,6 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
                 }}
             }
         }
-    }
-    
-    ///
-    /// API to set data in the GPU execution context.
-    ///
-    /// Throw an error if data size is not coherent.
-    ///
-    /// - Parameters:
-    ///     - data: The data to set.
-    ///     - format: The data format.
-    ///
-    public func setDataGPU<T: BinaryFloatingPoint>(
-        _ data: [[T]],
-        format: ImageFormat) throws
-    {
-        let batchSize = data.count
-        let dataTmp = data.reduce([], +)
-        try setDataGPU(dataTmp, batchSize: batchSize, format: format)
     }
     
     ///

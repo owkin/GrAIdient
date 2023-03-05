@@ -74,6 +74,38 @@ class LayerSeqGradTests: Input2DMSE1DCase
                 params: params
             )
             
+        case "Concat1":
+            let otherLayer1: LayerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: 2, nbNeurons: 5,
+                activation: SoftReLU.str, biases: true, params: params
+            )
+            layerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: 3, nbNeurons: 5,
+                activation: SoftReLU.str, biases: true, params: params
+            )
+            layerSeq = Concat1Seq(
+                layersPrev: [layerSeq, otherLayer1],
+                params: params
+            )
+            
+        case "Concat2":
+            let otherLayer1: LayerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: 2, nbNeurons: 3,
+                activation: SoftReLU.str, biases: true, params: params
+            )
+            let otherLayer2: LayerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: 2, nbNeurons: 6,
+                activation: SoftReLU.str, biases: true, params: params
+            )
+            layerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: 2, nbNeurons: 9,
+                activation: SoftReLU.str, biases: true, params: params
+            )
+            layerSeq = Concat2Seq(
+                layersPrev: [layerSeq, otherLayer1, otherLayer2],
+                params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -118,6 +150,32 @@ class LayerSeqGradTests: Input2DMSE1DCase
     func testSumGPU() throws
     {
         let trainer = _buildTrainer("Sum")
+        run(trainer)
+    }
+    
+    func testConcat1CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("Concat1")
+        run(trainer)
+    }
+    
+    func testConcat1GPU() throws
+    {
+        let trainer = _buildTrainer("Concat1")
+        run(trainer)
+    }
+    
+    func testConcat2CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("Concat2")
+        run(trainer)
+    }
+    
+    func testConcat2GPU() throws
+    {
+        let trainer = _buildTrainer("Concat2")
         run(trainer)
     }
 }
@@ -182,6 +240,38 @@ class LayerSeqFlowTests: Input2DMSE1DCase
                 params: params
             )
             
+        case "Concat1":
+            let otherLayer1: LayerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: 2, nbNeurons: 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: 3, nbNeurons: 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = Concat1Seq(
+                layersPrev: [layerSeq, otherLayer1],
+                params: params
+            )
+            
+        case "Concat2":
+            let otherLayer1: LayerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: 2, nbNeurons: 3,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            let otherLayer2: LayerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: 2, nbNeurons: 6,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: 2, nbNeurons: 9,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = Concat2Seq(
+                layersPrev: [layerSeq, otherLayer1, otherLayer2],
+                params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -212,6 +302,18 @@ class LayerSeqFlowTests: Input2DMSE1DCase
     func testSum() throws
     {
         let trainer = _buildTrainer("Sum")
+        run(trainer)
+    }
+    
+    func testConcat1() throws
+    {
+        let trainer = _buildTrainer("Concat1")
+        run(trainer)
+    }
+    
+    func testConcat2() throws
+    {
+        let trainer = _buildTrainer("Concat2")
         run(trainer)
     }
 }
@@ -262,6 +364,18 @@ class LayerSeqFlowResetTests: LayerSeqFlowTests
         let trainer = _buildTrainer("Sum")
         run(trainer)
     }
+    
+    override func testConcat1() throws
+    {
+        let trainer = _buildTrainer("Concat1")
+        run(trainer)
+    }
+    
+    override func testConcat2() throws
+    {
+        let trainer = _buildTrainer("Concat2")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -310,6 +424,18 @@ class LayerSeqFlowReverseTests: LayerSeqFlowTests
         let trainer = _buildTrainer("Sum")
         run(trainer)
     }
+    
+    override func testConcat1() throws
+    {
+        let trainer = _buildTrainer("Concat1")
+        run(trainer)
+    }
+    
+    override func testConcat2() throws
+    {
+        let trainer = _buildTrainer("Concat2")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -348,6 +474,18 @@ class LayerSeqInferenceTests: LayerSeqFlowTests
     override func testSum() throws
     {
         let trainer = _buildTrainer("Sum")
+        run(trainer)
+    }
+    
+    override func testConcat1() throws
+    {
+        let trainer = _buildTrainer("Concat1")
+        run(trainer)
+    }
+    
+    override func testConcat2() throws
+    {
+        let trainer = _buildTrainer("Concat2")
         run(trainer)
     }
 }
@@ -391,6 +529,18 @@ class LayerSeqLoadTests: LayerSeqFlowTests
         let trainer = _buildTrainer("Sum")
         run(trainer)
     }
+    
+    override func testConcat1() throws
+    {
+        let trainer = _buildTrainer("Concat1")
+        run(trainer)
+    }
+    
+    override func testConcat2() throws
+    {
+        let trainer = _buildTrainer("Concat2")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -430,6 +580,18 @@ class LayerSeqTransformTests: LayerSeqFlowTests
     override func testSum() throws
     {
         let trainer = _buildTrainer("Sum")
+        run(trainer)
+    }
+    
+    override func testConcat1() throws
+    {
+        let trainer = _buildTrainer("Concat1")
+        run(trainer)
+    }
+    
+    override func testConcat2() throws
+    {
+        let trainer = _buildTrainer("Concat2")
         run(trainer)
     }
 }

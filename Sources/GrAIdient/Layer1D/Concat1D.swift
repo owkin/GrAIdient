@@ -256,7 +256,7 @@ public class Concat1D: LayerMerge1D
     {
         try checkStateForwardGPU(batchSize: batchSize)
         
-        let pNbNeurones: [UInt32] = [UInt32(nbNeurons)]
+        let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         
         let metalKernel = MetalKernel.get
@@ -277,7 +277,7 @@ public class Concat1D: LayerMerge1D
                 (_layersPrev[num] as! Layer1D).outs.metal, atIndex: 0
             )
             command.setBytes(pGlobalOffset, atIndex: 1)
-            command.setBytes(pNbNeurones, atIndex: 2)
+            command.setBytes(pNbNeurons, atIndex: 2)
             command.setBytes(pNbNeuronsPrev, atIndex: 3)
             command.setBytes(pNbBatch, atIndex: 4)
             command.setBuffer(outs.metal, atIndex: 5)
@@ -347,7 +347,7 @@ public class Concat1D: LayerMerge1D
             return
         }
         
-        let pNbNeurones: [UInt32] = [UInt32(nbNeurons)]
+        let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         
         let metalKernel = MetalKernel.get
@@ -376,7 +376,7 @@ public class Concat1D: LayerMerge1D
             )
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBytes(pGlobalOffset, atIndex: 1)
-            command.setBytes(pNbNeurones, atIndex: 2)
+            command.setBytes(pNbNeurons, atIndex: 2)
             command.setBytes(pNbNeuronsPrev, atIndex: 3)
             command.setBytes(pNbBatch, atIndex: 4)
             command.setBytes(pDirty, atIndex: 5)

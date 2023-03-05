@@ -56,6 +56,24 @@ class LayerSeqGradTests: Input2DMSE1DCase
                 activation: SoftReLU.str, biases: true, params: params
             )
             
+        case "Sum":
+            let otherLayer1: LayerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: 2, nbNeurons: 5,
+                activation: SoftReLU.str, biases: true, params: params
+            )
+            let otherLayer2: LayerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: 2, nbNeurons: 5,
+                activation: SoftReLU.str, biases: true, params: params
+            )
+            layerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: 2, nbNeurons: 5,
+                activation: SoftReLU.str, biases: true, params: params
+            )
+            layerSeq = SumSeq(
+                layersPrev: [layerSeq, otherLayer1, otherLayer2],
+                params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -87,6 +105,19 @@ class LayerSeqGradTests: Input2DMSE1DCase
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer("FullyConnectedPatch")
+        run(trainer)
+    }
+    
+    func testSumCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("Sum")
+        run(trainer)
+    }
+    
+    func testSumGPU() throws
+    {
+        let trainer = _buildTrainer("Sum")
         run(trainer)
     }
 }
@@ -132,6 +163,24 @@ class LayerSeqFlowTests: Input2DMSE1DCase
                 layerPrev: layer, patch: 2, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true, params: params
             )
+           
+        case "Sum":
+            let otherLayer1: LayerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: 2, nbNeurons: 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            let otherLayer2: LayerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: 2, nbNeurons: 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: 2, nbNeurons: 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = SumSeq(
+                layersPrev: [layerSeq, otherLayer1, otherLayer2],
+                params: params
+            )
             
         default:
             fatalError("Unreachable.")
@@ -157,6 +206,12 @@ class LayerSeqFlowTests: Input2DMSE1DCase
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer("FullyConnectedPatch")
+        run(trainer)
+    }
+    
+    func testSum() throws
+    {
+        let trainer = _buildTrainer("Sum")
         run(trainer)
     }
 }
@@ -201,6 +256,12 @@ class LayerSeqFlowResetTests: LayerSeqFlowTests
         let trainer = _buildTrainer("FullyConnectedPatch")
         run(trainer)
     }
+    
+    override func testSum() throws
+    {
+        let trainer = _buildTrainer("Sum")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -243,6 +304,12 @@ class LayerSeqFlowReverseTests: LayerSeqFlowTests
         let trainer = _buildTrainer("FullyConnectedPatch")
         run(trainer)
     }
+    
+    override func testSum() throws
+    {
+        let trainer = _buildTrainer("Sum")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -275,6 +342,12 @@ class LayerSeqInferenceTests: LayerSeqFlowTests
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer("FullyConnectedPatch")
+        run(trainer)
+    }
+    
+    override func testSum() throws
+    {
+        let trainer = _buildTrainer("Sum")
         run(trainer)
     }
 }
@@ -312,6 +385,12 @@ class LayerSeqLoadTests: LayerSeqFlowTests
         let trainer = _buildTrainer("FullyConnectedPatch")
         run(trainer)
     }
+    
+    override func testSum() throws
+    {
+        let trainer = _buildTrainer("Sum")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -345,6 +424,12 @@ class LayerSeqTransformTests: LayerSeqFlowTests
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer("FullyConnectedPatch")
+        run(trainer)
+    }
+    
+    override func testSum() throws
+    {
+        let trainer = _buildTrainer("Sum")
         run(trainer)
     }
 }

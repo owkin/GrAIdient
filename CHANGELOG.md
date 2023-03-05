@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🪜 **layer_seq:** SumSeq ([#62](https://github.com/owkin/GrAIdient/pull/62))\
 🪜 **layer_2d:** MSE2D & LayerOutput2D ([#61](https://github.com/owkin/GrAIdient/pull/61))\
 🪜 **layer_seq:** FullyConnectedPatch & base classes ([#60](https://github.com/owkin/GrAIdient/pull/60))\
 🪜 **layer_2d:** Constant2D ([#56](https://github.com/owkin/GrAIdient/pull/56))\

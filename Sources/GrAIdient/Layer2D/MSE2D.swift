@@ -418,10 +418,10 @@ public class MSE2D: LayerOutput2D
             command.setBuffer(outs.metal, atIndex: 0)
             command.setBuffer(groundTruth.metal, atIndex: 1)
             command.setBytes(pNbChannels, atIndex: 2)
-            command.setBytes(pDimensions, atIndex: 2)
-            command.setBytes(pCoeff, atIndex: 3)
-            command.setBytes(pNbBatch, atIndex: 4)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 5)
+            command.setBytes(pDimensions, atIndex: 3)
+            command.setBytes(pCoeff, atIndex: 4)
+            command.setBytes(pNbBatch, atIndex: 5)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 6)
             
             command.dispatchThreads(
                 width: nbChannels * width,

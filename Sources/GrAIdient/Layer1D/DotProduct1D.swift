@@ -320,7 +320,7 @@ public class DotProduct1D: LayerMerge1D
         let nbNeuronsPrev = (_layersPrev[0] as! Layer1D).nbNeurons
         
         let pSize: [UInt32] = [UInt32(_size)]
-        let pNbNeurones: [UInt32] = [UInt32(nbNeurons)]
+        let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
         let pNbneuronsPrev: [UInt32] = [UInt32(nbNeuronsPrev)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         
@@ -330,7 +330,7 @@ public class DotProduct1D: LayerMerge1D
         command.setBuffer((_layersPrev[0] as! Layer1D).outs.metal, atIndex: 0)
         command.setBuffer((_layersPrev[1] as! Layer1D).outs.metal, atIndex: 1)
         command.setBytes(pSize, atIndex: 2)
-        command.setBytes(pNbNeurones, atIndex: 3)
+        command.setBytes(pNbNeurons, atIndex: 3)
         command.setBytes(pNbneuronsPrev, atIndex: 4)
         command.setBytes(pNbBatch, atIndex: 5)
         command.setBuffer(outs.metal, atIndex: 6)
@@ -406,7 +406,7 @@ public class DotProduct1D: LayerMerge1D
         let nbNeuronsPrev = layerPrev1.nbNeurons
         
         let pSize: [UInt32] = [UInt32(_size)]
-        let pNbNeurones: [UInt32] = [UInt32(nbNeurons)]
+        let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
         let pNbneuronsPrev: [UInt32] = [UInt32(nbNeuronsPrev)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         
@@ -425,7 +425,7 @@ public class DotProduct1D: LayerMerge1D
             command.setBuffer(layerPrev2.outs.metal, atIndex: 0)
             command.setBuffer(delta.metal, atIndex: 1)
             command.setBytes(pSize, atIndex: 2)
-            command.setBytes(pNbNeurones, atIndex: 3)
+            command.setBytes(pNbNeurons, atIndex: 3)
             command.setBytes(pNbneuronsPrev, atIndex: 4)
             command.setBytes(pNbBatch, atIndex: 5)
             command.setBytes(pDirty, atIndex: 6)
@@ -452,7 +452,7 @@ public class DotProduct1D: LayerMerge1D
             command.setBuffer(layerPrev1.outs.metal, atIndex: 0)
             command.setBuffer(delta.metal, atIndex: 1)
             command.setBytes(pSize, atIndex: 2)
-            command.setBytes(pNbNeurones, atIndex: 3)
+            command.setBytes(pNbNeurons, atIndex: 3)
             command.setBytes(pNbneuronsPrev, atIndex: 4)
             command.setBytes(pNbBatch, atIndex: 5)
             command.setBytes(pDirty, atIndex: 6)

@@ -1,19 +1,19 @@
 //
-// LayerOutput1D.swift
+// LayerOutput2D.swift
 // GrAIdient
 //
-// Created by Jean-François Reboud on 09/10/2022.
+// Created by Jean-François Reboud on 04/03/2023.
 //
 
-/// Loss layer of a model with a 1D shape neural structure.
-open class LayerOutput1D: Layer1D
+/// Loss layer of a model with a 2D shape neural structure.
+open class LayerOutput2D: Layer2D
 {
     /// Coefficient to be applied to the loss compuptation.
     public var coeff: Double = 1.0
     
     ///
     /// Ground truth buffer in the GPU execution context.
-    /// Shape ~ (batch, nbNeurons).
+    /// Shape ~ (batch, nbChannels, height, width).
     ///
     public internal(set) var groundTruth: MetalSharedBuffer<Float>! = nil
     
@@ -29,16 +29,18 @@ open class LayerOutput1D: Layer1D
     }
     
     ///
-    /// Create a layer with a 1D shape neural structure.
+    /// Create a layer with a 2D shape neural structure.
     ///
     /// - Parameters:
     ///     - layerPrev: Previous layer that has been queued to the model.
     ///     - params: Contextual parameters linking to the model.
     ///
-    public init(layerPrev: Layer1D, params: GrAI.Model.Params)
+    public init(layerPrev: Layer2D, params: GrAI.Model.Params)
     {
         super.init(layerPrev: layerPrev,
-                   nbNeurons: layerPrev.nbNeurons,
+                   nbChannels: layerPrev.nbChannels,
+                   height: layerPrev.height,
+                   width: layerPrev.width,
                    params: params)
     }
     
@@ -89,35 +91,67 @@ open class LayerOutput1D: Layer1D
     }
     
     ///
-    /// Setup ground truth state in the GPU execution context.
+    /// Setup groundTruth state in the GPU execution context.
     ///
     /// Throw an error if batch size or ground truth are incoherent.
     ///
-    /// - Parameter groundTruth: The ground truth.
+    /// - Parameters:
+    ///     - groundTruth: The ground truth.
+    ///     - batchSize: The batch size of data.
+    ///     - format: The data format.
     ///
     public func checkGroundTruthGPU<T: BinaryFloatingPoint>(
-        _ groundTruth: [[T]]) throws
+        _ groundTruth: [T],
+        batchSize: Int,
+        format: ImageFormat) throws
     {
-        let batchSize = groundTruth.count
         if self.groundTruth == nil
         {
             self.groundTruth = MetalSharedBuffer<Float>(
-                batchSize * nbNeurons,
+                batchSize * nbChannels * height * width,
                 deviceID: deviceID
             )
         }
+        else if batchSize <= 0 ||
+           batchSize > self.groundTruth.nbElems / (nbChannels * width * height)
+        {
+            throw LayerError.BatchSize
+        }
         
         let bufferPtr = self.groundTruth.buffer
-        for (i, dataI) in groundTruth.enumerated()
+        switch format
         {
-            if dataI.count != nbNeurons
+        case .RGB:
+            for elem in 0..<batchSize {
+            for depth in 0..<nbChannels
             {
-                throw LayerError.DataSize
-            }
-            for (j, dataIJ) in dataI.enumerated()
+                let offsetStart = (depth + nbChannels * elem) * height
+                
+                for i in 0..<height {
+                for j in 0..<width
+                {
+                    let offsetGet = j + (elem * height + i) * width
+                    let offsetSet = j + (offsetStart + i) * width
+                    
+                    let gt = groundTruth[nbChannels * offsetGet + depth]
+                    bufferPtr[offsetSet] = Float(gt)
+                }}
+            }}
+        case .Neuron:
+            for elem in 0..<batchSize {
+            for depth in 0..<nbChannels
             {
-                bufferPtr[j + i * nbNeurons] = Float(dataIJ)
-            }
+                let offsetStart = (depth + nbChannels * elem) * height
+                
+                for i in 0..<height {
+                for j in 0..<width
+                {
+                    let offset = j + (offsetStart + i) * width
+                    
+                    let gt = groundTruth[offset]
+                    bufferPtr[offset] = Float(gt)
+                }}
+            }}
         }
         MetalKernel.get.upload([self.groundTruth])
     }
@@ -135,7 +169,7 @@ open class LayerOutput1D: Layer1D
         {
             loss = MetalSharedBuffer<Float>(batchSize, deviceID: deviceID)
         }
-        else if batchSize > loss.nbElems
+        else if batchSize <= 0 || batchSize > loss.nbElems
         {
             throw LayerError.BatchSize
         }
@@ -148,23 +182,34 @@ open class LayerOutput1D: Layer1D
     ///
     open override func forwardGCCPU() throws
     {
-        if let layerPrev = self.layerPrev as? Layer1D
+        if let layerPrev = self.layerPrev as? Layer2D
         {
             try checkStateCPU(batchSize: batchSize)
             
             let nbGC = layerPrev.nbGC
-            for depth in 0..<nbNeurons
+            for depth in 0..<nbChannels
             {
-                neurons.get(depth)!.initGC(batchSize: batchSize, nbGC: nbGC)
+                for i in 0..<height {
+                for j in 0..<width
+                {
+                    neurons[depth].get(i, j)!.initGC(
+                        batchSize: batchSize,
+                        nbGC: nbGC
+                    )
+                }}
             }
             
             let neuronsPrev = layerPrev.neurons
             for batch in 0..<batchSize {
             for elem in 0..<nbGC {
-            for j in 0..<nbNeurons
+            for depth in 0..<nbChannels
             {
-                neurons.get(j)!.gc[batch][elem].out =
-                    neuronsPrev.get(j)!.gc[batch][elem].out
+                for i in 0..<height {
+                for j in 0..<width
+                {
+                    neurons[depth].get(i, j)!.gc[batch][elem].out =
+                        neuronsPrev[depth].get(i, j)!.gc[batch][elem].out
+                }}
             }}}
         }
     }
@@ -186,15 +231,20 @@ open class LayerOutput1D: Layer1D
     ///
     open override func forwardCPU() throws
     {
-        if let layerPrev = self.layerPrev as? Layer1D
+        if let layerPrev = self.layerPrev as? Layer2D
         {
             try checkStateCPU(batchSize: batchSize)
             
             let neuronsPrev = layerPrev.neurons
             for elem in 0..<batchSize {
-            for j in 0..<nbNeurons
+            for depth in 0..<nbChannels
             {
-                neurons.get(j)!.v[elem].out = neuronsPrev.get(j)!.v[elem].out
+                for i in 0..<height {
+                for j in 0..<width
+                {
+                    neurons[depth].get(i, j)!.v[elem].out =
+                    neuronsPrev[depth].get(i, j)!.v[elem].out
+                }}
             }}
         }
     }
@@ -206,7 +256,7 @@ open class LayerOutput1D: Layer1D
     ///
     open override func forwardGPU() throws
     {
-        if let layerPrev = self.layerPrev as? Layer1D
+        if let layerPrev = self.layerPrev as? Layer2D
         {
             try checkStateForwardGPU(batchSize: batchSize)
             
@@ -231,21 +281,25 @@ open class LayerOutput1D: Layer1D
         // Note that backward is not called except when it is
         // an intermediate layer.
         // Model.backward is only called on not dirty layers.
-        if let layerPrev = self.layerPrev as? Layer1D, mustComputeBackward
+        if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
             let neuronsPrev = layerPrev.neurons
             for elem in 0..<batchSize {
-            for depth in 0..<nbNeurons
+            for depth in 0..<nbChannels
             {
-                let delta = neurons.get(depth)!.v[elem].delta
-                if layerPrev.dirty
+                for i in 0..<height {
+                for j in 0..<width
                 {
-                    neuronsPrev.get(depth)!.v[elem].delta = delta
-                }
-                else
-                {
-                    neuronsPrev.get(depth)!.v[elem].delta += delta
-                }
+                    let delta = neurons[depth].get(i, j)!.v[elem].delta
+                    if layerPrev.dirty
+                    {
+                        neuronsPrev[depth].get(i, j)!.v[elem].delta = delta
+                    }
+                    else
+                    {
+                        neuronsPrev[depth].get(i, j)!.v[elem].delta += delta
+                    }
+                }}
             }}
             propagateDirty()
         }
@@ -261,7 +315,7 @@ open class LayerOutput1D: Layer1D
         // Note that backward is not called except when it is
         // an intermediate layer.
         // Model.backward is only called on not dirty layers.
-        if let layerPrev = self.layerPrev as? Layer1D, mustComputeBackward
+        if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
             try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
             

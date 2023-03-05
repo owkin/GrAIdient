@@ -41,11 +41,15 @@ class Input2DMSE1DCase: MSE1DCase
         
         if GrAI.Opti.GPU
         {
-            try! firstLayer.setDataGPU(ins, format: .Neuron)
+            try! firstLayer.setDataGPU(
+                ins.reduce([], +), batchSize: ins.count, format: .Neuron
+            )
         }
         else
         {
-            try! firstLayer.setDataCPU(ins, format: .Neuron)
+            try! firstLayer.setDataCPU(
+                ins.reduce([], +), batchSize: ins.count, format: .Neuron
+            )
         }
         return (ins, ins.count)
     }

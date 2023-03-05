@@ -2026,7 +2026,7 @@ kernel void MSE2DLoss(
     }
     
     float tmp = 0.0;
-    for (uint depth=0; depth<nbNeurons; depth++)
+    for (uint depth=0; depth<nbChannels; depth++)
     {
         uint offsetStart = (depth + nbChannels * elem) * height;
         
@@ -2039,7 +2039,7 @@ kernel void MSE2DLoss(
             float gt = groundTruth[offset];
             float diff = out - gt;
             
-            tmp += diff * diff
+            tmp += diff * diff;
         }}
     }
     

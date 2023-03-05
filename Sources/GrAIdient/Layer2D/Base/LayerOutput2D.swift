@@ -112,9 +112,7 @@ open class LayerOutput2D: Layer2D
                 deviceID: deviceID
             )
         }
-        
-        if batchSize != self.batchSize ||
-           batchSize <= 0 ||
+        else if batchSize <= 0 ||
            batchSize > self.groundTruth.nbElems / (nbChannels * width * height)
         {
             throw LayerError.BatchSize
@@ -171,7 +169,7 @@ open class LayerOutput2D: Layer2D
         {
             loss = MetalSharedBuffer<Float>(batchSize, deviceID: deviceID)
         }
-        if batchSize > loss.nbElems
+        else if batchSize <= 0 || batchSize > loss.nbElems
         {
             throw LayerError.BatchSize
         }

@@ -135,7 +135,7 @@ open class LayerOutput1D: Layer1D
         {
             loss = MetalSharedBuffer<Float>(batchSize, deviceID: deviceID)
         }
-        if batchSize > loss.nbElems
+        else if batchSize > loss.nbElems
         {
             throw LayerError.BatchSize
         }

@@ -1,6 +1,6 @@
 //
 // MSE2DCase.swift
-// GrAIdient
+// GrAITests
 //
 // Created by Jean-François Reboud on 05/03/2023.
 //

@@ -3167,8 +3167,6 @@ class MSE2DGradTests: Input2DMSE2DCase
     override func setUp()
     {
         super.setUp()
-        
-        optimizerParams.nbLoops = 2
         GrAI.Loop.gradientChecking = true
     }
     
@@ -3196,6 +3194,11 @@ class MSE2DGradTests: Input2DMSE2DCase
         
         layer = Convolution2D(
             layerPrev: layer, size: 1, nbChannels: 6, stride: 1,
+            activation: SoftReLU.str, biases: true, bn: false, params: params
+        )
+        
+        layer = Convolution2D(
+            layerPrev: layer, size: 1, nbChannels: 1, stride: 1,
             activation: SoftReLU.str, biases: true, bn: false, params: params
         )
         
@@ -3246,6 +3249,11 @@ class MSE2DFlowTests: Input2DMSE2DCase
         
         layer = Convolution2D(
             layerPrev: layer, size: 1, nbChannels: 6, stride: 1,
+            activation: LeakyReLU.str, biases: true, bn: false, params: params
+        )
+        
+        layer = Convolution2D(
+            layerPrev: layer, size: 1, nbChannels: 1, stride: 1,
             activation: LeakyReLU.str, biases: true, bn: false, params: params
         )
         

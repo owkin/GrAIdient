@@ -223,8 +223,7 @@ public class MSE2D: LayerOutput2D
             groundTruth, batchSize: batchSize, format: format
         )
         return try T(getLossGPU(
-            self.groundTruth,
-            batchSize: groundTruth.count
+            self.groundTruth, batchSize: batchSize
         ))
     }
     
@@ -376,8 +375,7 @@ public class MSE2D: LayerOutput2D
             groundTruth, batchSize: batchSize, format: format
         )
         try lossDerivativeGPU(
-            self.groundTruth,
-            batchSize: groundTruth.count
+            self.groundTruth, batchSize: batchSize
         )
     }
     

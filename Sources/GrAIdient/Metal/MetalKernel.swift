@@ -646,6 +646,8 @@ private class MetalDevice
             "LayerSeq": [
                 "avgPoolSeqForward",
                 "avgPoolSeqBackward",
+                "concat2SeqForward",
+                "concat2SeqBackward",
             ],
             "Merge": [
                 "sum1",

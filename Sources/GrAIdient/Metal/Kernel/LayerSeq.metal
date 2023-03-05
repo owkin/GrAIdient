@@ -97,3 +97,103 @@ kernel void avgPoolSeqBackward(
         deltaPrev[offsetPrev] += deltaCur / sequence;
     }
 }
+
+kernel void concat2SeqForward(
+    const device float * outsPrev,
+    constant uint * pGlobalOffset,
+    constant uint * pNbNeurons,
+    constant uint * pNbNeuronsPrev,
+    constant uint * pNbBatch,
+    constant uint * pSequence,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint nbNeurons;
+    uint nbNeuronsPrev;
+    uint nbBatch;
+    uint sequence;
+    uint globalOffset;
+    
+    if (pGlobalOffset && pNbNeurons && pNbNeuronsPrev &&
+        pNbBatch && pSequence && outsPrev && outs)
+    {
+        nbNeurons = *pNbNeurons;
+        nbNeuronsPrev = *pNbNeuronsPrev;
+        nbBatch = *pNbBatch;
+        sequence = *pSequence;
+        globalOffset = *pGlobalOffset;
+    }
+    else
+        return ;
+    
+    uint depth = id[0];
+    uint elem = id[1] / sequence;
+    uint seq = id[1] % sequence;
+    
+    if (depth >= nbNeuronsPrev || elem >= nbBatch || seq >= sequence)
+    {
+        return ;
+    }
+    
+    uint offsetPrev = depth +
+        nbNeuronsPrev * seq + sequence * nbNeuronsPrev * elem;
+    uint offset = globalOffset+depth +
+        nbNeurons * seq + sequence * nbNeurons * elem;
+    
+    outs[offset] = outsPrev[offsetPrev];
+}
+
+kernel void concat2SeqBackward(
+    const device float * delta,
+    constant uint * pGlobalOffset,
+    constant uint * pNbNeurons,
+    constant uint * pNbNeuronsPrev,
+    constant uint * pNbBatch,
+    constant uint * pSequence,
+    constant uint * pDirty,
+    device float * deltaPrev,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint nbNeurons;
+    uint nbNeuronsPrev;
+    uint nbBatch;
+    uint sequence;
+    uint globalOffset;
+    uint dirty;
+    
+    if (pGlobalOffset && pNbNeurons && pNbNeuronsPrev &&
+        pNbBatch && pSequence && pDirty && deltaPrev && delta)
+    {
+        nbNeurons = *pNbNeurons;
+        nbNeuronsPrev = *pNbNeuronsPrev;
+        nbBatch = *pNbBatch;
+        sequence = *pSequence;
+        globalOffset = *pGlobalOffset;
+        dirty = *pDirty;
+    }
+    else
+        return ;
+    
+    uint depth = id[0];
+    uint elem = id[1] / sequence;
+    uint seq = id[1] % sequence;
+    
+    if (depth >= nbNeuronsPrev || elem >= nbBatch || seq >= sequence)
+    {
+        return ;
+    }
+    
+    uint offsetPrev = depth +
+        nbNeuronsPrev * seq + sequence * nbNeuronsPrev * elem;
+    uint offset = globalOffset+depth +
+        nbNeurons * seq + sequence * nbNeurons * elem;
+    
+    if (dirty)
+    {
+        deltaPrev[offsetPrev] = delta[offset];
+    }
+    else
+    {
+        deltaPrev[offsetPrev] += delta[offset];
+    }
+}

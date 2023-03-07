@@ -41,6 +41,8 @@ let LAYER_REGISTRY: [String: Codable.Type] = buildRegistry(
     Concat2Seq.self,
     Constant1D.self,
     Constant2D.self,
+    Constant12Seq.self,
+    Constant2Seq.self,
     Convolution2D.self,
     Crop2D.self,
     Deconvolution2D.self,

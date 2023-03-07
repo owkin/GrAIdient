@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🪜 **layer_seq:** Constant12Seq & Constant2Seq ([#64](https://github.com/owkin/GrAIdient/pull/64))\
 🪜 **layer_seq:** Concat1Seq & Concat2Seq ([#63](https://github.com/owkin/GrAIdient/pull/63))\
 🪜 **layer_seq:** SumSeq ([#62](https://github.com/owkin/GrAIdient/pull/62))\
 🪜 **layer_2d:** MSE2D & LayerOutput2D ([#61](https://github.com/owkin/GrAIdient/pull/61))\

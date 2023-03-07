@@ -5,7 +5,7 @@
 // Created by Jean-François Reboud on 19/02/2023.
 //
 
-/// Layer with a 1D shape neural structure and weights.
+/// Layer with a 2D shape neural structure and weights.
 public class Constant2D: Layer2D, LayerResize, LayerUpdate
 {
     ///

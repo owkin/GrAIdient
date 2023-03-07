@@ -42,7 +42,7 @@ class LayerSeqDirtyFlowTests: Input2DMSE1DCase
         )
         
         let layerSeq = FullyConnectedPatch(
-            layerPrev: layer, patch: 2, nbNeurons: 5,
+            layerPrev: layer, patch: width / 3, nbNeurons: 5,
             activation: LeakyReLU.str, biases: true, params: params
         )
         
@@ -53,7 +53,7 @@ class LayerSeqDirtyFlowTests: Input2DMSE1DCase
         {
         case "Sum":
             let otherLayer: LayerSeq = FullyConnectedPatch(
-                layerPrev: layer, patch: 2, nbNeurons: 5,
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true, params: params
             )
             secondLayer = SumSeq(

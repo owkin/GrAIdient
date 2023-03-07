@@ -298,6 +298,88 @@ kernel void concat2SeqBackward(
     }
 }
 
+kernel void constant12SeqForward(
+    const device float * weights,
+    constant uint * pNbNeurons,
+    constant uint * pNbBatch,
+    constant uint * pSequence,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint nbNeurons;
+    uint nbBatch;
+    uint sequence;
+    
+    if (pNbNeurons && pNbBatch && pSequence && weights && outs)
+    {
+        nbNeurons = *pNbNeurons;
+        nbBatch = *pNbBatch;
+        sequence = *pSequence;
+    }
+    else
+        return ;
+    
+    uint depth = id[0];
+    uint elem = id[1] / sequence;
+    uint seq = id[1] % sequence;
+    
+    if (depth >= nbNeurons || elem >= nbBatch || seq >= sequence)
+    {
+        return ;
+    }
+    
+    uint offset = depth + nbNeurons * seq + sequence * nbNeurons * elem;
+    outs[offset] = weights[depth + nbNeurons * seq];
+}
+
+kernel void constant12SeqBackward(
+    const device float * delta,
+    constant uint * pNbNeurons,
+    constant uint * pNbBatch,
+    constant uint * pSequence,
+    constant uint * pAccumulate,
+    device float * grads,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint nbNeurons;
+    uint nbBatch;
+    uint sequence;
+    uint accumulate;
+    
+    if (pNbNeurons && pNbBatch && pSequence && pAccumulate && delta && grads)
+    {
+        nbNeurons = *pNbNeurons;
+        nbBatch = *pNbBatch;
+        sequence = *pSequence;
+        accumulate = *pAccumulate;
+    }
+    else
+        return ;
+    
+    uint depth = id[0];
+    uint seq = id[1];
+    if (depth >= nbNeurons || seq >= sequence)
+    {
+        return ;
+    }
+    
+    float tmp = 0.0;
+    for (uint elem=0; elem<nbBatch; elem++)
+    {
+        uint offset = depth + nbNeurons * seq + sequence * nbNeurons * elem;
+        tmp += delta[offset];
+    }
+    
+    if (accumulate)
+    {
+        grads[depth + nbNeurons * seq] += tmp;
+    }
+    else
+    {
+        grads[depth + nbNeurons * seq] = tmp;
+    }
+}
+
 kernel void constant2SeqForward(
     const device float * weights,
     constant uint * pNbNeurons,

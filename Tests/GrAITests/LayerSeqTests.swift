@@ -5,6 +5,7 @@
 // Created by Jean-François Reboud on 27/02/2023.
 //
 
+import XCTest
 import GrAIdient
 import GrAITestsUtils
 
@@ -52,21 +53,21 @@ class LayerSeqGradTests: Input2DMSE1DCase
         {
         case "FullyConnectedPatch":
             layerSeq = FullyConnectedPatch(
-                layerPrev: layer, patch: 2, nbNeurons: 5,
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: SoftReLU.str, biases: true, params: params
             )
             
         case "Sum":
             let otherLayer1: LayerSeq = FullyConnectedPatch(
-                layerPrev: layer, patch: 2, nbNeurons: 5,
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: SoftReLU.str, biases: true, params: params
             )
             let otherLayer2: LayerSeq = FullyConnectedPatch(
-                layerPrev: layer, patch: 2, nbNeurons: 5,
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: SoftReLU.str, biases: true, params: params
             )
             layerSeq = FullyConnectedPatch(
-                layerPrev: layer, patch: 2, nbNeurons: 5,
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: SoftReLU.str, biases: true, params: params
             )
             layerSeq = SumSeq(
@@ -76,11 +77,11 @@ class LayerSeqGradTests: Input2DMSE1DCase
             
         case "Concat1":
             let otherLayer: LayerSeq = FullyConnectedPatch(
-                layerPrev: layer, patch: 2, nbNeurons: 5,
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: SoftReLU.str, biases: true, params: params
             )
             layerSeq = FullyConnectedPatch(
-                layerPrev: layer, patch: 3, nbNeurons: 5,
+                layerPrev: layer, patch: width / 2, nbNeurons: 5,
                 activation: SoftReLU.str, biases: true, params: params
             )
             layerSeq = Concat1Seq(
@@ -90,20 +91,36 @@ class LayerSeqGradTests: Input2DMSE1DCase
             
         case "Concat2":
             let otherLayer1: LayerSeq = FullyConnectedPatch(
-                layerPrev: layer, patch: 2, nbNeurons: 3,
+                layerPrev: layer, patch: width / 3, nbNeurons: 3,
                 activation: SoftReLU.str, biases: true, params: params
             )
             let otherLayer2: LayerSeq = FullyConnectedPatch(
-                layerPrev: layer, patch: 2, nbNeurons: 6,
+                layerPrev: layer, patch: width / 3, nbNeurons: 6,
                 activation: SoftReLU.str, biases: true, params: params
             )
             layerSeq = FullyConnectedPatch(
-                layerPrev: layer, patch: 2, nbNeurons: 9,
+                layerPrev: layer, patch: width / 3, nbNeurons: 9,
                 activation: SoftReLU.str, biases: true, params: params
             )
             layerSeq = Concat2Seq(
                 layersPrev: [layerSeq, otherLayer1, otherLayer2],
                 params: params
+            )
+            
+        case "Constant12":
+            let otherLayer: LayerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: 3, nbNeurons: 2,
+                activation: SoftReLU.str, biases: true, params: params
+            )
+            layerSeq = Constant12Seq(
+                sequence: 4, nbNeurons: 2, params: params
+            )
+            (layerSeq as! Constant12Seq).weightsCPU = [
+                1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0
+            ]
+            
+            layerSeq = SumSeq(
+                layersPrev: [layerSeq, otherLayer], params: params
             )
             
         case "Constant2":
@@ -193,6 +210,19 @@ class LayerSeqGradTests: Input2DMSE1DCase
         run(trainer)
     }
     
+    func testConstant12CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("Constant12")
+        run(trainer)
+    }
+    
+    func testConstant12GPU() throws
+    {
+        let trainer = _buildTrainer("Constant12")
+        run(trainer)
+    }
+    
     func testConstant2CPU() throws
     {
         GrAI.Opti.CPU = true
@@ -252,21 +282,21 @@ class LayerSeqFlowTests: Input2DMSE1DCase
         {
         case "FullyConnectedPatch":
             layerSeq = FullyConnectedPatch(
-                layerPrev: layer, patch: 2, nbNeurons: 5,
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true, params: params
             )
            
         case "Sum":
             let otherLayer1: LayerSeq = FullyConnectedPatch(
-                layerPrev: layer, patch: 2, nbNeurons: 5,
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true, params: params
             )
             let otherLayer2: LayerSeq = FullyConnectedPatch(
-                layerPrev: layer, patch: 2, nbNeurons: 5,
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true, params: params
             )
             layerSeq = FullyConnectedPatch(
-                layerPrev: layer, patch: 2, nbNeurons: 5,
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true, params: params
             )
             layerSeq = SumSeq(
@@ -276,11 +306,11 @@ class LayerSeqFlowTests: Input2DMSE1DCase
             
         case "Concat1":
             let otherLayer: LayerSeq = FullyConnectedPatch(
-                layerPrev: layer, patch: 2, nbNeurons: 5,
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true, params: params
             )
             layerSeq = FullyConnectedPatch(
-                layerPrev: layer, patch: 3, nbNeurons: 5,
+                layerPrev: layer, patch: width / 2, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true, params: params
             )
             layerSeq = Concat1Seq(
@@ -290,20 +320,36 @@ class LayerSeqFlowTests: Input2DMSE1DCase
             
         case "Concat2":
             let otherLayer1: LayerSeq = FullyConnectedPatch(
-                layerPrev: layer, patch: 2, nbNeurons: 3,
+                layerPrev: layer, patch: width / 3, nbNeurons: 3,
                 activation: LeakyReLU.str, biases: true, params: params
             )
             let otherLayer2: LayerSeq = FullyConnectedPatch(
-                layerPrev: layer, patch: 2, nbNeurons: 6,
+                layerPrev: layer, patch: width / 3, nbNeurons: 6,
                 activation: LeakyReLU.str, biases: true, params: params
             )
             layerSeq = FullyConnectedPatch(
-                layerPrev: layer, patch: 2, nbNeurons: 9,
+                layerPrev: layer, patch: width / 3, nbNeurons: 9,
                 activation: LeakyReLU.str, biases: true, params: params
             )
             layerSeq = Concat2Seq(
                 layersPrev: [layerSeq, otherLayer1, otherLayer2],
                 params: params
+            )
+            
+        case "Constant12":
+            let otherLayer: LayerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: 3, nbNeurons: 2,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = Constant12Seq(
+                sequence: 4, nbNeurons: 2, params: params
+            )
+            (layerSeq as! Constant12Seq).weightsCPU = [
+                1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0
+            ]
+            
+            layerSeq = SumSeq(
+                layersPrev: [layerSeq, otherLayer], params: params
             )
             
         case "Constant2":
@@ -362,6 +408,12 @@ class LayerSeqFlowTests: Input2DMSE1DCase
     func testConcat2() throws
     {
         let trainer = _buildTrainer("Concat2")
+        run(trainer)
+    }
+    
+    func testConstant12() throws
+    {
+        let trainer = _buildTrainer("Constant12")
         run(trainer)
     }
     
@@ -438,6 +490,12 @@ class LayerSeqFlowResetTests: LayerSeqFlowTests
         run(trainer)
     }
     
+    override func testConstant12() throws
+    {
+        let trainer = _buildTrainer("Constant12")
+        run(trainer)
+    }
+    
     override func testConstant2() throws
     {
         let trainer = _buildTrainer("Constant2")
@@ -511,6 +569,12 @@ class LayerSeqFlowReverseTests: LayerSeqFlowTests
         run(trainer)
     }
     
+    override func testConstant12() throws
+    {
+        let trainer = _buildTrainer("Constant12")
+        run(trainer)
+    }
+    
     override func testConstant2() throws
     {
         let trainer = _buildTrainer("Constant2")
@@ -573,6 +637,12 @@ class LayerSeqInferenceTests: LayerSeqFlowTests
     override func testConcat2() throws
     {
         let trainer = _buildTrainer("Concat2")
+        run(trainer)
+    }
+    
+    override func testConstant12() throws
+    {
+        let trainer = _buildTrainer("Constant12")
         run(trainer)
     }
     
@@ -642,6 +712,12 @@ class LayerSeqLoadTests: LayerSeqFlowTests
         run(trainer)
     }
     
+    override func testConstant12() throws
+    {
+        let trainer = _buildTrainer("Constant12")
+        run(trainer)
+    }
+    
     override func testConstant2() throws
     {
         let trainer = _buildTrainer("Constant2")
@@ -663,6 +739,50 @@ class LayerSeqLoadTests: LayerSeqFlowTests
 // -----------------------------------------------------------------------------
 class LayerSeqTransformTests: LayerSeqFlowTests
 {
+    ///
+    /// Run Transform tests.
+    ///
+    /// The goal is to compare the losses computed in the CPU execution
+    /// after transforming the model and do the same in the GPU execution context.
+    ///
+    /// - Parameters:
+    ///     - trainer: The testing pipeline to run.
+    ///     - nbRetry: The maximum number we can retry the test.
+    ///     - diffThreshold: The threshold above which the relative difference is too high.
+    ///
+    override func run(
+        _ trainer: TransformTrainer,
+        nbRetry: Int = NB_RETRY,
+        diffThreshold: Double = 0.001)
+    {
+        retryNumeric(
+            nbRetry: nbRetry,
+            {
+                () throws in
+                try trainer.run(
+                    transforms: [self.copy, self.copyInPlace],
+                    setData: self.setData,
+                    setLoss: self.setLoss,
+                    getLoss: self.getLoss)
+                {
+                    (diffCPU: Double, diffGPU: Double) in
+                    if diffCPU > diffThreshold
+                    {
+                        throw TestError.Numeric
+                    }
+                    if diffGPU > diffThreshold
+                    {
+                        throw TestError.Numeric
+                    }
+                }
+            },
+            {
+                () in
+                XCTAssert(false)
+            }
+        )
+    }
+    
     private func _buildTrainer(_ model: String) -> TransformTrainer
     {
         let trainer = TransformTrainer(
@@ -705,6 +825,12 @@ class LayerSeqTransformTests: LayerSeqFlowTests
     override func testConcat2() throws
     {
         let trainer = _buildTrainer("Concat2")
+        run(trainer)
+    }
+    
+    override func testConstant12() throws
+    {
+        let trainer = _buildTrainer("Constant12")
         run(trainer)
     }
     

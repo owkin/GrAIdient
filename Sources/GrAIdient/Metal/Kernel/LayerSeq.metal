@@ -297,3 +297,37 @@ kernel void concat2SeqBackward(
         deltaPrev[offsetPrev] += delta[offset];
     }
 }
+
+kernel void constant2SeqForward(
+    const device float * weights,
+    constant uint * pNbNeurons,
+    constant uint * pNbBatch,
+    constant uint * pSequence,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint nbNeurons;
+    uint nbBatch;
+    uint sequence;
+    
+    if (pNbNeurons && pNbBatch && pSequence && weights && outs)
+    {
+        nbNeurons = *pNbNeurons;
+        nbBatch = *pNbBatch;
+        sequence = *pSequence;
+    }
+    else
+        return ;
+    
+    uint depth = id[0];
+    uint elem = id[1] / sequence;
+    uint seq = id[1] % sequence;
+    
+    if (depth >= nbNeurons || elem >= nbBatch || seq >= sequence)
+    {
+        return ;
+    }
+    
+    uint offset = depth + nbNeurons * seq + sequence * nbNeurons * elem;
+    outs[offset] = weights[depth];
+}

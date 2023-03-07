@@ -650,6 +650,7 @@ private class MetalDevice
                 "concat1SeqBackward",
                 "concat2SeqForward",
                 "concat2SeqBackward",
+                "constant2SeqForward",
             ],
             "Merge": [
                 "sum1",

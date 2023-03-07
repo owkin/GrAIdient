@@ -75,7 +75,7 @@ class LayerSeqGradTests: Input2DMSE1DCase
             )
             
         case "Concat1":
-            let otherLayer1: LayerSeq = FullyConnectedPatch(
+            let otherLayer: LayerSeq = FullyConnectedPatch(
                 layerPrev: layer, patch: 2, nbNeurons: 5,
                 activation: SoftReLU.str, biases: true, params: params
             )
@@ -84,7 +84,7 @@ class LayerSeqGradTests: Input2DMSE1DCase
                 activation: SoftReLU.str, biases: true, params: params
             )
             layerSeq = Concat1Seq(
-                layersPrev: [layerSeq, otherLayer1],
+                layersPrev: [layerSeq, otherLayer],
                 params: params
             )
             
@@ -104,6 +104,20 @@ class LayerSeqGradTests: Input2DMSE1DCase
             layerSeq = Concat2Seq(
                 layersPrev: [layerSeq, otherLayer1, otherLayer2],
                 params: params
+            )
+            
+        case "Constant2":
+            let otherLayer: LayerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: 2, nbNeurons: 5,
+                activation: SoftReLU.str, biases: true, params: params
+            )
+            layerSeq = Constant2Seq(
+                sequence: 9, nbNeurons: 5, params: params
+            )
+            (layerSeq as! Constant2Seq).weightsCPU = [1.0, 2.0, 3.0, 4.0, 5.0]
+            
+            layerSeq = SumSeq(
+                layersPrev: [layerSeq, otherLayer], params: params
             )
             
         default:
@@ -178,6 +192,26 @@ class LayerSeqGradTests: Input2DMSE1DCase
         let trainer = _buildTrainer("Concat2")
         run(trainer)
     }
+    
+    func testConstant2CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("Constant2")
+        run(trainer)
+    }
+    
+    func testConstant2GPU() throws
+    {
+        let trainer = _buildTrainer("Constant2")
+        run(trainer)
+    }
+    
+    func testConstant2SampleGPU() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("Constant2")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -241,7 +275,7 @@ class LayerSeqFlowTests: Input2DMSE1DCase
             )
             
         case "Concat1":
-            let otherLayer1: LayerSeq = FullyConnectedPatch(
+            let otherLayer: LayerSeq = FullyConnectedPatch(
                 layerPrev: layer, patch: 2, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true, params: params
             )
@@ -250,7 +284,7 @@ class LayerSeqFlowTests: Input2DMSE1DCase
                 activation: LeakyReLU.str, biases: true, params: params
             )
             layerSeq = Concat1Seq(
-                layersPrev: [layerSeq, otherLayer1],
+                layersPrev: [layerSeq, otherLayer],
                 params: params
             )
             
@@ -270,6 +304,20 @@ class LayerSeqFlowTests: Input2DMSE1DCase
             layerSeq = Concat2Seq(
                 layersPrev: [layerSeq, otherLayer1, otherLayer2],
                 params: params
+            )
+            
+        case "Constant2":
+            let otherLayer: LayerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: 2, nbNeurons: 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = Constant2Seq(
+                sequence: 9, nbNeurons: 5, params: params
+            )
+            (layerSeq as! Constant2Seq).weightsCPU = [1.0, 2.0, 3.0, 4.0, 5.0]
+            
+            layerSeq = SumSeq(
+                layersPrev: [layerSeq, otherLayer], params: params
             )
             
         default:
@@ -314,6 +362,19 @@ class LayerSeqFlowTests: Input2DMSE1DCase
     func testConcat2() throws
     {
         let trainer = _buildTrainer("Concat2")
+        run(trainer)
+    }
+    
+    func testConstant2() throws
+    {
+        let trainer = _buildTrainer("Constant2")
+        run(trainer)
+    }
+    
+    func testConstant2Sample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("Constant2")
         run(trainer)
     }
 }
@@ -376,6 +437,19 @@ class LayerSeqFlowResetTests: LayerSeqFlowTests
         let trainer = _buildTrainer("Concat2")
         run(trainer)
     }
+    
+    override func testConstant2() throws
+    {
+        let trainer = _buildTrainer("Constant2")
+        run(trainer)
+    }
+    
+    override func testConstant2Sample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("Constant2")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -436,6 +510,19 @@ class LayerSeqFlowReverseTests: LayerSeqFlowTests
         let trainer = _buildTrainer("Concat2")
         run(trainer)
     }
+    
+    override func testConstant2() throws
+    {
+        let trainer = _buildTrainer("Constant2")
+        run(trainer)
+    }
+    
+    override func testConstant2Sample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("Constant2")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -486,6 +573,19 @@ class LayerSeqInferenceTests: LayerSeqFlowTests
     override func testConcat2() throws
     {
         let trainer = _buildTrainer("Concat2")
+        run(trainer)
+    }
+    
+    override func testConstant2() throws
+    {
+        let trainer = _buildTrainer("Constant2")
+        run(trainer)
+    }
+    
+    override func testConstant2Sample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("Constant2")
         run(trainer)
     }
 }
@@ -541,6 +641,19 @@ class LayerSeqLoadTests: LayerSeqFlowTests
         let trainer = _buildTrainer("Concat2")
         run(trainer)
     }
+    
+    override func testConstant2() throws
+    {
+        let trainer = _buildTrainer("Constant2")
+        run(trainer)
+    }
+    
+    override func testConstant2Sample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("Constant2")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -592,6 +705,19 @@ class LayerSeqTransformTests: LayerSeqFlowTests
     override func testConcat2() throws
     {
         let trainer = _buildTrainer("Concat2")
+        run(trainer)
+    }
+    
+    override func testConstant2() throws
+    {
+        let trainer = _buildTrainer("Constant2")
+        run(trainer)
+    }
+    
+    override func testConstant2Sample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("Constant2")
         run(trainer)
     }
 }

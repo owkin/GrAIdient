@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
-🪜 **layer_seq:** FullyConnectedSeq ([#64](https://github.com/owkin/GrAIdient/pull/64))\
+🪜 **layer_seq:** FullyConnectedSeq ([#65](https://github.com/owkin/GrAIdient/pull/65))\
 🪜 **layer_seq:** Constant12Seq & Constant2Seq ([#64](https://github.com/owkin/GrAIdient/pull/64))\
 🪜 **layer_seq:** Concat1Seq & Concat2Seq ([#63](https://github.com/owkin/GrAIdient/pull/63))\
 🪜 **layer_seq:** SumSeq ([#62](https://github.com/owkin/GrAIdient/pull/62))\

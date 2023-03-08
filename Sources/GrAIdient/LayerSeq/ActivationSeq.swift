@@ -169,26 +169,30 @@ public class ActivationSeq: LayerSeq
     ///
     private func _forwardGC() throws
     {
-        if let layerPrev = self.layerPrev as? Layer1D
+        if let layerPrev = self.layerPrev as? LayerSeq
         {
             try checkStateCPU(batchSize: batchSize)
             
             let nbGC = layerPrev.nbGC
-            for j in 0..<nbNeurons
+            for seq in 0..<sequence {
+            for depth in 0..<nbNeurons
             {
-                neurons.get(j)!.initGC(batchSize: batchSize, nbGC: nbGC)
-            }
+                neurons.get(seq, depth)!.initGC(
+                    batchSize: batchSize, nbGC: nbGC
+                )
+            }}
             
-            let neuronsPrev = layerPrev.neurons
+            let neuronsPrev = layerPrev.neurons!
             for batch in 0..<batchSize {
+            for seq in 0..<sequence {
             for elem in 0..<nbGC
             {
                 for depth in 0..<nbNeurons
                 {
-                    neurons.get(depth)!.gc[batch][elem].out =
-                        neuronsPrev.get(depth)!.gc[batch][elem].out
+                    neurons.get(seq, depth)!.gc[batch][elem].out =
+                        neuronsPrev.get(seq, depth)!.gc[batch][elem].out
                 }
-            }}
+            }}}
         }
     }
     
@@ -236,7 +240,7 @@ public class ActivationSeq: LayerSeq
     ///
     public override func forwardGPU() throws
     {
-        if let layerPrev = self.layerPrev as? Layer1D
+        if let layerPrev = self.layerPrev as? LayerSeq
         {
             try checkStateForwardGPU(batchSize: batchSize)
             
@@ -295,7 +299,7 @@ public class ActivationSeq: LayerSeq
     {
         _activation!.backwardGPU(self)
         
-        if let layerPrev = self.layerPrev as? Layer1D, mustComputeBackward
+        if let layerPrev = self.layerPrev as? LayerSeq, mustComputeBackward
         {
             try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
             

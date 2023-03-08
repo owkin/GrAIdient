@@ -58,7 +58,7 @@ class ActivationSeqGradTests: Input2DMSE1DCase
         
         switch model
         {
-        case "FullyConnectedSeq":
+        case "FullyConnected":
             layerSeq = FullyConnectedSeq(
                 layerPrev: layerSeq, nbNeurons: 5,
                 activation: activation, biases: true,

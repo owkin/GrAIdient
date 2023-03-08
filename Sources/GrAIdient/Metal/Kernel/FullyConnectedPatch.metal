@@ -106,7 +106,7 @@ kernel void flPatchBackward(
     uint sequence;
     uint dirty;
     
-    if (pNbNeurons && pNbChannelsPrev && pNbBatch && pDirty &&
+    if (pNbNeurons && pNbChannelsPrev && pPatch && pNbBatch && pDirty &&
         deltaPrev && weights && delta)
     {
         nbNeurons = *pNbNeurons;

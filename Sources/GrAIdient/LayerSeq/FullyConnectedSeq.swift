@@ -1,27 +1,19 @@
 //
-// FullyConnectedPatch.swift
+// FullyConnectedSeq.swift
 // GrAIdient
 //
-// Created by Jean-François Reboud on 21/02/2023.
+// Created by Jean-François Reboud on 08/03/2023.
 //
 
 import Foundation
 
-///
 /// Layer with a sequential shape neural structure, weights and biases and an activation function.
-///
-/// This layer transforms a 2D layer into a sequential layer, applying fully connected operation
-/// on patches of the 2D layer.
-///
-public class FullyConnectedPatch: ActivationSeq,
-                                  LayerWithActivation, LayerUpdate
+public class FullyConnectedSeq: ActivationSeq,
+                                LayerWithActivation, LayerUpdate
 {
-    /// Size (height, width) of a patch.
-    let _patch: Int
-    
     ///
     /// Grid of weights.
-    /// Shape ~ (nbNeurons, nbNeuronsPrev x patch x patch).
+    /// Shape ~ (nbNeurons, nbNeuronsPrev).
     ///
     var _wArrays: WeightGrids! = nil
     ///
@@ -32,7 +24,7 @@ public class FullyConnectedPatch: ActivationSeq,
     
     ///
     /// Buffer of weights.
-    /// Shape ~ (nbNeurons, nbNeuronsPrev x patch x patch).
+    /// Shape ~ (nbNeurons, nbNeuronsPrev).
     ///
     var _wBuffers: IWeightBuffers! = nil
     ///
@@ -43,7 +35,7 @@ public class FullyConnectedPatch: ActivationSeq,
     
     ///
     /// Buffer of gradients per sample for weights.
-    /// Shape ~ (batch, nbNeurons, nbNeuronsPrev x patch x patch).
+    /// Shape ~ (batch, nbNeurons, nbNeuronsPrev).
     ///
     var _wDeltaWeights: MetalPrivateBuffer<Float>! = nil
     ///
@@ -130,7 +122,8 @@ public class FullyConnectedPatch: ActivationSeq,
             {
                 return activation.coeffInitWeights(
                     nPrev: weightWidth,
-                    nCur: nbNeurons)
+                    nCur: nbNeurons
+                )
             }
             return sqrt(2.0 / Double(weightWidth + nbNeurons))
         }
@@ -153,7 +146,6 @@ public class FullyConnectedPatch: ActivationSeq,
     
     private enum Keys: String, CodingKey
     {
-        case patch
         case weightWidth
         case weightHeight
         case weights
@@ -165,32 +157,21 @@ public class FullyConnectedPatch: ActivationSeq,
     ///
     /// - Parameters:
     ///     - layerPrev: Previous layer that has been queued to the model.
-    ///     - patch: Size of a patch.
     ///     - nbNeurons: Number of neurons.
     ///     - activation: The activation function.
     ///     - biases: Whether to update biases or not.
     ///     - params: Contextual parameters linking to the model.
     ///
-    public init(layerPrev: Layer2D,
-                patch: Int, nbNeurons: Int, activation: String?, biases: Bool,
+    public init(layerPrev: LayerSeq,
+                nbNeurons: Int, activation: String?, biases: Bool,
                 params: GrAI.Model.Params)
     {
-        if layerPrev.height % patch != 0 || layerPrev.width % patch != 0
-        {
-            fatalError(
-                "Previous layer's size is not divisible by patch \(patch)."
-            )
-        }
-        
-        _patch = patch
-        let nbPatches = (layerPrev.height / patch) * (layerPrev.width / patch)
-        
-        weightWidth = layerPrev.nbChannels * patch * patch
+        weightWidth = layerPrev.nbNeurons
         weightHeight = nbNeurons
         _updateBiases = biases
         
         super.init(layerPrev: layerPrev,
-                   sequence: nbPatches,
+                   sequence: layerPrev.sequence,
                    nbNeurons: nbNeurons,
                    activation: activation,
                    params: params)
@@ -207,7 +188,6 @@ public class FullyConnectedPatch: ActivationSeq,
     public required init(from decoder: Decoder) throws
     {
         let values = try decoder.container(keyedBy: Keys.self)
-        _patch = try values.decode(Int.self, forKey: .patch)
         _updateBiases = try values.decode(Bool.self, forKey: .updateBiases)
         weightWidth = try values.decode(Int.self, forKey: .weightWidth)
         weightHeight = try values.decode(Int.self, forKey: .weightHeight)
@@ -233,7 +213,6 @@ public class FullyConnectedPatch: ActivationSeq,
     {
         var container = encoder.container(keyedBy: Keys.self)
         
-        try container.encode(_patch, forKey: .patch)
         try container.encode(_updateBiases, forKey: .updateBiases)
         try container.encode(weightWidth, forKey: .weightWidth)
         try container.encode(weightHeight, forKey: .weightHeight)
@@ -269,14 +248,13 @@ public class FullyConnectedPatch: ActivationSeq,
         inPlace: Bool) -> Layer
     {
         let context = ModelContext(name: "", curID: 0)
-        let layerPrev = mapping[idPrev] as! Layer2D
+        let layerPrev = mapping[idPrev] as! LayerSeq
         
         let params = GrAI.Model.Params(context: context)
         params.context.curID = id
             
-        let layer = FullyConnectedPatch(
+        let layer = FullyConnectedSeq(
             layerPrev: layerPrev,
-            patch: _patch,
             nbNeurons: nbNeurons,
             activation: _activation?.name,
             biases: _updateBiases,
@@ -316,14 +294,13 @@ public class FullyConnectedPatch: ActivationSeq,
     public func removeActivation(inPlace: Bool) -> Layer
     {
         let context = ModelContext(name: "", curID: 0)
-        let layerPrev = self.layerPrev as! Layer2D
+        let layerPrev = self.layerPrev as! LayerSeq
         
         let params = GrAI.Model.Params(context: context)
         params.context.curID = id
         
-        let layer = FullyConnectedPatch(
+        let layer = FullyConnectedSeq(
             layerPrev: layerPrev,
-            patch: _patch,
             nbNeurons: nbNeurons,
             activation: nil,
             biases: _updateBiases,
@@ -359,10 +336,9 @@ public class FullyConnectedPatch: ActivationSeq,
     ///
     public func removeActivation(params: GrAI.Model.Params) -> Layer
     {
-        let layerPrev = self.layerPrev as! Layer2D
-        let layer = FullyConnectedPatch(
+        let layerPrev = self.layerPrev as! LayerSeq
+        let layer = FullyConnectedSeq(
             layerPrev: layerPrev,
-            patch: _patch,
             nbNeurons: nbNeurons,
             activation: nil,
             biases: _updateBiases,
@@ -569,7 +545,7 @@ public class FullyConnectedPatch: ActivationSeq,
     
     private func _forwardGCCPU() throws
     {
-        if let layerPrev = self.layerPrev as? Layer2D
+        if let layerPrev = self.layerPrev as? LayerSeq
         {
             try checkStateCPU(batchSize: batchSize)
             
@@ -584,35 +560,23 @@ public class FullyConnectedPatch: ActivationSeq,
                 )
             }}
             
-            let nbSeqPerCol = layerPrev.width / _patch
-            let neuronsPrev = layerPrev.neurons
-            let nbChannelsPrev = layerPrev.nbChannels
+            let neuronsPrev = layerPrev.neurons!
+            let nbNeuronsPrev = layerPrev.nbNeurons
             
             for elem in 0..<nbGC {
             for batch in 0..<batchSize {
             for seq in 0..<sequence
             {
-                let seqI = seq / nbSeqPerCol
-                let seqJ = seq % nbSeqPerCol
-                
-                let iStart = seqI * _patch
-                let jStart = seqJ * _patch
-                
                 for depth in 0..<nbNeurons
                 {
                     var tmp: Double = _bArrays.w[depth]
-                    for depthPrev in 0..<nbChannelsPrev {
-                    for i in 0..<_patch {
-                    for j in 0..<_patch
+                    for depthPrev in 0..<nbNeuronsPrev
                     {
-                        let offsetWeight = j +
-                            i * _patch + depthPrev * _patch * _patch
-                        
-                        let w = _wArrays.w(depth, offsetWeight)
-                        let outPrev = neuronsPrev[depthPrev]
-                            .get(iStart+i, jStart+j)!.gc[batch][elem].out
+                        let w = _wArrays.w(depth, depthPrev)
+                        let outPrev = neuronsPrev
+                            .get(seq, depthPrev)!.gc[batch][elem].out
                         tmp += w * outPrev
-                    }}}
+                    }
                     neurons.get(seq, depth)!.gc[batch][elem].out = tmp
                 }
             }}}
@@ -620,12 +584,6 @@ public class FullyConnectedPatch: ActivationSeq,
             for batch in 0..<batchSize {
             for seq in 0..<sequence
             {
-                let seqI = seq / nbSeqPerCol
-                let seqJ = seq % nbSeqPerCol
-                
-                let iStart = seqI * _patch
-                let jStart = seqJ * _patch
-                
                 for DEPTH in 0..<nbNeurons {
                 for DEPTHPREV in 0..<weightWidth {
                 for elem in 0...1
@@ -633,15 +591,10 @@ public class FullyConnectedPatch: ActivationSeq,
                     for depth in 0..<nbNeurons
                     {
                         var tmp: Double = _bArrays.w[depth]
-                        for depthPrev in 0..<nbChannelsPrev {
-                        for i in 0..<_patch {
-                        for j in 0..<_patch
+                        for depthPrev in 0..<nbNeuronsPrev
                         {
-                            let offsetWeight = j +
-                                i * _patch + depthPrev * _patch * _patch
-                
-                            var w = _wArrays.w(depth, offsetWeight)
-                            if depth == DEPTH && offsetWeight == DEPTHPREV
+                            var w = _wArrays.w(depth, depthPrev)
+                            if depth == DEPTH && depthPrev == DEPTHPREV
                             {
                                 if elem % 2 == 0
                                 {
@@ -653,10 +606,10 @@ public class FullyConnectedPatch: ActivationSeq,
                                 }
                             }
                             
-                            let outPrev = neuronsPrev[depthPrev]
-                                .get(iStart+i, jStart+j)!.v[batch].out
+                            let outPrev = neuronsPrev
+                                .get(seq, depthPrev)!.v[batch].out
                             tmp += w * outPrev
-                        }}}
+                        }
                         
                         let offset = nbGC +
                             2 * (DEPTHPREV + weightWidth * DEPTH) + elem
@@ -669,12 +622,6 @@ public class FullyConnectedPatch: ActivationSeq,
             for batch in 0..<batchSize {
             for seq in 0..<sequence
             {
-                let seqI = seq / nbSeqPerCol
-                let seqJ = seq % nbSeqPerCol
-                
-                let iStart = seqI * _patch
-                let jStart = seqJ * _patch
-                
                 for DEPTH in 0..<nbNeurons {
                 for elem in 0...1
                 {
@@ -693,18 +640,13 @@ public class FullyConnectedPatch: ActivationSeq,
                             }
                         }
                         
-                        for depthPrev in 0..<nbChannelsPrev {
-                        for i in 0..<_patch {
-                        for j in 0..<_patch
+                        for depthPrev in 0..<nbNeuronsPrev
                         {
-                            let offsetWeight = j +
-                                i * _patch + depthPrev * _patch * _patch
-                            
-                            let w = _wArrays.w(depth, offsetWeight)
-                            let outPrev = neuronsPrev[depthPrev]
-                                .get(iStart+i, jStart+j)!.v[batch].out
+                            let w = _wArrays.w(depth, depthPrev)
+                            let outPrev = neuronsPrev
+                                .get(seq, depthPrev)!.v[batch].out
                             tmp += w * outPrev
-                        }}}
+                        }
                         
                         let offset = nbGC +
                             2 * nbNeurons * weightWidth +
@@ -729,7 +671,7 @@ public class FullyConnectedPatch: ActivationSeq,
     
     private func _forwardGCGPU() throws
     {
-        if let layerPrev = self.layerPrev as? Layer2D
+        if let layerPrev = self.layerPrev as? LayerSeq
         {
             try checkStateCPU(batchSize: batchSize)
             
@@ -750,38 +692,25 @@ public class FullyConnectedPatch: ActivationSeq,
             let weightsPtr = _wBuffers.w_p!.shared.buffer
             let biasesPtr = _bBuffers.w_p!.shared.buffer
             
-            let nbSeqPerCol = layerPrev.width / _patch
-            let neuronsPrev = layerPrev.neurons
-            let nbChannelsPrev = layerPrev.nbChannels
-            let heightPrev = layerPrev.height
-            let widthPrev = layerPrev.width
+            let neuronsPrev = layerPrev.neurons!
+            let nbNeuronsPrev = layerPrev.nbNeurons
             
             for elem in 0..<nbGC {
             for batch in 0..<batchSize {
             for seq in 0..<sequence
             {
-                let seqI = seq / nbSeqPerCol
-                let seqJ = seq % nbSeqPerCol
-                
-                let iStart = seqI * _patch
-                let jStart = seqJ * _patch
-                
                 for depth in 0..<nbNeurons
                 {
                     var tmp: Double = Double(biasesPtr[depth])
-                    for depthPrev in 0..<nbChannelsPrev {
-                    for i in 0..<_patch {
-                    for j in 0..<_patch
+                    for depthPrev in 0..<nbNeuronsPrev
                     {
-                        let offsetWeight = j +
-                            i * _patch + depthPrev * _patch * _patch
-                        let offsetWeights = offsetWeight + weightWidth * depth
+                        let offsetWeights = depthPrev + weightWidth * depth
                         
                         let w = Double(weightsPtr[offsetWeights])
-                        let outPrev = neuronsPrev[depthPrev]
-                            .get(iStart+i, jStart+j)!.gc[batch][elem].out
+                        let outPrev = neuronsPrev
+                            .get(seq, depthPrev)!.gc[batch][elem].out
                         tmp += w * outPrev
-                    }}}
+                    }
                     neurons.get(seq, depth)!.gc[batch][elem].out = tmp
                 }
             }}}
@@ -791,12 +720,6 @@ public class FullyConnectedPatch: ActivationSeq,
             for batch in 0..<batchSize {
             for seq in 0..<sequence
             {
-                let seqI = seq / nbSeqPerCol
-                let seqJ = seq % nbSeqPerCol
-                
-                let iStart = seqI * _patch
-                let jStart = seqJ * _patch
-                
                 for DEPTH in 0..<nbNeurons {
                 for DEPTHPREV in 0..<weightWidth {
                 for elem in 0...1
@@ -804,21 +727,14 @@ public class FullyConnectedPatch: ActivationSeq,
                     for depth in 0..<nbNeurons
                     {
                         var tmp: Double = Double(biasesPtr[depth])
-                        for depthPrev in 0..<nbChannelsPrev {
-                        for i in 0..<_patch {
-                        for j in 0..<_patch
+                        for depthPrev in 0..<nbNeuronsPrev
                         {
-                            let offsetWeight = j +
-                                i * _patch + depthPrev * _patch * _patch
-                            let offsetWeights = offsetWeight +
-                                weightWidth * depth
-                            let offsetStartPrev =
-                                (depthPrev + nbChannelsPrev*batch) * heightPrev
-                            let offsetPrev = jStart+j +
-                                (offsetStartPrev + iStart+i) * widthPrev
+                            let offsetWeights = depthPrev + weightWidth * depth
+                            let offsetPrev = depthPrev + nbNeuronsPrev * seq +
+                                sequence * nbNeuronsPrev * batch
                 
                             var w = Double(weightsPtr[offsetWeights])
-                            if depth == DEPTH && offsetWeight == DEPTHPREV
+                            if depth == DEPTH && depthPrev == DEPTHPREV
                             {
                                 if elem % 2 == 0
                                 {
@@ -832,7 +748,7 @@ public class FullyConnectedPatch: ActivationSeq,
                             
                             let outPrev = Double(outsPrevPtr[offsetPrev])
                             tmp += w * outPrev
-                        }}}
+                        }
                         
                         let offset = nbGC +
                             2 * (DEPTHPREV + weightWidth * DEPTH) + elem
@@ -845,12 +761,6 @@ public class FullyConnectedPatch: ActivationSeq,
             for batch in 0..<batchSize {
             for seq in 0..<sequence
             {
-                let seqI = seq / nbSeqPerCol
-                let seqJ = seq % nbSeqPerCol
-                
-                let iStart = seqI * _patch
-                let jStart = seqJ * _patch
-                
                 for DEPTH in 0..<nbNeurons {
                 for elem in 0...1
                 {
@@ -869,23 +779,16 @@ public class FullyConnectedPatch: ActivationSeq,
                             }
                         }
                         
-                        for depthPrev in 0..<nbChannelsPrev {
-                        for i in 0..<_patch {
-                        for j in 0..<_patch
+                        for depthPrev in 0..<nbNeuronsPrev
                         {
-                            let offsetWeight = j +
-                                i * _patch + depthPrev * _patch * _patch
-                            let offsetWeights = offsetWeight +
-                                weightWidth * depth
-                            let offsetStartPrev =
-                                (depthPrev + nbChannelsPrev*batch) * heightPrev
-                            let offsetPrev = jStart+j +
-                                (offsetStartPrev + iStart+i) * widthPrev
+                            let offsetWeights = depthPrev + weightWidth * depth
+                            let offsetPrev = depthPrev + nbNeuronsPrev * seq +
+                                sequence * nbNeuronsPrev * batch
                             
                             let w = Double(weightsPtr[offsetWeights])
                             let outPrev = Double(outsPrevPtr[offsetPrev])
                             tmp += w * outPrev
-                        }}}
+                        }
                         
                         let offset = nbGC +
                             2 * nbNeurons * weightWidth +
@@ -910,38 +813,26 @@ public class FullyConnectedPatch: ActivationSeq,
     
     private func _forwardCPU() throws
     {
-        if let layerPrev = self.layerPrev as? Layer2D
+        if let layerPrev = self.layerPrev as? LayerSeq
         {
             try checkStateCPU(batchSize: batchSize)
             
-            let nbSeqPerCol = layerPrev.width / _patch
-            let neuronsPrev = layerPrev.neurons
-            let nbChannelsPrev = layerPrev.nbChannels
+            let neuronsPrev = layerPrev.neurons!
+            let nbNeuronsPrev = layerPrev.nbNeurons
             
             for elem in 0..<batchSize {
             for seq in 0..<sequence
             {
-                let seqI = seq / nbSeqPerCol
-                let seqJ = seq % nbSeqPerCol
-                
-                let iStart = seqI * _patch
-                let jStart = seqJ * _patch
-                
                 for depth in 0..<nbNeurons
                 {
                     var tmp: Double = _bArrays.w[depth]
-                    for depthPrev in 0..<nbChannelsPrev {
-                    for i in 0..<_patch {
-                    for j in 0..<_patch
+                    for depthPrev in 0..<nbNeuronsPrev
                     {
-                        let offsetWeight = j +
-                            i * _patch + depthPrev * _patch * _patch
-                        
-                        let w = _wArrays.w(depth, offsetWeight)
-                        let outPrev = neuronsPrev[depthPrev]
-                            .get(iStart+i, jStart+j)!.v[elem].out
+                        let w = _wArrays.w(depth, depthPrev)
+                        let outPrev = neuronsPrev
+                            .get(seq, depthPrev)!.v[elem].out
                         tmp += w * outPrev
-                    }}}
+                    }
                     
                     neurons.get(seq, depth)!.v[elem].out = tmp
                 }
@@ -962,31 +853,26 @@ public class FullyConnectedPatch: ActivationSeq,
     
     private func _forwardGPU() throws
     {
-        if let layerPrev = self.layerPrev as? Layer2D
+        if let layerPrev = self.layerPrev as? LayerSeq
         {
             try checkStateForwardGPU(batchSize: batchSize)
             
             let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
-            let pNbChannelsPrev: [UInt32] = [UInt32(layerPrev.nbChannels)]
-            let pDimensionsPrev: [UInt32] = [UInt32(layerPrev.width),
-                                             UInt32(layerPrev.height)]
-            let pPatch: [UInt32] = [UInt32(_patch)]
+            let pNbNeuronsPrev: [UInt32] = [UInt32(layerPrev.nbNeurons)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pSequence: [UInt32] = [UInt32(sequence)]
             
             let command = MetalKernel.get.createCommand(
-                "flPatchForward", deviceID: deviceID
+                "flSeqForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBuffer(_wBuffers.w.metal, atIndex: 1)
             command.setBuffer(_bBuffers.w.metal, atIndex: 2)
             command.setBytes(pNbNeurons, atIndex: 3)
-            command.setBytes(pNbChannelsPrev, atIndex: 4)
-            command.setBytes(pDimensionsPrev, atIndex: 5)
-            command.setBytes(pPatch, atIndex: 6)
-            command.setBytes(pNbBatch, atIndex: 7)
-            command.setBytes(pSequence, atIndex: 8)
-            command.setBuffer(outs.metal, atIndex: 9)
+            command.setBytes(pNbNeuronsPrev, atIndex: 4)
+            command.setBytes(pNbBatch, atIndex: 5)
+            command.setBytes(pSequence, atIndex: 6)
+            command.setBuffer(outs.metal, atIndex: 7)
             
             command.dispatchThreads(
                 width: nbNeurons,
@@ -1007,46 +893,31 @@ public class FullyConnectedPatch: ActivationSeq,
     
     private func _backwardCPU()
     {
-        if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
+        if let layerPrev = self.layerPrev as? LayerSeq, mustComputeBackward
         {
-            let nbSeqPerCol = layerPrev.width / _patch
-            let neuronsPrev = layerPrev.neurons
+            let nbNeuronsPrev = layerPrev.nbNeurons
+            let neuronsPrev = layerPrev.neurons!
             
             for elem in 0..<batchSize {
             for seq in 0..<sequence
             {
-                let seqI = seq / nbSeqPerCol
-                let seqJ = seq % nbSeqPerCol
-                
-                let iStart = seqI * _patch
-                let jStart = seqJ * _patch
-                
-                for offsetWeight in 0..<weightWidth
+                for depthPrev in 0..<nbNeuronsPrev
                 {
-                    var res = offsetWeight
-                    let depthPrev = res / (_patch * _patch)
-                    res -= depthPrev * _patch * _patch
-                    let i = res / _patch
-                    res -= i * _patch
-                    let j = res
-                    
                     var tmp: Double = 0.0
                     for depth in 0..<nbNeurons
                     {
-                        let w = _wArrays.w(depth, offsetWeight)
+                        let w = _wArrays.w(depth, depthPrev)
                         let deltaCur = neurons.get(seq, depth)!.v[elem].delta
                         tmp += w * deltaCur
                     }
                     
                     if layerPrev.dirty
                     {
-                        neuronsPrev[depthPrev]
-                            .get(iStart+i, jStart+j)!.v[elem].delta = tmp
+                        neuronsPrev.get(seq, depthPrev)!.v[elem].delta = tmp
                     }
                     else
                     {
-                        neuronsPrev[depthPrev]
-                            .get(iStart+i, jStart+j)!.v[elem].delta += tmp
+                        neuronsPrev.get(seq, depthPrev)!.v[elem].delta += tmp
                     }
                 }
             }}
@@ -1056,45 +927,31 @@ public class FullyConnectedPatch: ActivationSeq,
     
     private func _backwardWeightsCPU()
     {
-        if let layerPrev = self.layerPrev as? Layer2D, computeDeltaWeights
+        if let layerPrev = self.layerPrev as? LayerSeq, computeDeltaWeights
         {
-            let nbSeqPerCol = layerPrev.width / _patch
-            let neuronsPrev = layerPrev.neurons
+            let nbNeuronsPrev = layerPrev.nbNeurons
+            let neuronsPrev = layerPrev.neurons!
             
             // -----------------------------------------------------------------
             // Compute Gradients per batch
             // -----------------------------------------------------------------
             for depth in 0..<nbNeurons {
-            for offsetWeight in 0..<weightWidth
+            for depthPrev in 0..<nbNeuronsPrev
             {
-                var res = offsetWeight
-                let depthPrev = res / (_patch * _patch)
-                res -= depthPrev * _patch * _patch
-                let i = res / _patch
-                res -= i * _patch
-                let j = res
-                
                 var tmp: Double = 0.0
                 for elem in 0..<batchSize {
                 for seq in 0..<sequence
                 {
-                    let seqI = seq / nbSeqPerCol
-                    let seqJ = seq % nbSeqPerCol
-                    
-                    let iStart = seqI * _patch
-                    let jStart = seqJ * _patch
-                    
                     let deltaCur = neurons.get(seq, depth)!.v[elem].delta
-                    let outPrev = neuronsPrev[depthPrev]
-                        .get(iStart + i, jStart + j)!.v[elem].out
+                    let outPrev = neuronsPrev.get(seq, depthPrev)!.v[elem].out
                     tmp += outPrev * deltaCur
                 }}
                 
                 if accumulateDeltaWeights
                 {
-                    tmp += _wArrays.g(depth, offsetWeight)
+                    tmp += _wArrays.g(depth, depthPrev)
                 }
-                _wArrays.g(depth, offsetWeight, tmp)
+                _wArrays.g(depth, depthPrev, tmp)
             }}
             
             if _updateBiases
@@ -1134,32 +991,27 @@ public class FullyConnectedPatch: ActivationSeq,
     
     private func _backwardGPU() throws
     {
-        if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
+        if let layerPrev = self.layerPrev as? LayerSeq, mustComputeBackward
         {
             try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
             
             let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
-            let pNbChannelsPrev: [UInt32] = [UInt32(layerPrev.nbChannels)]
-            let pDimensionsPrev: [UInt32] = [UInt32(layerPrev.width),
-                                             UInt32(layerPrev.height)]
-            let pPatch: [UInt32] = [UInt32(_patch)]
+            let pNbNeuronsPrev: [UInt32] = [UInt32(layerPrev.nbNeurons)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pSequence: [UInt32] = [UInt32(sequence)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
             let command = MetalKernel.get.createCommand(
-                "flPatchBackward", deviceID: deviceID
+                "flSeqBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBuffer(_wBuffers.w.metal, atIndex: 1)
             command.setBytes(pNbNeurons, atIndex: 2)
-            command.setBytes(pNbChannelsPrev, atIndex: 3)
-            command.setBytes(pDimensionsPrev, atIndex: 4)
-            command.setBytes(pPatch, atIndex: 5)
-            command.setBytes(pNbBatch, atIndex: 6)
-            command.setBytes(pSequence, atIndex: 7)
-            command.setBytes(pDirty, atIndex: 8)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 9)
+            command.setBytes(pNbNeuronsPrev, atIndex: 3)
+            command.setBytes(pNbBatch, atIndex: 4)
+            command.setBytes(pSequence, atIndex: 5)
+            command.setBytes(pDirty, atIndex: 6)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 7)
             
             command.dispatchThreads(
                 width: weightWidth,
@@ -1173,13 +1025,10 @@ public class FullyConnectedPatch: ActivationSeq,
     
     private func _backwardWeightsGPU()
     {
-        if let layerPrev = self.layerPrev as? Layer2D, computeDeltaWeights
+        if let layerPrev = self.layerPrev as? LayerSeq, computeDeltaWeights
         {
             let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
-            let pNbChannelsPrev: [UInt32] = [UInt32(layerPrev.nbChannels)]
-            let pDimensionsPrev: [UInt32] = [UInt32(layerPrev.width),
-                                             UInt32(layerPrev.height)]
-            let pPatch: [UInt32] = [UInt32(_patch)]
+            let pNbNeuronsPrev: [UInt32] = [UInt32(layerPrev.nbNeurons)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pSequence: [UInt32] = [UInt32(sequence)]
             let pAccumulate: [UInt32] = accumulateDeltaWeights ? [1] : [0]
@@ -1191,18 +1040,16 @@ public class FullyConnectedPatch: ActivationSeq,
                 // Compute Gradients per batch
                 // -------------------------------------------------------------
                 command = MetalKernel.get.createCommand(
-                    "flPatchBatchDerWeights", deviceID: deviceID
+                    "flSeqBatchDerWeights", deviceID: deviceID
                 )
                 command.setBuffer(layerPrev.outs.metal, atIndex: 0)
                 command.setBuffer(delta.metal, atIndex: 1)
                 command.setBytes(pNbNeurons, atIndex: 2)
-                command.setBytes(pNbChannelsPrev, atIndex: 3)
-                command.setBytes(pDimensionsPrev, atIndex: 4)
-                command.setBytes(pPatch, atIndex: 5)
-                command.setBytes(pNbBatch, atIndex: 6)
-                command.setBytes(pSequence, atIndex: 7)
-                command.setBytes(pAccumulate, atIndex: 8)
-                command.setBuffer(_wBuffers.g.metal, atIndex: 9)
+                command.setBytes(pNbNeuronsPrev, atIndex: 3)
+                command.setBytes(pNbBatch, atIndex: 4)
+                command.setBytes(pSequence, atIndex: 5)
+                command.setBytes(pAccumulate, atIndex: 6)
+                command.setBuffer(_wBuffers.g.metal, atIndex: 7)
                 
                 command.dispatchThreads(
                     width: nbNeurons,
@@ -1232,17 +1079,15 @@ public class FullyConnectedPatch: ActivationSeq,
                 // Compute Gradients per sample
                 // -------------------------------------------------------------
                 command = MetalKernel.get.createCommand(
-                    "flPatchDerWeights", deviceID: deviceID
+                    "flSeqDerWeights", deviceID: deviceID
                 )
                 command.setBuffer(layerPrev.outs.metal, atIndex: 0)
                 command.setBuffer(delta.metal, atIndex: 1)
                 command.setBytes(pNbNeurons, atIndex: 2)
-                command.setBytes(pNbChannelsPrev, atIndex: 3)
-                command.setBytes(pDimensionsPrev, atIndex: 4)
-                command.setBytes(pPatch, atIndex: 5)
-                command.setBytes(pNbBatch, atIndex: 6)
-                command.setBytes(pSequence, atIndex: 7)
-                command.setBuffer(_wDeltaWeights.metal, atIndex: 8)
+                command.setBytes(pNbNeuronsPrev, atIndex: 3)
+                command.setBytes(pNbBatch, atIndex: 4)
+                command.setBytes(pSequence, atIndex: 5)
+                command.setBuffer(_wDeltaWeights.metal, atIndex: 6)
                 
                 command.dispatchThreads(
                     width: nbNeurons * batchSize,
@@ -1272,15 +1117,14 @@ public class FullyConnectedPatch: ActivationSeq,
                 // Compute Gradients per batch
                 // -------------------------------------------------------------
                 command = MetalKernel.get.createCommand(
-                    "flPatchReduceWeights", deviceID: deviceID
+                    "flSeqReduceWeights", deviceID: deviceID
                 )
                 command.setBuffer(_wDeltaWeights.metal, atIndex: 0)
                 command.setBytes(pNbNeurons, atIndex: 1)
-                command.setBytes(pNbChannelsPrev, atIndex: 2)
-                command.setBytes(pPatch, atIndex: 3)
-                command.setBytes(pNbBatch, atIndex: 4)
-                command.setBytes(pAccumulate, atIndex: 5)
-                command.setBuffer(_wBuffers.g.metal, atIndex: 6)
+                command.setBytes(pNbNeuronsPrev, atIndex: 2)
+                command.setBytes(pNbBatch, atIndex: 3)
+                command.setBytes(pAccumulate, atIndex: 4)
+                command.setBuffer(_wBuffers.g.metal, atIndex: 5)
                 
                 command.dispatchThreads(
                     width: nbNeurons,

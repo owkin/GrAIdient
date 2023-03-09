@@ -147,6 +147,15 @@ class LayerSeqGradTests: Input2DMSE1DCase
                 activation: SoftReLU.str, biases: true, params: params
             )
             
+        case "LayerNorm":
+            layerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
+                activation: SoftReLU.str, biases: true, params: params
+            )
+            layerSeq = LayerNormSeq(
+                layerPrev: layerSeq, activation: nil, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -270,6 +279,19 @@ class LayerSeqGradTests: Input2DMSE1DCase
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer("FullyConnectedSeq")
+        run(trainer)
+    }
+    
+    func testLayerNormSeqCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("LayerNorm")
+        run(trainer)
+    }
+    
+    func testLayerNormSeqGPU() throws
+    {
+        let trainer = _buildTrainer("LayerNorm")
         run(trainer)
     }
 }
@@ -406,6 +428,15 @@ class LayerSeqFlowTests: Input2DMSE1DCase
                 activation: LeakyReLU.str, biases: true, params: params
             )
             
+        case "LayerNorm":
+            layerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = LayerNormSeq(
+                layerPrev: layerSeq, activation: nil, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -480,6 +511,12 @@ class LayerSeqFlowTests: Input2DMSE1DCase
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer("FullyConnectedSeq")
+        run(trainer)
+    }
+    
+    func testLayerNormSeq() throws
+    {
+        let trainer = _buildTrainer("LayerNorm")
         run(trainer)
     }
 }
@@ -574,6 +611,12 @@ class LayerSeqFlowResetTests: LayerSeqFlowTests
         let trainer = _buildTrainer("FullyConnectedSeq")
         run(trainer)
     }
+    
+    override func testLayerNormSeq() throws
+    {
+        let trainer = _buildTrainer("LayerNorm")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -666,6 +709,12 @@ class LayerSeqFlowReverseTests: LayerSeqFlowTests
         let trainer = _buildTrainer("FullyConnectedSeq")
         run(trainer)
     }
+    
+    override func testLayerNormSeq() throws
+    {
+        let trainer = _buildTrainer("LayerNorm")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -748,6 +797,12 @@ class LayerSeqInferenceTests: LayerSeqFlowTests
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer("FullyConnectedSeq")
+        run(trainer)
+    }
+    
+    override func testLayerNormSeq() throws
+    {
+        let trainer = _buildTrainer("LayerNorm")
         run(trainer)
     }
 }
@@ -833,6 +888,12 @@ class LayerSeqLoadTests: LayerSeqFlowTests
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer("FullyConnectedSeq")
+        run(trainer)
+    }
+    
+    override func testLayerNormSeq() throws
+    {
+        let trainer = _buildTrainer("LayerNorm")
         run(trainer)
     }
 }
@@ -962,6 +1023,12 @@ class LayerSeqTransformTests: LayerSeqFlowTests
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer("FullyConnectedSeq")
+        run(trainer)
+    }
+    
+    override func testLayerNormSeq() throws
+    {
+        let trainer = _buildTrainer("LayerNorm")
         run(trainer)
     }
 }

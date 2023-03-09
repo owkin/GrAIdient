@@ -63,6 +63,11 @@ class LayerSeqDirtyGradTests: Input2DMSE1DCase
                 activation: SoftReLU.str, biases: true, params: params
             )
             
+        case "LayerNorm":
+            secondLayer = LayerNormSeq(
+                layerPrev: layerSeq, activation: nil, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -91,6 +96,19 @@ class LayerSeqDirtyGradTests: Input2DMSE1DCase
     func testFLGPU() throws
     {
         let trainer = _buildTrainer("FullyConnectedSeq")
+        run(trainer)
+    }
+    
+    func testLayerNormCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("LayerNorm")
+        run(trainer)
+    }
+    
+    func testLayerNormGPU() throws
+    {
+        let trainer = _buildTrainer("LayerNorm")
         run(trainer)
     }
 }
@@ -168,6 +186,11 @@ class LayerSeqDirtyFlowTests: Input2DMSE1DCase
                 activation: LeakyReLU.str, biases: true, params: params
             )
             
+        case "LayerNorm":
+            secondLayer = LayerNormSeq(
+                layerPrev: layerSeq, activation: nil, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -201,6 +224,12 @@ class LayerSeqDirtyFlowTests: Input2DMSE1DCase
     func testFLSeq() throws
     {
         let trainer = _buildTrainer("FullyConnectedSeq")
+        run(trainer)
+    }
+    
+    func testLayerNorm() throws
+    {
+        let trainer = _buildTrainer("LayerNorm")
         run(trainer)
     }
 }

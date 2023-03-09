@@ -82,6 +82,16 @@ public class LayerWeightsNormalization: Codable, Cloneable
     }
     
     ///
+    /// Create a layer with independent units of normalization.
+    ///
+    /// - Parameter layer: The layer with the structure we want to apply the normalization to .
+    ///
+    convenience init(_ layer: LayerNormSeq)
+    {
+        self.init(nbNeurons: layer.nbNeurons)
+    }
+    
+    ///
     /// Decode from the disk.
     ///
     /// Throw an error if reading from the decoder fails, or
@@ -1860,7 +1870,7 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
         
         let command = MetalKernel.get.createCommand(
-            "backwardInstanceNorm", deviceID: _deviceID
+            "backwardInstanceNormConv", deviceID: _deviceID
         )
         command.setBuffer(_σ2.metal, atIndex: 0)
         command.setBuffer(_xHat.metal, atIndex: 1)
@@ -1996,6 +2006,603 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         command.setBuffer(layerLast.delta.metal, atIndex: 9)
         
         command.dispatchThreads(width: _nbNeurons, height: batchSize)
+        command.enqueue()
+    }
+    
+    /// Get the weights in the GPU execution context.
+    func collectWeights() -> [IWeightBuffers]
+    {
+        return [_Ɣ, _β]
+    }
+}
+
+/// A layer that applies layer normalization in the CPU execution context.
+public class LayerNormalization: LayerWeightsNormalization
+{
+    /// Slight modification to avoid "divide by 0" errors.
+    let _Ɛ: Double = 1e-5
+    
+    ///
+    /// Array of weights to scale the normalization result.
+    /// Shape ~ (1,).
+    ///
+    var _Ɣ: WeightArrays! = nil
+    ///
+    /// Array of biases to add to the normalization result.
+    /// Shape ~ (1,).
+    ///
+    var _β: WeightArrays! = nil
+    
+    ///
+    /// List of deviations of data for the different independent batch normalization units.
+    /// Shape ~ ((batch x sequence),).
+    ///
+    var _σ2 = [Double]()
+    
+    ///
+    /// The list of data normalized without taking into account the biases and the weights.
+    /// Shape ~ ((batch x sequence), (nbNeurons)).
+    ///
+    var _xHat = [[Double]]()
+    
+    /// Weights in the CPU execution context.
+    override var weights: [Float]
+    {
+        get {
+            if _Ɣ == nil
+            {
+                return super.weights
+            }
+            
+            var weightsTmp = [Float]()
+            for Ɣ in _Ɣ.w
+            {
+                weightsTmp.append(Float(Ɣ))
+            }
+            for β in _β.w
+            {
+                weightsTmp.append(Float(β))
+            }
+            return weightsTmp
+        }
+        set {
+            if newValue.count > 0 && newValue.count != 2
+            {
+                fatalError(
+                    "Weights do not have the expected number of elements."
+                )
+            }
+            super.weights = newValue
+        }
+    }
+    
+    /// Copy this.
+    public override func clone() -> Self
+    {
+        return LayerNormalization(norm: self) as! Self
+    }
+    
+    ///
+    /// Clean state resources in the CPU execution context.
+    ///
+    /// We do not clean Ɣ and β but must reset their momentum state.
+    /// Note that we do not have to reset their delta because here they are independent on
+    /// batch size.
+    ///
+    func resetKernel()
+    {
+        _σ2 = []
+        _xHat = []
+        
+        _Ɣ?.reset()
+        _β?.reset()
+    }
+    
+    ///
+    /// Initialize weights in the CPU execution context.
+    ///
+    /// Their momentum state is also reset.
+    /// Note that we also initialize the delta which are independent on the batch size.
+    ///
+    func initWeights()
+    {
+        _β = WeightArrays(1)
+        _Ɣ = WeightArrays(1)
+        if _weightsList.count == 0
+        {
+            _Ɣ.w[0] = 1.0
+            _β.w[0] = 0.0
+        }
+        else
+        {
+            _Ɣ.w[0] = Double(_weightsList[0])
+            _β.w[0] = Double(_weightsList[1])
+            _weightsList = []
+        }
+    }
+    
+    /// Apply the forward pass of the Gradient Checking in CPU execution context.
+    func forwardGC(_ layer: LayerNormSeq)
+    {
+        let nbGC = layer.nbGC
+        let Ɛ = layer.Ɛ
+        
+        Concurrency.slice(layer.sequence)
+        {
+            (seq: Int) in
+            
+            for batch in 0..<layer.batchSize {
+            for elem in 0..<nbGC
+            {
+                let outs: [Double]
+                if elem >= nbGC-4 && elem < nbGC-2
+                {
+                    if elem % 2 == 0
+                    {
+                        outs = Normalization.forwardGC(
+                            outs: layer.getOutsGC(
+                                batch: batch, seq: seq, elem: elem
+                            ),
+                            β: _β.w[0],
+                            Ɣ: _Ɣ.w[0]+Ɛ
+                        )
+                    }
+                    else
+                    {
+                        outs = Normalization.forwardGC(
+                            outs: layer.getOutsGC(
+                                batch: batch, seq: seq, elem: elem
+                            ),
+                            β: _β.w[0],
+                            Ɣ: _Ɣ.w[0]-Ɛ
+                        )
+                    }
+                }
+                else if elem >= nbGC-2
+                {
+                    if elem % 2 == 0
+                    {
+                        outs = Normalization.forwardGC(
+                            outs: layer.getOutsGC(
+                                batch: batch, seq: seq, elem: elem
+                            ),
+                            β: _β.w[0]+Ɛ,
+                            Ɣ: _Ɣ.w[0]
+                        )
+                    }
+                    else
+                    {
+                        outs = Normalization.forwardGC(
+                            outs: layer.getOutsGC(
+                                batch: batch, seq: seq, elem: elem
+                            ),
+                            β: _β.w[0]-Ɛ,
+                            Ɣ: _Ɣ.w[0]
+                        )
+                    }
+                }
+                else
+                {
+                    outs = Normalization.forwardGC(
+                        outs: layer.getOutsGC(
+                            batch: batch, seq: seq, elem: elem
+                        ),
+                        β: _β.w[0],
+                        Ɣ: _Ɣ.w[0]
+                    )
+                }
+                layer.setOutsGC(
+                    batch: batch, seq: seq, elem: elem, outs: outs
+                )
+            }}
+        }
+    }
+    
+    /// Apply the forward pass of the Gradient Checking in GPU execution context.
+    func forwardFlowGC(_ layer: LayerNormSeq)
+    {
+        layer._normGPU?.applyWeights(norm: self)
+        forwardGC(layer)
+    }
+    
+    /// Apply the forward pass in the CPU execution context.
+    func forward(_ layer: LayerNormSeq)
+    {
+        if _σ2.count == 0
+        {
+            _σ2 = [Double](
+                repeating: 0.0, count: layer.batchSize * layer.sequence
+            )
+            _xHat = [[Double]](
+                repeating: [],
+                count: layer.batchSize * layer.sequence * _nbNeurons
+            )
+        }
+        
+        let sequence = layer.sequence
+        
+        _xHat.withUnsafeMutableBufferPointer { xHatPointer in
+        _σ2.withUnsafeMutableBufferPointer { σ2Pointer in
+        Concurrency.slice(sequence)
+        {
+            (seq: Int) in
+            
+            for batch in 0..<layer.batchSize
+            {
+                let (outs, xHat, _, σ2) = Normalization.forward(
+                    outs: layer.getOuts(batch: batch, seq: seq),
+                    β: _β.w[0],
+                    Ɣ: _Ɣ.w[0]
+                )
+                layer.setOuts(batch: batch, seq: seq, outs: outs)
+                
+                xHatPointer[seq + sequence * batch] = xHat
+                σ2Pointer[seq + sequence * batch] = σ2
+            }
+        }}}
+    }
+    
+    /// Apply the backward pass in the CPU execution context.
+    func backward(_ layer: LayerNormSeq)
+    {
+        let sequence = layer.sequence
+        
+        var deltaβ = 0.0
+        var deltaƔ = 0.0
+        
+        for batch in 0..<layer.batchSize {
+        for seq in 0..<sequence
+        {
+            let (delta, dβ, dƔ) = Normalization.backward(
+                delta: layer.getDelta(batch: batch, seq: seq),
+                xHat: _xHat[seq + sequence * batch],
+                σ2: _σ2[seq + sequence * batch],
+                Ɣ: _Ɣ.w[0]
+            )
+            layer.setDelta(batch: batch, seq: seq, delta: delta)
+            
+            deltaβ += dβ
+            deltaƔ += dƔ
+        }}
+        
+        if !layer.accumulateDeltaWeights
+        {
+            _Ɣ.g[0] = deltaƔ
+            _β.g[0] = deltaβ
+        }
+        else
+        {
+            _Ɣ.g[0] += deltaƔ
+            _β.g[0] += deltaβ
+        }
+    }
+    
+    /// Get the weights in the CPU execution context.
+    func collectWeights() -> [IWeightArrays]
+    {
+        return [_Ɣ, _β]
+    }
+}
+
+/// A layer that applies layer normalization in the GPU execution context.
+class LayerNormalizationGPU: LayerWeightsNormalization
+{
+    ///
+    /// Buffer of weights to scale the normalization result.
+    /// Shape ~ (1,).
+    ///
+    var _Ɣ: IWeightBuffers! = nil
+    ///
+    /// Buffer of biases to add to the normalization result.
+    /// Shape ~ (1,).
+    ///
+    var _β: IWeightBuffers! = nil
+    
+    ///
+    /// Buffer of averages of data for the different independent batch normalization units.
+    /// Shape ~ (batch, sequence).
+    ///
+    var _μ: MetalBuffer<Float>! = nil
+    ///
+    /// Buffer of deviations of data for the different independent batch normalization units.
+    /// Shape ~ (batch, sequence).
+    ///
+    var _σ2: MetalBuffer<Float>! = nil
+    
+    ///
+    /// Buffer of data normalized without taking into account the biases and the weights.
+    /// Shape ~ (batch, sequence, nbNeurons).
+    ///
+    var _xHat: MetalBuffer<Float>! = nil
+    
+    ///
+    /// Buffer used to compute backward pass.
+    /// Shape ~ (batch, sequence).
+    ///
+    var _sum1: MetalBuffer<Float>! = nil
+    ///
+    /// Buffer used to compute backward pass.
+    /// Shape ~ (batch, sequence).
+    ///
+    var _sum2: MetalBuffer<Float>! = nil
+   
+    /// GPU device on which model is executed.
+    var _deviceID = 0
+    
+    /// Weights in the GPU execution context.
+    override var weights: [Float]
+    {
+        get {
+            if _Ɣ == nil
+            {
+                return super.weights
+            }
+            
+            MetalKernel.get.download([_β.w_p!, _Ɣ.w_p!])
+            
+            var weightsTmp = [Float]()
+            weightsTmp += _Ɣ.w_p!.shared.array
+            weightsTmp += _β.w_p!.shared.array
+            return weightsTmp
+        }
+        set {
+            if newValue.count > 0 && newValue.count != 2
+            {
+                fatalError(
+                    "Weights do not have the expected number of elements."
+                )
+            }
+            super.weights = newValue
+        }
+    }
+    
+    /// Copy this.
+    public override func clone() -> Self
+    {
+        return LayerNormalizationGPU(norm: self) as! Self
+    }
+    
+    ///
+    /// Clean state resources in the GPU execution context.
+    ///
+    /// We do not clean Ɣ and β but must reset their momentum state.
+    ///
+    func resetKernel()
+    {
+        _σ2 = nil
+        _xHat = nil
+        _sum1 = nil
+        _sum2 = nil
+        
+        _Ɣ?.reset()
+        _β?.reset()
+    }
+    
+    ///
+    /// Initialize hard resources in the GPU execution context.
+    ///
+    /// We initialize the stats.
+    ///
+    /// - Parameter deviceID: The id of GPU where to run the model.
+    ///
+    func initKernel(deviceID: Int)
+    {
+        _deviceID = deviceID
+    }
+    
+    ///
+    /// Initialize weights in the GPU execution context.
+    ///
+    /// Their momentum and delta state are also reset.
+    ///
+    func initWeights()
+    {
+        _β = WeightBuffers(nbElems: 1, deviceID: _deviceID)
+        _Ɣ = WeightBuffers(nbElems: 1, deviceID: _deviceID)
+        
+        let βPtr = _β.w_p!.shared.buffer
+        let ƔPtr = _Ɣ.w_p!.shared.buffer
+        
+        if _weightsList.count == 0
+        {
+            ƔPtr[0] = 1.0
+            βPtr[0] = 0.0
+        }
+        else
+        {
+            ƔPtr[0] = _weightsList[0]
+            βPtr[0] = _weightsList[1]
+            _weightsList = []
+        }
+        
+        MetalKernel.get.upload([_β.w_p!, _Ɣ.w_p!])
+    }
+    
+    ///
+    /// Get the weights and biases back to the CPU execution context.
+    ///
+    /// This function is necessary for the Gradient Checking in the GPU execution context.
+    ///
+    /// - Parameter norm: The layer in the CPU execution context.
+    ///
+    func applyWeights(norm: LayerNormalization)
+    {
+        let weights = self.weights
+        norm._Ɣ.w[0] = Double(weights[0])
+        norm._β.w[0] = Double(weights[1])
+    }
+    
+    /// Apply the forward pass in the GPU execution context.
+    func forward(_ layer: LayerNormSeq)
+    {
+        _computeμ(layer)
+        _computeσ2(layer)
+        
+        let batchSize = layer.batchSize
+        let sequence = layer.sequence
+        
+        let pNbNeurons: [UInt32] = [UInt32(_nbNeurons)]
+        let pNbBatch: [UInt32] = [UInt32(batchSize)]
+        let pSequence: [UInt32] = [UInt32(sequence)]
+        
+        if _xHat == nil
+        {
+            _xHat = MetalPrivateBuffer<Float>(
+                batchSize * sequence * _nbNeurons,
+                deviceID: _deviceID
+            )
+        }
+        
+        let command = MetalKernel.get.createCommand(
+            "forwardLayerNormSeq", deviceID: _deviceID
+        )
+        command.setBuffer(_β.w.metal, atIndex: 0)
+        command.setBuffer(_Ɣ.w.metal, atIndex: 1)
+        command.setBuffer(_μ.metal, atIndex: 2)
+        command.setBuffer(_σ2.metal, atIndex: 3)
+        command.setBytes(pNbNeurons, atIndex: 4)
+        command.setBytes(pNbBatch, atIndex: 5)
+        command.setBytes(pSequence, atIndex: 6)
+        command.setBuffer(layer.outs.metal, atIndex: 7)
+        command.setBuffer(_xHat.metal, atIndex: 8)
+        
+        command.dispatchThreads(
+            width: _nbNeurons,
+            height: batchSize * sequence
+        )
+        command.enqueue()
+    }
+    
+    /// Compute the averages of the different independent normalization units.
+    private func _computeμ(_ layer: LayerNormSeq)
+    {
+        let batchSize = layer.batchSize
+        let sequence = layer.sequence
+        
+        let pNbNeurons: [UInt32] = [UInt32(_nbNeurons)]
+        let pNbBatch: [UInt32] = [UInt32(batchSize)]
+        let pSequence: [UInt32] = [UInt32(sequence)]
+        
+        if _μ == nil
+        {
+            _μ = MetalPrivateBuffer<Float>(
+                batchSize * sequence, deviceID: _deviceID
+            )
+        }
+        
+        let command = MetalKernel.get.createCommand(
+            "computeLayerNormSeqμ", deviceID: _deviceID
+        )
+        command.setBuffer(layer.outs.metal, atIndex: 0)
+        command.setBytes(pNbNeurons, atIndex: 1)
+        command.setBytes(pNbBatch, atIndex: 2)
+        command.setBytes(pSequence, atIndex: 3)
+        command.setBuffer(_μ.metal, atIndex: 4)
+        
+        command.dispatchThreads(width: sequence, height: batchSize)
+        command.enqueue()
+    }
+    
+    /// Compute the deviations of the different independent normalization units.
+    private func _computeσ2(_ layer: LayerNormSeq)
+    {
+        let batchSize = layer.batchSize
+        let sequence = layer.sequence
+        
+        let pNbNeurons: [UInt32] = [UInt32(_nbNeurons)]
+        let pNbBatch: [UInt32] = [UInt32(batchSize)]
+        let pSequence: [UInt32] = [UInt32(sequence)]
+        
+        if _σ2 == nil
+        {
+            _σ2 = MetalPrivateBuffer<Float>(
+                batchSize * sequence, deviceID: _deviceID
+            )
+        }
+        
+        let command = MetalKernel.get.createCommand(
+            "computeLayerNormSeqσ2", deviceID: _deviceID
+        )
+        command.setBuffer(layer.outs.metal, atIndex: 0)
+        command.setBuffer(_μ.metal, atIndex: 1)
+        command.setBytes(pNbNeurons, atIndex: 2)
+        command.setBytes(pNbBatch, atIndex: 3)
+        command.setBytes(pSequence, atIndex: 4)
+        command.setBuffer(_σ2.metal, atIndex: 5)
+        
+        command.dispatchThreads(width: sequence, height: batchSize)
+        command.enqueue()
+    }
+    
+    /// Apply the backward pass in the GPU execution context.
+    func backward(_ layer: LayerNormSeq)
+    {
+        _backwardWeights(layer)
+        
+        let batchSize = layer.batchSize
+        let sequence = layer.sequence
+        
+        let pNbNeurons: [UInt32] = [UInt32(_nbNeurons)]
+        let pNbBatch: [UInt32] = [UInt32(batchSize)]
+        let pSequence: [UInt32] = [UInt32(sequence)]
+        
+        let command = MetalKernel.get.createCommand(
+            "backwardLayerNormSeq", deviceID: _deviceID
+        )
+        command.setBuffer(_σ2.metal, atIndex: 0)
+        command.setBuffer(_xHat.metal, atIndex: 1)
+        command.setBuffer(_Ɣ.w.metal, atIndex: 2)
+        command.setBuffer(_sum1.metal, atIndex: 3)
+        command.setBuffer(_sum2.metal, atIndex: 4)
+        command.setBytes(pNbNeurons, atIndex: 5)
+        command.setBytes(pNbBatch, atIndex: 6)
+        command.setBytes(pSequence, atIndex: 7)
+        command.setBuffer(layer.delta.metal, atIndex: 8)
+        
+        command.dispatchThreads(
+            width: _nbNeurons,
+            height: batchSize * sequence
+        )
+        command.enqueue()
+    }
+    
+    /// Compute the gradients of weights  in the GPU execution context.
+    private func _backwardWeights(_ layer: LayerNormSeq)
+    {
+        let batchSize = layer.batchSize
+        let sequence = layer.sequence
+        
+        let pNbNeurons: [UInt32] = [UInt32(_nbNeurons)]
+        let pNbBatch: [UInt32] = [UInt32(batchSize)]
+        let pSequence: [UInt32] = [UInt32(sequence)]
+        let pAccumulate: [UInt32] = layer.accumulateDeltaWeights ? [1] : [0]
+        
+        if _sum1 == nil
+        {
+            _sum1 = MetalPrivateBuffer<Float>(
+                batchSize * sequence, deviceID: _deviceID
+            )
+            _sum2 = MetalPrivateBuffer<Float>(
+                batchSize * sequence, deviceID: _deviceID
+            )
+        }
+        
+        let command = MetalKernel.get.createCommand(
+            "backwardWeightsLayerNormSeq", deviceID: _deviceID
+        )
+        command.setBuffer(layer.delta.metal, atIndex: 0)
+        command.setBuffer(_xHat.metal, atIndex: 1)
+        command.setBuffer(_Ɣ.w.metal, atIndex: 2)
+        command.setBytes(pNbNeurons, atIndex: 3)
+        command.setBytes(pNbBatch, atIndex: 4)
+        command.setBytes(pSequence, atIndex: 5)
+        command.setBytes(pAccumulate, atIndex: 6)
+        command.setBuffer(_sum1.metal, atIndex: 7)
+        command.setBuffer(_sum2.metal, atIndex: 8)
+        command.setBuffer(_Ɣ.g.metal, atIndex: 9)
+        command.setBuffer(_β.g.metal, atIndex: 10)
+        
+        command.dispatchThreads(1)
         command.enqueue()
     }
     

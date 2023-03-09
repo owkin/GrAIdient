@@ -1,17 +1,17 @@
 //
-// InstanceNorm2D.swift
+// LayerNormSeq.swift
 // GrAIdient
 //
-// Created by Jean-François Reboud on 17/02/2023.
+//  Created by Jean-François Reboud on 08/03/2023.
 //
 
-/// Layer with a 2D shape neural structure, an activation function and instance normalization units.
-public class InstanceNorm2D: Activation2D, LayerUpdate, LayerWithActivation
+/// Layer with a sequential shape neural structure, an activation function and one layer normalization unit.
+public class LayerNormSeq: ActivationSeq, LayerUpdate, LayerWithActivation
 {
     /// Instance normalization by default or instance normalization in the CPU execution context.
     var _norm: LayerWeightsNormalization? = nil
     /// Instance normalization in the GPU execution context.
-    var _normGPU: InstanceNormalizationGPU? = nil
+    var _normGPU: LayerNormalizationGPU? = nil
     
     /// Whether to compute weights' gradients or not.
     public var computeDeltaWeights: Bool = true
@@ -66,10 +66,10 @@ public class InstanceNorm2D: Activation2D, LayerUpdate, LayerWithActivation
     }
     
     /// Get instance normalization in the CPU execution context.
-    var norm: InstanceNormalization?
+    var norm: LayerNormalization?
     {
         get {
-            return _norm as? InstanceNormalization
+            return _norm as? LayerNormalization
         }
     }
     
@@ -77,7 +77,7 @@ public class InstanceNorm2D: Activation2D, LayerUpdate, LayerWithActivation
     var nbLearnedGC: Int
     {
         get {
-            return 2 * nbChannels
+            return 2
         }
     }
     
@@ -87,20 +87,19 @@ public class InstanceNorm2D: Activation2D, LayerUpdate, LayerWithActivation
     }
     
     ///
-    /// Create a layer with a 2D shape neural structure.
+    /// Create a layer with a sequential shape neural structure.
     ///
     /// - Parameters:
     ///     - layerPrev: Previous layer that has been queued to the model.
     ///     - activation: The activation function.
     ///     - params: Contextual parameters linking to the model.
     ///
-    public override init(layerPrev: Layer2D, activation: String?,
+    public override init(layerPrev: LayerSeq, activation: String?,
                          params: GrAI.Model.Params)
     {
         super.init(layerPrev: layerPrev,
-                   nbChannels: layerPrev.nbChannels,
-                   height: layerPrev.height,
-                   width: layerPrev.width,
+                   sequence: layerPrev.sequence,
+                   nbNeurons: layerPrev.nbNeurons,
                    activation: activation,
                    params: params)
         
@@ -166,12 +165,12 @@ public class InstanceNorm2D: Activation2D, LayerUpdate, LayerWithActivation
         inPlace: Bool) -> Layer
     {
         let context = ModelContext(name: "", curID: 0)
-        let layerPrev = mapping[idPrev] as! Layer2D
+        let layerPrev = mapping[idPrev] as! LayerSeq
         
         let params = GrAI.Model.Params(context: context)
         params.context.curID = id
             
-        let layer = InstanceNorm2D(
+        let layer = LayerNormSeq(
             layerPrev: layerPrev,
             activation: _activation?.name,
             params: params
@@ -209,12 +208,12 @@ public class InstanceNorm2D: Activation2D, LayerUpdate, LayerWithActivation
     public func removeActivation(inPlace: Bool) -> Layer
     {
         let context = ModelContext(name: "", curID: 0)
-        let layerPrev = self.layerPrev as! Layer2D
+        let layerPrev = self.layerPrev as! LayerSeq
         
         let params = GrAI.Model.Params(context: context)
         params.context.curID = id
         
-        let layer = InstanceNorm2D(
+        let layer = LayerNormSeq(
             layerPrev: layerPrev,
             activation: nil,
             params: params
@@ -249,8 +248,8 @@ public class InstanceNorm2D: Activation2D, LayerUpdate, LayerWithActivation
     ///
     public func removeActivation(params: GrAI.Model.Params) -> Layer
     {
-        let layerPrev = self.layerPrev as! Layer2D
-        let layer = InstanceNorm2D(
+        let layerPrev = self.layerPrev as! LayerSeq
+        let layer = LayerNormSeq(
             layerPrev: layerPrev,
             activation: nil,
             params: params
@@ -299,11 +298,11 @@ public class InstanceNorm2D: Activation2D, LayerUpdate, LayerWithActivation
         
         if let norm = _normGPU
         {
-            _norm = InstanceNormalization(norm: norm)
+            _norm = LayerNormalization(norm: norm)
         }
         else if let norm = _norm
         {
-            _norm = InstanceNormalization(norm: norm)
+            _norm = LayerNormalization(norm: norm)
         }
         
         if !GrAI.Loop.gradientChecking
@@ -323,11 +322,11 @@ public class InstanceNorm2D: Activation2D, LayerUpdate, LayerWithActivation
         
         if let norm = _normGPU
         {
-            _normGPU = InstanceNormalizationGPU(norm: norm)
+            _normGPU = LayerNormalizationGPU(norm: norm)
         }
         else if let norm = _norm
         {
-            _normGPU = InstanceNormalizationGPU(norm: norm)
+            _normGPU = LayerNormalizationGPU(norm: norm)
         }
         _normGPU?.initKernel(deviceID: deviceID)
         
@@ -375,42 +374,43 @@ public class InstanceNorm2D: Activation2D, LayerUpdate, LayerWithActivation
     ///
     private func _forwardGCCPU() throws
     {
-        if let layerPrev = self.layerPrev as? Layer2D
+        if let layerPrev = self.layerPrev as? LayerSeq
         {
             try checkStateCPU(batchSize: batchSize)
             
             let nbGC = layerPrev.nbGC
             let newGC = nbGC + 2 * nbLearnedGC
-            for j in 0..<nbChannels
+            for seq in 0..<sequence {
+            for depth in 0..<nbNeurons
             {
-                neurons[j].initGC(batchSize: batchSize, nbGC: newGC)
-            }
+                neurons.get(seq, depth)!.initGC(
+                    batchSize: batchSize, nbGC: newGC
+                )
+            }}
             
-            let neuronsPrev = layerPrev.neurons
+            let neuronsPrev = layerPrev.neurons!
             for batch in 0..<batchSize {
+            for seq in 0..<sequence {
             for elem in 0..<nbGC
             {
-                for depth in 0..<nbChannels {
-                for i in 0..<height {
-                for j in 0..<width
+                for depth in 0..<nbNeurons
                 {
-                    neurons[depth].get(i, j)!.gc[batch][elem].out =
-                        neuronsPrev[depth].get(i, j)!.gc[batch][elem].out
-                }}}
-            }}
+                    neurons.get(seq, depth)!.gc[batch][elem].out =
+                        neuronsPrev.get(seq, depth)!.gc[batch][elem].out
+                }
+            }}}
             
             // Prepare GC for norm weights: Ɣ and β.
             for batch in 0..<batchSize {
-            for elem in newGC-4*nbChannels..<newGC
+            for seq in 0..<sequence {
+            for elem in newGC-4..<newGC
             {
-                for depth in 0..<nbChannels {
-                for i in 0..<height {
-                for j in 0..<width
+                for depth in 0..<nbNeurons
                 {
-                    neurons[depth].get(i, j)!.gc[batch][elem].out =
-                        neuronsPrev[depth].get(i, j)!.v[batch].out
-                }}}
-            }}
+                    neurons.get(seq, depth)!.gc[batch][elem].out =
+                        neuronsPrev.get(seq, depth)!.v[batch].out
+                }
+            }}}
         }
     }
     
@@ -433,52 +433,49 @@ public class InstanceNorm2D: Activation2D, LayerUpdate, LayerWithActivation
     ///
     private func _forwardGCGPU() throws
     {
-        if let layerPrev = self.layerPrev as? Layer2D
+        if let layerPrev = self.layerPrev as? LayerSeq
         {
             try checkStateCPU(batchSize: batchSize)
             
             let nbGC = layerPrev.nbGC
             let newGC = nbGC + 2 * nbLearnedGC
-            for j in 0..<nbChannels
+            for seq in 0..<sequence {
+            for depth in 0..<nbNeurons
             {
-                neurons[j].initGC(batchSize: batchSize, nbGC: newGC)
-            }
+                neurons.get(seq, depth)!.initGC(
+                    batchSize: batchSize, nbGC: newGC
+                )
+            }}
             
-            let neuronsPrev = layerPrev.neurons
+            let neuronsPrev = layerPrev.neurons!
             for batch in 0..<batchSize {
+            for seq in 0..<sequence {
             for elem in 0..<nbGC
             {
-                for depth in 0..<nbChannels {
-                for i in 0..<height {
-                for j in 0..<width
+                for depth in 0..<nbNeurons
                 {
-                    neurons[depth].get(i, j)!.gc[batch][elem].out =
-                        neuronsPrev[depth].get(i, j)!.gc[batch][elem].out
-                }}}
-            }}
+                    neurons.get(seq, depth)!.gc[batch][elem].out =
+                        neuronsPrev.get(seq, depth)!.gc[batch][elem].out
+                }
+            }}}
             
             MetalKernel.get.download([layerPrev.outs])
             let outsPrevPtr = layerPrev.outs.shared.buffer
             
             // Prepare GC for norm weights: Ɣ and β.
             for batch in 0..<batchSize {
-            for elem in newGC-4*nbChannels..<newGC
+            for seq in 0..<sequence {
+            for elem in newGC-4..<newGC
             {
-                for depth in 0..<nbChannels
+                for depth in 0..<nbNeurons
                 {
-                    let offsetStart =
-                        (depth + nbChannels * batch) * height
+                    let offset = depth + nbNeurons * seq +
+                        sequence * nbNeurons * batch
                     
-                    for i in 0..<height {
-                    for j in 0..<width
-                    {
-                        let offset = j + (offsetStart + i) * width
-                        
-                        neurons[depth].get(i, j)!.gc[batch][elem].out =
-                            Double(outsPrevPtr[offset])
-                    }}
+                    neurons.get(seq, depth)!.gc[batch][elem].out =
+                        Double(outsPrevPtr[offset])
                 }
-            }}
+            }}}
         }
     }
     
@@ -489,21 +486,20 @@ public class InstanceNorm2D: Activation2D, LayerUpdate, LayerWithActivation
     ///
     public override func forwardCPU() throws
     {
-        if let layerPrev = self.layerPrev as? Layer2D
+        if let layerPrev = self.layerPrev as? LayerSeq
         {
             try checkStateCPU(batchSize: batchSize)
             
-            let neuronsPrev = layerPrev.neurons
-            for elem in 0..<batchSize
+            let neuronsPrev = layerPrev.neurons!
+            for elem in 0..<batchSize {
+            for seq in 0..<sequence
             {
-                for depth in 0..<nbChannels {
-                for i in 0..<height {
-                for j in 0..<width
+                for depth in 0..<nbNeurons
                 {
-                    neurons[depth].get(i, j)!.v[elem].out =
-                        neuronsPrev[depth].get(i, j)!.v[elem].out
-                }}}
-            }
+                    neurons.get(seq, depth)!.v[elem].out =
+                        neuronsPrev.get(seq, depth)!.v[elem].out
+                }
+            }}
             
             norm!.forward(self)
             _activation?.forwardCPU(self)
@@ -517,7 +513,7 @@ public class InstanceNorm2D: Activation2D, LayerUpdate, LayerWithActivation
     ///
     public override func forwardGPU() throws
     {
-        if let layerPrev = self.layerPrev as? Layer2D
+        if let layerPrev = self.layerPrev as? LayerSeq
         {
             try checkStateForwardGPU(batchSize: batchSize)
             
@@ -545,27 +541,26 @@ public class InstanceNorm2D: Activation2D, LayerUpdate, LayerWithActivation
         _activation?.backwardCPU(self)
         norm!.backward(self)
         
-        if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
+        if let layerPrev = self.layerPrev as? LayerSeq, mustComputeBackward
         {
-            let neuronsPrev = layerPrev.neurons
-            for elem in 0..<batchSize
+            let neuronsPrev = layerPrev.neurons!
+            for elem in 0..<batchSize {
+            for seq in 0..<sequence
             {
-                for depth in 0..<nbChannels {
-                for i in 0..<height {
-                for j in 0..<width
+                for depth in 0..<nbNeurons
                 {
                     if layerPrev.dirty
                     {
-                        neuronsPrev[depth].get(i, j)!.v[elem].delta =
-                            neurons[depth].get(i, j)!.v[elem].delta
+                        neuronsPrev.get(seq, depth)!.v[elem].delta =
+                            neurons.get(seq, depth)!.v[elem].delta
                     }
                     else
                     {
-                        neuronsPrev[depth].get(i, j)!.v[elem].delta +=
-                            neurons[depth].get(i, j)!.v[elem].delta
+                        neuronsPrev.get(seq, depth)!.v[elem].delta +=
+                            neurons.get(seq, depth)!.v[elem].delta
                     }
-                }}}
-            }
+                }
+            }}
             propagateDirty()
         }
     }
@@ -580,7 +575,7 @@ public class InstanceNorm2D: Activation2D, LayerUpdate, LayerWithActivation
         _activation?.backwardGPU(self)
         _normGPU!.backward(self)
         
-        if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
+        if let layerPrev = self.layerPrev as? LayerSeq, mustComputeBackward
         {
             try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
             
@@ -633,20 +628,18 @@ public class InstanceNorm2D: Activation2D, LayerUpdate, LayerWithActivation
     /// Get the outputs of Gradient Checking (result of the forward pass) in the CPU execution context.
     ///
     /// - Parameters:
-    ///     - depth: Channel index.
     ///     - batch: Index of sample in the mini batch.
+    ///     - seq: Index of the sequence.
     ///     - elem: Weight estimation index during the Gradient Checking.
     /// - Returns: The outputs.
     ///
-    func getOutsGC(depth: Int, batch: Int, elem: Int) -> [Double]
+    func getOutsGC(batch: Int, seq: Int, elem: Int) -> [Double]
     {
-        var outs = [Double](repeating: 0.0, count: height * width)
-        for i in 0..<height {
-        for j in 0..<width
+        var outs = [Double](repeating: 0.0, count: nbNeurons)
+        for depth in 0..<nbNeurons
         {
-            let offset = j + i * width
-            outs[offset] = neurons[depth].get(i, j)!.gc[batch][elem].out
-        }}
+            outs[depth] = neurons.get(seq, depth)!.gc[batch][elem].out
+        }
         return outs
     }
     
@@ -654,38 +647,34 @@ public class InstanceNorm2D: Activation2D, LayerUpdate, LayerWithActivation
     /// Set the outputs of Gradient Checking (result of the forward pass) in the CPU execution context.
     ///
     /// - Parameters:
-    ///     - depth: Channel index.
     ///     - batch: Index sample in the mini batch.
+    ///     - seq: Index of the sequence.
     ///     - elem: Weight estimation index during the Gradient Checking.
     ///     - outs: The outputs to set.
     ///
-    func setOutsGC(depth: Int, batch: Int, elem: Int, outs: [Double])
+    func setOutsGC(batch: Int, seq: Int, elem: Int, outs: [Double])
     {
-        for i in 0..<height {
-        for j in 0..<width
+        for depth in 0..<nbNeurons
         {
-            let offset = j + i * width
-            neurons[depth].get(i, j)!.gc[batch][elem].out = outs[offset]
-        }}
+            neurons.get(seq, depth)!.gc[batch][elem].out = outs[depth]
+        }
     }
     
     ///
     /// Get the outputs (result of the forward pass) in the CPU execution context.
     ///
     /// - Parameters:
-    ///     - depth: Channel index.
     ///     - batch: Index sample in the mini batch.
+    ///     - seq: Index of the sequence.
     /// - Returns: The outputs.
     ///
-    func getOuts(depth: Int, batch: Int) -> [Double]
+    func getOuts(batch: Int, seq: Int) -> [Double]
     {
-        var outs = [Double](repeating: 0.0, count: height * width)
-        for i in 0..<height {
-        for j in 0..<width
+        var outs = [Double](repeating: 0.0, count: nbNeurons)
+        for depth in 0..<nbNeurons
         {
-            let offset = j + i * width
-            outs[offset] = neurons[depth].get(i, j)!.v[batch].out
-        }}
+            outs[depth] = neurons.get(seq, depth)!.v[batch].out
+        }
         return outs
     }
     
@@ -693,37 +682,33 @@ public class InstanceNorm2D: Activation2D, LayerUpdate, LayerWithActivation
     /// Set the outputs (result of the forward pass) in the CPU execution context.
     ///
     /// - Parameters:
-    ///     - depth: Channel index.
     ///     - batch: Index sample in the mini batch.
+    ///     - seq: Index of the sequence.
     ///     - outs: The outputs to set.
     ///
-    func setOuts(depth: Int, batch: Int, outs: [Double])
+    func setOuts(batch: Int, seq: Int, outs: [Double])
     {
-        for i in 0..<height {
-        for j in 0..<width
+        for depth in 0..<nbNeurons
         {
-            let offset = j + i * width
-            neurons[depth].get(i, j)!.v[batch].out = outs[offset]
-        }}
+            neurons.get(seq, depth)!.v[batch].out = outs[depth]
+        }
     }
     
     ///
     /// Get the gradients (result of the backward pass) in the CPU execution context.
     ///
     /// - Parameters:
-    ///     - depth: Channel index.
     ///     - batch: Index sample in the mini batch.
+    ///     - seq: Index of the sequence.
     /// - Returns: The gradients.
     ///
-    func getDelta(depth: Int, batch: Int) -> [Double]
+    func getDelta(batch: Int, seq: Int) -> [Double]
     {
-        var delta = [Double](repeating: 0.0, count: height * width)
-        for i in 0..<height {
-        for j in 0..<width
+        var delta = [Double](repeating: 0.0, count: nbNeurons)
+        for depth in 0..<nbNeurons
         {
-            let offset = j + i * width
-            delta[offset] = neurons[depth].get(i, j)!.v[batch].delta
-        }}
+            delta[depth] = neurons.get(seq, depth)!.v[batch].delta
+        }
         return delta
     }
     
@@ -731,17 +716,15 @@ public class InstanceNorm2D: Activation2D, LayerUpdate, LayerWithActivation
     /// Set the gradients (result of the backward pass) in the CPU execution context.
     ///
     /// - Parameters:
-    ///     - depth: Channel index.
     ///     - batch: Index sample in the mini batch.
+    ///     - seq: Index of the sequence.
     ///     - delta: The gradients to set.
     ///
-    func setDelta(depth: Int, batch: Int, delta: [Double])
+    func setDelta(batch: Int, seq: Int, delta: [Double])
     {
-        for i in 0..<height {
-        for j in 0..<width
+        for depth in 0..<nbNeurons
         {
-            let offset = j + i * width
-            neurons[depth].get(i, j)!.v[batch].delta = delta[offset]
-        }}
+            neurons.get(seq, depth)!.v[batch].delta = delta[depth]
+        }
     }
 }

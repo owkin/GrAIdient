@@ -347,7 +347,7 @@ kernel void backward2AdaIN(
     }
 }
 
-kernel void backwardInstanceNorm(
+kernel void backwardInstanceNormConv(
     const device float * σ2,
     const device float * xHat,
     const device float * Ɣ,

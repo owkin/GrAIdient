@@ -5,7 +5,7 @@
 //  Created by Jean-François Reboud on 08/03/2023.
 //
 
-/// Layer with a sequeential shape neural structure, an activation function and layer normalization units.
+/// Layer with a sequential shape neural structure, an activation function and one layer normalization unit.
 public class LayerNormSeq: ActivationSeq, LayerUpdate, LayerWithActivation
 {
     /// Instance normalization by default or instance normalization in the CPU execution context.

@@ -156,6 +156,19 @@ class LayerSeqGradTests: Input2DMSE1DCase
                 layerPrev: layerSeq, activation: nil, params: params
             )
             
+        case "Query":
+            let otherLayer: LayerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
+                activation: SoftReLU.str, biases: true, params: params
+            )
+            layerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
+                activation: SoftReLU.str, biases: true, params: params
+            )
+            layerSeq = QuerySeq(
+                query: layerSeq, key: otherLayer, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -292,6 +305,13 @@ class LayerSeqGradTests: Input2DMSE1DCase
     func testLayerNormSeqGPU() throws
     {
         let trainer = _buildTrainer("LayerNorm")
+        run(trainer)
+    }
+    
+    func testQuerySeqCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("Query")
         run(trainer)
     }
 }

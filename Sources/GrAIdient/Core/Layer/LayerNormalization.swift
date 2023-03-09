@@ -82,6 +82,16 @@ public class LayerWeightsNormalization: Codable, Cloneable
     }
     
     ///
+    /// Create a layer with independent units of normalization.
+    ///
+    /// - Parameter layer: The layer with the structure we want to apply the normalization to .
+    ///
+    convenience init(_ layer: LayerNormSeq)
+    {
+        self.init(nbNeurons: layer.nbNeurons)
+    }
+    
+    ///
     /// Decode from the disk.
     ///
     /// Throw an error if reading from the decoder fails, or
@@ -1860,7 +1870,7 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
         
         let command = MetalKernel.get.createCommand(
-            "backwardInstanceNorm", deviceID: _deviceID
+            "backwardInstanceNormConv", deviceID: _deviceID
         )
         command.setBuffer(_σ2.metal, atIndex: 0)
         command.setBuffer(_xHat.metal, atIndex: 1)
@@ -2279,40 +2289,40 @@ class LayerNormalizationGPU: LayerWeightsNormalization
 {
     ///
     /// Buffer of weights to scale the normalization result.
-    /// Shape ~ (nbNeurons,).
+    /// Shape ~ (1,).
     ///
     var _Ɣ: IWeightBuffers! = nil
     ///
     /// Buffer of biases to add to the normalization result.
-    /// Shape ~ (nbNeurons,).
+    /// Shape ~ (1,).
     ///
     var _β: IWeightBuffers! = nil
     
     ///
     /// Buffer of averages of data for the different independent batch normalization units.
-    /// Shape ~ (batch, nbNeurons).
+    /// Shape ~ (batch, sequence).
     ///
     var _μ: MetalBuffer<Float>! = nil
     ///
     /// Buffer of deviations of data for the different independent batch normalization units.
-    /// Shape ~ (batch, nbNeurons).
+    /// Shape ~ (batch, sequence).
     ///
     var _σ2: MetalBuffer<Float>! = nil
     
     ///
     /// Buffer of data normalized without taking into account the biases and the weights.
-    /// Shape ~ (batch, nbNeurons, height, width).
+    /// Shape ~ (batch, sequence, nbNeurons).
     ///
     var _xHat: MetalBuffer<Float>! = nil
     
     ///
     /// Buffer used to compute backward pass.
-    /// Shape ~ (nbNeurons,).
+    /// Shape ~ (batch, sequence).
     ///
     var _sum1: MetalBuffer<Float>! = nil
     ///
     /// Buffer used to compute backward pass.
-    /// Shape ~ (nbNeurons,).
+    /// Shape ~ (batch, sequence).
     ///
     var _sum2: MetalBuffer<Float>! = nil
    
@@ -2336,7 +2346,7 @@ class LayerNormalizationGPU: LayerWeightsNormalization
             return weightsTmp
         }
         set {
-            if newValue.count > 0 && newValue.count != 2 * _nbNeurons
+            if newValue.count > 0 && newValue.count != 2
             {
                 fatalError(
                     "Weights do not have the expected number of elements."
@@ -2349,7 +2359,7 @@ class LayerNormalizationGPU: LayerWeightsNormalization
     /// Copy this.
     public override func clone() -> Self
     {
-        return InstanceNormalizationGPU(norm: self) as! Self
+        return LayerNormalizationGPU(norm: self) as! Self
     }
     
     ///
@@ -2387,27 +2397,21 @@ class LayerNormalizationGPU: LayerWeightsNormalization
     ///
     func initWeights()
     {
-        _β = WeightBuffers(nbElems: _nbNeurons, deviceID: _deviceID)
-        _Ɣ = WeightBuffers(nbElems: _nbNeurons, deviceID: _deviceID)
+        _β = WeightBuffers(nbElems: 1, deviceID: _deviceID)
+        _Ɣ = WeightBuffers(nbElems: 1, deviceID: _deviceID)
         
         let βPtr = _β.w_p!.shared.buffer
         let ƔPtr = _Ɣ.w_p!.shared.buffer
         
         if _weightsList.count == 0
         {
-            for depth in 0..<_nbNeurons
-            {
-                ƔPtr[depth] = 1.0
-                βPtr[depth] = 0.0
-            }
+            ƔPtr[0] = 1.0
+            βPtr[0] = 0.0
         }
         else
         {
-            for depth in 0..<_nbNeurons
-            {
-                ƔPtr[depth] = _weightsList[depth]
-                βPtr[depth] = _weightsList[_nbNeurons + depth]
-            }
+            ƔPtr[0] = _weightsList[0]
+            βPtr[0] = _weightsList[1]
             _weightsList = []
         }
         
@@ -2421,194 +2425,184 @@ class LayerNormalizationGPU: LayerWeightsNormalization
     ///
     /// - Parameter norm: The layer in the CPU execution context.
     ///
-    func applyWeights(norm: InstanceNormalization)
+    func applyWeights(norm: LayerNormalization)
     {
         let weights = self.weights
-        for depth in 0..<_nbNeurons
-        {
-            norm._Ɣ.w[depth] = Double(weights[depth])
-            norm._β.w[depth] = Double(weights[_nbNeurons + depth])
-        }
+        norm._Ɣ.w[0] = Double(weights[0])
+        norm._β.w[0] = Double(weights[1])
     }
     
     /// Apply the forward pass in the GPU execution context.
-    func forward(_ layer: InstanceNorm2D)
+    func forward(_ layer: LayerNormSeq)
     {
         _computeμ(layer)
         _computeσ2(layer)
         
         let batchSize = layer.batchSize
-        let width = layer.width
-        let height = layer.height
+        let sequence = layer.sequence
         
-        let pNbChannels: [UInt32] = [UInt32(_nbNeurons)]
+        let pNbNeurons: [UInt32] = [UInt32(_nbNeurons)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
-        let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
+        let pSequence: [UInt32] = [UInt32(sequence)]
         
         if _xHat == nil
         {
             _xHat = MetalPrivateBuffer<Float>(
-                batchSize * _nbNeurons * width * height,
+                batchSize * sequence * _nbNeurons,
                 deviceID: _deviceID
             )
         }
         
         let command = MetalKernel.get.createCommand(
-            "forwardInstanceNormConv", deviceID: _deviceID
+            "forwardLayerNormSeq", deviceID: _deviceID
         )
         command.setBuffer(_β.w.metal, atIndex: 0)
         command.setBuffer(_Ɣ.w.metal, atIndex: 1)
         command.setBuffer(_μ.metal, atIndex: 2)
         command.setBuffer(_σ2.metal, atIndex: 3)
-        command.setBytes(pNbChannels, atIndex: 4)
+        command.setBytes(pNbNeurons, atIndex: 4)
         command.setBytes(pNbBatch, atIndex: 5)
-        command.setBytes(pDimensions, atIndex: 6)
+        command.setBytes(pSequence, atIndex: 6)
         command.setBuffer(layer.outs.metal, atIndex: 7)
         command.setBuffer(_xHat.metal, atIndex: 8)
         
         command.dispatchThreads(
-            width: _nbNeurons * width,
-            height: batchSize * height
+            width: _nbNeurons,
+            height: batchSize * sequence
         )
         command.enqueue()
     }
     
     /// Compute the averages of the different independent normalization units.
-    private func _computeμ(_ layer: InstanceNorm2D)
+    private func _computeμ(_ layer: LayerNormSeq)
     {
-        let nbChannels = layer.nbChannels
         let batchSize = layer.batchSize
-        let width = layer.width
-        let height = layer.height
+        let sequence = layer.sequence
         
-        let pNbChannels: [UInt32] = [UInt32(nbChannels)]
+        let pNbNeurons: [UInt32] = [UInt32(_nbNeurons)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
-        let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
+        let pSequence: [UInt32] = [UInt32(sequence)]
         
         if _μ == nil
         {
             _μ = MetalPrivateBuffer<Float>(
-                batchSize * _nbNeurons, deviceID: _deviceID
+                batchSize * sequence, deviceID: _deviceID
             )
         }
         
         let command = MetalKernel.get.createCommand(
-            "computeInstanceNormConvμ", deviceID: _deviceID
+            "computeLayerNormSeqμ", deviceID: _deviceID
         )
         command.setBuffer(layer.outs.metal, atIndex: 0)
-        command.setBytes(pNbChannels, atIndex: 1)
+        command.setBytes(pNbNeurons, atIndex: 1)
         command.setBytes(pNbBatch, atIndex: 2)
-        command.setBytes(pDimensions, atIndex: 3)
+        command.setBytes(pSequence, atIndex: 3)
         command.setBuffer(_μ.metal, atIndex: 4)
         
-        command.dispatchThreads(width: _nbNeurons, height: batchSize)
+        command.dispatchThreads(width: sequence, height: batchSize)
         command.enqueue()
     }
     
     /// Compute the deviations of the different independent normalization units.
-    private func _computeσ2(_ layer: InstanceNorm2D)
+    private func _computeσ2(_ layer: LayerNormSeq)
     {
-        let nbChannels = layer.nbChannels
         let batchSize = layer.batchSize
-        let width = layer.width
-        let height = layer.height
+        let sequence = layer.sequence
         
-        let pNbChannels: [UInt32] = [UInt32(nbChannels)]
+        let pNbNeurons: [UInt32] = [UInt32(_nbNeurons)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
-        let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
+        let pSequence: [UInt32] = [UInt32(sequence)]
         
         if _σ2 == nil
         {
             _σ2 = MetalPrivateBuffer<Float>(
-                batchSize * _nbNeurons, deviceID: _deviceID
+                batchSize * sequence, deviceID: _deviceID
             )
         }
         
         let command = MetalKernel.get.createCommand(
-            "computeInstanceNormConvσ2", deviceID: _deviceID
+            "computeLayerNormSeqσ2", deviceID: _deviceID
         )
         command.setBuffer(layer.outs.metal, atIndex: 0)
         command.setBuffer(_μ.metal, atIndex: 1)
-        command.setBytes(pNbChannels, atIndex: 2)
+        command.setBytes(pNbNeurons, atIndex: 2)
         command.setBytes(pNbBatch, atIndex: 3)
-        command.setBytes(pDimensions, atIndex: 4)
+        command.setBytes(pSequence, atIndex: 4)
         command.setBuffer(_σ2.metal, atIndex: 5)
         
-        command.dispatchThreads(width: _nbNeurons, height: batchSize)
+        command.dispatchThreads(width: sequence, height: batchSize)
         command.enqueue()
     }
     
     /// Apply the backward pass in the GPU execution context.
-    func backward(_ layer: InstanceNorm2D)
+    func backward(_ layer: LayerNormSeq)
     {
         _backwardWeights(layer)
         
         let batchSize = layer.batchSize
-        let width = layer.width
-        let height = layer.height
+        let sequence = layer.sequence
         
-        let pNbChannels: [UInt32] = [UInt32(_nbNeurons)]
+        let pNbNeurons: [UInt32] = [UInt32(_nbNeurons)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
-        let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
+        let pSequence: [UInt32] = [UInt32(sequence)]
         
         let command = MetalKernel.get.createCommand(
-            "backwardInstanceNorm", deviceID: _deviceID
+            "backwardLayerNormSeq", deviceID: _deviceID
         )
         command.setBuffer(_σ2.metal, atIndex: 0)
         command.setBuffer(_xHat.metal, atIndex: 1)
         command.setBuffer(_Ɣ.w.metal, atIndex: 2)
         command.setBuffer(_sum1.metal, atIndex: 3)
         command.setBuffer(_sum2.metal, atIndex: 4)
-        command.setBytes(pNbChannels, atIndex: 5)
+        command.setBytes(pNbNeurons, atIndex: 5)
         command.setBytes(pNbBatch, atIndex: 6)
-        command.setBytes(pDimensions, atIndex: 7)
+        command.setBytes(pSequence, atIndex: 7)
         command.setBuffer(layer.delta.metal, atIndex: 8)
         
         command.dispatchThreads(
-            width: _nbNeurons * width,
-            height: batchSize * height
+            width: _nbNeurons,
+            height: batchSize * sequence
         )
         command.enqueue()
     }
     
     /// Compute the gradients of weights  in the GPU execution context.
-    private func _backwardWeights(_ layer: InstanceNorm2D)
+    private func _backwardWeights(_ layer: LayerNormSeq)
     {
         let batchSize = layer.batchSize
-        let width = layer.width
-        let height = layer.height
+        let sequence = layer.sequence
         
-        let pNbChannels: [UInt32] = [UInt32(_nbNeurons)]
+        let pNbNeurons: [UInt32] = [UInt32(_nbNeurons)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
-        let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
+        let pSequence: [UInt32] = [UInt32(sequence)]
         let pAccumulate: [UInt32] = layer.accumulateDeltaWeights ? [1] : [0]
         
         if _sum1 == nil
         {
             _sum1 = MetalPrivateBuffer<Float>(
-                batchSize * _nbNeurons, deviceID: _deviceID
+                batchSize * sequence, deviceID: _deviceID
             )
             _sum2 = MetalPrivateBuffer<Float>(
-                batchSize * _nbNeurons, deviceID: _deviceID
+                batchSize * sequence, deviceID: _deviceID
             )
         }
         
         let command = MetalKernel.get.createCommand(
-            "backwardWeightsInstanceNormConv", deviceID: _deviceID
+            "backwardWeightsLayerNormSeq", deviceID: _deviceID
         )
         command.setBuffer(layer.delta.metal, atIndex: 0)
         command.setBuffer(_xHat.metal, atIndex: 1)
         command.setBuffer(_Ɣ.w.metal, atIndex: 2)
-        command.setBytes(pNbChannels, atIndex: 3)
+        command.setBytes(pNbNeurons, atIndex: 3)
         command.setBytes(pNbBatch, atIndex: 4)
-        command.setBytes(pDimensions, atIndex: 5)
+        command.setBytes(pSequence, atIndex: 5)
         command.setBytes(pAccumulate, atIndex: 6)
         command.setBuffer(_sum1.metal, atIndex: 7)
         command.setBuffer(_sum2.metal, atIndex: 8)
         command.setBuffer(_Ɣ.g.metal, atIndex: 9)
         command.setBuffer(_β.g.metal, atIndex: 10)
         
-        command.dispatchThreads(_nbNeurons)
+        command.dispatchThreads(1)
         command.enqueue()
     }
     

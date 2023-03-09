@@ -542,7 +542,7 @@ private class MetalDevice
             "Biases": [
                 "reduceBiases",
             ],
-            "BN": [
+            "BatchNorm": [
                 "computeBNConvμ",
                 "computeBNConvσ2",
                 "forwardBNConvTraining",
@@ -598,7 +598,7 @@ private class MetalDevice
                 "forwardAdaIN",
                 "backwardWeightsInstanceNormConv",
                 "backward2AdaIN",
-                "backwardInstanceNorm",
+                "backwardInstanceNormConv",
                 "backward1AdaIN",
             ],
             "Layer1D": [
@@ -649,6 +649,13 @@ private class MetalDevice
                 "constant2DForward",
                 "MSE2DLoss",
                 "MSE2DLossDerivative",
+            ],
+            "LayerNorm": [
+                "computeLayerNormSeqμ",
+                "computeLayerNormSeqσ2",
+                "forwardLayerNormSeq",
+                "backwardWeightsLayerNormSeq",
+                "backwardLayerNormSeq",
             ],
             "LayerSeq": [
                 "avgPoolSeqForward",

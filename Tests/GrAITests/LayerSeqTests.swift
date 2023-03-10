@@ -171,6 +171,13 @@ class LayerSeqGradTests: Input2DMSE1DCase
                 query: layerSeq, key: otherLayer, params: params
             )
             
+        case "Softmax":
+            layerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
+                activation: SoftReLU.str, biases: true, params: params
+            )
+            layerSeq = SoftmaxSeq(layerPrev: layerSeq, params: params)
+            
         default:
             fatalError("Unreachable.")
         }
@@ -320,6 +327,19 @@ class LayerSeqGradTests: Input2DMSE1DCase
     func testQuerySeqGPU() throws
     {
         let trainer = _buildTrainer("Query")
+        run(trainer)
+    }
+    
+    func testSoftmaxSeqCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("Softmax")
+        run(trainer)
+    }
+    
+    func testSoftmaxSeqGPU() throws
+    {
+        let trainer = _buildTrainer("Softmax")
         run(trainer)
     }
 }
@@ -478,6 +498,13 @@ class LayerSeqFlowTests: Input2DMSE1DCase
                 query: layerSeq, key: otherLayer, params: params
             )
             
+        case "Softmax":
+            layerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = SoftmaxSeq(layerPrev: layerSeq, params: params)
+            
         default:
             fatalError("Unreachable.")
         }
@@ -564,6 +591,12 @@ class LayerSeqFlowTests: Input2DMSE1DCase
     func testQuerySeq() throws
     {
         let trainer = _buildTrainer("Query")
+        run(trainer)
+    }
+    
+    func testSoftmaxSeq() throws
+    {
+        let trainer = _buildTrainer("Softmax")
         run(trainer)
     }
 }
@@ -670,6 +703,12 @@ class LayerSeqFlowResetTests: LayerSeqFlowTests
         let trainer = _buildTrainer("Query")
         run(trainer)
     }
+    
+    override func testSoftmaxSeq() throws
+    {
+        let trainer = _buildTrainer("Softmax")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -774,6 +813,12 @@ class LayerSeqFlowReverseTests: LayerSeqFlowTests
         let trainer = _buildTrainer("Query")
         run(trainer)
     }
+    
+    override func testSoftmaxSeq() throws
+    {
+        let trainer = _buildTrainer("Softmax")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -868,6 +913,12 @@ class LayerSeqInferenceTests: LayerSeqFlowTests
     override func testQuerySeq() throws
     {
         let trainer = _buildTrainer("Query")
+        run(trainer)
+    }
+    
+    override func testSoftmaxSeq() throws
+    {
+        let trainer = _buildTrainer("Softmax")
         run(trainer)
     }
 }
@@ -965,6 +1016,12 @@ class LayerSeqLoadTests: LayerSeqFlowTests
     override func testQuerySeq() throws
     {
         let trainer = _buildTrainer("Query")
+        run(trainer)
+    }
+    
+    override func testSoftmaxSeq() throws
+    {
+        let trainer = _buildTrainer("Softmax")
         run(trainer)
     }
 }
@@ -1106,6 +1163,12 @@ class LayerSeqTransformTests: LayerSeqFlowTests
     override func testQuerySeq() throws
     {
         let trainer = _buildTrainer("Query")
+        run(trainer)
+    }
+    
+    override func testSoftmaxSeq() throws
+    {
+        let trainer = _buildTrainer("Softmax")
         run(trainer)
     }
 }

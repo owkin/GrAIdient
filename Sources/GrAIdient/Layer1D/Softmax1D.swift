@@ -285,7 +285,6 @@ public class Softmax1D: Layer1D
                                 -sum2 / (sum1 * sum1) + tmp
                         }
                     }
-                    
                 }
             }
             propagateDirty()

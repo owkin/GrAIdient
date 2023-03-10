@@ -70,6 +70,11 @@ class LayerSeqDirtyGradTests: Input2DMSE1DCase
                 layerPrev: layerSeq, activation: nil, params: params
             )
             
+        case "Softmax":
+            secondLayer = SoftmaxSeq(
+                layerPrev: layerSeq, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -111,6 +116,19 @@ class LayerSeqDirtyGradTests: Input2DMSE1DCase
     func testLayerNormSeqGPU() throws
     {
         let trainer = _buildTrainer("LayerNorm")
+        run(trainer)
+    }
+    
+    func testSoftmaxSeqCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("Softmax")
+        run(trainer)
+    }
+    
+    func testSoftmaxSeqGPU() throws
+    {
+        let trainer = _buildTrainer("Softmax")
         run(trainer)
     }
 }
@@ -219,6 +237,11 @@ class LayerSeqDirtyFlowTests: Input2DMSE1DCase
                 activation: LeakyReLU.str, biases: true, params: params
             )
             
+        case "Softmax":
+            secondLayer = SoftmaxSeq(
+                layerPrev: layerSeq, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -270,6 +293,12 @@ class LayerSeqDirtyFlowTests: Input2DMSE1DCase
     func testQueryKeySeq() throws
     {
         let trainer = _buildTrainer("QueryKey")
+        run(trainer)
+    }
+    
+    func testSoftmaxSeq() throws
+    {
+        let trainer = _buildTrainer("Softmax")
         run(trainer)
     }
 }

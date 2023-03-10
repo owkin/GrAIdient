@@ -579,3 +579,119 @@ kernel void queryKeySeqBackward(
         key[offsetKey] += tmp;
     }
 }
+
+kernel void softmaxSeqForward(
+    const device float * outsPrev,
+    constant uint * pNbNeurons,
+    constant uint * pNbBatch,
+    constant uint * pSequence,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint nbNeurons;
+    uint nbBatch;
+    uint sequence;
+    
+    if (pNbNeurons && pNbBatch && pSequence && outsPrev && outs)
+    {
+        nbNeurons = *pNbNeurons;
+        nbBatch = *pNbBatch;
+        sequence = *pSequence;
+    }
+    else
+        return ;
+    
+    uint depth = id[0];
+    uint elem = id[1] / sequence;
+    uint seq = id[1] % sequence;
+    
+    if (depth >= nbNeurons || elem >= nbBatch || seq >= sequence)
+    {
+        return ;
+    }
+    
+    float sum1 = 0.0;
+    for (uint depth1=0; depth1<nbNeurons; depth1++)
+    {
+        uint offset1 = depth1 +
+            nbNeurons * seq + sequence * nbNeurons * elem;
+        
+        float outPrev = outsPrev[offset1];
+        sum1 += exp(outPrev);
+    }
+    
+    uint offset = depth + nbNeurons * seq + sequence * nbNeurons * elem;
+    float outPrev = outsPrev[offset];
+    outs[offset] = exp(outPrev) / sum1;
+}
+
+kernel void softmaxSeqBackward(
+    const device float * outsPrev,
+    const device float * delta,
+    constant uint * pNbNeurons,
+    constant uint * pNbBatch,
+    constant uint * pSequence,
+    constant uint * pDirty,
+    device float * deltaPrev,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint nbNeurons;
+    uint nbBatch;
+    uint sequence;
+    uint dirty;
+    
+    if (pNbNeurons && pNbBatch && pSequence && pDirty &&
+        outsPrev && deltaPrev && delta)
+    {
+        nbNeurons = *pNbNeurons;
+        nbBatch = *pNbBatch;
+        sequence = *pSequence;
+        dirty = *pDirty;
+    }
+    else
+        return ;
+    
+    uint depth = id[0];
+    uint elem = id[1] / sequence;
+    uint seq = id[1] % sequence;
+    
+    if (depth >= nbNeurons || elem >= nbBatch || seq >= sequence)
+    {
+        return ;
+    }
+    
+    float sum1 = 0.0;
+    for (uint depth1=0; depth1<nbNeurons; depth1++)
+    {
+        uint offset1 = depth1 +
+            nbNeurons * seq + sequence * nbNeurons * elem;
+        float outPrev = outsPrev[offset1];
+        sum1 += exp(outPrev);
+    }
+    
+    uint offset = depth + nbNeurons * seq + sequence * nbNeurons * elem;
+    float outPrev = outsPrev[offset];
+    float deltaCur = delta[offset];
+    
+    float sum2 = 0.0;
+    for (uint depth2=0; depth2<nbNeurons; depth2++)
+    {
+        uint offset2 = depth2 +
+            nbNeurons * seq + sequence * nbNeurons * elem;
+        
+        float outPrev2 = outsPrev[offset2];
+        float deltaCur2 = delta[offset2];
+        sum2 += exp(outPrev + outPrev2) * deltaCur2;
+    }
+    
+    if (dirty)
+    {
+        deltaPrev[offset] = -sum2 / (sum1 * sum1) +
+            exp(outPrev) * deltaCur / sum1;
+    }
+    else
+    {
+        deltaPrev[offset] += -sum2 / (sum1 * sum1) +
+            exp(outPrev) * deltaCur / sum1;
+    }
+}

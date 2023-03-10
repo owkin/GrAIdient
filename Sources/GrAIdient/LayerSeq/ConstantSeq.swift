@@ -89,7 +89,7 @@ public class Constant12Seq: LayerSeq, LayerUpdate
     }
     
     ///
-    /// Create a layer with a 1D shape neural structure.
+    /// Create a layer with a sequential shape neural structure.
     ///
     /// - Parameters:
     ///     - sequence: Length of the sequence.
@@ -583,7 +583,7 @@ public class Constant2Seq: LayerSeq, LayerUpdate
     }
     
     ///
-    /// Create a layer with a 1D shape neural structure.
+    /// Create a layer with a sequential shape neural structure.
     ///
     /// - Parameters:
     ///     - sequence: Length of the sequence.

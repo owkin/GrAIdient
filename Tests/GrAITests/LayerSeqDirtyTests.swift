@@ -242,6 +242,33 @@ class LayerSeqDirtyFlowTests: Input2DMSE1DCase
                 layerPrev: layerSeq, params: params
             )
             
+        case "ValueValue":
+            var otherLayer: LayerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: 2, nbNeurons: 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            otherLayer = FullyConnectedSeq(
+                layerPrev: otherLayer, nbNeurons: 9,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            secondLayer = ValueSeq(
+                value: layerSeq, score: otherLayer, params: params
+            )
+            
+        case "ValueScore":
+            secondLayer = firstLayer
+            firstLayer = FullyConnectedSeq(
+                layerPrev: firstLayer, nbNeurons: 9,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            secondLayer = ValueSeq(
+                value: secondLayer, score: firstLayer, params: params
+            )
+            secondLayer = FullyConnectedSeq(
+                layerPrev: secondLayer, nbNeurons: 9,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -299,6 +326,18 @@ class LayerSeqDirtyFlowTests: Input2DMSE1DCase
     func testSoftmaxSeq() throws
     {
         let trainer = _buildTrainer("Softmax")
+        run(trainer)
+    }
+    
+    func testValueValueSeq() throws
+    {
+        let trainer = _buildTrainer("ValueValue")
+        run(trainer)
+    }
+    
+    func testValueScoreSeq() throws
+    {
+        let trainer = _buildTrainer("ValueScore")
         run(trainer)
     }
 }

@@ -283,34 +283,33 @@ public class ValueSeq: LayerMergeSeq
     ///
     /// Throw an error if batch size is greater than the first batch size.
     ///
-    /*public override func forwardGPU() throws
+    public override func forwardGPU() throws
     {
         try checkStateForwardGPU(batchSize: batchSize)
         
-        let query = _layersPrev[0] as! LayerSeq
-        let key = _layersPrev[1] as! LayerSeq
-        let nbNeuronsPrev = query.nbNeurons
+        let value = _layersPrev[0] as! LayerSeq
+        let score = _layersPrev[1] as! LayerSeq
         
-        let pNbNeuronsPrev: [UInt32] = [UInt32(nbNeuronsPrev)]
+        let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pSequence: [UInt32] = [UInt32(sequence)]
         
         let command = MetalKernel.get.createCommand(
-            "querySeqForward", deviceID: deviceID
+            "valueSeqForward", deviceID: deviceID
         )
-        command.setBuffer(query.outs.metal, atIndex: 0)
-        command.setBuffer(key.outs.metal, atIndex: 1)
-        command.setBytes(pNbNeuronsPrev, atIndex: 2)
+        command.setBuffer(value.outs.metal, atIndex: 0)
+        command.setBuffer(score.outs.metal, atIndex: 1)
+        command.setBytes(pNbNeurons, atIndex: 2)
         command.setBytes(pNbBatch, atIndex: 3)
         command.setBytes(pSequence, atIndex: 4)
         command.setBuffer(outs.metal, atIndex: 5)
         
         command.dispatchThreads(
-            width: sequence,
+            width: nbNeurons,
             height: batchSize * sequence
         )
         command.enqueue()
-    }*/
+    }
     
     /// Apply the backward pass in the CPU execution context.
     public override func backwardCPU()
@@ -381,40 +380,39 @@ public class ValueSeq: LayerMergeSeq
     ///
     /// Throw an error if batch size is greater than the first batch size.
     ///
-    /*public override func backwardGPU() throws
+    public override func backwardGPU() throws
     {
         if !mustComputeBackward
         {
             return
         }
         
-        let query = _layersPrev[0] as! LayerSeq
-        let key = _layersPrev[1] as! LayerSeq
-        let nbNeuronsPrev = query.nbNeurons
+        let value = _layersPrev[0] as! LayerSeq
+        let score = _layersPrev[1] as! LayerSeq
         
-        let pNbNeuronsPrev: [UInt32] = [UInt32(nbNeuronsPrev)]
+        let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pSequence: [UInt32] = [UInt32(sequence)]
         
         let metalKernel = MetalKernel.get
         var command: MetalCommand
         
-        if query.computeDelta
+        if value.computeDelta
         {
-            try query.checkStateBackwardGPU(batchSize: batchSize)
+            try value.checkStateBackwardGPU(batchSize: batchSize)
             
-            let pDirty: [UInt32] = query.dirty ? [1] : [0]
+            let pDirty: [UInt32] = value.dirty ? [1] : [0]
             
             command = metalKernel.createCommand(
-                "queryQuerySeqBackward", deviceID: deviceID
+                "valueValueSeqBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
-            command.setBuffer(key.outs.metal, atIndex: 1)
-            command.setBytes(pNbNeuronsPrev, atIndex: 2)
+            command.setBuffer(score.outs.metal, atIndex: 1)
+            command.setBytes(pNbNeurons, atIndex: 2)
             command.setBytes(pNbBatch, atIndex: 3)
             command.setBytes(pSequence, atIndex: 4)
             command.setBytes(pDirty, atIndex: 5)
-            command.setBuffer(query.delta.metal, atIndex: 6)
+            command.setBuffer(value.delta.metal, atIndex: 6)
             
             command.dispatchThreads(
                 width: nbNeurons,
@@ -422,29 +420,29 @@ public class ValueSeq: LayerMergeSeq
             )
             command.enqueue()
         }
-        if key.computeDelta
+        if score.computeDelta
         {
-            try key.checkStateBackwardGPU(batchSize: batchSize)
+            try score.checkStateBackwardGPU(batchSize: batchSize)
             
-            let pDirty: [UInt32] = key.dirty ? [1] : [0]
+            let pDirty: [UInt32] = score.dirty ? [1] : [0]
             
             command = metalKernel.createCommand(
-                "queryKeySeqBackward", deviceID: deviceID
+                "valueScoreSeqBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
-            command.setBuffer(query.outs.metal, atIndex: 1)
-            command.setBytes(pNbNeuronsPrev, atIndex: 2)
+            command.setBuffer(value.outs.metal, atIndex: 1)
+            command.setBytes(pNbNeurons, atIndex: 2)
             command.setBytes(pNbBatch, atIndex: 3)
             command.setBytes(pSequence, atIndex: 4)
             command.setBytes(pDirty, atIndex: 5)
-            command.setBuffer(key.delta.metal, atIndex: 6)
+            command.setBuffer(score.delta.metal, atIndex: 6)
             
             command.dispatchThreads(
-                width: nbNeurons,
+                width: sequence,
                 height: batchSize * sequence
             )
             command.enqueue()
         }
         propagateDirty()
-    }*/
+    }
 }

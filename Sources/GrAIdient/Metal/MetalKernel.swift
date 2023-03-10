@@ -672,6 +672,9 @@ private class MetalDevice
                 "queryKeySeqBackward",
                 "softmaxSeqForward",
                 "softmaxSeqBackward",
+                "valueSeqForward",
+                "valueValueSeqBackward",
+                "valueScoreSeqBackward",
             ],
             "Merge": [
                 "sum1",

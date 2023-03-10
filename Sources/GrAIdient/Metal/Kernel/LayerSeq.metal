@@ -695,3 +695,166 @@ kernel void softmaxSeqBackward(
             exp(outPrev) * deltaCur / sum1;
     }
 }
+
+kernel void valueSeqForward(
+    const device float * value,
+    const device float * score,
+    constant uint * pNbNeurons,
+    constant uint * pNbBatch,
+    constant uint * pSequence,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint nbNeurons;
+    uint nbBatch;
+    uint sequence;
+    
+    if (pNbNeurons && pNbBatch && pSequence &&
+        value && score && outs)
+    {
+        nbNeurons = *pNbNeurons;
+        nbBatch = *pNbBatch;
+        sequence = *pSequence;
+    }
+    else
+        return ;
+    
+    uint depth = id[0];
+    uint elem = id[1] / sequence;
+    uint seqQ = id[1] % sequence;
+    
+    if (depth >= nbNeurons || elem >= nbBatch || seqQ >= sequence)
+    {
+        return ;
+    }
+    
+    float tmp = 0.0;
+    for (uint seqK=0; seqK<sequence; seqK++)
+    {
+        uint offsetValue = depth +
+            nbNeurons * seqQ + sequence * nbNeurons * elem;
+        uint offsetScore = seqK +
+            sequence * seqQ + sequence * sequence * elem;
+        
+        tmp += value[offsetValue] * score[offsetScore];
+    }
+    
+    uint offset = depth + nbNeurons * seqQ + sequence * nbNeurons * elem;
+    outs[offset] = tmp;
+}
+
+kernel void valueValueSeqBackward(
+    const device float * delta,
+    const device float * score,
+    constant uint * pNbNeurons,
+    constant uint * pNbBatch,
+    constant uint * pSequence,
+    constant uint * pDirty,
+    device float * value,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint nbNeurons;
+    uint nbBatch;
+    uint sequence;
+    uint dirty;
+    
+    if (pNbNeurons && pNbBatch && pSequence && pDirty &&
+        value && score && delta)
+    {
+        nbNeurons = *pNbNeurons;
+        nbBatch = *pNbBatch;
+        sequence = *pSequence;
+        dirty = *pDirty;
+    }
+    else
+        return ;
+    
+    uint depth = id[0];
+    uint elem = id[1] / sequence;
+    uint seqQ = id[1] % sequence;
+    
+    if (depth >= nbNeurons || elem >= nbBatch || seqQ >= sequence)
+    {
+        return ;
+    }
+    
+    float tmp = 0.0;
+    for (uint seqK=0; seqK<sequence; seqK++)
+    {
+        uint offset = depth + nbNeurons * seqQ + sequence * nbNeurons * elem;
+        uint offsetScore = seqK +
+            sequence * seqQ + sequence * sequence * elem;
+        
+        tmp += delta[offset] * score[offsetScore];
+    }
+    
+    uint offsetValue = depth +
+        nbNeurons * seqQ + sequence * nbNeurons * elem;
+    
+    if (dirty)
+    {
+        value[offsetValue] = tmp;
+    }
+    else
+    {
+        value[offsetValue] += tmp;
+    }
+}
+
+kernel void valueScoreSeqBackward(
+    const device float * delta,
+    const device float * value,
+    constant uint * pNbNeurons,
+    constant uint * pNbBatch,
+    constant uint * pSequence,
+    constant uint * pDirty,
+    device float * score,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint nbNeurons;
+    uint nbBatch;
+    uint sequence;
+    uint dirty;
+    
+    if (pNbNeurons && pNbBatch && pSequence && pDirty &&
+        value && score && delta)
+    {
+        nbNeurons = *pNbNeurons;
+        nbBatch = *pNbBatch;
+        sequence = *pSequence;
+        dirty = *pDirty;
+    }
+    else
+        return ;
+    
+    uint seqK = id[0];
+    uint elem = id[1] / sequence;
+    uint seqQ = id[1] % sequence;
+    
+    if (seqK >= sequence || elem >= nbBatch || seqQ >= sequence)
+    {
+        return ;
+    }
+    
+    float tmp = 0.0;
+    for (uint depth=0; depth<nbNeurons; depth++)
+    {
+        uint offset = depth + nbNeurons * seqQ + sequence * nbNeurons * elem;
+        uint offsetValue = depth +
+            nbNeurons * seqQ + sequence * nbNeurons * elem;
+        
+        tmp += delta[offset] * value[offsetValue];
+    }
+    
+    uint offsetScore = seqK +
+        sequence * seqQ + sequence * sequence * elem;
+    
+    if (dirty)
+    {
+        score[offsetScore] = tmp;
+    }
+    else
+    {
+        score[offsetScore] += tmp;
+    }
+}

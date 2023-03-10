@@ -178,6 +178,23 @@ class LayerSeqGradTests: Input2DMSE1DCase
             )
             layerSeq = SoftmaxSeq(layerPrev: layerSeq, params: params)
             
+        case "Value":
+            let otherLayer: LayerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: 2, nbNeurons: 5,
+                activation: SoftReLU.str, biases: true, params: params
+            )
+            layerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: 2, nbNeurons: 5,
+                activation: SoftReLU.str, biases: true, params: params
+            )
+            layerSeq = FullyConnectedSeq(
+                layerPrev: layerSeq, nbNeurons: 9,
+                activation: SoftReLU.str, biases: true, params: params
+            )
+            layerSeq = ValueSeq(
+                value: otherLayer, score: layerSeq, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -340,6 +357,19 @@ class LayerSeqGradTests: Input2DMSE1DCase
     func testSoftmaxSeqGPU() throws
     {
         let trainer = _buildTrainer("Softmax")
+        run(trainer)
+    }
+    
+    func testValueSeqCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("Value")
+        run(trainer)
+    }
+    
+    func testValueSeqGPU() throws
+    {
+        let trainer = _buildTrainer("Value")
         run(trainer)
     }
 }
@@ -505,6 +535,23 @@ class LayerSeqFlowTests: Input2DMSE1DCase
             )
             layerSeq = SoftmaxSeq(layerPrev: layerSeq, params: params)
             
+        case "Value":
+            let otherLayer: LayerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: 2, nbNeurons: 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: 2, nbNeurons: 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = FullyConnectedSeq(
+                layerPrev: layerSeq, nbNeurons: 9,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = ValueSeq(
+                value: otherLayer, score: layerSeq, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -597,6 +644,12 @@ class LayerSeqFlowTests: Input2DMSE1DCase
     func testSoftmaxSeq() throws
     {
         let trainer = _buildTrainer("Softmax")
+        run(trainer)
+    }
+    
+    func testValueSeq() throws
+    {
+        let trainer = _buildTrainer("Value")
         run(trainer)
     }
 }
@@ -709,6 +762,12 @@ class LayerSeqFlowResetTests: LayerSeqFlowTests
         let trainer = _buildTrainer("Softmax")
         run(trainer)
     }
+    
+    override func testValueSeq() throws
+    {
+        let trainer = _buildTrainer("Value")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -819,6 +878,12 @@ class LayerSeqFlowReverseTests: LayerSeqFlowTests
         let trainer = _buildTrainer("Softmax")
         run(trainer)
     }
+    
+    override func testValueSeq() throws
+    {
+        let trainer = _buildTrainer("Value")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -919,6 +984,12 @@ class LayerSeqInferenceTests: LayerSeqFlowTests
     override func testSoftmaxSeq() throws
     {
         let trainer = _buildTrainer("Softmax")
+        run(trainer)
+    }
+    
+    override func testValueSeq() throws
+    {
+        let trainer = _buildTrainer("Value")
         run(trainer)
     }
 }
@@ -1022,6 +1093,12 @@ class LayerSeqLoadTests: LayerSeqFlowTests
     override func testSoftmaxSeq() throws
     {
         let trainer = _buildTrainer("Softmax")
+        run(trainer)
+    }
+    
+    override func testValueSeq() throws
+    {
+        let trainer = _buildTrainer("Value")
         run(trainer)
     }
 }
@@ -1169,6 +1246,12 @@ class LayerSeqTransformTests: LayerSeqFlowTests
     override func testSoftmaxSeq() throws
     {
         let trainer = _buildTrainer("Softmax")
+        run(trainer)
+    }
+    
+    override func testValueSeq() throws
+    {
+        let trainer = _buildTrainer("Value")
         run(trainer)
     }
 }

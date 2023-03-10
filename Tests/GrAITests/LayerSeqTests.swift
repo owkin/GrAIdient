@@ -18,6 +18,8 @@ class LayerSeqGradTests: Input2DMSE1DCase
     override func setUp()
     {
         super.setUp()
+        
+        optimizerParams.nbLoops = 2
         GrAI.Loop.gradientChecking = true
     }
     
@@ -314,6 +316,12 @@ class LayerSeqGradTests: Input2DMSE1DCase
         let trainer = _buildTrainer("Query")
         run(trainer)
     }
+    
+    func testQuerySeqGPU() throws
+    {
+        let trainer = _buildTrainer("Query")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -457,6 +465,19 @@ class LayerSeqFlowTests: Input2DMSE1DCase
                 layerPrev: layerSeq, activation: nil, params: params
             )
             
+        case "Query":
+            let otherLayer: LayerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = QuerySeq(
+                query: layerSeq, key: otherLayer, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -537,6 +558,12 @@ class LayerSeqFlowTests: Input2DMSE1DCase
     func testLayerNormSeq() throws
     {
         let trainer = _buildTrainer("LayerNorm")
+        run(trainer)
+    }
+    
+    func testQuerySeq() throws
+    {
+        let trainer = _buildTrainer("Query")
         run(trainer)
     }
 }
@@ -637,6 +664,12 @@ class LayerSeqFlowResetTests: LayerSeqFlowTests
         let trainer = _buildTrainer("LayerNorm")
         run(trainer)
     }
+    
+    override func testQuerySeq() throws
+    {
+        let trainer = _buildTrainer("Query")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -735,6 +768,12 @@ class LayerSeqFlowReverseTests: LayerSeqFlowTests
         let trainer = _buildTrainer("LayerNorm")
         run(trainer)
     }
+    
+    override func testQuerySeq() throws
+    {
+        let trainer = _buildTrainer("Query")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -823,6 +862,12 @@ class LayerSeqInferenceTests: LayerSeqFlowTests
     override func testLayerNormSeq() throws
     {
         let trainer = _buildTrainer("LayerNorm")
+        run(trainer)
+    }
+    
+    override func testQuerySeq() throws
+    {
+        let trainer = _buildTrainer("Query")
         run(trainer)
     }
 }
@@ -914,6 +959,12 @@ class LayerSeqLoadTests: LayerSeqFlowTests
     override func testLayerNormSeq() throws
     {
         let trainer = _buildTrainer("LayerNorm")
+        run(trainer)
+    }
+    
+    override func testQuerySeq() throws
+    {
+        let trainer = _buildTrainer("Query")
         run(trainer)
     }
 }
@@ -1049,6 +1100,12 @@ class LayerSeqTransformTests: LayerSeqFlowTests
     override func testLayerNormSeq() throws
     {
         let trainer = _buildTrainer("LayerNorm")
+        run(trainer)
+    }
+    
+    override func testQuerySeq() throws
+    {
+        let trainer = _buildTrainer("Query")
         run(trainer)
     }
 }

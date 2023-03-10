@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🪜 **layer_seq:** SoftmaxSeq ([#68](https://github.com/owkin/GrAIdient/pull/68))\
 🪜 **layer_seq:** QuerySeq ([#67](https://github.com/owkin/GrAIdient/pull/67))\
 🪜 **layer_seq:** LayerNormSeq & LayerNormalization ([#66](https://github.com/owkin/GrAIdient/pull/66))\
 🪜 **layer_seq:** FullyConnectedSeq ([#65](https://github.com/owkin/GrAIdient/pull/65))\

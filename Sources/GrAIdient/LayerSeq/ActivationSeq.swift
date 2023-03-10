@@ -24,7 +24,7 @@ public class ActivationSeq: LayerSeq
     }
     
     ///
-    /// Create a layer with a 1D shape neural structure.
+    /// Create a layer with a sequential shape neural structure.
     ///
     /// - Parameters:
     ///     - layerPrev: Previous layer that has been queued to the model.

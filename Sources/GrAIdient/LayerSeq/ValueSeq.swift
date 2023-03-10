@@ -1,38 +1,36 @@
 //
-// QuerySeq.swift
+// ValueSeq.swift
 // GrAIdient
 //
-// Created by Jean-François Reboud on 09/03/2023.
+// Created by Jean-François Reboud on 10/03/2023.
 //
-
-import Foundation
 
 ///
 /// Layer with a sequential shape neural structure.
 ///
-/// This layer computes the attention scores between a query layer and a key layer.
+/// This layer computes the values (value layer) that are scaled through attention scores (score layer).
 ///
-public class QuerySeq: LayerMergeSeq
+public class ValueSeq: LayerMergeSeq
 {
     ///
     /// Create a layer with a sequential shape neural structure.
     ///
     /// - Parameters:
-    ///     - query: Previous layer containing the query to look for.
-    ///     - key: Previous layer containing the keys of reference.
+    ///     - value: Previous layer containing the value.
+    ///     - score: Previous layer contianing the attention scores per sequence.
     ///     - params: Contextual parameters linking to the model.
     ///
-    public init(query: LayerSeq, key: LayerSeq, params: GrAI.Model.Params)
+    public init(value: LayerSeq, score: LayerSeq, params: GrAI.Model.Params)
     {
-        if query.nbNeurons != key.nbNeurons ||
-           query.sequence != key.sequence
+        if value.sequence != score.sequence ||
+           score.sequence != score.nbNeurons
         {
             fatalError("Layer structure error.")
         }
 
-        super.init(layersPrev: [query, key],
-                   sequence: query.sequence,
-                   nbNeurons: query.sequence,
+        super.init(layersPrev: [value, score],
+                   sequence: value.sequence,
+                   nbNeurons: value.nbNeurons,
                    params: params)
     }
     
@@ -63,8 +61,8 @@ public class QuerySeq: LayerMergeSeq
             layersPrev.append(mapping[idPrev] as! LayerSeq)
         }
         
-        let layer = QuerySeq(
-            query: layersPrev[0], key: layersPrev[1], params: params
+        let layer = ValueSeq(
+            value: layersPrev[0], score: layersPrev[1], params: params
         )
         return layer
     }
@@ -86,37 +84,35 @@ public class QuerySeq: LayerMergeSeq
             nbGC += nbElemsTmp
         }
         
-        for seqQ in 0..<sequence {
-        for seqK in 0..<nbNeurons
+        for seq in 0..<sequence {
+        for depth in 0..<nbNeurons
         {
-            neurons.get(seqQ, seqK)!.initGC(batchSize: batchSize, nbGC: nbGC)
+            neurons.get(seq, depth)!.initGC(batchSize: batchSize, nbGC: nbGC)
         }}
         
-        let query = (_layersPrev[0] as! LayerSeq).neurons!
-        let key = (_layersPrev[1] as! LayerSeq).neurons!
-        let nbNeuronsPrev = (_layersPrev[0] as! LayerSeq).nbNeurons
+        let value = (_layersPrev[0] as! LayerSeq).neurons!
+        let score = (_layersPrev[1] as! LayerSeq).neurons!
         
         for batch in 0..<batchSize {
         for seqQ in 0..<sequence {
-        for seqK in 0..<nbNeurons {
+        for depth in 0..<nbNeurons {
         for elem in 0..<nbSameElems
         {
             var sum = 0.0
-            for depthPrev in 0..<nbNeuronsPrev
+            for seqK in 0..<sequence
             {
-                let queryTmp = query.get(seqQ, depthPrev)!.gc[batch][elem].out
-                let keyTmp = key.get(seqK, depthPrev)!.gc[batch][elem].out
+                let valueTmp = value.get(seqQ, depth)!.gc[batch][elem].out
+                let scoreTmp = score.get(seqQ, seqK)!.gc[batch][elem].out
                 
-                sum += queryTmp * keyTmp
+                sum += valueTmp * scoreTmp
             }
             
-            neurons.get(seqQ, seqK)!.gc[batch][elem].out =
-                sum / sqrt(Double(nbNeuronsPrev))
+            neurons.get(seqQ, depth)!.gc[batch][elem].out = sum
         }}}}
         
         for batch in 0..<batchSize {
         for seqQ in 0..<sequence {
-        for seqK in 0..<nbNeurons {
+        for depth in 0..<nbNeurons {
         var offset = nbSameElems
         var nbLastElems = [Int](repeating: nbSameElems,
                                 count: _layersPrev.count)
@@ -124,29 +120,28 @@ public class QuerySeq: LayerMergeSeq
         for elem in 0..<nbElemsTmp
         {
             var sum = 0.0
-            for depthPrev in 0..<nbNeuronsPrev
+            for seqK in 0..<sequence
             {
-                let queryTmp: Double
-                let keyTmp: Double
+                let valueTmp: Double
+                let scoreTmp: Double
                 
                 if index == 0
                 {
-                    queryTmp = query.get(seqQ, depthPrev)!
+                    valueTmp = value.get(seqQ, depth)!
                         .gc[batch][nbLastElems[index]+elem].out
-                    keyTmp = key.get(seqK, depthPrev)!.v[batch].out
+                    scoreTmp = score.get(seqQ, seqK)!.v[batch].out
                 }
                 else
                 {
-                    queryTmp = query.get(seqQ, depthPrev)!.v[batch].out
-                    keyTmp = key.get(seqK, depthPrev)!
+                    valueTmp = value.get(seqQ, depth)!.v[batch].out
+                    scoreTmp = score.get(seqQ, seqK)!
                         .gc[batch][nbLastElems[index]+elem].out
                 }
                 
-                sum += queryTmp * keyTmp
+                sum += valueTmp * scoreTmp
             }
             
-            neurons.get(seqQ, seqK)!.gc[batch][offset+elem].out =
-                sum / sqrt(Double(nbNeuronsPrev))
+            neurons.get(seqQ, depth)!.gc[batch][offset+elem].out = sum
         }
         
         offset += nbElemsTmp
@@ -176,42 +171,40 @@ public class QuerySeq: LayerMergeSeq
             nbGC += nbElemsTmp
         }
         
-        for seqQ in 0..<sequence {
-        for seqK in 0..<nbNeurons
+        for seq in 0..<sequence {
+        for depth in 0..<nbNeurons
         {
-            neurons.get(seqQ, seqK)!.initGC(batchSize: batchSize, nbGC: nbGC)
+            neurons.get(seq, depth)!.initGC(batchSize: batchSize, nbGC: nbGC)
         }}
         
-        let query = (_layersPrev[0] as! LayerSeq).neurons!
-        let key = (_layersPrev[1] as! LayerSeq).neurons!
-        let nbNeuronsPrev = (_layersPrev[0] as! LayerSeq).nbNeurons
+        let value = (_layersPrev[0] as! LayerSeq).neurons!
+        let score = (_layersPrev[1] as! LayerSeq).neurons!
         
         for batch in 0..<batchSize {
         for seqQ in 0..<sequence {
-        for seqK in 0..<nbNeurons {
+        for depth in 0..<nbNeurons {
         for elem in 0..<nbSameElems
         {
             var sum = 0.0
-            for depthPrev in 0..<nbNeuronsPrev
+            for seqK in 0..<sequence
             {
-                let queryTmp = query.get(seqQ, depthPrev)!.gc[batch][elem].out
-                let keyTmp = key.get(seqK, depthPrev)!.gc[batch][elem].out
+                let valueTmp = value.get(seqQ, depth)!.gc[batch][elem].out
+                let scoreTmp = score.get(seqQ, seqK)!.gc[batch][elem].out
                 
-                sum += queryTmp * keyTmp
+                sum += valueTmp * scoreTmp
             }
             
-            neurons.get(seqQ, seqK)!.gc[batch][elem].out =
-                sum / sqrt(Double(nbNeuronsPrev))
+            neurons.get(seqQ, depth)!.gc[batch][elem].out = sum
         }}}}
         
-        let queryBuffer =
+        let valueBuffer =
             (_layersPrev[0] as! LayerSeq).outs.shared.buffer
-        let keyBuffer =
+        let scoreBuffer =
             (_layersPrev[1] as! LayerSeq).outs.shared.buffer
         
         for batch in 0..<batchSize {
         for seqQ in 0..<sequence {
-        for seqK in 0..<nbNeurons {
+        for depth in 0..<nbNeurons {
         var offset = nbSameElems
         var nbLastElems = [Int](repeating: nbSameElems,
                                 count: _layersPrev.count)
@@ -219,37 +212,36 @@ public class QuerySeq: LayerMergeSeq
         for elem in 0..<nbElemsTmp
         {
             var sum = 0.0
-            for depthPrev in 0..<nbNeuronsPrev
+            for seqK in 0..<sequence
             {
-                let queryTmp: Double
-                let keyTmp: Double
+                let valueTmp: Double
+                let scoreTmp: Double
                 
                 if index == 0
                 {
-                    queryTmp = query.get(seqQ, depthPrev)!
+                    valueTmp = value.get(seqQ, depth)!
                         .gc[batch][nbLastElems[index]+elem].out
                     
-                    let offsetTmp = depthPrev + nbNeuronsPrev * seqK +
-                        sequence * nbNeuronsPrev * batch
+                    let offsetTmp = seqK + sequence * seqQ +
+                        sequence * sequence * batch
                     
-                    keyTmp = Double(keyBuffer[offsetTmp])
+                    scoreTmp = Double(scoreBuffer[offsetTmp])
                 }
                 else
                 {
-                    let offsetTmp = depthPrev + nbNeuronsPrev * seqQ +
-                        sequence * nbNeuronsPrev * batch
+                    let offsetTmp = depth + nbNeurons * seqQ +
+                        sequence * nbNeurons * batch
                     
-                    queryTmp = Double(queryBuffer[offsetTmp])
+                    valueTmp = Double(valueBuffer[offsetTmp])
                     
-                    keyTmp = key.get(seqK, depthPrev)!
+                    scoreTmp = score.get(seqQ, seqK)!
                         .gc[batch][nbLastElems[index]+elem].out
                 }
                 
-                sum += queryTmp * keyTmp
+                sum += valueTmp * scoreTmp
             }
             
-            neurons.get(seqQ, seqK)!.gc[batch][offset+elem].out =
-                sum / sqrt(Double(nbNeuronsPrev))
+            neurons.get(seqQ, depth)!.gc[batch][offset+elem].out = sum
         }
         
         offset += nbElemsTmp
@@ -266,25 +258,23 @@ public class QuerySeq: LayerMergeSeq
     {
         try checkStateCPU(batchSize: batchSize)
         
-        let query = (_layersPrev[0] as! LayerSeq).neurons!
-        let key = (_layersPrev[1] as! LayerSeq).neurons!
-        let nbNeuronsPrev = (_layersPrev[0] as! LayerSeq).nbNeurons
+        let value = (_layersPrev[0] as! LayerSeq).neurons!
+        let score = (_layersPrev[1] as! LayerSeq).neurons!
         
         for elem in 0..<batchSize {
         for seqQ in 0..<sequence {
-        for seqK in 0..<nbNeurons
+        for depth in 0..<nbNeurons
         {
             var sum = 0.0
-            for depthPrev in 0..<nbNeuronsPrev
+            for seqK in 0..<sequence
             {
-                let queryTmp = query.get(seqQ, depthPrev)!.v[elem].out
-                let keyTmp = key.get(seqK, depthPrev)!.v[elem].out
+                let valueTmp = value.get(seqQ, depth)!.v[elem].out
+                let scoreTmp = score.get(seqQ, seqK)!.v[elem].out
                 
-                sum += queryTmp * keyTmp
+                sum += valueTmp * scoreTmp
             }
             
-            neurons.get(seqQ, seqK)!.v[elem].out =
-                sum / sqrt(Double(nbNeuronsPrev))
+            neurons.get(seqQ, depth)!.v[elem].out = sum
         }}}
     }
     
@@ -293,7 +283,7 @@ public class QuerySeq: LayerMergeSeq
     ///
     /// Throw an error if batch size is greater than the first batch size.
     ///
-    public override func forwardGPU() throws
+    /*public override func forwardGPU() throws
     {
         try checkStateForwardGPU(batchSize: batchSize)
         
@@ -320,7 +310,7 @@ public class QuerySeq: LayerMergeSeq
             height: batchSize * sequence
         )
         command.enqueue()
-    }
+    }*/
     
     /// Apply the backward pass in the CPU execution context.
     public override func backwardCPU()
@@ -330,61 +320,56 @@ public class QuerySeq: LayerMergeSeq
             return
         }
         
-        let query = (_layersPrev[0] as! LayerSeq).neurons!
-        let key = (_layersPrev[1] as! LayerSeq).neurons!
-        let nbNeuronsPrev = (_layersPrev[0] as! LayerSeq).nbNeurons
+        let value = (_layersPrev[0] as! LayerSeq).neurons!
+        let score = (_layersPrev[1] as! LayerSeq).neurons!
         
         if _layersPrev[0].computeDelta
         {
             for elem in 0..<batchSize {
             for seqQ in 0..<sequence {
-            for depthPrev in 0..<nbNeuronsPrev
+            for depth in 0..<nbNeurons
             {
                 var sum = 0.0
-                for seqK in 0..<nbNeurons
+                for seqK in 0..<sequence
                 {
-                    let deltaCur = neurons.get(seqQ, seqK)!.v[elem].delta
-                    let keyTmp = key.get(seqK, depthPrev)!.v[elem].out
+                    let deltaCur = neurons.get(seqQ, depth)!.v[elem].delta
+                    let scoreTmp = score.get(seqQ, seqK)!.v[elem].out
                     
-                    sum += deltaCur * keyTmp
+                    sum += deltaCur * scoreTmp
                 }
                 
                 if _layersPrev[0].dirty
                 {
-                    query.get(seqQ, depthPrev)!.v[elem].delta =
-                        sum / sqrt(Double(nbNeuronsPrev))
+                    value.get(seqQ, depth)!.v[elem].delta = sum
                 }
                 else
                 {
-                    query.get(seqQ, depthPrev)!.v[elem].delta +=
-                        sum / sqrt(Double(nbNeuronsPrev))
+                    value.get(seqQ, depth)!.v[elem].delta += sum
                 }
             }}}
         }
         if _layersPrev[1].computeDelta
         {
             for elem in 0..<batchSize {
-            for seqK in 0..<nbNeurons {
-            for depthPrev in 0..<nbNeuronsPrev
+            for seqK in 0..<sequence {
+            for seqQ in 0..<sequence
             {
                 var sum = 0.0
-                for seqQ in 0..<sequence
+                for depth in 0..<nbNeurons
                 {
-                    let deltaCur = neurons.get(seqQ, seqK)!.v[elem].delta
-                    let queryTmp = query.get(seqQ, depthPrev)!.v[elem].out
+                    let deltaCur = neurons.get(seqQ, depth)!.v[elem].delta
+                    let valueTmp = value.get(seqQ, depth)!.v[elem].out
                     
-                    sum += deltaCur * queryTmp
+                    sum += deltaCur * valueTmp
                 }
                 
                 if _layersPrev[1].dirty
                 {
-                    key.get(seqK, depthPrev)!.v[elem].delta =
-                        sum / sqrt(Double(nbNeuronsPrev))
+                    score.get(seqQ, seqK)!.v[elem].delta = sum
                 }
                 else
                 {
-                    key.get(seqK, depthPrev)!.v[elem].delta +=
-                        sum / sqrt(Double(nbNeuronsPrev))
+                    score.get(seqQ, seqK)!.v[elem].delta += sum
                 }
             }}}
         }
@@ -396,7 +381,7 @@ public class QuerySeq: LayerMergeSeq
     ///
     /// Throw an error if batch size is greater than the first batch size.
     ///
-    public override func backwardGPU() throws
+    /*public override func backwardGPU() throws
     {
         if !mustComputeBackward
         {
@@ -461,5 +446,5 @@ public class QuerySeq: LayerMergeSeq
             command.enqueue()
         }
         propagateDirty()
-    }
+    }*/
 }

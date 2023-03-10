@@ -178,6 +178,23 @@ class LayerSeqGradTests: Input2DMSE1DCase
             )
             layerSeq = SoftmaxSeq(layerPrev: layerSeq, params: params)
             
+        case "Value":
+            let otherLayer: LayerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: 2, nbNeurons: 5,
+                activation: SoftReLU.str, biases: true, params: params
+            )
+            layerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: 2, nbNeurons: 5,
+                activation: SoftReLU.str, biases: true, params: params
+            )
+            layerSeq = FullyConnectedSeq(
+                layerPrev: layerSeq, nbNeurons: 9,
+                activation: SoftReLU.str, biases: true, params: params
+            )
+            layerSeq = ValueSeq(
+                value: otherLayer, score: layerSeq, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -340,6 +357,13 @@ class LayerSeqGradTests: Input2DMSE1DCase
     func testSoftmaxSeqGPU() throws
     {
         let trainer = _buildTrainer("Softmax")
+        run(trainer)
+    }
+    
+    func testValueSeqCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("Value")
         run(trainer)
     }
 }

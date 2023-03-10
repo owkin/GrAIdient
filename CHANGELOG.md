@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🪜 **layer_seq:** QuerySeq ([#67](https://github.com/owkin/GrAIdient/pull/67))\
 🪜 **layer_seq:** LayerNormSeq & LayerNormalization ([#66](https://github.com/owkin/GrAIdient/pull/66))\
 🪜 **layer_seq:** FullyConnectedSeq ([#65](https://github.com/owkin/GrAIdient/pull/65))\
 🪜 **layer_seq:** Constant12Seq & Constant2Seq ([#64](https://github.com/owkin/GrAIdient/pull/64))\

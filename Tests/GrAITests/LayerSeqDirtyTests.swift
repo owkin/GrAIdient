@@ -17,6 +17,8 @@ class LayerSeqDirtyGradTests: Input2DMSE1DCase
     override func setUp()
     {
         super.setUp()
+        
+        optimizerParams.nbLoops = 2
         GrAI.Loop.gradientChecking = true
     }
     
@@ -99,14 +101,14 @@ class LayerSeqDirtyGradTests: Input2DMSE1DCase
         run(trainer)
     }
     
-    func testLayerNormCPU() throws
+    func testLayerNormSeqCPU() throws
     {
         GrAI.Opti.CPU = true
         let trainer = _buildTrainer("LayerNorm")
         run(trainer)
     }
     
-    func testLayerNormGPU() throws
+    func testLayerNormSeqGPU() throws
     {
         let trainer = _buildTrainer("LayerNorm")
         run(trainer)
@@ -191,6 +193,32 @@ class LayerSeqDirtyFlowTests: Input2DMSE1DCase
                 layerPrev: layerSeq, activation: nil, params: params
             )
             
+        case "QueryQuery":
+            let otherLayer: LayerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            secondLayer = QuerySeq(
+                query: layerSeq, key: otherLayer, params: params
+            )
+            secondLayer = FullyConnectedSeq(
+                layerPrev: secondLayer, nbNeurons: 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            
+        case "QueryKey":
+            let otherLayer: LayerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            secondLayer = QuerySeq(
+                query: otherLayer, key: layerSeq, params: params
+            )
+            secondLayer = FullyConnectedSeq(
+                layerPrev: secondLayer, nbNeurons: 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -227,9 +255,21 @@ class LayerSeqDirtyFlowTests: Input2DMSE1DCase
         run(trainer)
     }
     
-    func testLayerNorm() throws
+    func testLayerNormSeq() throws
     {
         let trainer = _buildTrainer("LayerNorm")
+        run(trainer)
+    }
+    
+    func testQueryQuerySeq() throws
+    {
+        let trainer = _buildTrainer("QueryQuery")
+        run(trainer)
+    }
+    
+    func testQueryKeySeq() throws
+    {
+        let trainer = _buildTrainer("QueryKey")
         run(trainer)
     }
 }

@@ -667,6 +667,9 @@ private class MetalDevice
                 "constant12SeqForward",
                 "constant12SeqBackward",
                 "constant2SeqForward",
+                "querySeqForward",
+                "queryQuerySeqBackward",
+                "queryKeySeqBackward",
             ],
             "Merge": [
                 "sum1",

@@ -360,7 +360,7 @@ def compute_test8_grad_norm(size: int) -> float:
     return _compute_grad_norm(img_tensor, model)
 
 
-def compute_test9_grad_norm(size: int) -> float:
+def compute_test9_grad_norm(size: int, patch: int) -> float:
     """
     Compute the gradient norm of one backward pass of ModelTest9.
 
@@ -368,6 +368,8 @@ def compute_test9_grad_norm(size: int) -> float:
     ----------
     size: int
         The size of the input data.
+    patch: int
+        kernel split size of the input data.
 
     Returns
     -------
@@ -377,11 +379,11 @@ def compute_test9_grad_norm(size: int) -> float:
     torch.manual_seed(42)
     img_array = _build_input_data(size)
     img_tensor = ToTensor()(img_array).type(torch.float32)
-    model = ModelTest9().eval().cpu()
+    model = ModelTest9(size=size, patch=patch).eval().cpu()
     return _compute_grad_norm(img_tensor, model)
 
 
-def compute_test10_grad_norm(size: int) -> float:
+def compute_test10_grad_norm(size: int, patch: int) -> float:
     """
     Compute the gradient norm of one backward pass of ModelTest10.
 
@@ -389,6 +391,8 @@ def compute_test10_grad_norm(size: int) -> float:
     ----------
     size: int
         The size of the input data.
+    patch: int
+        kernel split size of the input data.
 
     Returns
     -------
@@ -398,5 +402,9 @@ def compute_test10_grad_norm(size: int) -> float:
     torch.manual_seed(42)
     img_array = _build_input_data(size)
     img_tensor = ToTensor()(img_array).type(torch.float32)
-    model = ModelTest10().eval().cpu()
+    model = ModelTest10(size=size, patch=patch).eval().cpu()
     return _compute_grad_norm(img_tensor, model)
+
+
+if __name__ == "__main__":
+    compute_test10_grad_norm(size=32, patch=8)

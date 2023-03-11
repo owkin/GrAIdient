@@ -179,26 +179,30 @@ func computeTest8GradNorm(_ size: Int) -> Float
 ///
 /// Get gradient norm computed with PyTorch for ModelTest9.
 ///
-/// - Parameter size: The size of the input data.
+/// - Parameters:
+///     - size: The size of the input data.
+///     - patch: The kernel split size of the input data.
 /// - Returns: The gradient norm.
 ///
-func computeTest9GradNorm(_ size: Int) -> Float
+func computeTest9GradNorm(size: Int, patch: Int) -> Float
 {
     let pythonLib = Python.import("python_lib")
-    let data = pythonLib.compute_test9_grad_norm(size)
+    let data = pythonLib.compute_test9_grad_norm(size, patch)
     return Float(data)!
 }
 
 ///
 /// Get gradient norm computed with PyTorch for ModelTest10.
 ///
-/// - Parameter size: The size of the input data.
+/// - Parameters:
+///     - size: The size of the input data.
+///     - patch: The kernel split size of the input data.
 /// - Returns: The gradient norm.
 ///
-func computeTest10GradNorm(_ size: Int) -> Float
+func computeTest10GradNorm(size: Int, patch: Int) -> Float
 {
     let pythonLib = Python.import("python_lib")
-    let data = pythonLib.compute_test10_grad_norm(size)
+    let data = pythonLib.compute_test10_grad_norm(size, patch)
     return Float(data)!
 }
 

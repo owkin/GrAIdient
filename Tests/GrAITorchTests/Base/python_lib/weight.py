@@ -221,23 +221,37 @@ def load_test8_weights() -> Tuple[List[List[float]], List[List[int]]]:
     return _extract_weights(model)
 
 
-def load_test9_weights() -> Tuple[List[List[float]], List[List[int]]]:
+def load_test9_weights(size: int, patch: int) -> Tuple[List[List[float]], List[List[int]]]:
     """
     Get weights and biases for ModelTest9.
 
+    Parameters
+    ----------
+    size: int
+        The size of the input data.
+    patch: int
+        kernel split size of the input data.
+
     Returns
     -------
     (_, _): List[float], List[int]
         The flattened weights, their shape.
     """
     torch.manual_seed(42)
-    model = ModelTest9()
+    model = ModelTest9(size=size, patch=patch)
     return _extract_weights(model)
 
 
-def load_test10_weights() -> Tuple[List[List[float]], List[List[int]]]:
+def load_test10_weights(size: int, patch: int) -> Tuple[List[List[float]], List[List[int]]]:
     """
     Get weights and biases for ModelTest10.
+
+    Parameters
+    ----------
+    size: int
+        The size of the input data.
+    patch: int
+        kernel split size of the input data.
 
     Returns
     -------
@@ -245,5 +259,5 @@ def load_test10_weights() -> Tuple[List[List[float]], List[List[int]]]:
         The flattened weights, their shape.
     """
     torch.manual_seed(42)
-    model = ModelTest10()
+    model = ModelTest10(size=size, patch=patch)
     return _extract_weights(model)

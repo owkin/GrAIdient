@@ -734,10 +734,12 @@ class ModelTest9
     ///   - FullyConnectedPatch
     ///   - AvgPoolSeq
     ///
-    /// - Parameter size: The size of the input data.
+    /// - Parameters:
+    ///     - size: The size of the input data.
+    ///     - patch: The kernel split size of the input data.
     /// - Returns: The built model.
     ///
-    static func build(_ size: Int) -> Model
+    static func build(size: Int, patch: Int) -> Model
     {
         let context = ModelContext(name: "ModelTest9", curID: 0)
         let params = GrAI.Model.Params(context: context)
@@ -751,20 +753,26 @@ class ModelTest9
         )
         
         let layerSeq: LayerSeq = FullyConnectedPatch(
-            layerPrev: layer, patch: 2, nbNeurons: 1,
+            layerPrev: layer, patch: patch, nbNeurons: 5,
             activation: nil, biases: true,
             params: params
         )
         
-        _ = AvgPoolSeq(
+        var head: Layer1D = AvgPoolSeq(
             layerPrev: layerSeq, params: params
+        )
+        
+        head = FullyConnected(
+            layerPrev: head, nbNeurons: 1,
+            activation: nil, biases: true,
+            params: params
         )
         
         let model = Model(model: context.model, modelsPrev: [])
         
         // Load weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
-        let data = pythonLib.load_test9_weights()
+        let data = pythonLib.load_test9_weights(size, patch)
         
         let weights = [[Float]](data.tuple2.0)!
         
@@ -774,6 +782,15 @@ class ModelTest9
         {
             // Load weights and biases.
             if let flLayer = model.layers[num_layer] as? FullyConnectedPatch
+            {
+                let weightsTmp: [Float] = weights[cur]
+                cur += 1
+                let biases: [Float] = weights[cur]
+                cur += 1
+                
+                flLayer.weightsCPU = weightsTmp + biases
+            }
+            else if let flLayer = model.layers[num_layer] as? FullyConnected
             {
                 let weightsTmp: [Float] = weights[cur]
                 cur += 1
@@ -800,10 +817,12 @@ class ModelTest10
     ///   - SoftmaxSeq
     ///   - ValueSeq
     ///
-    /// - Parameter size: The size of the input data.
+    /// - Parameters:
+    ///     - size: The size of the input data.
+    ///     - patch: The kernel split size of the input data.
     /// - Returns: The built model.
     ///
-    static func build(_ size: Int) -> Model
+    static func build(size: Int, patch: Int) -> Model
     {
         let context = ModelContext(name: "ModelTest10", curID: 0)
         let params = GrAI.Model.Params(context: context)
@@ -817,23 +836,23 @@ class ModelTest10
         )
         
         var layerSeq: LayerSeq = FullyConnectedPatch(
-            layerPrev: layer, patch: 2, nbNeurons: 1,
+            layerPrev: layer, patch: patch, nbNeurons: 5,
             activation: nil, biases: true,
             params: params
         )
         
         let query = FullyConnectedSeq(
-            layerPrev: layerSeq, nbNeurons: 1,
+            layerPrev: layerSeq, nbNeurons: 5,
             activation: nil, biases: true,
             params: params
         )
         let key = FullyConnectedSeq(
-            layerPrev: layerSeq, nbNeurons: 1,
+            layerPrev: layerSeq, nbNeurons: 5,
             activation: nil, biases: true,
             params: params
         )
         let value = FullyConnectedSeq(
-            layerPrev: layerSeq, nbNeurons: 1,
+            layerPrev: layerSeq, nbNeurons: 5,
             activation: nil, biases: true,
             params: params
         )
@@ -846,20 +865,26 @@ class ModelTest10
         layerSeq = ValueSeq(value: value, score: score, params: params)
         
         layerSeq = FullyConnectedSeq(
-            layerPrev: layerSeq, nbNeurons: 1,
+            layerPrev: layerSeq, nbNeurons: 5,
             activation: nil, biases: true,
             params: params
         )
         
-        _ = AvgPoolSeq(
+        var head: Layer1D = AvgPoolSeq(
             layerPrev: layerSeq, params: params
+        )
+        
+        head = FullyConnected(
+            layerPrev: head, nbNeurons: 1,
+            activation: nil, biases: true,
+            params: params
         )
         
         let model = Model(model: context.model, modelsPrev: [])
         
         // Load weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
-        let data = pythonLib.load_test10_weights()
+        let data = pythonLib.load_test10_weights(size, patch)
         
         let weights = [[Float]](data.tuple2.0)!
         
@@ -911,6 +936,15 @@ class ModelTest10
                 cur += 1
                 
                 flSeq.weightsCPU = weightsTmp + biases
+            }
+            else if let flLayer = model.layers[num_layer] as? FullyConnected
+            {
+                let weightsTmp: [Float] = weights[cur]
+                cur += 1
+                let biases: [Float] = weights[cur]
+                cur += 1
+                
+                flLayer.weightsCPU = weightsTmp + biases
             }
         }
         

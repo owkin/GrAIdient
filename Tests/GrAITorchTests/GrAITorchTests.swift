@@ -13,6 +13,8 @@ final class GrAITorchTests: XCTestCase
 {
     /// Size of one image (height and width are the same).
     let _size = 32
+    /// Kernel split size of one image (height and width are the same).
+    let _patch = 8
     
     /// Initialize test.
     override func setUp()
@@ -328,7 +330,7 @@ final class GrAITorchTests: XCTestCase
     func testModel9()
     {
         // Build model.
-        let model = ModelTest9.build(6)
+        let model = ModelTest9.build(size: _size, patch: _patch)
         
         // Initialize for inference.
         model.initKernel(phase: .Inference)
@@ -342,11 +344,13 @@ final class GrAITorchTests: XCTestCase
         firstLayer.computeDeltaWeights = true
         
         // Set data.
-        let data: [Float] = getInputData(6)
+        let data: [Float] = getInputData(_size)
         try! firstLayer.setDataGPU(data, batchSize: 1, format: .RGB)
         
         // Get the gradient norm on the first layer.
-        let expectedNorm: Double = Double(computeTest9GradNorm(6))
+        let expectedNorm: Double = Double(computeTest9GradNorm(
+            size: _size, patch: _patch
+        ))
         let gradNormOutput: Double = _getGradientNorm(model)
         
         // Compare difference.
@@ -359,7 +363,7 @@ final class GrAITorchTests: XCTestCase
     func testModel10()
     {
         // Build model.
-        let model = ModelTest10.build(6)
+        let model = ModelTest10.build(size: _size, patch: _patch)
         
         // Initialize for inference.
         model.initKernel(phase: .Inference)
@@ -373,11 +377,13 @@ final class GrAITorchTests: XCTestCase
         firstLayer.computeDeltaWeights = true
         
         // Set data.
-        let data: [Float] = getInputData(6)
+        let data: [Float] = getInputData(_size)
         try! firstLayer.setDataGPU(data, batchSize: 1, format: .RGB)
         
         // Get the gradient norm on the first layer.
-        let expectedNorm: Double = Double(computeTest10GradNorm(6))
+        let expectedNorm: Double = Double(computeTest10GradNorm(
+            size: _size, patch: _patch
+        ))
         let gradNormOutput: Double = _getGradientNorm(model)
         
         // Compare difference.

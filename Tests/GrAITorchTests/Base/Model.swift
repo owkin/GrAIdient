@@ -890,8 +890,6 @@ class ModelTest10
         
         // Apply weights on the `GrAIdient` model's layers.
         var cur = 0
-        let nbMulti = 3
-        var multi = 0
         for num_layer in 0..<model.layers.count
         {
             // Load weights and biases.
@@ -904,38 +902,14 @@ class ModelTest10
                 
                 flLayer.weightsCPU = weightsTmp + biases
             }
-            else if let attention = model.layers[num_layer]
-                        as? FullyConnectedSeq, multi < nbMulti
-            {
-                var w = weights[cur]
-                var nbPartial = w.count / 3
-                
-                let weightsTmp: [Float] = [Float](
-                    w[nbPartial * multi..<nbPartial * (multi + 1)]
-                )
-                
-                w = weights[cur + 1]
-                nbPartial = w.count / 3
-                let biases: [Float] = [Float](
-                    w[nbPartial * multi..<nbPartial * (multi + 1)]
-                )
-                
-                multi += 1
-                if multi == nbMulti
-                {
-                    cur += 2
-                }
-                
-                attention.weightsCPU = weightsTmp + biases
-            }
-            else if let flSeq = model.layers[num_layer] as? FullyConnectedSeq
+            else if let flLayer = model.layers[num_layer] as? FullyConnectedSeq
             {
                 let weightsTmp: [Float] = weights[cur]
                 cur += 1
                 let biases: [Float] = weights[cur]
                 cur += 1
                 
-                flSeq.weightsCPU = weightsTmp + biases
+                flLayer.weightsCPU = weightsTmp + biases
             }
             else if let flLayer = model.layers[num_layer] as? FullyConnected
             {

@@ -352,17 +352,29 @@ kernel void softmax1DForward(
         return ;
     }
     
+    float cMax = 0.0;
+    for (uint j1=0; j1<size; j1++)
+    {
+        uint offset1 = j1+block*size + nbNeurons * elem;
+        float outPrev = outsPrev[offset1];
+        
+        if (outPrev > cMax)
+        {
+            cMax = outPrev;
+        }
+    }
+    
     float sum1 = 0.0;
     for (uint j1=0; j1<size; j1++)
     {
         uint offset1 = j1+block*size + nbNeurons * elem;
         float outPrev = outsPrev[offset1];
-        sum1 += exp(outPrev);
+        sum1 += exp(outPrev - cMax);
     }
     
     uint offset = depth + nbNeurons * elem;
     float outPrev = outsPrev[offset];
-    outs[offset] = exp(outPrev) / sum1;
+    outs[offset] = exp(outPrev - cMax) / sum1;
 }
 
 kernel void softmax1DBackward(
@@ -400,12 +412,24 @@ kernel void softmax1DBackward(
         return ;
     }
     
+    float cMax = 0.0;
+    for (uint j1=0; j1<size; j1++)
+    {
+        uint offset1 = j1+block*size + nbNeurons * elem;
+        float outPrev = outsPrev[offset1];
+        
+        if (outPrev > cMax)
+        {
+            cMax = outPrev;
+        }
+    }
+    
     float sum1 = 0.0;
     for (uint j1=0; j1<size; j1++)
     {
         uint offset1 = j1+block*size + nbNeurons * elem;
         float outPrev1 = outsPrev[offset1];
-        sum1 += exp(outPrev1);
+        sum1 += exp(outPrev1 - cMax);
     }
     
     uint offset = depth + nbNeurons * elem;
@@ -418,18 +442,18 @@ kernel void softmax1DBackward(
         uint offset2 = j2+block*size + nbNeurons * elem;
         float outPrev2 = outsPrev[offset2];
         float deltaCur2 = delta[offset2];
-        sum2 += exp(outPrev + outPrev2) * deltaCur2;
+        sum2 += exp(outPrev + outPrev2 - 2 * cMax) * deltaCur2;
     }
     
     if (dirty)
     {
         deltaPrev[offset] = -sum2 / (sum1 * sum1) +
-            exp(outPrev) * deltaCur / sum1;
+            exp(outPrev - cMax) * deltaCur / sum1;
     }
     else
     {
         deltaPrev[offset] += -sum2 / (sum1 * sum1) +
-            exp(outPrev) * deltaCur / sum1;
+            exp(outPrev - cMax) * deltaCur / sum1;
     }
 }
 

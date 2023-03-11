@@ -15,6 +15,7 @@ from python_lib.model import (
     ModelTest8,
     ModelTest9,
     ModelTest10,
+    ModelTest11,
 )
 
 
@@ -406,5 +407,24 @@ def compute_test10_grad_norm(size: int, patch: int) -> float:
     return _compute_grad_norm(img_tensor, model)
 
 
-if __name__ == "__main__":
-    compute_test10_grad_norm(size=32, patch=8)
+def compute_test11_grad_norm(size: int, patch: int) -> float:
+    """
+    Compute the gradient norm of one backward pass of ModelTest11.
+
+    Parameters
+    ----------
+    size: int
+        The size of the input data.
+    patch: int
+        kernel split size of the input data.
+
+    Returns
+    -------
+    _: float
+        The gradient norm.
+    """
+    torch.manual_seed(42)
+    img_array = _build_input_data(size)
+    img_tensor = ToTensor()(img_array).type(torch.float32)
+    model = ModelTest11(size=size, patch=patch).eval().cpu()
+    return _compute_grad_norm(img_tensor, model)

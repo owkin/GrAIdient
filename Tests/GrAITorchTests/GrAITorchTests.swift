@@ -391,4 +391,37 @@ final class GrAITorchTests: XCTestCase
             abs(gradNormOutput - expectedNorm) / expectedNorm * 100.0
         XCTAssert(diffPercent < 1.0)
     }
+    
+    /// Test that model11 backward pass returns the same gradient norm in GrAIdient and PyTorch.
+    func testModel11()
+    {
+        // Build model.
+        let model = ModelTest11.build(size: _size, patch: _patch)
+        
+        // Initialize for inference.
+        model.initKernel(phase: .Inference)
+        // Avoid the compute of every gradients of weights.
+        model.computeDeltaWeights = false
+        
+        let firstLayer: Input2D = model.layers.first as! Input2D
+        // Allow backward pass go through the first layer.
+        firstLayer.computeDelta = true
+        // Allow to compute the gradients of weights for the first layer.
+        firstLayer.computeDeltaWeights = true
+        
+        // Set data.
+        let data: [Float] = getInputData(_size)
+        try! firstLayer.setDataGPU(data, batchSize: 1, format: .RGB)
+        
+        // Get the gradient norm on the first layer.
+        let expectedNorm: Double = Double(computeTest11GradNorm(
+            size: _size, patch: _patch
+        ))
+        let gradNormOutput: Double = _getGradientNorm(model)
+        
+        // Compare difference.
+        let diffPercent =
+            abs(gradNormOutput - expectedNorm) / expectedNorm * 100.0
+        XCTAssert(diffPercent < 1.0)
+    }
 }

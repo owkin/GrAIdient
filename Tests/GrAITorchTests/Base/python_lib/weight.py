@@ -12,6 +12,7 @@ from python_lib.model import (
     ModelTest8,
     ModelTest9,
     ModelTest10,
+    ModelTest11,
 )
 
 
@@ -39,6 +40,7 @@ def _flatten_weights(
 
 def _flatten_attention_weights(
     weights: np.ndarray,
+    biases: np.ndarray,
     nb_heads: int
 ) -> Tuple[List[List[float]], List[List[int]]]:
     """
@@ -48,6 +50,8 @@ def _flatten_attention_weights(
     ----------
     weights: np.ndarray
         The weights to flatten.
+    biases: np.ndarray
+        The biases to flatten.
     nb_heads: int
         Number of heads in the attention modules.
 
@@ -62,6 +66,14 @@ def _flatten_attention_weights(
 
     for head in range(nb_heads):
         weights_tmp = weights[head * nb_partial: ((head + 1) * nb_partial)]
+
+        weights_list = weights_tmp.flatten().tolist()
+        dims_list = list(weights_tmp.shape)
+
+        layers_weights.append(weights_list)
+        layers_dims.append(dims_list)
+
+        weights_tmp = biases[head * nb_partial: ((head + 1) * nb_partial)]
 
         weights_list = weights_tmp.flatten().tolist()
         dims_list = list(weights_tmp.shape)
@@ -207,37 +219,19 @@ def _extract_attention_weights(
             biases3 = biases[2 * nb_partial: 3 * nb_partial]
 
             weights_list, dims_list = _flatten_attention_weights(
-                weights=weights1, nb_heads=nb_heads
+                weights=weights1, biases=biases1, nb_heads=nb_heads
             )
             layers_weights += weights_list
             layers_dims += dims_list
 
             weights_list, dims_list = _flatten_attention_weights(
-                weights=biases1, nb_heads=nb_heads
+                weights=weights2, biases=biases2, nb_heads=nb_heads
             )
             layers_weights += weights_list
             layers_dims += dims_list
 
             weights_list, dims_list = _flatten_attention_weights(
-                weights=weights2, nb_heads=nb_heads
-            )
-            layers_weights += weights_list
-            layers_dims += dims_list
-
-            weights_list, dims_list = _flatten_attention_weights(
-                weights=biases2, nb_heads=nb_heads
-            )
-            layers_weights += weights_list
-            layers_dims += dims_list
-
-            weights_list, dims_list = _flatten_attention_weights(
-                weights=weights3, nb_heads=nb_heads
-            )
-            layers_weights += weights_list
-            layers_dims += dims_list
-
-            weights_list, dims_list = _flatten_attention_weights(
-                weights=biases3, nb_heads=nb_heads
+                weights=weights3, biases=biases3, nb_heads=nb_heads
             )
             layers_weights += weights_list
             layers_dims += dims_list
@@ -395,3 +389,24 @@ def load_test10_weights(size: int, patch: int) -> Tuple[List[List[float]], List[
     torch.manual_seed(42)
     model = ModelTest10(size=size, patch=patch)
     return _extract_attention_weights(model=model, nb_heads=1)
+
+
+def load_test11_weights(size: int, patch: int) -> Tuple[List[List[float]], List[List[int]]]:
+    """
+    Get weights and biases for ModelTest11.
+
+    Parameters
+    ----------
+    size: int
+        The size of the input data.
+    patch: int
+        kernel split size of the input data.
+
+    Returns
+    -------
+    (_, _): List[float], List[int]
+        The flattened weights, their shape.
+    """
+    torch.manual_seed(42)
+    model = ModelTest11(size=size, patch=patch)
+    return _extract_attention_weights(model=model, nb_heads=3)

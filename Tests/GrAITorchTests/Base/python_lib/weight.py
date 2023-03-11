@@ -10,6 +10,8 @@ from python_lib.model import (
     ModelTest6,
     ModelTest7,
     ModelTest8,
+    ModelTest9,
+    ModelTest10,
 )
 
 
@@ -216,4 +218,32 @@ def load_test8_weights() -> Tuple[List[List[float]], List[List[int]]]:
     """
     torch.manual_seed(42)
     model = ModelTest8()
+    return _extract_weights(model)
+
+
+def load_test9_weights() -> Tuple[List[List[float]], List[List[int]]]:
+    """
+    Get weights and biases for ModelTest9.
+
+    Returns
+    -------
+    (_, _): List[float], List[int]
+        The flattened weights, their shape.
+    """
+    torch.manual_seed(42)
+    model = ModelTest9()
+    return _extract_weights(model)
+
+
+def load_test10_weights() -> Tuple[List[List[float]], List[List[int]]]:
+    """
+    Get weights and biases for ModelTest10.
+
+    Returns
+    -------
+    (_, _): List[float], List[int]
+        The flattened weights, their shape.
+    """
+    torch.manual_seed(42)
+    model = ModelTest10()
     return _extract_weights(model)

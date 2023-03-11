@@ -470,3 +470,122 @@ class ModelTest8(torch.nn.Module):
         x = torch.flatten(x, 1)
         x = self.classifier(x)
         return x
+
+
+class ModelTest9(torch.nn.Module):
+    """
+    Model to test.
+    Principle features:
+        - Patch convolution
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.features = torch.nn.Sequential(
+            torch.nn.Conv2d(
+                3, 1,
+                kernel_size=(2, 2),
+                stride=(2, 2),
+                bias=True
+            ),
+        )
+        self.avgpool = torch.nn.AdaptiveAvgPool2d((1, 1))
+        self.features.apply(self.weight_init)
+
+    @staticmethod
+    def weight_init(module: torch.nn.Module):
+        """
+        Initialize weights and biases.
+
+        Parameters
+        ----------
+        module: torch.nn.Module
+            The module to initialize.
+        """
+        if isinstance(module, torch.nn.Conv2d):
+            torch.nn.init.normal_(module.weight)
+
+            if module.bias is not None:
+                torch.nn.init.normal_(module.bias)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass.
+
+        Parameters
+        ----------
+        x: torch.Tensor
+            The input tensor.
+
+        Returns
+        -------
+        _: torch.Tensor
+            The output tensor.
+        """
+        x = self.features(x)
+        x = x.reshape(1, 1, 9)
+        x = x.permute(0, 2, 1)
+        x = self.avgpool(x)
+        x = torch.flatten(x, 1)
+        return x
+
+
+class ModelTest10(torch.nn.Module):
+    """
+    Model to test.
+    Principle features:
+        - MultiheadAttention
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.features = torch.nn.Sequential(
+            torch.nn.Conv2d(
+                3, 1,
+                kernel_size=(2, 2),
+                stride=(2, 2),
+                bias=True
+            ),
+        )
+        self.attention = torch.nn.MultiheadAttention(1, 1)
+        self.avgpool = torch.nn.AdaptiveAvgPool2d((1, 1))
+        self.features.apply(self.weight_init)
+
+    @staticmethod
+    def weight_init(module: torch.nn.Module):
+        """
+        Initialize weights and biases.
+
+        Parameters
+        ----------
+        module: torch.nn.Module
+            The module to initialize.
+        """
+        if isinstance(module, torch.nn.Conv2d) or \
+           isinstance(module, torch.nn.MultiheadAttention):
+            torch.nn.init.normal_(module.weight)
+
+            if module.bias is not None:
+                torch.nn.init.normal_(module.bias)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass.
+
+        Parameters
+        ----------
+        x: torch.Tensor
+            The input tensor.
+
+        Returns
+        -------
+        _: torch.Tensor
+            The output tensor.
+        """
+        x = self.features(x)
+        x = x.reshape(1, 1, 9)
+        x = x.permute(0, 2, 1)
+        x, y = self.attention(x, x, x)
+        x = self.avgpool(x)
+        x = torch.flatten(x, 1)
+        return x

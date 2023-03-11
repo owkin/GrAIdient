@@ -13,6 +13,8 @@ from python_lib.model import (
     ModelTest6,
     ModelTest7,
     ModelTest8,
+    ModelTest9,
+    ModelTest10,
 )
 
 
@@ -355,4 +357,46 @@ def compute_test8_grad_norm(size: int) -> float:
     img_array = _build_input_data(size)
     img_tensor = ToTensor()(img_array).type(torch.float32)
     model = ModelTest8().eval().cpu()
+    return _compute_grad_norm(img_tensor, model)
+
+
+def compute_test9_grad_norm(size: int) -> float:
+    """
+    Compute the gradient norm of one backward pass of ModelTest9.
+
+    Parameters
+    ----------
+    size: int
+        The size of the input data.
+
+    Returns
+    -------
+    _: float
+        The gradient norm.
+    """
+    torch.manual_seed(42)
+    img_array = _build_input_data(size)
+    img_tensor = ToTensor()(img_array).type(torch.float32)
+    model = ModelTest9().eval().cpu()
+    return _compute_grad_norm(img_tensor, model)
+
+
+def compute_test10_grad_norm(size: int) -> float:
+    """
+    Compute the gradient norm of one backward pass of ModelTest10.
+
+    Parameters
+    ----------
+    size: int
+        The size of the input data.
+
+    Returns
+    -------
+    _: float
+        The gradient norm.
+    """
+    torch.manual_seed(42)
+    img_array = _build_input_data(size)
+    img_tensor = ToTensor()(img_array).type(torch.float32)
+    model = ModelTest10().eval().cpu()
     return _compute_grad_norm(img_tensor, model)

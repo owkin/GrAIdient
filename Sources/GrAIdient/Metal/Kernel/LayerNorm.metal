@@ -133,19 +133,65 @@ kernel void forwardLayerNormSeq(
     float tmp2 = sqrt(σ2[seq + sequence * elem] + Ɛ);
     float xhat = tmp1 / tmp2;
     xHat[offset] = xhat;
-    tmps[offset] = Ɣ[0] * xhat + β[0];
+    tmps[offset] = Ɣ[depth] * xhat + β[depth];
 }
 
-kernel void backwardWeightsLayerNormSeq(
+kernel void backwardWeights1LayerNormSeq(
     const device float * delta,
     const device float * xHat,
     const device float * Ɣ,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    constant uint * pAccumulate,
     device float * sum1,
     device float * sum2,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint nbNeurons;
+    uint nbBatch;
+    uint sequence;
+    
+    if (pNbNeurons && pNbBatch && pSequence &&
+        delta && xHat && Ɣ && sum1 && sum2)
+    {
+        nbNeurons = *pNbNeurons;
+        nbBatch = *pNbBatch;
+        sequence = *pSequence;
+    }
+    else
+        return ;
+    
+    uint elem = id[1];
+    uint seq = id[0];
+    if (elem >= nbBatch || seq >= sequence)
+    {
+        return ;
+    }
+    
+    float tmp1 = 0.0, tmp2 = 0.0;
+    for (uint depth=0; depth<nbNeurons; depth++)
+    {
+        uint offset = depth +
+            nbNeurons * seq + sequence * nbNeurons * elem;
+        
+        float deltaTmp = delta[offset];
+        float xHatTmp = xHat[offset];
+        float dxHat = Ɣ[depth] * deltaTmp;
+        tmp1 += dxHat;
+        tmp2 += dxHat * xHatTmp;
+    }
+    
+    sum1[seq + sequence * elem] = tmp1;
+    sum2[seq + sequence * elem] = tmp2;
+}
+
+kernel void backwardWeights2LayerNormSeq(
+    const device float * delta,
+    const device float * xHat,
+    constant uint * pNbNeurons,
+    constant uint * pNbBatch,
+    constant uint * pSequence,
+    constant uint * pAccumulate,
     device float * dƔ,
     device float * dβ,
     uint id [[ thread_position_in_grid ]])
@@ -156,8 +202,7 @@ kernel void backwardWeightsLayerNormSeq(
     uint accumulate;
     
     if (pNbNeurons && pNbBatch && pSequence && pAccumulate &&
-        delta && xHat && Ɣ &&
-        sum1 && sum2 && dƔ && dβ)
+        delta && xHat&& dƔ && dβ)
     {
         nbNeurons = *pNbNeurons;
         nbBatch = *pNbBatch;
@@ -167,42 +212,35 @@ kernel void backwardWeightsLayerNormSeq(
     else
         return ;
     
-    if (id >= 1)
+    uint depth = id;
+    if (depth >= nbNeurons)
     {
         return ;
     }
     
-    float tmp3 = 0.0, tmp4 = 0.0;
+    float tmp1 = 0.0, tmp2 = 0.0;
     for (uint elem=0; elem<nbBatch; elem++) {
     for (uint seq=0; seq<sequence; seq++)
     {
-        float tmp1 = 0.0, tmp2 = 0.0;
-        for (uint depth=0; depth<nbNeurons; depth++)
-        {
-            uint offset = depth + nbNeurons * seq + sequence * nbNeurons * elem;
-            
-            float deltaTmp = delta[offset];
-            float xHatTmp = xHat[offset];
-            float dxhat = Ɣ[0] * deltaTmp;
-            tmp1 += dxhat;
-            tmp2 += dxhat * xHatTmp;
-            tmp3 += deltaTmp * xHatTmp;
-            tmp4 += deltaTmp;
-        }
+        uint offset = depth +
+            nbNeurons * seq + sequence * nbNeurons * elem;
         
-        sum1[seq + sequence * elem] = tmp1;
-        sum2[seq + sequence * elem] = tmp2;
+        float deltaTmp = delta[offset];
+        float xHatTmp = xHat[offset];
+        
+        tmp1 += deltaTmp * xHatTmp;
+        tmp2 += deltaTmp;
     }}
     
     if (accumulate)
     {
-        dƔ[id] += tmp3;
-        dβ[id] += tmp4;
+        dƔ[depth] += tmp1;
+        dβ[depth] += tmp2;
     }
     else
     {
-        dƔ[id] = tmp3;
-        dβ[id] = tmp4;
+        dƔ[depth] = tmp1;
+        dβ[depth] = tmp2;
     }
 }
 
@@ -247,8 +285,8 @@ kernel void backwardLayerNormSeq(
     
     float mult =
         1.0 / ((float)nbElems * sqrt(σ2[seq + sequence * elem] + Ɛ));
-    float dxhat = Ɣ[0] * delta[offset];
-    float tmp1 = nbElems * dxhat;
+    float dxHat = Ɣ[depth] * delta[offset];
+    float tmp1 = nbElems * dxHat;
     float tmp2 = sum1[seq + sequence * elem];
     float tmp3 = xHat[offset] * sum2[seq + sequence * elem];
     

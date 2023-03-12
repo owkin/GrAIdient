@@ -654,7 +654,8 @@ private class MetalDevice
                 "computeLayerNormSeqμ",
                 "computeLayerNormSeqσ2",
                 "forwardLayerNormSeq",
-                "backwardWeightsLayerNormSeq",
+                "backwardWeights1LayerNormSeq",
+                "backwardWeights2LayerNormSeq",
                 "backwardLayerNormSeq",
             ],
             "LayerSeq": [

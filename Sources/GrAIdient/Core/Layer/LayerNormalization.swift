@@ -2024,12 +2024,12 @@ public class LayerNormalization: LayerWeightsNormalization
     
     ///
     /// Array of weights to scale the normalization result.
-    /// Shape ~ (1,).
+    /// Shape ~ (nbNeurons,).
     ///
     var _Ɣ: WeightArrays! = nil
     ///
     /// Array of biases to add to the normalization result.
-    /// Shape ~ (1,).
+    /// Shape ~ (nbNeurons,).
     ///
     var _β: WeightArrays! = nil
     
@@ -2066,7 +2066,7 @@ public class LayerNormalization: LayerWeightsNormalization
             return weightsTmp
         }
         set {
-            if newValue.count > 0 && newValue.count != 2
+            if newValue.count > 0 && newValue.count != 2 * _nbNeurons
             {
                 fatalError(
                     "Weights do not have the expected number of elements."
@@ -2106,17 +2106,23 @@ public class LayerNormalization: LayerWeightsNormalization
     ///
     func initWeights()
     {
-        _β = WeightArrays(1)
-        _Ɣ = WeightArrays(1)
+        _β = WeightArrays(_nbNeurons)
+        _Ɣ = WeightArrays(_nbNeurons)
         if _weightsList.count == 0
         {
-            _Ɣ.w[0] = 1.0
-            _β.w[0] = 0.0
+            for depth in 0..<_nbNeurons
+            {
+                _Ɣ.w[depth] = 1.0
+                _β.w[depth] = 0.0
+            }
         }
         else
         {
-            _Ɣ.w[0] = Double(_weightsList[0])
-            _β.w[0] = Double(_weightsList[1])
+            for depth in 0..<_nbNeurons
+            {
+                _Ɣ.w[depth] = Double(_weightsList[depth])
+                _β.w[depth] = Double(_weightsList[_nbNeurons + depth])
+            }
             _weightsList = []
         }
     }
@@ -2125,6 +2131,7 @@ public class LayerNormalization: LayerWeightsNormalization
     func forwardGC(_ layer: LayerNormSeq)
     {
         let nbGC = layer.nbGC
+        let nbNeurons = layer.nbNeurons
         let Ɛ = layer.Ɛ
         
         Concurrency.slice(layer.sequence)
@@ -2134,63 +2141,101 @@ public class LayerNormalization: LayerWeightsNormalization
             for batch in 0..<layer.batchSize {
             for elem in 0..<nbGC
             {
-                let outs: [Double]
-                if elem >= nbGC-4 && elem < nbGC-2
+                var β = [Double]()
+                var Ɣ = [Double]()
+                
+                if elem >= nbGC-4*nbNeurons && elem < nbGC-2*nbNeurons
                 {
+                    let DEPTH = (elem - nbGC + 4 * nbNeurons) / 2
+                    
+                    for depth in 0..<nbNeurons
+                    {
+                        β.append(_β.w[depth])
+                    }
+                    
                     if elem % 2 == 0
                     {
-                        outs = Normalization.forwardGC(
-                            outs: layer.getOutsGC(
-                                batch: batch, seq: seq, elem: elem
-                            ),
-                            β: _β.w[0],
-                            Ɣ: _Ɣ.w[0]+Ɛ
-                        )
+                        for depth in 0..<nbNeurons
+                        {
+                            if depth == DEPTH
+                            {
+                                Ɣ.append(_Ɣ.w[depth]+Ɛ)
+                            }
+                            else
+                            {
+                                Ɣ.append(_Ɣ.w[depth])
+                            }
+                        }
                     }
                     else
                     {
-                        outs = Normalization.forwardGC(
-                            outs: layer.getOutsGC(
-                                batch: batch, seq: seq, elem: elem
-                            ),
-                            β: _β.w[0],
-                            Ɣ: _Ɣ.w[0]-Ɛ
-                        )
+                        for depth in 0..<nbNeurons
+                        {
+                            if depth == DEPTH
+                            {
+                                Ɣ.append(_Ɣ.w[depth]-Ɛ)
+                            }
+                            else
+                            {
+                                Ɣ.append(_Ɣ.w[depth])
+                            }
+                        }
                     }
                 }
-                else if elem >= nbGC-2
+                else if elem >= nbGC-2*nbNeurons
                 {
+                    let DEPTH = (elem - nbGC + 2 * nbNeurons) / 2
+                    
+                    for depth in 0..<nbNeurons
+                    {
+                        Ɣ.append(_Ɣ.w[depth])
+                    }
+                    
                     if elem % 2 == 0
                     {
-                        outs = Normalization.forwardGC(
-                            outs: layer.getOutsGC(
-                                batch: batch, seq: seq, elem: elem
-                            ),
-                            β: _β.w[0]+Ɛ,
-                            Ɣ: _Ɣ.w[0]
-                        )
+                        for depth in 0..<nbNeurons
+                        {
+                            if depth == DEPTH
+                            {
+                                β.append(_β.w[depth]+Ɛ)
+                            }
+                            else
+                            {
+                                β.append(_β.w[depth])
+                            }
+                        }
                     }
                     else
                     {
-                        outs = Normalization.forwardGC(
-                            outs: layer.getOutsGC(
-                                batch: batch, seq: seq, elem: elem
-                            ),
-                            β: _β.w[0]-Ɛ,
-                            Ɣ: _Ɣ.w[0]
-                        )
+                        for depth in 0..<nbNeurons
+                        {
+                            if depth == DEPTH
+                            {
+                                β.append(_β.w[depth]-Ɛ)
+                            }
+                            else
+                            {
+                                β.append(_β.w[depth])
+                            }
+                        }
                     }
                 }
                 else
                 {
-                    outs = Normalization.forwardGC(
-                        outs: layer.getOutsGC(
-                            batch: batch, seq: seq, elem: elem
-                        ),
-                        β: _β.w[0],
-                        Ɣ: _Ɣ.w[0]
-                    )
+                    for depth in 0..<nbNeurons
+                    {
+                        Ɣ.append(_Ɣ.w[depth])
+                        β.append(_β.w[depth])
+                    }
                 }
+                
+                let outs = Normalization.forwardGC(
+                    outs: layer.getOutsGC(
+                        batch: batch, seq: seq, elem: elem
+                    ),
+                    β: β,
+                    Ɣ: Ɣ
+                )
                 layer.setOutsGC(
                     batch: batch, seq: seq, elem: elem, outs: outs
                 )
@@ -2220,7 +2265,14 @@ public class LayerNormalization: LayerWeightsNormalization
         }
         
         let sequence = layer.sequence
-        
+        var β = [Double]()
+        var Ɣ = [Double]()
+        for depth in 0..<_nbNeurons
+        {
+            β.append(_β.w[depth])
+            Ɣ.append(_Ɣ.w[depth])
+        }
+                
         _xHat.withUnsafeMutableBufferPointer { xHatPointer in
         _σ2.withUnsafeMutableBufferPointer { σ2Pointer in
         Concurrency.slice(sequence)
@@ -2231,8 +2283,8 @@ public class LayerNormalization: LayerWeightsNormalization
             {
                 let (outs, xHat, _, σ2) = Normalization.forward(
                     outs: layer.getOuts(batch: batch, seq: seq),
-                    β: _β.w[0],
-                    Ɣ: _Ɣ.w[0]
+                    β: β,
+                    Ɣ: Ɣ
                 )
                 layer.setOuts(batch: batch, seq: seq, outs: outs)
                 
@@ -2246,34 +2298,50 @@ public class LayerNormalization: LayerWeightsNormalization
     func backward(_ layer: LayerNormSeq)
     {
         let sequence = layer.sequence
+        let nbNeurons = layer.nbNeurons
         
-        var deltaβ = 0.0
-        var deltaƔ = 0.0
+        var deltaβ = [Double](repeating: 0, count: nbNeurons)
+        var deltaƔ = [Double](repeating: 0, count: nbNeurons)
+        
+        var Ɣ = [Double]()
+        for depth in 0..<nbNeurons
+        {
+            Ɣ.append(_Ɣ.w[depth])
+        }
         
         for batch in 0..<layer.batchSize {
         for seq in 0..<sequence
         {
-            let (delta, dβ, dƔ) = Normalization.backward(
-                delta: layer.getDelta(batch: batch, seq: seq),
+            let delta1 = layer.getDelta(batch: batch, seq: seq)
+            
+            let delta2 = Normalization.backward(
+                delta: delta1,
                 xHat: _xHat[seq + sequence * batch],
                 σ2: _σ2[seq + sequence * batch],
-                Ɣ: _Ɣ.w[0]
+                Ɣ: Ɣ
             )
-            layer.setDelta(batch: batch, seq: seq, delta: delta)
+            layer.setDelta(batch: batch, seq: seq, delta: delta2)
             
-            deltaβ += dβ
-            deltaƔ += dƔ
+            for depth in 0..<_nbNeurons
+            {
+                deltaβ[depth] += delta1[depth]
+                deltaƔ[depth] +=
+                    _xHat[seq + sequence * batch][depth] * delta1[depth]
+            }
         }}
         
-        if !layer.accumulateDeltaWeights
+        for depth in 0..<nbNeurons
         {
-            _Ɣ.g[0] = deltaƔ
-            _β.g[0] = deltaβ
-        }
-        else
-        {
-            _Ɣ.g[0] += deltaƔ
-            _β.g[0] += deltaβ
+            if !layer.accumulateDeltaWeights
+            {
+                _Ɣ.g[depth] = deltaƔ[depth]
+                _β.g[depth] = deltaβ[depth]
+            }
+            else
+            {
+                _Ɣ.g[depth] += deltaƔ[depth]
+                _β.g[depth] += deltaβ[depth]
+            }
         }
     }
     
@@ -2289,12 +2357,12 @@ class LayerNormalizationGPU: LayerWeightsNormalization
 {
     ///
     /// Buffer of weights to scale the normalization result.
-    /// Shape ~ (1,).
+    /// Shape ~ (nbNeurons,).
     ///
     var _Ɣ: IWeightBuffers! = nil
     ///
     /// Buffer of biases to add to the normalization result.
-    /// Shape ~ (1,).
+    /// Shape ~ (nbNeurons,).
     ///
     var _β: IWeightBuffers! = nil
     
@@ -2346,7 +2414,7 @@ class LayerNormalizationGPU: LayerWeightsNormalization
             return weightsTmp
         }
         set {
-            if newValue.count > 0 && newValue.count != 2
+            if newValue.count > 0 && newValue.count != 2 * _nbNeurons
             {
                 fatalError(
                     "Weights do not have the expected number of elements."
@@ -2397,21 +2465,27 @@ class LayerNormalizationGPU: LayerWeightsNormalization
     ///
     func initWeights()
     {
-        _β = WeightBuffers(nbElems: 1, deviceID: _deviceID)
-        _Ɣ = WeightBuffers(nbElems: 1, deviceID: _deviceID)
+        _β = WeightBuffers(nbElems: _nbNeurons, deviceID: _deviceID)
+        _Ɣ = WeightBuffers(nbElems: _nbNeurons, deviceID: _deviceID)
         
         let βPtr = _β.w_p!.shared.buffer
         let ƔPtr = _Ɣ.w_p!.shared.buffer
         
         if _weightsList.count == 0
         {
-            ƔPtr[0] = 1.0
-            βPtr[0] = 0.0
+            for depth in 0..<_nbNeurons
+            {
+                ƔPtr[depth] = 1.0
+                βPtr[depth] = 0.0
+            }
         }
         else
         {
-            ƔPtr[0] = _weightsList[0]
-            βPtr[0] = _weightsList[1]
+            for depth in 0..<_nbNeurons
+            {
+                ƔPtr[depth] = _weightsList[depth]
+                βPtr[depth] = _weightsList[_nbNeurons + depth]
+            }
             _weightsList = []
         }
         
@@ -2428,8 +2502,11 @@ class LayerNormalizationGPU: LayerWeightsNormalization
     func applyWeights(norm: LayerNormalization)
     {
         let weights = self.weights
-        norm._Ɣ.w[0] = Double(weights[0])
-        norm._β.w[0] = Double(weights[1])
+        for depth in 0..<_nbNeurons
+        {
+            norm._Ɣ.w[depth] = Double(weights[depth])
+            norm._β.w[depth] = Double(weights[_nbNeurons + depth])
+        }
     }
     
     /// Apply the forward pass in the GPU execution context.
@@ -2537,7 +2614,8 @@ class LayerNormalizationGPU: LayerWeightsNormalization
     /// Apply the backward pass in the GPU execution context.
     func backward(_ layer: LayerNormSeq)
     {
-        _backwardWeights(layer)
+        _backwardWeights1(layer)
+        _backwardWeights2(layer)
         
         let batchSize = layer.batchSize
         let sequence = layer.sequence
@@ -2567,7 +2645,7 @@ class LayerNormalizationGPU: LayerWeightsNormalization
     }
     
     /// Compute the gradients of weights  in the GPU execution context.
-    private func _backwardWeights(_ layer: LayerNormSeq)
+    private func _backwardWeights1(_ layer: LayerNormSeq)
     {
         let batchSize = layer.batchSize
         let sequence = layer.sequence
@@ -2575,7 +2653,6 @@ class LayerNormalizationGPU: LayerWeightsNormalization
         let pNbNeurons: [UInt32] = [UInt32(_nbNeurons)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pSequence: [UInt32] = [UInt32(sequence)]
-        let pAccumulate: [UInt32] = layer.accumulateDeltaWeights ? [1] : [0]
         
         if _sum1 == nil
         {
@@ -2588,7 +2665,7 @@ class LayerNormalizationGPU: LayerWeightsNormalization
         }
         
         let command = MetalKernel.get.createCommand(
-            "backwardWeightsLayerNormSeq", deviceID: _deviceID
+            "backwardWeights1LayerNormSeq", deviceID: _deviceID
         )
         command.setBuffer(layer.delta.metal, atIndex: 0)
         command.setBuffer(_xHat.metal, atIndex: 1)
@@ -2596,13 +2673,37 @@ class LayerNormalizationGPU: LayerWeightsNormalization
         command.setBytes(pNbNeurons, atIndex: 3)
         command.setBytes(pNbBatch, atIndex: 4)
         command.setBytes(pSequence, atIndex: 5)
-        command.setBytes(pAccumulate, atIndex: 6)
-        command.setBuffer(_sum1.metal, atIndex: 7)
-        command.setBuffer(_sum2.metal, atIndex: 8)
-        command.setBuffer(_Ɣ.g.metal, atIndex: 9)
-        command.setBuffer(_β.g.metal, atIndex: 10)
+        command.setBuffer(_sum1.metal, atIndex: 6)
+        command.setBuffer(_sum2.metal, atIndex: 7)
         
-        command.dispatchThreads(1)
+        command.dispatchThreads(width: sequence, height: batchSize)
+        command.enqueue()
+    }
+    
+    /// Compute the gradients of weights  in the GPU execution context.
+    private func _backwardWeights2(_ layer: LayerNormSeq)
+    {
+        let batchSize = layer.batchSize
+        let sequence = layer.sequence
+        
+        let pNbNeurons: [UInt32] = [UInt32(_nbNeurons)]
+        let pNbBatch: [UInt32] = [UInt32(batchSize)]
+        let pSequence: [UInt32] = [UInt32(sequence)]
+        let pAccumulate: [UInt32] = layer.accumulateDeltaWeights ? [1] : [0]
+        
+        let command = MetalKernel.get.createCommand(
+            "backwardWeights2LayerNormSeq", deviceID: _deviceID
+        )
+        command.setBuffer(layer.delta.metal, atIndex: 0)
+        command.setBuffer(_xHat.metal, atIndex: 1)
+        command.setBytes(pNbNeurons, atIndex: 2)
+        command.setBytes(pNbBatch, atIndex: 3)
+        command.setBytes(pSequence, atIndex: 4)
+        command.setBytes(pAccumulate, atIndex: 5)
+        command.setBuffer(_Ɣ.g.metal, atIndex: 6)
+        command.setBuffer(_β.g.metal, atIndex: 7)
+        
+        command.dispatchThreads(_nbNeurons)
         command.enqueue()
     }
     

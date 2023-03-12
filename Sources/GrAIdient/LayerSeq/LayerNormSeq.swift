@@ -77,7 +77,7 @@ public class LayerNormSeq: ActivationSeq, LayerUpdate, LayerWithActivation
     var nbLearnedGC: Int
     {
         get {
-            return 2
+            return 2 * nbNeurons
         }
     }
     
@@ -403,7 +403,7 @@ public class LayerNormSeq: ActivationSeq, LayerUpdate, LayerWithActivation
             // Prepare GC for norm weights: Ɣ and β.
             for batch in 0..<batchSize {
             for seq in 0..<sequence {
-            for elem in newGC-4..<newGC
+            for elem in newGC-4*nbNeurons..<newGC
             {
                 for depth in 0..<nbNeurons
                 {
@@ -465,7 +465,7 @@ public class LayerNormSeq: ActivationSeq, LayerUpdate, LayerWithActivation
             // Prepare GC for norm weights: Ɣ and β.
             for batch in 0..<batchSize {
             for seq in 0..<sequence {
-            for elem in newGC-4..<newGC
+            for elem in newGC-4*nbNeurons..<newGC
             {
                 for depth in 0..<nbNeurons
                 {

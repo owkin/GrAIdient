@@ -2502,8 +2502,11 @@ class LayerNormalizationGPU: LayerWeightsNormalization
     func applyWeights(norm: LayerNormalization)
     {
         let weights = self.weights
-        norm._Ɣ.w[0] = Double(weights[0])
-        norm._β.w[0] = Double(weights[1])
+        for depth in 0..<_nbNeurons
+        {
+            norm._Ɣ.w[depth] = Double(weights[depth])
+            norm._β.w[depth] = Double(weights[_nbNeurons + depth])
+        }
     }
     
     /// Apply the forward pass in the GPU execution context.

@@ -13,6 +13,7 @@ from python_lib.model import (
     ModelTest9,
     ModelTest10,
     ModelTest11,
+    ModelTest12,
 )
 
 
@@ -410,3 +411,24 @@ def load_test11_weights(size: int, patch: int) -> Tuple[List[List[float]], List[
     torch.manual_seed(42)
     model = ModelTest11(size=size, patch=patch)
     return _extract_attention_weights(model=model, nb_heads=3)
+
+
+def load_test12_weights(size: int, patch: int) -> Tuple[List[List[float]], List[List[int]]]:
+    """
+    Get weights and biases for ModelTest12.
+
+    Parameters
+    ----------
+    size: int
+        The size of the input data.
+    patch: int
+        kernel split size of the input data.
+
+    Returns
+    -------
+    (_, _): List[float], List[int]
+        The flattened weights, their shape.
+    """
+    torch.manual_seed(42)
+    model = ModelTest12(size=size, patch=patch)
+    return _extract_weights(model)

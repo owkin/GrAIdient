@@ -1069,3 +1069,96 @@ class ModelTest11
         return model
     }
 }
+
+/// Model to test against PyTorch.
+class ModelTest12
+{
+    ///
+    /// Create the model and import weights from PyTorch.
+    ///
+    /// Principle features:
+    ///   - LayerNormSeq
+    ///
+    /// - Parameters:
+    ///     - size: The size of the input data.
+    ///     - patch: The kernel split size of the input data.
+    /// - Returns: The built model.
+    ///
+    static func build(size: Int, patch: Int) -> Model
+    {
+        let context = ModelContext(name: "ModelTest12", curID: 0)
+        let params = GrAI.Model.Params(context: context)
+        
+        var layer: Layer2D
+        layer = Input2D(
+            nbChannels: 3,
+            width: size,
+            height: size,
+            params: params
+        )
+        
+        var layerSeq: LayerSeq = FullyConnectedPatch(
+            layerPrev: layer, patch: patch, nbNeurons: 5,
+            activation: nil, biases: true,
+            params: params
+        )
+        
+        layerSeq = LayerNormSeq(
+            layerPrev: layerSeq, activation: nil, params: params
+        )
+        
+        var head: Layer1D = AvgPoolSeq(
+            layerPrev: layerSeq, params: params
+        )
+        
+        head = FullyConnected(
+            layerPrev: head, nbNeurons: 1,
+            activation: nil, biases: true,
+            params: params
+        )
+        
+        let model = Model(model: context.model, modelsPrev: [])
+        
+        // Load weights from `PyTorch`.
+        let pythonLib = Python.import("python_lib")
+        let data = pythonLib.load_test12_weights(size, patch)
+        
+        let weights = [[Float]](data.tuple2.0)!
+        
+        // Apply weights on the `GrAIdient` model's layers.
+        var cur = 0
+        for num_layer in 0..<model.layers.count
+        {
+            // Load weights and biases.
+            if let flLayer = model.layers[num_layer] as? FullyConnectedPatch
+            {
+                let weightsTmp: [Float] = weights[cur]
+                cur += 1
+                let biases: [Float] = weights[cur]
+                cur += 1
+                
+                flLayer.weightsCPU = weightsTmp + biases
+            }
+            else if let layer = model.layers[num_layer] as? LayerNormSeq
+            {
+                let weightsTmp: [Float] = weights[cur]
+                cur += 1
+                let biases: [Float] = weights[cur]
+                cur += 1
+                
+                layer.weightsCPU = weightsTmp + biases
+            }
+            else if let flLayer = model.layers[num_layer] as? FullyConnected
+            {
+                let weightsTmp: [Float] = weights[cur]
+                cur += 1
+                let biases: [Float] = weights[cur]
+                cur += 1
+                
+                flLayer.weightsCPU = weightsTmp + biases
+            }
+        }
+        
+        return model
+    }
+}

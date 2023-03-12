@@ -251,9 +251,9 @@ kernel void backwardWeightsInstanceNormConv(
             
             float deltaTmp = delta[offset];
             float xHatTmp = xHat[offset];
-            float dxhat = Ɣ[depth] * deltaTmp;
-            tmp1 += dxhat;
-            tmp2 += dxhat * xHatTmp;
+            float dxHat = Ɣ[depth] * deltaTmp;
+            tmp1 += dxHat;
+            tmp2 += dxHat * xHatTmp;
             tmp3 += deltaTmp * xHatTmp;
             tmp4 += deltaTmp;
         }}
@@ -324,9 +324,9 @@ kernel void backward2AdaIN(
         
         float deltaTmp = delta[offset];
         float xHatTmp = xHat[offset];
-        float dxhat = outStyles[depth] * deltaTmp;
-        tmp1 += dxhat;
-        tmp2 += dxhat * xHatTmp;
+        float dxHat = outStyles[depth] * deltaTmp;
+        tmp1 += dxHat;
+        tmp2 += dxHat * xHatTmp;
         tmp3 += deltaTmp * xHatTmp;
         tmp4 += deltaTmp;
     }}
@@ -393,8 +393,8 @@ kernel void backwardInstanceNormConv(
     
     float mult =
         1.0 / ((float)nbElems * sqrt(σ2[depth + nbChannels * elem] + Ɛ));
-    float dxhat = Ɣ[depth] * delta[offset];
-    float tmp1 = nbElems * dxhat;
+    float dxHat = Ɣ[depth] * delta[offset];
+    float tmp1 = nbElems * dxHat;
     float tmp2 = sum1[depth + nbChannels * elem];
     float tmp3 = xHat[offset] * sum2[depth + nbChannels * elem];
     
@@ -451,8 +451,8 @@ kernel void backward1AdaIN(
     
     float mult =
         1.0 / ((float)nbElems * sqrt(σ2[depth + nbChannels * elem] + Ɛ));
-    float dxhat = styles[depth] * delta[offset];
-    float tmp1 = nbElems * dxhat;
+    float dxHat = styles[depth] * delta[offset];
+    float tmp1 = nbElems * dxHat;
     float tmp2 = sum1[depth + nbChannels * elem];
     float tmp3 = xHat[offset] * sum2[depth + nbChannels * elem];
     

@@ -12,6 +12,7 @@ from python_lib.gradient import (
     compute_test9_grad_norm,
     compute_test10_grad_norm,
     compute_test11_grad_norm,
+    compute_test12_grad_norm,
 )
 from python_lib.weight import (
     load_test1_weights,
@@ -24,6 +25,7 @@ from python_lib.weight import (
     load_test9_weights,
     load_test10_weights,
     load_test11_weights,
+    load_test12_weights,
 )
 
 __all__ = [
@@ -40,6 +42,7 @@ __all__ = [
     "compute_test9_grad_norm",
     "compute_test10_grad_norm",
     "compute_test11_grad_norm",
+    "compute_test12_grad_norm",
     "load_test1_weights",
     "load_test2_weights",
     "load_test4_weights",
@@ -50,4 +53,5 @@ __all__ = [
     "load_test9_weights",
     "load_test10_weights",
     "load_test11_weights",
+    "load_test12_weights",
 ]

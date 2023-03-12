@@ -222,6 +222,21 @@ func computeTest11GradNorm(size: Int, patch: Int) -> Float
 }
 
 ///
+/// Get gradient norm computed with PyTorch for ModelTest12.
+///
+/// - Parameters:
+///     - size: The size of the input data.
+///     - patch: The kernel split size of the input data.
+/// - Returns: The gradient norm.
+///
+func computeTest12GradNorm(size: Int, patch: Int) -> Float
+{
+    let pythonLib = Python.import("python_lib")
+    let data = pythonLib.compute_test12_grad_norm(size, patch)
+    return Float(data)!
+}
+
+///
 /// Get optimizer parameters for model training.
 ///
 /// - Parameter nbLoops: Number of steps per epoch.

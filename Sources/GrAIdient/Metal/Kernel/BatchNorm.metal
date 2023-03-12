@@ -285,9 +285,9 @@ kernel void backwardWeightsBNConv(
                 
             float deltaTmp = delta[offset];
             float xHatTmp = xHat[offset];
-            float dxhat = Ɣ[depth] * deltaTmp;
-            tmp1 += dxhat;
-            tmp2 += dxhat * xHatTmp;
+            float dxHat = Ɣ[depth] * deltaTmp;
+            tmp1 += dxHat;
+            tmp2 += dxHat * xHatTmp;
             
             tmp3 += deltaTmp * xHatTmp;
             tmp4 += deltaTmp;
@@ -353,8 +353,8 @@ kernel void backwardBNConvTraining(
     uint offset = j + (offsetStart + i) * width;
     
     float mult = 1.0 / ((float)nbElems * sqrt(σ2[depth] + Ɛ));
-    float dxhat = Ɣ[depth] * delta[offset];
-    float tmp1 = nbElems * dxhat;
+    float dxHat = Ɣ[depth] * delta[offset];
+    float tmp1 = nbElems * dxHat;
     float tmp2 = sum1[depth];
     float tmp3 = xHat[offset] * sum2[depth];
     

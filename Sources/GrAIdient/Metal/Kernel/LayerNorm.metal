@@ -133,7 +133,7 @@ kernel void forwardLayerNormSeq(
     float tmp2 = sqrt(σ2[seq + sequence * elem] + Ɛ);
     float xhat = tmp1 / tmp2;
     xHat[offset] = xhat;
-    tmps[offset] = Ɣ[0] * xhat + β[0];
+    tmps[offset] = Ɣ[depth] * xhat + β[depth];
 }
 
 kernel void backwardWeightsLayerNormSeq(
@@ -167,7 +167,8 @@ kernel void backwardWeightsLayerNormSeq(
     else
         return ;
     
-    if (id >= 1)
+    uint depth = id;
+    if (depth >= nbNeurons)
     {
         return ;
     }
@@ -177,32 +178,40 @@ kernel void backwardWeightsLayerNormSeq(
     for (uint seq=0; seq<sequence; seq++)
     {
         float tmp1 = 0.0, tmp2 = 0.0;
-        for (uint depth=0; depth<nbNeurons; depth++)
+        for (uint depth1=0; depth1<nbNeurons; depth1++)
         {
-            uint offset = depth + nbNeurons * seq + sequence * nbNeurons * elem;
+            uint offset1 = depth1 +
+                nbNeurons * seq + sequence * nbNeurons * elem;
             
-            float deltaTmp = delta[offset];
-            float xHatTmp = xHat[offset];
-            float dxhat = Ɣ[0] * deltaTmp;
-            tmp1 += dxhat;
-            tmp2 += dxhat * xHatTmp;
-            tmp3 += deltaTmp * xHatTmp;
-            tmp4 += deltaTmp;
+            float deltaTmp1 = delta[offset1];
+            float xHatTmp1 = xHat[offset1];
+            float dxHat = Ɣ[depth1] * deltaTmp1;
+            tmp1 += dxHat;
+            tmp2 += dxHat * xHatTmp1;
         }
         
         sum1[seq + sequence * elem] = tmp1;
         sum2[seq + sequence * elem] = tmp2;
+        
+        uint offset = depth +
+            nbNeurons * seq + sequence * nbNeurons * elem;
+        
+        float deltaTmp = delta[offset];
+        float xHatTmp = xHat[offset];
+        
+        tmp3 += deltaTmp * xHatTmp;
+        tmp4 += deltaTmp;
     }}
     
     if (accumulate)
     {
-        dƔ[id] += tmp3;
-        dβ[id] += tmp4;
+        dƔ[depth] += tmp3;
+        dβ[depth] += tmp4;
     }
     else
     {
-        dƔ[id] = tmp3;
-        dβ[id] = tmp4;
+        dƔ[depth] = tmp3;
+        dβ[depth] = tmp4;
     }
 }
 
@@ -247,8 +256,8 @@ kernel void backwardLayerNormSeq(
     
     float mult =
         1.0 / ((float)nbElems * sqrt(σ2[seq + sequence * elem] + Ɛ));
-    float dxhat = Ɣ[0] * delta[offset];
-    float tmp1 = nbElems * dxhat;
+    float dxHat = Ɣ[depth] * delta[offset];
+    float tmp1 = nbElems * dxHat;
     float tmp2 = sum1[seq + sequence * elem];
     float tmp3 = xHat[offset] * sum2[seq + sequence * elem];
     

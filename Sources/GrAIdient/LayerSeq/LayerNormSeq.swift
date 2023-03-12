@@ -77,7 +77,7 @@ public class LayerNormSeq: ActivationSeq, LayerUpdate, LayerWithActivation
     var nbLearnedGC: Int
     {
         get {
-            return 2
+            return 2 * nbNeurons
         }
     }
     

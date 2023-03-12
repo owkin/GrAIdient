@@ -2155,7 +2155,7 @@ public class LayerNormalization: LayerWeightsNormalization
                     
                     if elem % 2 == 0
                     {
-                        for depth in 0..<_nbNeurons
+                        for depth in 0..<nbNeurons
                         {
                             if depth == DEPTH
                             {
@@ -2169,7 +2169,7 @@ public class LayerNormalization: LayerWeightsNormalization
                     }
                     else
                     {
-                        for depth in 0..<_nbNeurons
+                        for depth in 0..<nbNeurons
                         {
                             if depth == DEPTH
                             {
@@ -2193,7 +2193,7 @@ public class LayerNormalization: LayerWeightsNormalization
                     
                     if elem % 2 == 0
                     {
-                        for depth in 0..<_nbNeurons
+                        for depth in 0..<nbNeurons
                         {
                             if depth == DEPTH
                             {
@@ -2207,7 +2207,7 @@ public class LayerNormalization: LayerWeightsNormalization
                     }
                     else
                     {
-                        for depth in 0..<_nbNeurons
+                        for depth in 0..<nbNeurons
                         {
                             if depth == DEPTH
                             {
@@ -2298,12 +2298,13 @@ public class LayerNormalization: LayerWeightsNormalization
     func backward(_ layer: LayerNormSeq)
     {
         let sequence = layer.sequence
+        let nbNeurons = layer.nbNeurons
         
-        var deltaβ = 0.0
-        var deltaƔ = 0.0
+        var deltaβ = [Double](repeating: 0, count: nbNeurons)
+        var deltaƔ = [Double](repeating: 0, count: nbNeurons)
         
         var Ɣ = [Double]()
-        for depth in 0..<_nbNeurons
+        for depth in 0..<nbNeurons
         {
             Ɣ.append(_Ɣ.w[depth])
         }
@@ -2323,20 +2324,24 @@ public class LayerNormalization: LayerWeightsNormalization
             
             for depth in 0..<_nbNeurons
             {
-                deltaβ += delta1[depth]
-                deltaƔ += _xHat[seq + sequence * batch][depth] * delta1[depth]
+                deltaβ[depth] += delta1[depth]
+                deltaƔ[depth] +=
+                    _xHat[seq + sequence * batch][depth] * delta1[depth]
             }
         }}
         
-        if !layer.accumulateDeltaWeights
+        for depth in 0..<nbNeurons
         {
-            _Ɣ.g[0] = deltaƔ
-            _β.g[0] = deltaβ
-        }
-        else
-        {
-            _Ɣ.g[0] += deltaƔ
-            _β.g[0] += deltaβ
+            if !layer.accumulateDeltaWeights
+            {
+                _Ɣ.g[depth] = deltaƔ[depth]
+                _β.g[depth] = deltaβ[depth]
+            }
+            else
+            {
+                _Ɣ.g[depth] += deltaƔ[depth]
+                _β.g[depth] += deltaβ[depth]
+            }
         }
     }
     

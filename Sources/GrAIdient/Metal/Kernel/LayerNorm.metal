@@ -136,16 +136,62 @@ kernel void forwardLayerNormSeq(
     tmps[offset] = Ɣ[depth] * xhat + β[depth];
 }
 
-kernel void backwardWeightsLayerNormSeq(
+kernel void backwardWeights1LayerNormSeq(
     const device float * delta,
     const device float * xHat,
     const device float * Ɣ,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    constant uint * pAccumulate,
     device float * sum1,
     device float * sum2,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint nbNeurons;
+    uint nbBatch;
+    uint sequence;
+    
+    if (pNbNeurons && pNbBatch && pSequence &&
+        delta && xHat && Ɣ && sum1 && sum2)
+    {
+        nbNeurons = *pNbNeurons;
+        nbBatch = *pNbBatch;
+        sequence = *pSequence;
+    }
+    else
+        return ;
+    
+    uint elem = id[1];
+    uint seq = id[0];
+    if (elem >= nbBatch || seq >= sequence)
+    {
+        return ;
+    }
+    
+    float tmp1 = 0.0, tmp2 = 0.0;
+    for (uint depth=0; depth<nbNeurons; depth++)
+    {
+        uint offset = depth +
+            nbNeurons * seq + sequence * nbNeurons * elem;
+        
+        float deltaTmp = delta[offset];
+        float xHatTmp = xHat[offset];
+        float dxHat = Ɣ[depth] * deltaTmp;
+        tmp1 += dxHat;
+        tmp2 += dxHat * xHatTmp;
+    }
+    
+    sum1[seq + sequence * elem] = tmp1;
+    sum2[seq + sequence * elem] = tmp2;
+}
+
+kernel void backwardWeights2LayerNormSeq(
+    const device float * delta,
+    const device float * xHat,
+    constant uint * pNbNeurons,
+    constant uint * pNbBatch,
+    constant uint * pSequence,
+    constant uint * pAccumulate,
     device float * dƔ,
     device float * dβ,
     uint id [[ thread_position_in_grid ]])
@@ -156,8 +202,7 @@ kernel void backwardWeightsLayerNormSeq(
     uint accumulate;
     
     if (pNbNeurons && pNbBatch && pSequence && pAccumulate &&
-        delta && xHat && Ɣ &&
-        sum1 && sum2 && dƔ && dβ)
+        delta && xHat&& dƔ && dβ)
     {
         nbNeurons = *pNbNeurons;
         nbBatch = *pNbBatch;
@@ -173,45 +218,29 @@ kernel void backwardWeightsLayerNormSeq(
         return ;
     }
     
-    float tmp3 = 0.0, tmp4 = 0.0;
+    float tmp1 = 0.0, tmp2 = 0.0;
     for (uint elem=0; elem<nbBatch; elem++) {
     for (uint seq=0; seq<sequence; seq++)
     {
-        float tmp1 = 0.0, tmp2 = 0.0;
-        for (uint depth1=0; depth1<nbNeurons; depth1++)
-        {
-            uint offset1 = depth1 +
-                nbNeurons * seq + sequence * nbNeurons * elem;
-            
-            float deltaTmp1 = delta[offset1];
-            float xHatTmp1 = xHat[offset1];
-            float dxHat = Ɣ[depth1] * deltaTmp1;
-            tmp1 += dxHat;
-            tmp2 += dxHat * xHatTmp1;
-        }
-        
-        sum1[seq + sequence * elem] = tmp1;
-        sum2[seq + sequence * elem] = tmp2;
-        
         uint offset = depth +
             nbNeurons * seq + sequence * nbNeurons * elem;
         
         float deltaTmp = delta[offset];
         float xHatTmp = xHat[offset];
         
-        tmp3 += deltaTmp * xHatTmp;
-        tmp4 += deltaTmp;
+        tmp1 += deltaTmp * xHatTmp;
+        tmp2 += deltaTmp;
     }}
     
     if (accumulate)
     {
-        dƔ[depth] += tmp3;
-        dβ[depth] += tmp4;
+        dƔ[depth] += tmp1;
+        dβ[depth] += tmp2;
     }
     else
     {
-        dƔ[depth] = tmp3;
-        dβ[depth] = tmp4;
+        dƔ[depth] = tmp1;
+        dβ[depth] = tmp2;
     }
 }
 

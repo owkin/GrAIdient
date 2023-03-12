@@ -2614,7 +2614,8 @@ class LayerNormalizationGPU: LayerWeightsNormalization
     /// Apply the backward pass in the GPU execution context.
     func backward(_ layer: LayerNormSeq)
     {
-        _backwardWeights(layer)
+        _backwardWeights1(layer)
+        _backwardWeights2(layer)
         
         let batchSize = layer.batchSize
         let sequence = layer.sequence
@@ -2644,7 +2645,7 @@ class LayerNormalizationGPU: LayerWeightsNormalization
     }
     
     /// Compute the gradients of weights  in the GPU execution context.
-    private func _backwardWeights(_ layer: LayerNormSeq)
+    private func _backwardWeights1(_ layer: LayerNormSeq)
     {
         let batchSize = layer.batchSize
         let sequence = layer.sequence
@@ -2652,7 +2653,6 @@ class LayerNormalizationGPU: LayerWeightsNormalization
         let pNbNeurons: [UInt32] = [UInt32(_nbNeurons)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pSequence: [UInt32] = [UInt32(sequence)]
-        let pAccumulate: [UInt32] = layer.accumulateDeltaWeights ? [1] : [0]
         
         if _sum1 == nil
         {
@@ -2665,7 +2665,7 @@ class LayerNormalizationGPU: LayerWeightsNormalization
         }
         
         let command = MetalKernel.get.createCommand(
-            "backwardWeightsLayerNormSeq", deviceID: _deviceID
+            "backwardWeights1LayerNormSeq", deviceID: _deviceID
         )
         command.setBuffer(layer.delta.metal, atIndex: 0)
         command.setBuffer(_xHat.metal, atIndex: 1)
@@ -2673,11 +2673,35 @@ class LayerNormalizationGPU: LayerWeightsNormalization
         command.setBytes(pNbNeurons, atIndex: 3)
         command.setBytes(pNbBatch, atIndex: 4)
         command.setBytes(pSequence, atIndex: 5)
-        command.setBytes(pAccumulate, atIndex: 6)
-        command.setBuffer(_sum1.metal, atIndex: 7)
-        command.setBuffer(_sum2.metal, atIndex: 8)
-        command.setBuffer(_Ɣ.g.metal, atIndex: 9)
-        command.setBuffer(_β.g.metal, atIndex: 10)
+        command.setBuffer(_sum1.metal, atIndex: 6)
+        command.setBuffer(_sum2.metal, atIndex: 7)
+        
+        command.dispatchThreads(width: sequence, height: batchSize)
+        command.enqueue()
+    }
+    
+    /// Compute the gradients of weights  in the GPU execution context.
+    private func _backwardWeights2(_ layer: LayerNormSeq)
+    {
+        let batchSize = layer.batchSize
+        let sequence = layer.sequence
+        
+        let pNbNeurons: [UInt32] = [UInt32(_nbNeurons)]
+        let pNbBatch: [UInt32] = [UInt32(batchSize)]
+        let pSequence: [UInt32] = [UInt32(sequence)]
+        let pAccumulate: [UInt32] = layer.accumulateDeltaWeights ? [1] : [0]
+        
+        let command = MetalKernel.get.createCommand(
+            "backwardWeights2LayerNormSeq", deviceID: _deviceID
+        )
+        command.setBuffer(layer.delta.metal, atIndex: 0)
+        command.setBuffer(_xHat.metal, atIndex: 1)
+        command.setBytes(pNbNeurons, atIndex: 2)
+        command.setBytes(pNbBatch, atIndex: 3)
+        command.setBytes(pSequence, atIndex: 4)
+        command.setBytes(pAccumulate, atIndex: 5)
+        command.setBuffer(_Ɣ.g.metal, atIndex: 6)
+        command.setBuffer(_β.g.metal, atIndex: 7)
         
         command.dispatchThreads(_nbNeurons)
         command.enqueue()

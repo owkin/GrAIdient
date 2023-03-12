@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🚨 **integration:** validate MultiHeadAttention & fix Softmax stability ([#70](https://github.com/owkin/GrAIdient/pull/70))\
 🪜 **layer_seq:** ValueSeq ([#69](https://github.com/owkin/GrAIdient/pull/69))\
 🪜 **layer_seq:** SoftmaxSeq ([#68](https://github.com/owkin/GrAIdient/pull/68))\
 🪜 **layer_seq:** QuerySeq ([#67](https://github.com/owkin/GrAIdient/pull/67))\

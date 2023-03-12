@@ -178,27 +178,36 @@ public class Softmax1D: Layer1D
             let nbBlocks = nbNeurons / _size
             let neuronsPrev = layerPrev.neurons
             
-            for elem in 0..<batchSize
+            for elem in 0..<batchSize {
+            for block in 0..<nbBlocks
             {
-                for block in 0..<nbBlocks
+                var cMax = 0.0
+                for j1 in 0..<_size
                 {
-                    var sum1 = 0.0
-                    for j1 in 0..<_size
+                    let outPrev = neuronsPrev.get(
+                        j1 + block * _size)!.v[elem].out
+                    if outPrev > cMax
                     {
-                        let outPrev = neuronsPrev.get(
-                            j1 + block * _size)!.v[elem].out
-                        sum1 += exp(outPrev)
-                    }
-                    
-                    for j1 in 0..<_size
-                    {
-                        let outPrev = neuronsPrev.get(
-                            j1 + block * _size)!.v[elem].out
-                        neurons.get(j1 + block * _size)!.v[elem].out =
-                            exp(outPrev) / sum1
+                        cMax = outPrev
                     }
                 }
-            }
+                
+                var sum1 = 0.0
+                for j1 in 0..<_size
+                {
+                    let outPrev = neuronsPrev.get(
+                        j1 + block * _size)!.v[elem].out
+                    sum1 += exp(outPrev - cMax)
+                }
+                
+                for j1 in 0..<_size
+                {
+                    let outPrev = neuronsPrev.get(
+                        j1 + block * _size)!.v[elem].out
+                    neurons.get(j1 + block * _size)!.v[elem].out =
+                        exp(outPrev - cMax) / sum1
+                }
+            }}
         }
     }
     
@@ -242,51 +251,60 @@ public class Softmax1D: Layer1D
             let nbBlocks = nbNeurons / _size
             let neuronsPrev = layerPrev.neurons
             
-            for elem in 0..<batchSize
+            for elem in 0..<batchSize {
+            for block in 0..<nbBlocks
             {
-                for block in 0..<nbBlocks
+                var cMax = 0.0
+                for j1 in 0..<_size
                 {
-                    var sum1: Double = 0.0
-                    for j1 in 0..<_size
+                    let outPrev = neuronsPrev.get(
+                        j1 + block * _size)!.v[elem].out
+                    if outPrev > cMax
                     {
-                        let outPrev = neuronsPrev.get(
-                            j1 + block * _size)!.v[elem].out
-                        sum1 += exp(outPrev)
-                    }
-                    
-                    for j1 in 0..<_size
-                    {
-                        let outPrev1 = neuronsPrev.get(
-                            j1 + block * _size)!.v[elem].out
-                        let deltaCur1 = neurons.get(
-                            j1 + block * _size)!.v[elem].delta
-                        
-                        var sum2: Double = 0.0
-                        for j2 in 0..<_size
-                        {
-                            let deltaCur2 = neurons.get(
-                                j2 + block * _size)!.v[elem].delta
-                            let outPrev2 = neuronsPrev.get(
-                                j2 + block * _size)!.v[elem].out
-                            sum2 += exp(outPrev1 + outPrev2) * deltaCur2
-                        }
-                        
-                        let tmp = exp(outPrev1) * deltaCur1 / sum1
-                        if layerPrev.dirty
-                        {
-                            neuronsPrev.get(
-                                j1 + block * _size)!.v[elem].delta =
-                                -sum2 / (sum1 * sum1) + tmp
-                        }
-                        else
-                        {
-                            neuronsPrev.get(
-                                j1 + block * _size)!.v[elem].delta +=
-                                -sum2 / (sum1 * sum1) + tmp
-                        }
+                        cMax = outPrev
                     }
                 }
-            }
+                
+                var sum1: Double = 0.0
+                for j1 in 0..<_size
+                {
+                    let outPrev = neuronsPrev.get(
+                        j1 + block * _size)!.v[elem].out
+                    sum1 += exp(outPrev - cMax)
+                }
+                
+                for j1 in 0..<_size
+                {
+                    let outPrev1 = neuronsPrev.get(
+                        j1 + block * _size)!.v[elem].out
+                    let deltaCur1 = neurons.get(
+                        j1 + block * _size)!.v[elem].delta
+                    
+                    var sum2: Double = 0.0
+                    for j2 in 0..<_size
+                    {
+                        let deltaCur2 = neurons.get(
+                            j2 + block * _size)!.v[elem].delta
+                        let outPrev2 = neuronsPrev.get(
+                            j2 + block * _size)!.v[elem].out
+                        sum2 += exp(outPrev1 + outPrev2 - 2 * cMax) * deltaCur2
+                    }
+                    
+                    let tmp = exp(outPrev1 - cMax) * deltaCur1 / sum1
+                    if layerPrev.dirty
+                    {
+                        neuronsPrev.get(
+                            j1 + block * _size)!.v[elem].delta =
+                            -sum2 / (sum1 * sum1) + tmp
+                    }
+                    else
+                    {
+                        neuronsPrev.get(
+                            j1 + block * _size)!.v[elem].delta +=
+                            -sum2 / (sum1 * sum1) + tmp
+                    }
+                }
+            }}
             propagateDirty()
         }
     }

@@ -470,3 +470,236 @@ class ModelTest8(torch.nn.Module):
         x = torch.flatten(x, 1)
         x = self.classifier(x)
         return x
+
+
+class ModelTest9(torch.nn.Module):
+    """
+    Model to test.
+    Principle features:
+        - Patch convolution
+
+    Parameters
+    ----------
+    size: int
+        size of the input data.
+    patch: int
+        kernel split size of the input data.
+    """
+
+    def __init__(self, size: int, patch: int):
+        super().__init__()
+
+        self._patch = patch
+        self._nb_patch = int(size / patch)
+
+        self.features = torch.nn.Sequential(
+            torch.nn.Conv2d(
+                3, 5,
+                kernel_size=(patch, patch),
+                stride=(patch, patch),
+                bias=True
+            ),
+        )
+        self.classifier = torch.nn.Sequential(
+            torch.nn.Linear(in_features=5, out_features=1),
+        )
+
+        self.features.apply(self.weight_init)
+        self.classifier.apply(self.weight_init)
+
+    @staticmethod
+    def weight_init(module: torch.nn.Module):
+        """
+        Initialize weights and biases.
+
+        Parameters
+        ----------
+        module: torch.nn.Module
+            The module to initialize.
+        """
+        if isinstance(module, torch.nn.Conv2d) or \
+           isinstance(module, torch.nn.Linear):
+            torch.nn.init.normal_(module.weight)
+
+            if module.bias is not None:
+                torch.nn.init.normal_(module.bias)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass.
+
+        Parameters
+        ----------
+        x: torch.Tensor
+            The input tensor.
+
+        Returns
+        -------
+        _: torch.Tensor
+            The output tensor.
+        """
+        x = self.features(x)
+        x = x.reshape(1, 5, self._nb_patch * self._nb_patch)
+        x = x.permute(0, 2, 1)
+        x = torch.mean(x, dim=1)
+        x = torch.flatten(x, 1)
+        x = self.classifier(x)
+        return x
+
+
+class ModelTest10(torch.nn.Module):
+    """
+    Model to test.
+    Principle features:
+        - MultiheadAttention with 1 head
+
+    Parameters
+    ----------
+    size: int
+        size of the input data.
+    patch: int
+        kernel split size of the input data.
+    """
+
+    def __init__(self, size: int, patch: int):
+        super().__init__()
+
+        self._patch = patch
+        self._nb_patch = int(size / patch)
+
+        self.features = torch.nn.Sequential(
+            torch.nn.Conv2d(
+                3, 5,
+                kernel_size=(patch, patch),
+                stride=(patch, patch),
+                bias=True
+            ),
+        )
+        self.attention = torch.nn.MultiheadAttention(5, 1)
+        self.classifier = torch.nn.Sequential(
+            torch.nn.Linear(in_features=5, out_features=1),
+        )
+
+        self.features.apply(self.weight_init)
+        # self.attention.apply(self.weight_init)
+        self.classifier.apply(self.weight_init)
+
+    @staticmethod
+    def weight_init(module: torch.nn.Module):
+        """
+        Initialize weights and biases.
+
+        Parameters
+        ----------
+        module: torch.nn.Module
+            The module to initialize.
+        """
+        if isinstance(module, torch.nn.Conv2d) or \
+           isinstance(module, torch.nn.Linear) or \
+           isinstance(module, torch.nn.MultiheadAttention):
+            torch.nn.init.normal_(module.weight)
+
+            if module.bias is not None:
+                torch.nn.init.normal_(module.bias)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass.
+
+        Parameters
+        ----------
+        x: torch.Tensor
+            The input tensor.
+
+        Returns
+        -------
+        _: torch.Tensor
+            The output tensor.
+        """
+        x = self.features(x)
+        x = x.reshape(1, 5, self._nb_patch * self._nb_patch)
+        x = x.permute(0, 2, 1)
+        x, y = self.attention(x, x, x)
+        x = torch.mean(x, dim=1)
+        x = torch.flatten(x, 1)
+        x = self.classifier(x)
+        return x
+
+
+class ModelTest11(torch.nn.Module):
+    """
+    Model to test.
+    Principle features:
+        - MultiheadAttention with 3 heads
+
+    Parameters
+    ----------
+    size: int
+        size of the input data.
+    patch: int
+        kernel split size of the input data.
+    """
+
+    def __init__(self, size: int, patch: int):
+        super().__init__()
+
+        self._patch = patch
+        self._nb_patch = int(size / patch)
+
+        self.features = torch.nn.Sequential(
+            torch.nn.Conv2d(
+                3, 6,
+                kernel_size=(patch, patch),
+                stride=(patch, patch),
+                bias=True
+            ),
+        )
+        self.attention = torch.nn.MultiheadAttention(6, 3)
+        self.classifier = torch.nn.Sequential(
+            torch.nn.Linear(in_features=6, out_features=1),
+        )
+
+        self.features.apply(self.weight_init)
+        # self.attention.apply(self.weight_init)
+        self.classifier.apply(self.weight_init)
+
+    @staticmethod
+    def weight_init(module: torch.nn.Module):
+        """
+        Initialize weights and biases.
+
+        Parameters
+        ----------
+        module: torch.nn.Module
+            The module to initialize.
+        """
+        if isinstance(module, torch.nn.Conv2d) or \
+           isinstance(module, torch.nn.Linear) or \
+           isinstance(module, torch.nn.MultiheadAttention):
+            torch.nn.init.normal_(module.weight)
+
+            if module.bias is not None:
+                torch.nn.init.normal_(module.bias)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass.
+
+        Parameters
+        ----------
+        x: torch.Tensor
+            The input tensor.
+
+        Returns
+        -------
+        _: torch.Tensor
+            The output tensor.
+        """
+        x = self.features(x)
+        x = x.reshape(1, 6, self._nb_patch * self._nb_patch)
+        x = x.permute(0, 2, 1)
+        x, y = self.attention(x, x, x)
+        x = torch.mean(x, dim=1)
+        x = torch.flatten(x, 1)
+        x = self.classifier(x)
+        return x

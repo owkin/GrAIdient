@@ -10,6 +10,9 @@ from python_lib.model import (
     ModelTest6,
     ModelTest7,
     ModelTest8,
+    ModelTest9,
+    ModelTest10,
+    ModelTest11,
 )
 
 
@@ -33,6 +36,52 @@ def _flatten_weights(
     dims_list = list(weights.shape)
 
     return weights_list, dims_list
+
+
+def _flatten_attention_weights(
+    weights: np.ndarray,
+    biases: np.ndarray,
+    nb_heads: int
+) -> Tuple[List[List[float]], List[List[int]]]:
+    """
+    Flatten weights and biases.
+
+    Parameters
+    ----------
+    weights: np.ndarray
+        The weights to flatten.
+    biases: np.ndarray
+        The biases to flatten.
+    nb_heads: int
+        Number of heads in the attention modules.
+
+    Returns
+    -------
+    (_, _): List[float], List[int]
+        The flattened weights, their shape.
+    """
+    nb_partial = int(len(weights) / nb_heads)
+    layers_weights: List[List[float]] = []
+    layers_dims: List[List[int]] = []
+
+    for head in range(nb_heads):
+        weights_tmp = weights[head * nb_partial: ((head + 1) * nb_partial)]
+
+        weights_list = weights_tmp.flatten().tolist()
+        dims_list = list(weights_tmp.shape)
+
+        layers_weights.append(weights_list)
+        layers_dims.append(dims_list)
+
+        weights_tmp = biases[head * nb_partial: ((head + 1) * nb_partial)]
+
+        weights_list = weights_tmp.flatten().tolist()
+        dims_list = list(weights_tmp.shape)
+
+        layers_weights.append(weights_list)
+        layers_dims.append(dims_list)
+
+    return layers_weights, layers_dims
 
 
 def _extract_weights(
@@ -117,6 +166,87 @@ def _extract_and_transpose_weights(
 
                 layers_weights.append(weights_list)
                 layers_dims.append(dims_list)
+
+    return layers_weights, layers_dims
+
+
+def _extract_attention_weights(
+    model: torch.nn.Module,
+    nb_heads: int
+) -> Tuple[List[List[float]], List[List[int]]]:
+    """
+    Get weights and biases.
+
+    Parameters
+    ----------
+    model: torch.nn.Module
+        The module to get the weights and biases from.
+    nb_heads: int
+        Number of heads in the attention modules.
+
+    Returns
+    -------
+    (_, _): List[List[float]], List[List[int]]
+        The flattened weights, their shape.
+    """
+    model_weights = model.state_dict()
+
+    layers_weights: List[List[float]] = []
+    layers_dims: List[List[int]] = []
+
+    cur_item = 0
+    list_items = list(model_weights.items())
+
+    while cur_item < len(list_items):
+        name, layer_weights = list_items[cur_item]
+        print(f"Extracting weigths {name}.")
+
+        if "in_proj" in name:
+            weights = layer_weights.data.cpu().numpy()
+            nb_partial = int(len(weights) / 3)
+
+            weights1 = weights[0:nb_partial]
+            weights2 = weights[nb_partial: 2*nb_partial]
+            weights3 = weights[2*nb_partial: 3*nb_partial]
+
+            cur_item += 1
+            name, layer_weights = list_items[cur_item]
+            print(f"Extracting weigths {name}.")
+            biases = layer_weights.data.cpu().numpy()
+
+            biases1 = biases[0:nb_partial]
+            biases2 = biases[nb_partial: 2 * nb_partial]
+            biases3 = biases[2 * nb_partial: 3 * nb_partial]
+
+            weights_list, dims_list = _flatten_attention_weights(
+                weights=weights1, biases=biases1, nb_heads=nb_heads
+            )
+            layers_weights += weights_list
+            layers_dims += dims_list
+
+            weights_list, dims_list = _flatten_attention_weights(
+                weights=weights2, biases=biases2, nb_heads=nb_heads
+            )
+            layers_weights += weights_list
+            layers_dims += dims_list
+
+            weights_list, dims_list = _flatten_attention_weights(
+                weights=weights3, biases=biases3, nb_heads=nb_heads
+            )
+            layers_weights += weights_list
+            layers_dims += dims_list
+
+            cur_item += 1
+
+        else:
+            weights_list, dims_list = _flatten_weights(
+                layer_weights.data.cpu().numpy()
+            )
+
+            layers_weights.append(weights_list)
+            layers_dims.append(dims_list)
+
+            cur_item += 1
 
     return layers_weights, layers_dims
 
@@ -217,3 +347,66 @@ def load_test8_weights() -> Tuple[List[List[float]], List[List[int]]]:
     torch.manual_seed(42)
     model = ModelTest8()
     return _extract_weights(model)
+
+
+def load_test9_weights(size: int, patch: int) -> Tuple[List[List[float]], List[List[int]]]:
+    """
+    Get weights and biases for ModelTest9.
+
+    Parameters
+    ----------
+    size: int
+        The size of the input data.
+    patch: int
+        kernel split size of the input data.
+
+    Returns
+    -------
+    (_, _): List[float], List[int]
+        The flattened weights, their shape.
+    """
+    torch.manual_seed(42)
+    model = ModelTest9(size=size, patch=patch)
+    return _extract_weights(model)
+
+
+def load_test10_weights(size: int, patch: int) -> Tuple[List[List[float]], List[List[int]]]:
+    """
+    Get weights and biases for ModelTest10.
+
+    Parameters
+    ----------
+    size: int
+        The size of the input data.
+    patch: int
+        kernel split size of the input data.
+
+    Returns
+    -------
+    (_, _): List[float], List[int]
+        The flattened weights, their shape.
+    """
+    torch.manual_seed(42)
+    model = ModelTest10(size=size, patch=patch)
+    return _extract_attention_weights(model=model, nb_heads=1)
+
+
+def load_test11_weights(size: int, patch: int) -> Tuple[List[List[float]], List[List[int]]]:
+    """
+    Get weights and biases for ModelTest11.
+
+    Parameters
+    ----------
+    size: int
+        The size of the input data.
+    patch: int
+        kernel split size of the input data.
+
+    Returns
+    -------
+    (_, _): List[float], List[int]
+        The flattened weights, their shape.
+    """
+    torch.manual_seed(42)
+    model = ModelTest11(size=size, patch=patch)
+    return _extract_attention_weights(model=model, nb_heads=3)

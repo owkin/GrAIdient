@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
-🚨 **integration:** update & validate LayerNorm ([#71](https://github.com/owkin/GrAIdient/pull/71))\
+🚨 **integration:** update & validate LayerNormSeq ([#71](https://github.com/owkin/GrAIdient/pull/71))\
 🚨 **integration:** validate MultiHeadAttention & fix Softmax stability ([#70](https://github.com/owkin/GrAIdient/pull/70))\
 🪜 **layer_seq:** ValueSeq ([#69](https://github.com/owkin/GrAIdient/pull/69))\
 🪜 **layer_seq:** SoftmaxSeq ([#68](https://github.com/owkin/GrAIdient/pull/68))\

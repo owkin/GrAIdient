@@ -575,7 +575,7 @@ class ModelTest10(torch.nn.Module):
                 bias=True
             ),
         )
-        self.attention = torch.nn.MultiheadAttention(5, 1)
+        self.attention = torch.nn.MultiheadAttention(5, 1, batch_first=True)
         self.classifier = torch.nn.Sequential(
             torch.nn.Linear(in_features=5, out_features=1),
         )
@@ -619,7 +619,7 @@ class ModelTest10(torch.nn.Module):
         x = self.features(x)
         x = x.reshape(1, 5, self._nb_patch * self._nb_patch)
         x = x.permute(0, 2, 1)
-        x, y = self.attention(x, x, x)
+        x, _ = self.attention(x, x, x, need_weights=False)
         x = torch.mean(x, dim=1)
         x = torch.flatten(x, 1)
         x = self.classifier(x)
@@ -654,7 +654,7 @@ class ModelTest11(torch.nn.Module):
                 bias=True
             ),
         )
-        self.attention = torch.nn.MultiheadAttention(6, 3)
+        self.attention = torch.nn.MultiheadAttention(6, 3, batch_first=True)
         self.classifier = torch.nn.Sequential(
             torch.nn.Linear(in_features=6, out_features=1),
         )
@@ -698,7 +698,7 @@ class ModelTest11(torch.nn.Module):
         x = self.features(x)
         x = x.reshape(1, 6, self._nb_patch * self._nb_patch)
         x = x.permute(0, 2, 1)
-        x, y = self.attention(x, x, x)
+        x, _ = self.attention(x, x, x, need_weights=False)
         x = torch.mean(x, dim=1)
         x = torch.flatten(x, 1)
         x = self.classifier(x)

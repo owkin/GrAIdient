@@ -101,7 +101,7 @@ public class ValueSeq: LayerMergeSeq
             var sum = 0.0
             for seqK in 0..<sequence
             {
-                let valueTmp = value.get(seqQ, depth)!.gc[batch][elem].out
+                let valueTmp = value.get(seqK, depth)!.gc[batch][elem].out
                 let scoreTmp = score.get(seqQ, seqK)!.gc[batch][elem].out
                 
                 sum += valueTmp * scoreTmp
@@ -127,13 +127,13 @@ public class ValueSeq: LayerMergeSeq
                 
                 if index == 0
                 {
-                    valueTmp = value.get(seqQ, depth)!
+                    valueTmp = value.get(seqK, depth)!
                         .gc[batch][nbLastElems[index]+elem].out
                     scoreTmp = score.get(seqQ, seqK)!.v[batch].out
                 }
                 else
                 {
-                    valueTmp = value.get(seqQ, depth)!.v[batch].out
+                    valueTmp = value.get(seqK, depth)!.v[batch].out
                     scoreTmp = score.get(seqQ, seqK)!
                         .gc[batch][nbLastElems[index]+elem].out
                 }
@@ -188,7 +188,7 @@ public class ValueSeq: LayerMergeSeq
             var sum = 0.0
             for seqK in 0..<sequence
             {
-                let valueTmp = value.get(seqQ, depth)!.gc[batch][elem].out
+                let valueTmp = value.get(seqK, depth)!.gc[batch][elem].out
                 let scoreTmp = score.get(seqQ, seqK)!.gc[batch][elem].out
                 
                 sum += valueTmp * scoreTmp
@@ -219,7 +219,7 @@ public class ValueSeq: LayerMergeSeq
                 
                 if index == 0
                 {
-                    valueTmp = value.get(seqQ, depth)!
+                    valueTmp = value.get(seqK, depth)!
                         .gc[batch][nbLastElems[index]+elem].out
                     
                     let offsetTmp = seqK + sequence * seqQ +
@@ -229,7 +229,7 @@ public class ValueSeq: LayerMergeSeq
                 }
                 else
                 {
-                    let offsetTmp = depth + nbNeurons * seqQ +
+                    let offsetTmp = depth + nbNeurons * seqK +
                         sequence * nbNeurons * batch
                     
                     valueTmp = Double(valueBuffer[offsetTmp])
@@ -268,7 +268,7 @@ public class ValueSeq: LayerMergeSeq
             var sum = 0.0
             for seqK in 0..<sequence
             {
-                let valueTmp = value.get(seqQ, depth)!.v[elem].out
+                let valueTmp = value.get(seqK, depth)!.v[elem].out
                 let scoreTmp = score.get(seqQ, seqK)!.v[elem].out
                 
                 sum += valueTmp * scoreTmp
@@ -332,7 +332,7 @@ public class ValueSeq: LayerMergeSeq
                 for seqK in 0..<sequence
                 {
                     let deltaCur = neurons.get(seqQ, depth)!.v[elem].delta
-                    let scoreTmp = score.get(seqQ, seqK)!.v[elem].out
+                    let scoreTmp = score.get(seqK, seqQ)!.v[elem].out
                     
                     sum += deltaCur * scoreTmp
                 }
@@ -350,14 +350,14 @@ public class ValueSeq: LayerMergeSeq
         if _layersPrev[1].computeDelta
         {
             for elem in 0..<batchSize {
-            for seqK in 0..<sequence {
-            for seqQ in 0..<sequence
+            for seqQ in 0..<sequence {
+            for seqK in 0..<sequence
             {
                 var sum = 0.0
                 for depth in 0..<nbNeurons
                 {
                     let deltaCur = neurons.get(seqQ, depth)!.v[elem].delta
-                    let valueTmp = value.get(seqQ, depth)!.v[elem].out
+                    let valueTmp = value.get(seqK, depth)!.v[elem].out
                     
                     sum += deltaCur * valueTmp
                 }

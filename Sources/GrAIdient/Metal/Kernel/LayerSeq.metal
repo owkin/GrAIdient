@@ -758,7 +758,7 @@ kernel void valueSeqForward(
     for (uint seqK=0; seqK<sequence; seqK++)
     {
         uint offsetValue = depth +
-            nbNeurons * seqQ + sequence * nbNeurons * elem;
+            nbNeurons * seqK + sequence * nbNeurons * elem;
         uint offsetScore = seqK +
             sequence * seqQ + sequence * sequence * elem;
         
@@ -808,8 +808,8 @@ kernel void valueValueSeqBackward(
     for (uint seqK=0; seqK<sequence; seqK++)
     {
         uint offset = depth + nbNeurons * seqQ + sequence * nbNeurons * elem;
-        uint offsetScore = seqK +
-            sequence * seqQ + sequence * sequence * elem;
+        uint offsetScore = seqQ +
+            sequence * seqK + sequence * sequence * elem;
         
         tmp += delta[offset] * score[offsetScore];
     }
@@ -867,7 +867,7 @@ kernel void valueScoreSeqBackward(
     {
         uint offset = depth + nbNeurons * seqQ + sequence * nbNeurons * elem;
         uint offsetValue = depth +
-            nbNeurons * seqQ + sequence * nbNeurons * elem;
+            nbNeurons * seqK + sequence * nbNeurons * elem;
         
         tmp += delta[offset] * value[offsetValue];
     }

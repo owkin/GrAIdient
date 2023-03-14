@@ -222,3 +222,52 @@ kernel void backwardSigmoid(
     float derivative = tmp * (1 - tmp);
     delta[id] = delta[id] * derivative;
 }
+
+kernel void forwardGELU(
+   constant uint * pNbElems,
+   device float * tmps,
+   device float * outs,
+   uint id [[ thread_position_in_grid ]])
+{
+    uint nbElems;
+    
+    if (pNbElems)
+    {
+        nbElems = pNbElems[0];
+    }
+    else
+        return ;
+    
+    if (id >= nbElems)
+    {
+        return ;
+    }
+    
+    tmps[id] = outs[id];
+    outs[id] = tmps[id] / (1.0 + exp(-1.702 * tmps[id]));
+}
+
+kernel void backwardGELU(
+    const device float * tmps,
+    constant uint * pNbElems,
+    device float * delta,
+    uint id [[ thread_position_in_grid ]])
+{
+    uint nbElems;
+    
+    if (pNbElems)
+    {
+        nbElems = pNbElems[0];
+    }
+    else
+        return ;
+    
+    if (id >= nbElems)
+    {
+        return ;
+    }
+    
+    float tmp = 1.0 / (1.0 + exp(-1.702 * tmps[id]));
+    float derivative = 1.702 * tmp * (1 - tmp);
+    delta[id] = delta[id] * (tmps[id] * derivative + tmp);
+}

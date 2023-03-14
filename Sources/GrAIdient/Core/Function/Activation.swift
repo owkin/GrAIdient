@@ -13,7 +13,8 @@ let ACTIVATION_REGISTRY: [String: Codable.Type] = buildRegistry(
     ReLU.self,
     LeakyReLU.self,
     SoftReLU.self,
-    Sigmoid.self
+    Sigmoid.self,
+    GELU.self
 ])
 
 /// Activation function to be used in a layer.
@@ -771,6 +772,82 @@ public class Sigmoid: ActivationFunction
     }
 }
 
+/// GELU activation function.
+public class GELU: ActivationFunction
+{
+    public static let str = "GELU"
+    
+    /// Forward GPU kernel.
+    public override var forwardKernel: String
+    {
+        get {
+            return "forwardGELU"
+        }
+    }
+    /// Backward GPU kernel.
+    public override var backwardKernel: String
+    {
+        get {
+            return "backwardGELU"
+        }
+    }
+    
+    /// Create a Sigmoid activation function.
+    init()
+    {
+        super.init(GELU.str)
+    }
+    
+    ///
+    /// Decode from the disk.
+    ///
+    /// Throw an error if reading from the decoder fails, or
+    /// if the data read is corrupted or otherwise invalid.
+    ///
+    /// - Parameter decoder: The decoder to read data from.
+    ///
+    required public init(from decoder: Decoder) throws
+    {
+        try super.init(from: decoder)
+    }
+    
+    ///
+    /// Coefficient to apply during the weights initialization.
+    ///
+    /// - Parameters:
+    ///     - nPrev: The number of input connections.
+    ///     - nCur: The number of output connections.
+    ///
+    public override func coeffInitWeights(nPrev: Int, nCur: Int) -> Double
+    {
+        return sqrt(2.0 / Double(nPrev))
+    }
+    
+    ///
+    /// Forward CPU.
+    ///
+    /// - Parameter x: The input.
+    /// - Returns: The output.
+    ///
+    public override func apply(_ x: Double) -> Double
+    {
+        return x / (1 + exp(-1.702 * x))
+    }
+    
+    ///
+    /// Backward CPU.
+    ///
+    /// - Parameter x: The input.
+    /// - Returns: The output.
+    ///
+    public override func derivate(_ x: Double) -> Double
+    {
+        let tmp = 1 / (1 + exp(-1.702 * x))
+        let derivative = 1.702 * tmp * (1 - tmp)
+        return x * derivative + tmp
+    }
+}
+
 /// Factory API to build an activation function.
 public protocol ActivationKernel
 {
@@ -791,7 +868,8 @@ class ActivationKernelImpl: ActivationKernel
         ReLU.str: ReLUKernel(),
         LeakyReLU.str: LeakyReLUKernel(),
         SoftReLU.str: SoftReLUKernel(),
-        Sigmoid.str: SigmoidKernel()
+        Sigmoid.str: SigmoidKernel(),
+        GELU.str: GELUKernel()
     ]
     
     ///
@@ -856,5 +934,15 @@ private class SigmoidKernel: ActivationKernelImpl
     override func build() -> ActivationFunction
     {
         return Sigmoid()
+    }
+}
+
+/// Factory to build a Sigmoid function.
+private class GELUKernel: ActivationKernelImpl
+{
+    /// Build a Sigmoid function.
+    override func build() -> ActivationFunction
+    {
+        return GELU()
     }
 }

@@ -538,6 +538,8 @@ private class MetalDevice
                 "backwardSoftReLU",
                 "forwardSigmoid",
                 "backwardSigmoid",
+                "forwardGELU",
+                "backwardGELU",
             ],
             "Biases": [
                 "reduceBiases",

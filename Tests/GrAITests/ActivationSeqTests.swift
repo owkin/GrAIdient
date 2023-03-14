@@ -171,6 +171,23 @@ class ActivationSeqGradTests: Input2DMSE1DCase
         run(trainer)
     }
     
+    func testFLGELUCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(
+            model: "FullyConnected", activation: GELU.str
+        )
+        run(trainer)
+    }
+    
+    func testFLGELUGPU() throws
+    {
+        let trainer = _buildTrainer(
+            model: "FullyConnected", activation: GELU.str
+        )
+        run(trainer)
+    }
+    
     func testReLUCPU() throws
     {
         GrAI.Opti.CPU = true
@@ -235,6 +252,23 @@ class ActivationSeqGradTests: Input2DMSE1DCase
     {
         let trainer = _buildTrainer(
             model: "Activation", activation: Sigmoid.str
+        )
+        run(trainer)
+    }
+    
+    func testGELUCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(
+            model: "Activation", activation: GELU.str
+        )
+        run(trainer)
+    }
+    
+    func testGELUGPU() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Activation", activation: GELU.str
         )
         run(trainer)
     }

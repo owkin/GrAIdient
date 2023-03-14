@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+⚙️ **core:** GELU activation function ([#73](https://github.com/owkin/GrAIdient/pull/73))\
 🐛 **fix:** update ValueSeq operation ([#72](https://github.com/owkin/GrAIdient/pull/72))\
 🚨 **integration:** update & validate LayerNormSeq ([#71](https://github.com/owkin/GrAIdient/pull/71))\
 🚨 **integration:** validate MultiHeadAttention & fix Softmax stability ([#70](https://github.com/owkin/GrAIdient/pull/70))\

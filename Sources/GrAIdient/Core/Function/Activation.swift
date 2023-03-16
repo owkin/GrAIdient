@@ -792,7 +792,7 @@ public class GELU: ActivationFunction
         }
     }
     
-    /// Create a Sigmoid activation function.
+    /// Create a GELU activation function.
     init()
     {
         super.init(GELU.str)

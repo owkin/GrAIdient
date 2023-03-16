@@ -1346,12 +1346,6 @@ public class Convolution2D: BN2D
                                          UInt32(weightHeight)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             
-            if outs == nil
-            {
-                outs = MetalPrivateBuffer<Float>(
-                    batchSize * nbChannels * width * height, deviceID: deviceID)
-            }
-            
             let command = MetalKernel.get.createCommand(
                 forwardKernel, deviceID: deviceID
             )

@@ -1,11 +1,9 @@
 //
-//  File.swift
+// TransformerExample.swift
+// GrAIExamples
 //
+// Created by Aurélien PEDEN on 14/03/2023.
 //
-//  Created by Aurélien PEDEN on 14/03/2023.
-//
-
-import Foundation
 
 import XCTest
 import GrAIdient
@@ -25,7 +23,6 @@ final class TransformerExample: XCTestCase
     /// Deviation of the preprocessing to apply to data.
     let _std = (63.0, 62.1, 66.7)
     
-    
     // Initialize test.
     override func setUp()
     {
@@ -33,7 +30,6 @@ final class TransformerExample: XCTestCase
         _ = MetalKernel.get
         GrAI.Opti.GPU = true
     }
-    
     
     ///
     /// Get optimizer parameters for model training.
@@ -65,6 +61,16 @@ final class TransformerExample: XCTestCase
         return optimizerParams
     }
     
+    ///
+    /// Build a multi attention branch.
+    ///
+    /// - Parameters:
+    ///     - layerPrev: previous layer.
+    ///     - nbHeads: Number of head in attention branches.
+    ///     - hiddenDim: Dimension of neurons in the main branch.
+    ///     - params: Contextual parameters linking to the model.
+    /// - Returns: The model built.
+    ///
     func buildMultiHeadAttention(
         layerPrev: LayerSeq,
         nbHeads: Int,
@@ -126,6 +132,19 @@ final class TransformerExample: XCTestCase
         return layerSeq
     }
     
+    ///
+    /// Build a simple VisionTransformer model.
+    ///
+    /// - Parameters:
+    ///     - size: The data input size.
+    ///     - patch: Size of patch.
+    ///     - nbLayers: Number of atttention branches.
+    ///     - nbHeads: Number of head in attention branches.
+    ///     - hiddenDim: Dimension of neurons in the main branch.
+    ///     - mlpDim: Dimension of neurons in the MLP branch.
+    ///     - mlpActivation: Activation function in the MLP branch.
+    /// - Returns: The model built.
+    ///
     func _buildModel(
         size: Int,
         patch: Int,
@@ -133,8 +152,7 @@ final class TransformerExample: XCTestCase
         nbHeads: Int,
         hiddenDim: Int,
         mlpDim: Int,
-        mlpActivation: String,
-        weightsList: [[Float]]? = nil) -> Model
+        mlpActivation: String) -> Model
     {
         let context = ModelContext(name: "VisionTransformer", curID: 0)
         let params = GrAI.Model.Params(context: context)
@@ -213,11 +231,13 @@ final class TransformerExample: XCTestCase
             layerPrev: layerSeq, activation: nil, params: params
         )
         
-        let layerAvgPoolSeq: AvgPoolSeq = AvgPoolSeq(layerPrev: layerSeq, params: params)
-        _ = MSE1D(layerPrev: layerAvgPoolSeq, params: params)
+        let head: Layer1D = AvgPoolSeq(layerPrev: layerSeq, params: params)
         
+        _ = MSE1D(layerPrev: head, params: params)
+        
+        // Retrieve base model in the context and initialize a
+        // real model (with `layerPrev` links updated).
         let model = Model(model: context.model, modelsPrev: [])
-        
         return model
     }
     
@@ -247,8 +267,7 @@ final class TransformerExample: XCTestCase
         return transformer
     }
     
-    
-    //
+    ///
     /// Evaluate a model on the testing CIFAR dataset.
     ///
     /// - Parameter model: The model to evaluate.
@@ -319,7 +338,6 @@ final class TransformerExample: XCTestCase
                 {
                     // Get result: 1 neuron.
                     let result: Float = lastLayer.getOutsGPU(elem: elem)[0]
-                    //let result: Float = Float(lastLayer.getOuts(batch: elem, seq: 0)[0])
                     if label == 0 && result < 0.5
                     {
                         nbRight += 1
@@ -338,8 +356,6 @@ final class TransformerExample: XCTestCase
         let ratio = Int(Double(nbRight) / Double(nbTotal) * 100)
         return ratio
     }
-    
-    
     
     /// Test1: dump CIFAR train and test datasets for labels 8 and 5.
     func test1_DumpDataset()
@@ -444,8 +460,7 @@ final class TransformerExample: XCTestCase
         )
     }
     
-    
-    // Test4: train a simple model.
+    /// Test4: train a simple model.
     func test4_TrainTransformer()
     {
         let cifar8 = CIFAR.loadDataset(
@@ -579,7 +594,6 @@ final class TransformerExample: XCTestCase
             to: URL(fileURLWithPath: _outputDir + "/transformer2.plist")
         )
     }
-    
     
     /// Test5: test that the previous trained model makes better predictions than the untrained model.
     func test5_CompareModels()

@@ -300,7 +300,6 @@ final class TransformerExample: XCTestCase
         var sampler: CIFAR = cifar8
         var samples = sampler.getSamples()
         
-        
         for label in 0...1
         {
             if samples == nil
@@ -431,13 +430,15 @@ final class TransformerExample: XCTestCase
     func test3_UntrainedModel()
     {
         // Build a model with randomly initialized weights.
-        let transformer = _buildModel(size: 32,
-                                      patch: 16,
-                                      nbLayers: 12,
-                                      nbHeads: 12,
-                                      hiddenDim: 768,
-                                      mlpDim: 3072,
-                                      mlpActivation: ReLU.str)
+        let transformer = _buildModel(
+            size: 32,
+            patch: 16,
+            nbLayers: 2,
+            nbHeads: 2,
+            hiddenDim: 16,
+            mlpDim: 32,
+            mlpActivation: ReLU.str
+        )
         
         // Initialize for inference.
         transformer.initKernel(phase: .Inference)
@@ -488,7 +489,7 @@ final class TransformerExample: XCTestCase
         // Small trick to force full batches throughout the training:
         // this enables us to set the ground truth once and for all.
         let nbWholeBatches =
-        cifar8.nbSamples / cifar8.batchSize * cifar8.batchSize
+            cifar8.nbSamples / cifar8.batchSize * cifar8.batchSize
         cifar8.keep(nbWholeBatches)
         cifar5.keep(nbWholeBatches)
         

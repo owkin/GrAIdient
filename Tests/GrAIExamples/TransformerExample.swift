@@ -437,7 +437,7 @@ final class TransformerExample: XCTestCase
             nbHeads: 2,
             hiddenDim: 16,
             mlpDim: 32,
-            mlpActivation: ReLU.str
+            mlpActivation: GELU.str
         )
         
         // Initialize for inference.

@@ -315,9 +315,17 @@ public class SoftmaxSeq: LayerSeq
             {
                 hum1.append(elem)
             }
+            var max3 = Float(0.0)
             for elem in buffer3
             {
                 hum3.append(elem)
+            }
+            for elem in 0..<196
+            {
+                if buffer3[elem] > max3
+                {
+                    max3 = buffer3[elem]
+                }
             }
             print("COUCOU")
         }

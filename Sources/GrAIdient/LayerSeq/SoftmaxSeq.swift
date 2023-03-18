@@ -320,7 +320,7 @@ public class SoftmaxSeq: LayerSeq
             {
                 hum3.append(elem)
             }
-            for elem in 0..<196
+            for elem in 0..<197
             {
                 if buffer3[elem] > max3
                 {

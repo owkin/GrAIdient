@@ -983,25 +983,25 @@ public class FullyConnectedSeq: ActivationSeq,
     ///
     public override func backwardGPU() throws
     {
-        MetalKernel.get.download([delta])
+        /*MetalKernel.get.download([delta])
         let buffer1 = delta.shared.buffer
         var hum1 = [Float]()
         for elem in buffer1
         {
             hum1.append(elem)
         }
-        print("COUCOU")
+        print("COUCOU")*/
         
         _activation?.backwardGPU(self)
         
-        MetalKernel.get.download([delta])
+        /*MetalKernel.get.download([delta])
         let buffer2 = delta.shared.buffer
         var hum2 = [Float]()
         for elem in buffer2
         {
             hum2.append(elem)
         }
-        print("COUCOU")
+        print("COUCOU")*/
         
         try _backwardGPU()
         _backwardWeightsGPU()

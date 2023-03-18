@@ -294,7 +294,7 @@ public class SoftmaxSeq: LayerSeq
             propagateDirty()
             
             
-            MetalKernel.get.download([outs])
+            /*MetalKernel.get.download([outs])
             MetalKernel.get.download([delta])
             MetalKernel.get.download([layerPrev.delta])
             let buffer1 = delta.shared.buffer
@@ -327,7 +327,7 @@ public class SoftmaxSeq: LayerSeq
                     max3 = buffer3[elem]
                 }
             }
-            print("COUCOU")
+            print("COUCOU")*/
         }
     }
 }

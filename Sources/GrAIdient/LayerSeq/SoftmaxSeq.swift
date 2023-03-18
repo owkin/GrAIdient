@@ -292,6 +292,16 @@ public class SoftmaxSeq: LayerSeq
             command.enqueue()
             
             propagateDirty()
+            
+            
+            MetalKernel.get.download([layerPrev.delta])
+            let buffer = layerPrev.delta.shared.buffer
+            var hum = [Float]()
+            for elem in buffer
+            {
+                hum.append(elem)
+            }
+            print("COUCOU")
         }
     }
 }

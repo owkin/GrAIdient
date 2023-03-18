@@ -983,7 +983,7 @@ public class FullyConnectedSeq: ActivationSeq,
     ///
     public override func backwardGPU() throws
     {
-        MetalKernel.get.download([outs])
+        MetalKernel.get.download([delta])
         let buffer1 = delta.shared.buffer
         var hum1 = [Float]()
         for elem in buffer1
@@ -994,7 +994,7 @@ public class FullyConnectedSeq: ActivationSeq,
         
         _activation?.backwardGPU(self)
         
-        MetalKernel.get.download([outs])
+        MetalKernel.get.download([delta])
         let buffer2 = delta.shared.buffer
         var hum2 = [Float]()
         for elem in buffer2

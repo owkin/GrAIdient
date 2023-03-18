@@ -299,6 +299,10 @@ public class SoftmaxSeq: LayerSeq
             var hum = [Float]()
             for elem in buffer
             {
+                if elem > 1.0
+                {
+                    print("HUM")
+                }
                 hum.append(elem)
             }
             print("COUCOU")

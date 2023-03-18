@@ -294,16 +294,23 @@ public class SoftmaxSeq: LayerSeq
             propagateDirty()
             
             
+            MetalKernel.get.download([delta])
             MetalKernel.get.download([layerPrev.delta])
-            let buffer = layerPrev.delta.shared.buffer
-            var hum = [Float]()
-            for elem in buffer
+            let buffer1 = delta.shared.buffer
+            let buffer2 = layerPrev.delta.shared.buffer
+            var hum1 = [Float]()
+            var hum2 = [Float]()
+            for elem in buffer2
             {
                 if elem > 1.0
                 {
                     print("HUM")
                 }
-                hum.append(elem)
+                hum2.append(elem)
+            }
+            for elem in buffer1
+            {
+                hum1.append(elem)
             }
             print("COUCOU")
         }

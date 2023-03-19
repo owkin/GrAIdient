@@ -610,7 +610,7 @@ kernel void softmaxSeqForward(
         return ;
     }
     
-    float cMax = 0.0;
+    float cMax = -1000;
     for (uint depth1=0; depth1<nbNeurons; depth1++)
     {
         uint offset1 = depth1 +

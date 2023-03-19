@@ -294,7 +294,7 @@ public class SoftmaxSeq: LayerSeq
             let command = MetalKernel.get.createCommand(
                 "softmaxSeqBackward", deviceID: deviceID
             )
-            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+            command.setBuffer(outs.metal, atIndex: 0)
             command.setBuffer(delta.metal, atIndex: 1)
             command.setBytes(pNbNeurons, atIndex: 2)
             command.setBytes(pNbBatch, atIndex: 3)

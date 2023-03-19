@@ -200,12 +200,19 @@ public class SoftmaxSeq: LayerSeq
             command.enqueue()
             
             
+            MetalKernel.get.download([layerPrev.outs])
             MetalKernel.get.download([outs])
-            let buffer1 = outs.shared.buffer
+            let buffer1 = layerPrev.outs.shared.buffer
+            let buffer2 = outs.shared.buffer
             var hum1 = [Float]()
+            var hum2 = [Float]()
             for elem in buffer1
             {
                 hum1.append(elem)
+            }
+            for elem in buffer2
+            {
+                hum2.append(elem)
             }
             print("COUCOU")
         }

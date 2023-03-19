@@ -198,6 +198,16 @@ public class SoftmaxSeq: LayerSeq
                 height: batchSize * sequence
             )
             command.enqueue()
+            
+            
+            MetalKernel.get.download([outs])
+            let buffer1 = outs.shared.buffer
+            var hum1 = [Float]()
+            for elem in buffer1
+            {
+                hum1.append(elem)
+            }
+            print("COUCOU")
         }
     }
     

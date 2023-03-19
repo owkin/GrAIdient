@@ -245,9 +245,18 @@ kernel void forwardGELU(
     
     float cst = sqrt(2.0 / 3.14159);
     float x = outs[id];
-    float tmp = tanh(cst * (x + 0.044715 * pow(x, 3)));
+    float tmp = cst * (x + 0.044715 * pow(x, 3));
+    float tmp1;
+    if (x >= 0)
+    {
+        tmp1 = (1 - exp(-2 * tmp)) / (1 + exp(-2 * tmp));
+    }
+    else
+    {
+        tmp1 = (exp(2 * tmp) - 1) / (exp(2 * tmp) + 1);
+    }
     tmps[id] = x;
-    outs[id] = 0.5 * x * (1 + tmp);
+    outs[id] = 0.5 * x * (1 + tmp1);
 }
 
 kernel void backwardGELU(
@@ -272,8 +281,17 @@ kernel void backwardGELU(
     
     float cst = sqrt(2.0 / 3.14159);
     float x = tmps[id];
-    float tmp1 = tanh(cst * (x + 0.044715 * pow(x, 3)));
-    float tmp2 = cst * (1 + 3 * 0.044715 * x * x) * (1 - tmp1 * tmp1);
-    float derivative = 0.5 * (1 + tmp1 + x * tmp2);
+    float tmp1 = cst * (x + 0.044715 * pow(x, 3));
+    float tmp2;
+    if (x >= 0)
+    {
+        tmp2 = (1 - exp(-2 * tmp1)) / (1 + exp(-2 * tmp1));
+    }
+    else
+    {
+        tmp2 = (exp(2 * tmp1) - 1) / (exp(2 * tmp1) + 1);
+    }
+    float tmp3 = cst * (1 + 3 * 0.044715 * x * x) * (1 - tmp2 * tmp2);
+    float derivative = 0.5 * (1 + tmp2 + x * tmp3);
     delta[id] = delta[id] * derivative;
 }

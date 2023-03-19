@@ -268,7 +268,7 @@ public class Softmax1D: Layer1D
             {
                 for j in 0..<_size
                 {
-                    let outCur = neuronsPrev.get(
+                    let outCur = neurons.get(
                         j + block * _size)!.v[elem].out
                     let deltaCur = neurons.get(
                         j + block * _size)!.v[elem].delta

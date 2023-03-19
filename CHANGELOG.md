@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🐛 **fix:** numerical instability of Softmax ([#76](https://github.com/owkin/GrAIdient/pull/76))\
 🚀 **examples:** make Transformer example very simple ([#75](https://github.com/owkin/GrAIdient/pull/75))\
 🚀 **examples:** adding Transformer training example ([#74](https://github.com/owkin/GrAIdient/pull/74))\
 ⚙️ **core:** GELU activation function ([#73](https://github.com/owkin/GrAIdient/pull/73))\

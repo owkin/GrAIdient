@@ -352,7 +352,7 @@ kernel void softmax1DForward(
         return ;
     }
     
-    float cMax = 0.0;
+    float cMax = outsPrev[0+block*size + nbNeurons * elem];
     for (uint j1=0; j1<size; j1++)
     {
         uint offset1 = j1+block*size + nbNeurons * elem;
@@ -378,7 +378,7 @@ kernel void softmax1DForward(
 }
 
 kernel void softmax1DBackward(
-    const device float * outsPrev,
+    const device float * outs,
     const device float * delta,
     constant uint * pSize,
     constant uint * pNbNeurons,
@@ -393,7 +393,7 @@ kernel void softmax1DBackward(
     uint dirty;
     
     if (pSize && pNbNeurons && pNbBatch && pDirty &&
-        outsPrev && deltaPrev && delta)
+        deltaPrev && outs && delta)
     {
         size = *pSize;
         nbNeurons = *pNbNeurons;
@@ -412,48 +412,26 @@ kernel void softmax1DBackward(
         return ;
     }
     
-    float cMax = 0.0;
-    for (uint j1=0; j1<size; j1++)
-    {
-        uint offset1 = j1+block*size + nbNeurons * elem;
-        float outPrev = outsPrev[offset1];
-        
-        if (outPrev > cMax)
-        {
-            cMax = outPrev;
-        }
-    }
-    
-    float sum1 = 0.0;
-    for (uint j1=0; j1<size; j1++)
-    {
-        uint offset1 = j1+block*size + nbNeurons * elem;
-        float outPrev1 = outsPrev[offset1];
-        sum1 += exp(outPrev1 - cMax);
-    }
-    
     uint offset = depth + nbNeurons * elem;
     float outPrev = outsPrev[offset];
     float deltaCur = delta[offset];
     
-    float sum2 = 0.0;
-    for (uint j2=0; j2<size; j2++)
+    float sum1 = 0.0;
+    for (uint j1=0; j1<size; j1++)
     {
-        uint offset2 = j2+block*size + nbNeurons * elem;
-        float outPrev2 = outsPrev[offset2];
-        float deltaCur2 = delta[offset2];
-        sum2 += exp(outPrev + outPrev2 - 2 * cMax) * deltaCur2;
+        uint offse1 = j1+block*size + nbNeurons * elem;
+        float outCur1 = outs[offset1];
+        float deltaCur1 = delta[offset1];
+        sum1 += outCur1 * deltaCur1;
     }
     
     if (dirty)
     {
-        deltaPrev[offset] = -sum2 / (sum1 * sum1) +
-            exp(outPrev - cMax) * deltaCur / sum1;
+        deltaPrev[offset] = outCur * (deltaCur - sum1);
     }
     else
     {
-        deltaPrev[offset] += -sum2 / (sum1 * sum1) +
-            exp(outPrev - cMax) * deltaCur / sum1;
+        deltaPrev[offset] += outCur * (deltaCur - sum1);
     }
 }
 

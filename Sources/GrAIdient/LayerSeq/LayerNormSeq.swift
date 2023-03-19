@@ -530,8 +530,8 @@ public class LayerNormSeq: ActivationSeq, LayerUpdate, LayerWithActivation
             command.dispatchThreads(nbElems)
             command.enqueue()
             
-            //_normGPU!.forward(self)
-            //_activation?.forwardGPU(self)
+            _normGPU!.forward(self)
+            _activation?.forwardGPU(self)
         }
     }
     
@@ -572,8 +572,8 @@ public class LayerNormSeq: ActivationSeq, LayerUpdate, LayerWithActivation
     ///
     public override func backwardGPU() throws
     {
-        //_activation?.backwardGPU(self)
-        //_normGPU!.backward(self)
+        _activation?.backwardGPU(self)
+        _normGPU!.backward(self)
         
         if let layerPrev = self.layerPrev as? LayerSeq, mustComputeBackward
         {

@@ -413,13 +413,13 @@ kernel void softmax1DBackward(
     }
     
     uint offset = depth + nbNeurons * elem;
-    float outPrev = outsPrev[offset];
+    float outCur = outs[offset];
     float deltaCur = delta[offset];
     
     float sum1 = 0.0;
     for (uint j1=0; j1<size; j1++)
     {
-        uint offse1 = j1+block*size + nbNeurons * elem;
+        uint offset1 = j1+block*size + nbNeurons * elem;
         float outCur1 = outs[offset1];
         float deltaCur1 = delta[offset1];
         sum1 += outCur1 * deltaCur1;

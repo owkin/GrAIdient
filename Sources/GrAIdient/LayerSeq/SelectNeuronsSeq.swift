@@ -245,6 +245,7 @@ public class SelectNeuronsSeq: Layer1D
             let pTarget: [UInt32] = [UInt32(targetSeq)]
             let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
+            let pSequence: [UInt32] = [UInt32(layerPrev.sequence)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
             let command = MetalKernel.get.createCommand(
@@ -254,8 +255,9 @@ public class SelectNeuronsSeq: Layer1D
             command.setBytes(pTarget, atIndex: 1)
             command.setBytes(pNbNeurons, atIndex: 2)
             command.setBytes(pNbBatch, atIndex: 3)
-            command.setBytes(pDirty, atIndex: 4)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 5)
+            command.setBytes(pSequence, atIndex: 4)
+            command.setBytes(pDirty, atIndex: 5)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 6)
             
             command.enqueue()
             

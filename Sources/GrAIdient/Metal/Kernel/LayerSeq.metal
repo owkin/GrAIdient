@@ -50,6 +50,85 @@ kernel void avgPoolSeqForward(
     outs[offset] = tmp;
 }
 
+kernel void selectNeuronsSeqForward(
+    const device float * outsPrev,
+    constant uint * pTarget,
+    constant uint * pNbNeurons,
+    constant uint * pNbBatch,
+    constant uint * pSequence,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint targetSeq;
+    uint nbNeurons;
+    uint nbBatch;
+    uint sequence;
+    
+    if (pTarget && pNbNeurons && pNbBatch &&
+        outsPrev && outs)
+    {
+        targetSeq = *pTarget;
+        nbNeurons = *pNbNeurons;
+        nbBatch = *pNbBatch;
+        sequence = *pSequence;
+    }
+    else
+        return ;
+    
+    uint depth = id[0];
+    uint elem = id[1];
+    
+    if (depth >= nbNeurons || elem >= nbBatch)
+    {
+        return ;
+    }
+    
+    uint offset = depth + nbNeurons * elem;
+    uint offsetPrev = depth + nbNeurons * targetSeq + sequence * nbNeurons * elem;
+    outs[offset] = outsPrev[offsetPrev];
+}
+
+kernel void selectNeuronsSeqBackward(
+    const device float * delta,
+    constant uint * pTarget,
+    constant uint * pNbNeurons,
+    constant uint * pNbBatch,
+    constant uint * pSequence,
+    constant uint * pDirty,
+    device float * deltaPrev,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint nbNeurons;
+    uint nbNeuronsPrev;
+    uint nbBatch;
+    uint sequence;
+    uint dirty;
+    uint targetSeq;
+    
+    if (pNbNeurons && pTarget && pNbBatch &&
+        deltaPrev && delta)
+    {
+        targetSeq = *pTarget;
+        nbNeurons = *pNbNeurons;
+        nbBatch = *pNbBatch;
+        sequence = *pSequence;
+    }
+    else
+        return ;
+    
+    uint depth = id[0];
+    uint elem = id[1];
+    
+    if (depth >= nbNeurons || elem >= nbBatch)
+    {
+        return ;
+    }
+    
+    uint offset = depth + nbNeurons * elem;
+    uint offsetPrev = depth + nbNeurons * targetSeq + sequence * nbNeurons * elem;
+    deltaPrev[offsetPrev] += delta[offset];
+}
+
 kernel void avgPoolSeqBackward(
     const device float * delta,
     constant uint * pNbNeurons,

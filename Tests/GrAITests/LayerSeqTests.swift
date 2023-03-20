@@ -1255,3 +1255,74 @@ class LayerSeqTransformTests: LayerSeqFlowTests
         run(trainer)
     }
 }
+
+
+// -----------------------------------------------------------------------------
+// Compare GPU Loss in inference mode with CPU one using SelectNeuronsSeq
+// We expect to see errors ~ 1e-3 and less.
+// -----------------------------------------------------------------------------
+class LayerSelectNeuronsSeqInferenceTests: LayerSeqFlowTests
+{
+    private func _buildTrainer() -> InferenceTrainer
+    {
+        let trainer = InferenceTrainer(
+            name: "LayerSeq",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            _buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    private func _buildModel(context: ModelContext)
+    {
+        let params = GrAI.Model.Params(context: context)
+        
+        var layer: Layer2D = Input2D(
+            nbChannels: 1, width: width, height: height, params: params
+        )
+        
+        layer = Convolution2D(
+            layerPrev: layer, size: 1, nbChannels: 3, stride: 1,
+            activation: SoftReLU.str, biases: true, bn: false, params: params
+        )
+        
+        var layerSeq: LayerSeq
+        
+        let otherLayer1: LayerSeq = FullyConnectedPatch(
+            layerPrev: layer, patch: width / 3, nbNeurons: 5,
+            activation: SoftReLU.str, biases: true, params: params
+        )
+        let otherLayer2: LayerSeq = FullyConnectedPatch(
+            layerPrev: layer, patch: width / 3, nbNeurons: 5,
+            activation: SoftReLU.str, biases: true, params: params
+        )
+        layerSeq = FullyConnectedPatch(
+            layerPrev: layer, patch: width / 3, nbNeurons: 5,
+            activation: SoftReLU.str, biases: true, params: params
+        )
+        layerSeq = SumSeq(
+            layersPrev: [layerSeq, otherLayer1, otherLayer2],
+            params: params
+        )
+        
+        var head: Layer1D = SelectNeuronsSeq(layerPrev: layerSeq, targetSeq: 3, params: params)
+        
+        head = FullyConnected(
+            layerPrev: head, nbNeurons: 1,
+            activation: SoftReLU.str, biases: true, params: params
+        )
+        
+        _ = MSE1D(layerPrev: head, params: params)
+    }
+    
+    override func testSum() throws
+    {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+}
+

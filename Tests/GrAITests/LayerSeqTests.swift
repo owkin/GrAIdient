@@ -1309,7 +1309,7 @@ class LayerSelectNeuronsSeqInferenceTests: LayerSeqFlowTests
             params: params
         )
         
-        var head: Layer1D = SelectNeuronsSeq(layerPrev: layerSeq, targetSeq: 3, params: params)
+        var head: Layer1D = SelectNeuronsSeq(layerPrev: layerSeq, targetSeq: 3, neurons: [1, 3], coeffs: [0.2, 0.1], params: params)
         
         head = FullyConnected(
             layerPrev: head, nbNeurons: 1,

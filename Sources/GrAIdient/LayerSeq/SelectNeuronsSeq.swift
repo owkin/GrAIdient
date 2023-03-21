@@ -12,9 +12,27 @@ public class SelectNeuronsSeq: Layer1D
     /// Sequence of the selected neuron
     public let targetSeq: Int
     
+    /// List of neurons to select.
+    let _neurons: [Int]
+    /// List of coefficients to scale each selected neuron.
+    let _coeffs: [Double]
+    
+    ///
+    /// Indices of selected neurons.
+    /// Shape ~ (nbNeurons,).
+    ///
+    var _neuronsBuffer: MetalPrivateBuffer<UInt32>! = nil
+    ///
+    /// Coefficients of selected neurons.
+    /// Shape ~ (nbNeurons,).
+    ///
+    var _coeffsBuffer: MetalPrivateBuffer<Float>! = nil
+    
     private enum Keys: String, CodingKey
     {
         case targetSeq
+        case neurons
+        case coeffs
     }
     
     ///
@@ -25,12 +43,14 @@ public class SelectNeuronsSeq: Layer1D
     ///     - params: Contextual parameters linking to the model.
     ///     - targetSeq: Selected seq
     ///
-    public init(layerPrev: LayerSeq, targetSeq: Int, params: GrAI.Model.Params)
+    public init(layerPrev: LayerSeq, targetSeq: Int, neurons: [Int], coeffs: [Double], params: GrAI.Model.Params)
     {
         self.targetSeq = targetSeq
+        _neurons = neurons
+        _coeffs = coeffs
         
         super.init(layerPrev: layerPrev,
-                   nbNeurons: layerPrev.nbNeurons,
+                   nbNeurons: _neurons.count,
                    params: params)
     }
     
@@ -46,6 +66,8 @@ public class SelectNeuronsSeq: Layer1D
     {
         let values = try decoder.container(keyedBy: Keys.self)
         targetSeq = try values.decode(Int.self, forKey: Keys.targetSeq)
+        _neurons = try values.decode([Int].self, forKey: .neurons)
+        _coeffs = try values.decode([Double].self, forKey: .coeffs)
         try super.init(from: decoder)
     }
     
@@ -64,6 +86,8 @@ public class SelectNeuronsSeq: Layer1D
     {
         var container = encoder.container(keyedBy: Keys.self)
         try container.encode(targetSeq, forKey: Keys.targetSeq)
+        try container.encode(_neurons, forKey: Keys.neurons)
+        try container.encode(_coeffs, forKey: Keys.coeffs)
         try super.encode(to: encoder)
     }
     
@@ -89,8 +113,57 @@ public class SelectNeuronsSeq: Layer1D
         let params = GrAI.Model.Params(context: context)
         params.context.curID = id
             
-        let layer = SelectNeuronsSeq(layerPrev: layerPrev, targetSeq: targetSeq, params: params)
+        let layer = SelectNeuronsSeq(
+            layerPrev: layerPrev,
+            targetSeq: targetSeq,
+            neurons: _neurons,
+            coeffs: _coeffs,
+            params: params)
         return layer
+    }
+    
+    ///
+    /// Clean state resources in the GPU execution context.
+    ///
+    /// We clean the neurons' state (forward and backward).
+    ///
+    public override func resetKernelGPU()
+    {
+        super.resetKernelGPU()
+        _neuronsBuffer = nil
+        _coeffsBuffer = nil
+    }
+    
+    ///
+    /// Initialize state resources in the GPU execution context.
+    ///
+    /// We initialize the neurons' forward state.
+    ///
+    public override func checkStateForwardGPU(batchSize: Int) throws
+    {
+        try super.checkStateForwardGPU(batchSize: batchSize)
+        
+        if _neuronsBuffer == nil
+        {
+            _neuronsBuffer = MetalPrivateBuffer<UInt32>(
+                nbNeurons, deviceID: deviceID
+            )
+            _coeffsBuffer = MetalPrivateBuffer<Float>(
+                nbNeurons, deviceID: deviceID
+            )
+            
+            let neuronsPtr = _neuronsBuffer.shared.buffer
+            let coeffsPtr = _coeffsBuffer.shared.buffer
+            
+            for (num, neuron) in _neurons.enumerated()
+            {
+                neuronsPtr[num] = UInt32(neuron)
+                coeffsPtr[num] = Float(_coeffs[num])
+            }
+            
+            MetalKernel.get.upload([_neuronsBuffer])
+            MetalKernel.get.upload([_coeffsBuffer])
+        }
     }
     
     ///
@@ -118,8 +191,8 @@ public class SelectNeuronsSeq: Layer1D
                 {
                     for depth in 0..<nbNeurons
                     {
-                        let outPrev = neuronsPrev!.get(targetSeq, depth)!
-                        neurons.get(depth)!.gc[batch][elem].out =
+                        let outPrev = neuronsPrev!.get(targetSeq, _neurons[depth])!
+                        neurons.get(depth)!.gc[batch][elem].out = _coeffs[depth] *
                             outPrev.gc[batch][elem].out
                     }
                 }
@@ -155,9 +228,11 @@ public class SelectNeuronsSeq: Layer1D
             {
                 for depth in 0..<nbNeurons
                 {
-                    let outPrev = neuronsPrev.get(targetSeq, depth)!.v[elem].out
+                    //let outPrev = neuronsPrev.get(targetSeq, _neurons[depth])!.v[elem].out
                     
-                    neurons.get(depth)!.v[elem].out = outPrev
+                    //neurons.get(depth)!.v[elem].out = _coeffs[depth] * outPrev
+                    
+                    neurons.get(depth)!.v[elem].out = _coeffs[depth] * neuronsPrev.get(targetSeq, _neurons[depth])!.v[elem].out
                 }
             }
         }
@@ -185,9 +260,13 @@ public class SelectNeuronsSeq: Layer1D
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(pTarget, atIndex: 1)
             command.setBytes(pNbNeurons, atIndex: 2)
-            command.setBytes(pNbBatch, atIndex: 3)
-            command.setBytes(pSequence, atIndex: 4)
-            command.setBuffer(outs.metal, atIndex: 5)
+            
+            command.setBuffer(_neuronsBuffer.metal, atIndex: 3)
+            command.setBuffer(_coeffsBuffer.metal, atIndex: 4)
+            
+            command.setBytes(pNbBatch, atIndex: 5)
+            command.setBytes(pSequence, atIndex: 6)
+            command.setBuffer(outs.metal, atIndex: 7)
             
             command.dispatchThreads(
                 width: nbNeurons,
@@ -223,7 +302,7 @@ public class SelectNeuronsSeq: Layer1D
             {
                 for depth in 0..<nbNeurons
                 {
-                    neuronsPrev.get(targetSeq, depth)!.v[elem].delta += neurons.get(depth)!.v[elem].delta
+                    neuronsPrev.get(targetSeq, _neurons[depth])!.v[elem].delta += _coeffs[depth] * neurons.get(depth)!.v[elem].delta
                 }
             }
             
@@ -254,10 +333,14 @@ public class SelectNeuronsSeq: Layer1D
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBytes(pTarget, atIndex: 1)
             command.setBytes(pNbNeurons, atIndex: 2)
-            command.setBytes(pNbBatch, atIndex: 3)
-            command.setBytes(pSequence, atIndex: 4)
-            command.setBytes(pDirty, atIndex: 5)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 6)
+            
+            command.setBuffer(_neuronsBuffer.metal, atIndex: 3)
+            command.setBuffer(_coeffsBuffer.metal, atIndex: 4)
+            
+            command.setBytes(pNbBatch, atIndex: 5)
+            command.setBytes(pSequence, atIndex: 6)
+            command.setBytes(pDirty, atIndex: 7)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 8)
             
             command.enqueue()
             

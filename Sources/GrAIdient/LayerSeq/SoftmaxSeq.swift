@@ -97,12 +97,23 @@ public class SoftmaxSeq: LayerSeq
             for seq in 0..<sequence {
             for elem in 0..<nbGC
             {
+                var cMax = neuronsPrev.get(seq, 0)!.gc[batch][elem].out
+                for depth1 in 0..<nbNeurons
+                {
+                    let outPrev = neuronsPrev
+                        .get(seq, depth1)!.gc[batch][elem].out
+                    if outPrev > cMax
+                    {
+                        cMax = outPrev
+                    }
+                }
+                
                 var sum1 = 0.0
                 for depth1 in 0..<nbNeurons
                 {
                     let outPrev = neuronsPrev
                         .get(seq, depth1)!.gc[batch][elem].out
-                    sum1 += exp(outPrev)
+                    sum1 += exp(outPrev - cMax)
                 }
                 
                 for depth1 in 0..<nbNeurons
@@ -110,7 +121,7 @@ public class SoftmaxSeq: LayerSeq
                     let outPrev = neuronsPrev
                         .get(seq, depth1)!.gc[batch][elem].out
                     neurons.get(seq, depth1)!.gc[batch][elem].out =
-                        exp(outPrev) / sum1
+                        exp(outPrev - cMax) / sum1
                 }
             }}}
         }
@@ -142,7 +153,7 @@ public class SoftmaxSeq: LayerSeq
             for elem in 0..<batchSize {
             for seq in 0..<sequence
             {
-                var cMax = 0.0
+                var cMax = neuronsPrev.get(seq, 0)!.v[elem].out
                 for depth1 in 0..<nbNeurons
                 {
                     let outPrev = neuronsPrev.get(seq, depth1)!.v[elem].out
@@ -211,46 +222,28 @@ public class SoftmaxSeq: LayerSeq
             for elem in 0..<batchSize {
             for seq in 0..<sequence
             {
-                var cMax = 0.0
-                for depth1 in 0..<nbNeurons
+                for depth in 0..<nbNeurons
                 {
-                    let outPrev = neuronsPrev.get(seq, depth1)!.v[elem].out
-                    if outPrev > cMax
-                    {
-                        cMax = outPrev
-                    }
-                }
-                
-                var sum1: Double = 0.0
-                for depth1 in 0..<nbNeurons
-                {
-                    let outPrev = neuronsPrev.get(seq, depth1)!.v[elem].out
-                    sum1 += exp(outPrev - cMax)
-                }
-                
-                for depth1 in 0..<nbNeurons
-                {
-                    let outPrev1 = neuronsPrev.get(seq, depth1)!.v[elem].out
-                    let deltaCur1 = neurons.get(seq, depth1)!.v[elem].delta
+                    let outCur = neurons.get(seq, depth)!.v[elem].out
+                    let deltaCur = neurons.get(seq, depth)!.v[elem].delta
                     
-                    var sum2: Double = 0.0
-                    for depth2 in 0..<nbNeurons
+                    var sum1: Double = 0.0
+                    for depth1 in 0..<nbNeurons
                     {
-                        let deltaCur2 = neurons.get(seq, depth2)!.v[elem].delta
-                        let outPrev2 = neuronsPrev.get(seq, depth2)!.v[elem].out
-                        sum2 += exp(outPrev1 + outPrev2 - 2 * cMax) * deltaCur2
+                        let deltaCur1 = neurons.get(seq, depth1)!.v[elem].delta
+                        let outCur1 = neurons.get(seq, depth1)!.v[elem].out
+                        sum1 += outCur1 * deltaCur1
                     }
                     
-                    let tmp = exp(outPrev1 - cMax) * deltaCur1 / sum1
                     if layerPrev.dirty
                     {
-                        neuronsPrev.get(seq, depth1)!.v[elem].delta =
-                            -sum2 / (sum1 * sum1) + tmp
+                        neuronsPrev.get(seq, depth)!.v[elem].delta =
+                            outCur * (deltaCur - sum1)
                     }
                     else
                     {
-                        neuronsPrev.get(seq, depth1)!.v[elem].delta +=
-                            -sum2 / (sum1 * sum1) + tmp
+                        neuronsPrev.get(seq, depth)!.v[elem].delta +=
+                            outCur * (deltaCur - sum1)
                     }
                 }
             }}
@@ -277,7 +270,7 @@ public class SoftmaxSeq: LayerSeq
             let command = MetalKernel.get.createCommand(
                 "softmaxSeqBackward", deviceID: deviceID
             )
-            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+            command.setBuffer(outs.metal, atIndex: 0)
             command.setBuffer(delta.metal, atIndex: 1)
             command.setBytes(pNbNeurons, atIndex: 2)
             command.setBytes(pNbBatch, atIndex: 3)

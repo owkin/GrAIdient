@@ -699,7 +699,7 @@ kernel void softmaxSeqForward(
         return ;
     }
     
-    float cMax = 0.0;
+    float cMax = outsPrev[0 + nbNeurons * seq + sequence * nbNeurons * elem];
     for (uint depth1=0; depth1<nbNeurons; depth1++)
     {
         uint offset1 = depth1 +
@@ -728,7 +728,7 @@ kernel void softmaxSeqForward(
 }
 
 kernel void softmaxSeqBackward(
-    const device float * outsPrev,
+    const device float * outs,
     const device float * delta,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
@@ -743,7 +743,7 @@ kernel void softmaxSeqBackward(
     uint dirty;
     
     if (pNbNeurons && pNbBatch && pSequence && pDirty &&
-        outsPrev && deltaPrev && delta)
+        deltaPrev && outs && delta)
     {
         nbNeurons = *pNbNeurons;
         nbBatch = *pNbBatch;
@@ -762,52 +762,28 @@ kernel void softmaxSeqBackward(
         return ;
     }
     
-    float cMax = 0.0;
-    for (uint depth1=0; depth1<nbNeurons; depth1++)
-    {
-        uint offset1 = depth1 +
-            nbNeurons * seq + sequence * nbNeurons * elem;
-        
-        float outPrev = outsPrev[offset1];
-        if (outPrev > cMax)
-        {
-            cMax = outPrev;
-        }
-    }
+    uint offset = depth + nbNeurons * seq + sequence * nbNeurons * elem;
+    float outCur = outs[offset];
+    float deltaCur = delta[offset];
     
     float sum1 = 0.0;
     for (uint depth1=0; depth1<nbNeurons; depth1++)
     {
         uint offset1 = depth1 +
             nbNeurons * seq + sequence * nbNeurons * elem;
-        float outPrev = outsPrev[offset1];
-        sum1 += exp(outPrev - cMax);
-    }
-    
-    uint offset = depth + nbNeurons * seq + sequence * nbNeurons * elem;
-    float outPrev = outsPrev[offset];
-    float deltaCur = delta[offset];
-    
-    float sum2 = 0.0;
-    for (uint depth2=0; depth2<nbNeurons; depth2++)
-    {
-        uint offset2 = depth2 +
-            nbNeurons * seq + sequence * nbNeurons * elem;
         
-        float outPrev2 = outsPrev[offset2];
-        float deltaCur2 = delta[offset2];
-        sum2 += exp(outPrev + outPrev2 - 2 * cMax) * deltaCur2;
+        float outCur1 = outs[offset1];
+        float deltaCur1 = delta[offset1];
+        sum1 += outCur1 * deltaCur1;
     }
     
     if (dirty)
     {
-        deltaPrev[offset] = -sum2 / (sum1 * sum1) +
-            exp(outPrev - cMax) * deltaCur / sum1;
+        deltaPrev[offset] = outCur * (deltaCur - sum1);
     }
     else
     {
-        deltaPrev[offset] += -sum2 / (sum1 * sum1) +
-            exp(outPrev - cMax) * deltaCur / sum1;
+        deltaPrev[offset] += outCur * (deltaCur - sum1);
     }
 }
 

@@ -180,19 +180,19 @@ class LayerSeqGradTests: Input2DMSE1DCase
             
         case "Value":
             let otherLayer: LayerSeq = FullyConnectedPatch(
-                layerPrev: layer, patch: 2, nbNeurons: 5,
+                layerPrev: layer, patch: 3, nbNeurons: 6,
                 activation: SoftReLU.str, biases: true, params: params
             )
             layerSeq = FullyConnectedPatch(
-                layerPrev: layer, patch: 2, nbNeurons: 5,
+                layerPrev: layer, patch: 3, nbNeurons: 6,
                 activation: SoftReLU.str, biases: true, params: params
             )
             layerSeq = FullyConnectedSeq(
-                layerPrev: layerSeq, nbNeurons: 9,
+                layerPrev: layerSeq, nbNeurons: 2 * 4,
                 activation: SoftReLU.str, biases: true, params: params
             )
             layerSeq = ValueSeq(
-                value: otherLayer, score: layerSeq, nbHeads: 1, params: params
+                value: otherLayer, score: layerSeq, nbHeads: 2, params: params
             )
             
         default:
@@ -537,19 +537,19 @@ class LayerSeqFlowTests: Input2DMSE1DCase
             
         case "Value":
             let otherLayer: LayerSeq = FullyConnectedPatch(
-                layerPrev: layer, patch: 2, nbNeurons: 5,
+                layerPrev: layer, patch: 3, nbNeurons: 6,
                 activation: LeakyReLU.str, biases: true, params: params
             )
             layerSeq = FullyConnectedPatch(
-                layerPrev: layer, patch: 2, nbNeurons: 5,
+                layerPrev: layer, patch: 3, nbNeurons: 6,
                 activation: LeakyReLU.str, biases: true, params: params
             )
             layerSeq = FullyConnectedSeq(
-                layerPrev: layerSeq, nbNeurons: 9,
+                layerPrev: layerSeq, nbNeurons: 2 * 4,
                 activation: LeakyReLU.str, biases: true, params: params
             )
             layerSeq = ValueSeq(
-                value: otherLayer, score: layerSeq, nbHeads: 1, params: params
+                value: otherLayer, score: layerSeq, nbHeads: 2, params: params
             )
             
         default:

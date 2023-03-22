@@ -46,8 +46,7 @@ public class ValueSeq: LayerMergeSeq
                 "should be a multiple of nbHeads (\(nbHeads))."
             )
         }
-        if value.sequence != score.sequence ||
-           score.sequence != score.nbNeurons
+        if value.sequence != score.sequence
         {
             fatalError("Layer structure error.")
         }
@@ -422,7 +421,7 @@ public class ValueSeq: LayerMergeSeq
                 {
                     let deltaCur = neurons.get(seqQ, depth)!.v[elem].delta
                     let scoreTmp = score
-                        .get(seqK, seqK + head * sequence)!.v[elem].out
+                        .get(seqK, seqQ + head * sequence)!.v[elem].out
                     
                     sum += deltaCur * scoreTmp
                 }

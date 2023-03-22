@@ -599,8 +599,8 @@ kernel void queryQuerySeqBackward(
     else
         return ;
     
-    uint head = id[0] / sequence;
-    uint j = id[0] % sequence;
+    uint head = id[0] / size;
+    uint j = id[0] % size;
     uint elem = id[1] / sequence;
     uint seqQ = id[1] % sequence;
     uint depthPrev = j + head * size;
@@ -671,8 +671,8 @@ kernel void queryKeySeqBackward(
     else
         return ;
     
-    uint head = id[0] / sequence;
-    uint j = id[0] % sequence;
+    uint head = id[0] / size;
+    uint j = id[0] % size;
     uint elem = id[1] / sequence;
     uint seqK = id[1] % sequence;
     uint depthPrev = j + head * size;
@@ -857,13 +857,13 @@ kernel void valueSeqForward(
     else
         return ;
     
-    uint head = id[0] / sequence;
-    uint j = id[0] % sequence;
+    uint head = id[0] / size;
+    uint j = id[0] % size;
     uint elem = id[1] / sequence;
     uint seqQ = id[1] % sequence;
     uint depth = j + head * size;
     
-    if (head >= nbHeads || depth >= nbNeurons ||
+    if (head >= nbHeads || j >= size ||
         elem >= nbBatch || seqQ >= sequence)
     {
         return ;
@@ -919,13 +919,13 @@ kernel void valueValueSeqBackward(
     else
         return ;
     
-    uint head = id[0] / sequence;
-    uint j = id[0] % sequence;
+    uint head = id[0] / size;
+    uint j = id[0] % size;
     uint elem = id[1] / sequence;
     uint seqQ = id[1] % sequence;
     uint depth = j + head * size;
     
-    if (head >= nbHeads || depth >= nbNeurons ||
+    if (head >= nbHeads || j >= size ||
         elem >= nbBatch || seqQ >= sequence)
     {
         return ;
@@ -935,8 +935,8 @@ kernel void valueValueSeqBackward(
     for (uint seqK=0; seqK<sequence; seqK++)
     {
         uint offset = depth + nbNeurons * seqQ + sequence * nbNeurons * elem;
-        uint offsetScore = seqQ +
-            nbNeuronsPrev * (seqK + head * sequence) +
+        uint offsetScore = seqQ + head * sequence +
+            nbNeuronsPrev * seqK +
             sequence * nbNeuronsPrev * elem;
         
         tmp += delta[offset] * score[offsetScore];

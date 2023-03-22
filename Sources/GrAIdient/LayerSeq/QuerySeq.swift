@@ -515,7 +515,7 @@ public class QuerySeq: LayerMergeSeq
             command.setBuffer(query.delta.metal, atIndex: 8)
             
             command.dispatchThreads(
-                width: nbNeurons,
+                width: nbNeuronsPrev,
                 height: batchSize * sequence
             )
             command.enqueue()
@@ -540,7 +540,7 @@ public class QuerySeq: LayerMergeSeq
             command.setBuffer(key.delta.metal, atIndex: 8)
             
             command.dispatchThreads(
-                width: nbNeurons,
+                width: nbNeuronsPrev,
                 height: batchSize * sequence
             )
             command.enqueue()

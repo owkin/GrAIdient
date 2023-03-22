@@ -110,7 +110,8 @@ final class TransformerExample: XCTestCase
         for head in 0..<nbHeads
         {
             var score: LayerSeq = QuerySeq(
-                query: queries[head], key: keys[head], params: params
+                query: queries[head], key: keys[head], nbHeads: 1,
+                params: params
             )
             score = SoftmaxSeq(layerPrev: score, params: params)
             

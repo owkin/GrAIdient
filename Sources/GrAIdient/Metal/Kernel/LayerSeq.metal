@@ -417,38 +417,50 @@ kernel void constant2SeqForward(
 kernel void querySeqForward(
     const device float * query,
     const device float * key,
+    constant uint * pNbHeads,
+    constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pSequence,
     device float * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
+    uint nbHeads;
+    uint nbNeurons;
     uint nbNeuronsPrev;
     uint nbBatch;
     uint sequence;
+    uint size;
     
-    if (pNbNeuronsPrev && pNbBatch && pSequence &&
+    if (pNbHeads && pNbNeurons && pNbNeuronsPrev && pNbBatch && pSequence &&
         query && key && outs)
     {
+        nbHeads = *pNbHeads;
+        nbNeurons = *pNbNeurons;
         nbNeuronsPrev = *pNbNeuronsPrev;
         nbBatch = *pNbBatch;
         sequence = *pSequence;
+        size = nbNeuronsPrev / nbHeads;
     }
     else
         return ;
     
-    uint seqK = id[0];
+    uint head = id[0] / sequence;
+    uint seqK = id[0] % sequence;
     uint elem = id[1] / sequence;
     uint seqQ = id[1] % sequence;
     
-    if (seqK >= sequence || elem >= nbBatch || seqQ >= sequence)
+    if (head >= nbHeads || seqK >= sequence ||
+        elem >= nbBatch || seqQ >= sequence)
     {
         return ;
     }
     
     float tmp = 0.0;
-    for (uint depthPrev=0; depthPrev<nbNeuronsPrev; depthPrev++)
+    for (uint j=0; j<size; j++)
     {
+        uint depthPrev = j + head * size;
+        
         uint offsetQuery = depthPrev +
             nbNeuronsPrev * seqQ + sequence * nbNeuronsPrev * elem;
         uint offsetKey = depthPrev +
@@ -456,15 +468,18 @@ kernel void querySeqForward(
         
         tmp += query[offsetQuery] * key[offsetKey];
     }
-    tmp /= sqrt((float)nbNeuronsPrev);
+    tmp /= sqrt((float)size);
     
-    uint offset = seqK + sequence * seqQ + sequence * sequence * elem;
+    uint offset = seqK + head * sequence +
+        nbNeurons * seqQ + sequence * nbNeurons * elem;
     outs[offset] = tmp;
 }
 
 kernel void queryQuerySeqBackward(
     const device float * delta,
     const device float * key,
+    constant uint * pNbHeads,
+    constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pSequence,
@@ -472,27 +487,37 @@ kernel void queryQuerySeqBackward(
     device float * query,
     uint2 id [[ thread_position_in_grid ]])
 {
+    uint nbHeads;
+    uint nbNeurons;
     uint nbNeuronsPrev;
     uint nbBatch;
     uint sequence;
+    uint size;
     uint dirty;
     
-    if (pNbNeuronsPrev && pNbBatch && pSequence && pDirty &&
+    if (pNbHeads && pNbNeurons && pNbNeuronsPrev &&
+        pNbBatch && pSequence && pDirty &&
         query && key && delta)
     {
+        nbHeads = *pNbHeads;
+        nbNeurons = *pNbNeurons;
         nbNeuronsPrev = *pNbNeuronsPrev;
         nbBatch = *pNbBatch;
         sequence = *pSequence;
         dirty = *pDirty;
+        size = nbNeuronsPrev / nbHeads;
     }
     else
         return ;
     
-    uint depthPrev = id[0];
+    uint head = id[0] / sequence;
+    uint j = id[0] % sequence;
     uint elem = id[1] / sequence;
     uint seqQ = id[1] % sequence;
+    uint depthPrev = j + head * size;
     
-    if (depthPrev >= nbNeuronsPrev || elem >= nbBatch || seqQ >= sequence)
+    if (head >= nbHeads || j >= size ||
+        elem >= nbBatch || seqQ >= sequence)
     {
         return ;
     }
@@ -500,13 +525,14 @@ kernel void queryQuerySeqBackward(
     float tmp = 0.0;
     for (uint seqK=0; seqK<sequence; seqK++)
     {
-        uint offset = seqK + sequence * seqQ + sequence * sequence * elem;
+        uint offset = seqK + head * sequence +
+            nbNeurons * seqQ + sequence * nbNeurons * elem;
         uint offsetKey = depthPrev +
             nbNeuronsPrev * seqK + sequence * nbNeuronsPrev * elem;
         
         tmp += delta[offset] * key[offsetKey];
     }
-    tmp /= sqrt((float)nbNeuronsPrev);
+    tmp /= sqrt((float)size);
     
     uint offsetQuery = depthPrev +
         nbNeuronsPrev * seqQ + sequence * nbNeuronsPrev * elem;
@@ -524,6 +550,8 @@ kernel void queryQuerySeqBackward(
 kernel void queryKeySeqBackward(
     const device float * delta,
     const device float * query,
+    constant uint * pNbHeads,
+    constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pSequence,
@@ -531,27 +559,37 @@ kernel void queryKeySeqBackward(
     device float * key,
     uint2 id [[ thread_position_in_grid ]])
 {
+    uint nbHeads;
+    uint nbNeurons;
     uint nbNeuronsPrev;
     uint nbBatch;
     uint sequence;
+    uint size;
     uint dirty;
     
-    if (pNbNeuronsPrev && pNbBatch && pSequence && pDirty &&
+    if (pNbHeads && pNbNeurons && pNbNeuronsPrev &&
+        pNbBatch && pSequence && pDirty &&
         query && key && delta)
     {
+        nbHeads = *pNbHeads;
+        nbNeurons = *pNbNeurons;
         nbNeuronsPrev = *pNbNeuronsPrev;
         nbBatch = *pNbBatch;
         sequence = *pSequence;
         dirty = *pDirty;
+        size = nbNeuronsPrev / nbHeads;
     }
     else
         return ;
     
-    uint depthPrev = id[0];
+    uint head = id[0] / sequence;
+    uint j = id[0] % sequence;
     uint elem = id[1] / sequence;
     uint seqK = id[1] % sequence;
+    uint depthPrev = j + head * size;
     
-    if (depthPrev >= nbNeuronsPrev || elem >= nbBatch || seqK >= sequence)
+    if (head >= nbHeads || j >= size ||
+        elem >= nbBatch || seqK >= sequence)
     {
         return ;
     }
@@ -559,13 +597,14 @@ kernel void queryKeySeqBackward(
     float tmp = 0.0;
     for (uint seqQ=0; seqQ<sequence; seqQ++)
     {
-        uint offset = seqK + sequence * seqQ + sequence * sequence * elem;
+        uint offset = seqK + head * sequence +
+            nbNeurons * seqQ + sequence * nbNeurons * elem;
         uint offsetQuery = depthPrev +
             nbNeuronsPrev * seqQ + sequence * nbNeuronsPrev * elem;
         
         tmp += delta[offset] * query[offsetQuery];
     }
-    tmp /= sqrt((float)nbNeuronsPrev);
+    tmp /= sqrt((float)size);
     
     uint offsetKey = depthPrev +
         nbNeuronsPrev * seqK + sequence * nbNeuronsPrev * elem;

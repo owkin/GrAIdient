@@ -1255,3 +1255,325 @@ class LayerSeqTransformTests: LayerSeqFlowTests
         run(trainer)
     }
 }
+
+// -----------------------------------------------------------------------------
+// Gradient Checking
+// We expect to see errors ~ 1e-7 and less.
+// -----------------------------------------------------------------------------
+class SelectNeuronsSeqGradTests: Input2DMSE1DCase
+{
+    private func _buildTrainer() -> GradTrainer
+    {
+        let trainer = GradTrainer(
+            name: "LayerSeq",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            _buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    private func _buildModel(context: ModelContext)
+    {
+        let params = GrAI.Model.Params(context: context)
+        
+        var layer: Layer2D = Input2D(
+            nbChannels: 1, width: width, height: height, params: params
+        )
+        
+        layer = Convolution2D(
+            layerPrev: layer, size: 1, nbChannels: 3, stride: 1,
+            activation: SoftReLU.str, biases: true, bn: false, params: params
+        )
+        
+        let layerSeq: LayerSeq = FullyConnectedPatch(
+            layerPrev: layer, patch: width / 3, nbNeurons: 5,
+            activation: SoftReLU.str, biases: true, params: params
+        )
+        
+        var head: Layer1D = SelectNeuronsSeq(
+            layerPrev: layerSeq,
+            targetSeq: 3, neurons: [1, 3], coeffs: [0.2, 0.1],
+            params: params
+        )
+        
+        head = FullyConnected(
+            layerPrev: head, nbNeurons: 1,
+            activation: SoftReLU.str, biases: true, params: params
+        )
+        
+        _ = MSE1D(layerPrev: head, params: params)
+    }
+    
+    func testSelectCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+    
+    func testSelectGPU() throws
+    {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU gradients with CPU ones through time.
+// We expect to see errors ~ 1e-7 and less.
+// -----------------------------------------------------------------------------
+class SelectNeuronsSeqFlowTests: Input2DMSE1DCase
+{
+    private func _buildTrainer() -> FlowTrainer
+    {
+        let trainer = FlowTrainer(
+            name: "LayerSeq",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    func buildModel(context: ModelContext)
+    {
+        let params = GrAI.Model.Params(context: context)
+        
+        var layer: Layer2D = Input2D(
+            nbChannels: 1, width: width, height: height, params: params
+        )
+        
+        layer = Convolution2D(
+            layerPrev: layer, size: 1, nbChannels: 3, stride: 1,
+            activation: LeakyReLU.str, biases: true, bn: false, params: params
+        )
+        
+        let layerSeq: LayerSeq = FullyConnectedPatch(
+            layerPrev: layer, patch: width / 3, nbNeurons: 5,
+            activation: LeakyReLU.str, biases: true, params: params
+        )
+        
+        var head: Layer1D = SelectNeuronsSeq(
+            layerPrev: layerSeq,
+            targetSeq: 3, neurons: [1, 3], coeffs: [0.2, 0.1],
+            params: params
+        )
+        
+        head = FullyConnected(
+            layerPrev: head, nbNeurons: 1,
+            activation: LeakyReLU.str, biases: true, params: params
+        )
+        
+        _ = MSE1D(layerPrev: head, params: params)
+    }
+    
+    func testSelect() throws
+    {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU gradients with CPU ones through time.
+// We expect to see errors ~ 1e-7 and less.
+// -----------------------------------------------------------------------------
+class SelectNeuronsSeqFlowResetTests: SelectNeuronsSeqFlowTests
+{
+    override func setUp()
+    {
+        super.setUp()
+        
+        setOptimizerParams(params: &optimizerParams,
+                           optimizerClass: .Adam)
+    }
+    
+    private func _buildTrainer() -> FlowResetTrainer
+    {
+        let trainer = FlowResetTrainer(
+            name: "LayerSeq",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    override func testSelect() throws
+    {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU gradients with CPU ones through time.
+// We expect to see errors ~ 1e-7 and less.
+// -----------------------------------------------------------------------------
+class SelectNeuronsSeqFlowReverseTests: SelectNeuronsSeqFlowTests
+{
+    override func setUp()
+    {
+        super.setUp()
+        
+        setOptimizerParams(params: &optimizerParams,
+                           optimizerClass: .Adam)
+    }
+    
+    private func _buildTrainer() -> FlowReverseTrainer
+    {
+        let trainer = FlowReverseTrainer(
+            name: "LayerSeq",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    override func testSelect() throws
+    {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU Loss in inference mode with CPU one.
+// We expect to see errors ~ 1e-3 and less.
+// -----------------------------------------------------------------------------
+class SelectNeuronsSeqInferenceTests: SelectNeuronsSeqFlowTests
+{
+    private func _buildTrainer() -> InferenceTrainer
+    {
+        let trainer = InferenceTrainer(
+            name: "LayerSeq",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    override func testSelect() throws
+    {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU/CPU Losses in inference mode with the one obtained from a
+// loaded model.
+// We expect to see errors ~ 1e-3 and less.
+// -----------------------------------------------------------------------------
+class SelectNeuronsSeqLoadTests: SelectNeuronsSeqFlowTests
+{
+    private func _buildTrainer() -> LoadTrainer
+    {
+        let trainer = LoadTrainer(
+            name: "LayerSeq",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    override func testSelect() throws
+    {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU/CPU Losses in inference mode with the one obtained from a
+// transformed model.
+// We expect to see errors ~ 1e-3 and less.
+// -----------------------------------------------------------------------------
+class SelectNeuronsSeqTransformTests: SelectNeuronsSeqFlowTests
+{
+    ///
+    /// Run Transform tests.
+    ///
+    /// The goal is to compare the losses computed in the CPU execution
+    /// after transforming the model and do the same in the GPU execution context.
+    ///
+    /// - Parameters:
+    ///     - trainer: The testing pipeline to run.
+    ///     - nbRetry: The maximum number we can retry the test.
+    ///     - diffThreshold: The threshold above which the relative difference is too high.
+    ///
+    override func run(
+        _ trainer: TransformTrainer,
+        nbRetry: Int = NB_RETRY,
+        diffThreshold: Double = 0.001)
+    {
+        retryNumeric(
+            nbRetry: nbRetry,
+            {
+                () throws in
+                try trainer.run(
+                    transforms: [self.copy, self.copyInPlace],
+                    setData: self.setData,
+                    setLoss: self.setLoss,
+                    getLoss: self.getLoss)
+                {
+                    (diffCPU: Double, diffGPU: Double) in
+                    if diffCPU > diffThreshold
+                    {
+                        throw TestError.Numeric
+                    }
+                    if diffGPU > diffThreshold
+                    {
+                        throw TestError.Numeric
+                    }
+                }
+            },
+            {
+                () in
+                XCTAssert(false)
+            }
+        )
+    }
+    
+    private func _buildTrainer() -> TransformTrainer
+    {
+        let trainer = TransformTrainer(
+            name: "LayerSeq",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    override func testSelect() throws
+    {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+}

@@ -217,7 +217,8 @@ class LayerSeqDirtyFlowTests: Input2DMSE1DCase
                 activation: LeakyReLU.str, biases: true, params: params
             )
             secondLayer = QuerySeq(
-                query: layerSeq, key: otherLayer, nbHeads: 1, params: params
+                query: layerSeq, key: otherLayer, nbHeads: 1,
+                params: params
             )
             secondLayer = FullyConnectedSeq(
                 layerPrev: secondLayer, nbNeurons: 5,
@@ -230,7 +231,8 @@ class LayerSeqDirtyFlowTests: Input2DMSE1DCase
                 activation: LeakyReLU.str, biases: true, params: params
             )
             secondLayer = QuerySeq(
-                query: otherLayer, key: layerSeq, nbHeads: 1, params: params
+                query: otherLayer, key: layerSeq, nbHeads: 1,
+                params: params
             )
             secondLayer = FullyConnectedSeq(
                 layerPrev: secondLayer, nbNeurons: 5,
@@ -252,7 +254,8 @@ class LayerSeqDirtyFlowTests: Input2DMSE1DCase
                 activation: LeakyReLU.str, biases: true, params: params
             )
             secondLayer = ValueSeq(
-                value: layerSeq, score: otherLayer, params: params
+                value: layerSeq, score: otherLayer, nbHeads: 1,
+                params: params
             )
             
         case "ValueScore":
@@ -262,7 +265,8 @@ class LayerSeqDirtyFlowTests: Input2DMSE1DCase
                 activation: LeakyReLU.str, biases: true, params: params
             )
             secondLayer = ValueSeq(
-                value: secondLayer, score: firstLayer, params: params
+                value: secondLayer, score: firstLayer, nbHeads: 1,
+                params: params
             )
             secondLayer = FullyConnectedSeq(
                 layerPrev: secondLayer, nbNeurons: 9,

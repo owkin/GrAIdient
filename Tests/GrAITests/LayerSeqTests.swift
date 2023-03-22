@@ -192,7 +192,7 @@ class LayerSeqGradTests: Input2DMSE1DCase
                 activation: SoftReLU.str, biases: true, params: params
             )
             layerSeq = ValueSeq(
-                value: otherLayer, score: layerSeq, params: params
+                value: otherLayer, score: layerSeq, nbHeads: 1, params: params
             )
             
         default:
@@ -549,7 +549,7 @@ class LayerSeqFlowTests: Input2DMSE1DCase
                 activation: LeakyReLU.str, biases: true, params: params
             )
             layerSeq = ValueSeq(
-                value: otherLayer, score: layerSeq, params: params
+                value: otherLayer, score: layerSeq, nbHeads: 1, params: params
             )
             
         default:

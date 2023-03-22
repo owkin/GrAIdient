@@ -862,7 +862,10 @@ class ModelTest10
         )
         score = SoftmaxSeq(layerPrev: score, params: params)
         
-        layerSeq = ValueSeq(value: value, score: score, params: params)
+        layerSeq = ValueSeq(
+            value: value, score: score, nbHeads: 1,
+            params: params
+        )
         
         layerSeq = FullyConnectedSeq(
             layerPrev: layerSeq, nbNeurons: 5,
@@ -1003,7 +1006,8 @@ class ModelTest11
             score = SoftmaxSeq(layerPrev: score, params: params)
             
             attention.append(ValueSeq(
-                value: values[head], score: score, params: params
+                value: values[head], score: score, nbHeads: 1,
+                params: params
             ))
         }
         

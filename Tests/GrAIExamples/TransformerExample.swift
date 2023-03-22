@@ -116,7 +116,8 @@ final class TransformerExample: XCTestCase
             score = SoftmaxSeq(layerPrev: score, params: params)
             
             attention.append(ValueSeq(
-                value: values[head], score: score, params: params
+                value: values[head], score: score, nbHeads: 1,
+                params: params
             ))
         }
         

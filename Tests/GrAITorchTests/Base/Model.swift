@@ -940,7 +940,6 @@ class ModelTestAttention2
     ///   - QuerySeq
     ///   - SoftmaxSeq
     ///   - ValueSeq
-    ///   - Concat2Seq
     ///
     /// - Parameters:
     ///     - size: The size of the input data.
@@ -966,52 +965,36 @@ class ModelTestAttention2
             params: params
         )
         
-        var queries = [LayerSeq]()
-        var keys = [LayerSeq]()
-        var values = [LayerSeq]()
+        let query: LayerSeq = FullyConnectedSeq(
+            layerPrev: layerSeq, nbNeurons: 6,
+            activation: nil, biases: true,
+            params: params
+        )
+        let key: LayerSeq = FullyConnectedSeq(
+            layerPrev: layerSeq, nbNeurons: 6,
+            activation: nil, biases: true,
+            params: params
+        )
+        let value: LayerSeq = FullyConnectedSeq(
+            layerPrev: layerSeq, nbNeurons: 6,
+            activation: nil, biases: true,
+            params: params
+        )
         
         let nbHeads = 3
-        for _ in 0..<nbHeads
-        {
-            queries.append(FullyConnectedSeq(
-                layerPrev: layerSeq, nbNeurons: 2,
-                activation: nil, biases: true,
-                params: params
-            ))
-        }
-        for _ in 0..<nbHeads
-        {
-            keys.append(FullyConnectedSeq(
-                layerPrev: layerSeq, nbNeurons: 2,
-                activation: nil, biases: true,
-                params: params
-            ))
-        }
-        for _ in 0..<nbHeads
-        {
-            values.append(FullyConnectedSeq(
-                layerPrev: layerSeq, nbNeurons: 2,
-                activation: nil, biases: true,
-                params: params
-            ))
-        }
-        
-        var attention = [LayerSeq]()
-        for head in 0..<nbHeads
-        {
-            var score: LayerSeq = QuerySeq(
-                query: queries[head], key: keys[head], nbHeads: 1,
-                params: params
-            )
-            score = SoftmaxSeq(layerPrev: score, nbHeads: 1, params: params)
+        layerSeq = QuerySeq(
+            query: query, key: key, nbHeads: nbHeads,
+            params: params
+        )
+        layerSeq = SoftmaxSeq(
+            layerPrev: layerSeq, nbHeads: nbHeads,
+            params: params
+        )
             
-            attention.append(ValueSeq(
-                value: values[head], score: score, nbHeads: 1,
-                params: params
-            ))
-        }
-        
-        layerSeq = Concat2Seq(layersPrev: attention, params: params)
+        layerSeq = ValueSeq(
+            value: value, score: layerSeq, nbHeads: nbHeads,
+            params: params
+        )
         
         layerSeq = FullyConnectedSeq(
             layerPrev: layerSeq, nbNeurons: 6,

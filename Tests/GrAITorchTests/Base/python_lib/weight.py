@@ -39,52 +39,6 @@ def _flatten_weights(
     return weights_list, dims_list
 
 
-def _flatten_attention_weights(
-    weights: np.ndarray,
-    biases: np.ndarray,
-    nb_heads: int
-) -> Tuple[List[List[float]], List[List[int]]]:
-    """
-    Flatten weights and biases.
-
-    Parameters
-    ----------
-    weights: np.ndarray
-        The weights to flatten.
-    biases: np.ndarray
-        The biases to flatten.
-    nb_heads: int
-        Number of heads in the attention modules.
-
-    Returns
-    -------
-    (_, _): List[float], List[int]
-        The flattened weights, their shape.
-    """
-    nb_partial = int(len(weights) / nb_heads)
-    layers_weights: List[List[float]] = []
-    layers_dims: List[List[int]] = []
-
-    for head in range(nb_heads):
-        weights_tmp = weights[head * nb_partial: ((head + 1) * nb_partial)]
-
-        weights_list = weights_tmp.flatten().tolist()
-        dims_list = list(weights_tmp.shape)
-
-        layers_weights.append(weights_list)
-        layers_dims.append(dims_list)
-
-        weights_tmp = biases[head * nb_partial: ((head + 1) * nb_partial)]
-
-        weights_list = weights_tmp.flatten().tolist()
-        dims_list = list(weights_tmp.shape)
-
-        layers_weights.append(weights_list)
-        layers_dims.append(dims_list)
-
-    return layers_weights, layers_dims
-
-
 def _extract_weights(
     model: torch.nn.Module
 ) -> Tuple[List[List[float]], List[List[int]]]:
@@ -173,7 +127,6 @@ def _extract_and_transpose_weights(
 
 def _extract_attention_weights(
     model: torch.nn.Module,
-    nb_heads: int
 ) -> Tuple[List[List[float]], List[List[int]]]:
     """
     Get weights and biases.
@@ -182,8 +135,6 @@ def _extract_attention_weights(
     ----------
     model: torch.nn.Module
         The module to get the weights and biases from.
-    nb_heads: int
-        Number of heads in the attention modules.
 
     Returns
     -------
@@ -219,23 +170,38 @@ def _extract_attention_weights(
             biases2 = biases[nb_partial: 2 * nb_partial]
             biases3 = biases[2 * nb_partial: 3 * nb_partial]
 
-            weights_list, dims_list = _flatten_attention_weights(
-                weights=weights1, biases=biases1, nb_heads=nb_heads
+            weights_list, dims_list = _flatten_weights(
+                weights=weights1
             )
-            layers_weights += weights_list
-            layers_dims += dims_list
+            layers_weights.append(weights_list)
+            layers_dims.append(dims_list)
+            weights_list, dims_list = _flatten_weights(
+                weights=biases1
+            )
+            layers_weights.append(weights_list)
+            layers_dims.append(dims_list)
 
-            weights_list, dims_list = _flatten_attention_weights(
-                weights=weights2, biases=biases2, nb_heads=nb_heads
+            weights_list, dims_list = _flatten_weights(
+                weights=weights2
             )
-            layers_weights += weights_list
-            layers_dims += dims_list
+            layers_weights.append(weights_list)
+            layers_dims.append(dims_list)
+            weights_list, dims_list = _flatten_weights(
+                weights=biases2
+            )
+            layers_weights.append(weights_list)
+            layers_dims.append(dims_list)
 
-            weights_list, dims_list = _flatten_attention_weights(
-                weights=weights3, biases=biases3, nb_heads=nb_heads
+            weights_list, dims_list = _flatten_weights(
+                weights=weights3
             )
-            layers_weights += weights_list
-            layers_dims += dims_list
+            layers_weights.append(weights_list)
+            layers_dims.append(dims_list)
+            weights_list, dims_list = _flatten_weights(
+                weights=biases3
+            )
+            layers_weights.append(weights_list)
+            layers_dims.append(dims_list)
 
             cur_item += 1
 
@@ -389,7 +355,7 @@ def load_attention1_weights(size: int, patch: int) -> Tuple[List[List[float]], L
     """
     torch.manual_seed(42)
     model = ModelTestAttention1(size=size, patch=patch)
-    return _extract_attention_weights(model=model, nb_heads=1)
+    return _extract_attention_weights(model=model)
 
 
 def load_attention2_weights(size: int, patch: int) -> Tuple[List[List[float]], List[List[int]]]:
@@ -410,7 +376,7 @@ def load_attention2_weights(size: int, patch: int) -> Tuple[List[List[float]], L
     """
     torch.manual_seed(42)
     model = ModelTestAttention2(size=size, patch=patch)
-    return _extract_attention_weights(model=model, nb_heads=3)
+    return _extract_attention_weights(model=model)
 
 
 def load_layer_norm_weights(size: int, patch: int) -> Tuple[List[List[float]], List[List[int]]]:

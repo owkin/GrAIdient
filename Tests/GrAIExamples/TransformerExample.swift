@@ -77,52 +77,34 @@ final class TransformerExample: XCTestCase
         hiddenDim: Int,
         params: GrAI.Model.Params) -> LayerSeq
     {
-        var queries = [LayerSeq]()
-        var keys = [LayerSeq]()
-        var values = [LayerSeq]()
+        let query: LayerSeq = FullyConnectedSeq(
+            layerPrev: layerPrev, nbNeurons: hiddenDim,
+            activation: nil, biases: true,
+            params: params
+        )
+        let key: LayerSeq = FullyConnectedSeq(
+            layerPrev: layerPrev, nbNeurons: hiddenDim,
+            activation: nil, biases: true,
+            params: params
+        )
+        let value: LayerSeq = FullyConnectedSeq(
+            layerPrev: layerPrev, nbNeurons: hiddenDim,
+            activation: nil, biases: true,
+            params: params
+        )
         
-        for _ in 0..<nbHeads
-        {
-            queries.append(FullyConnectedSeq(
-                layerPrev: layerPrev, nbNeurons: hiddenDim / nbHeads,
-                activation: nil, biases: true,
-                params: params
-            ))
-        }
-        for _ in 0..<nbHeads
-        {
-            keys.append(FullyConnectedSeq(
-                layerPrev: layerPrev, nbNeurons: hiddenDim / nbHeads,
-                activation: nil, biases: true,
-                params: params
-            ))
-        }
-        for _ in 0..<nbHeads
-        {
-            values.append(FullyConnectedSeq(
-                layerPrev: layerPrev, nbNeurons: hiddenDim / nbHeads,
-                activation: nil, biases: true,
-                params: params
-            ))
-        }
-        
-        var attention = [LayerSeq]()
-        for head in 0..<nbHeads
-        {
-            var score: LayerSeq = QuerySeq(
-                query: queries[head], key: keys[head], nbHeads: 1,
-                params: params
-            )
-            score = SoftmaxSeq(layerPrev: score, nbHeads: 1, params: params)
+        var layerSeq: LayerSeq = QuerySeq(
+            query: query, key: key, nbHeads: nbHeads,
+            params: params
+        )
+        layerSeq = SoftmaxSeq(
+            layerPrev: layerSeq, nbHeads: nbHeads,
+            params: params
+        )
             
-            attention.append(ValueSeq(
-                value: values[head], score: score, nbHeads: 1,
-                params: params
-            ))
-        }
-        
-        var layerSeq: LayerSeq = Concat2Seq(
-            layersPrev: attention, params: params
+        layerSeq = ValueSeq(
+            value: value, score: layerSeq, nbHeads: nbHeads,
+            params: params
         )
         
         layerSeq = FullyConnectedSeq(
@@ -130,7 +112,6 @@ final class TransformerExample: XCTestCase
             activation: nil, biases: true,
             params: params
         )
-        
         return layerSeq
     }
     

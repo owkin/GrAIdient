@@ -173,10 +173,12 @@ class LayerSeqGradTests: Input2DMSE1DCase
             
         case "Softmax":
             layerSeq = FullyConnectedPatch(
-                layerPrev: layer, patch: width / 3, nbNeurons: 5,
+                layerPrev: layer, patch: width / 3, nbNeurons: 15,
                 activation: SoftReLU.str, biases: true, params: params
             )
-            layerSeq = SoftmaxSeq(layerPrev: layerSeq, params: params)
+            layerSeq = SoftmaxSeq(
+                layerPrev: layerSeq, nbHeads: 3, params: params
+            )
             
         case "Value":
             let otherLayer: LayerSeq = FullyConnectedPatch(
@@ -530,10 +532,12 @@ class LayerSeqFlowTests: Input2DMSE1DCase
             
         case "Softmax":
             layerSeq = FullyConnectedPatch(
-                layerPrev: layer, patch: width / 3, nbNeurons: 5,
+                layerPrev: layer, patch: width / 3, nbNeurons: 15,
                 activation: LeakyReLU.str, biases: true, params: params
             )
-            layerSeq = SoftmaxSeq(layerPrev: layerSeq, params: params)
+            layerSeq = SoftmaxSeq(
+                layerPrev: layerSeq, nbHeads: 3, params: params
+            )
             
         case "Value":
             let otherLayer: LayerSeq = FullyConnectedPatch(

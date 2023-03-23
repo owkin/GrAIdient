@@ -149,15 +149,15 @@ public class Softmax1D: Layer1D
                     var sum1 = 0.0
                     for j in 0..<size
                     {
-                        let outPrev = neuronsPrev.get(
-                            j + head * size)!.gc[batch][elem].out
+                        let outPrev = neuronsPrev
+                            .get(j + head * size)!.gc[batch][elem].out
                         sum1 += exp(outPrev - cMax)
                     }
                     
                     for j in 0..<size
                     {
-                        let outPrev = neuronsPrev.get(
-                            j + head * size)!.gc[batch][elem].out
+                        let outPrev = neuronsPrev
+                            .get(j + head * size)!.gc[batch][elem].out
                         neurons.get(j + head * size)!.gc[batch][elem].out =
                             exp(outPrev - cMax) / sum1
                     }
@@ -196,8 +196,7 @@ public class Softmax1D: Layer1D
                 var cMax = neuronsPrev.get(0 + head * size)!.v[elem].out
                 for j in 0..<size
                 {
-                    let outPrev = neuronsPrev.get(
-                        j + head * size)!.v[elem].out
+                    let outPrev = neuronsPrev.get(j + head * size)!.v[elem].out
                     if outPrev > cMax
                     {
                         cMax = outPrev
@@ -207,15 +206,13 @@ public class Softmax1D: Layer1D
                 var sum1 = 0.0
                 for j in 0..<size
                 {
-                    let outPrev = neuronsPrev.get(
-                        j + head * size)!.v[elem].out
+                    let outPrev = neuronsPrev.get(j + head * size)!.v[elem].out
                     sum1 += exp(outPrev - cMax)
                 }
                 
                 for j in 0..<size
                 {
-                    let outPrev = neuronsPrev.get(
-                        j + head * size)!.v[elem].out
+                    let outPrev = neuronsPrev.get(j + head * size)!.v[elem].out
                     neurons.get(j + head * size)!.v[elem].out =
                         exp(outPrev - cMax) / sum1
                 }
@@ -268,18 +265,15 @@ public class Softmax1D: Layer1D
             {
                 for j in 0..<size
                 {
-                    let outCur = neurons.get(
-                        j + head * size)!.v[elem].out
-                    let deltaCur = neurons.get(
-                        j + head * size)!.v[elem].delta
+                    let outCur = neurons.get(j + head * size)!.v[elem].out
+                    let deltaCur = neurons.get(j + head * size)!.v[elem].delta
                     
                     var sum1: Double = 0.0
                     for j1 in 0..<size
                     {
-                        let deltaCur1 = neurons.get(
-                            j1 + head * size)!.v[elem].delta
-                        let outCur1 = neurons.get(
-                            j1 + head * size)!.v[elem].out
+                        let deltaCur1 = neurons
+                            .get(j1 + head * size)!.v[elem].delta
+                        let outCur1 = neurons.get(j1 + head * size)!.v[elem].out
                         sum1 += outCur1 * deltaCur1
                     }
                     

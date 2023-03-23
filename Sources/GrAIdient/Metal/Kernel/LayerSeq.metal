@@ -710,21 +710,26 @@ kernel void queryKeySeqBackward(
 
 kernel void softmaxSeqForward(
     const device float * outsPrev,
+    constant uint * pNbHeads,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
     device float * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
+    uint nbHeads;
     uint nbNeurons;
     uint nbBatch;
     uint sequence;
+    uint size;
     
-    if (pNbNeurons && pNbBatch && pSequence && outsPrev && outs)
+    if (pNbHeads && pNbNeurons && pNbBatch && pSequence && outsPrev && outs)
     {
+        nbHeads = *pNbHeads;
         nbNeurons = *pNbNeurons;
         nbBatch = *pNbBatch;
         sequence = *pSequence;
+        size = nbNeurons / nbHeads;
     }
     else
         return ;
@@ -732,16 +737,19 @@ kernel void softmaxSeqForward(
     uint depth = id[0];
     uint elem = id[1] / sequence;
     uint seq = id[1] % sequence;
+    uint head = depth / size;
     
     if (depth >= nbNeurons || elem >= nbBatch || seq >= sequence)
     {
         return ;
     }
     
-    float cMax = outsPrev[0 + nbNeurons * seq + sequence * nbNeurons * elem];
-    for (uint depth1=0; depth1<nbNeurons; depth1++)
+    float cMax = outsPrev[
+        0+head*size + nbNeurons * seq + sequence * nbNeurons * elem
+    ];
+    for (uint j=0; j<size; j++)
     {
-        uint offset1 = depth1 +
+        uint offset1 = j+head*size +
             nbNeurons * seq + sequence * nbNeurons * elem;
         
         float outPrev = outsPrev[offset1];
@@ -752,9 +760,9 @@ kernel void softmaxSeqForward(
     }
     
     float sum1 = 0.0;
-    for (uint depth1=0; depth1<nbNeurons; depth1++)
+    for (uint j=0; j<size; j++)
     {
-        uint offset1 = depth1 +
+        uint offset1 = j+head*size +
             nbNeurons * seq + sequence * nbNeurons * elem;
         
         float outPrev = outsPrev[offset1];
@@ -769,6 +777,7 @@ kernel void softmaxSeqForward(
 kernel void softmaxSeqBackward(
     const device float * outs,
     const device float * delta,
+    constant uint * pNbHeads,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
@@ -776,17 +785,21 @@ kernel void softmaxSeqBackward(
     device float * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
+    uint nbHeads;
     uint nbNeurons;
     uint nbBatch;
     uint sequence;
+    uint size;
     uint dirty;
     
-    if (pNbNeurons && pNbBatch && pSequence && pDirty &&
+    if (pNbHeads && pNbNeurons && pNbBatch && pSequence && pDirty &&
         deltaPrev && outs && delta)
     {
+        nbHeads = *pNbHeads;
         nbNeurons = *pNbNeurons;
         nbBatch = *pNbBatch;
         sequence = *pSequence;
+        size = nbNeurons / nbHeads;
         dirty = *pDirty;
     }
     else
@@ -795,6 +808,7 @@ kernel void softmaxSeqBackward(
     uint depth = id[0];
     uint elem = id[1] / sequence;
     uint seq = id[1] % sequence;
+    uint head = depth / size;
     
     if (depth >= nbNeurons || elem >= nbBatch || seq >= sequence)
     {
@@ -806,9 +820,9 @@ kernel void softmaxSeqBackward(
     float deltaCur = delta[offset];
     
     float sum1 = 0.0;
-    for (uint depth1=0; depth1<nbNeurons; depth1++)
+    for (uint j=0; j<size; j++)
     {
-        uint offset1 = depth1 +
+        uint offset1 = j+head*size +
             nbNeurons * seq + sequence * nbNeurons * elem;
         
         float outCur1 = outs[offset1];

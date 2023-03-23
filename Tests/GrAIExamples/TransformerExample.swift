@@ -113,7 +113,7 @@ final class TransformerExample: XCTestCase
                 query: queries[head], key: keys[head], nbHeads: 1,
                 params: params
             )
-            score = SoftmaxSeq(layerPrev: score, params: params)
+            score = SoftmaxSeq(layerPrev: score, nbHeads: 1, params: params)
             
             attention.append(ValueSeq(
                 value: values[head], score: score, nbHeads: 1,

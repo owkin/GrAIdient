@@ -72,7 +72,7 @@ class LayerSeqDirtyGradTests: Input2DMSE1DCase
             
         case "Softmax":
             secondLayer = SoftmaxSeq(
-                layerPrev: layerSeq, params: params
+                layerPrev: layerSeq, nbHeads: 1, params: params
             )
             
         default:
@@ -241,7 +241,7 @@ class LayerSeqDirtyFlowTests: Input2DMSE1DCase
             
         case "Softmax":
             secondLayer = SoftmaxSeq(
-                layerPrev: layerSeq, params: params
+                layerPrev: layerSeq, nbHeads: 1, params: params
             )
             
         case "ValueValue":

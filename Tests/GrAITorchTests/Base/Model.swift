@@ -9,7 +9,7 @@ import GrAIdient
 import PythonKit
 
 /// Model to test against PyTorch.
-class ModelTest1
+class ModelTestConv1
 {
     ///
     /// Create the model and import weights from PyTorch.
@@ -24,7 +24,7 @@ class ModelTest1
     ///
     static func build(_ size: Int) -> Model
     {
-        let context = ModelContext(name: "ModelTest1", curID: 0)
+        let context = ModelContext(name: "ModelTestConv1", curID: 0)
         let params = GrAI.Model.Params(context: context)
         
         var layer: Layer2D
@@ -75,7 +75,7 @@ class ModelTest1
         
         // Load weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
-        let data = pythonLib.load_test1_weights()
+        let data = pythonLib.load_conv1_weights()
         
         let weights = [[Float]](data.tuple2.0)!
         
@@ -110,7 +110,7 @@ class ModelTest1
 }
 
 /// Model to test against PyTorch.
-class ModelTest2
+class ModelTestConv2
 {
     ///
     /// Create the model and import weights from PyTorch.
@@ -125,7 +125,7 @@ class ModelTest2
     ///
     static func build(_ size: Int) -> Model
     {
-        let context = ModelContext(name: "ModelTest2", curID: 0)
+        let context = ModelContext(name: "ModelTestConv2", curID: 0)
         let params = GrAI.Model.Params(context: context)
         
         var layer: Layer2D
@@ -181,7 +181,7 @@ class ModelTest2
         
         // Load weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
-        let data = pythonLib.load_test2_weights()
+        let data = pythonLib.load_conv2_weights()
         
         let weights = [[Float]](data.tuple2.0)!
         
@@ -225,7 +225,7 @@ class ModelTest2
 }
 
 /// Model to test against PyTorch.
-class ModelTest3
+class ModelTestFFT
 {
     ///
     /// Create the model.
@@ -240,7 +240,7 @@ class ModelTest3
     ///
     static func build(_ size: Int) -> Model
     {
-        let context = ModelContext(name: "ModelTest2", curID: 0)
+        let context = ModelContext(name: "ModelTestFFT", curID: 0)
         let params = GrAI.Model.Params(context: context)
         
         var layer: Layer2D
@@ -305,7 +305,7 @@ class ModelTest3
 }
 
 /// Model to test against PyTorch.
-class ModelTest4
+class ModelTestDeConv1
 {
     ///
     /// Create the model and import weights from PyTorch.
@@ -318,7 +318,7 @@ class ModelTest4
     ///
     static func build(_ size: Int) -> Model
     {
-        let context = ModelContext(name: "ModelTest4", curID: 0)
+        let context = ModelContext(name: "ModelTestDeConv1", curID: 0)
         let params = GrAI.Model.Params(context: context)
         
         var layer: Layer2D
@@ -352,7 +352,7 @@ class ModelTest4
         
         // Load weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
-        let data = pythonLib.load_test4_weights()
+        let data = pythonLib.load_deconv1_weights()
         
         let weights = [[Float]](data.tuple2.0)!
         
@@ -387,7 +387,7 @@ class ModelTest4
 }
 
 /// Model to test against PyTorch.
-class ModelTest5
+class ModelTestDeConv2
 {
     ///
     /// Create the model and import weights from PyTorch.
@@ -400,7 +400,7 @@ class ModelTest5
     ///
     static func build(_ size: Int) -> Model
     {
-        let context = ModelContext(name: "ModelTest5", curID: 0)
+        let context = ModelContext(name: "ModelTestDeConv2", curID: 0)
         let params = GrAI.Model.Params(context: context)
         
         var layer: Layer2D
@@ -434,7 +434,7 @@ class ModelTest5
         
         // Load weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
-        let data = pythonLib.load_test5_weights()
+        let data = pythonLib.load_deconv2_weights()
         
         let weights = [[Float]](data.tuple2.0)!
         
@@ -469,7 +469,7 @@ class ModelTest5
 }
 
 /// Model to test against PyTorch.
-class ModelTest6
+class ModelTestDeConv3
 {
     ///
     /// Create the model and import weights from PyTorch.
@@ -482,7 +482,7 @@ class ModelTest6
     ///
     static func build(_ size: Int) -> Model
     {
-        let context = ModelContext(name: "ModelTest6", curID: 0)
+        let context = ModelContext(name: "ModelTestDeConv3", curID: 0)
         let params = GrAI.Model.Params(context: context)
         
         var layer: Layer2D
@@ -516,7 +516,7 @@ class ModelTest6
         
         // Load weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
-        let data = pythonLib.load_test6_weights()
+        let data = pythonLib.load_deconv3_weights()
         
         let weights = [[Float]](data.tuple2.0)!
         
@@ -551,7 +551,7 @@ class ModelTest6
 }
 
 /// Model to test against PyTorch.
-class ModelTest7
+class ModelTestDeConv4
 {
     ///
     /// Create the model and import weights from PyTorch.
@@ -564,7 +564,7 @@ class ModelTest7
     ///
     static func build(_ size: Int) -> Model
     {
-        let context = ModelContext(name: "ModelTest7", curID: 0)
+        let context = ModelContext(name: "ModelTestDeConv4", curID: 0)
         let params = GrAI.Model.Params(context: context)
         
         var layer: Layer2D
@@ -598,7 +598,7 @@ class ModelTest7
         
         // Load weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
-        let data = pythonLib.load_test7_weights()
+        let data = pythonLib.load_deconv4_weights()
         
         let weights = [[Float]](data.tuple2.0)!
         
@@ -633,7 +633,7 @@ class ModelTest7
 }
 
 /// Model to test against PyTorch.
-class ModelTest8
+class ModelTestCat
 {
     ///
     /// Create the model and import weights from PyTorch.
@@ -646,7 +646,7 @@ class ModelTest8
     ///
     static func build(_ size: Int) -> Model
     {
-        let context = ModelContext(name: "ModelTest8", curID: 0)
+        let context = ModelContext(name: "ModelTestCat", curID: 0)
         let params = GrAI.Model.Params(context: context)
         
         var layer: Layer2D
@@ -690,7 +690,7 @@ class ModelTest8
         
         // Load weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
-        let data = pythonLib.load_test8_weights()
+        let data = pythonLib.load_cat_weights()
         
         let weights = [[Float]](data.tuple2.0)!
         
@@ -725,7 +725,7 @@ class ModelTest8
 }
 
 /// Model to test against PyTorch.
-class ModelTest9
+class ModelTestPatchConv
 {
     ///
     /// Create the model and import weights from PyTorch.
@@ -741,7 +741,7 @@ class ModelTest9
     ///
     static func build(size: Int, patch: Int) -> Model
     {
-        let context = ModelContext(name: "ModelTest9", curID: 0)
+        let context = ModelContext(name: "ModelTestPatchConv", curID: 0)
         let params = GrAI.Model.Params(context: context)
         
         var layer: Layer2D
@@ -772,7 +772,7 @@ class ModelTest9
         
         // Load weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
-        let data = pythonLib.load_test9_weights(size, patch)
+        let data = pythonLib.load_patch_conv_weights(size, patch)
         
         let weights = [[Float]](data.tuple2.0)!
         
@@ -806,7 +806,7 @@ class ModelTest9
 }
 
 /// Model to test against PyTorch.
-class ModelTest10
+class ModelTestAttention1
 {
     ///
     /// Create the model and import weights from PyTorch.
@@ -824,7 +824,7 @@ class ModelTest10
     ///
     static func build(size: Int, patch: Int) -> Model
     {
-        let context = ModelContext(name: "ModelTest10", curID: 0)
+        let context = ModelContext(name: "ModelTestAttention1", curID: 0)
         let params = GrAI.Model.Params(context: context)
         
         var layer: Layer2D
@@ -887,7 +887,7 @@ class ModelTest10
         
         // Load weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
-        let data = pythonLib.load_test10_weights(size, patch)
+        let data = pythonLib.load_attention1_weights(size, patch)
         
         let weights = [[Float]](data.tuple2.0)!
         
@@ -930,7 +930,7 @@ class ModelTest10
 }
 
 /// Model to test against PyTorch.
-class ModelTest11
+class ModelTestAttention2
 {
     ///
     /// Create the model and import weights from PyTorch.
@@ -949,7 +949,7 @@ class ModelTest11
     ///
     static func build(size: Int, patch: Int) -> Model
     {
-        let context = ModelContext(name: "ModelTest11", curID: 0)
+        let context = ModelContext(name: "ModelTestAttention2", curID: 0)
         let params = GrAI.Model.Params(context: context)
         
         var layer: Layer2D
@@ -1033,7 +1033,7 @@ class ModelTest11
         
         // Load weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
-        let data = pythonLib.load_test11_weights(size, patch)
+        let data = pythonLib.load_attention2_weights(size, patch)
         
         let weights = [[Float]](data.tuple2.0)!
         
@@ -1076,7 +1076,7 @@ class ModelTest11
 }
 
 /// Model to test against PyTorch.
-class ModelTest12
+class ModelTestLayerNorm
 {
     ///
     /// Create the model and import weights from PyTorch.
@@ -1091,7 +1091,7 @@ class ModelTest12
     ///
     static func build(size: Int, patch: Int) -> Model
     {
-        let context = ModelContext(name: "ModelTest12", curID: 0)
+        let context = ModelContext(name: "ModelTestLayerNorm", curID: 0)
         let params = GrAI.Model.Params(context: context)
         
         var layer: Layer2D
@@ -1126,7 +1126,7 @@ class ModelTest12
         
         // Load weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
-        let data = pythonLib.load_test12_weights(size, patch)
+        let data = pythonLib.load_layer_norm_weights(size, patch)
         
         let weights = [[Float]](data.tuple2.0)!
         

@@ -76,11 +76,11 @@ final class GrAITorchTests: XCTestCase
         return gradNormOutput
     }
     
-    /// Test that model1 backward pass returns the same gradient norm in GrAIdient and PyTorch.
-    func testModel1()
+    /// Test that modelConv1 backward pass returns the same gradient norm in GrAIdient and PyTorch.
+    func testModelConv1()
     {
         // Build model.
-        let model = ModelTest1.build(_size)
+        let model = ModelTestConv1.build(_size)
         
         // Initialize for inference.
         model.initKernel(phase: .Inference)
@@ -98,7 +98,7 @@ final class GrAITorchTests: XCTestCase
         try! firstLayer.setDataGPU(data, batchSize: 1, format: .RGB)
         
         // Get the gradient norm on the first layer.
-        let expectedNorm: Double = Double(computeTest1GradNorm(_size))
+        let expectedNorm: Double = Double(computeConv1GradNorm(_size))
         let gradNormOutput: Double = _getGradientNorm(model)
         
         // Compare difference.
@@ -107,11 +107,11 @@ final class GrAITorchTests: XCTestCase
         XCTAssert(diffPercent < 1.0)
     }
     
-    /// Test that model2 backward pass returns the same gradient norm in GrAIdient and PyTorch.
-    func testModel2()
+    /// Test that modelConv2 backward pass returns the same gradient norm in GrAIdient and PyTorch.
+    func testModelConv2()
     {
         // Build model.
-        let model = ModelTest2.build(_size)
+        let model = ModelTestConv2.build(_size)
         
         // Initialize for inference.
         model.initKernel(phase: .Inference)
@@ -129,7 +129,7 @@ final class GrAITorchTests: XCTestCase
         try! firstLayer.setDataGPU(data, batchSize: 1, format: .RGB)
         
         // Get the gradient norm on the first layer.
-        let expectedNorm: Double = Double(computeTest2GradNorm(_size))
+        let expectedNorm: Double = Double(computeConv2GradNorm(_size))
         let gradNormOutput: Double = _getGradientNorm(model)
         
         // Compare difference.
@@ -138,11 +138,11 @@ final class GrAITorchTests: XCTestCase
         XCTAssert(diffPercent < 1.0)
     }
     
-    /// Test that model3 backward pass returns the same gradient norm in GrAIdient and PyTorch.
-    func testModel3()
+    /// Test that modelFFT backward pass returns the same gradient norm in GrAIdient and PyTorch.
+    func testModelFFT()
     {
         // Build model.
-        let model = ModelTest3.build(_size)
+        let model = ModelTestFFT.build(_size)
         
         // Initialize for inference.
         model.initKernel(phase: .Inference)
@@ -162,7 +162,7 @@ final class GrAITorchTests: XCTestCase
         try! secondLayer.setDataGPU(batchSize: 1)
         
         // Get the gradient norm on the first layer.
-        let expectedNorm: Double = Double(computeTest3GradNorm(_size))
+        let expectedNorm: Double = Double(computeFFTGradNorm(_size))
         let gradNormOutput: Double = _getGradientNorm(model)
         
         // Compare difference.
@@ -171,11 +171,11 @@ final class GrAITorchTests: XCTestCase
         XCTAssert(diffPercent < 1.0)
     }
     
-    /// Test that model4 backward pass returns the same gradient norm in GrAIdient and PyTorch.
-    func testModel4()
+    /// Test that modelDeConv1 backward pass returns the same gradient norm in GrAIdient and PyTorch.
+    func testModelDeConv1()
     {
         // Build model.
-        let model = ModelTest4.build(_size)
+        let model = ModelTestDeConv1.build(_size)
         
         // Initialize for inference.
         model.initKernel(phase: .Inference)
@@ -193,7 +193,7 @@ final class GrAITorchTests: XCTestCase
         try! firstLayer.setDataGPU(data, batchSize: 1, format: .RGB)
         
         // Get the gradient norm on the first layer.
-        let expectedNorm: Double = Double(computeTest4GradNorm(_size))
+        let expectedNorm: Double = Double(computeDeConv1GradNorm(_size))
         let gradNormOutput: Double = _getGradientNorm(model)
         
         // Compare difference.
@@ -202,11 +202,11 @@ final class GrAITorchTests: XCTestCase
         XCTAssert(diffPercent < 1.0)
     }
     
-    /// Test that model5 backward pass returns the same gradient norm in GrAIdient and PyTorch.
-    func testModel5()
+    /// Test that modelDeConv2 backward pass returns the same gradient norm in GrAIdient and PyTorch.
+    func testModelDeConv2()
     {
         // Build model.
-        let model = ModelTest5.build(_size)
+        let model = ModelTestDeConv2.build(_size)
         
         // Initialize for inference.
         model.initKernel(phase: .Inference)
@@ -224,7 +224,7 @@ final class GrAITorchTests: XCTestCase
         try! firstLayer.setDataGPU(data, batchSize: 1, format: .RGB)
         
         // Get the gradient norm on the first layer.
-        let expectedNorm: Double = Double(computeTest5GradNorm(_size))
+        let expectedNorm: Double = Double(computeDeConv2GradNorm(_size))
         let gradNormOutput: Double = _getGradientNorm(model)
         
         // Compare difference.
@@ -233,11 +233,11 @@ final class GrAITorchTests: XCTestCase
         XCTAssert(diffPercent < 1.0)
     }
     
-    /// Test that model6 backward pass returns the same gradient norm in GrAIdient and PyTorch.
-    func testModel6()
+    /// Test that modelDeConv3 backward pass returns the same gradient norm in GrAIdient and PyTorch.
+    func testModelDeConv3()
     {
         // Build model.
-        let model = ModelTest6.build(_size)
+        let model = ModelTestDeConv3.build(_size)
         
         // Initialize for inference.
         model.initKernel(phase: .Inference)
@@ -255,7 +255,7 @@ final class GrAITorchTests: XCTestCase
         try! firstLayer.setDataGPU(data, batchSize: 1, format: .RGB)
         
         // Get the gradient norm on the first layer.
-        let expectedNorm: Double = Double(computeTest6GradNorm(_size))
+        let expectedNorm: Double = Double(computeDeConv3GradNorm(_size))
         let gradNormOutput: Double = _getGradientNorm(model)
         
         // Compare difference.
@@ -264,11 +264,11 @@ final class GrAITorchTests: XCTestCase
         XCTAssert(diffPercent < 1.0)
     }
     
-    /// Test that model7 backward pass returns the same gradient norm in GrAIdient and PyTorch.
-    func testModel7()
+    /// Test that modelDeConv4 backward pass returns the same gradient norm in GrAIdient and PyTorch.
+    func testModelDeConv4()
     {
         // Build model.
-        let model = ModelTest7.build(_size)
+        let model = ModelTestDeConv4.build(_size)
         
         // Initialize for inference.
         model.initKernel(phase: .Inference)
@@ -286,7 +286,7 @@ final class GrAITorchTests: XCTestCase
         try! firstLayer.setDataGPU(data, batchSize: 1, format: .RGB)
         
         // Get the gradient norm on the first layer.
-        let expectedNorm: Double = Double(computeTest7GradNorm(_size))
+        let expectedNorm: Double = Double(computeDeConv4GradNorm(_size))
         let gradNormOutput: Double = _getGradientNorm(model)
         
         // Compare difference.
@@ -295,11 +295,11 @@ final class GrAITorchTests: XCTestCase
         XCTAssert(diffPercent < 1.0)
     }
     
-    /// Test that model8 backward pass returns the same gradient norm in GrAIdient and PyTorch.
-    func testModel8()
+    /// Test that modelCat backward pass returns the same gradient norm in GrAIdient and PyTorch.
+    func testModelCat()
     {
         // Build model.
-        let model = ModelTest8.build(_size)
+        let model = ModelTestCat.build(_size)
         
         // Initialize for inference.
         model.initKernel(phase: .Inference)
@@ -317,7 +317,7 @@ final class GrAITorchTests: XCTestCase
         try! firstLayer.setDataGPU(data, batchSize: 1, format: .RGB)
         
         // Get the gradient norm on the first layer.
-        let expectedNorm: Double = Double(computeTest8GradNorm(_size))
+        let expectedNorm: Double = Double(computeCatGradNorm(_size))
         let gradNormOutput: Double = _getGradientNorm(model)
         
         // Compare difference.
@@ -326,11 +326,14 @@ final class GrAITorchTests: XCTestCase
         XCTAssert(diffPercent < 1.0)
     }
     
-    /// Test that model9 backward pass returns the same gradient norm in GrAIdient and PyTorch.
-    func testModel9()
+    ///
+    /// Test that modelPatchConv backward pass returns the same gradient norm
+    /// in GrAIdient and PyTorch.
+    ///
+    func testModelPatchConv()
     {
         // Build model.
-        let model = ModelTest9.build(size: _size, patch: _patch)
+        let model = ModelTestPatchConv.build(size: _size, patch: _patch)
         
         // Initialize for inference.
         model.initKernel(phase: .Inference)
@@ -348,7 +351,7 @@ final class GrAITorchTests: XCTestCase
         try! firstLayer.setDataGPU(data, batchSize: 1, format: .RGB)
         
         // Get the gradient norm on the first layer.
-        let expectedNorm: Double = Double(computeTest9GradNorm(
+        let expectedNorm: Double = Double(computePatchConvGradNorm(
             size: _size, patch: _patch
         ))
         let gradNormOutput: Double = _getGradientNorm(model)
@@ -359,11 +362,11 @@ final class GrAITorchTests: XCTestCase
         XCTAssert(diffPercent < 1.0)
     }
     
-    /// Test that model10 backward pass returns the same gradient norm in GrAIdient and PyTorch.
-    func testModel10()
+    /// Test that modelAttention1 backward pass returns the same gradient norm in GrAIdient and PyTorch.
+    func testModelAttention1()
     {
         // Build model.
-        let model = ModelTest10.build(size: _size, patch: _patch)
+        let model = ModelTestAttention1.build(size: _size, patch: _patch)
         
         // Initialize for inference.
         model.initKernel(phase: .Inference)
@@ -381,7 +384,7 @@ final class GrAITorchTests: XCTestCase
         try! firstLayer.setDataGPU(data, batchSize: 1, format: .RGB)
         
         // Get the gradient norm on the first layer.
-        let expectedNorm: Double = Double(computeTest10GradNorm(
+        let expectedNorm: Double = Double(computeAttention1GradNorm(
             size: _size, patch: _patch
         ))
         let gradNormOutput: Double = _getGradientNorm(model)
@@ -392,11 +395,11 @@ final class GrAITorchTests: XCTestCase
         XCTAssert(diffPercent < 1.0)
     }
     
-    /// Test that model11 backward pass returns the same gradient norm in GrAIdient and PyTorch.
-    func testModel11()
+    /// Test that modelAttention2 backward pass returns the same gradient norm in GrAIdient and PyTorch.
+    func testModelAttention2()
     {
         // Build model.
-        let model = ModelTest11.build(size: _size, patch: _patch)
+        let model = ModelTestAttention2.build(size: _size, patch: _patch)
         
         // Initialize for inference.
         model.initKernel(phase: .Inference)
@@ -414,7 +417,7 @@ final class GrAITorchTests: XCTestCase
         try! firstLayer.setDataGPU(data, batchSize: 1, format: .RGB)
         
         // Get the gradient norm on the first layer.
-        let expectedNorm: Double = Double(computeTest11GradNorm(
+        let expectedNorm: Double = Double(computeAttention2GradNorm(
             size: _size, patch: _patch
         ))
         let gradNormOutput: Double = _getGradientNorm(model)
@@ -425,11 +428,14 @@ final class GrAITorchTests: XCTestCase
         XCTAssert(diffPercent < 1.0)
     }
     
-    /// Test that model12 backward pass returns the same gradient norm in GrAIdient and PyTorch.
-    func testModel12()
+    ///
+    /// Test that modelLayerNorm backward pass returns the same gradient norm
+    /// in GrAIdient and PyTorch.
+    ///
+    func testModelLayerNorm()
     {
         // Build model.
-        let model = ModelTest12.build(size: _size, patch: _patch)
+        let model = ModelTestLayerNorm.build(size: _size, patch: _patch)
         
         // Initialize for inference.
         model.initKernel(phase: .Inference)
@@ -447,7 +453,7 @@ final class GrAITorchTests: XCTestCase
         try! firstLayer.setDataGPU(data, batchSize: 1, format: .RGB)
         
         // Get the gradient norm on the first layer.
-        let expectedNorm: Double = Double(computeTest12GradNorm(
+        let expectedNorm: Double = Double(computeLayerNormGradNorm(
             size: _size, patch: _patch
         ))
         let gradNormOutput: Double = _getGradientNorm(model)

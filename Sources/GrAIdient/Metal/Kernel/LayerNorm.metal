@@ -106,7 +106,7 @@ kernel void forwardLayerNormSeq(
     uint nbNeurons;
     uint nbBatch;
     uint sequence;
-    float Ɛ = 1e-6;
+    float Ɛ = 1e-7;
     
     if (pNbNeurons && pNbBatch && pSequence && β && Ɣ &&
         tmps && xHat && μ && σ2)
@@ -259,7 +259,7 @@ kernel void backwardLayerNormSeq(
     uint nbNeurons;
     uint nbBatch;
     uint sequence;
-    float Ɛ = 1e-6;
+    float Ɛ = 1e-7;
     
     if (pNbNeurons && pNbBatch && pSequence &&
         σ2 && xHat && Ɣ && sum1 && sum2 && delta)

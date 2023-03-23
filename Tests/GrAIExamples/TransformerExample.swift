@@ -69,7 +69,7 @@ final class TransformerExample: XCTestCase
     ///     - nbHeads: Number of head in attention branches.
     ///     - hiddenDim: Dimension of neurons in the main branch.
     ///     - params: Contextual parameters linking to the model.
-    /// - Returns: The model built.
+    /// - Returns: The last layer of the branch.
     ///
     func buildMultiHeadAttention(
         layerPrev: LayerSeq,

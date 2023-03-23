@@ -157,7 +157,7 @@ def _extract_attention_weights(
             weights = layer_weights.data.cpu().numpy()
             nb_partial = int(len(weights) / 3)
 
-            weights1 = weights[0:nb_partial]
+            weights1 = weights[0: nb_partial]
             weights2 = weights[nb_partial: 2*nb_partial]
             weights3 = weights[2*nb_partial: 3*nb_partial]
 
@@ -166,7 +166,7 @@ def _extract_attention_weights(
             print(f"Extracting weigths {name}.")
             biases = layer_weights.data.cpu().numpy()
 
-            biases1 = biases[0:nb_partial]
+            biases1 = biases[0: nb_partial]
             biases2 = biases[nb_partial: 2 * nb_partial]
             biases3 = biases[2 * nb_partial: 3 * nb_partial]
 

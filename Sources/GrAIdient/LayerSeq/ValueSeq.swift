@@ -518,6 +518,45 @@ public class ValueSeq: LayerMergeSeq
                 height: batchSize * sequence
             )
             command.enqueue()
+            
+            
+            MetalKernel.get.download([delta, score.outs, value.delta])
+            let delta1 = delta.shared.buffer
+            let score1 = score.outs.shared.buffer
+            let value1 = value.delta.shared.buffer
+            var hum1 = [Double]()
+            var hum2 = [Double]()
+            
+            let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeads
+            for elem in 0..<batchSize {
+            for seqQ in 0..<sequence {
+            for head in 0..<_nbHeads {
+            for j in 0..<size
+            {
+                let depth = j + head * size
+                
+                var sum = 0.0
+                for seqK in 0..<sequence
+                {
+                    let offset = depth + nbNeurons * seqQ +
+                        sequence * nbNeurons * elem
+                    let offsetScore = seqQ + head * sequence +
+                        nbNeuronsPrev * seqK +
+                        sequence * nbNeuronsPrev * elem
+                    
+                    let deltaCur = delta1[offset]
+                    let scoreTmp = score1[offsetScore]
+                    
+                    sum += Double(deltaCur) * Double(scoreTmp)
+                }
+                hum1.append(sum)
+            }}}}
+            
+            for elem in value1
+            {
+                hum2.append(Double(elem))
+            }
+            print("COUCOU")
         }
         if score.computeDelta
         {

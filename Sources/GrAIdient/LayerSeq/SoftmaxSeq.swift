@@ -275,7 +275,7 @@ public class SoftmaxSeq: LayerSeq
                 {
                     let offset = j+head*size +
                         nbNeurons * seq + sequence * nbNeurons * elem
-                    avg = Double(buffer[offset])
+                    avg += Double(buffer[offset])
                 }
                 avg /= Double(_nbHeads)
                 hum2.append(avg)

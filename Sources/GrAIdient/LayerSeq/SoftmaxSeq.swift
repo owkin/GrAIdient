@@ -262,11 +262,27 @@ public class SoftmaxSeq: LayerSeq
             command.enqueue()
             
             MetalKernel.get.download([outs])
-            var hum = [Float]()
+            var hum1 = [Float]()
+            var hum2 = [Double]()
             let buffer = outs.shared.buffer
+            let size = nbNeurons / _nbHeads
+            for elem in 0..<batchSize {
+            for seq in 0..<sequence {
+            for j in 0..<size
+            {
+                var avg = 0.0
+                for head in 0..<_nbHeads
+                {
+                    let offset = j+head*size +
+                        nbNeurons * seq + sequence * nbNeurons * elem
+                    avg = Double(buffer[offset])
+                }
+                avg /= Double(_nbHeads)
+                hum2.append(avg)
+            }}}
             for elem in buffer
             {
-                hum.append(elem)
+                hum1.append(elem)
             }
             print("COUCOU")
         }

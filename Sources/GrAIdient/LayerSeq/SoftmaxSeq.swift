@@ -261,7 +261,7 @@ public class SoftmaxSeq: LayerSeq
             )
             command.enqueue()
             
-            MetalKernel.get.download([outs])
+            /*MetalKernel.get.download([outs])
             var hum1 = [Float]()
             var hum2 = [Double]()
             let buffer = outs.shared.buffer
@@ -284,7 +284,7 @@ public class SoftmaxSeq: LayerSeq
             {
                 hum1.append(elem)
             }
-            print("COUCOU")
+            print("COUCOU")*/
         }
     }
     

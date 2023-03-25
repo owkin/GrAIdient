@@ -520,6 +520,15 @@ public class ValueSeq: LayerMergeSeq
             command.enqueue()
             
             
+            MetalKernel.get.download([value.delta])
+            var hum = [Float]()
+            let buffer = value.delta.shared.buffer
+            for elem in buffer
+            {
+                hum.append(elem)
+            }
+            print("COUCOU")
+            
             /*MetalKernel.get.download([delta, score.outs, value.delta])
             let delta1 = delta.shared.buffer
             let score1 = score.outs.shared.buffer
@@ -582,6 +591,15 @@ public class ValueSeq: LayerMergeSeq
                 height: batchSize * sequence
             )
             command.enqueue()
+            
+            MetalKernel.get.download([score.delta])
+            var hum = [Float]()
+            let buffer = score.delta.shared.buffer
+            for elem in buffer
+            {
+                hum.append(elem)
+            }
+            print("COUCOU")
         }
         propagateDirty()
     }

@@ -936,36 +936,34 @@ kernel void valueValueSeqBackward(
     uint head = id[0] / size;
     uint j = id[0] % size;
     uint elem = id[1] / sequence;
-    uint seqQ = id[1] % sequence;
+    uint seqK = id[1] % sequence;
     uint depth = j + head * size;
     
     if (head >= nbHeads || j >= size ||
-        elem >= nbBatch || seqQ >= sequence)
+        elem >= nbBatch || seqK >= sequence)
     {
         return ;
     }
     
     float tmp = 0.0;
-    for (uint seqK=0; seqK<sequence; seqK++)
+    for (uint seqQ=0; seqQ<sequence; seqQ++)
     {
-        uint offsetScore = seqQ + head * sequence +
-            nbNeuronsPrev * seqK +
+        uint offset = depth + nbNeurons * seqQ + sequence * nbNeurons * elem;
+        uint offsetScore = seqK + head * sequence +
+            nbNeuronsPrev * seqQ +
             sequence * nbNeuronsPrev * elem;
         
-        tmp += score[offsetScore];
+        tmp += delta[offset] * score[offsetScore];
     }
     
-    uint offset = depth + nbNeurons * seqQ + sequence * nbNeurons * elem;
-    uint offsetValue = depth +
-        nbNeurons * seqQ + sequence * nbNeurons * elem;
-    
+    uint offsetValue = depth + nbNeurons * seqK + sequence * nbNeurons * elem;
     if (dirty)
     {
-        value[offsetValue] = tmp * delta[offset];
+        value[offsetValue] = tmp;
     }
     else
     {
-        value[offsetValue] += tmp * delta[offset];
+        value[offsetValue] += tmp;
     }
 }
 

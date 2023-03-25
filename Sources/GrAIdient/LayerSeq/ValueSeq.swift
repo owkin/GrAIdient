@@ -413,28 +413,28 @@ public class ValueSeq: LayerMergeSeq
         {
             for elem in 0..<batchSize {
             for head in 0..<_nbHeads {
-            for seqQ in 0..<sequence {
+            for seqK in 0..<sequence {
             for j in 0..<size
             {
                 let depth = j + head * size
                 
                 var sum = 0.0
-                for seqK in 0..<sequence
+                for seqQ in 0..<sequence
                 {
                     let deltaCur = neurons.get(seqQ, depth)!.v[elem].delta
                     let scoreTmp = score
-                        .get(seqK, seqQ + head * sequence)!.v[elem].out
+                        .get(seqQ, seqK + head * sequence)!.v[elem].out
                     
                     sum += deltaCur * scoreTmp
                 }
                 
                 if _layersPrev[0].dirty
                 {
-                    value.get(seqQ, depth)!.v[elem].delta = sum
+                    value.get(seqK, depth)!.v[elem].delta = sum
                 }
                 else
                 {
-                    value.get(seqQ, depth)!.v[elem].delta += sum
+                    value.get(seqK, depth)!.v[elem].delta += sum
                 }
             }}}}
         }
@@ -534,7 +534,7 @@ public class ValueSeq: LayerMergeSeq
             norm = sqrt(norm)
             print("COUCOU")
             
-            MetalKernel.get.download([delta, score.outs, value.delta])
+            /*MetalKernel.get.download([delta, score.outs, value.delta])
             let delta1 = delta.shared.buffer
             let score1 = score.outs.shared.buffer
             let value1 = value.delta.shared.buffer
@@ -576,7 +576,7 @@ public class ValueSeq: LayerMergeSeq
             {
                 hum2.append(Double(elem))
             }
-            print("COUCOU")
+            print("COUCOU")*/
         }
         if score.computeDelta
         {

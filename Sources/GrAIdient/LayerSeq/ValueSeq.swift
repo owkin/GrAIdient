@@ -520,7 +520,7 @@ public class ValueSeq: LayerMergeSeq
             command.enqueue()
             
             
-            /*MetalKernel.get.download([delta, score.outs, value.delta])
+            MetalKernel.get.download([delta, score.outs, value.delta])
             let delta1 = delta.shared.buffer
             let score1 = score.outs.shared.buffer
             let value1 = value.delta.shared.buffer
@@ -556,7 +556,7 @@ public class ValueSeq: LayerMergeSeq
             {
                 hum2.append(Double(elem))
             }
-            print("COUCOU")*/
+            print("COUCOU")
         }
         if score.computeDelta
         {

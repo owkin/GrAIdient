@@ -519,6 +519,15 @@ public class QuerySeq: LayerMergeSeq
                 height: batchSize * sequence
             )
             command.enqueue()
+            
+            MetalKernel.get.download([query.delta])
+            var hum = [Float]()
+            let buffer = query.delta.shared.buffer
+            for elem in buffer
+            {
+                hum.append(elem)
+            }
+            print("COUCOU")
         }
         if key.computeDelta
         {
@@ -544,6 +553,15 @@ public class QuerySeq: LayerMergeSeq
                 height: batchSize * sequence
             )
             command.enqueue()
+            
+            MetalKernel.get.download([key.delta])
+            var hum = [Float]()
+            let buffer = key.delta.shared.buffer
+            for elem in buffer
+            {
+                hum.append(elem)
+            }
+            print("COUCOU")
         }
         propagateDirty()
     }

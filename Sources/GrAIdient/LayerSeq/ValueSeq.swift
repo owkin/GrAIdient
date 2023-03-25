@@ -5,6 +5,8 @@
 // Created by Jean-François Reboud on 10/03/2023.
 //
 
+import Foundation
+
 ///
 /// Layer with a sequential shape neural structure.
 ///
@@ -522,11 +524,14 @@ public class ValueSeq: LayerMergeSeq
             
             MetalKernel.get.download([value.delta])
             var hum = [Float]()
+            var norm = 0.0
             let buffer = value.delta.shared.buffer
             for elem in buffer
             {
                 hum.append(elem)
+                norm += Double(elem) * Double(elem)
             }
+            norm = sqrt(norm)
             print("COUCOU")
             
             /*MetalKernel.get.download([delta, score.outs, value.delta])
@@ -594,11 +599,14 @@ public class ValueSeq: LayerMergeSeq
             
             MetalKernel.get.download([score.delta])
             var hum = [Float]()
+            var norm = 0.0
             let buffer = score.delta.shared.buffer
             for elem in buffer
             {
                 hum.append(elem)
+                norm += Double(elem) * Double(elem)
             }
+            norm = sqrt(norm)
             print("COUCOU")
         }
         propagateDirty()

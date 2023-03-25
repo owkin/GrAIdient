@@ -522,11 +522,14 @@ public class QuerySeq: LayerMergeSeq
             
             MetalKernel.get.download([query.delta])
             var hum = [Float]()
+            var norm = 0.0
             let buffer = query.delta.shared.buffer
             for elem in buffer
             {
                 hum.append(elem)
+                norm += Double(elem) * Double(elem)
             }
+            norm = sqrt(norm)
             print("COUCOU")
         }
         if key.computeDelta
@@ -556,11 +559,14 @@ public class QuerySeq: LayerMergeSeq
             
             MetalKernel.get.download([key.delta])
             var hum = [Float]()
+            var norm = 0.0
             let buffer = key.delta.shared.buffer
             for elem in buffer
             {
                 hum.append(elem)
+                norm += Double(elem) * Double(elem)
             }
+            norm = sqrt(norm)
             print("COUCOU")
         }
         propagateDirty()

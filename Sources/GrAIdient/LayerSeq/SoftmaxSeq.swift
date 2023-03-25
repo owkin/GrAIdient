@@ -371,11 +371,14 @@ public class SoftmaxSeq: LayerSeq
             
             MetalKernel.get.download([layerPrev.delta])
             var hum = [Float]()
+            var norm = 0.0
             let buffer = layerPrev.delta.shared.buffer
             for elem in buffer
             {
                 hum.append(elem)
+                norm += Double(elem) * Double(elem)
             }
+            norm = sqrt(norm)
             print("COUCOU")
         }
     }

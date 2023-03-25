@@ -948,24 +948,24 @@ kernel void valueValueSeqBackward(
     float tmp = 0.0;
     for (uint seqK=0; seqK<sequence; seqK++)
     {
-        uint offset = depth + nbNeurons * seqQ + sequence * nbNeurons * elem;
         uint offsetScore = seqQ + head * sequence +
             nbNeuronsPrev * seqK +
             sequence * nbNeuronsPrev * elem;
         
-        tmp += delta[offset] * score[offsetScore];
+        tmp += score[offsetScore];
     }
     
+    uint offset = depth + nbNeurons * seqQ + sequence * nbNeurons * elem;
     uint offsetValue = depth +
         nbNeurons * seqQ + sequence * nbNeurons * elem;
     
     if (dirty)
     {
-        value[offsetValue] = tmp;
+        value[offsetValue] = tmp * delta[offset];
     }
     else
     {
-        value[offsetValue] += tmp;
+        value[offsetValue] += tmp * delta[offset];
     }
 }
 

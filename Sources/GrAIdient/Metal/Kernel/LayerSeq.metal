@@ -747,29 +747,16 @@ kernel void softmaxSeqForward(
     float cMax = outsPrev[
         0+head*size + nbNeurons * seq + sequence * nbNeurons * elem
     ];
-    float cMean = 0.0;
     for (uint j=0; j<size; j++)
     {
         uint offset1 = j+head*size +
             nbNeurons * seq + sequence * nbNeurons * elem;
         
         float outPrev = outsPrev[offset1];
-        cMean += outPrev;
         if (outPrev > cMax)
         {
             cMax = outPrev;
         }
-    }
-    cMean /= size;
-    
-    float c;
-    if (cMax - cMean < 5.0)
-    {
-        c = cMean;
-    }
-    else
-    {
-        c = cMax;
     }
     
     float sum1 = 0.0;
@@ -779,12 +766,12 @@ kernel void softmaxSeqForward(
             nbNeurons * seq + sequence * nbNeurons * elem;
         
         float outPrev = outsPrev[offset1];
-        sum1 += exp(outPrev - c);
+        sum1 += exp(outPrev - cMax);
     }
     
     uint offset = depth + nbNeurons * seq + sequence * nbNeurons * elem;
     float outPrev = outsPrev[offset];
-    outs[offset] = exp(outPrev - c) / sum1;
+    outs[offset] = exp(outPrev - cMax) / sum1;
 }
 
 kernel void softmaxSeqBackward(

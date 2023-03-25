@@ -520,63 +520,6 @@ public class ValueSeq: LayerMergeSeq
                 height: batchSize * sequence
             )
             command.enqueue()
-            
-            
-            MetalKernel.get.download([value.delta])
-            var hum = [Float]()
-            var norm = 0.0
-            let buffer = value.delta.shared.buffer
-            for elem in buffer
-            {
-                hum.append(elem)
-                norm += Double(elem) * Double(elem)
-            }
-            norm = sqrt(norm)
-            print("COUCOU")
-            
-            /*MetalKernel.get.download([delta, score.outs, value.delta])
-            let delta1 = delta.shared.buffer
-            let score1 = score.outs.shared.buffer
-            let value1 = value.delta.shared.buffer
-            var hum1 = [Double]()
-            var hum2 = [Double]()
-            var deltaStore = [Double]()
-            var scoreStore = [Double]()
-            
-            let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeads
-            for elem in 0..<batchSize {
-            for seqQ in 0..<sequence {
-            for head in 0..<_nbHeads {
-            for j in 0..<size
-            {
-                let depth = j + head * size
-                deltaStore = [Double]()
-                scoreStore = [Double]()
-                
-                var sum = 0.0
-                for seqK in 0..<sequence
-                {
-                    let offset = depth + nbNeurons * seqQ +
-                        sequence * nbNeurons * elem
-                    let offsetScore = seqQ + head * sequence +
-                        nbNeuronsPrev * seqK +
-                        sequence * nbNeuronsPrev * elem
-                    
-                    let deltaCur = delta1[offset]
-                    let scoreTmp = score1[offsetScore]
-                    
-                    deltaStore.append(Double(deltaCur))
-                    scoreStore.append(Double(scoreTmp))
-                    sum += Double(deltaCur) * Double(scoreTmp)
-                }
-                hum1.append(sum)
-            }}}}
-            
-            for elem in value1
-            {
-                hum2.append(Double(elem))
-            }
-            print("COUCOU")*/
         }
         if score.computeDelta
         {
@@ -602,18 +545,6 @@ public class ValueSeq: LayerMergeSeq
                 height: batchSize * sequence
             )
             command.enqueue()
-            
-            MetalKernel.get.download([score.delta])
-            var hum = [Float]()
-            var norm = 0.0
-            let buffer = score.delta.shared.buffer
-            for elem in buffer
-            {
-                hum.append(elem)
-                norm += Double(elem) * Double(elem)
-            }
-            norm = sqrt(norm)
-            print("COUCOU")
         }
         propagateDirty()
     }

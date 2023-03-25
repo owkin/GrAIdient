@@ -606,18 +606,6 @@ public class LayerNormSeq: ActivationSeq, LayerUpdate, LayerWithActivation
             command.enqueue()
             
             propagateDirty()
-            
-            MetalKernel.get.download([layerPrev.delta])
-            var hum = [Float]()
-            let buffer = layerPrev.delta.shared.buffer
-            var norm = 0.0
-            for elem in buffer
-            {
-                hum.append(elem)
-                norm += Double(elem) * Double(elem)
-            }
-            norm = sqrt(norm)
-            print("COUCOU")
         }
     }
     

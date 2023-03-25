@@ -5,8 +5,6 @@
 // Created by Jean-François Reboud on 10/03/2023.
 //
 
-import Foundation
-
 ///
 /// Layer with a sequential shape neural structure.
 ///

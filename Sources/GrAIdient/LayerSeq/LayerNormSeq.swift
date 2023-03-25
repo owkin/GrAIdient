@@ -5,8 +5,6 @@
 //  Created by Jean-François Reboud on 08/03/2023.
 //
 
-import Foundation
-
 /// Layer with a sequential shape neural structure, an activation function and one layer normalization unit.
 public class LayerNormSeq: ActivationSeq, LayerUpdate, LayerWithActivation
 {

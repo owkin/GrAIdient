@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🚀 **examples**: AutoEncoder models ([#79](https://github.com/owkin/GrAIdient/pull/79))\
 🚀 **layer_seq**: factorize by nbHeads ([#78](https://github.com/owkin/GrAIdient/pull/78))\
 🪜 **layer_seq**: Adding new layer SelectNeuronsSeq ([#77](https://github.com/owkin/GrAIdient/pull/77))\
 🐛 **fix:** numerical instability of Softmax ([#76](https://github.com/owkin/GrAIdient/pull/76))\

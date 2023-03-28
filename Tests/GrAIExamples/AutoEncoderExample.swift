@@ -353,7 +353,6 @@ final class AutoEncoderExample: XCTestCase
         }
         
         _ = MSE2D(layerPrev: layer, params: params)
-        
         return Model(model: context.model, modelsPrev: [])
     }
     

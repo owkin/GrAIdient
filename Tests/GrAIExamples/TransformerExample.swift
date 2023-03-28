@@ -388,14 +388,5 @@ final class TransformerExample: XCTestCase
                 transformer.incStep()
             }
         }
-        
-        // Encode the trained model.
-        let encoder = PropertyListEncoder()
-        let data = try! encoder.encode(transformer)
-        
-        // Save it to the disk.
-        try! data.write(
-            to: URL(fileURLWithPath: _outputDir + "/transformer2.plist")
-        )
     }
 }

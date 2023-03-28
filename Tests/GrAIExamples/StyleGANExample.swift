@@ -63,36 +63,6 @@ final class StyleGANExample : XCTestCase
         return optimizerParams
     }
     
-    ///
-    /// Get optimizer parameters for model training.
-    ///
-    /// - Parameter nbLoops: Number of steps per epoch.
-    /// - Returns: The optimizer parameters.
-    ///
-//    func _getOptimizerParams(nbLoops: Int) -> GrAI.Optimizer.Params
-//    {
-//        var optimizerParams = GrAI.Optimizer.Params()
-//        optimizerParams.nbLoops = nbLoops
-//
-//        // Simple optimizer scheduler: always the same optimizer during
-//        // the training.
-//        optimizerParams.optimizer = ConstEpochsScheduler(
-//            GrAI.Optimizer.Class.AdamRectified
-//        )
-//
-//        // Simple variable scheduler: always the same variable during
-//        // the training.
-//        optimizerParams.variables["alpha"] = ConstEpochsVar(
-//            value: ConstVal(1e-3)
-//        )
-//        optimizerParams.variables["lambda"] = ConstEpochsVar(
-//            value: ConstVal(1e-6)
-//        )
-//
-//        // Other schedulers can be built thanks to `GrAI.Optimizer.Params`.
-//        return optimizerParams
-//    }
-    
     func buildCNNEncoder(params: GrAI.Model.Params) -> Layer2D
     {
         var layer: Layer2D
@@ -223,7 +193,7 @@ final class StyleGANExample : XCTestCase
     }
     
     ///
-    /// Build a StyleGAN model.
+    /// Build a AutoEncoder model.
     ///
     ///
     /// - Returns: The model built.
@@ -236,9 +206,26 @@ final class StyleGANExample : XCTestCase
         let params = GrAI.Model.Params(context: context)
         
         let encoder = buildCNNEncoder(params: params)
-        let decoder = buildTestCnnDecoder(params: params, layerPrev: encoder)
-        // let mappingNetwork = buildMappingNetwork(params: params)
-        // let synthesisNetwork = buildSynthesisNetwork(mappingNetworkOutput: mappingNetwork, params: params)
+        _ = buildTestCnnDecoder(params: params, layerPrev: encoder)
+        
+        return Model(model: context.model, modelsPrev: [])
+    }
+    
+    ///
+    /// Build a StyleGAN model.
+    ///
+    ///
+    /// - Returns: The model built.
+    ///
+    func _buildStyleGANModel() -> Model
+    {
+        // Create the context to build a graph of layers where
+        // there is no previous model dependency: layer id starts at 0.
+        let context = ModelContext(name: "StyleGAN", models: [])
+        let params = GrAI.Model.Params(context: context)
+        
+        let mappingNetwork = buildMappingNetwork(params: params)
+        let synthesisNetwork = buildSynthesisNetwork(mappingNetworkOutput: mappingNetwork, params: params)
         
         return Model(model: context.model, modelsPrev: [])
     }
@@ -265,10 +252,16 @@ final class StyleGANExample : XCTestCase
         
         // Create a model with initialized links
         // with no previous model dependencies.
-        let cnn_ae = Model(model: baseModel, modelsPrev: [])
-        return cnn_ae
+        let model = Model(model: baseModel, modelsPrev: [])
+        return model
     }
     
+    ///
+    /// Build a Unet model.
+    ///
+    ///
+    /// - Returns: The model built.
+    ///
     func buildMatter(size: Int, leakyReLU: Bool = false) -> Model
         {
             let context = ModelContext(name: "PrimeMatter", curID: 0)
@@ -477,6 +470,22 @@ final class StyleGANExample : XCTestCase
             return model
         }
     
+    func getModel(name: String) -> Model {
+        var model: Model
+        // Default autoencoder
+        model = _buildModel()
+        
+        if (name == "unet") {
+            model = buildMatter(size: _size)
+        } else if (name == "autoencoder") {
+            model = _buildModel()
+        } else if (name == "stylegan") {
+            model = _buildStyleGANModel()
+        }
+                
+        return model
+    }
+    
     /// Test1: dump CIFAR train and test datasets for labels 8 and 5.
     func test1_DumpDataset()
     {
@@ -493,40 +502,11 @@ final class StyleGANExample : XCTestCase
         )
     }
     
-    /// Test2: dump CIFAR images for labels 8 and 5.
-    func test2_DumpImages()
-    {
-        let batchSize = 16
-        let cifar8 = CIFAR.loadDataset(
-            datasetPath: _outputDir + "/datasetTest8",
-            size: _size
-        )
-        
-        cifar8.initSamples(batchSize: batchSize)
-        
-        let samples8 = cifar8.getSamples()!
-        
-        let pixels8 = getPixels(
-            samples8, width: _size, height: _size, imageFormat: .Neuron
-        )
-        
-        for elem in 0..<batchSize
-        {
-            var image = getImage(
-                pixels: pixels8[elem], width: _size, height: _size
-            )
-            saveImage(
-                image,
-                url: URL(fileURLWithPath: _outputDir + "CIFAR8_\(elem).png")
-            )
-        }
-    }
-    
-    func test3_SaveModel()
+    func test2_SaveModel()
     {
         // Build a model with randomly initialized weights.
         //let cnn_ae = _buildModel()
-        let unet = buildMatter(size: 32)
+        let unet = getModel(name: "unet")
         
         // Encode the model.
         let encoder = PropertyListEncoder()
@@ -535,7 +515,7 @@ final class StyleGANExample : XCTestCase
         
         // Save it to the disk.
         try! data.write(
-            to: URL(fileURLWithPath: _outputDir + "/cnn_ae1.plist")
+            to: URL(fileURLWithPath: _outputDir + "/model1.plist")
         )
     }
     
@@ -562,26 +542,13 @@ final class StyleGANExample : XCTestCase
         cifar8.keep(nbWholeBatches)
         
         // Load previous model from the disk.
-        let cnn_ae = _loadModel(_outputDir + "cnn_ae1.plist")
+        let model = _loadModel(_outputDir + "model1.plist")
         
         // Initialize for training.
-        cnn_ae.initialize(params: params, phase: .Training)
+        model.initialize(params: params, phase: .Training)
         
-        let firstLayer: Input2D = cnn_ae.layers.first as! Input2D
-        let lastLayer: MSE2D = cnn_ae.layers.last as! MSE2D
-        
-        // Initialize the ground truth once and for all.
-//        let groundTruth = MetalSharedBuffer<Float>(_batchSize, deviceID: 0)
-//        let buffer = groundTruth.buffer
-//        for elem in 0..<_batchSize / 2
-//        {
-//            buffer[elem] = 0.0
-//        }
-//        for elem in _batchSize / 2..<_batchSize
-//        {
-//            buffer[elem] = 1.0
-//        }
-//        MetalKernel.get.upload([groundTruth])
+        let firstLayer: Input2D = model.layers.first as! Input2D
+        let lastLayer: MSE2D = model.layers.last as! MSE2D
         
         let nbEpochs = 15
         for epoch in 0..<nbEpochs
@@ -611,7 +578,7 @@ final class StyleGANExample : XCTestCase
                 
                 // Reset gradient validity for backward pass
                 // and update the batch size (although here it stays the same).
-                cnn_ae.updateKernel(batchSize: _batchSize)
+                model.updateKernel(batchSize: _batchSize)
                 
                 // Set data.
                 try! firstLayer.setDataGPU(
@@ -621,47 +588,39 @@ final class StyleGANExample : XCTestCase
                 )
                 
                 // Forward.
-                try! cnn_ae.forward()
+                try! model.forward()
                 
                 // Apply loss derivative.
                 try! lastLayer.lossDerivativeGPU(data, batchSize: _batchSize, format: .Neuron)
-//                try! lastLayer.lossDerivativeGPU(
-//                    data,
-//                    //groundTruth,
-//                    batchSize: _batchSize
-//                )
-                
+
                 // Backward.
-                try! cnn_ae.backward()
+                try! model.backward()
                 
                 // Update weights.
-                try! cnn_ae.update()
+                try! model.update()
                 
                 // Get loss result.
                 // Note that backward is explicitly
                 // enabled by `applyGradient` whereas `getLoss` is
                 // just an indicator.
                 let loss = try! lastLayer.getLossGPU(data, batchSize: _batchSize, format: .Neuron)
-//                let loss = try! lastLayer.getLossGPU(
-//                    groundTruth,
-//                    batchSize: _batchSize
-//                )
+
                 print("Step \(step)/\(cifar8.nbLoops-1): \(sqrt(loss)).")
                 
                 // Update internal step.
                 // This is not mandatory except if we used another
                 // optimizer scheduler: see `_getOptimizerParams`.
-                cnn_ae.incStep()
+                model.incStep()
             }
         }
     
         // Encode the trained model.
         let encoder = PropertyListEncoder()
-        let data = try! encoder.encode(cnn_ae)
+        let data = try! encoder.encode(model)
         
         // Save it to the disk.
         try! data.write(
-            to: URL(fileURLWithPath: _outputDir + "/cnn_ae2.plist")
+            to: URL(fileURLWithPath: _outputDir + "/model2.plist")
         )
     }
     

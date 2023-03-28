@@ -14,25 +14,43 @@ import Foundation
 ///
 public class QuerySeq: LayerMergeSeq
 {
+    /// Number of heads (groups) of neurons.
+    let _nbHeads: Int
+    
+    private enum Keys: String, CodingKey
+    {
+        case nbHeads
+    }
+    
     ///
     /// Create a layer with a sequential shape neural structure.
     ///
     /// - Parameters:
     ///     - query: Previous layer containing the query to look for.
     ///     - key: Previous layer containing the keys of reference.
+    ///     - nbHeads: Number of heads (groups) of neurons.
     ///     - params: Contextual parameters linking to the model.
     ///
-    public init(query: LayerSeq, key: LayerSeq, params: GrAI.Model.Params)
+    public init(query: LayerSeq, key: LayerSeq, nbHeads: Int,
+                params: GrAI.Model.Params)
     {
+        if query.nbNeurons % nbHeads != 0
+        {
+            fatalError(
+                "'nbNeurons' (\(query.nbNeurons)) " +
+                "should be a multiple of nbHeads (\(nbHeads))."
+            )
+        }
         if query.nbNeurons != key.nbNeurons ||
            query.sequence != key.sequence
         {
             fatalError("Layer structure error.")
         }
-
+        
+        _nbHeads = nbHeads
         super.init(layersPrev: [query, key],
                    sequence: query.sequence,
-                   nbNeurons: query.sequence,
+                   nbNeurons: query.sequence * nbHeads,
                    params: params)
     }
     
@@ -46,9 +64,41 @@ public class QuerySeq: LayerMergeSeq
     ///
     public required init(from decoder: Decoder) throws
     {
+        let values = try decoder.container(keyedBy: Keys.self)
+        _nbHeads = try values.decode(Int.self, forKey: Keys.nbHeads)
         try super.init(from: decoder)
     }
     
+    ///
+    /// Encode to the disk.
+    ///
+    /// If the value fails to encode anything, `encoder` will encode an empty
+    /// keyed container in its place.
+    ///
+    /// Throw an error if any values are invalid for the given
+    /// encoder's format.
+    ///
+    /// - Parameter encoder: The encoder to write data to.
+    ///
+    public override func encode(to encoder: Encoder) throws
+    {
+        var container = encoder.container(keyedBy: Keys.self)
+        try container.encode(_nbHeads, forKey: Keys.nbHeads)
+        try super.encode(to: encoder)
+    }
+    
+    ///
+    /// Create a layer with same values as this.
+    ///
+    /// - Parameters:
+    ///     - mapping: Dictionary allowing to find the layer associated to some id.
+    ///     This dictionary is particularly useful when the different layers cannot access
+    ///     their `layerPrev`.
+    ///     - inPlace: Whether hard resources should be copied as is.
+    ///
+    /// - Returns: A new layer. When `inPlace` is false, `initKernel` is
+    /// necessary in order to recreate hard resources.
+    ///
     public override func copy(
         mapping: Dictionary<Int, Layer>,
         inPlace: Bool) -> Layer
@@ -64,7 +114,8 @@ public class QuerySeq: LayerMergeSeq
         }
         
         let layer = QuerySeq(
-            query: layersPrev[0], key: layersPrev[1], params: params
+            query: layersPrev[0], key: layersPrev[1], nbHeads: _nbHeads,
+            params: params
         )
         return layer
     }
@@ -94,29 +145,33 @@ public class QuerySeq: LayerMergeSeq
         
         let query = (_layersPrev[0] as! LayerSeq).neurons!
         let key = (_layersPrev[1] as! LayerSeq).neurons!
-        let nbNeuronsPrev = (_layersPrev[0] as! LayerSeq).nbNeurons
+        let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeads
         
         for batch in 0..<batchSize {
+        for head in 0..<_nbHeads {
         for seqQ in 0..<sequence {
-        for seqK in 0..<nbNeurons {
+        for seqK in 0..<sequence {
         for elem in 0..<nbSameElems
         {
             var sum = 0.0
-            for depthPrev in 0..<nbNeuronsPrev
+            for j in 0..<size
             {
+                let depthPrev = j + head * size
+                
                 let queryTmp = query.get(seqQ, depthPrev)!.gc[batch][elem].out
                 let keyTmp = key.get(seqK, depthPrev)!.gc[batch][elem].out
                 
                 sum += queryTmp * keyTmp
             }
             
-            neurons.get(seqQ, seqK)!.gc[batch][elem].out =
-                sum / sqrt(Double(nbNeuronsPrev))
-        }}}}
+            neurons.get(seqQ, seqK + head * sequence)!.gc[batch][elem].out =
+                sum / sqrt(Double(size))
+        }}}}}
         
         for batch in 0..<batchSize {
+        for head in 0..<_nbHeads {
         for seqQ in 0..<sequence {
-        for seqK in 0..<nbNeurons {
+        for seqK in 0..<sequence {
         var offset = nbSameElems
         var nbLastElems = [Int](repeating: nbSameElems,
                                 count: _layersPrev.count)
@@ -124,8 +179,10 @@ public class QuerySeq: LayerMergeSeq
         for elem in 0..<nbElemsTmp
         {
             var sum = 0.0
-            for depthPrev in 0..<nbNeuronsPrev
+            for j in 0..<size
             {
+                let depthPrev = j + head * size
+                
                 let queryTmp: Double
                 let keyTmp: Double
                 
@@ -145,13 +202,13 @@ public class QuerySeq: LayerMergeSeq
                 sum += queryTmp * keyTmp
             }
             
-            neurons.get(seqQ, seqK)!.gc[batch][offset+elem].out =
-                sum / sqrt(Double(nbNeuronsPrev))
+            neurons.get(seqQ, seqK + head * sequence)!
+                .gc[batch][offset+elem].out = sum / sqrt(Double(size))
         }
         
         offset += nbElemsTmp
         nbLastElems[index] += nbElemsTmp
-        }}}}
+        }}}}}
     }
     
     ///
@@ -185,24 +242,28 @@ public class QuerySeq: LayerMergeSeq
         let query = (_layersPrev[0] as! LayerSeq).neurons!
         let key = (_layersPrev[1] as! LayerSeq).neurons!
         let nbNeuronsPrev = (_layersPrev[0] as! LayerSeq).nbNeurons
+        let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeads
         
         for batch in 0..<batchSize {
+        for head in 0..<_nbHeads {
         for seqQ in 0..<sequence {
-        for seqK in 0..<nbNeurons {
+        for seqK in 0..<sequence {
         for elem in 0..<nbSameElems
         {
             var sum = 0.0
-            for depthPrev in 0..<nbNeuronsPrev
+            for j in 0..<size
             {
+                let depthPrev = j + head * size
+                
                 let queryTmp = query.get(seqQ, depthPrev)!.gc[batch][elem].out
                 let keyTmp = key.get(seqK, depthPrev)!.gc[batch][elem].out
                 
                 sum += queryTmp * keyTmp
             }
             
-            neurons.get(seqQ, seqK)!.gc[batch][elem].out =
-                sum / sqrt(Double(nbNeuronsPrev))
-        }}}}
+            neurons.get(seqQ, seqK + head * sequence)!.gc[batch][elem].out =
+                sum / sqrt(Double(size))
+        }}}}}
         
         let queryBuffer =
             (_layersPrev[0] as! LayerSeq).outs.shared.buffer
@@ -210,8 +271,9 @@ public class QuerySeq: LayerMergeSeq
             (_layersPrev[1] as! LayerSeq).outs.shared.buffer
         
         for batch in 0..<batchSize {
+        for head in 0..<_nbHeads {
         for seqQ in 0..<sequence {
-        for seqK in 0..<nbNeurons {
+        for seqK in 0..<sequence {
         var offset = nbSameElems
         var nbLastElems = [Int](repeating: nbSameElems,
                                 count: _layersPrev.count)
@@ -219,8 +281,10 @@ public class QuerySeq: LayerMergeSeq
         for elem in 0..<nbElemsTmp
         {
             var sum = 0.0
-            for depthPrev in 0..<nbNeuronsPrev
+            for j in 0..<size
             {
+                let depthPrev = j + head * size
+                
                 let queryTmp: Double
                 let keyTmp: Double
                 
@@ -248,13 +312,13 @@ public class QuerySeq: LayerMergeSeq
                 sum += queryTmp * keyTmp
             }
             
-            neurons.get(seqQ, seqK)!.gc[batch][offset+elem].out =
-                sum / sqrt(Double(nbNeuronsPrev))
+            neurons.get(seqQ, seqK + head * sequence)!
+                .gc[batch][offset+elem].out = sum / sqrt(Double(size))
         }
         
         offset += nbElemsTmp
         nbLastElems[index] += nbElemsTmp
-        }}}}
+        }}}}}
     }
     
     ///
@@ -268,24 +332,27 @@ public class QuerySeq: LayerMergeSeq
         
         let query = (_layersPrev[0] as! LayerSeq).neurons!
         let key = (_layersPrev[1] as! LayerSeq).neurons!
-        let nbNeuronsPrev = (_layersPrev[0] as! LayerSeq).nbNeurons
+        let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeads
         
         for elem in 0..<batchSize {
+        for head in 0..<_nbHeads {
         for seqQ in 0..<sequence {
-        for seqK in 0..<nbNeurons
+        for seqK in 0..<sequence
         {
             var sum = 0.0
-            for depthPrev in 0..<nbNeuronsPrev
+            for j in 0..<size
             {
+                let depthPrev = j + head * size
+                
                 let queryTmp = query.get(seqQ, depthPrev)!.v[elem].out
                 let keyTmp = key.get(seqK, depthPrev)!.v[elem].out
                 
                 sum += queryTmp * keyTmp
             }
             
-            neurons.get(seqQ, seqK)!.v[elem].out =
-                sum / sqrt(Double(nbNeuronsPrev))
-        }}}
+            neurons.get(seqQ, seqK + head * sequence)!.v[elem].out =
+                sum / sqrt(Double(size))
+        }}}}
     }
     
     ///
@@ -301,6 +368,8 @@ public class QuerySeq: LayerMergeSeq
         let key = _layersPrev[1] as! LayerSeq
         let nbNeuronsPrev = query.nbNeurons
         
+        let pNbHeads: [UInt32] = [UInt32(_nbHeads)]
+        let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
         let pNbNeuronsPrev: [UInt32] = [UInt32(nbNeuronsPrev)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pSequence: [UInt32] = [UInt32(sequence)]
@@ -310,13 +379,15 @@ public class QuerySeq: LayerMergeSeq
         )
         command.setBuffer(query.outs.metal, atIndex: 0)
         command.setBuffer(key.outs.metal, atIndex: 1)
-        command.setBytes(pNbNeuronsPrev, atIndex: 2)
-        command.setBytes(pNbBatch, atIndex: 3)
-        command.setBytes(pSequence, atIndex: 4)
-        command.setBuffer(outs.metal, atIndex: 5)
+        command.setBytes(pNbHeads, atIndex: 2)
+        command.setBytes(pNbNeurons, atIndex: 3)
+        command.setBytes(pNbNeuronsPrev, atIndex: 4)
+        command.setBytes(pNbBatch, atIndex: 5)
+        command.setBytes(pSequence, atIndex: 6)
+        command.setBuffer(outs.metal, atIndex: 7)
         
         command.dispatchThreads(
-            width: sequence,
+            width: nbNeurons,
             height: batchSize * sequence
         )
         command.enqueue()
@@ -332,18 +403,22 @@ public class QuerySeq: LayerMergeSeq
         
         let query = (_layersPrev[0] as! LayerSeq).neurons!
         let key = (_layersPrev[1] as! LayerSeq).neurons!
-        let nbNeuronsPrev = (_layersPrev[0] as! LayerSeq).nbNeurons
+        let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeads
         
         if _layersPrev[0].computeDelta
         {
             for elem in 0..<batchSize {
+            for head in 0..<_nbHeads {
             for seqQ in 0..<sequence {
-            for depthPrev in 0..<nbNeuronsPrev
+            for j in 0..<size
             {
+                let depthPrev = j + head * size
+                
                 var sum = 0.0
-                for seqK in 0..<nbNeurons
+                for seqK in 0..<sequence
                 {
-                    let deltaCur = neurons.get(seqQ, seqK)!.v[elem].delta
+                    let deltaCur = neurons
+                        .get(seqQ, seqK + head * sequence)!.v[elem].delta
                     let keyTmp = key.get(seqK, depthPrev)!.v[elem].out
                     
                     sum += deltaCur * keyTmp
@@ -352,25 +427,29 @@ public class QuerySeq: LayerMergeSeq
                 if _layersPrev[0].dirty
                 {
                     query.get(seqQ, depthPrev)!.v[elem].delta =
-                        sum / sqrt(Double(nbNeuronsPrev))
+                        sum / sqrt(Double(size))
                 }
                 else
                 {
                     query.get(seqQ, depthPrev)!.v[elem].delta +=
-                        sum / sqrt(Double(nbNeuronsPrev))
+                        sum / sqrt(Double(size))
                 }
-            }}}
+            }}}}
         }
         if _layersPrev[1].computeDelta
         {
             for elem in 0..<batchSize {
-            for seqK in 0..<nbNeurons {
-            for depthPrev in 0..<nbNeuronsPrev
+            for head in 0..<_nbHeads {
+            for seqK in 0..<sequence {
+            for j in 0..<size
             {
+                let depthPrev = j + head * size
+                
                 var sum = 0.0
                 for seqQ in 0..<sequence
                 {
-                    let deltaCur = neurons.get(seqQ, seqK)!.v[elem].delta
+                    let deltaCur = neurons
+                        .get(seqQ, seqK + head * sequence)!.v[elem].delta
                     let queryTmp = query.get(seqQ, depthPrev)!.v[elem].out
                     
                     sum += deltaCur * queryTmp
@@ -379,14 +458,14 @@ public class QuerySeq: LayerMergeSeq
                 if _layersPrev[1].dirty
                 {
                     key.get(seqK, depthPrev)!.v[elem].delta =
-                        sum / sqrt(Double(nbNeuronsPrev))
+                        sum / sqrt(Double(size))
                 }
                 else
                 {
                     key.get(seqK, depthPrev)!.v[elem].delta +=
-                        sum / sqrt(Double(nbNeuronsPrev))
+                        sum / sqrt(Double(size))
                 }
-            }}}
+            }}}}
         }
         propagateDirty()
     }
@@ -407,6 +486,8 @@ public class QuerySeq: LayerMergeSeq
         let key = _layersPrev[1] as! LayerSeq
         let nbNeuronsPrev = query.nbNeurons
         
+        let pNbHeads: [UInt32] = [UInt32(_nbHeads)]
+        let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
         let pNbNeuronsPrev: [UInt32] = [UInt32(nbNeuronsPrev)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pSequence: [UInt32] = [UInt32(sequence)]
@@ -425,14 +506,16 @@ public class QuerySeq: LayerMergeSeq
             )
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBuffer(key.outs.metal, atIndex: 1)
-            command.setBytes(pNbNeuronsPrev, atIndex: 2)
-            command.setBytes(pNbBatch, atIndex: 3)
-            command.setBytes(pSequence, atIndex: 4)
-            command.setBytes(pDirty, atIndex: 5)
-            command.setBuffer(query.delta.metal, atIndex: 6)
+            command.setBytes(pNbHeads, atIndex: 2)
+            command.setBytes(pNbNeurons, atIndex: 3)
+            command.setBytes(pNbNeuronsPrev, atIndex: 4)
+            command.setBytes(pNbBatch, atIndex: 5)
+            command.setBytes(pSequence, atIndex: 6)
+            command.setBytes(pDirty, atIndex: 7)
+            command.setBuffer(query.delta.metal, atIndex: 8)
             
             command.dispatchThreads(
-                width: nbNeurons,
+                width: nbNeuronsPrev,
                 height: batchSize * sequence
             )
             command.enqueue()
@@ -448,14 +531,16 @@ public class QuerySeq: LayerMergeSeq
             )
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBuffer(query.outs.metal, atIndex: 1)
-            command.setBytes(pNbNeuronsPrev, atIndex: 2)
-            command.setBytes(pNbBatch, atIndex: 3)
-            command.setBytes(pSequence, atIndex: 4)
-            command.setBytes(pDirty, atIndex: 5)
-            command.setBuffer(key.delta.metal, atIndex: 6)
+            command.setBytes(pNbHeads, atIndex: 2)
+            command.setBytes(pNbNeurons, atIndex: 3)
+            command.setBytes(pNbNeuronsPrev, atIndex: 4)
+            command.setBytes(pNbBatch, atIndex: 5)
+            command.setBytes(pSequence, atIndex: 6)
+            command.setBytes(pDirty, atIndex: 7)
+            command.setBuffer(key.delta.metal, atIndex: 8)
             
             command.dispatchThreads(
-                width: nbNeurons,
+                width: nbNeuronsPrev,
                 height: batchSize * sequence
             )
             command.enqueue()

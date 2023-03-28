@@ -73,166 +73,166 @@ func getComplexData(_ size: Int) -> [Float]
 }
 
 ///
-/// Get gradient norm computed with PyTorch for ModelTest1.
+/// Get gradient norm computed with PyTorch for ModelTestConv1.
 ///
 /// - Parameter size: The size of the input data.
 /// - Returns: The gradient norm.
 ///
-func computeTest1GradNorm(_ size: Int) -> Float
+func computeConv1GradNorm(_ size: Int) -> Float
 {
     let pythonLib = Python.import("python_lib")
-    let data = pythonLib.compute_test1_grad_norm(size)
+    let data = pythonLib.compute_conv1_grad_norm(size)
     return Float(data)!
 }
 
 ///
-/// Get gradient norm computed with PyTorch for ModelTest2.
+/// Get gradient norm computed with PyTorch for ModelTestConv2.
 ///
 /// - Parameter size: The size of the input data.
 /// - Returns: The gradient norm.
 ///
-func computeTest2GradNorm(_ size: Int) -> Float
+func computeConv2GradNorm(_ size: Int) -> Float
 {
     let pythonLib = Python.import("python_lib")
-    let data = pythonLib.compute_test2_grad_norm(size)
+    let data = pythonLib.compute_conv2_grad_norm(size)
     return Float(data)!
 }
 
 ///
-/// Get gradient norm computed with PyTorch for ModelTest3.
+/// Get gradient norm computed with PyTorch for ModelTestFFT.
 ///
 /// - Parameter size: The size of the input data.
 /// - Returns: The gradient norm.
 ///
-func computeTest3GradNorm(_ size: Int) -> Float
+func computeFFTGradNorm(_ size: Int) -> Float
 {
     let pythonLib = Python.import("python_lib")
-    let data = pythonLib.compute_test3_grad_norm(size)
+    let data = pythonLib.compute_fft_grad_norm(size)
     return Float(data)!
 }
 
 ///
-/// Get gradient norm computed with PyTorch for ModelTest4.
+/// Get gradient norm computed with PyTorch for ModelTestDeConv1.
 ///
 /// - Parameter size: The size of the input data.
 /// - Returns: The gradient norm.
 ///
-func computeTest4GradNorm(_ size: Int) -> Float
+func computeDeConv1GradNorm(_ size: Int) -> Float
 {
     let pythonLib = Python.import("python_lib")
-    let data = pythonLib.compute_test4_grad_norm(size)
+    let data = pythonLib.compute_deconv1_grad_norm(size)
     return Float(data)!
 }
 
 ///
-/// Get gradient norm computed with PyTorch for ModelTest5.
+/// Get gradient norm computed with PyTorch for ModelTestDeConv2.
 ///
 /// - Parameter size: The size of the input data.
 /// - Returns: The gradient norm.
 ///
-func computeTest5GradNorm(_ size: Int) -> Float
+func computeDeConv2GradNorm(_ size: Int) -> Float
 {
     let pythonLib = Python.import("python_lib")
-    let data = pythonLib.compute_test5_grad_norm(size)
+    let data = pythonLib.compute_deconv2_grad_norm(size)
     return Float(data)!
 }
 
 ///
-/// Get gradient norm computed with PyTorch for ModelTest6.
+/// Get gradient norm computed with PyTorch for ModelTestDeConv3.
 ///
 /// - Parameter size: The size of the input data.
 /// - Returns: The gradient norm.
 ///
-func computeTest6GradNorm(_ size: Int) -> Float
+func computeDeConv3GradNorm(_ size: Int) -> Float
 {
     let pythonLib = Python.import("python_lib")
-    let data = pythonLib.compute_test6_grad_norm(size)
+    let data = pythonLib.compute_deconv3_grad_norm(size)
     return Float(data)!
 }
 
 ///
-/// Get gradient norm computed with PyTorch for ModelTest7.
+/// Get gradient norm computed with PyTorch for ModelTestDeConv4.
 ///
 /// - Parameter size: The size of the input data.
 /// - Returns: The gradient norm.
 ///
-func computeTest7GradNorm(_ size: Int) -> Float
+func computeDeConv4GradNorm(_ size: Int) -> Float
 {
     let pythonLib = Python.import("python_lib")
-    let data = pythonLib.compute_test7_grad_norm(size)
+    let data = pythonLib.compute_deconv4_grad_norm(size)
     return Float(data)!
 }
 
 ///
-/// Get gradient norm computed with PyTorch for ModelTest8.
+/// Get gradient norm computed with PyTorch for ModelTestCat.
 ///
 /// - Parameter size: The size of the input data.
 /// - Returns: The gradient norm.
 ///
-func computeTest8GradNorm(_ size: Int) -> Float
+func computeCatGradNorm(_ size: Int) -> Float
 {
     let pythonLib = Python.import("python_lib")
-    let data = pythonLib.compute_test8_grad_norm(size)
+    let data = pythonLib.compute_cat_grad_norm(size)
     return Float(data)!
 }
 
 ///
-/// Get gradient norm computed with PyTorch for ModelTest9.
+/// Get gradient norm computed with PyTorch for ModelTestPatchConv.
 ///
 /// - Parameters:
 ///     - size: The size of the input data.
 ///     - patch: The kernel split size of the input data.
 /// - Returns: The gradient norm.
 ///
-func computeTest9GradNorm(size: Int, patch: Int) -> Float
+func computePatchConvGradNorm(size: Int, patch: Int) -> Float
 {
     let pythonLib = Python.import("python_lib")
-    let data = pythonLib.compute_test9_grad_norm(size, patch)
+    let data = pythonLib.compute_patch_conv_grad_norm(size, patch)
     return Float(data)!
 }
 
 ///
-/// Get gradient norm computed with PyTorch for ModelTest10.
+/// Get gradient norm computed with PyTorch for ModelTestAttention1.
 ///
 /// - Parameters:
 ///     - size: The size of the input data.
 ///     - patch: The kernel split size of the input data.
 /// - Returns: The gradient norm.
 ///
-func computeTest10GradNorm(size: Int, patch: Int) -> Float
+func computeAttention1GradNorm(size: Int, patch: Int) -> Float
 {
     let pythonLib = Python.import("python_lib")
-    let data = pythonLib.compute_test10_grad_norm(size, patch)
+    let data = pythonLib.compute_attention1_grad_norm(size, patch)
     return Float(data)!
 }
 
 ///
-/// Get gradient norm computed with PyTorch for ModelTest11.
+/// Get gradient norm computed with PyTorch for ModelTestAttention2.
 ///
 /// - Parameters:
 ///     - size: The size of the input data.
 ///     - patch: The kernel split size of the input data.
 /// - Returns: The gradient norm.
 ///
-func computeTest11GradNorm(size: Int, patch: Int) -> Float
+func computeAttention2GradNorm(size: Int, patch: Int) -> Float
 {
     let pythonLib = Python.import("python_lib")
-    let data = pythonLib.compute_test11_grad_norm(size, patch)
+    let data = pythonLib.compute_attention2_grad_norm(size, patch)
     return Float(data)!
 }
 
 ///
-/// Get gradient norm computed with PyTorch for ModelTest12.
+/// Get gradient norm computed with PyTorch for ModelTestLayerNorm.
 ///
 /// - Parameters:
 ///     - size: The size of the input data.
 ///     - patch: The kernel split size of the input data.
 /// - Returns: The gradient norm.
 ///
-func computeTest12GradNorm(size: Int, patch: Int) -> Float
+func computeLayerNormGradNorm(size: Int, patch: Int) -> Float
 {
     let pythonLib = Python.import("python_lib")
-    let data = pythonLib.compute_test12_grad_norm(size, patch)
+    let data = pythonLib.compute_layer_norm_grad_norm(size, patch)
     return Float(data)!
 }
 

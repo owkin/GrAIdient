@@ -3,17 +3,17 @@ import numpy as np
 from typing import List, Tuple
 
 from python_lib.model import (
-    ModelTest1,
-    ModelTest2,
-    ModelTest4,
-    ModelTest5,
-    ModelTest6,
-    ModelTest7,
-    ModelTest8,
-    ModelTest9,
-    ModelTest10,
-    ModelTest11,
-    ModelTest12,
+    ModelTestConv1,
+    ModelTestConv2,
+    ModelTestDeConv1,
+    ModelTestDeConv2,
+    ModelTestDeConv3,
+    ModelTestDeConv4,
+    ModelTestCat,
+    ModelTestPatchConv,
+    ModelTestAttention1,
+    ModelTestAttention2,
+    ModelTestLayerNorm,
 )
 
 
@@ -37,52 +37,6 @@ def _flatten_weights(
     dims_list = list(weights.shape)
 
     return weights_list, dims_list
-
-
-def _flatten_attention_weights(
-    weights: np.ndarray,
-    biases: np.ndarray,
-    nb_heads: int
-) -> Tuple[List[List[float]], List[List[int]]]:
-    """
-    Flatten weights and biases.
-
-    Parameters
-    ----------
-    weights: np.ndarray
-        The weights to flatten.
-    biases: np.ndarray
-        The biases to flatten.
-    nb_heads: int
-        Number of heads in the attention modules.
-
-    Returns
-    -------
-    (_, _): List[float], List[int]
-        The flattened weights, their shape.
-    """
-    nb_partial = int(len(weights) / nb_heads)
-    layers_weights: List[List[float]] = []
-    layers_dims: List[List[int]] = []
-
-    for head in range(nb_heads):
-        weights_tmp = weights[head * nb_partial: ((head + 1) * nb_partial)]
-
-        weights_list = weights_tmp.flatten().tolist()
-        dims_list = list(weights_tmp.shape)
-
-        layers_weights.append(weights_list)
-        layers_dims.append(dims_list)
-
-        weights_tmp = biases[head * nb_partial: ((head + 1) * nb_partial)]
-
-        weights_list = weights_tmp.flatten().tolist()
-        dims_list = list(weights_tmp.shape)
-
-        layers_weights.append(weights_list)
-        layers_dims.append(dims_list)
-
-    return layers_weights, layers_dims
 
 
 def _extract_weights(
@@ -173,7 +127,6 @@ def _extract_and_transpose_weights(
 
 def _extract_attention_weights(
     model: torch.nn.Module,
-    nb_heads: int
 ) -> Tuple[List[List[float]], List[List[int]]]:
     """
     Get weights and biases.
@@ -182,8 +135,6 @@ def _extract_attention_weights(
     ----------
     model: torch.nn.Module
         The module to get the weights and biases from.
-    nb_heads: int
-        Number of heads in the attention modules.
 
     Returns
     -------
@@ -206,7 +157,7 @@ def _extract_attention_weights(
             weights = layer_weights.data.cpu().numpy()
             nb_partial = int(len(weights) / 3)
 
-            weights1 = weights[0:nb_partial]
+            weights1 = weights[0: nb_partial]
             weights2 = weights[nb_partial: 2*nb_partial]
             weights3 = weights[2*nb_partial: 3*nb_partial]
 
@@ -215,27 +166,42 @@ def _extract_attention_weights(
             print(f"Extracting weigths {name}.")
             biases = layer_weights.data.cpu().numpy()
 
-            biases1 = biases[0:nb_partial]
+            biases1 = biases[0: nb_partial]
             biases2 = biases[nb_partial: 2 * nb_partial]
             biases3 = biases[2 * nb_partial: 3 * nb_partial]
 
-            weights_list, dims_list = _flatten_attention_weights(
-                weights=weights1, biases=biases1, nb_heads=nb_heads
+            weights_list, dims_list = _flatten_weights(
+                weights=weights1
             )
-            layers_weights += weights_list
-            layers_dims += dims_list
+            layers_weights.append(weights_list)
+            layers_dims.append(dims_list)
+            weights_list, dims_list = _flatten_weights(
+                weights=biases1
+            )
+            layers_weights.append(weights_list)
+            layers_dims.append(dims_list)
 
-            weights_list, dims_list = _flatten_attention_weights(
-                weights=weights2, biases=biases2, nb_heads=nb_heads
+            weights_list, dims_list = _flatten_weights(
+                weights=weights2
             )
-            layers_weights += weights_list
-            layers_dims += dims_list
+            layers_weights.append(weights_list)
+            layers_dims.append(dims_list)
+            weights_list, dims_list = _flatten_weights(
+                weights=biases2
+            )
+            layers_weights.append(weights_list)
+            layers_dims.append(dims_list)
 
-            weights_list, dims_list = _flatten_attention_weights(
-                weights=weights3, biases=biases3, nb_heads=nb_heads
+            weights_list, dims_list = _flatten_weights(
+                weights=weights3
             )
-            layers_weights += weights_list
-            layers_dims += dims_list
+            layers_weights.append(weights_list)
+            layers_dims.append(dims_list)
+            weights_list, dims_list = _flatten_weights(
+                weights=biases3
+            )
+            layers_weights.append(weights_list)
+            layers_dims.append(dims_list)
 
             cur_item += 1
 
@@ -252,9 +218,9 @@ def _extract_attention_weights(
     return layers_weights, layers_dims
 
 
-def load_test1_weights() -> Tuple[List[List[float]], List[List[int]]]:
+def load_conv1_weights() -> Tuple[List[List[float]], List[List[int]]]:
     """
-    Get weights and biases for ModelTest1.
+    Get weights and biases for ModelTestConv1.
 
     Returns
     -------
@@ -262,13 +228,13 @@ def load_test1_weights() -> Tuple[List[List[float]], List[List[int]]]:
         The flattened weights, their shape.
     """
     torch.manual_seed(42)
-    model = ModelTest1()
+    model = ModelTestConv1()
     return _extract_weights(model)
 
 
-def load_test2_weights() -> Tuple[List[List[float]], List[List[int]]]:
+def load_conv2_weights() -> Tuple[List[List[float]], List[List[int]]]:
     """
-    Get weights and biases for ModelTest2.
+    Get weights and biases for ModelTestConv2.
 
     Returns
     -------
@@ -276,13 +242,13 @@ def load_test2_weights() -> Tuple[List[List[float]], List[List[int]]]:
         The flattened weights, their shape.
     """
     torch.manual_seed(42)
-    model = ModelTest2()
+    model = ModelTestConv2()
     return _extract_weights(model)
 
 
-def load_test4_weights() -> Tuple[List[List[float]], List[List[int]]]:
+def load_deconv1_weights() -> Tuple[List[List[float]], List[List[int]]]:
     """
-    Get weights and biases for ModelTest4.
+    Get weights and biases for ModelTestDeConv1.
 
     Returns
     -------
@@ -290,13 +256,13 @@ def load_test4_weights() -> Tuple[List[List[float]], List[List[int]]]:
         The flattened weights, their shape.
     """
     torch.manual_seed(42)
-    model = ModelTest4()
+    model = ModelTestDeConv1()
     return _extract_and_transpose_weights(list(model.children()))
 
 
-def load_test5_weights() -> Tuple[List[List[float]], List[List[int]]]:
+def load_deconv2_weights() -> Tuple[List[List[float]], List[List[int]]]:
     """
-    Get weights and biases for ModelTest5.
+    Get weights and biases for ModelTestDeConv2.
 
     Returns
     -------
@@ -304,13 +270,13 @@ def load_test5_weights() -> Tuple[List[List[float]], List[List[int]]]:
         The flattened weights, their shape.
     """
     torch.manual_seed(42)
-    model = ModelTest5()
+    model = ModelTestDeConv2()
     return _extract_and_transpose_weights(list(model.children()))
 
 
-def load_test6_weights() -> Tuple[List[List[float]], List[List[int]]]:
+def load_deconv3_weights() -> Tuple[List[List[float]], List[List[int]]]:
     """
-    Get weights and biases for ModelTest6.
+    Get weights and biases for ModelTestDeConv3.
 
     Returns
     -------
@@ -318,13 +284,13 @@ def load_test6_weights() -> Tuple[List[List[float]], List[List[int]]]:
         The flattened weights, their shape.
     """
     torch.manual_seed(42)
-    model = ModelTest6()
+    model = ModelTestDeConv3()
     return _extract_and_transpose_weights(list(model.children()))
 
 
-def load_test7_weights() -> Tuple[List[List[float]], List[List[int]]]:
+def load_deconv4_weights() -> Tuple[List[List[float]], List[List[int]]]:
     """
-    Get weights and biases for ModelTest7.
+    Get weights and biases for ModelTestDeConv4.
 
     Returns
     -------
@@ -332,13 +298,13 @@ def load_test7_weights() -> Tuple[List[List[float]], List[List[int]]]:
         The flattened weights, their shape.
     """
     torch.manual_seed(42)
-    model = ModelTest7()
+    model = ModelTestDeConv4()
     return _extract_and_transpose_weights(list(model.children()))
 
 
-def load_test8_weights() -> Tuple[List[List[float]], List[List[int]]]:
+def load_cat_weights() -> Tuple[List[List[float]], List[List[int]]]:
     """
-    Get weights and biases for ModelTest8.
+    Get weights and biases for ModelTestCat.
 
     Returns
     -------
@@ -346,13 +312,13 @@ def load_test8_weights() -> Tuple[List[List[float]], List[List[int]]]:
         The flattened weights, their shape.
     """
     torch.manual_seed(42)
-    model = ModelTest8()
+    model = ModelTestCat()
     return _extract_weights(model)
 
 
-def load_test9_weights(size: int, patch: int) -> Tuple[List[List[float]], List[List[int]]]:
+def load_patch_conv_weights(size: int, patch: int) -> Tuple[List[List[float]], List[List[int]]]:
     """
-    Get weights and biases for ModelTest9.
+    Get weights and biases for ModelTestPatchConv.
 
     Parameters
     ----------
@@ -367,13 +333,13 @@ def load_test9_weights(size: int, patch: int) -> Tuple[List[List[float]], List[L
         The flattened weights, their shape.
     """
     torch.manual_seed(42)
-    model = ModelTest9(size=size, patch=patch)
+    model = ModelTestPatchConv(size=size, patch=patch)
     return _extract_weights(model)
 
 
-def load_test10_weights(size: int, patch: int) -> Tuple[List[List[float]], List[List[int]]]:
+def load_attention1_weights(size: int, patch: int) -> Tuple[List[List[float]], List[List[int]]]:
     """
-    Get weights and biases for ModelTest10.
+    Get weights and biases for ModelTestAttention1.
 
     Parameters
     ----------
@@ -388,13 +354,13 @@ def load_test10_weights(size: int, patch: int) -> Tuple[List[List[float]], List[
         The flattened weights, their shape.
     """
     torch.manual_seed(42)
-    model = ModelTest10(size=size, patch=patch)
-    return _extract_attention_weights(model=model, nb_heads=1)
+    model = ModelTestAttention1(size=size, patch=patch)
+    return _extract_attention_weights(model=model)
 
 
-def load_test11_weights(size: int, patch: int) -> Tuple[List[List[float]], List[List[int]]]:
+def load_attention2_weights(size: int, patch: int) -> Tuple[List[List[float]], List[List[int]]]:
     """
-    Get weights and biases for ModelTest11.
+    Get weights and biases for ModelTestAttention2.
 
     Parameters
     ----------
@@ -409,13 +375,13 @@ def load_test11_weights(size: int, patch: int) -> Tuple[List[List[float]], List[
         The flattened weights, their shape.
     """
     torch.manual_seed(42)
-    model = ModelTest11(size=size, patch=patch)
-    return _extract_attention_weights(model=model, nb_heads=3)
+    model = ModelTestAttention2(size=size, patch=patch)
+    return _extract_attention_weights(model=model)
 
 
-def load_test12_weights(size: int, patch: int) -> Tuple[List[List[float]], List[List[int]]]:
+def load_layer_norm_weights(size: int, patch: int) -> Tuple[List[List[float]], List[List[int]]]:
     """
-    Get weights and biases for ModelTest12.
+    Get weights and biases for ModelTestLayerNorm.
 
     Parameters
     ----------
@@ -430,5 +396,5 @@ def load_test12_weights(size: int, patch: int) -> Tuple[List[List[float]], List[
         The flattened weights, their shape.
     """
     torch.manual_seed(42)
-    model = ModelTest12(size=size, patch=patch)
+    model = ModelTestLayerNorm(size=size, patch=patch)
     return _extract_weights(model)

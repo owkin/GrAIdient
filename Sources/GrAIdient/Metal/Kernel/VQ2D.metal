@@ -217,7 +217,7 @@ kernel void vq2DBatchDerWeights(
     for (uint j=0; j<width; j++)
     {
         int minIndex = indices[j + (elem * height + i) * width];
-        if (minIndex == k)
+        if (minIndex == (int)k)
         {
             uint offsetStart = (depth + nbChannels * elem) * height;
             uint offset = j + (offsetStart + i) * width;
@@ -279,7 +279,7 @@ kernel void vq2DDerWeights(
     for (uint j=0; j<width; j++)
     {
         int minIndex = indices[j + (elem * height + i) * width];
-        if (minIndex == k)
+        if (minIndex == (int)k)
         {
             uint offsetStart = (depth + nbChannels * elem) * height;
             uint offset = j + (offsetStart + i) * width;
@@ -335,7 +335,7 @@ kernel void vq2DReduceWeights(
     for (uint elem=0; elem<nbBatch; elem++)
     {
         uint offset = depth + nbChannels * k + K * nbChannels * elem;
-        sum += deltaWeighs[offset];
+        sum += deltaWeights[offset];
     }
     
     if (accumulate)

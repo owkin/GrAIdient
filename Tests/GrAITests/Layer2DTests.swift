@@ -1228,6 +1228,9 @@ class Layer2DFlowTests: Input2DMSE1DCase
                 layersPrev: [layer, otherLayer], params: params
             )
             
+        case "VQ":
+            layer = VQ2D(layerPrev: layer, K: 3, beta: 0.25, params: params)
+            
         default:
             fatalError("Unreachable.")
         }
@@ -1535,6 +1538,19 @@ class Layer2DFlowTests: Input2DMSE1DCase
     func testConstant() throws
     {
         let trainer = _buildTrainer(model: "Constant", bn: false)
+        run(trainer)
+    }
+    
+    func testVQ() throws
+    {
+        let trainer = _buildTrainer(model: "VQ", bn: false)
+        run(trainer)
+    }
+    
+    func testVQSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "VQ", bn: false)
         run(trainer)
     }
 }

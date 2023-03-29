@@ -155,7 +155,7 @@ kernel void vq2DBackward(
     int minIndex = indices[j + (elem * height + i) * width];
     uint offsetWeights = depth + nbChannels * minIndex;
     
-    float vq = outsPrev[offsetWeights];
+    float vq = weights[offsetWeights];
     float deltaCur = delta[offset];
     float outPrev = outsPrev[offset];
     

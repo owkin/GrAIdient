@@ -286,7 +286,7 @@ public class VQ2D: Layer2D, LayerUpdate
             for depth in 0..<nbChannels
             {
                 let offset = depth + nbChannels * k
-                _wArrays.w[depth] = Double(_weightsList[offset])
+                _wArrays.w(k, depth, Double(_weightsList[offset]))
             }}
             _weightsList = []
         }
@@ -300,7 +300,7 @@ public class VQ2D: Layer2D, LayerUpdate
     public func initWeightsGPU()
     {
         _wBuffers = WeightBuffers(
-            nbElems: nbChannels,
+            nbElems: _K * nbChannels,
             deviceID: deviceID
         )
         
@@ -378,10 +378,10 @@ public class VQ2D: Layer2D, LayerUpdate
     ///
     public override func forwardCPU() throws
     {
-        try checkStateCPU(batchSize: batchSize)
-        
         if let layerPrev = self.layerPrev as? Layer2D
         {
+            try checkStateCPU(batchSize: batchSize)
+            
             let neuronsPrev = layerPrev.neurons
             let indicesPtr = (_indices as! MetalSharedBuffer<Int32>).buffer
             
@@ -571,7 +571,8 @@ public class VQ2D: Layer2D, LayerUpdate
     ///
     public override func backwardGPU() throws
     {
-        
+        try _backwardGPU()
+        _backwardWeightsGPU()
     }
     
     private func _backwardGPU() throws

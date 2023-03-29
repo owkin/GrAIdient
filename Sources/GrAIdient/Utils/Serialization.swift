@@ -77,6 +77,7 @@ let LAYER_REGISTRY: [String: Codable.Type] = buildRegistry(
     SelectNeurons2D.self,
     SelectNeuronsSeq.self,
     ValueSeq.self,
+    VQ2D.self,
 ])
 
 ///

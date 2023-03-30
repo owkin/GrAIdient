@@ -108,7 +108,7 @@ kernel void vq2DBackward(
     constant uint * pK,
     constant float * pBeta,
     constant uint * pNbBatch,
-    constant uint * pCommit,
+    constant uint * pComputeVQ,
     constant uint * pDirty,
     device float * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
@@ -118,11 +118,11 @@ kernel void vq2DBackward(
     uint K;
     float beta;
     uint nbBatch;
-    uint commit;
+    uint computeVQ;
     uint dirty;
     
     if (pNbChannels && pDimensions && pK && pBeta &&
-        pNbBatch && pCommit && pDirty &&
+        pNbBatch && pComputeVQ && pDirty &&
         outsPrev && delta && weights && indices && deltaPrev)
     {
         width = pDimensions[0];
@@ -131,7 +131,7 @@ kernel void vq2DBackward(
         K = *pK;
         beta = *pBeta;
         nbBatch = *pNbBatch;
-        commit = *pCommit;
+        computeVQ = *pComputeVQ;
         dirty = *pDirty;
     }
     else
@@ -168,7 +168,7 @@ kernel void vq2DBackward(
         deltaPrev[offset] += deltaCur;
     }
     
-    if (commit)
+    if (computeVQ)
     {
         deltaPrev[offset] += beta / (float)coeff * (outPrev - vq);
     }
@@ -222,7 +222,6 @@ kernel void vq2DBatchDerWeights(
             uint offsetStart = (depth + nbChannels * elem) * height;
             uint offset = j + (offsetStart + i) * width;
             
-            int minIndex = indices[j + (elem * height + i) * width];
             uint offsetWeights = depth + nbChannels * minIndex;
             
             float vq = weights[offsetWeights];
@@ -284,7 +283,6 @@ kernel void vq2DDerWeights(
             uint offsetStart = (depth + nbChannels * elem) * height;
             uint offset = j + (offsetStart + i) * width;
             
-            int minIndex = indices[j + (elem * height + i) * width];
             uint offsetWeights = depth + nbChannels * minIndex;
             
             float vq = weights[offsetWeights];

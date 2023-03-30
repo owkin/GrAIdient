@@ -43,9 +43,6 @@ public class VQ2D: Layer2D, LayerUpdate
     /// Whether to forward vectors in the dictionary.
     public var computeVQ = true
     
-    /// Whether to ensure that outputs commit to vectors in the dictionary.
-    public var computeCommitment: Bool = true
-    
     /// Whether to compute weights' gradients or not.
     public var computeDeltaWeights: Bool = true
     
@@ -512,7 +509,7 @@ public class VQ2D: Layer2D, LayerUpdate
                             deltaCur
                     }
                     
-                    if computeCommitment
+                    if computeVQ
                     {
                         neuronsPrev[depth].get(i, j)!.v[elem].delta +=
                             _beta / Double(coeff) * (outPrev - vq)
@@ -540,27 +537,24 @@ public class VQ2D: Layer2D, LayerUpdate
                 }}
             }
             
-            for k in 0..<_K
+            for elem in 0..<batchSize {
+            for i in 0..<height {
+            for j in 0..<width
             {
-                for elem in 0..<batchSize {
-                for i in 0..<height {
-                for j in 0..<width
+                let minIndex =
+                    Int(indicesPtr[j + (elem * height + i) * width])
+                for depth in 0..<nbChannels
                 {
-                    let minIndex =
-                        Int(indicesPtr[j + (elem * height + i) * width])
-                    if minIndex == k {
-                    for depth in 0..<nbChannels
-                    {
-                        let vq = _wArrays.w(minIndex, depth)
-                        let outPrev = neuronsPrev[depth].get(i, j)!.v[elem].out
-                        
-                        let g = _wArrays.g(k, depth)
-                        _wArrays.g(
-                            k, depth, g + 1.0 / Double(coeff) * (vq - outPrev)
-                        )
-                    }}
-                }}}
-            }
+                    let vq = _wArrays.w(minIndex, depth)
+                    let outPrev = neuronsPrev[depth].get(i, j)!.v[elem].out
+                    
+                    let g = _wArrays.g(minIndex, depth)
+                    _wArrays.g(
+                        minIndex, depth,
+                        g + 1.0 / Double(coeff) * (vq - outPrev)
+                    )
+                }
+            }}}
         }
     }
     
@@ -586,7 +580,7 @@ public class VQ2D: Layer2D, LayerUpdate
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pK: [UInt32] = [UInt32(_K)]
             let pBeta: [Float] = [Float(_beta)]
-            let pCommit: [UInt32] = computeCommitment ? [1] : [0]
+            let pComputeVQ: [UInt32] = computeVQ ? [1] : [0]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
             let command = MetalKernel.get.createCommand(
@@ -601,7 +595,7 @@ public class VQ2D: Layer2D, LayerUpdate
             command.setBytes(pK, atIndex: 6)
             command.setBytes(pBeta, atIndex: 7)
             command.setBytes(pNbBatch, atIndex: 8)
-            command.setBytes(pCommit, atIndex: 9)
+            command.setBytes(pComputeVQ, atIndex: 9)
             command.setBytes(pDirty, atIndex: 10)
             command.setBuffer(layerPrev.delta.metal, atIndex: 11)
             

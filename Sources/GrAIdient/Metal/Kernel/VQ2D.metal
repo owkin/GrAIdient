@@ -52,7 +52,7 @@ kernel void vq2DForward(
     uint offset = j + (offsetStart + i) * width;
     
     int minIndex = -1;
-    float minValue = outsPrev[offset];
+    float minValue = 0.0;
     for (uint k=0; k<K; k++)
     {
         float value = 0.0;
@@ -69,14 +69,14 @@ kernel void vq2DForward(
         }
         value = sqrt(value);
         
-        if (value < minValue)
+        if (minIndex < 0 || value < minValue)
         {
             minValue = value;
             minIndex = k;
         }
     }
     
-    if (minIndex > 0)
+    if (minIndex >= 0)
     {
         for (uint depth=0; depth<nbChannels; depth++)
         {
@@ -141,7 +141,6 @@ kernel void vq2DBackward(
     uint elem = id[1] / height;
     uint i = id[1] % height;
     uint j = id[0] % width;
-    uint coeff = nbBatch * height * width;
     
     if (i * elem >= height * nbBatch ||
         j * depth >= width * nbChannels)
@@ -170,7 +169,7 @@ kernel void vq2DBackward(
     
     if (computeVQ)
     {
-        deltaPrev[offset] += beta / (float)coeff * (outPrev - vq);
+        deltaPrev[offset] += beta * (outPrev - vq);
     }
 }
 

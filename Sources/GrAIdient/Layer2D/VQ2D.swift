@@ -242,6 +242,7 @@ public class VQ2D: Layer2D, LayerUpdate
     {
         super.resetKernelCPU()
         _wArrays?.reset()
+        _indices = nil
     }
     
     ///
@@ -255,6 +256,7 @@ public class VQ2D: Layer2D, LayerUpdate
     {
         super.resetKernelGPU()
         
+        _indices = nil
         _wDeltaWeights = nil
         _wBuffers?.reset()
     }
@@ -484,7 +486,6 @@ public class VQ2D: Layer2D, LayerUpdate
         if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
             let neuronsPrev = layerPrev.neurons
-            let coeff = batchSize * height * width
             let indicesPtr = (_indices as! MetalSharedBuffer<Int32>).buffer
             
             for elem in 0..<batchSize {
@@ -512,7 +513,7 @@ public class VQ2D: Layer2D, LayerUpdate
                     if computeVQ
                     {
                         neuronsPrev[depth].get(i, j)!.v[elem].delta +=
-                            _beta / Double(coeff) * (outPrev - vq)
+                            _beta * (outPrev - vq)
                     }
                 }
             }}}

@@ -1228,8 +1228,12 @@ class Layer2DFlowTests: Input2DMSE1DCase
                 layersPrev: [layer, otherLayer], params: params
             )
             
-        case "VQ":
-            layer = VQ2D(layerPrev: layer, K: 3, beta: 0.25, params: params)
+        case "VQ1":
+            layer = VQ2D(layerPrev: layer, K: 5, beta: 0.25, params: params)
+            
+        case "VQ2":
+            layer = VQ2D(layerPrev: layer, K: 5, beta: 0.25, params: params)
+            (layer as! VQ2D).computeVQ = false
             
         default:
             fatalError("Unreachable.")
@@ -1541,16 +1545,29 @@ class Layer2DFlowTests: Input2DMSE1DCase
         run(trainer)
     }
     
-    func testVQ() throws
+    func testVQ1() throws
     {
-        let trainer = _buildTrainer(model: "VQ", bn: false)
+        let trainer = _buildTrainer(model: "VQ1", bn: false)
         run(trainer)
     }
     
-    func testVQSample() throws
+    func testVQ1Sample() throws
     {
         GrAI.Gradient.sample = true
-        let trainer = _buildTrainer(model: "VQ", bn: false)
+        let trainer = _buildTrainer(model: "VQ1", bn: false)
+        run(trainer)
+    }
+                         
+    func testVQ2() throws
+    {
+        let trainer = _buildTrainer(model: "VQ2", bn: false)
+        run(trainer)
+    }
+
+    func testVQ2Sample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "VQ2", bn: false)
         run(trainer)
     }
 }
@@ -1880,6 +1897,32 @@ class Layer2DFlowResetTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "Constant", bn: false)
         run(trainer)
     }
+    
+    override func testVQ1() throws
+    {
+        let trainer = _buildTrainer(model: "VQ1", bn: false)
+        run(trainer)
+    }
+    
+    override func testVQ1Sample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "VQ1", bn: false)
+        run(trainer)
+    }
+                         
+    override func testVQ2() throws
+    {
+        let trainer = _buildTrainer(model: "VQ2", bn: false)
+        run(trainer)
+    }
+
+    override func testVQ2Sample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "VQ2", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -2207,6 +2250,32 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "Constant", bn: false)
         run(trainer)
     }
+    
+    override func testVQ1() throws
+    {
+        let trainer = _buildTrainer(model: "VQ1", bn: false)
+        run(trainer)
+    }
+    
+    override func testVQ1Sample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "VQ1", bn: false)
+        run(trainer)
+    }
+                         
+    override func testVQ2() throws
+    {
+        let trainer = _buildTrainer(model: "VQ2", bn: false)
+        run(trainer)
+    }
+
+    override func testVQ2Sample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "VQ2", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -2532,6 +2601,32 @@ class Layer2DInferenceTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "Constant", bn: false)
         run(trainer)
     }
+    
+    override func testVQ1() throws
+    {
+        let trainer = _buildTrainer(model: "VQ1", bn: false)
+        run(trainer)
+    }
+    
+    override func testVQ1Sample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "VQ1", bn: false)
+        run(trainer)
+    }
+                         
+    override func testVQ2() throws
+    {
+        let trainer = _buildTrainer(model: "VQ2", bn: false)
+        run(trainer)
+    }
+
+    override func testVQ2Sample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "VQ2", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -2852,6 +2947,32 @@ class Layer2DLoadTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "Constant", bn: false)
         run(trainer)
     }
+    
+    override func testVQ1() throws
+    {
+        let trainer = _buildTrainer(model: "VQ1", bn: false)
+        run(trainer)
+    }
+    
+    override func testVQ1Sample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "VQ1", bn: false)
+        run(trainer)
+    }
+                         
+    override func testVQ2() throws
+    {
+        let trainer = _buildTrainer(model: "VQ2", bn: false)
+        run(trainer)
+    }
+
+    override func testVQ2Sample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "VQ2", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -3170,6 +3291,32 @@ class Layer2DTransformTests: Layer2DFlowTests
     override func testConstant() throws
     {
         let trainer = _buildTrainer(model: "Constant", bn: false)
+        run(trainer)
+    }
+    
+    override func testVQ1() throws
+    {
+        let trainer = _buildTrainer(model: "VQ1", bn: false)
+        run(trainer)
+    }
+    
+    override func testVQ1Sample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "VQ1", bn: false)
+        run(trainer)
+    }
+                         
+    override func testVQ2() throws
+    {
+        let trainer = _buildTrainer(model: "VQ2", bn: false)
+        run(trainer)
+    }
+
+    override func testVQ2Sample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "VQ2", bn: false)
         run(trainer)
     }
 }

@@ -687,6 +687,19 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
                 params: params
             )
             
+        case "VQ1":
+            secondLayer = VQ2D(
+                layerPrev: layer, K: 5, beta: 0.25,
+                params: params
+            )
+            
+        case "VQ2":
+            secondLayer = VQ2D(
+                layerPrev: layer, K: 5, beta: 0.25,
+                params: params
+            )
+            (secondLayer as! VQ2D).computeVQ = false
+            
         default:
             fatalError("Unreachable.")
         }
@@ -820,6 +833,32 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
     func testAdaIN() throws
     {
         let trainer = _buildTrainer(model: "AdaIN")
+        run(trainer)
+    }
+    
+    func testVQ1() throws
+    {
+        let trainer = _buildTrainer(model: "VQ1")
+        run(trainer)
+    }
+    
+    func testVQ1Sample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "VQ1")
+        run(trainer)
+    }
+                         
+    func testVQ2() throws
+    {
+        let trainer = _buildTrainer(model: "VQ2")
+        run(trainer)
+    }
+
+    func testVQ2Sample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "VQ2")
         run(trainer)
     }
 }

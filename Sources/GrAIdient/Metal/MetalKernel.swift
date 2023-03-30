@@ -700,6 +700,13 @@ private class MetalDevice
             ],
             "Reset": [
                 "reset"
+            ],
+            "VQ2D": [
+                "vq2DForward",
+                "vq2DBackward",
+                "vq2DBatchDerWeights",
+                "vq2DDerWeights",
+                "vq2DReduceWeights"
             ]
         ]
         

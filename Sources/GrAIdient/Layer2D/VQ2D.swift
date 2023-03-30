@@ -14,7 +14,7 @@ public class VQ2D: Layer2D, LayerUpdate
     let _K: Int
     
     /// Coefficient for commitment.
-    var _beta: Double
+    public var beta: Double
     
     ///
     /// Indices of maximal elements.
@@ -124,7 +124,7 @@ public class VQ2D: Layer2D, LayerUpdate
                 params: GrAI.Model.Params)
     {
         _K = K
-        _beta = beta
+        self.beta = beta
         super.init(
             layerPrev: layerPrev,
             nbChannels: layerPrev.nbChannels,
@@ -147,7 +147,7 @@ public class VQ2D: Layer2D, LayerUpdate
         let values = try decoder.container(keyedBy: Keys.self)
         
         _K = try values.decode(Int.self, forKey: .K)
-        _beta = try values.decode(Double.self, forKey: .beta)
+        beta = try values.decode(Double.self, forKey: .beta)
         
         try super.init(from: decoder)
         
@@ -171,7 +171,7 @@ public class VQ2D: Layer2D, LayerUpdate
         var container = encoder.container(keyedBy: Keys.self)
         
         try container.encode(_K, forKey: .K)
-        try container.encode(_beta, forKey: .beta)
+        try container.encode(beta, forKey: .beta)
         
         let weightsList: [Float]
         if GrAI.Opti.GPU
@@ -210,7 +210,7 @@ public class VQ2D: Layer2D, LayerUpdate
         params.context.curID = id
             
         let layer = VQ2D(
-            layerPrev: layerPrev, K: _K, beta: _beta, params: params
+            layerPrev: layerPrev, K: _K, beta: beta, params: params
         )
         if inPlace
         {
@@ -513,7 +513,7 @@ public class VQ2D: Layer2D, LayerUpdate
                     if computeVQ
                     {
                         neuronsPrev[depth].get(i, j)!.v[elem].delta +=
-                            _beta * (outPrev - vq)
+                            beta * (outPrev - vq)
                     }
                 }
             }}}
@@ -580,7 +580,7 @@ public class VQ2D: Layer2D, LayerUpdate
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pK: [UInt32] = [UInt32(_K)]
-            let pBeta: [Float] = [Float(_beta)]
+            let pBeta: [Float] = [Float(beta)]
             let pComputeVQ: [UInt32] = computeVQ ? [1] : [0]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             

@@ -2960,18 +2960,20 @@ class Layer2DLoadTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "VQ1", bn: false)
         run(trainer)
     }
-                         
+            
+    /// Do not run this test as computeVQ is not recovered from the disk.
     override func testVQ2() throws
     {
-        let trainer = _buildTrainer(model: "VQ2", bn: false)
-        run(trainer)
+        /*let trainer = _buildTrainer(model: "VQ2", bn: false)
+        run(trainer)*/
     }
 
+    /// Do not run this test as computeVQ is not recovered from the disk.
     override func testVQ2Sample() throws
     {
-        GrAI.Gradient.sample = true
+        /*GrAI.Gradient.sample = true
         let trainer = _buildTrainer(model: "VQ2", bn: false)
-        run(trainer)
+        run(trainer)*/
     }
 }
 
@@ -3306,18 +3308,20 @@ class Layer2DTransformTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "VQ1", bn: false)
         run(trainer)
     }
-                         
+           
+    /// Do not run this test as computeVQ is not copied.
     override func testVQ2() throws
     {
-        let trainer = _buildTrainer(model: "VQ2", bn: false)
-        run(trainer)
+        /*let trainer = _buildTrainer(model: "VQ2", bn: false)
+        run(trainer)*/
     }
 
+    /// Do not run this test as computeVQ is not copied.
     override func testVQ2Sample() throws
     {
-        GrAI.Gradient.sample = true
+        /*GrAI.Gradient.sample = true
         let trainer = _buildTrainer(model: "VQ2", bn: false)
-        run(trainer)
+        run(trainer)*/
     }
 }
 

@@ -8,6 +8,7 @@
 import XCTest
 import GrAIdient
 
+/// Test that we can train a simple Vision Transformer model on the CIFAR dataset.
 final class TransformerExample: XCTestCase
 {
     /// Directory to dump outputs from the tests.

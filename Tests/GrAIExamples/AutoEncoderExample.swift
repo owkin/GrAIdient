@@ -8,6 +8,7 @@
 import XCTest
 import GrAIdient
 
+/// Test that we can train a simple Auto Encoder model on the CIFAR dataset.
 final class AutoEncoderExample: XCTestCase
 {
     /// Directory to dump outputs from the tests.
@@ -331,6 +332,7 @@ final class AutoEncoderExample: XCTestCase
         return layer
     }
     
+    /// Model architecture choice.
     enum ModelClass
     {
         case UNet, Style

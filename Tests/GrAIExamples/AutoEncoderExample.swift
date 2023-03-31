@@ -62,6 +62,12 @@ final class AutoEncoderExample: XCTestCase
         return optimizerParams
     }
     
+    ///
+    /// Build an encoder branch.
+    ///
+    /// - Parameter params: Contextual parameters linking to the model.
+    /// - Returns: A tuple of layers at different image resolutions.
+    ///
     func _buildEncoder(params: GrAI.Model.Params)
         -> (Layer2D, Layer2D, Layer2D, Layer2D, Layer2D)
     {
@@ -108,6 +114,14 @@ final class AutoEncoderExample: XCTestCase
         return (layer, layer1, layer2, layer3, layer4)
     }
     
+    ///
+    /// Build a UNet like decoder branch.
+    ///
+    /// - Parameters:
+    ///     - layersPrev: A tuple of layers at different image resolutions.
+    ///     - params: Contextual parameters linking to the model.
+    /// - Returns: The last layer of the decoder branch.
+    ///
     func _buildUNetDecoder(
         layersPrev: (Layer2D, Layer2D, Layer2D, Layer2D, Layer2D),
         params: GrAI.Model.Params) -> Layer2D
@@ -193,10 +207,12 @@ final class AutoEncoderExample: XCTestCase
     }
     
     ///
-    /// Build the Mapping Network, taking a latent vector as input and outputing a latent vector w.
+    /// Build a style controler branch.
     ///
     /// - Parameters:
-    /// - Returns: The model built.
+    ///     - layersPrev: A tuple of layers at different image resolutions.
+    ///     - params: Contextual parameters linking to the model.
+    /// - Returns: The last layer of the style branch.
     ///
     func _buildStyleMapping(
         layersPrev: (Layer2D, Layer2D, Layer2D, Layer2D, Layer2D),
@@ -227,10 +243,12 @@ final class AutoEncoderExample: XCTestCase
     }
     
     ///
-    /// Build a multi attention branch.
+    /// Build a StyleGAN like decoder branch.
     ///
     /// - Parameters:
-    /// - Returns: The model built.
+    ///     - style: The last layer of the style branch.
+    ///     - params: Contextual parameters linking to the model.
+    /// - Returns: The last layer of the decoder branch.
     ///
     func _buildStyleDecoder(style: Layer1D, params: GrAI.Model.Params)
         -> Layer2D
@@ -272,7 +290,6 @@ final class AutoEncoderExample: XCTestCase
         
         for _ in 0..<5
         {
-            // Upsample
             layer = ResizeBilinearCrop(
                 layerPrev: layer, scalesList: [2],
                 params: params
@@ -320,9 +337,9 @@ final class AutoEncoderExample: XCTestCase
     }
     
     ///
-    /// Build a StyleGAN model.
+    /// Build the final model.
     ///
-    ///
+    /// - Parameter modelType: The model to build.
     /// - Returns: The model built.
     ///
     func _buildModel(modelType: ModelClass) -> Model
@@ -356,24 +373,12 @@ final class AutoEncoderExample: XCTestCase
         return Model(model: context.model, modelsPrev: [])
     }
     
-    /// Test1: dump CIFAR train and test datasets for labels 8 and 5.
-    func test1_DumpDataset()
-    {
-        CIFAR.dumpTrain(
-            datasetPath: _outputDir + "/datasetTrain8",
-            label: 8,
-            size: _size
-        )
-        
-        CIFAR.dumpTest(
-            datasetPath: _outputDir + "/datasetTest8",
-            label: 8,
-            size: _size
-        )
-    }
-    
-    /// Test2: train a simple model.
-    func test2_TrainModel()
+    ///
+    /// Train the model.
+    ///
+    /// - Parameter model: The model to train.
+    ///
+    func _trainModel(model: Model)
     {
         let cifar8 = CIFAR.loadDataset(
             datasetPath: _outputDir + "/datasetTrain8",
@@ -393,9 +398,6 @@ final class AutoEncoderExample: XCTestCase
         let nbWholeBatches =
             cifar8.nbSamples / cifar8.batchSize * cifar8.batchSize
         cifar8.keep(nbWholeBatches)
-        
-        // Build a model with randomly initialized weights.
-        let model = _buildModel(modelType: .Style)
         
         // Initialize for training.
         model.initialize(params: params, phase: .Training)
@@ -473,5 +475,35 @@ final class AutoEncoderExample: XCTestCase
                 model.incStep()
             }
         }
+    }
+    
+    /// Test1: dump CIFAR train and test datasets for labels 8 and 5.
+    func test1_DumpDataset()
+    {
+        CIFAR.dumpTrain(
+            datasetPath: _outputDir + "/datasetTrain8",
+            label: 8,
+            size: _size
+        )
+    }
+    
+    /// Test2: train a simple UNet like auto encoder model.
+    func test2_TrainUNetModel()
+    {
+        // Build a model with randomly initialized weights.
+        let model = _buildModel(modelType: .UNet)
+        
+        // Train model.
+        _trainModel(model: model)
+    }
+    
+    /// Test3: train a simple StyleGAN like auto encoder model.
+    func test3_TrainStyleModel()
+    {
+        // Build a model with randomly initialized weights.
+        let model = _buildModel(modelType: .Style)
+        
+        // Train model.
+        _trainModel(model: model)
     }
 }

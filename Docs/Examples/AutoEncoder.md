@@ -1,0 +1,69 @@
+# 🚀 Auto Encoder Example
+
+This is the documentation of a 
+[toy Auto Encoder model](../../Tests/GrAIExamples/AutoEncoder.swift), 
+trained on the GPU. 
+The dataset used is CIFAR 10. 
+
+We want to train the model to encode and generate images of ships (label 8).
+
+Here is a subset of the data input images.
+
+<table align="center" cellspacing="0" cellpadding="0">
+    <tr>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_0.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_1.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_2.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_3.png"></td>
+    </tr>
+    <tr>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_4.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_5.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_6.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_7.png"></td>
+    </tr>
+    <tr>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_8.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_9.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_10.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_11.png"></td>
+    </tr>
+    <tr>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_12.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_13.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_14.png"></td>
+        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_15.png"></td>
+    </tr>
+</table>
+
+## Setup
+
+This example has some `Python` dependencies. In order to run 
+the example, we first have to setup the environment: 
+
+```bash
+conda create --name graiexamples python=3.9
+conda activate graiexamples
+cd Tests/GrAIExamples/Base
+pip install -e .
+```
+
+Now, let us run the tests from Xcode or a `bash` command (here with compiler 
+optimization):
+
+```bash
+swift test -c release --filter GrAIExamples
+```
+
+It is finally possible to clean the environment 🌍
+
+```bash     
+conda deactivate
+conda env remove --name graiexamples
+```
+
+## Steps
+
+1. Dump the training dataset.  
+1. Train a simple UNet like auto encoder model on the training dataset.
+1. Train a simple StyleGAN like auto encoder model on the training dataset.

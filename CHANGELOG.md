@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
-🔨 **layer_2d**: SelectSeq ([#82](https://github.com/owkin/GrAIdient/pull/82))\
+🔨 **layer_seq**: SelectSeq ([#82](https://github.com/owkin/GrAIdient/pull/82))\
 🪜 **layer_2d**: VQ2D ([#81](https://github.com/owkin/GrAIdient/pull/81))\
 🚀 **layer_seq**: factorize by nbHeads ([#78](https://github.com/owkin/GrAIdient/pull/78))\
 🪜 **layer_seq**: Adding new layer SelectNeuronsSeq ([#77](https://github.com/owkin/GrAIdient/pull/77))\

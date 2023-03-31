@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🪜 **layer_2d**: VQ2D ([#81](https://github.com/owkin/GrAIdient/pull/81))\
+🚀 **layer_seq**: factorize by nbHeads ([#78](https://github.com/owkin/GrAIdient/pull/78))\
 🪜 **layer_seq**: Adding new layer SelectNeuronsSeq ([#77](https://github.com/owkin/GrAIdient/pull/77))\
 🐛 **fix:** numerical instability of Softmax ([#76](https://github.com/owkin/GrAIdient/pull/76))\
 🚀 **examples:** make Transformer example very simple ([#75](https://github.com/owkin/GrAIdient/pull/75))\

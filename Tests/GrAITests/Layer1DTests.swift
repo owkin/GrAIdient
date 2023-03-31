@@ -119,7 +119,7 @@ class Layer1DGradTests: Input1DMSE1DCase
                 params: params
             )
             
-            layer = Softmax1D(layerPrev: layer, size: 5, params: params)
+            layer = Softmax1D(layerPrev: layer, nbHeads: 3, params: params)
             
         case "DotProduct":
             let otherLayer: Layer1D = FullyConnected(
@@ -388,7 +388,7 @@ class Layer1DFlowTests: Input1DMSE1DCase
                 params: params
             )
             
-            layer = Softmax1D(layerPrev: layer, size: 5, params: params)
+            layer = Softmax1D(layerPrev: layer, nbHeads: 3, params: params)
             
         case "DotProduct":
             let otherLayer: Layer1D = FullyConnected(

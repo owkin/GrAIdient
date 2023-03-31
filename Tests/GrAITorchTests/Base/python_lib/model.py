@@ -2,7 +2,7 @@ import torch
 import numpy as np
 
 
-class ModelTest1(torch.nn.Module):
+class ModelTestConv1(torch.nn.Module):
     """
     Model to test.
     Principle features:
@@ -78,7 +78,7 @@ class ModelTest1(torch.nn.Module):
         return x
 
 
-class ModelTest2(torch.nn.Module):
+class ModelTestConv2(torch.nn.Module):
     """
     Model to test.
     Principle features:
@@ -222,7 +222,7 @@ def _linear_decorrelate_color(x):
     return x
 
 
-class ModelTest3(torch.nn.Module):
+class ModelTestFFT(torch.nn.Module):
     """
     Model to test.
     Principle features:
@@ -305,7 +305,7 @@ class ModelConv(torch.nn.Module):
         return x
 
 
-class ModelTest4(ModelConv):
+class ModelTestDeConv1(ModelConv):
     """
     Model to test.
     Principle features:
@@ -329,7 +329,7 @@ class ModelTest4(ModelConv):
         self.classifier.apply(self.weight_init)
 
 
-class ModelTest5(ModelConv):
+class ModelTestDeConv2(ModelConv):
     """
     Model to test.
     Principle features:
@@ -353,7 +353,7 @@ class ModelTest5(ModelConv):
         self.classifier.apply(self.weight_init)
 
 
-class ModelTest6(ModelConv):
+class ModelTestDeConv3(ModelConv):
     """
     Model to test.
     Principle features:
@@ -377,7 +377,7 @@ class ModelTest6(ModelConv):
         self.classifier.apply(self.weight_init)
 
 
-class ModelTest7(ModelConv):
+class ModelTestDeConv4(ModelConv):
     """
     Model to test.
     Principle features:
@@ -401,7 +401,7 @@ class ModelTest7(ModelConv):
         self.classifier.apply(self.weight_init)
 
 
-class ModelTest8(torch.nn.Module):
+class ModelTestCat(torch.nn.Module):
     """
     Model to test.
     Principle features:
@@ -472,7 +472,7 @@ class ModelTest8(torch.nn.Module):
         return x
 
 
-class ModelTest9(torch.nn.Module):
+class ModelTestPatchConv(torch.nn.Module):
     """
     Model to test.
     Principle features:
@@ -547,7 +547,7 @@ class ModelTest9(torch.nn.Module):
         return x
 
 
-class ModelTest10(torch.nn.Module):
+class ModelTestAttention1(torch.nn.Module):
     """
     Model to test.
     Principle features:
@@ -581,8 +581,12 @@ class ModelTest10(torch.nn.Module):
         )
 
         self.features.apply(self.weight_init)
-        # self.attention.apply(self.weight_init)
         self.classifier.apply(self.weight_init)
+
+        torch.nn.init.normal_(self.attention.in_proj_weight)
+        torch.nn.init.normal_(self.attention.in_proj_bias)
+        torch.nn.init.normal_(self.attention.out_proj.weight)
+        torch.nn.init.normal_(self.attention.out_proj.bias)
 
     @staticmethod
     def weight_init(module: torch.nn.Module):
@@ -595,8 +599,7 @@ class ModelTest10(torch.nn.Module):
             The module to initialize.
         """
         if isinstance(module, torch.nn.Conv2d) or \
-           isinstance(module, torch.nn.Linear) or \
-           isinstance(module, torch.nn.MultiheadAttention):
+           isinstance(module, torch.nn.Linear):
             torch.nn.init.normal_(module.weight)
 
             if module.bias is not None:
@@ -626,7 +629,7 @@ class ModelTest10(torch.nn.Module):
         return x
 
 
-class ModelTest11(torch.nn.Module):
+class ModelTestAttention2(torch.nn.Module):
     """
     Model to test.
     Principle features:
@@ -660,8 +663,12 @@ class ModelTest11(torch.nn.Module):
         )
 
         self.features.apply(self.weight_init)
-        # self.attention.apply(self.weight_init)
         self.classifier.apply(self.weight_init)
+
+        torch.nn.init.normal_(self.attention.in_proj_weight)
+        torch.nn.init.normal_(self.attention.in_proj_bias)
+        torch.nn.init.normal_(self.attention.out_proj.weight)
+        torch.nn.init.normal_(self.attention.out_proj.bias)
 
     @staticmethod
     def weight_init(module: torch.nn.Module):
@@ -674,8 +681,7 @@ class ModelTest11(torch.nn.Module):
             The module to initialize.
         """
         if isinstance(module, torch.nn.Conv2d) or \
-           isinstance(module, torch.nn.Linear) or \
-           isinstance(module, torch.nn.MultiheadAttention):
+           isinstance(module, torch.nn.Linear):
             torch.nn.init.normal_(module.weight)
 
             if module.bias is not None:
@@ -705,7 +711,7 @@ class ModelTest11(torch.nn.Module):
         return x
 
 
-class ModelTest12(torch.nn.Module):
+class ModelTestLayerNorm(torch.nn.Module):
     """
     Model to test.
     Principle features:

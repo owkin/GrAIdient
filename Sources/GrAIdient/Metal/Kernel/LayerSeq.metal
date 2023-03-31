@@ -98,13 +98,10 @@ kernel void avgPoolSeqBackward(
     }
 }
 
-kernel void selectNeuronsSeqForward(
+kernel void selectSeqForward(
     const device float * outsPrev,
     constant uint * pNbNeurons,
-    constant uint * pNbNeuronsPrev,
     constant uint * pTargetSeq,
-    constant uint * pNeurons,
-    constant float * pCoeffs,
     constant uint * pNbBatch,
     constant uint * pSequence,
     device float * outs,
@@ -112,16 +109,14 @@ kernel void selectNeuronsSeqForward(
 {
     uint targetSeq;
     uint nbNeurons;
-    uint nbNeuronsPrev;
     uint nbBatch;
     uint sequence;
     
-    if (pTargetSeq && pNbNeurons && pNbNeuronsPrev && pNbBatch && pSequence &&
-        outsPrev && outs && pCoeffs && pNeurons)
+    if (pTargetSeq && pNbNeurons && pNbBatch && pSequence &&
+        outsPrev && outs)
     {
         targetSeq = *pTargetSeq;
         nbNeurons = *pNbNeurons;
-        nbNeuronsPrev = *pNbNeuronsPrev;
         nbBatch = *pNbBatch;
         sequence = *pSequence;
     }
@@ -137,36 +132,30 @@ kernel void selectNeuronsSeqForward(
     }
     
     uint offset = depth + nbNeurons * elem;
-    uint offsetPrev = pNeurons[depth] +
-        nbNeuronsPrev * targetSeq + sequence * nbNeuronsPrev * elem;
-    outs[offset] = pCoeffs[depth] * outsPrev[offsetPrev];
+    uint offsetPrev = depth +
+        nbNeurons * targetSeq + sequence * nbNeurons * elem;
+    outs[offset] = outsPrev[offsetPrev];
 }
 
-kernel void selectNeuronsSeqBackward(
+kernel void selectSeqBackward(
     const device float * delta,
     constant uint * pNbNeurons,
-    constant uint * pNbNeuronsPrev,
     constant uint * pTargetSeq,
-    constant uint * pNeurons,
-    constant float * pCoeffs,
     constant uint * pNbBatch,
     constant uint * pSequence,
     device float * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
-    uint nbNeuronsPrev;
     uint nbBatch;
     uint sequence;
     uint targetSeq;
     
-    if (pNbNeurons && pNbNeuronsPrev &&
-        pTargetSeq && pNeurons && pCoeffs && pNbBatch && pSequence &&
+    if (pNbNeurons && pTargetSeq && pNbBatch && pSequence &&
         deltaPrev && delta)
     {
         targetSeq = *pTargetSeq;
         nbNeurons = *pNbNeurons;
-        nbNeuronsPrev = *pNbNeuronsPrev;
         nbBatch = *pNbBatch;
         sequence = *pSequence;
     }
@@ -182,9 +171,9 @@ kernel void selectNeuronsSeqBackward(
     }
     
     uint offset = depth + nbNeurons * elem;
-    uint offsetPrev = pNeurons[depth] +
-        nbNeuronsPrev * targetSeq + sequence * nbNeuronsPrev * elem;
-    deltaPrev[offsetPrev] += pCoeffs[depth] * delta[offset];
+    uint offsetPrev = depth +
+        nbNeurons * targetSeq + sequence * nbNeurons * elem;
+    deltaPrev[offsetPrev] += delta[offset];
 }
 
 kernel void concat1SeqForward(

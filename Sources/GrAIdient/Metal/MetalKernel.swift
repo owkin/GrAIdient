@@ -678,8 +678,8 @@ private class MetalDevice
                 "valueSeqForward",
                 "valueValueSeqBackward",
                 "valueScoreSeqBackward",
-                "selectNeuronsSeqForward",
-                "selectNeuronsSeqBackward",
+                "selectSeqForward",
+                "selectSeqBackward",
             ],
             "Merge": [
                 "sum1",

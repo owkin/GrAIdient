@@ -68,7 +68,6 @@ public class Deconvolution2D: Convolution2D
     ///
     /// Create a layer with a 2D shape neural structure.
     ///
-    ///
     /// - Parameters:
     ///     - layerPrev: Previous layer that has been queued to the model.
     ///     - size: Size (height, weight) of the weights kernels.

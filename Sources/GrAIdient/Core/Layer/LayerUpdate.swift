@@ -13,6 +13,7 @@ public enum Phase
     case Training, Inference
 }
 
+/// API for a layer that have learning weights.
 public protocol LayerUpdate: Layer
 {
     /// Weights in the CPU execution context.

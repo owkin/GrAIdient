@@ -1,7 +1,7 @@
 # 🚀 Auto Encoder Example
 
 This is the documentation of a 
-[toy Auto Encoder model](../../Tests/GrAIExamples/AutoEncoder.swift), 
+[toy Auto Encoder model](../../Tests/GrAIExamples/AutoEncoderExample.swift), 
 trained on the GPU. 
 The dataset used is CIFAR 10. 
 

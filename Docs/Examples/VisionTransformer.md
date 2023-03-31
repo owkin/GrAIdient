@@ -1,6 +1,6 @@
 # 🚀 Vision Transformer Example
 
-This is the documentation of a [toy Vision Transformer model](../../Tests/GrAIExamples/VisionTransformer.swift), 
+This is the documentation of a [toy Vision Transformer model](../../Tests/GrAIExamples/TransformerExample.swift), 
 trained on the GPU. 
 The dataset used is CIFAR 10. 
 

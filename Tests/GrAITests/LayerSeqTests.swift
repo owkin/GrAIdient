@@ -1264,7 +1264,7 @@ class LayerSeqTransformTests: LayerSeqFlowTests
 // Gradient Checking
 // We expect to see errors ~ 1e-7 and less.
 // -----------------------------------------------------------------------------
-class SelectNeuronsSeqGradTests: Input2DMSE1DCase
+class SelectSeqGradTests: Input2DMSE1DCase
 {
     private func _buildTrainer() -> GradTrainer
     {
@@ -1298,9 +1298,9 @@ class SelectNeuronsSeqGradTests: Input2DMSE1DCase
             activation: SoftReLU.str, biases: true, params: params
         )
         
-        var head: Layer1D = SelectNeuronsSeq(
+        var head: Layer1D = SelectSeq(
             layerPrev: layerSeq,
-            targetSeq: 3, neurons: [1, 3], coeffs: [0.2, 0.1],
+            targetSeq: 3,
             params: params
         )
         
@@ -1330,7 +1330,7 @@ class SelectNeuronsSeqGradTests: Input2DMSE1DCase
 // Compare GPU gradients with CPU ones through time.
 // We expect to see errors ~ 1e-7 and less.
 // -----------------------------------------------------------------------------
-class SelectNeuronsSeqFlowTests: Input2DMSE1DCase
+class SelectSeqFlowTests: Input2DMSE1DCase
 {
     private func _buildTrainer() -> FlowTrainer
     {
@@ -1364,9 +1364,9 @@ class SelectNeuronsSeqFlowTests: Input2DMSE1DCase
             activation: LeakyReLU.str, biases: true, params: params
         )
         
-        var head: Layer1D = SelectNeuronsSeq(
+        var head: Layer1D = SelectSeq(
             layerPrev: layerSeq,
-            targetSeq: 3, neurons: [1, 3], coeffs: [0.2, 0.1],
+            targetSeq: 3,
             params: params
         )
         
@@ -1389,7 +1389,7 @@ class SelectNeuronsSeqFlowTests: Input2DMSE1DCase
 // Compare GPU gradients with CPU ones through time.
 // We expect to see errors ~ 1e-7 and less.
 // -----------------------------------------------------------------------------
-class SelectNeuronsSeqFlowResetTests: SelectNeuronsSeqFlowTests
+class SelectSeqFlowResetTests: SelectSeqFlowTests
 {
     override func setUp()
     {
@@ -1424,7 +1424,7 @@ class SelectNeuronsSeqFlowResetTests: SelectNeuronsSeqFlowTests
 // Compare GPU gradients with CPU ones through time.
 // We expect to see errors ~ 1e-7 and less.
 // -----------------------------------------------------------------------------
-class SelectNeuronsSeqFlowReverseTests: SelectNeuronsSeqFlowTests
+class SelectSeqFlowReverseTests: SelectSeqFlowTests
 {
     override func setUp()
     {
@@ -1459,7 +1459,7 @@ class SelectNeuronsSeqFlowReverseTests: SelectNeuronsSeqFlowTests
 // Compare GPU Loss in inference mode with CPU one.
 // We expect to see errors ~ 1e-3 and less.
 // -----------------------------------------------------------------------------
-class SelectNeuronsSeqInferenceTests: SelectNeuronsSeqFlowTests
+class SelectSeqInferenceTests: SelectSeqFlowTests
 {
     private func _buildTrainer() -> InferenceTrainer
     {
@@ -1487,7 +1487,7 @@ class SelectNeuronsSeqInferenceTests: SelectNeuronsSeqFlowTests
 // loaded model.
 // We expect to see errors ~ 1e-3 and less.
 // -----------------------------------------------------------------------------
-class SelectNeuronsSeqLoadTests: SelectNeuronsSeqFlowTests
+class SelectSeqLoadTests: SelectSeqFlowTests
 {
     private func _buildTrainer() -> LoadTrainer
     {
@@ -1515,7 +1515,7 @@ class SelectNeuronsSeqLoadTests: SelectNeuronsSeqFlowTests
 // transformed model.
 // We expect to see errors ~ 1e-3 and less.
 // -----------------------------------------------------------------------------
-class SelectNeuronsSeqTransformTests: SelectNeuronsSeqFlowTests
+class SelectSeqTransformTests: SelectSeqFlowTests
 {
     ///
     /// Run Transform tests.

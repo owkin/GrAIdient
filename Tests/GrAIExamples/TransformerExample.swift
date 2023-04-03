@@ -8,6 +8,7 @@
 import XCTest
 import GrAIdient
 
+/// Test that we can train a simple Vision Transformer model on the CIFAR dataset.
 final class TransformerExample: XCTestCase
 {
     /// Directory to dump outputs from the tests.
@@ -71,7 +72,7 @@ final class TransformerExample: XCTestCase
     ///     - params: Contextual parameters linking to the model.
     /// - Returns: The last layer of the branch.
     ///
-    func buildMultiHeadAttention(
+    func _buildMultiHeadAttention(
         layerPrev: LayerSeq,
         nbHeads: Int,
         hiddenDim: Int,
@@ -178,7 +179,7 @@ final class TransformerExample: XCTestCase
                 layerPrev: layerSeq, activation: nil, params: params
             )
             
-            layerSeq = buildMultiHeadAttention(
+            layerSeq = _buildMultiHeadAttention(
                 layerPrev: layerSeq,
                 nbHeads: nbHeads, hiddenDim: hiddenDim,
                 params: params
@@ -224,121 +225,6 @@ final class TransformerExample: XCTestCase
         return model
     }
     
-    ///
-    /// Load a model from the disk.
-    ///
-    /// - Parameter modelPath: The model path on the disk.
-    /// - Returns: the model loaded.
-    ///
-    func _loadModel(_ modelPath: String) -> Model
-    {
-        // Load model from the disk.
-        let data = try! Data(
-            contentsOf: URL(fileURLWithPath: modelPath)
-        )
-        
-        // Decode it as a base model
-        // (model where `layerPrev` links are not initialized).
-        let baseModel = try! PropertyListDecoder().decode(
-            BaseModel.self,
-            from: data
-        )
-        
-        // Create a model with initialized links
-        // with no previous model dependencies.
-        let transformer = Model(model: baseModel, modelsPrev: [])
-        return transformer
-    }
-    
-    ///
-    /// Evaluate a model on the testing CIFAR dataset.
-    ///
-    /// - Parameter model: The model to evaluate.
-    /// - Returns: The ratio (in percent) of good predictions.
-    ///
-    func _evaluateModel(_ model: Model) -> Int
-    {
-        let cifar8 = CIFAR.loadDataset(
-            datasetPath: _outputDir + "/datasetTest8",
-            size: _size
-        )
-        let cifar5 = CIFAR.loadDataset(
-            datasetPath: _outputDir + "/datasetTest5",
-            size: _size
-        )
-        
-        cifar8.initSamples(batchSize: _batchSize)
-        cifar5.initSamples(batchSize: _batchSize)
-        
-        // We keep a subset of the dataset to have a quicker evaluation.
-        cifar8.keep(100)
-        cifar5.keep(100)
-        
-        let firstLayer: Input2D = model.layers.first as! Input2D
-        let lastLayer: MSE1D = model.layers.last as! MSE1D
-        
-        var nbRight = 0
-        var nbTotal = 0
-        
-        var sampler: CIFAR = cifar8
-        var samples = sampler.getSamples()
-        
-        for label in 0...1
-        {
-            if samples == nil
-            {
-                sampler = cifar5
-                samples = sampler.getSamples()
-            }
-            
-            while samples != nil
-            {
-                // Pre processing.
-                let data = preprocess(
-                    samples!,
-                    height: _size,
-                    width: _size,
-                    mean: _mean,
-                    std: _std,
-                    imageFormat: .Neuron
-                )
-                
-                // Update internal batch size.
-                model.updateKernel(batchSize: samples!.count)
-                
-                // Set data.
-                try! firstLayer.setDataGPU(
-                    data,
-                    batchSize: samples!.count,
-                    format: .Neuron
-                )
-                
-                // Forward.
-                try! model.forward()
-                
-                for elem in 0..<samples!.count
-                {
-                    // Get result: 1 neuron.
-                    let result: Float = lastLayer.getOutsGPU(elem: elem)[0]
-                    if label == 0 && result < 0.5
-                    {
-                        nbRight += 1
-                    }
-                    else if label == 1 && result >= 0.5
-                    {
-                        nbRight += 1
-                    }
-                    nbTotal += 1
-                }
-                
-                samples = sampler.getSamples()
-            }
-        }
-        
-        let ratio = Int(Double(nbRight) / Double(nbTotal) * 100)
-        return ratio
-    }
-    
     /// Test1: dump CIFAR train and test datasets for labels 8 and 5.
     func test1_DumpDataset()
     {
@@ -352,99 +238,10 @@ final class TransformerExample: XCTestCase
             label: 5,
             size: _size
         )
-        CIFAR.dumpTest(
-            datasetPath: _outputDir + "/datasetTest8",
-            label: 8,
-            size: _size
-        )
-        CIFAR.dumpTest(
-            datasetPath: _outputDir + "/datasetTest5",
-            label: 5,
-            size: _size
-        )
     }
     
-    /// Test2: dump CIFAR images for labels 8 and 5.
-    func test2_DumpImages()
-    {
-        let batchSize = 16
-        let cifar8 = CIFAR.loadDataset(
-            datasetPath: _outputDir + "/datasetTest8",
-            size: _size
-        )
-        let cifar5 = CIFAR.loadDataset(
-            datasetPath: _outputDir + "/datasetTest5",
-            size: _size
-        )
-        cifar8.initSamples(batchSize: batchSize)
-        cifar5.initSamples(batchSize: batchSize)
-        
-        let samples8 = cifar8.getSamples()!
-        let samples5 = cifar5.getSamples()!
-        
-        let pixels8 = getPixels(
-            samples8, width: _size, height: _size, imageFormat: .Neuron
-        )
-        let pixels5 = getPixels(
-            samples5, width: _size, height: _size, imageFormat: .Neuron
-        )
-        
-        for elem in 0..<batchSize
-        {
-            var image = getImage(
-                pixels: pixels8[elem], width: _size, height: _size
-            )
-            saveImage(
-                image,
-                url: URL(fileURLWithPath: _outputDir + "CIFAR8_\(elem).png")
-            )
-            
-            image = getImage(
-                pixels: pixels5[elem], width: _size, height: _size
-            )
-            saveImage(
-                image,
-                url: URL(fileURLWithPath: _outputDir + "CIFAR5_\(elem).png")
-            )
-        }
-    }
-    
-    /// Test3: test that an untrained model makes bad predictions.
-    func test3_UntrainedModel()
-    {
-        // Build a model with randomly initialized weights.
-        let transformer = _buildModel(
-            size: 32,
-            patch: 16,
-            nbLayers: 2,
-            nbHeads: 2,
-            hiddenDim: 16,
-            mlpDim: 32,
-            mlpActivation: GELU.str
-        )
-        
-        // Initialize for inference.
-        transformer.initKernel(phase: .Inference)
-        
-        // Evaluate model on CIFAR testing dataset.
-        let ratio = _evaluateModel(transformer)
-        
-        print(
-            "Ratio of good predictions: \(ratio)%."
-        )
-        
-        // Encode the model.
-        let encoder = PropertyListEncoder()
-        let data = try! encoder.encode(transformer)
-        
-        // Save it to the disk.
-        try! data.write(
-            to: URL(fileURLWithPath: _outputDir + "/transformer1.plist")
-        )
-    }
-    
-    /// Test4: train a simple model.
-    func test4_TrainTransformer()
+    /// Test2: train a simple model.
+    func test2_TrainTransformer()
     {
         let cifar8 = CIFAR.loadDataset(
             datasetPath: _outputDir + "/datasetTrain8",
@@ -475,8 +272,16 @@ final class TransformerExample: XCTestCase
         cifar8.keep(nbWholeBatches)
         cifar5.keep(nbWholeBatches)
         
-        // Load previous model from the disk.
-        let transformer = _loadModel(_outputDir + "transformer1.plist")
+        // Build a model with randomly initialized weights.
+        let transformer = _buildModel(
+            size: 32,
+            patch: 16,
+            nbLayers: 2,
+            nbHeads: 2,
+            hiddenDim: 16,
+            mlpDim: 32,
+            mlpActivation: GELU.str
+        )
         
         // Initialize for training.
         transformer.initialize(params: params, phase: .Training)
@@ -567,37 +372,5 @@ final class TransformerExample: XCTestCase
                 transformer.incStep()
             }
         }
-        
-        // Encode the trained model.
-        let encoder = PropertyListEncoder()
-        let data = try! encoder.encode(transformer)
-        
-        // Save it to the disk.
-        try! data.write(
-            to: URL(fileURLWithPath: _outputDir + "/transformer2.plist")
-        )
-    }
-    
-    /// Test5: test that the previous trained model makes better predictions than the untrained model.
-    func test5_CompareModels()
-    {
-        // Load previous model from the disk.
-        let transformer1 = _loadModel(_outputDir + "/transformer1.plist")
-        let transformer2 = _loadModel(_outputDir + "/transformer2.plist")
-        
-        // Initialize for inference.
-        transformer1.initKernel(phase: .Inference)
-        transformer2.initKernel(phase: .Inference)
-        
-        // Evaluate model on CIFAR testing dataset.
-        let ratio1 = _evaluateModel(transformer1)
-        let ratio2 = _evaluateModel(transformer2)
-        
-        print(
-            "Ratio of good predictions before training: \(ratio1)%."
-        )
-        print(
-            "Ratio of good predictions after training: \(ratio2)%."
-        )
     }
 }

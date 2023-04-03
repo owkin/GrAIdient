@@ -9,4 +9,6 @@ or in the [GitHub](https://github.com/owkin/GrAIdient/actions) CI
 
 The following examples are currently available: 
 
-- [VGGExample](VGG.md)
+- [VGG](VGG.md)
+- [Vision Transformer](VisionTransformer.md)
+- [Auto Encoder](AutoEncoder.md)

@@ -832,8 +832,17 @@ public class GELU: ActivationFunction
     public override func apply(_ x: Double) -> Double
     {
         let cst = sqrt(2.0 / Double.pi)
-        let tmp = tanh(cst * (x + 0.044715 * pow(x, 3)))
-        return 0.5 * x * (1 + tmp)
+        let tmp1 = cst * (x + 0.044715 * pow(x, 3))
+        let tmp2: Double
+        if tmp1 >= 0
+        {
+            tmp2 = (1.0 - exp(-2.0 * tmp1)) / (1.0 + exp(-2.0 * tmp1))
+        }
+        else
+        {
+            tmp2 = (exp(2.0 * tmp1) - 1.0) / (exp(2.0 * tmp1) + 1.0)
+        }
+        return 0.5 * x * (1 + tmp2)
     }
     
     ///
@@ -845,9 +854,18 @@ public class GELU: ActivationFunction
     public override func derivate(_ x: Double) -> Double
     {
         let cst = sqrt(2.0 / Double.pi)
-        let tmp1 = tanh(cst * (x + 0.044715 * pow(x, 3)))
-        let tmp2 = cst * (1 + 3 * 0.044715 * x * x) * (1 - tmp1 * tmp1)
-        let derivative = 0.5 * (1 + tmp1 + x * tmp2)
+        let tmp1 = cst * (x + 0.044715 * pow(x, 3))
+        let tmp2: Double
+        if tmp1 >= 0
+        {
+            tmp2 = (1.0 - exp(-2.0 * tmp1)) / (1.0 + exp(-2.0 * tmp1))
+        }
+        else
+        {
+            tmp2 = (exp(2.0 * tmp1) - 1.0) / (exp(2.0 * tmp1) + 1.0)
+        }
+        let tmp3 = cst * (1 + 3 * 0.044715 * x * x) * (1 - tmp2 * tmp2)
+        let derivative = 0.5 * (1 + tmp2 + x * tmp3)
         return derivative
     }
 }

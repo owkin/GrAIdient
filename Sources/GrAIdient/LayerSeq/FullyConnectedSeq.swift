@@ -850,7 +850,7 @@ public class FullyConnectedSeq: ActivationSeq,
         try _forwardGPU()
         _activation?.forwardGPU(self)
         
-        let layerPrev = self.layerPrev as! Layer2D
+        let layerPrev = self.layerPrev as! LayerSeq
         MetalKernel.get.download([layerPrev.outs, outs])
         var hum1 = [Float]()
         var hum2 = [Float]()

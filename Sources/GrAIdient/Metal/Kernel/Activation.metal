@@ -255,9 +255,8 @@ kernel void forwardGELU(
     {
         tmp2 = (exp(2.0 * tmp1) - 1.0) / (exp(2.0 * tmp1) + 1.0);
     }
-    float tmp = tanh(cst * (x + 0.044715 * pow(x, 3)));
     tmps[id] = x;
-    outs[id] = 0.5 * x * (1 + tmp);
+    outs[id] = 0.5 * x * (1 + tmp2);
 }
 
 kernel void backwardGELU(

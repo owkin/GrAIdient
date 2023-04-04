@@ -260,6 +260,29 @@ public class SoftmaxSeq: LayerSeq
                 height: batchSize * sequence
             )
             command.enqueue()
+            
+            MetalKernel.get.download([layerPrev.outs, outs])
+            var hum1 = [Float]()
+            var hum2 = [Float]()
+            let buffer1 = layerPrev.outs.shared.buffer
+            let buffer2 = outs.shared.buffer
+            for elem in buffer1
+            {
+                hum1.append(elem)
+                if elem.isNaN
+                {
+                    print("NaN")
+                }
+            }
+            for elem in buffer2
+            {
+                hum2.append(elem)
+                if elem.isNaN
+                {
+                    print("NaN")
+                }
+            }
+            print("COUCOU")
         }
     }
     

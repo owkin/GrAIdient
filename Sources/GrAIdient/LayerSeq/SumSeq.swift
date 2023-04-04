@@ -294,6 +294,19 @@ public class SumSeq: LayerMergeSeq
             command.dispatchThreads(nbElems)
             command.enqueue()
         }
+        
+        MetalKernel.get.download([outs])
+        var hum2 = [Float]()
+        let buffer2 = outs.shared.buffer
+        for elem in buffer2
+        {
+            hum2.append(elem)
+            if elem.isNaN
+            {
+                print("NaN")
+            }
+        }
+        print("COUCOU")
     }
     
     /// Apply the backward pass in the CPU execution context.

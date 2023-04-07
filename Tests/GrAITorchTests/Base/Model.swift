@@ -331,7 +331,7 @@ class ModelTestDeConv1
         
         layer = Deconvolution2D(
             layerPrev: layer,
-            size: 3, nbChannels: 1, stride: 2,
+            size: 3, nbChannels: 5, stride: 2,
             activation: nil, biases: true, bn: false,
             params: params
         )
@@ -413,7 +413,7 @@ class ModelTestDeConv2
         
         layer = Deconvolution2D(
             layerPrev: layer,
-            size: 2, nbChannels: 1, stride: 2,
+            size: 2, nbChannels: 5, stride: 2,
             activation: nil, biases: true, bn: false,
             params: params
         )

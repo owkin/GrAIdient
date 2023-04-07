@@ -10,10 +10,13 @@ from python_lib.model import (
     ModelTestDeConv3,
     ModelTestDeConv4,
     ModelTestCat,
+    ModelTestResize,
     ModelTestPatchConv,
     ModelTestAttention1,
     ModelTestAttention2,
     ModelTestLayerNorm,
+    ModelTestAutoEncoder1,
+    ModelTestAutoEncoder2,
 )
 
 
@@ -316,6 +319,25 @@ def load_cat_weights() -> Tuple[List[List[float]], List[List[int]]]:
     return _extract_weights(model)
 
 
+def load_resize_weights(size: int) -> Tuple[List[List[float]], List[List[int]]]:
+    """
+    Get weights and biases for ModelTestResize.
+
+    Parameters
+    ----------
+    size: int
+        The output size of the resize operation.
+
+    Returns
+    -------
+    (_, _): List[float], List[int]
+        The flattened weights, their shape.
+    """
+    torch.manual_seed(42)
+    model = ModelTestResize(size)
+    return _extract_weights(model)
+
+
 def load_patch_conv_weights(size: int, patch: int) -> Tuple[List[List[float]], List[List[int]]]:
     """
     Get weights and biases for ModelTestPatchConv.
@@ -398,3 +420,31 @@ def load_layer_norm_weights(size: int, patch: int) -> Tuple[List[List[float]], L
     torch.manual_seed(42)
     model = ModelTestLayerNorm(size=size, patch=patch)
     return _extract_weights(model)
+
+
+def load_auto_encoder1_weights() -> Tuple[List[List[float]], List[List[int]]]:
+    """
+    Get weights and biases for ModelTestAutoEncoder1.
+
+    Returns
+    -------
+    (_, _): List[float], List[int]
+        The flattened weights, their shape.
+    """
+    torch.manual_seed(42)
+    model = ModelTestAutoEncoder1()
+    return _extract_and_transpose_weights(list(model.children()))
+
+
+def load_auto_encoder2_weights() -> Tuple[List[List[float]], List[List[int]]]:
+    """
+    Get weights and biases for ModelTestAutoEncoder2.
+
+    Returns
+    -------
+    (_, _): List[float], List[int]
+        The flattened weights, their shape.
+    """
+    torch.manual_seed(42)
+    model = ModelTestAutoEncoder2()
+    return _extract_and_transpose_weights(list(model.children()))

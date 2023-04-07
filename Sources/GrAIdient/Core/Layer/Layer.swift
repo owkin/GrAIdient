@@ -222,6 +222,11 @@ open class Layer: Codable
     ///
     open func initLinks(_ layers: [Layer])
     {
+        if idPrev < 0
+        {
+            layerPrev = nil
+            return
+        }
         for testLayer in layers
         {
             if testLayer.id == idPrev

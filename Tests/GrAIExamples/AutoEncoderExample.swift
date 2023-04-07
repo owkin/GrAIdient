@@ -15,7 +15,7 @@ final class AutoEncoderExample: XCTestCase
     let _outputDir = NSTemporaryDirectory()
     
     /// Batch size of data.
-    let _batchSize = 64
+    let _batchSize = 16
     
     /// Size of one image (height and width are the same).
     let _size = 32
@@ -147,7 +147,7 @@ final class AutoEncoderExample: XCTestCase
         
         layer = Deconvolution2D(
             layerPrev: layer, size: 2, nbChannels: 8, stride: 2,
-            activation: nil, biases: true, bn: true,
+            activation: nil, biases: true, bn: false,
             params: params
         )
         layer = Concat2D(

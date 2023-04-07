@@ -1,4 +1,5 @@
 import torch
+import torchvision
 import numpy as np
 
 
@@ -472,6 +473,74 @@ class ModelTestCat(torch.nn.Module):
         return x
 
 
+class ModelTestResize(torch.nn.Module):
+    """
+    Model to test.
+    Principle features:
+        - resize
+
+    Parameters
+    ----------
+    size: int
+        The output size of the resize operation.
+    """
+
+    def __init__(self, size: int):
+        super().__init__()
+        self.features = torch.nn.Sequential(
+            torch.nn.Conv2d(
+                3, 5,
+                kernel_size=(1, 1),
+                bias=True
+            ),
+        )
+        self.resize = torchvision.transforms.Resize(size)
+        self.avgpool = torch.nn.AdaptiveAvgPool2d((1, 1))
+        self.classifier = torch.nn.Sequential(
+            torch.nn.Linear(in_features=5, out_features=1)
+        )
+        self.features.apply(self.weight_init)
+        self.classifier.apply(self.weight_init)
+
+    @staticmethod
+    def weight_init(module: torch.nn.Module):
+        """
+        Initialize weights and biases.
+
+        Parameters
+        ----------
+        module: torch.nn.Module
+            The module to initialize.
+        """
+        if isinstance(module, torch.nn.Conv2d) or \
+           isinstance(module, torch.nn.Linear):
+            torch.nn.init.normal_(module.weight)
+
+            if module.bias is not None:
+                torch.nn.init.normal_(module.bias)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass.
+
+        Parameters
+        ----------
+        x: torch.Tensor
+            The input tensor.
+
+        Returns
+        -------
+        _: torch.Tensor
+            The output tensor.
+        """
+        x = self.features(x)
+        x = self.resize(x)
+        x = self.avgpool(x)
+        x = torch.flatten(x, 1)
+        x = self.classifier(x)
+        return x
+
+
 class ModelTestPatchConv(torch.nn.Module):
     """
     Model to test.
@@ -791,3 +860,78 @@ class ModelTestLayerNorm(torch.nn.Module):
         x = torch.flatten(x, 1)
         x = self.classifier(x)
         return x
+
+
+class ModelTestAutoEncoder(torch.nn.Module):
+    """
+    Generic auto encoder model to test.
+    """
+
+    @staticmethod
+    def weight_init(module: torch.nn.Module):
+        """
+        Initialize weights and biases.
+
+        Parameters
+        ----------
+        module: torch.nn.Module
+            The module to initialize.
+        """
+        if isinstance(module, torch.nn.Conv2d) or \
+           isinstance(module, torch.nn.ConvTranspose2d) or \
+           isinstance(module, torch.nn.Linear):
+            torch.nn.init.normal_(module.weight)
+
+            if module.bias is not None:
+                torch.nn.init.normal_(module.bias)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass.
+
+        Parameters
+        ----------
+        x: torch.Tensor
+            The input tensor.
+
+        Returns
+        -------
+        _: torch.Tensor
+            The output tensor.
+        """
+        x = self.features(x)
+        return x
+
+
+class ModelTestAutoEncoder1(ModelTestAutoEncoder):
+    """
+    Model to test.
+    Principle features:
+        - Conv2d
+        - ConvTranspose2d
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.features = torch.nn.Sequential(
+            torch.nn.Conv2d(3, 5, kernel_size=3, stride=2, padding=1),
+            torch.nn.ConvTranspose2d(5, 3, kernel_size=2, stride=2),
+        )
+        self.features.apply(self.weight_init)
+
+
+class ModelTestAutoEncoder2(ModelTestAutoEncoder):
+    """
+    Model to test.
+    Principle features:
+        - Conv2d
+        - ConvTranspose2d
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.features = torch.nn.Sequential(
+            torch.nn.Conv2d(3, 5, kernel_size=2, stride=2),
+            torch.nn.ConvTranspose2d(5, 3, kernel_size=2, stride=2),
+        )
+        self.features.apply(self.weight_init)

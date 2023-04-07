@@ -333,11 +333,11 @@ public class Convolution2D: BN2D
         get {
             let weightHeightHalf = weightHeight / 2
             let weightWidthHalf = weightWidth / 2
-            let startI = weightWidth % 2 == 1 ? -weightHeightHalf :
-                                                -weightHeightHalf+1
+            let startI = weightHeight % 2 == 1 ? -weightHeightHalf :
+                                                 -weightHeightHalf+1
             let endI = weightHeightHalf
-            let startJ = weightHeight % 2 == 1 ? -weightWidthHalf :
-                                                 -weightWidthHalf+1
+            let startJ = weightWidth % 2 == 1 ? -weightWidthHalf :
+                                                -weightWidthHalf+1
             let endJ = weightWidthHalf
             
             return (startI, endI, startJ, endJ)

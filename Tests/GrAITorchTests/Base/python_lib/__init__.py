@@ -9,10 +9,13 @@ from python_lib.gradient import (
     compute_deconv3_grad_norm,
     compute_deconv4_grad_norm,
     compute_cat_grad_norm,
+    compute_resize_grad_norm,
     compute_patch_conv_grad_norm,
     compute_attention1_grad_norm,
     compute_attention2_grad_norm,
     compute_layer_norm_grad_norm,
+    compute_auto_encoder1_grad_norm,
+    compute_auto_encoder2_grad_norm,
 )
 from python_lib.weight import (
     load_conv1_weights,
@@ -22,10 +25,13 @@ from python_lib.weight import (
     load_deconv3_weights,
     load_deconv4_weights,
     load_cat_weights,
+    load_resize_weights,
     load_patch_conv_weights,
     load_attention1_weights,
     load_attention2_weights,
     load_layer_norm_weights,
+    load_auto_encoder1_weights,
+    load_auto_encoder2_weights,
 )
 
 __all__ = [
@@ -39,6 +45,7 @@ __all__ = [
     "compute_deconv3_grad_norm",
     "compute_deconv4_grad_norm",
     "compute_cat_grad_norm",
+    "compute_resize_grad_norm",
     "compute_patch_conv_grad_norm",
     "compute_attention1_grad_norm",
     "compute_attention2_grad_norm",
@@ -54,4 +61,6 @@ __all__ = [
     "load_attention1_weights",
     "load_attention2_weights",
     "load_layer_norm_weights",
+    "load_auto_encoder1_weights",
+    "load_auto_encoder2_weights",
 ]

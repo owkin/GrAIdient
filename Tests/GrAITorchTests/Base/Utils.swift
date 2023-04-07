@@ -177,6 +177,21 @@ func computeCatGradNorm(_ size: Int) -> Float
 }
 
 ///
+/// Get gradient norm computed with PyTorch for ModelTestResize.
+///
+/// - Parameters:
+///     - sizeInput: The size of the input data.
+///     - sizeOutput: The output size of the resize operation.
+/// - Returns: The gradient norm.
+///
+func computeResizeGradNorm(sizeInput: Int, sizeOutput: Int) -> Float
+{
+    let pythonLib = Python.import("python_lib")
+    let data = pythonLib.compute_resize_grad_norm(sizeInput, sizeOutput)
+    return Float(data)!
+}
+
+///
 /// Get gradient norm computed with PyTorch for ModelTestPatchConv.
 ///
 /// - Parameters:
@@ -233,6 +248,32 @@ func computeLayerNormGradNorm(size: Int, patch: Int) -> Float
 {
     let pythonLib = Python.import("python_lib")
     let data = pythonLib.compute_layer_norm_grad_norm(size, patch)
+    return Float(data)!
+}
+
+///
+/// Get gradient norm computed with PyTorch for ModelTestAutoEncoder1.
+///
+/// - Parameter size: The size of the input data.
+/// - Returns: The gradient norm.
+///
+func computeAutoEncoder1GradNorm(_ size: Int) -> Float
+{
+    let pythonLib = Python.import("python_lib")
+    let data = pythonLib.compute_auto_encoder1_grad_norm(size)
+    return Float(data)!
+}
+
+///
+/// Get gradient norm computed with PyTorch for ModelTestAutoEncoder2.
+///
+/// - Parameter size: The size of the input data.
+/// - Returns: The gradient norm.
+///
+func computeAutoEncoder2GradNorm(_ size: Int) -> Float
+{
+    let pythonLib = Python.import("python_lib")
+    let data = pythonLib.compute_auto_encoder2_grad_norm(size)
     return Float(data)!
 }
 

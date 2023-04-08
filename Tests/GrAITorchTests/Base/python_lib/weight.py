@@ -5,10 +5,12 @@ from typing import List, Tuple
 from python_lib.model import (
     ModelTestConv1,
     ModelTestConv2,
-    ModelTestDeConv1,
-    ModelTestDeConv2,
-    ModelTestDeConv3,
-    ModelTestDeConv4,
+    ModelTestConvS1K2,
+    ModelTestConvS1K3,
+    ModelTestConvS1K4,
+    ModelTestDeConvS1K2,
+    ModelTestDeConvS1K3,
+    ModelTestDeConvS1K4,
     ModelTestCat,
     ModelTestResize,
     ModelTestPatchConv,
@@ -249,9 +251,9 @@ def load_conv2_weights() -> Tuple[List[List[float]], List[List[int]]]:
     return _extract_weights(model)
 
 
-def load_deconv1_weights() -> Tuple[List[List[float]], List[List[int]]]:
+def load_conv3_weights() -> Tuple[List[List[float]], List[List[int]]]:
     """
-    Get weights and biases for ModelTestDeConv1.
+    Get weights and biases for ModelTestConvS1K2.
 
     Returns
     -------
@@ -259,13 +261,55 @@ def load_deconv1_weights() -> Tuple[List[List[float]], List[List[int]]]:
         The flattened weights, their shape.
     """
     torch.manual_seed(42)
-    model = ModelTestDeConv1()
+    model = ModelTestConvS1K2()
+    return _extract_weights(model)
+
+
+def load_conv4_weights() -> Tuple[List[List[float]], List[List[int]]]:
+    """
+    Get weights and biases for ModelTestConvS1K3.
+
+    Returns
+    -------
+    (_, _): List[float], List[int]
+        The flattened weights, their shape.
+    """
+    torch.manual_seed(42)
+    model = ModelTestConvS1K3()
+    return _extract_weights(model)
+
+
+def load_conv5_weights() -> Tuple[List[List[float]], List[List[int]]]:
+    """
+    Get weights and biases for ModelTestConvS1K4.
+
+    Returns
+    -------
+    (_, _): List[float], List[int]
+        The flattened weights, their shape.
+    """
+    torch.manual_seed(42)
+    model = ModelTestConvS1K4()
+    return _extract_weights(model)
+
+
+def load_deconv1_weights() -> Tuple[List[List[float]], List[List[int]]]:
+    """
+    Get weights and biases for ModelTestDeConvS1K2.
+
+    Returns
+    -------
+    (_, _): List[float], List[int]
+        The flattened weights, their shape.
+    """
+    torch.manual_seed(42)
+    model = ModelTestDeConvS1K2()
     return _extract_and_transpose_weights(list(model.children()))
 
 
 def load_deconv2_weights() -> Tuple[List[List[float]], List[List[int]]]:
     """
-    Get weights and biases for ModelTestDeConv2.
+    Get weights and biases for ModelTestDeConvS1K3.
 
     Returns
     -------
@@ -273,13 +317,13 @@ def load_deconv2_weights() -> Tuple[List[List[float]], List[List[int]]]:
         The flattened weights, their shape.
     """
     torch.manual_seed(42)
-    model = ModelTestDeConv2()
+    model = ModelTestDeConvS1K3()
     return _extract_and_transpose_weights(list(model.children()))
 
 
 def load_deconv3_weights() -> Tuple[List[List[float]], List[List[int]]]:
     """
-    Get weights and biases for ModelTestDeConv3.
+    Get weights and biases for ModelTestDeConvS1K4.
 
     Returns
     -------
@@ -287,21 +331,7 @@ def load_deconv3_weights() -> Tuple[List[List[float]], List[List[int]]]:
         The flattened weights, their shape.
     """
     torch.manual_seed(42)
-    model = ModelTestDeConv3()
-    return _extract_and_transpose_weights(list(model.children()))
-
-
-def load_deconv4_weights() -> Tuple[List[List[float]], List[List[int]]]:
-    """
-    Get weights and biases for ModelTestDeConv4.
-
-    Returns
-    -------
-    (_, _): List[float], List[int]
-        The flattened weights, their shape.
-    """
-    torch.manual_seed(42)
-    model = ModelTestDeConv4()
+    model = ModelTestDeConvS1K4()
     return _extract_and_transpose_weights(list(model.children()))
 
 

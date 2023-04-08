@@ -252,14 +252,17 @@ final class GrAITorchTests: XCTestCase
         XCTAssert(diffPercent < 1.0)
     }
     
-    /// Test that modelDeConv1 backward pass returns the same gradient norm in GrAIdient and PyTorch.
-    func testModelDeConv1()
+    ///
+    /// Test that modelConvS1K2 backward pass returns the same gradient norm
+    /// in GrAIdient and PyTorch.
+    ///
+    func testModelConvS1K2()
     {
         // Build model.
-        let model = ModelTestDeConv1.build(_size)
+        let model = ModelTestConvS1K2.build(_size)
         
         // Get the gradient norm on the first layer.
-        let expectedNorm: Double = Double(computeDeConv1GradNorm(_size))
+        let expectedNorm: Double = Double(computeConvS1K2GradNorm(_size))
         let gradNormOutput: Double = _getGradientNormMSE1D(
             model: model, size: _size
         )
@@ -270,14 +273,17 @@ final class GrAITorchTests: XCTestCase
         XCTAssert(diffPercent < 1.0)
     }
     
-    /// Test that modelDeConv2 backward pass returns the same gradient norm in GrAIdient and PyTorch.
-    func testModelDeConv2()
+    ///
+    /// Test that modelConvS1K3 backward pass returns the same gradient norm
+    /// in GrAIdient and PyTorch.
+    ///
+    func testModelConvS1K3()
     {
         // Build model.
-        let model = ModelTestDeConv2.build(_size)
+        let model = ModelTestConvS1K3.build(_size)
         
         // Get the gradient norm on the first layer.
-        let expectedNorm: Double = Double(computeDeConv2GradNorm(_size))
+        let expectedNorm: Double = Double(computeConvS1K3GradNorm(_size))
         let gradNormOutput: Double = _getGradientNormMSE1D(
             model: model, size: _size
         )
@@ -288,14 +294,17 @@ final class GrAITorchTests: XCTestCase
         XCTAssert(diffPercent < 1.0)
     }
     
-    /// Test that modelDeConv3 backward pass returns the same gradient norm in GrAIdient and PyTorch.
-    func testModelDeConv3()
+    ///
+    /// Test that modelConvS1K4 backward pass returns the same gradient norm
+    /// in GrAIdient and PyTorch.
+    ///
+    func testModelConvS1K4()
     {
         // Build model.
-        let model = ModelTestDeConv3.build(_size)
+        let model = ModelTestConvS1K4.build(_size)
         
         // Get the gradient norm on the first layer.
-        let expectedNorm: Double = Double(computeDeConv3GradNorm(_size))
+        let expectedNorm: Double = Double(computeConvS1K4GradNorm(_size))
         let gradNormOutput: Double = _getGradientNormMSE1D(
             model: model, size: _size
         )
@@ -306,14 +315,311 @@ final class GrAITorchTests: XCTestCase
         XCTAssert(diffPercent < 1.0)
     }
     
-    /// Test that modelDeConv4 backward pass returns the same gradient norm in GrAIdient and PyTorch.
-    func testModelDeConv4()
+    ///
+    /// Test that modelConvS2K2 backward pass returns the same gradient norm
+    /// in GrAIdient and PyTorch.
+    ///
+    func testModelConvS2K2()
     {
         // Build model.
-        let model = ModelTestDeConv4.build(_size)
+        let model = ModelTestConvS2K2.build(_size)
         
         // Get the gradient norm on the first layer.
-        let expectedNorm: Double = Double(computeDeConv4GradNorm(_size))
+        let expectedNorm: Double = Double(computeConvS2K2GradNorm(_size))
+        let gradNormOutput: Double = _getGradientNormMSE1D(
+            model: model, size: _size
+        )
+        
+        // Compare difference.
+        let diffPercent =
+            abs(gradNormOutput - expectedNorm) / expectedNorm * 100.0
+        XCTAssert(diffPercent < 1.0)
+    }
+    
+    ///
+    /// Test that modelConvS2K3 backward pass returns the same gradient norm
+    /// in GrAIdient and PyTorch.
+    ///
+    func testModelConvS2K3()
+    {
+        // Build model.
+        let model = ModelTestConvS2K3.build(_size)
+        
+        // Get the gradient norm on the first layer.
+        let expectedNorm: Double = Double(computeConvS2K3GradNorm(_size))
+        let gradNormOutput: Double = _getGradientNormMSE1D(
+            model: model, size: _size
+        )
+        
+        // Compare difference.
+        let diffPercent =
+            abs(gradNormOutput - expectedNorm) / expectedNorm * 100.0
+        XCTAssert(diffPercent < 1.0)
+    }
+    
+    ///
+    /// Test that modelConvS2K4 backward pass returns the same gradient norm
+    /// in GrAIdient and PyTorch.
+    ///
+    func testModelConvS2K4()
+    {
+        // Build model.
+        let model = ModelTestConvS2K4.build(_size)
+        
+        // Get the gradient norm on the first layer.
+        let expectedNorm: Double = Double(computeConvS2K4GradNorm(_size))
+        let gradNormOutput: Double = _getGradientNormMSE1D(
+            model: model, size: _size
+        )
+        
+        // Compare difference.
+        let diffPercent =
+            abs(gradNormOutput - expectedNorm) / expectedNorm * 100.0
+        XCTAssert(diffPercent < 1.0)
+    }
+    
+    ///
+    /// Test that modelConvS4K2 backward pass returns the same gradient norm
+    /// in GrAIdient and PyTorch.
+    ///
+    func testModelConvS4K2()
+    {
+        // Build model.
+        let model = ModelTestConvS4K2.build(_size)
+        
+        // Get the gradient norm on the first layer.
+        let expectedNorm: Double = Double(computeConvS4K2GradNorm(_size))
+        let gradNormOutput: Double = _getGradientNormMSE1D(
+            model: model, size: _size
+        )
+        
+        // Compare difference.
+        let diffPercent =
+            abs(gradNormOutput - expectedNorm) / expectedNorm * 100.0
+        XCTAssert(diffPercent < 1.0)
+    }
+    
+    ///
+    /// Test that modelConvS4K3 backward pass returns the same gradient norm
+    /// in GrAIdient and PyTorch.
+    ///
+    func testModelConvS4K3()
+    {
+        // Build model.
+        let model = ModelTestConvS4K3.build(_size)
+        
+        // Get the gradient norm on the first layer.
+        let expectedNorm: Double = Double(computeConvS4K3GradNorm(_size))
+        let gradNormOutput: Double = _getGradientNormMSE1D(
+            model: model, size: _size
+        )
+        
+        // Compare difference.
+        let diffPercent =
+            abs(gradNormOutput - expectedNorm) / expectedNorm * 100.0
+        XCTAssert(diffPercent < 1.0)
+    }
+    
+    ///
+    /// Test that modelConvS4K4 backward pass returns the same gradient norm
+    /// in GrAIdient and PyTorch.
+    ///
+    func testModelConvS4K4()
+    {
+        // Build model.
+        let model = ModelTestConvS4K4.build(_size)
+        
+        // Get the gradient norm on the first layer.
+        let expectedNorm: Double = Double(computeConvS4K4GradNorm(_size))
+        let gradNormOutput: Double = _getGradientNormMSE1D(
+            model: model, size: _size
+        )
+        
+        // Compare difference.
+        let diffPercent =
+            abs(gradNormOutput - expectedNorm) / expectedNorm * 100.0
+        XCTAssert(diffPercent < 1.0)
+    }
+    
+    ///
+    /// Test that modelDeConvS1K2 backward pass returns the same gradient norm
+    /// in GrAIdient and PyTorch.
+    ///
+    func testModelDeConvS1K2()
+    {
+        // Build model.
+        let model = ModelTestDeConvS1K2.build(_size)
+        
+        // Get the gradient norm on the first layer.
+        let expectedNorm: Double = Double(computeDeConvS1K2GradNorm(_size))
+        let gradNormOutput: Double = _getGradientNormMSE1D(
+            model: model, size: _size
+        )
+        
+        // Compare difference.
+        let diffPercent =
+            abs(gradNormOutput - expectedNorm) / expectedNorm * 100.0
+        XCTAssert(diffPercent < 1.0)
+    }
+    
+    ///
+    /// Test that modelDeConvS1K3 backward pass returns the same gradient norm
+    /// in GrAIdient and PyTorch.
+    ///
+    func testModelDeConvS1K3()
+    {
+        // Build model.
+        let model = ModelTestDeConvS1K3.build(_size)
+        
+        // Get the gradient norm on the first layer.
+        let expectedNorm: Double = Double(computeDeConvS1K3GradNorm(_size))
+        let gradNormOutput: Double = _getGradientNormMSE1D(
+            model: model, size: _size
+        )
+        
+        // Compare difference.
+        let diffPercent =
+            abs(gradNormOutput - expectedNorm) / expectedNorm * 100.0
+        XCTAssert(diffPercent < 1.0)
+    }
+    
+    ///
+    /// Test that modelDeConvS1K4 backward pass returns the same gradient norm
+    /// in GrAIdient and PyTorch.
+    ///
+    func testModelDeConvS1K4()
+    {
+        // Build model.
+        let model = ModelTestDeConvS1K4.build(_size)
+        
+        // Get the gradient norm on the first layer.
+        let expectedNorm: Double = Double(computeDeConvS1K4GradNorm(_size))
+        let gradNormOutput: Double = _getGradientNormMSE1D(
+            model: model, size: _size
+        )
+        
+        // Compare difference.
+        let diffPercent =
+            abs(gradNormOutput - expectedNorm) / expectedNorm * 100.0
+        XCTAssert(diffPercent < 1.0)
+    }
+    
+    ///
+    /// Test that modelDeConvS2K2 backward pass returns the same gradient norm
+    /// in GrAIdient and PyTorch.
+    ///
+    func testModelDeConvS2K2()
+    {
+        // Build model.
+        let model = ModelTestDeConvS2K2.build(_size)
+        
+        // Get the gradient norm on the first layer.
+        let expectedNorm: Double = Double(computeDeConvS2K2GradNorm(_size))
+        let gradNormOutput: Double = _getGradientNormMSE1D(
+            model: model, size: _size
+        )
+        
+        // Compare difference.
+        let diffPercent =
+            abs(gradNormOutput - expectedNorm) / expectedNorm * 100.0
+        XCTAssert(diffPercent < 1.0)
+    }
+    
+    ///
+    /// Test that modelDeConvS2K3 backward pass returns the same gradient norm
+    /// in GrAIdient and PyTorch.
+    ///
+    func testModelDeConvS2K3()
+    {
+        // Build model.
+        let model = ModelTestDeConvS2K3.build(_size)
+        
+        // Get the gradient norm on the first layer.
+        let expectedNorm: Double = Double(computeDeConvS2K3GradNorm(_size))
+        let gradNormOutput: Double = _getGradientNormMSE1D(
+            model: model, size: _size
+        )
+        
+        // Compare difference.
+        let diffPercent =
+            abs(gradNormOutput - expectedNorm) / expectedNorm * 100.0
+        XCTAssert(diffPercent < 1.0)
+    }
+    
+    ///
+    /// Test that modelDeConvS2K4 backward pass returns the same gradient norm
+    /// in GrAIdient and PyTorch.
+    ///
+    func testModelDeConvS2K4()
+    {
+        // Build model.
+        let model = ModelTestDeConvS2K4.build(_size)
+        
+        // Get the gradient norm on the first layer.
+        let expectedNorm: Double = Double(computeDeConvS2K4GradNorm(_size))
+        let gradNormOutput: Double = _getGradientNormMSE1D(
+            model: model, size: _size
+        )
+        
+        // Compare difference.
+        let diffPercent =
+            abs(gradNormOutput - expectedNorm) / expectedNorm * 100.0
+        XCTAssert(diffPercent < 1.0)
+    }
+    
+    ///
+    /// Test that modelDeConvS4K2 backward pass returns the same gradient norm
+    /// in GrAIdient and PyTorch.
+    ///
+    func testModelDeConvS4K2()
+    {
+        // Build model.
+        let model = ModelTestDeConvS4K2.build(_size)
+        
+        // Get the gradient norm on the first layer.
+        let expectedNorm: Double = Double(computeDeConvS4K2GradNorm(_size))
+        let gradNormOutput: Double = _getGradientNormMSE1D(
+            model: model, size: _size
+        )
+        
+        // Compare difference.
+        let diffPercent =
+            abs(gradNormOutput - expectedNorm) / expectedNorm * 100.0
+        XCTAssert(diffPercent < 1.0)
+    }
+    
+    ///
+    /// Test that modelDeConvS4K3 backward pass returns the same gradient norm
+    /// in GrAIdient and PyTorch.
+    ///
+    func testModelDeConvS4K3()
+    {
+        // Build model.
+        let model = ModelTestDeConvS4K3.build(_size)
+        
+        // Get the gradient norm on the first layer.
+        let expectedNorm: Double = Double(computeDeConvS4K3GradNorm(_size))
+        let gradNormOutput: Double = _getGradientNormMSE1D(
+            model: model, size: _size
+        )
+        
+        // Compare difference.
+        let diffPercent =
+            abs(gradNormOutput - expectedNorm) / expectedNorm * 100.0
+        XCTAssert(diffPercent < 1.0)
+    }
+    
+    ///
+    /// Test that modelDeConvS4K4 backward pass returns the same gradient norm
+    /// in GrAIdient and PyTorch.
+    ///
+    func testModelDeConvS4K4()
+    {
+        // Build model.
+        let model = ModelTestDeConvS4K4.build(_size)
+        
+        // Get the gradient norm on the first layer.
+        let expectedNorm: Double = Double(computeDeConvS4K4GradNorm(_size))
         let gradNormOutput: Double = _getGradientNormMSE1D(
             model: model, size: _size
         )

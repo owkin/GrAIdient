@@ -79,10 +79,10 @@ kernel void deconvForward(
         for (int k=startI; k<=endI; k++){
         for (int l=startJ; l<=endJ; l++)
         {
-            if ((i-k) % stride == 0 && (j-l) % stride == 0)
+            if ((i-k+startI) % stride == 0 && (j-l+startJ) % stride == 0)
             {
-                int i1 = (i-k) / stride;
-                int j1 = (j-l) / stride;
+                int i1 = (i-k+startI) / stride;
+                int j1 = (j-l+startJ) / stride;
                 
                 if (j1 >= 0 && j1 < (int)widthPrev &&
                     i1 >= 0 && i1 < (int)heightPrev)
@@ -177,11 +177,11 @@ kernel void deconvBackward(
         for (int k=startI; k<=endI; k++){
         for (int l=startJ; l<=endJ; l++)
         {
-            if ((int)(stride*j)+l >= 0 && stride*j+l < width
-                && (int)(stride*i)+k >= 0 && stride*i+k < height)
+            if ((int)(stride*j)+l-startJ >= 0 && stride*j+l-startJ < width
+                && (int)(stride*i)+k-startI >= 0 && stride*i+k-startI < height)
             {
-                uint offset = stride*j+l +
-                    (offsetStart + stride*i+k) * width;
+                uint offset = stride*j+l-startJ +
+                    (offsetStart + stride*i+k-startI) * width;
                 float deltaCur = delta[offset];
                 
                 uint offsetWeights = l-startJ +
@@ -279,10 +279,10 @@ kernel void deconvBatchDerWeights(
         for (uint k=0; k<height; k++){
         for (uint l=0; l<width; l++)
         {
-            if ((k-i) % stride == 0 && (l-j) % stride == 0)
+            if ((k-i+startI) % stride == 0 && (l-j+startJ) % stride == 0)
             {
-                int i1 = (k-i) / stride;
-                int j1 = (l-j) / stride;
+                int i1 = (k-i+startI) / stride;
+                int j1 = (l-j+startJ) / stride;
                 
                 if (j1 >= 0 && j1 < (int)widthPrev &&
                     i1 >= 0 && i1 < (int)heightPrev)
@@ -391,10 +391,10 @@ kernel void deconvDerWeights(
     for (uint k=0; k<height; k++){
     for (uint l=0; l<width; l++)
     {
-        if ((k-i) % stride == 0 && (l-j) % stride == 0)
+        if ((k-i+startI) % stride == 0 && (l-j+startJ) % stride == 0)
         {
-            int i1 = (k-i) / stride;
-            int j1 = (l-j) / stride;
+            int i1 = (k-i+startI) / stride;
+            int j1 = (l-j+startJ) / stride;
             
             if (j1 >= 0 && j1 < (int)widthPrev &&
                 i1 >= 0 && i1 < (int)heightPrev)

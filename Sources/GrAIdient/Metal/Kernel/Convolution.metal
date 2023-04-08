@@ -30,6 +30,7 @@ kernel void convForward(
     uint nbChannelsPrev;
     int startI, startJ;
     int endI, endJ;
+    int offI, offJ;
     uint stride;
     uint nbBatch;
     
@@ -50,6 +51,8 @@ kernel void convForward(
         endI = pStart[1];
         startJ = pStart[2];
         endJ = pStart[3];
+        offI = pStart[4];
+        offJ = pStart[5];
         stride = pStride[0];
     }
     else
@@ -79,11 +82,12 @@ kernel void convForward(
         for (int k=startI; k<=endI; k++){
         for (int l=startJ; l<=endJ; l++)
         {
-            if ((int)(stride*j)+l >= 0 && stride*j+l < widthPrev
-                && (int)(stride*i)+k >= 0 && stride*i+k < heightPrev)
+            if ((int)(stride*j)+l-offJ >= 0 && stride*j+l-offJ < widthPrev
+                && (int)(stride*i)+k-offI >= 0
+                && stride*i+k-offI < heightPrev)
             {
-                uint offsetPrev = stride*j+l +
-                    (offsetStartPrev + stride*i+k)*widthPrev;
+                uint offsetPrev = stride*j+l-offJ +
+                    (offsetStartPrev + stride*i+k-offI)*widthPrev;
                 float outPrev = outsPrev[offsetPrev];
                 
                 uint offsetWeights = l-startJ +
@@ -121,6 +125,7 @@ kernel void convBackward(
     uint nbChannelsPrev;
     int startI, startJ;
     int endI, endJ;
+    int offI, offJ;
     uint stride;
     uint nbBatch;
     uint dirty;
@@ -142,6 +147,8 @@ kernel void convBackward(
         endI = pStart[1];
         startJ = pStart[2];
         endJ = pStart[3];
+        offI = pStart[4];
+        offJ = pStart[5];
         stride = pStride[0];
         dirty = *pDirty;
     }
@@ -171,10 +178,10 @@ kernel void convBackward(
         for (int k=startI; k<=endI; k++){
         for (int l=startJ; l<=endJ; l++)
         {
-            if ((i-k) % stride == 0 && (j-l) % stride == 0)
+            if ((i-k+offI) % stride == 0 && (j-l+offJ) % stride == 0)
             {
-                int i1 = (i-k) / stride;
-                int j1 = (j-l) / stride;
+                int i1 = (i-k+offI) / stride;
+                int j1 = (j-l+offJ) / stride;
                 
                 if (j1 >= 0 && j1 < (int)width &&
                     i1 >= 0 && i1 < (int)height)
@@ -225,6 +232,7 @@ kernel void convBatchDerWeights(
     uint nbChannelsPrev;
     int startI, startJ;
     int endI, endJ;
+    int offI, offJ;
     uint stride;
     uint nbBatch;
     uint accumulate;
@@ -246,6 +254,8 @@ kernel void convBatchDerWeights(
         endI = pStart[1];
         startJ = pStart[2];
         endJ = pStart[3];
+        offI = pStart[4];
+        offJ = pStart[5];
         stride = pStride[0];
         accumulate = *pAccumulate;
     }
@@ -278,14 +288,14 @@ kernel void convBatchDerWeights(
         for (uint k=0; k<height; k++){
         for (uint l=0; l<width; l++)
         {
-            if ((int)(stride*l)+j >= 0 && stride*l+j < widthPrev &&
-                (int)(stride*k)+i >= 0 && stride*k+i < heightPrev)
+            if ((int)(stride*l)+j-offJ >= 0 && stride*l+j-offJ < widthPrev &&
+                (int)(stride*k)+i-offI >= 0 && stride*k+i-offI < heightPrev)
             {
                 uint offset = l + (offsetStart + k) * width;
                 float deltaCur = delta[offset];
                 
-                uint offsetPrev = stride*l+j +
-                    (offsetStartPrev + stride*k+i)*widthPrev;
+                uint offsetPrev = stride*l+j-offJ +
+                    (offsetStartPrev + stride*k+i-offI)*widthPrev;
                 float outPrev = outsPrev[offsetPrev];
                 
                 tmp += deltaCur * outPrev;
@@ -384,6 +394,7 @@ kernel void convDerWeights(
     uint nbChannelsPrev;
     int startI, startJ;
     int endI, endJ;
+    int offI, offJ;
     uint stride;
     uint nbBatch;
     
@@ -404,6 +415,8 @@ kernel void convDerWeights(
         endI = pStart[1];
         startJ = pStart[2];
         endJ = pStart[3];
+        offI = pStart[4];
+        offJ = pStart[5];
         stride = pStride[0];
     }
     else
@@ -439,14 +452,14 @@ kernel void convDerWeights(
     for (uint k=0; k<height; k++){
     for (uint l=0; l<width; l++)
     {
-        if ((int)(stride*l)+j >= 0 && stride*l+j < widthPrev &&
-            (int)(stride*k)+i >= 0 && stride*k+i < heightPrev)
+        if ((int)(stride*l)+j-offJ >= 0 && stride*l+j-offJ < widthPrev &&
+            (int)(stride*k)+i-offI >= 0 && stride*k+i-offI < heightPrev)
         {
             uint offset = l + (offsetStart + k) * width;
             float deltaCur = delta[offset];
             
-            uint offsetPrev = stride*l+j +
-                (offsetStartPrev + stride*k+i)*widthPrev;
+            uint offsetPrev = stride*l+j-offJ +
+                (offsetStartPrev + stride*k+i-offI)*widthPrev;
             float outPrev = outsPrev[offsetPrev];
             
             tmp += deltaCur * outPrev;

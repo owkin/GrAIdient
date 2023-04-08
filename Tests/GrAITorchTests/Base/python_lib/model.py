@@ -319,6 +319,7 @@ class ModelTestConvS1K2(ModelTestConv):
             torch.nn.Conv2d(
                 3, 5,
                 kernel_size=(2, 2), stride=(1, 1),
+                padding=(1, 1)
             ),
         )
         self.avgpool = torch.nn.AdaptiveAvgPool2d((1, 1))
@@ -393,6 +394,7 @@ class ModelTestConvS2K2(ModelTestConv):
             torch.nn.Conv2d(
                 3, 5,
                 kernel_size=(2, 2), stride=(2, 2),
+                padding=(1, 1)
             ),
         )
         self.avgpool = torch.nn.AdaptiveAvgPool2d((1, 1))
@@ -467,6 +469,7 @@ class ModelTestConvS4K2(ModelTestConv):
             torch.nn.Conv2d(
                 3, 5,
                 kernel_size=(2, 2), stride=(4, 4),
+                padding=(1, 1)
             ),
         )
         self.avgpool = torch.nn.AdaptiveAvgPool2d((1, 1))

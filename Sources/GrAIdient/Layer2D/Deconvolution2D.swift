@@ -13,6 +13,8 @@
 ///
 /// The implementation here corresponds to the no padding version of the link below:
 /// https://github.com/vdumoulin/conv_arithmetic/blob/master/README.md
+/// In the PyTorch documentation, we have padding = 0 and dilation = 1:
+/// https://pytorch.org/docs/stable/generated/torch.nn.ConvTranspose2d.html
 ///
 public class Deconvolution2D: Convolution2D
 {
@@ -282,7 +284,7 @@ public class Deconvolution2D: Convolution2D
             }
             
             let neuronsPrev = layerPrev.neurons
-            let (startI, endI, startJ, endJ) = _kernelIndices
+            let (startI, endI, startJ, endJ, _, _) = kernelIndices
             
             for batch in 0..<batchSize {
             for elem in 0..<nbGC {
@@ -496,7 +498,7 @@ public class Deconvolution2D: Convolution2D
             let widthPrev = layerPrev.width
             let heightPrev = layerPrev.height
             
-            let (startI, endI, startJ, endJ) = _kernelIndices
+            let (startI, endI, startJ, endJ, _, _) = kernelIndices
             
             for batch in 0..<batchSize {
             for elem in 0..<nbGC {
@@ -724,7 +726,7 @@ public class Deconvolution2D: Convolution2D
             try checkStateCPU(batchSize: batchSize)
             
             let neuronsPrev = layerPrev.neurons
-            let (startI, endI, startJ, endJ) = _kernelIndices
+            let (startI, endI, startJ, endJ, _, _) = kernelIndices
             
             for elem in 0..<batchSize {
             for depth in 0..<nbChannels
@@ -766,7 +768,7 @@ public class Deconvolution2D: Convolution2D
         if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
             let neuronsPrev = layerPrev.neurons
-            let (startI, endI, startJ, endJ) = _kernelIndices
+            let (startI, endI, startJ, endJ, _, _) = kernelIndices
             
             for elem in 0..<batchSize {
             for depthPrev in 0..<nbChannelsPrev
@@ -815,7 +817,7 @@ public class Deconvolution2D: Convolution2D
             // Compute Gradients per batch
             // -----------------------------------------------------------------
             let neuronsPrev = layerPrev.neurons
-            let (startI, endI, startJ, endJ) = _kernelIndices
+            let (startI, endI, startJ, endJ, _, _) = kernelIndices
             
             for depth in 0..<nbChannels
             {

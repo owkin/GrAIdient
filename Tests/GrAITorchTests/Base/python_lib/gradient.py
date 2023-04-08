@@ -552,13 +552,3 @@ def compute_auto_encoder2_grad_norm(size: int) -> float:
     img_tensor = ToTensor()(img_array).type(torch.float32)
     model = ModelTestAutoEncoder2().eval().cpu()
     return _compute_auto_encoder_grad_norm(img_tensor, model)
-
-
-if __name__ == "__main__":
-    test = compute_auto_encoder2_grad_norm(36)
-
-    torch.manual_seed(42)
-    img_array = _build_input_data(2)
-    img_tensor = ToTensor()(img_array).type(torch.float32)
-    model = ModelTestAutoEncoder().eval().cpu()
-    grad = _compute_grad_norm(img_tensor, model)

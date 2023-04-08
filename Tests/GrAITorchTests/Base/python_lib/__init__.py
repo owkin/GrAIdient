@@ -50,6 +50,8 @@ __all__ = [
     "compute_attention1_grad_norm",
     "compute_attention2_grad_norm",
     "compute_layer_norm_grad_norm",
+    "compute_auto_encoder1_grad_norm",
+    "compute_auto_encoder2_grad_norm",
     "load_conv1_weights",
     "load_conv2_weights",
     "load_deconv1_weights",

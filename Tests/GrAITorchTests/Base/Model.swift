@@ -1242,8 +1242,48 @@ class ModelTestLayerNorm
     }
 }
 
+/// Generic model to test against PyTorch.
+class ModelTestAutoEncoder
+{
+    ///
+    /// Load weights in the model.
+    ///
+    /// - Parameters:
+    ///     - model: The model.
+    ///     - weights: The weights.
+    ///
+    static func initWeights(model: Model, weights: [[Float]])
+    {
+        // Apply weights on the `GrAIdient` model's layers.
+        var cur = 0
+        for num_layer in 0..<model.layers.count
+        {
+            // Load weights and biases.
+            if let convLayer = model.layers[num_layer] as? Convolution2D
+            {
+                let weightsTmp: [Float] = weights[cur]
+                cur += 1
+                let biases: [Float] = weights[cur]
+                cur += 1
+                
+                convLayer.weightsCPU = weightsTmp + biases
+            }
+            // Load weights and biases.
+            else if let flLayer = model.layers[num_layer] as? FullyConnected
+            {
+                let weightsTmp: [Float] = weights[cur]
+                cur += 1
+                let biases: [Float] = weights[cur]
+                cur += 1
+                
+                flLayer.weightsCPU = weightsTmp + biases
+            }
+        }
+    }
+}
+
 /// Model to test against PyTorch.
-class ModelTestAutoEncoder1
+class ModelTestAutoEncoder1: ModelTestAutoEncoder
 {
     ///
     /// Create the model and import weights from PyTorch.
@@ -1290,39 +1330,14 @@ class ModelTestAutoEncoder1
         let data = pythonLib.load_auto_encoder1_weights()
         
         let weights = [[Float]](data.tuple2.0)!
-        
-        // Apply weights on the `GrAIdient` model's layers.
-        var cur = 0
-        for num_layer in 0..<model.layers.count
-        {
-            // Load weights and biases.
-            if let convLayer = model.layers[num_layer] as? Convolution2D
-            {
-                let weightsTmp: [Float] = weights[cur]
-                cur += 1
-                let biases: [Float] = weights[cur]
-                cur += 1
-                
-                convLayer.weightsCPU = weightsTmp + biases
-            }
-            // Load weights and biases.
-            else if let flLayer = model.layers[num_layer] as? FullyConnected
-            {
-                let weightsTmp: [Float] = weights[cur]
-                cur += 1
-                let biases: [Float] = weights[cur]
-                cur += 1
-                
-                flLayer.weightsCPU = weightsTmp + biases
-            }
-        }
+        super.initWeights(model: model, weights: weights)
         
         return model
     }
 }
 
 /// Model to test against PyTorch.
-class ModelTestAutoEncoder2
+class ModelTestAutoEncoder2: ModelTestAutoEncoder
 {
     ///
     /// Create the model and import weights from PyTorch.
@@ -1369,32 +1384,7 @@ class ModelTestAutoEncoder2
         let data = pythonLib.load_auto_encoder2_weights()
         
         let weights = [[Float]](data.tuple2.0)!
-        
-        // Apply weights on the `GrAIdient` model's layers.
-        var cur = 0
-        for num_layer in 0..<model.layers.count
-        {
-            // Load weights and biases.
-            if let convLayer = model.layers[num_layer] as? Convolution2D
-            {
-                let weightsTmp: [Float] = weights[cur]
-                cur += 1
-                let biases: [Float] = weights[cur]
-                cur += 1
-                
-                convLayer.weightsCPU = weightsTmp + biases
-            }
-            // Load weights and biases.
-            else if let flLayer = model.layers[num_layer] as? FullyConnected
-            {
-                let weightsTmp: [Float] = weights[cur]
-                cur += 1
-                let biases: [Float] = weights[cur]
-                cur += 1
-                
-                flLayer.weightsCPU = weightsTmp + biases
-            }
-        }
+        super.initWeights(model: model, weights: weights)
         
         return model
     }

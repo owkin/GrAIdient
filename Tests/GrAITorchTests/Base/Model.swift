@@ -392,7 +392,7 @@ class ModelTestConvS1K2: ModelTestConv
         
         // Load weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
-        let data = pythonLib.load_conv4_weights()
+        let data = pythonLib.load_conv3_weights()
         
         let weights = [[Float]](data.tuple2.0)!
         super.initWeights(model: model, weights: weights)
@@ -449,7 +449,7 @@ class ModelTestConvS1K3: ModelTestConv
         
         // Load weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
-        let data = pythonLib.load_conv5_weights()
+        let data = pythonLib.load_conv4_weights()
         
         let weights = [[Float]](data.tuple2.0)!
         super.initWeights(model: model, weights: weights)
@@ -506,7 +506,7 @@ class ModelTestConvS1K4: ModelTestConv
         
         // Load weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
-        let data = pythonLib.load_conv6_weights()
+        let data = pythonLib.load_conv5_weights()
         
         let weights = [[Float]](data.tuple2.0)!
         super.initWeights(model: model, weights: weights)
@@ -563,7 +563,7 @@ class ModelTestConvS2K2: ModelTestConv
         
         // Load weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
-        let data = pythonLib.load_conv4_weights()
+        let data = pythonLib.load_conv3_weights()
         
         let weights = [[Float]](data.tuple2.0)!
         super.initWeights(model: model, weights: weights)
@@ -620,7 +620,7 @@ class ModelTestConvS2K3: ModelTestConv
         
         // Load weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
-        let data = pythonLib.load_conv5_weights()
+        let data = pythonLib.load_conv4_weights()
         
         let weights = [[Float]](data.tuple2.0)!
         super.initWeights(model: model, weights: weights)
@@ -677,7 +677,7 @@ class ModelTestConvS2K4: ModelTestConv
         
         // Load weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
-        let data = pythonLib.load_conv6_weights()
+        let data = pythonLib.load_conv5_weights()
         
         let weights = [[Float]](data.tuple2.0)!
         super.initWeights(model: model, weights: weights)
@@ -734,7 +734,7 @@ class ModelTestConvS4K2: ModelTestConv
         
         // Load weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
-        let data = pythonLib.load_conv4_weights()
+        let data = pythonLib.load_conv3_weights()
         
         let weights = [[Float]](data.tuple2.0)!
         super.initWeights(model: model, weights: weights)
@@ -791,7 +791,7 @@ class ModelTestConvS4K3: ModelTestConv
         
         // Load weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
-        let data = pythonLib.load_conv5_weights()
+        let data = pythonLib.load_conv4_weights()
         
         let weights = [[Float]](data.tuple2.0)!
         super.initWeights(model: model, weights: weights)
@@ -848,7 +848,7 @@ class ModelTestConvS4K4: ModelTestConv
         
         // Load weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
-        let data = pythonLib.load_conv6_weights()
+        let data = pythonLib.load_conv5_weights()
         
         let weights = [[Float]](data.tuple2.0)!
         super.initWeights(model: model, weights: weights)

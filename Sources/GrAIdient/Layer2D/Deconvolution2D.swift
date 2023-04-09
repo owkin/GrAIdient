@@ -16,6 +16,9 @@
 /// In the PyTorch documentation, we have padding = 0 and dilation = 1:
 /// https://pytorch.org/docs/stable/generated/torch.nn.ConvTranspose2d.html
 ///
+/// The most standard way is to use an even kernel size with a stride greater than 1.
+/// This will multiply the previous layer's size by stride.
+///
 public class Deconvolution2D: Convolution2D
 {
     /// Get forward pass GPU kernel.

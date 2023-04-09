@@ -19,6 +19,10 @@ import MetalKit
 /// In the PyTorch documentation, we have padding = floor(kernel / 2) and dilation = 1:
 /// https://pytorch.org/docs/stable/generated/torch.nn.Conv2d.html
 ///
+/// The most standard way is to use an odd kernel size.
+/// With a stride of 1, this will preserve the previous layer's size.
+/// With a greater stride, this will divide the previous layer's size by stride.
+///
 public class Convolution2D: BN2D
 {
     /// Downscale factor of the resolution (height and width).
@@ -330,6 +334,24 @@ public class Convolution2D: BN2D
         }
     }
     
+    ///
+    /// Get indices needed to compute kernel convolution patchs.
+    ///
+    /// - Returns:
+    ///     - startI: Start index row offset from a pixel target position.
+    ///     - endI: End index row offset from a pixel target position.
+    ///     - startJ: Start index column offset from a pixel target position.
+    ///     - endJ: End index column offset from a pixel target position.
+    ///     - offI: Padding row offset.
+    ///     - offJ: Padding column offset.
+    ///
+    /// For a convolution, there are two situations:
+    ///     - odd kernel: Patchs exclusively target the pixels of the previous layer's grid.
+    ///     - even kernel: Patchs first targets are a void border on the left of the previous layer's grid.
+    ///
+    /// For a deconvolution:
+    ///     - Patchs first targets are a void border on the left of the previous layer's grid.
+    ///
     var kernelIndices: (Int, Int, Int, Int, Int, Int)
     {
         get {

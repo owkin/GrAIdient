@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🐛 **fix**: align Convolutions & Deconvolutions on PyTorch ([#84](https://github.com/owkin/GrAIdient/pull/84))\
 🐛 **fix**: numerical stability of tanh for GELU ([#83](https://github.com/owkin/GrAIdient/pull/83))\
 🔨 **layer_seq**: SelectSeq ([#82](https://github.com/owkin/GrAIdient/pull/82))\
 🚀 **examples**: AutoEncoder models ([#79](https://github.com/owkin/GrAIdient/pull/79))\

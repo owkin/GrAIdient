@@ -112,236 +112,34 @@ func computeFFTGradNorm(_ size: Int) -> Float
 }
 
 ///
-/// Get gradient norm computed with PyTorch for ModelTestConvS1K2.
+/// Get gradient norm computed with PyTorch for ModelTestConvSK.
 ///
-/// - Parameter size: The size of the input data.
+/// - Parameters:
+///     - size: The size of the input data.
+///     - stride: The stride of the model.
+///     - kernel: The kernel size of the model.
 /// - Returns: The gradient norm.
 ///
-func computeConvS1K2GradNorm(_ size: Int) -> Float
+func computeConvSKGradNorm(size: Int, stride: Int, kernel: Int) -> Float
 {
     let pythonLib = Python.import("python_lib")
-    let data = pythonLib.compute_conv_s1k2_grad_norm(size)
+    let data = pythonLib.compute_conv_sk_grad_norm(size, stride, kernel)
     return Float(data)!
 }
 
 ///
-/// Get gradient norm computed with PyTorch for ModelTestConvS1K3.
+/// Get gradient norm computed with PyTorch for ModelTestDeConvSK.
 ///
-/// - Parameter size: The size of the input data.
+//// - Parameters:
+///     - size: The size of the input data.
+///     - stride: The stride of the model.
+///     - kernel: The kernel size of the model.
 /// - Returns: The gradient norm.
 ///
-func computeConvS1K3GradNorm(_ size: Int) -> Float
+func computeDeConvSKGradNorm(size: Int, stride: Int, kernel: Int) -> Float
 {
     let pythonLib = Python.import("python_lib")
-    let data = pythonLib.compute_conv_s1k3_grad_norm(size)
-    return Float(data)!
-}
-
-///
-/// Get gradient norm computed with PyTorch for ModelTestConvS1K4.
-///
-/// - Parameter size: The size of the input data.
-/// - Returns: The gradient norm.
-///
-func computeConvS1K4GradNorm(_ size: Int) -> Float
-{
-    let pythonLib = Python.import("python_lib")
-    let data = pythonLib.compute_conv_s1k4_grad_norm(size)
-    return Float(data)!
-}
-
-///
-/// Get gradient norm computed with PyTorch for ModelTestConvS2K2.
-///
-/// - Parameter size: The size of the input data.
-/// - Returns: The gradient norm.
-///
-func computeConvS2K2GradNorm(_ size: Int) -> Float
-{
-    let pythonLib = Python.import("python_lib")
-    let data = pythonLib.compute_conv_s2k2_grad_norm(size)
-    return Float(data)!
-}
-
-///
-/// Get gradient norm computed with PyTorch for ModelTestConvS2K3.
-///
-/// - Parameter size: The size of the input data.
-/// - Returns: The gradient norm.
-///
-func computeConvS2K3GradNorm(_ size: Int) -> Float
-{
-    let pythonLib = Python.import("python_lib")
-    let data = pythonLib.compute_conv_s2k3_grad_norm(size)
-    return Float(data)!
-}
-
-///
-/// Get gradient norm computed with PyTorch for ModelTestConvS2K4.
-///
-/// - Parameter size: The size of the input data.
-/// - Returns: The gradient norm.
-///
-func computeConvS2K4GradNorm(_ size: Int) -> Float
-{
-    let pythonLib = Python.import("python_lib")
-    let data = pythonLib.compute_conv_s2k4_grad_norm(size)
-    return Float(data)!
-}
-
-///
-/// Get gradient norm computed with PyTorch for ModelTestConvS4K2.
-///
-/// - Parameter size: The size of the input data.
-/// - Returns: The gradient norm.
-///
-func computeConvS4K2GradNorm(_ size: Int) -> Float
-{
-    let pythonLib = Python.import("python_lib")
-    let data = pythonLib.compute_conv_s4k2_grad_norm(size)
-    return Float(data)!
-}
-
-///
-/// Get gradient norm computed with PyTorch for ModelTestConvS4K3.
-///
-/// - Parameter size: The size of the input data.
-/// - Returns: The gradient norm.
-///
-func computeConvS4K3GradNorm(_ size: Int) -> Float
-{
-    let pythonLib = Python.import("python_lib")
-    let data = pythonLib.compute_conv_s4k3_grad_norm(size)
-    return Float(data)!
-}
-
-///
-/// Get gradient norm computed with PyTorch for ModelTestConvS4K4.
-///
-/// - Parameter size: The size of the input data.
-/// - Returns: The gradient norm.
-///
-func computeConvS4K4GradNorm(_ size: Int) -> Float
-{
-    let pythonLib = Python.import("python_lib")
-    let data = pythonLib.compute_conv_s4k4_grad_norm(size)
-    return Float(data)!
-}
-
-///
-/// Get gradient norm computed with PyTorch for ModelTestDeConvS1K2.
-///
-/// - Parameter size: The size of the input data.
-/// - Returns: The gradient norm.
-///
-func computeDeConvS1K2GradNorm(_ size: Int) -> Float
-{
-    let pythonLib = Python.import("python_lib")
-    let data = pythonLib.compute_deconv_s1k2_grad_norm(size)
-    return Float(data)!
-}
-
-///
-/// Get gradient norm computed with PyTorch for ModelTestDeConvS1K3.
-///
-/// - Parameter size: The size of the input data.
-/// - Returns: The gradient norm.
-///
-func computeDeConvS1K3GradNorm(_ size: Int) -> Float
-{
-    let pythonLib = Python.import("python_lib")
-    let data = pythonLib.compute_deconv_s1k3_grad_norm(size)
-    return Float(data)!
-}
-
-///
-/// Get gradient norm computed with PyTorch for ModelTestDeConvS1K4.
-///
-/// - Parameter size: The size of the input data.
-/// - Returns: The gradient norm.
-///
-func computeDeConvS1K4GradNorm(_ size: Int) -> Float
-{
-    let pythonLib = Python.import("python_lib")
-    let data = pythonLib.compute_deconv_s1k4_grad_norm(size)
-    return Float(data)!
-}
-
-///
-/// Get gradient norm computed with PyTorch for ModelTestDeConvS2K2.
-///
-/// - Parameter size: The size of the input data.
-/// - Returns: The gradient norm.
-///
-func computeDeConvS2K2GradNorm(_ size: Int) -> Float
-{
-    let pythonLib = Python.import("python_lib")
-    let data = pythonLib.compute_deconv_s2k2_grad_norm(size)
-    return Float(data)!
-}
-
-///
-/// Get gradient norm computed with PyTorch for ModelTestDeConvS2K3.
-///
-/// - Parameter size: The size of the input data.
-/// - Returns: The gradient norm.
-///
-func computeDeConvS2K3GradNorm(_ size: Int) -> Float
-{
-    let pythonLib = Python.import("python_lib")
-    let data = pythonLib.compute_deconv_s2k3_grad_norm(size)
-    return Float(data)!
-}
-
-///
-/// Get gradient norm computed with PyTorch for ModelTestDeConvS2K4.
-///
-/// - Parameter size: The size of the input data.
-/// - Returns: The gradient norm.
-///
-func computeDeConvS2K4GradNorm(_ size: Int) -> Float
-{
-    let pythonLib = Python.import("python_lib")
-    let data = pythonLib.compute_deconv_s2k4_grad_norm(size)
-    return Float(data)!
-}
-
-///
-/// Get gradient norm computed with PyTorch for ModelTestDeConvS4K2.
-///
-/// - Parameter size: The size of the input data.
-/// - Returns: The gradient norm.
-///
-func computeDeConvS4K2GradNorm(_ size: Int) -> Float
-{
-    let pythonLib = Python.import("python_lib")
-    let data = pythonLib.compute_deconv_s4k2_grad_norm(size)
-    return Float(data)!
-}
-
-///
-/// Get gradient norm computed with PyTorch for ModelTestDeConvS4K3.
-///
-/// - Parameter size: The size of the input data.
-/// - Returns: The gradient norm.
-///
-func computeDeConvS4K3GradNorm(_ size: Int) -> Float
-{
-    let pythonLib = Python.import("python_lib")
-    let data = pythonLib.compute_deconv_s4k3_grad_norm(size)
-    return Float(data)!
-}
-
-///
-/// Get gradient norm computed with PyTorch for ModelTestDeConvS4K4.
-///
-/// - Parameter size: The size of the input data.
-/// - Returns: The gradient norm.
-///
-func computeDeConvS4K4GradNorm(_ size: Int) -> Float
-{
-    let pythonLib = Python.import("python_lib")
-    let data = pythonLib.compute_deconv_s4k4_grad_norm(size)
+    let data = pythonLib.compute_deconv_sk_grad_norm(size, stride, kernel)
     return Float(data)!
 }
 

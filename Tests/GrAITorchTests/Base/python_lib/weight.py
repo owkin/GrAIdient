@@ -5,12 +5,8 @@ from typing import List, Tuple
 from python_lib.model import (
     ModelTestConv1,
     ModelTestConv2,
-    ModelTestConvS1K2,
-    ModelTestConvS1K3,
-    ModelTestConvS1K4,
-    ModelTestDeConvS1K2,
-    ModelTestDeConvS1K3,
-    ModelTestDeConvS1K4,
+    ModelTestConvSK,
+    ModelTestDeConvSK,
     ModelTestCat,
     ModelTestResize,
     ModelTestPatchConv,
@@ -18,7 +14,6 @@ from python_lib.model import (
     ModelTestAttention2,
     ModelTestLayerNorm,
     ModelTestAutoEncoder1,
-    ModelTestAutoEncoder2,
 )
 
 
@@ -251,9 +246,18 @@ def load_conv2_weights() -> Tuple[List[List[float]], List[List[int]]]:
     return _extract_weights(model)
 
 
-def load_conv3_weights() -> Tuple[List[List[float]], List[List[int]]]:
+def load_conv_sk_weights(
+    stride: int, kernel: int
+) -> Tuple[List[List[float]], List[List[int]]]:
     """
-    Get weights and biases for ModelTestConvS1K2.
+    Get weights and biases for ModelTestConvSK.
+
+    Parameters
+    ----------
+    stride: int
+        The stride of the model.
+    kernel: int
+        The kernel size of the model.
 
     Returns
     -------
@@ -261,13 +265,22 @@ def load_conv3_weights() -> Tuple[List[List[float]], List[List[int]]]:
         The flattened weights, their shape.
     """
     torch.manual_seed(42)
-    model = ModelTestConvS1K2()
+    model = ModelTestConvSK(stride=stride, kernel=kernel)
     return _extract_weights(model)
 
 
-def load_conv4_weights() -> Tuple[List[List[float]], List[List[int]]]:
+def load_deconv_sk_weights(
+    stride: int, kernel: int
+) -> Tuple[List[List[float]], List[List[int]]]:
     """
-    Get weights and biases for ModelTestConvS1K3.
+    Get weights and biases for ModelTestDeConvSK.
+
+    Parameters
+    ----------
+    stride: int
+        The stride of the model.
+    kernel: int
+        The kernel size of the model.
 
     Returns
     -------
@@ -275,63 +288,7 @@ def load_conv4_weights() -> Tuple[List[List[float]], List[List[int]]]:
         The flattened weights, their shape.
     """
     torch.manual_seed(42)
-    model = ModelTestConvS1K3()
-    return _extract_weights(model)
-
-
-def load_conv5_weights() -> Tuple[List[List[float]], List[List[int]]]:
-    """
-    Get weights and biases for ModelTestConvS1K4.
-
-    Returns
-    -------
-    (_, _): List[float], List[int]
-        The flattened weights, their shape.
-    """
-    torch.manual_seed(42)
-    model = ModelTestConvS1K4()
-    return _extract_weights(model)
-
-
-def load_deconv1_weights() -> Tuple[List[List[float]], List[List[int]]]:
-    """
-    Get weights and biases for ModelTestDeConvS1K2.
-
-    Returns
-    -------
-    (_, _): List[float], List[int]
-        The flattened weights, their shape.
-    """
-    torch.manual_seed(42)
-    model = ModelTestDeConvS1K2()
-    return _extract_and_transpose_weights(list(model.children()))
-
-
-def load_deconv2_weights() -> Tuple[List[List[float]], List[List[int]]]:
-    """
-    Get weights and biases for ModelTestDeConvS1K3.
-
-    Returns
-    -------
-    (_, _): List[float], List[int]
-        The flattened weights, their shape.
-    """
-    torch.manual_seed(42)
-    model = ModelTestDeConvS1K3()
-    return _extract_and_transpose_weights(list(model.children()))
-
-
-def load_deconv3_weights() -> Tuple[List[List[float]], List[List[int]]]:
-    """
-    Get weights and biases for ModelTestDeConvS1K4.
-
-    Returns
-    -------
-    (_, _): List[float], List[int]
-        The flattened weights, their shape.
-    """
-    torch.manual_seed(42)
-    model = ModelTestDeConvS1K4()
+    model = ModelTestDeConvSK(stride=stride, kernel=kernel)
     return _extract_and_transpose_weights(list(model.children()))
 
 
@@ -463,18 +420,4 @@ def load_auto_encoder1_weights() -> Tuple[List[List[float]], List[List[int]]]:
     """
     torch.manual_seed(42)
     model = ModelTestAutoEncoder1()
-    return _extract_and_transpose_weights(list(model.children()))
-
-
-def load_auto_encoder2_weights() -> Tuple[List[List[float]], List[List[int]]]:
-    """
-    Get weights and biases for ModelTestAutoEncoder2.
-
-    Returns
-    -------
-    (_, _): List[float], List[int]
-        The flattened weights, their shape.
-    """
-    torch.manual_seed(42)
-    model = ModelTestAutoEncoder2()
     return _extract_and_transpose_weights(list(model.children()))

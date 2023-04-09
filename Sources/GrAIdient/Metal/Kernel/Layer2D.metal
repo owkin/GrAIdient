@@ -162,11 +162,13 @@ kernel void maxPoolForward(
     for (int k=start; k<=end; k++){
     for (int l=start; l<=end; l++)
     {
-        if ((int)(stride*j)+l >= 0 && stride*j+l < widthPrev
-            && (int)(stride*i)+k >= 0 && stride*i+k < heightPrev)
+        if ((int)(stride*j)+l >= 0 &&
+            (int)(stride*j)+l < (int)widthPrev &&
+            (int)(stride*i)+k >= 0 &&
+            (int)(stride*i)+k < (int)heightPrev)
         {
-            uint offsetPrev = stride*j+l +
-                (offsetStartPrev + stride*i+k)*widthPrev;
+            uint offsetPrev = (int)(stride*j)+l +
+                (offsetStartPrev + (int)(stride*i)+k)*widthPrev;
             
             float outPrev = outsPrev[offsetPrev];
             if (outPrev > maxVal)

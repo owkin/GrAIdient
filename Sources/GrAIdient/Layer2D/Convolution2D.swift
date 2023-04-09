@@ -342,24 +342,9 @@ public class Convolution2D: BN2D
                                                 -weightWidthHalf+1
             let endJ = weightWidthHalf
             
-            let offI: Int
-            if weightHeight % 2 == 1
-            {
-                offI = 0
-            }
-            else
-            {
-                offI = endI
-            }
-            let offJ: Int
-            if weightWidth % 2 == 1
-            {
-                offJ = 0
-            }
-            else
-            {
-                offJ = endJ
-            }
+            let offI = endI + startI
+            let offJ = endJ + startJ
+            
             return (startI, endI, startJ, endJ, offI, offJ)
         }
     }

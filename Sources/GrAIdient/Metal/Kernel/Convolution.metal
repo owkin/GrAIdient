@@ -82,12 +82,13 @@ kernel void convForward(
         for (int k=startI; k<=endI; k++){
         for (int l=startJ; l<=endJ; l++)
         {
-            if ((int)(stride*j)+l-offJ >= 0 && stride*j+l-offJ < widthPrev
+            if ((int)(stride*j)+l-offJ >= 0 &&
+                (int)(stride*j)+l-offJ < (int)widthPrev
                 && (int)(stride*i)+k-offI >= 0
-                && stride*i+k-offI < heightPrev)
+                && (int)(stride*i)+k-offI < (int)heightPrev)
             {
-                uint offsetPrev = stride*j+l-offJ +
-                    (offsetStartPrev + stride*i+k-offI)*widthPrev;
+                uint offsetPrev = (int)(stride*j)+l-offJ +
+                    (offsetStartPrev + (int)(stride*i)+k-offI)*widthPrev;
                 float outPrev = outsPrev[offsetPrev];
                 
                 uint offsetWeights = l-startJ +
@@ -288,14 +289,16 @@ kernel void convBatchDerWeights(
         for (uint k=0; k<height; k++){
         for (uint l=0; l<width; l++)
         {
-            if ((int)(stride*l)+j-offJ >= 0 && stride*l+j-offJ < widthPrev &&
-                (int)(stride*k)+i-offI >= 0 && stride*k+i-offI < heightPrev)
+            if ((int)(stride*l)+j-offJ >= 0 &&
+                (int)(stride*l)+j-offJ < (int)widthPrev &&
+                (int)(stride*k)+i-offI >= 0 &&
+                (int)(stride*k)+i-offI < (int)heightPrev)
             {
                 uint offset = l + (offsetStart + k) * width;
                 float deltaCur = delta[offset];
                 
-                uint offsetPrev = stride*l+j-offJ +
-                    (offsetStartPrev + stride*k+i-offI)*widthPrev;
+                uint offsetPrev = (int)(stride*l)+j-offJ +
+                    (offsetStartPrev + (int)(stride*k)+i-offI)*widthPrev;
                 float outPrev = outsPrev[offsetPrev];
                 
                 tmp += deltaCur * outPrev;
@@ -452,14 +455,16 @@ kernel void convDerWeights(
     for (uint k=0; k<height; k++){
     for (uint l=0; l<width; l++)
     {
-        if ((int)(stride*l)+j-offJ >= 0 && stride*l+j-offJ < widthPrev &&
-            (int)(stride*k)+i-offI >= 0 && stride*k+i-offI < heightPrev)
+        if ((int)(stride*l)+j-offJ >= 0 &&
+            (int)(stride*l)+j-offJ < (int)widthPrev &&
+            (int)(stride*k)+i-offI >= 0 &&
+            (int)(stride*k)+i-offI < (int)heightPrev)
         {
             uint offset = l + (offsetStart + k) * width;
             float deltaCur = delta[offset];
             
-            uint offsetPrev = stride*l+j-offJ +
-                (offsetStartPrev + stride*k+i-offI)*widthPrev;
+            uint offsetPrev = (int)(stride*l)+j-offJ +
+                (offsetStartPrev + (int)(stride*k)+i-offI)*widthPrev;
             float outPrev = outsPrev[offsetPrev];
             
             tmp += deltaCur * outPrev;

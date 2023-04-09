@@ -177,11 +177,13 @@ kernel void deconvBackward(
         for (int k=startI; k<=endI; k++){
         for (int l=startJ; l<=endJ; l++)
         {
-            if ((int)(stride*j)+l-startJ >= 0 && stride*j+l-startJ < width
-                && (int)(stride*i)+k-startI >= 0 && stride*i+k-startI < height)
+            if ((int)(stride*j)+l-startJ >= 0 &&
+                (int)(stride*j)+l-startJ < (int)width &&
+                (int)(stride*i)+k-startI >= 0 &&
+                (int)(stride*i)+k-startI < (int)height)
             {
-                uint offset = stride*j+l-startJ +
-                    (offsetStart + stride*i+k-startI) * width;
+                uint offset = (int)(stride*j)+l-startJ +
+                    (offsetStart + (int)(stride*i)+k-startI) * width;
                 float deltaCur = delta[offset];
                 
                 uint offsetWeights = l-startJ +

@@ -83,9 +83,9 @@ kernel void convForward(
         for (int l=startJ; l<=endJ; l++)
         {
             if ((int)(stride*j)+l-offJ >= 0 &&
-                (int)(stride*j)+l-offJ < (int)widthPrev
-                && (int)(stride*i)+k-offI >= 0
-                && (int)(stride*i)+k-offI < (int)heightPrev)
+                (int)(stride*j)+l-offJ < (int)widthPrev &&
+                (int)(stride*i)+k-offI >= 0 &&
+                (int)(stride*i)+k-offI < (int)heightPrev)
             {
                 uint offsetPrev = (int)(stride*j)+l-offJ +
                     (offsetStartPrev + (int)(stride*i)+k-offI)*widthPrev;

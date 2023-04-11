@@ -8,15 +8,15 @@ from python_lib.model import (
     ModelTestConv1,
     ModelTestConv2,
     ModelTestFFT,
-    ModelTestDeConv1,
-    ModelTestDeConv2,
-    ModelTestDeConv3,
-    ModelTestDeConv4,
+    ModelTestConvSK,
+    ModelTestDeConvSK,
     ModelTestCat,
+    ModelTestResize,
     ModelTestPatchConv,
     ModelTestAttention1,
     ModelTestAttention2,
     ModelTestLayerNorm,
+    ModelTestAutoEncoder1,
 )
 
 
@@ -196,7 +196,7 @@ def _compute_grad_norm(input: torch.Tensor, model: torch.nn.Module) -> float:
 
 def compute_conv1_grad_norm(size: int) -> float:
     """
-    Compute the gradient norm of one backward pass of ModelTest1.
+    Compute the gradient norm of one backward pass of ModelTestConv1.
 
     Parameters
     ----------
@@ -217,7 +217,7 @@ def compute_conv1_grad_norm(size: int) -> float:
 
 def compute_conv2_grad_norm(size: int) -> float:
     """
-    Compute the gradient norm of one backward pass of ModelTest2.
+    Compute the gradient norm of one backward pass of ModelTestConv2.
 
     Parameters
     ----------
@@ -238,7 +238,7 @@ def compute_conv2_grad_norm(size: int) -> float:
 
 def compute_fft_grad_norm(size: int) -> float:
     """
-    Compute the gradient norm of one backward pass of ModelTest3.
+    Compute the gradient norm of one backward pass of ModelTestFFT.
 
     Parameters
     ----------
@@ -257,14 +257,21 @@ def compute_fft_grad_norm(size: int) -> float:
     return _compute_grad_norm(img_tensor, model)
 
 
-def compute_deconv1_grad_norm(size: int) -> float:
+def compute_conv_sk_grad_norm(
+    size: int, stride: int, kernel: int
+) -> float:
     """
-    Compute the gradient norm of one backward pass of ModelTest4.
+    Compute the gradient norm of one backward pass of
+    ModelTestConvSK.
 
     Parameters
     ----------
     size: int
         The size of the input data.
+    stride: int
+        The stride of the model.
+    kernel: int
+        The kernel size of the model.
 
     Returns
     -------
@@ -274,18 +281,27 @@ def compute_deconv1_grad_norm(size: int) -> float:
     torch.manual_seed(42)
     img_array = _build_input_data(size)
     img_tensor = ToTensor()(img_array).type(torch.float32)
-    model = ModelTestDeConv1().eval().cpu()
+    model = ModelTestConvSK(
+        stride=stride, kernel=kernel
+    ).eval().cpu()
     return _compute_grad_norm(img_tensor, model)
 
 
-def compute_deconv2_grad_norm(size: int) -> float:
+def compute_deconv_sk_grad_norm(
+    size: int, stride: int, kernel: int
+) -> float:
     """
-    Compute the gradient norm of one backward pass of ModelTest5.
+    Compute the gradient norm of one backward pass of
+    ModelTestDeConvSK.
 
     Parameters
     ----------
     size: int
         The size of the input data.
+    stride: int
+        The stride of the model.
+    kernel: int
+        The kernel size of the model.
 
     Returns
     -------
@@ -295,55 +311,15 @@ def compute_deconv2_grad_norm(size: int) -> float:
     torch.manual_seed(42)
     img_array = _build_input_data(size)
     img_tensor = ToTensor()(img_array).type(torch.float32)
-    model = ModelTestDeConv2().eval().cpu()
-    return _compute_grad_norm(img_tensor, model)
-
-
-def compute_deconv3_grad_norm(size: int) -> float:
-    """
-    Compute the gradient norm of one backward pass of ModelTest6.
-
-    Parameters
-    ----------
-    size: int
-        The size of the input data.
-
-    Returns
-    -------
-    _: float
-        The gradient norm.
-    """
-    torch.manual_seed(42)
-    img_array = _build_input_data(size)
-    img_tensor = ToTensor()(img_array).type(torch.float32)
-    model = ModelTestDeConv3().eval().cpu()
-    return _compute_grad_norm(img_tensor, model)
-
-
-def compute_deconv4_grad_norm(size: int) -> float:
-    """
-    Compute the gradient norm of one backward pass of ModelTest7.
-
-    Parameters
-    ----------
-    size: int
-        The size of the input data.
-
-    Returns
-    -------
-    _: float
-        The gradient norm.
-    """
-    torch.manual_seed(42)
-    img_array = _build_input_data(size)
-    img_tensor = ToTensor()(img_array).type(torch.float32)
-    model = ModelTestDeConv4().eval().cpu()
+    model = ModelTestDeConvSK(
+        stride=stride, kernel=kernel
+    ).eval().cpu()
     return _compute_grad_norm(img_tensor, model)
 
 
 def compute_cat_grad_norm(size: int) -> float:
     """
-    Compute the gradient norm of one backward pass of ModelTest8.
+    Compute the gradient norm of one backward pass of ModelTestCat.
 
     Parameters
     ----------
@@ -362,9 +338,32 @@ def compute_cat_grad_norm(size: int) -> float:
     return _compute_grad_norm(img_tensor, model)
 
 
+def compute_resize_grad_norm(size_input: int, size_output) -> float:
+    """
+    Compute the gradient norm of one backward pass of ModelTestResize.
+
+    Parameters
+    ----------
+    size_input: int
+        The size of the input data.
+    size_output: int
+        The size of the output resize operation.
+
+    Returns
+    -------
+    _: float
+        The gradient norm.
+    """
+    torch.manual_seed(42)
+    img_array = _build_input_data(size_input)
+    img_tensor = ToTensor()(img_array).type(torch.float32)
+    model = ModelTestResize(size_output).eval().cpu()
+    return _compute_grad_norm(img_tensor, model)
+
+
 def compute_patch_conv_grad_norm(size: int, patch: int) -> float:
     """
-    Compute the gradient norm of one backward pass of ModelTest9.
+    Compute the gradient norm of one backward pass of ModelTestPathConv.
 
     Parameters
     ----------
@@ -387,7 +386,7 @@ def compute_patch_conv_grad_norm(size: int, patch: int) -> float:
 
 def compute_attention1_grad_norm(size: int, patch: int) -> float:
     """
-    Compute the gradient norm of one backward pass of ModelTest10.
+    Compute the gradient norm of one backward pass of ModelTestAttention1.
 
     Parameters
     ----------
@@ -410,7 +409,7 @@ def compute_attention1_grad_norm(size: int, patch: int) -> float:
 
 def compute_attention2_grad_norm(size: int, patch: int) -> float:
     """
-    Compute the gradient norm of one backward pass of ModelTest11.
+    Compute the gradient norm of one backward pass of ModelTestAttention2.
 
     Parameters
     ----------
@@ -433,7 +432,7 @@ def compute_attention2_grad_norm(size: int, patch: int) -> float:
 
 def compute_layer_norm_grad_norm(size: int, patch: int) -> float:
     """
-    Compute the gradient norm of one backward pass of ModelTest11.
+    Compute the gradient norm of one backward pass of ModelTestLayerNorm.
 
     Parameters
     ----------
@@ -452,3 +451,56 @@ def compute_layer_norm_grad_norm(size: int, patch: int) -> float:
     img_tensor = ToTensor()(img_array).type(torch.float32)
     model = ModelTestLayerNorm(size=size, patch=patch).eval().cpu()
     return _compute_grad_norm(img_tensor, model)
+
+
+def _compute_auto_encoder_grad_norm(
+    input: torch.Tensor, model: torch.nn.Module
+) -> float:
+    """
+    Compute the gradient norm of one backward pass in a specific context.
+
+    Parameters
+    ----------
+    model: torch.nn.Module
+        The model to test.
+
+    Returns
+    -------
+    _: float
+        The gradient norm.
+    """
+    img_var = Variable(input, requires_grad=True)
+    gradient = GetGradient(img_var)
+
+    x = img_var
+    x = x[None, :]
+    gt = x.detach()
+    x = model(x)
+
+    loss = torch.nn.MSELoss()(x, gt)
+    loss.backward()
+
+    gradient_norm = gradient.gradient_norm
+    gradient.close()
+    return gradient_norm
+
+
+def compute_auto_encoder1_grad_norm(size: int) -> float:
+    """
+    Compute the gradient norm of one backward pass of ModelTestAutoEncoder1.
+
+    Parameters
+    ----------
+    size: int
+        The size of the input data.
+
+    Returns
+    -------
+    _: float
+        The gradient norm.
+    """
+    torch.manual_seed(42)
+    img_array = _build_input_data(size)
+    img_tensor = ToTensor()(img_array).type(torch.float32)
+    model = ModelTestAutoEncoder1().eval().cpu()
+    return _compute_auto_encoder_grad_norm(img_tensor, model)

@@ -13,6 +13,11 @@
 ///
 /// The implementation here corresponds to the no padding version of the link below:
 /// https://github.com/vdumoulin/conv_arithmetic/blob/master/README.md
+/// In the PyTorch documentation, we have padding = 0 and dilation = 1:
+/// https://pytorch.org/docs/stable/generated/torch.nn.ConvTranspose2d.html
+///
+/// The most standard way is to use an even kernel size with a stride greater than 1.
+/// This will multiply the previous layer's size by stride.
 ///
 public class Deconvolution2D: Convolution2D
 {
@@ -282,7 +287,7 @@ public class Deconvolution2D: Convolution2D
             }
             
             let neuronsPrev = layerPrev.neurons
-            let (startI, endI, startJ, endJ) = _kernelIndices
+            let (startI, endI, startJ, endJ, _, _) = kernelIndices
             
             for batch in 0..<batchSize {
             for elem in 0..<nbGC {
@@ -300,12 +305,12 @@ public class Deconvolution2D: Convolution2D
                         for k in startI...endI {
                         for l in startJ...endJ
                         {
-                            if (i+k-endI) % _stride == 0 &&
-                               (j+l-endJ) % _stride == 0
+                            if (i-k+startI) % _stride == 0 &&
+                               (j-l+startJ) % _stride == 0
                             {
                                 if let outPrev = neuronsPrev[depthPrev]
-                                    .get((i+k-endI) / _stride,
-                                         (j+l-endJ) / _stride)?
+                                    .get((i-k+startI) / _stride,
+                                         (j-l+startJ) / _stride)?
                                     .gc[batch][elem].out
                                 {
                                     let w = weights.w(k-startI, l-startJ)
@@ -338,12 +343,12 @@ public class Deconvolution2D: Convolution2D
                         for k in startI...endI {
                         for l in startJ...endJ
                         {
-                            if (i+k-endI) % _stride == 0 &&
-                               (j+l-endJ) % _stride == 0
+                            if (i-k+startI) % _stride == 0 &&
+                               (j-l+startJ) % _stride == 0
                             {
                                 if let outPrev = neuronsPrev[depthPrev]
-                                    .get((i+k-endI) / _stride,
-                                         (j+l-endJ) / _stride)?
+                                    .get((i-k+startI) / _stride,
+                                         (j-l+startJ) / _stride)?
                                     .v[batch].out
                                 {
                                     var w = weights.w(k-startI, l-startJ)
@@ -405,12 +410,12 @@ public class Deconvolution2D: Convolution2D
                         for k in startI...endI {
                         for l in startJ...endJ
                         {
-                            if (i+k-endI) % _stride == 0 &&
-                               (j+l-endJ) % _stride == 0
+                            if (i-k+startI) % _stride == 0 &&
+                               (j-l+startJ) % _stride == 0
                             {
                                 if let outPrev = neuronsPrev[depthPrev]
-                                    .get((i+k-endI) / _stride,
-                                         (j+l-endJ) / _stride)?
+                                    .get((i-k+startI) / _stride,
+                                         (j-l+startJ) / _stride)?
                                     .v[batch].out
                                 {
                                     let w = weights.w(k-startI, l-startJ)
@@ -445,12 +450,12 @@ public class Deconvolution2D: Convolution2D
                         for k in startI...endI {
                         for l in startJ...endJ
                         {
-                            if (i+k-endI) % _stride == 0 &&
-                               (j+l-endJ) % _stride == 0
+                            if (i-k+startI) % _stride == 0 &&
+                               (j-l+startJ) % _stride == 0
                             {
                                 if let outPrev = neuronsPrev[depthPrev]
-                                    .get((i+k-endI) / _stride,
-                                         (j+l-endJ) / _stride)?
+                                    .get((i-k+startI) / _stride,
+                                         (j-l+startJ) / _stride)?
                                     .v[batch].out
                                 {
                                     let w = weights.w(k-startI, l-startJ)
@@ -496,7 +501,7 @@ public class Deconvolution2D: Convolution2D
             let widthPrev = layerPrev.width
             let heightPrev = layerPrev.height
             
-            let (startI, endI, startJ, endJ) = _kernelIndices
+            let (startI, endI, startJ, endJ, _, _) = kernelIndices
             
             for batch in 0..<batchSize {
             for elem in 0..<nbGC {
@@ -514,15 +519,15 @@ public class Deconvolution2D: Convolution2D
                         for k in startI...endI {
                         for l in startJ...endJ
                         {
-                            if (i+k-endI) % _stride == 0 &&
-                               (j+l-endJ) % _stride == 0
+                            if (i-k+startI) % _stride == 0 &&
+                               (j-l+startJ) % _stride == 0
                             {
                                 let offsetWeights = l-startJ +
                                     (offsetStartWeights + k-startI)*weightWidth
                                 
                                 if let outPrev = neuronsPrev[depthPrev]
-                                    .get((i+k-endI) / _stride,
-                                         (j+l-endJ) / _stride)?
+                                    .get((i-k+startI) / _stride,
+                                         (j-l+startJ) / _stride)?
                                     .gc[batch][elem].out
                                 {
                                     let w = Double(weightsPtr[offsetWeights])
@@ -559,11 +564,11 @@ public class Deconvolution2D: Convolution2D
                         for k in startI...endI {
                         for l in startJ...endJ
                         {
-                            if (i+k-endI) % _stride == 0 &&
-                               (j+l-endJ) % _stride == 0
+                            if (i-k+startI) % _stride == 0 &&
+                               (j-l+startJ) % _stride == 0
                             {
-                                let I1 = (i+k-endI) / _stride
-                                let J1 = (j+l-endJ) / _stride
+                                let I1 = (i-k+startI) / _stride
+                                let J1 = (j-l+startJ) / _stride
                                 if I1 >= 0, I1 < heightPrev,
                                    J1 >= 0, J1 < widthPrev
                                 {
@@ -637,11 +642,11 @@ public class Deconvolution2D: Convolution2D
                         for k in startI...endI {
                         for l in startJ...endJ
                         {
-                            if (i+k-endI) % _stride == 0 &&
-                               (j+l-endJ) % _stride == 0
+                            if (i-k+startI) % _stride == 0 &&
+                               (j-l+startJ) % _stride == 0
                             {
-                                let I1 = (i+k-endI) / _stride
-                                let J1 = (j+l-endJ) / _stride
+                                let I1 = (i-k+startI) / _stride
+                                let J1 = (j-l+startJ) / _stride
                                 if I1 >= 0, I1 < heightPrev,
                                    J1 >= 0, J1 < widthPrev
                                 {
@@ -688,11 +693,11 @@ public class Deconvolution2D: Convolution2D
                         for k in startI...endI {
                         for l in startJ...endJ
                         {
-                            if (i+k-endI) % _stride == 0 &&
-                               (j+l-endJ) % _stride == 0
+                            if (i-k+startI) % _stride == 0 &&
+                               (j-l+startJ) % _stride == 0
                             {
-                                let I1 = (i+k-endI) / _stride
-                                let J1 = (j+l-endJ) / _stride
+                                let I1 = (i-k+startI) / _stride
+                                let J1 = (j-l+startJ) / _stride
                                 if I1 >= 0, I1 < heightPrev,
                                    J1 >= 0, J1 < widthPrev
                                 {
@@ -724,7 +729,7 @@ public class Deconvolution2D: Convolution2D
             try checkStateCPU(batchSize: batchSize)
             
             let neuronsPrev = layerPrev.neurons
-            let (startI, endI, startJ, endJ) = _kernelIndices
+            let (startI, endI, startJ, endJ, _, _) = kernelIndices
             
             for elem in 0..<batchSize {
             for depth in 0..<nbChannels
@@ -741,12 +746,12 @@ public class Deconvolution2D: Convolution2D
                         for k in startI...endI {
                         for l in startJ...endJ
                         {
-                            if (i+k-endI) % _stride == 0 &&
-                               (j+l-endJ) % _stride == 0
+                            if (i-k+startI) % _stride == 0 &&
+                               (j-l+startJ) % _stride == 0
                             {
                                 if let outPrev = neuronsPrev[depthPrev]
-                                    .get((i+k-endI) / _stride,
-                                         (j+l-endJ) / _stride)?
+                                    .get((i-k+startI) / _stride,
+                                         (j-l+startJ) / _stride)?
                                     .v[elem].out
                                 {
                                     let w = weights.w(k-startI, l-startJ)
@@ -766,7 +771,7 @@ public class Deconvolution2D: Convolution2D
         if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
             let neuronsPrev = layerPrev.neurons
-            let (startI, endI, startJ, endJ) = _kernelIndices
+            let (startI, endI, startJ, endJ, _, _) = kernelIndices
             
             for elem in 0..<batchSize {
             for depthPrev in 0..<nbChannelsPrev
@@ -784,8 +789,8 @@ public class Deconvolution2D: Convolution2D
                         for l in startJ...endJ
                         {
                             if let deltaCur = neurons[depth].get(
-                                _stride*i+endI-k,
-                                _stride*j+endJ-l)?.v[elem].delta
+                                _stride*i+k-startI,
+                                _stride*j+l-startJ)?.v[elem].delta
                             {
                                 let w = weights.w(k-startI, l-startJ)
                                 tmp += deltaCur * w
@@ -815,7 +820,7 @@ public class Deconvolution2D: Convolution2D
             // Compute Gradients per batch
             // -----------------------------------------------------------------
             let neuronsPrev = layerPrev.neurons
-            let (startI, endI, startJ, endJ) = _kernelIndices
+            let (startI, endI, startJ, endJ, _, _) = kernelIndices
             
             for depth in 0..<nbChannels
             {
@@ -831,12 +836,12 @@ public class Deconvolution2D: Convolution2D
                         for k in 0..<height {
                         for l in 0..<width
                         {
-                            if (i+k-endI) % _stride == 0 &&
-                               (j+l-endJ) % _stride == 0
+                            if (k-i+startI) % _stride == 0 &&
+                               (l-j+startJ) % _stride == 0
                             {
                                 if let outPrev = neuronsPrev[depthPrev]
-                                    .get((i+k-endI) / _stride,
-                                         (j+l-endJ) / _stride)?.v[elem].out
+                                    .get((k-i+startI) / _stride,
+                                         (l-j+startJ) / _stride)?.v[elem].out
                                 {
                                     let deltaCur =
                                         neurons[depth].get(k, l)!.v[elem].delta

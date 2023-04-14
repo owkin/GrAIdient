@@ -5,6 +5,7 @@
 // Created by Jean-François Reboud on 15/10/2022.
 //
 
+import Foundation
 import GrAIdient
 import GrAITestsUtils
 
@@ -1235,6 +1236,26 @@ class Layer2DFlowTests: Input2DMSE1DCase
             layer = VQ2D(layerPrev: layer, K: 5, beta: 0.25, params: params)
             (layer as! VQ2D).computeVQ = false
             
+        case "ResizeBilinear1":
+            layer = ResizeBilinear(
+                layerPrev: layer,
+                dimension: Int(round(0.8 * Double(height))),
+                params: params
+            )
+            layer = AdaptiveAvgPool2D(
+                layerPrev: layer, size: width, params: params
+            )
+            
+        case "ResizeBilinear2":
+            layer = ResizeBilinear(
+                layerPrev: layer,
+                dimension: Int(round(1.2 * Double(height))),
+                params: params
+            )
+            layer = AdaptiveAvgPool2D(
+                layerPrev: layer, size: width, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -1568,6 +1589,18 @@ class Layer2DFlowTests: Input2DMSE1DCase
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer(model: "VQ2", bn: false)
+        run(trainer)
+    }
+    
+    func testResizeBilinear1() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinear1", bn: false)
+        run(trainer)
+    }
+    
+    func testResizeBilinear2() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinear2", bn: false)
         run(trainer)
     }
 }
@@ -1923,6 +1956,18 @@ class Layer2DFlowResetTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "VQ2", bn: false)
         run(trainer)
     }
+    
+    override func testResizeBilinear1() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinear1", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinear2() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinear2", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -2276,6 +2321,18 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "VQ2", bn: false)
         run(trainer)
     }
+    
+    override func testResizeBilinear1() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinear1", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinear2() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinear2", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -2627,6 +2684,18 @@ class Layer2DInferenceTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "VQ2", bn: false)
         run(trainer)
     }
+    
+    override func testResizeBilinear1() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinear1", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinear2() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinear2", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -2975,6 +3044,18 @@ class Layer2DLoadTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "VQ2", bn: false)
         run(trainer)*/
     }
+    
+    override func testResizeBilinear1() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinear1", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinear2() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinear2", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -3322,6 +3403,18 @@ class Layer2DTransformTests: Layer2DFlowTests
         /*GrAI.Gradient.sample = true
         let trainer = _buildTrainer(model: "VQ2", bn: false)
         run(trainer)*/
+    }
+    
+    override func testResizeBilinear1() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinear1", bn: false)
+        run(trainer)
+    }
+    
+    override func testResizeBilinear2() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinear2", bn: false)
+        run(trainer)
     }
 }
 

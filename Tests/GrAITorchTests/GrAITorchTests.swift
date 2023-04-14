@@ -961,12 +961,12 @@ final class GrAITorchTests: XCTestCase
     }
     
     /// Test that modelResize backward pass returns the same gradient norm in GrAIdient and PyTorch.
-    func testModelResize1()
+    func testModelResizeBilinear1()
     {
         let sizeOutput = Int(round(0.8 * Double(_size)))
         
         // Build model.
-        let model = ModelTestResize.build(
+        let model = ModelTestResizeBilinear.build(
             sizeInput: _size, sizeOutput: sizeOutput
         )
         
@@ -984,14 +984,13 @@ final class GrAITorchTests: XCTestCase
         XCTAssert(diffPercent < 1.0)
     }
     
-    /*
     /// Test that modelResize backward pass returns the same gradient norm in GrAIdient and PyTorch.
-    func testModelResize2()
+    func testModelResizeBilinear2()
     {
         let sizeOutput = Int(round(1.2 * Double(_size)))
         
         // Build model.
-        let model = ModelTestResize.build(
+        let model = ModelTestResizeBilinear.build(
             sizeInput: _size, sizeOutput: sizeOutput
         )
         
@@ -1015,7 +1014,7 @@ final class GrAITorchTests: XCTestCase
         let sizeOutput = 2 * _size
         
         // Build model.
-        let model = ModelTestResize.build(
+        let model = ModelTestResizeBilinear.build(
             sizeInput: _size, sizeOutput: sizeOutput
         )
         
@@ -1032,7 +1031,102 @@ final class GrAITorchTests: XCTestCase
             abs(gradNormOutput - expectedNorm) / expectedNorm * 100.0
         XCTAssert(diffPercent < 1.0)
     }
-    */
+    
+    /// Test that modelResize backward pass returns the same gradient norm in GrAIdient and PyTorch.
+    func testModelResizeBilinearPad1()
+    {
+        let sizeOutput = Int(round(0.8 * Double(_size)))
+        
+        // Build model.
+        let model = ModelTestResizeBilinearPad.build(
+            sizeInput: _size, sizeOutput: sizeOutput
+        )
+        
+        // Get the gradient norm on the first layer.
+        let expectedNorm: Double = Double(computeResizeGradNorm(
+            sizeInput: _size, sizeOutput: sizeOutput
+        ))
+        let gradNormOutput: Double = _getGradientNormMSE1D(
+            model: model, size: _size
+        )
+        
+        // Compare difference.
+        let diffPercent =
+            abs(gradNormOutput - expectedNorm) / expectedNorm * 100.0
+        XCTAssert(diffPercent < 1.0)
+    }
+    
+    /// Test that modelResize backward pass returns the same gradient norm in GrAIdient and PyTorch.
+    func testModelResizeBilinearPad2()
+    {
+        let sizeOutput = Int(round(1.2 * Double(_size)))
+        
+        // Build model.
+        let model = ModelTestResizeBilinearPad.build(
+            sizeInput: _size, sizeOutput: sizeOutput
+        )
+        
+        // Get the gradient norm on the first layer.
+        let expectedNorm: Double = Double(computeResizeGradNorm(
+            sizeInput: _size, sizeOutput: sizeOutput
+        ))
+        let gradNormOutput: Double = _getGradientNormMSE1D(
+            model: model, size: _size
+        )
+        
+        // Compare difference.
+        let diffPercent =
+            abs(gradNormOutput - expectedNorm) / expectedNorm * 100.0
+        XCTAssert(diffPercent < 1.0)
+    }
+    
+    /// Test that modelResize backward pass returns the same gradient norm in GrAIdient and PyTorch.
+    func testModelResizePad3()
+    {
+        let sizeOutput = 2 * _size
+        
+        // Build model.
+        let model = ModelTestResizeBilinearPad.build(
+            sizeInput: _size, sizeOutput: sizeOutput
+        )
+        
+        // Get the gradient norm on the first layer.
+        let expectedNorm: Double = Double(computeResizeGradNorm(
+            sizeInput: _size, sizeOutput: sizeOutput
+        ))
+        let gradNormOutput: Double = _getGradientNormMSE1D(
+            model: model, size: _size
+        )
+        
+        // Compare difference.
+        let diffPercent =
+            abs(gradNormOutput - expectedNorm) / expectedNorm * 100.0
+        XCTAssert(diffPercent < 1.0)
+    }
+    
+    /// Test that modelResize backward pass returns the same gradient norm in GrAIdient and PyTorch.
+    func testModelResizeBilinearCrop1()
+    {
+        let sizeOutput = Int(round(0.8 * Double(_size)))
+        
+        // Build model.
+        let model = ModelTestResizeBilinearCrop.build(
+            sizeInput: _size, sizeOutput: sizeOutput
+        )
+        
+        // Get the gradient norm on the first layer.
+        let expectedNorm: Double = Double(computeResizeGradNorm(
+            sizeInput: _size, sizeOutput: sizeOutput
+        ))
+        let gradNormOutput: Double = _getGradientNormMSE1D(
+            model: model, size: _size
+        )
+        
+        // Compare difference.
+        let diffPercent =
+            abs(gradNormOutput - expectedNorm) / expectedNorm * 100.0
+        XCTAssert(diffPercent < 1.0)
+    }
     
     ///
     /// Test that modelPatchConv backward pass returns the same gradient norm

@@ -1,6 +1,5 @@
 import math
 import torch
-import torchvision
 import numpy as np
 
 
@@ -455,6 +454,8 @@ class ModelTestResize(torch.nn.Module):
 
     def __init__(self, size: int):
         super().__init__()
+        self._size = size
+
         self.features = torch.nn.Sequential(
             torch.nn.Conv2d(
                 3, 5,
@@ -462,7 +463,6 @@ class ModelTestResize(torch.nn.Module):
                 bias=True
             ),
         )
-        self.resize = torchvision.transforms.Resize(size)
         self.avgpool = torch.nn.AdaptiveAvgPool2d((1, 1))
         self.classifier = torch.nn.Sequential(
             torch.nn.Linear(in_features=5, out_features=1)
@@ -502,7 +502,12 @@ class ModelTestResize(torch.nn.Module):
             The output tensor.
         """
         x = self.features(x)
-        x = self.resize(x)
+        x = torch.nn.functional.interpolate(
+            x,
+            mode="bilinear",
+            size=self._size,
+            align_corners=True
+        )
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
         x = self.classifier(x)

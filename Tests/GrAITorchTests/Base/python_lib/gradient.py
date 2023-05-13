@@ -17,6 +17,7 @@ from python_lib.model import (
     ModelTestAttention2,
     ModelTestLayerNorm,
     ModelTestAutoEncoder1,
+    ModelTestGram,
 )
 
 
@@ -504,3 +505,24 @@ def compute_auto_encoder1_grad_norm(size: int) -> float:
     img_tensor = ToTensor()(img_array).type(torch.float32)
     model = ModelTestAutoEncoder1().eval().cpu()
     return _compute_auto_encoder_grad_norm(img_tensor, model)
+
+
+def compute_gram_grad_norm(size: int) -> float:
+    """
+    Compute the gradient norm of one backward pass of ModelTestGram.
+
+    Parameters
+    ----------
+    size: int
+        The size of the input data.
+
+    Returns
+    -------
+    _: float
+        The gradient norm.
+    """
+    torch.manual_seed(42)
+    img_array = _build_input_data(size)
+    img_tensor = ToTensor()(img_array).type(torch.float32)
+    model = ModelTestGram().eval().cpu()
+    return _compute_grad_norm(img_tensor, model)

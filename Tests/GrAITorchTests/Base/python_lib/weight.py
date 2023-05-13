@@ -14,6 +14,7 @@ from python_lib.model import (
     ModelTestAttention2,
     ModelTestLayerNorm,
     ModelTestAutoEncoder1,
+    ModelTestGram,
 )
 
 
@@ -429,3 +430,17 @@ def load_auto_encoder1_weights() -> Tuple[List[List[float]], List[List[int]]]:
     torch.manual_seed(42)
     model = ModelTestAutoEncoder1()
     return _extract_and_transpose_weights(list(model.children()))
+
+
+def load_gram_weights() -> Tuple[List[List[float]], List[List[int]]]:
+    """
+    Get weights and biases for ModelTestGram.
+
+    Returns
+    -------
+    (_, _): List[float], List[int]
+        The flattened weights, their shape.
+    """
+    torch.manual_seed(42)
+    model = ModelTestGram()
+    return _extract_weights(model)

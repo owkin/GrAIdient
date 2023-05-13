@@ -1229,4 +1229,22 @@ final class GrAITorchTests: XCTestCase
             abs(gradNormOutput - expectedNorm) / expectedNorm * 100.0
         XCTAssert(diffPercent < 1.0)
     }
+    
+    /// Test that modelGram backward pass returns the same gradient norm in GrAIdient and PyTorch.
+    func testModelGram()
+    {
+        // Build model.
+        let model = ModelTestGram.build(_size)
+        
+        // Get the gradient norm on the first layer.
+        let expectedNorm: Double = Double(computeGramGradNorm(_size))
+        let gradNormOutput: Double = _getGradientNormMSE1D(
+            model: model, size: _size
+        )
+        
+        // Compare difference.
+        let diffPercent =
+            abs(gradNormOutput - expectedNorm) / expectedNorm * 100.0
+        XCTAssert(diffPercent < 1.0)
+    }
 }

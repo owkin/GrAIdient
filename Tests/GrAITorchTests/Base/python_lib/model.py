@@ -891,3 +891,63 @@ class ModelTestAutoEncoder1(ModelTestAutoEncoder):
             torch.nn.ConvTranspose2d(5, 3, kernel_size=2, stride=2),
         )
         self.features.apply(self.weight_init)
+
+
+class ModelTestGram(torch.nn.Module):
+    """
+    Model to test.
+    Principle features:
+        - AutoCorrelation
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.features = torch.nn.Conv2d(
+            3, 5,
+            kernel_size=1
+        )
+        self.classifier = torch.nn.Linear(in_features=25, out_features=1)
+
+        self.features.apply(self.weight_init)
+        self.classifier.apply(self.weight_init)
+
+    @staticmethod
+    def weight_init(module: torch.nn.Module):
+        """
+        Initialize weights and biases.
+
+        Parameters
+        ----------
+        module: torch.nn.Module
+            The module to initialize.
+        """
+        if isinstance(module, torch.nn.Conv2d) or \
+           isinstance(module, torch.nn.Linear):
+            torch.nn.init.normal_(module.weight)
+
+            if module.bias is not None:
+                torch.nn.init.normal_(module.bias)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass.
+
+        Parameters
+        ----------
+        x: torch.Tensor
+            The input tensor.
+
+        Returns
+        -------
+        _: torch.Tensor
+            The output tensor.
+        """
+        x = self.features(x)
+
+        nb_batch, nb_channels, _, _ = x.shape
+        x = x.view(nb_batch, nb_channels, -1)
+        x = torch.matmul(x, torch.transpose(x, 1, 2))
+
+        x = torch.flatten(x, 1)
+        x = self.classifier(x)
+        return x

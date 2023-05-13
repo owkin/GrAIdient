@@ -325,7 +325,9 @@ def load_resize_weights(size: int) -> Tuple[List[List[float]], List[List[int]]]:
     return _extract_weights(model)
 
 
-def load_patch_conv_weights(size: int, patch: int) -> Tuple[List[List[float]], List[List[int]]]:
+def load_patch_conv_weights(
+    size: int, patch: int
+) -> Tuple[List[List[float]], List[List[int]]]:
     """
     Get weights and biases for ModelTestPatchConv.
 
@@ -346,7 +348,9 @@ def load_patch_conv_weights(size: int, patch: int) -> Tuple[List[List[float]], L
     return _extract_weights(model)
 
 
-def load_attention1_weights(size: int, patch: int) -> Tuple[List[List[float]], List[List[int]]]:
+def load_attention1_weights(
+    size: int, patch: int
+) -> Tuple[List[List[float]], List[List[int]]]:
     """
     Get weights and biases for ModelTestAttention1.
 
@@ -367,7 +371,9 @@ def load_attention1_weights(size: int, patch: int) -> Tuple[List[List[float]], L
     return _extract_attention_weights(model=model)
 
 
-def load_attention2_weights(size: int, patch: int) -> Tuple[List[List[float]], List[List[int]]]:
+def load_attention2_weights(
+    size: int, patch: int
+) -> Tuple[List[List[float]], List[List[int]]]:
     """
     Get weights and biases for ModelTestAttention2.
 
@@ -388,7 +394,9 @@ def load_attention2_weights(size: int, patch: int) -> Tuple[List[List[float]], L
     return _extract_attention_weights(model=model)
 
 
-def load_layer_norm_weights(size: int, patch: int) -> Tuple[List[List[float]], List[List[int]]]:
+def load_layer_norm_weights(
+    size: int, patch: int
+) -> Tuple[List[List[float]], List[List[int]]]:
     """
     Get weights and biases for ModelTestLayerNorm.
 

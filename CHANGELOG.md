@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🪜 **layer_2d:** AutoCorrelation2D ([#86](https://github.com/owkin/GrAIdient/pull/86))\
 🚨 **integration**: resize alignment with PyTorch ([#85](https://github.com/owkin/GrAIdient/pull/85))\
 🐛 **layer_2d**: align Convolution & Deconvolution on PyTorch ([#84](https://github.com/owkin/GrAIdient/pull/84))\
 🐛 **fix**: numerical stability of tanh for GELU ([#83](https://github.com/owkin/GrAIdient/pull/83))\

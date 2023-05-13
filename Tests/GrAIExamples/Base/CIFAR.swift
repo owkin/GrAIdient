@@ -109,4 +109,3 @@ class CIFAR: DataSamplerImpl<UInt8>
         return CIFAR(data: dataset, size: size)
     }
 }
-

@@ -337,6 +337,9 @@ class Layer2DGradTests: Input2DMSE1DCase
                 layersPrev: [layer, otherLayer], params: params
             )
             
+        case "AutoCorrelation":
+            layer = AutoCorrelation2D(layerPrev: layer, params: params)
+            
         default:
             fatalError("Unreachable.")
         }
@@ -897,6 +900,13 @@ class Layer2DGradTests: Input2DMSE1DCase
     func testConstantGPU() throws
     {
         let trainer = _buildTrainer(model: "Constant", bn: false)
+        run(trainer)
+    }
+    
+    func testAutoCorrelationCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "AutoCorrelation", bn: false)
         run(trainer)
     }
 }

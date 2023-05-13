@@ -651,6 +651,8 @@ private class MetalDevice
                 "constant2DForward",
                 "MSE2DLoss",
                 "MSE2DLossDerivative",
+                "autoCorrelate2DForward",
+                "autoCorrelate2DBackward",
             ],
             "LayerNorm": [
                 "computeLayerNormSeqμ",

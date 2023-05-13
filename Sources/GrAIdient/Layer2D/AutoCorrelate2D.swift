@@ -1,5 +1,5 @@
 //
-// AutoCorrelation2D.swift
+// AutoCorrelate2D.swift
 // GrAIdient
 //
 // Created by Jean-François Reboud on 13/05/2023.
@@ -10,7 +10,7 @@
 ///
 /// This layer computes correlation of previous channels.
 ///
-public class AutoCorrelation2D: Layer2D
+public class AutoCorrelate2D: Layer2D
 {
     ///
     /// Create a layer with a 2D shape neural structure.
@@ -64,7 +64,7 @@ public class AutoCorrelation2D: Layer2D
         let params = GrAI.Model.Params(context: context)
         params.context.curID = id
             
-        let layer = AutoCorrelation2D(
+        let layer = AutoCorrelate2D(
             layerPrev: layerPrev,
             params: params
         )
@@ -170,34 +170,37 @@ public class AutoCorrelation2D: Layer2D
     ///
     /// Throw an error if batch size is greater than the first batch size.
     ///
-    /*public override func forwardGPU() throws
+    public override func forwardGPU() throws
     {
         if let layerPrev = self.layerPrev as? Layer2D
         {
             try checkStateForwardGPU(batchSize: batchSize)
             
-            let pNbChannels: [UInt32] = [UInt32(nbChannels)]
+            let nbChannelsPrev = layerPrev.nbChannels
+            let heightPrev = layerPrev.height
+            let widthPrev = layerPrev.width
+            
+            let pNbChannelsPrev: [UInt32] = [UInt32(nbChannelsPrev)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
-            let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
-            let weights: [Float] = _weights.map { Float($0) }
+            let pDimensionsPrev: [UInt32] = [UInt32(widthPrev),
+                                             UInt32(heightPrev)]
             
             let command = MetalKernel.get.createCommand(
-                "linearScale2DForward", deviceID: deviceID
+                "autoCorrelate2DForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
-            command.setBytes(weights, atIndex: 1)
-            command.setBytes(pNbChannels, atIndex: 2)
-            command.setBytes(pDimensions, atIndex: 3)
-            command.setBytes(pNbBatch, atIndex: 4)
-            command.setBuffer(outs.metal, atIndex: 5)
+            command.setBytes(pNbChannelsPrev, atIndex: 1)
+            command.setBytes(pDimensionsPrev, atIndex: 2)
+            command.setBytes(pNbBatch, atIndex: 3)
+            command.setBuffer(outs.metal, atIndex: 4)
             
             command.dispatchThreads(
-                width: width * nbChannels,
-                height: height * batchSize
+                width: nbChannelsPrev * nbChannelsPrev,
+                height: batchSize
             )
             command.enqueue()
         }
-    }*/
+    }
     
     /// Apply the backward pass in the CPU execution context.
     public override func backwardCPU()
@@ -248,36 +251,40 @@ public class AutoCorrelation2D: Layer2D
     ///
     /// Throw an error if batch size is greater than the first batch size.
     ///
-    /*public override func backwardGPU() throws
+    public override func backwardGPU() throws
     {
         if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
             try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
             
-            let pNbChannels: [UInt32] = [UInt32(nbChannels)]
+            let nbChannelsPrev = layerPrev.nbChannels
+            let heightPrev = layerPrev.height
+            let widthPrev = layerPrev.width
+            
+            let pNbChannelsPrev: [UInt32] = [UInt32(nbChannelsPrev)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
-            let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
+            let pDimensionsPrev: [UInt32] = [UInt32(widthPrev),
+                                             UInt32(heightPrev)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
-            let weights: [Float] = _weights.map { Float($0) }
             
             let command = MetalKernel.get.createCommand(
-                "linearScale2DBackward", deviceID: deviceID
+                "autoCorrelate2DBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
-            command.setBytes(weights, atIndex: 1)
-            command.setBytes(pNbChannels, atIndex: 2)
-            command.setBytes(pDimensions, atIndex: 3)
+            command.setBuffer(layerPrev.outs.metal, atIndex: 1)
+            command.setBytes(pNbChannelsPrev, atIndex: 2)
+            command.setBytes(pDimensionsPrev, atIndex: 3)
             command.setBytes(pNbBatch, atIndex: 4)
             command.setBytes(pDirty, atIndex: 5)
             command.setBuffer(layerPrev.delta.metal, atIndex: 6)
             
             command.dispatchThreads(
-                width: width * nbChannels,
-                height: height * batchSize
+                width: widthPrev * nbChannelsPrev,
+                height: heightPrev * batchSize
             )
             command.enqueue()
             
             propagateDirty()
         }
-    }*/
+    }
 }

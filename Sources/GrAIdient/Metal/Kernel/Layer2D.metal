@@ -2096,3 +2096,125 @@ kernel void MSE2DLossDerivative(
     deltaPrev[offset] = 2 * coeff * diff /
         float(nbBatch * nbChannels * height * width);
 }
+
+kernel void autoCorrelate2DForward(
+    const device float * outsPrev,
+    constant uint * pNbChannelsPrev,
+    constant uint * pDimensionsPrev,
+    constant uint * pNbBatch,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint heightPrev, widthPrev;
+    uint nbChannelsPrev;
+    uint nbBatch;
+    
+    if (pNbChannelsPrev && pDimensionsPrev && pNbBatch &&
+        outsPrev && outs)
+    {
+        widthPrev = pDimensionsPrev[0];
+        heightPrev = pDimensionsPrev[1];
+        nbChannelsPrev = *pNbChannelsPrev;
+        nbBatch = *pNbBatch;
+    }
+    else
+        return ;
+    
+    uint channel1 = id[0] / nbChannelsPrev;
+    uint channel2 = id[0] % nbChannelsPrev;
+    uint elem = id[1];
+    
+    if (channel1 * channel2 >= nbChannelsPrev * nbChannelsPrev ||
+        elem >= nbBatch)
+    {
+        return ;
+    }
+        
+    uint offsetStart1 = (channel1 + nbChannelsPrev * elem) * heightPrev;
+    uint offsetStart2 = (channel2 + nbChannelsPrev * elem) * heightPrev;
+    
+    float correlation = 0.0;
+    for (uint i=0; i<heightPrev; i++){
+    for (uint j=0; j<widthPrev; j++)
+    {
+        uint offset1 = j + (offsetStart1 + i) * widthPrev;
+        uint offset2 = j + (offsetStart2 + i) * widthPrev;
+        
+        correlation += outsPrev[offset1] * outsPrev[offset2];
+    }}
+    
+    uint offset = channel2 +
+        (elem * nbChannelsPrev + channel1) * nbChannelsPrev;
+    outs[offset] = correlation;
+}
+
+kernel void autoCorrelate2DBackward(
+    const device float * delta,
+    const device float * outsPrev,
+    constant uint * pNbChannelsPrev,
+    constant uint * pDimensionsPrev,
+    constant uint * pNbBatch,
+    constant uint * pDirty,
+    device float * deltaPrev,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint heightPrev, widthPrev;
+    uint nbChannelsPrev;
+    uint nbBatch;
+    uint dirty;
+    
+    if (pNbChannelsPrev && pDimensionsPrev && pNbBatch && pDirty &&
+        delta && outsPrev && deltaPrev)
+    {
+        widthPrev = pDimensionsPrev[0];
+        heightPrev = pDimensionsPrev[1];
+        nbChannelsPrev = *pNbChannelsPrev;
+        nbBatch = *pNbBatch;
+        dirty = *pDirty;
+    }
+    else
+        return ;
+    
+    uint depthPrev = id[0] / widthPrev;
+    uint elem = id[1] / heightPrev;
+    uint i = id[1] % heightPrev;
+    uint j = id[0] % widthPrev;
+    
+    if (i * elem >= heightPrev * nbBatch ||
+        j * depthPrev >= widthPrev * nbChannelsPrev)
+    {
+        return ;
+    }
+    
+    float correlation = 0.0;
+    for (uint col=0; col<nbChannelsPrev; col++)
+    {
+        uint offsetStartPrev = (col + nbChannelsPrev * elem) * heightPrev;
+        uint offsetPrev = j + (offsetStartPrev + i) * widthPrev;
+        uint offset = col +
+            (elem * nbChannelsPrev + depthPrev) * nbChannelsPrev;
+        
+        correlation += delta[offset] * outsPrev[offsetPrev];
+    }
+    for (uint row=0; row<nbChannelsPrev; row++)
+    {
+        uint offsetStartPrev = (row + nbChannelsPrev * elem) * heightPrev;
+        uint offsetPrev = j + (offsetStartPrev + i) * widthPrev;
+        uint offset = depthPrev +
+            (elem * nbChannelsPrev + row) * nbChannelsPrev;
+        
+        correlation += delta[offset] * outsPrev[offsetPrev];
+    }
+    
+    uint offsetStartPrev = (depthPrev + nbChannelsPrev * elem) * heightPrev;
+    uint offsetPrev = j + (offsetStartPrev + i) * widthPrev;
+    
+    if (dirty)
+    {
+        deltaPrev[offsetPrev] = correlation;
+    }
+    else
+    {
+        deltaPrev[offsetPrev] += correlation;
+    }
+}

@@ -211,6 +211,18 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
                 layerPrev: layer, activation: SoftReLU.str, params: params
             )
             
+        case "AutoCorrelate":
+            secondLayer = AutoCorrelate2D(layerPrev: layer, params: params)
+            
+            secondLayer = Convolution2D(
+                layerPrev: secondLayer, size: 1, nbChannels: 3, stride: 1,
+                activation: LeakyReLU.str, biases: true, bn: false,
+                params: params
+            )
+            secondLayer = AdaptiveAvgPool2D(
+                layerPrev: secondLayer, size: width, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -445,6 +457,19 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
     func testInstanceNormGPU() throws
     {
         let trainer = _buildTrainer(model: "InstanceNorm")
+        run(trainer)
+    }
+    
+    func testAutoCorrelateCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "AutoCorrelate")
+        run(trainer)
+    }
+    
+    func testAutoCorrelateGPU() throws
+    {
+        let trainer = _buildTrainer(model: "AutoCorrelate")
         run(trainer)
     }
 }
@@ -700,6 +725,18 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
             )
             (secondLayer as! VQ2D).computeVQ = false
             
+        case "AutoCorrelate":
+            secondLayer = AutoCorrelate2D(layerPrev: layer, params: params)
+            
+            secondLayer = Convolution2D(
+                layerPrev: secondLayer, size: 1, nbChannels: 3, stride: 1,
+                activation: LeakyReLU.str, biases: true, bn: false,
+                params: params
+            )
+            secondLayer = AdaptiveAvgPool2D(
+                layerPrev: secondLayer, size: width, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -859,6 +896,12 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer(model: "VQ2")
+        run(trainer)
+    }
+    
+    func testAutoCorrelate() throws
+    {
+        let trainer = _buildTrainer(model: "AutoCorrelate")
         run(trainer)
     }
 }

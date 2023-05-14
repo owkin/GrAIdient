@@ -929,9 +929,21 @@ class Layer2DGradTests: Input2DMSE1DCase
         run(trainer)
     }
     
+    func testNormalize1GPU() throws
+    {
+        let trainer = _buildTrainer(model: "Normalize1", bn: false)
+        run(trainer)
+    }
+    
     func testNormalize12CPU() throws
     {
         GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "Normalize12", bn: false)
+        run(trainer)
+    }
+    
+    func testNormalize12GPU() throws
+    {
         let trainer = _buildTrainer(model: "Normalize12", bn: false)
         run(trainer)
     }
@@ -1295,6 +1307,12 @@ class Layer2DFlowTests: Input2DMSE1DCase
         case "SelfCorrelate":
             layer = SelfCorrelate2D(layerPrev: layer, params: params)
             
+        case "Normalize1":
+            layer = Normalize12D(layerPrev: layer, params: params)
+            
+        case "Normalize12":
+            layer = Normalize122D(layerPrev: layer, params: params)
+            
         default:
             fatalError("Unreachable.")
         }
@@ -1646,6 +1664,18 @@ class Layer2DFlowTests: Input2DMSE1DCase
     func testSelfCorrelate() throws
     {
         let trainer = _buildTrainer(model: "SelfCorrelate", bn: false)
+        run(trainer)
+    }
+    
+    func testNormalize1() throws
+    {
+        let trainer = _buildTrainer(model: "Normalize1", bn: false)
+        run(trainer)
+    }
+    
+    func testNormalize12() throws
+    {
+        let trainer = _buildTrainer(model: "Normalize12", bn: false)
         run(trainer)
     }
 }
@@ -2019,6 +2049,18 @@ class Layer2DFlowResetTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "SelfCorrelate", bn: false)
         run(trainer)
     }
+    
+    override func testNormalize1() throws
+    {
+        let trainer = _buildTrainer(model: "Normalize1", bn: false)
+        run(trainer)
+    }
+    
+    override func testNormalize12() throws
+    {
+        let trainer = _buildTrainer(model: "Normalize12", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -2390,6 +2432,18 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "SelfCorrelate", bn: false)
         run(trainer)
     }
+    
+    override func testNormalize1() throws
+    {
+        let trainer = _buildTrainer(model: "Normalize1", bn: false)
+        run(trainer)
+    }
+    
+    override func testNormalize12() throws
+    {
+        let trainer = _buildTrainer(model: "Normalize12", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -2759,6 +2813,18 @@ class Layer2DInferenceTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "SelfCorrelate", bn: false)
         run(trainer)
     }
+    
+    override func testNormalize1() throws
+    {
+        let trainer = _buildTrainer(model: "Normalize1", bn: false)
+        run(trainer)
+    }
+    
+    override func testNormalize12() throws
+    {
+        let trainer = _buildTrainer(model: "Normalize12", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -3125,6 +3191,18 @@ class Layer2DLoadTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "SelfCorrelate", bn: false)
         run(trainer)
     }
+    
+    override func testNormalize1() throws
+    {
+        let trainer = _buildTrainer(model: "Normalize1", bn: false)
+        run(trainer)
+    }
+    
+    override func testNormalize12() throws
+    {
+        let trainer = _buildTrainer(model: "Normalize12", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -3489,6 +3567,18 @@ class Layer2DTransformTests: Layer2DFlowTests
     override func testSelfCorrelate() throws
     {
         let trainer = _buildTrainer(model: "SelfCorrelate", bn: false)
+        run(trainer)
+    }
+    
+    override func testNormalize1() throws
+    {
+        let trainer = _buildTrainer(model: "Normalize1", bn: false)
+        run(trainer)
+    }
+    
+    override func testNormalize12() throws
+    {
+        let trainer = _buildTrainer(model: "Normalize12", bn: false)
         run(trainer)
     }
 }

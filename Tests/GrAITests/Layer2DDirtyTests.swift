@@ -223,6 +223,12 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
                 layerPrev: secondLayer, size: width, params: params
             )
             
+        case "Normalize1":
+            secondLayer = Normalize12D(layerPrev: layer, params: params)
+            
+        case "Normalize12":
+            secondLayer = Normalize122D(layerPrev: layer, params: params)
+            
         default:
             fatalError("Unreachable.")
         }
@@ -470,6 +476,32 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
     func testSelfCorrelateGPU() throws
     {
         let trainer = _buildTrainer(model: "SelfCorrelate")
+        run(trainer)
+    }
+    
+    func testNormalize1CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "Normalize1")
+        run(trainer)
+    }
+    
+    func testNormalize1GPU() throws
+    {
+        let trainer = _buildTrainer(model: "Normalize1")
+        run(trainer)
+    }
+    
+    func testNormalize12CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "Normalize12")
+        run(trainer)
+    }
+    
+    func testNormalize12GPU() throws
+    {
+        let trainer = _buildTrainer(model: "Normalize12")
         run(trainer)
     }
 }
@@ -737,6 +769,12 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
                 layerPrev: secondLayer, size: width, params: params
             )
             
+        case "Normalize1":
+            secondLayer = Normalize12D(layerPrev: layer, params: params)
+            
+        case "Normalize12":
+            secondLayer = Normalize122D(layerPrev: layer, params: params)
+            
         default:
             fatalError("Unreachable.")
         }
@@ -902,6 +940,18 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
     func testSelfCorrelate() throws
     {
         let trainer = _buildTrainer(model: "SelfCorrelate")
+        run(trainer)
+    }
+    
+    func testNormalize1() throws
+    {
+        let trainer = _buildTrainer(model: "Normalize1")
+        run(trainer)
+    }
+    
+    func testNormalize12() throws
+    {
+        let trainer = _buildTrainer(model: "Normalize12")
         run(trainer)
     }
 }

@@ -898,6 +898,7 @@ class ModelTestGram(torch.nn.Module):
     Model to test.
     Principle features:
         - SelfCorrelate
+        - Normalize12
     """
 
     def __init__(self):
@@ -947,6 +948,7 @@ class ModelTestGram(torch.nn.Module):
         nb_batch, nb_channels, _, _ = x.shape
         x = x.view(nb_batch, nb_channels, -1)
         x = torch.matmul(x, torch.transpose(x, 1, 2))
+        x = torch.nn.functional.normalize(x, p=2, dim=(1, 2))
 
         x = torch.flatten(x, 1)
         x = self.classifier(x)

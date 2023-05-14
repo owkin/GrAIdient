@@ -175,37 +175,32 @@ public class Normalize12D: Layer2D
     ///
     /// Throw an error if batch size is greater than the first batch size.
     ///
-    /*public override func forwardGPU() throws
+    public override func forwardGPU() throws
     {
         if let layerPrev = self.layerPrev as? Layer2D
         {
             try checkStateForwardGPU(batchSize: batchSize)
             
-            let nbChannelsPrev = layerPrev.nbChannels
-            let heightPrev = layerPrev.height
-            let widthPrev = layerPrev.width
-            
-            let pNbChannelsPrev: [UInt32] = [UInt32(nbChannelsPrev)]
+            let pNbChannels: [UInt32] = [UInt32(nbChannels)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
-            let pDimensionsPrev: [UInt32] = [UInt32(widthPrev),
-                                             UInt32(heightPrev)]
+            let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             
             let command = MetalKernel.get.createCommand(
-                "selfCorrelate2DForward", deviceID: deviceID
+                "normalize12DForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
-            command.setBytes(pNbChannelsPrev, atIndex: 1)
-            command.setBytes(pDimensionsPrev, atIndex: 2)
+            command.setBytes(pNbChannels, atIndex: 1)
+            command.setBytes(pDimensions, atIndex: 2)
             command.setBytes(pNbBatch, atIndex: 3)
             command.setBuffer(outs.metal, atIndex: 4)
             
             command.dispatchThreads(
-                width: nbChannelsPrev * nbChannelsPrev,
-                height: batchSize
+                width: width * nbChannels,
+                height: height * batchSize
             )
             command.enqueue()
         }
-    }*/
+    }
     
     /// Apply the backward pass in the CPU execution context.
     public override func backwardCPU()
@@ -277,42 +272,37 @@ public class Normalize12D: Layer2D
     ///
     /// Throw an error if batch size is greater than the first batch size.
     ///
-    /*public override func backwardGPU() throws
+    public override func backwardGPU() throws
     {
         if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
             try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
             
-            let nbChannelsPrev = layerPrev.nbChannels
-            let heightPrev = layerPrev.height
-            let widthPrev = layerPrev.width
-            
-            let pNbChannelsPrev: [UInt32] = [UInt32(nbChannelsPrev)]
+            let pNbChannels: [UInt32] = [UInt32(nbChannels)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
-            let pDimensionsPrev: [UInt32] = [UInt32(widthPrev),
-                                             UInt32(heightPrev)]
+            let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
             let command = MetalKernel.get.createCommand(
-                "selfCorrelate2DBackward", deviceID: deviceID
+                "normalize12DBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBuffer(layerPrev.outs.metal, atIndex: 1)
-            command.setBytes(pNbChannelsPrev, atIndex: 2)
-            command.setBytes(pDimensionsPrev, atIndex: 3)
+            command.setBytes(pNbChannels, atIndex: 2)
+            command.setBytes(pDimensions, atIndex: 3)
             command.setBytes(pNbBatch, atIndex: 4)
             command.setBytes(pDirty, atIndex: 5)
             command.setBuffer(layerPrev.delta.metal, atIndex: 6)
             
             command.dispatchThreads(
-                width: widthPrev * nbChannelsPrev,
-                height: heightPrev * batchSize
+                width: width * nbChannels,
+                height: height * batchSize
             )
             command.enqueue()
             
             propagateDirty()
         }
-    }*/
+    }
 }
 
 ///
@@ -479,6 +469,38 @@ public class Normalize122D: Layer2D
         }
     }
     
+    ///
+    /// Apply the forward pass in the GPU execution context.
+    ///
+    /// Throw an error if batch size is greater than the first batch size.
+    ///
+    public override func forwardGPU() throws
+    {
+        if let layerPrev = self.layerPrev as? Layer2D
+        {
+            try checkStateForwardGPU(batchSize: batchSize)
+            
+            let pNbChannels: [UInt32] = [UInt32(nbChannels)]
+            let pNbBatch: [UInt32] = [UInt32(batchSize)]
+            let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
+            
+            let command = MetalKernel.get.createCommand(
+                "normalize122DForward", deviceID: deviceID
+            )
+            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+            command.setBytes(pNbChannels, atIndex: 1)
+            command.setBytes(pDimensions, atIndex: 2)
+            command.setBytes(pNbBatch, atIndex: 3)
+            command.setBuffer(outs.metal, atIndex: 4)
+            
+            command.dispatchThreads(
+                width: width * nbChannels,
+                height: height * batchSize
+            )
+            command.enqueue()
+        }
+    }
+    
     /// Apply the backward pass in the CPU execution context.
     public override func backwardCPU()
     {
@@ -542,6 +564,43 @@ public class Normalize122D: Layer2D
                     }
                 }}}
             }
+            propagateDirty()
+        }
+    }
+    
+    ///
+    /// Apply the backward pass in the GPU execution context.
+    ///
+    /// Throw an error if batch size is greater than the first batch size.
+    ///
+    public override func backwardGPU() throws
+    {
+        if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
+        {
+            try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
+            
+            let pNbChannels: [UInt32] = [UInt32(nbChannels)]
+            let pNbBatch: [UInt32] = [UInt32(batchSize)]
+            let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
+            let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
+            
+            let command = MetalKernel.get.createCommand(
+                "normalize122DBackward", deviceID: deviceID
+            )
+            command.setBuffer(delta.metal, atIndex: 0)
+            command.setBuffer(layerPrev.outs.metal, atIndex: 1)
+            command.setBytes(pNbChannels, atIndex: 2)
+            command.setBytes(pDimensions, atIndex: 3)
+            command.setBytes(pNbBatch, atIndex: 4)
+            command.setBytes(pDirty, atIndex: 5)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 6)
+            
+            command.dispatchThreads(
+                width: width * nbChannels,
+                height: height * batchSize
+            )
+            command.enqueue()
+            
             propagateDirty()
         }
     }

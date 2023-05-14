@@ -1321,6 +1321,7 @@ class ModelTestGram
     ///
     /// Principle features:
     ///   - SelfCorrelate
+    ///   - Normalize12
     ///
     /// - Parameter size: The size of the input data.
     /// - Returns: The built model.
@@ -1346,6 +1347,8 @@ class ModelTestGram
         )
         
         layer = SelfCorrelate2D(layerPrev: layer, params: params)
+        
+        layer = Normalize122D(layerPrev: layer, params: params)
         
         _ = FullyConnected(
             layerPrev: layer,

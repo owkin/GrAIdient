@@ -653,6 +653,10 @@ private class MetalDevice
                 "MSE2DLossDerivative",
                 "selfCorrelate2DForward",
                 "selfCorrelate2DBackward",
+                "normalize12DForward",
+                "normalize12DBackward",
+                "normalize122DForward",
+                "normalize122DBackward",
             ],
             "LayerNorm": [
                 "computeLayerNormSeqμ",

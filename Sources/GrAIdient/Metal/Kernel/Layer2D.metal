@@ -2218,3 +2218,285 @@ kernel void selfCorrelate2DBackward(
         deltaPrev[offsetPrev] += correlation;
     }
 }
+
+kernel void normalize12DForward(
+    const device float * outsPrev,
+    constant uint * pNbChannels,
+    constant uint * pDimensions,
+    constant uint * pNbBatch,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint height, width;
+    uint nbChannels;
+    uint nbBatch;
+    
+    if (pNbChannels && pDimensions && pNbBatch &&
+        outsPrev && outs)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        nbChannels = *pNbChannels;
+        nbBatch = *pNbBatch;
+    }
+    else
+        return ;
+    
+    uint depth = id[0] / width;
+    uint elem = id[1] / height;
+    uint i = id[1] % height;
+    uint j = id[0] % width;
+    
+    if (i * elem >= height * nbBatch ||
+        j * depth >= width * nbChannels)
+    {
+        return ;
+    }
+    
+    float norm = 0.0;
+    for (uint depth1=0; depth1<nbChannels; depth1++)
+    {
+        uint offsetStart1 = (depth1 + nbChannels * elem) * height;
+        uint offset1 = j + (offsetStart1 + i) * width;
+        
+        float outPrev1 = outsPrev[offset1];
+        norm += outPrev1 * outPrev1;
+    }
+    norm = sqrt(norm);
+    
+    uint offsetStart = (depth + nbChannels * elem) * height;
+    uint offset = j + (offsetStart + i) * width;
+    
+    float outPrev = outsPrev[offset];
+    outs[offset] = outPrev / max(norm, 1e-12);
+}
+
+kernel void normalize12DBackward(
+    const device float * delta,
+    const device float * outsPrev,
+    constant uint * pNbChannels,
+    constant uint * pDimensions,
+    constant uint * pNbBatch,
+    constant uint * pDirty,
+    device float * deltaPrev,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint height, width;
+    uint nbChannels;
+    uint nbBatch;
+    uint dirty;
+    
+    if (pNbChannels && pDimensions && pNbBatch && pDirty &&
+        delta && outsPrev && deltaPrev)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        nbChannels = *pNbChannels;
+        nbBatch = *pNbBatch;
+        dirty = *pDirty;
+    }
+    else
+        return ;
+    
+    uint depth = id[0] / width;
+    uint elem = id[1] / height;
+    uint i = id[1] % height;
+    uint j = id[0] % width;
+    
+    if (i * elem >= height * nbBatch ||
+        j * depth >= width * nbChannels)
+    {
+        return ;
+    }
+    
+    float normTmp = 0.0;
+    for (uint depth1=0; depth1<nbChannels; depth1++)
+    {
+        uint offsetStart1 = (depth1 + nbChannels * elem) * height;
+        uint offset1 = j + (offsetStart1 + i) * width;
+        
+        float outPrev1 = outsPrev[offset1];
+        normTmp += outPrev1 * outPrev1;
+    }
+    float norm = sqrt(normTmp);
+    normTmp = pow(norm, 3);
+    
+    uint offsetStart = (depth + nbChannels * elem) * height;
+    uint offset = j + (offsetStart + i) * width;
+    
+    float deltaCur = delta[offset];
+    float outPrev = outsPrev[offset];
+    
+    float newValue = 0.0;
+    if (norm > 1e-12)
+    {
+        for (uint depth1=0; depth1<nbChannels; depth1++)
+        {
+            uint offsetStart1 = (depth1 + nbChannels * elem) * height;
+            uint offset1 = j + (offsetStart1 + i) * width;
+            
+            float deltaCur1 = delta[offset1];
+            float outPrev1 = outsPrev[offset1];
+            
+            newValue -= outPrev1 * outPrev / normTmp * deltaCur1;
+        }
+        newValue += deltaCur / norm;
+    }
+    else
+    {
+        newValue = deltaCur / 1e-12;
+    }
+    
+    if (dirty)
+    {
+        deltaPrev[offset] = newValue;
+    }
+    else
+    {
+        deltaPrev[offset] += newValue;
+    }
+}
+
+kernel void normalize122DForward(
+    const device float * outsPrev,
+    constant uint * pNbChannels,
+    constant uint * pDimensions,
+    constant uint * pNbBatch,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint height, width;
+    uint nbChannels;
+    uint nbBatch;
+    
+    if (pNbChannels && pDimensions && pNbBatch &&
+        outsPrev && outs)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        nbChannels = *pNbChannels;
+        nbBatch = *pNbBatch;
+    }
+    else
+        return ;
+    
+    uint depth = id[0] / width;
+    uint elem = id[1] / height;
+    uint i = id[1] % height;
+    uint j = id[0] % width;
+    
+    if (i * elem >= height * nbBatch ||
+        j * depth >= width * nbChannels)
+    {
+        return ;
+    }
+    
+    float norm = 0.0;
+    for (uint i1=0; i1<height; i1++){
+    for (uint j1=0; j1<width; j1++){
+    for (uint depth1=0; depth1<nbChannels; depth1++)
+    {
+        uint offsetStart1 = (depth1 + nbChannels * elem) * height;
+        uint offset1 = j1 + (offsetStart1 + i1) * width;
+        
+        float outPrev1 = outsPrev[offset1];
+        norm += outPrev1 * outPrev1;
+    }}}
+    norm = sqrt(norm);
+    
+    uint offsetStart = (depth + nbChannels * elem) * height;
+    uint offset = j + (offsetStart + i) * width;
+    
+    float outPrev = outsPrev[offset];
+    outs[offset] = outPrev / max(norm, 1e-12);
+}
+
+kernel void normalize122DBackward(
+    const device float * delta,
+    const device float * outsPrev,
+    constant uint * pNbChannels,
+    constant uint * pDimensions,
+    constant uint * pNbBatch,
+    constant uint * pDirty,
+    device float * deltaPrev,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint height, width;
+    uint nbChannels;
+    uint nbBatch;
+    uint dirty;
+    
+    if (pNbChannels && pDimensions && pNbBatch && pDirty &&
+        delta && outsPrev && deltaPrev)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        nbChannels = *pNbChannels;
+        nbBatch = *pNbBatch;
+        dirty = *pDirty;
+    }
+    else
+        return ;
+    
+    uint depth = id[0] / width;
+    uint elem = id[1] / height;
+    uint i = id[1] % height;
+    uint j = id[0] % width;
+    
+    if (i * elem >= height * nbBatch ||
+        j * depth >= width * nbChannels)
+    {
+        return ;
+    }
+    
+    float normTmp = 0.0;
+    for (uint i1=0; i1<height; i1++){
+    for (uint j1=0; j1<width; j1++){
+    for (uint depth1=0; depth1<nbChannels; depth1++)
+    {
+        uint offsetStart1 = (depth1 + nbChannels * elem) * height;
+        uint offset1 = j1 + (offsetStart1 + i1) * width;
+        
+        float outPrev1 = outsPrev[offset1];
+        normTmp += outPrev1 * outPrev1;
+    }}}
+    float norm = sqrt(normTmp);
+    normTmp = pow(norm, 3);
+    
+    uint offsetStart = (depth + nbChannels * elem) * height;
+    uint offset = j + (offsetStart + i) * width;
+    
+    float deltaCur = delta[offset];
+    float outPrev = outsPrev[offset];
+    
+    float newValue = 0.0;
+    if (norm > 1e-12)
+    {
+        for (uint i1=0; i1<height; i1++){
+        for (uint j1=0; j1<width; j1++){
+        for (uint depth1=0; depth1<nbChannels; depth1++)
+        {
+            uint offsetStart1 = (depth1 + nbChannels * elem) * height;
+            uint offset1 = j1 + (offsetStart1 + i1) * width;
+            
+            float deltaCur1 = delta[offset1];
+            float outPrev1 = outsPrev[offset1];
+            
+            newValue -= outPrev1 * outPrev / normTmp * deltaCur1;
+        }}}
+        newValue += deltaCur / norm;
+    }
+    else
+    {
+        newValue = deltaCur / 1e-12;
+    }
+    
+    if (dirty)
+    {
+        deltaPrev[offset] = newValue;
+    }
+    else
+    {
+        deltaPrev[offset] += newValue;
+    }
+}

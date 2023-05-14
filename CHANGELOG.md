@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🪜 **layer_2d:** Normalize2D ([#87](https://github.com/owkin/GrAIdient/pull/87))\
 🪜 **layer_2d:** SelfCorrelate2D ([#86](https://github.com/owkin/GrAIdient/pull/86))\
 🚨 **integration**: resize alignment with PyTorch ([#85](https://github.com/owkin/GrAIdient/pull/85))\
 🐛 **layer_2d**: align Convolution & Deconvolution on PyTorch ([#84](https://github.com/owkin/GrAIdient/pull/84))\

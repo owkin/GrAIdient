@@ -337,6 +337,9 @@ class Layer2DGradTests: Input2DMSE1DCase
                 layersPrev: [layer, otherLayer], params: params
             )
             
+        case "SelfCorrelate":
+            layer = SelfCorrelate2D(layerPrev: layer, params: params)
+            
         default:
             fatalError("Unreachable.")
         }
@@ -899,6 +902,19 @@ class Layer2DGradTests: Input2DMSE1DCase
         let trainer = _buildTrainer(model: "Constant", bn: false)
         run(trainer)
     }
+    
+    func testSelfCorrelateCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "SelfCorrelate", bn: false)
+        run(trainer)
+    }
+    
+    func testSelfCorrelateGPU() throws
+    {
+        let trainer = _buildTrainer(model: "SelfCorrelate", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -1256,6 +1272,9 @@ class Layer2DFlowTests: Input2DMSE1DCase
                 layerPrev: layer, size: width, params: params
             )
             
+        case "SelfCorrelate":
+            layer = SelfCorrelate2D(layerPrev: layer, params: params)
+            
         default:
             fatalError("Unreachable.")
         }
@@ -1601,6 +1620,12 @@ class Layer2DFlowTests: Input2DMSE1DCase
     func testResizeBilinear2() throws
     {
         let trainer = _buildTrainer(model: "ResizeBilinear2", bn: false)
+        run(trainer)
+    }
+    
+    func testSelfCorrelate() throws
+    {
+        let trainer = _buildTrainer(model: "SelfCorrelate", bn: false)
         run(trainer)
     }
 }
@@ -1968,6 +1993,12 @@ class Layer2DFlowResetTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "ResizeBilinear2", bn: false)
         run(trainer)
     }
+    
+    override func testSelfCorrelate() throws
+    {
+        let trainer = _buildTrainer(model: "SelfCorrelate", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -2333,6 +2364,12 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "ResizeBilinear2", bn: false)
         run(trainer)
     }
+    
+    override func testSelfCorrelate() throws
+    {
+        let trainer = _buildTrainer(model: "SelfCorrelate", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -2696,6 +2733,12 @@ class Layer2DInferenceTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "ResizeBilinear2", bn: false)
         run(trainer)
     }
+    
+    override func testSelfCorrelate() throws
+    {
+        let trainer = _buildTrainer(model: "SelfCorrelate", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -3056,6 +3099,12 @@ class Layer2DLoadTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "ResizeBilinear2", bn: false)
         run(trainer)
     }
+    
+    override func testSelfCorrelate() throws
+    {
+        let trainer = _buildTrainer(model: "SelfCorrelate", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -3414,6 +3463,12 @@ class Layer2DTransformTests: Layer2DFlowTests
     override func testResizeBilinear2() throws
     {
         let trainer = _buildTrainer(model: "ResizeBilinear2", bn: false)
+        run(trainer)
+    }
+    
+    override func testSelfCorrelate() throws
+    {
+        let trainer = _buildTrainer(model: "SelfCorrelate", bn: false)
         run(trainer)
     }
 }

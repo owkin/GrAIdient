@@ -258,6 +258,19 @@ func computeAutoEncoder2GradNorm(_ size: Int) -> Float
 }
 
 ///
+/// Get gradient norm computed with PyTorch for ModelTestGram.
+///
+/// - Parameter size: The size of the input data.
+/// - Returns: The gradient norm.
+///
+func computeGramGradNorm(_ size: Int) -> Float
+{
+    let pythonLib = Python.import("python_lib")
+    let data = pythonLib.compute_gram_grad_norm(size)
+    return Float(data)!
+}
+
+///
 /// Get optimizer parameters for model training.
 ///
 /// - Parameter nbLoops: Number of steps per epoch.

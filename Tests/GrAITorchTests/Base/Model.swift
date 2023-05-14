@@ -1312,3 +1312,83 @@ class ModelTestAutoEncoder1: ModelTestAutoEncoder
         return model
     }
 }
+
+/// Model to test against PyTorch.
+class ModelTestGram
+{
+    ///
+    /// Create the model and import weights from PyTorch.
+    ///
+    /// Principle features:
+    ///   - SelfCorrelate
+    ///
+    /// - Parameter size: The size of the input data.
+    /// - Returns: The built model.
+    ///
+    static func build(_ size: Int) -> Model
+    {
+        let context = ModelContext(name: "ModelTestGram", curID: 0)
+        let params = GrAI.Model.Params(context: context)
+        
+        var layer: Layer2D
+        layer = Input2D(
+            nbChannels: 3,
+            width: size,
+            height: size,
+            params: params
+        )
+        
+        layer = Convolution2D(
+            layerPrev: layer,
+            size: 1, nbChannels: 5, stride: 1,
+            activation: nil, biases: true, bn: false,
+            params: params
+        )
+        
+        layer = SelfCorrelate2D(layerPrev: layer, params: params)
+        
+        _ = FullyConnected(
+            layerPrev: layer,
+            nbNeurons: 1,
+            activation: nil,
+            biases: true,
+            params: params
+        )
+        
+        let model = Model(model: context.model, modelsPrev: [])
+        
+        // Load weights from `PyTorch`.
+        let pythonLib = Python.import("python_lib")
+        let data = pythonLib.load_gram_weights()
+        
+        let weights = [[Float]](data.tuple2.0)!
+        
+        // Apply weights on the `GrAIdient` model's layers.
+        var cur = 0
+        for num_layer in 0..<model.layers.count
+        {
+            // Load weights and biases.
+            if let convLayer = model.layers[num_layer] as? Convolution2D
+            {
+                let weightsTmp: [Float] = weights[cur]
+                cur += 1
+                let biases: [Float] = weights[cur]
+                cur += 1
+                
+                convLayer.weightsCPU = weightsTmp + biases
+            }
+            // Load weights and biases.
+            else if let flLayer = model.layers[num_layer] as? FullyConnected
+            {
+                let weightsTmp: [Float] = weights[cur]
+                cur += 1
+                let biases: [Float] = weights[cur]
+                cur += 1
+                
+                flLayer.weightsCPU = weightsTmp + biases
+            }
+        }
+        
+        return model
+    }
+}

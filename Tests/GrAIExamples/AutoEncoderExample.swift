@@ -21,9 +21,9 @@ final class AutoEncoderExample: XCTestCase
     let _size = 32
     
     /// Mean of the preprocessing to apply to data.
-    let _mean = (125.3, 123.0, 113.9)
+    let _mean: (Float, Float, Float) = (123.675, 116.28, 103.53)
     /// Deviation of the preprocessing to apply to data.
-    let _std = (63.0, 62.1, 66.7)
+    let _std: (Float, Float, Float) = (58.395, 57.12, 57.375)
     
     /// Initialize test.
     override func setUp()
@@ -415,9 +415,7 @@ final class AutoEncoderExample: XCTestCase
             
             for step in 0..<cifar8.nbLoops
             {
-                let samples8 = cifar8.getSamples()!
-                let samples = samples8
-                
+                let samples = cifar8.getSamples()!
                 if samples.count != _batchSize
                 {
                     fatalError("Unreachable.")

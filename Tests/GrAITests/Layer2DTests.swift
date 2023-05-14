@@ -340,6 +340,12 @@ class Layer2DGradTests: Input2DMSE1DCase
         case "SelfCorrelate":
             layer = SelfCorrelate2D(layerPrev: layer, params: params)
             
+        case "Normalize1":
+            layer = Normalize12D(layerPrev: layer, params: params)
+            
+        case "Normalize12":
+            layer = Normalize122D(layerPrev: layer, params: params)
+            
         default:
             fatalError("Unreachable.")
         }
@@ -913,6 +919,20 @@ class Layer2DGradTests: Input2DMSE1DCase
     func testSelfCorrelateGPU() throws
     {
         let trainer = _buildTrainer(model: "SelfCorrelate", bn: false)
+        run(trainer)
+    }
+    
+    func testNormalize1CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "Normalize1", bn: false)
+        run(trainer)
+    }
+    
+    func testNormalize12CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "Normalize12", bn: false)
         run(trainer)
     }
 }

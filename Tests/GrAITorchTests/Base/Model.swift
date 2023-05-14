@@ -1320,7 +1320,7 @@ class ModelTestGram
     /// Create the model and import weights from PyTorch.
     ///
     /// Principle features:
-    ///   - AutoCorrelation
+    ///   - SelfCorrelate
     ///
     /// - Parameter size: The size of the input data.
     /// - Returns: The built model.
@@ -1345,7 +1345,7 @@ class ModelTestGram
             params: params
         )
         
-        layer = AutoCorrelate2D(layerPrev: layer, params: params)
+        layer = SelfCorrelate2D(layerPrev: layer, params: params)
         
         _ = FullyConnected(
             layerPrev: layer,

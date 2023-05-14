@@ -1,5 +1,5 @@
 //
-// AutoCorrelate2D.swift
+// SelfCorrelate2D.swift
 // GrAIdient
 //
 // Created by Jean-François Reboud on 13/05/2023.
@@ -10,7 +10,7 @@
 ///
 /// This layer computes correlation of previous channels.
 ///
-public class AutoCorrelate2D: Layer2D
+public class SelfCorrelate2D: Layer2D
 {
     ///
     /// Create a layer with a 2D shape neural structure.
@@ -64,7 +64,7 @@ public class AutoCorrelate2D: Layer2D
         let params = GrAI.Model.Params(context: context)
         params.context.curID = id
             
-        let layer = AutoCorrelate2D(
+        let layer = SelfCorrelate2D(
             layerPrev: layerPrev,
             params: params
         )
@@ -186,7 +186,7 @@ public class AutoCorrelate2D: Layer2D
                                              UInt32(heightPrev)]
             
             let command = MetalKernel.get.createCommand(
-                "autoCorrelate2DForward", deviceID: deviceID
+                "selfCorrelate2DForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(pNbChannelsPrev, atIndex: 1)
@@ -268,7 +268,7 @@ public class AutoCorrelate2D: Layer2D
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
             let command = MetalKernel.get.createCommand(
-                "autoCorrelate2DBackward", deviceID: deviceID
+                "selfCorrelate2DBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBuffer(layerPrev.outs.metal, atIndex: 1)

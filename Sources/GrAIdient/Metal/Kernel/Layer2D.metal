@@ -2097,7 +2097,7 @@ kernel void MSE2DLossDerivative(
         float(nbBatch * nbChannels * height * width);
 }
 
-kernel void autoCorrelate2DForward(
+kernel void selfCorrelate2DForward(
     const device float * outsPrev,
     constant uint * pNbChannelsPrev,
     constant uint * pDimensionsPrev,
@@ -2148,7 +2148,7 @@ kernel void autoCorrelate2DForward(
     outs[offset] = correlation;
 }
 
-kernel void autoCorrelate2DBackward(
+kernel void selfCorrelate2DBackward(
     const device float * delta,
     const device float * outsPrev,
     constant uint * pNbChannelsPrev,

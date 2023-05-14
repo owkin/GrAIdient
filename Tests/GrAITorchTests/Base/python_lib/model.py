@@ -897,7 +897,7 @@ class ModelTestGram(torch.nn.Module):
     """
     Model to test.
     Principle features:
-        - AutoCorrelation
+        - SelfCorrelate
     """
 
     def __init__(self):

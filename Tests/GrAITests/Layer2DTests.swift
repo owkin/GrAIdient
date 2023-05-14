@@ -337,8 +337,8 @@ class Layer2DGradTests: Input2DMSE1DCase
                 layersPrev: [layer, otherLayer], params: params
             )
             
-        case "AutoCorrelate":
-            layer = AutoCorrelate2D(layerPrev: layer, params: params)
+        case "SelfCorrelate":
+            layer = SelfCorrelate2D(layerPrev: layer, params: params)
             
         default:
             fatalError("Unreachable.")
@@ -903,16 +903,16 @@ class Layer2DGradTests: Input2DMSE1DCase
         run(trainer)
     }
     
-    func testAutoCorrelateCPU() throws
+    func testSelfCorrelateCPU() throws
     {
         GrAI.Opti.CPU = true
-        let trainer = _buildTrainer(model: "AutoCorrelate", bn: false)
+        let trainer = _buildTrainer(model: "SelfCorrelate", bn: false)
         run(trainer)
     }
     
-    func testAutoCorrelateGPU() throws
+    func testSelfCorrelateGPU() throws
     {
-        let trainer = _buildTrainer(model: "AutoCorrelate", bn: false)
+        let trainer = _buildTrainer(model: "SelfCorrelate", bn: false)
         run(trainer)
     }
 }
@@ -1272,8 +1272,8 @@ class Layer2DFlowTests: Input2DMSE1DCase
                 layerPrev: layer, size: width, params: params
             )
             
-        case "AutoCorrelate":
-            layer = AutoCorrelate2D(layerPrev: layer, params: params)
+        case "SelfCorrelate":
+            layer = SelfCorrelate2D(layerPrev: layer, params: params)
             
         default:
             fatalError("Unreachable.")
@@ -1623,9 +1623,9 @@ class Layer2DFlowTests: Input2DMSE1DCase
         run(trainer)
     }
     
-    func testAutoCorrelate() throws
+    func testSelfCorrelate() throws
     {
-        let trainer = _buildTrainer(model: "AutoCorrelate", bn: false)
+        let trainer = _buildTrainer(model: "SelfCorrelate", bn: false)
         run(trainer)
     }
 }
@@ -1994,9 +1994,9 @@ class Layer2DFlowResetTests: Layer2DFlowTests
         run(trainer)
     }
     
-    override func testAutoCorrelate() throws
+    override func testSelfCorrelate() throws
     {
-        let trainer = _buildTrainer(model: "AutoCorrelate", bn: false)
+        let trainer = _buildTrainer(model: "SelfCorrelate", bn: false)
         run(trainer)
     }
 }
@@ -2365,9 +2365,9 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
         run(trainer)
     }
     
-    override func testAutoCorrelate() throws
+    override func testSelfCorrelate() throws
     {
-        let trainer = _buildTrainer(model: "AutoCorrelate", bn: false)
+        let trainer = _buildTrainer(model: "SelfCorrelate", bn: false)
         run(trainer)
     }
 }
@@ -2734,9 +2734,9 @@ class Layer2DInferenceTests: Layer2DFlowTests
         run(trainer)
     }
     
-    override func testAutoCorrelate() throws
+    override func testSelfCorrelate() throws
     {
-        let trainer = _buildTrainer(model: "AutoCorrelate", bn: false)
+        let trainer = _buildTrainer(model: "SelfCorrelate", bn: false)
         run(trainer)
     }
 }
@@ -3100,9 +3100,9 @@ class Layer2DLoadTests: Layer2DFlowTests
         run(trainer)
     }
     
-    override func testAutoCorrelate() throws
+    override func testSelfCorrelate() throws
     {
-        let trainer = _buildTrainer(model: "AutoCorrelate", bn: false)
+        let trainer = _buildTrainer(model: "SelfCorrelate", bn: false)
         run(trainer)
     }
 }
@@ -3466,9 +3466,9 @@ class Layer2DTransformTests: Layer2DFlowTests
         run(trainer)
     }
     
-    override func testAutoCorrelate() throws
+    override func testSelfCorrelate() throws
     {
-        let trainer = _buildTrainer(model: "AutoCorrelate", bn: false)
+        let trainer = _buildTrainer(model: "SelfCorrelate", bn: false)
         run(trainer)
     }
 }

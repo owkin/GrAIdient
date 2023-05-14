@@ -211,8 +211,8 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
                 layerPrev: layer, activation: SoftReLU.str, params: params
             )
             
-        case "AutoCorrelate":
-            secondLayer = AutoCorrelate2D(layerPrev: layer, params: params)
+        case "SelfCorrelate":
+            secondLayer = SelfCorrelate2D(layerPrev: layer, params: params)
             
             secondLayer = Convolution2D(
                 layerPrev: secondLayer, size: 1, nbChannels: 3, stride: 1,
@@ -460,16 +460,16 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
         run(trainer)
     }
     
-    func testAutoCorrelateCPU() throws
+    func testSelfCorrelateCPU() throws
     {
         GrAI.Opti.CPU = true
-        let trainer = _buildTrainer(model: "AutoCorrelate")
+        let trainer = _buildTrainer(model: "SelfCorrelate")
         run(trainer)
     }
     
-    func testAutoCorrelateGPU() throws
+    func testSelfCorrelateGPU() throws
     {
-        let trainer = _buildTrainer(model: "AutoCorrelate")
+        let trainer = _buildTrainer(model: "SelfCorrelate")
         run(trainer)
     }
 }
@@ -725,8 +725,8 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
             )
             (secondLayer as! VQ2D).computeVQ = false
             
-        case "AutoCorrelate":
-            secondLayer = AutoCorrelate2D(layerPrev: layer, params: params)
+        case "SelfCorrelate":
+            secondLayer = SelfCorrelate2D(layerPrev: layer, params: params)
             
             secondLayer = Convolution2D(
                 layerPrev: secondLayer, size: 1, nbChannels: 3, stride: 1,
@@ -899,9 +899,9 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
         run(trainer)
     }
     
-    func testAutoCorrelate() throws
+    func testSelfCorrelate() throws
     {
-        let trainer = _buildTrainer(model: "AutoCorrelate")
+        let trainer = _buildTrainer(model: "SelfCorrelate")
         run(trainer)
     }
 }

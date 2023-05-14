@@ -4155,3 +4155,57 @@ class FTFrequences2DTransformTests: FTFrequences2DFlowTests
         run(trainer)
     }
 }
+
+// -----------------------------------------------------------------------------
+// Gradient Checking
+// We expect to see errors ~ 1e-7 and less.
+// -----------------------------------------------------------------------------
+class SimilarityBatchError2DGradTests: Input2DSimilarityBatchError2DCase
+{
+    override func setUp()
+    {
+        super.setUp()
+        GrAI.Loop.gradientChecking = true
+    }
+    
+    private func _buildTrainer() -> GradTrainer
+    {
+        let trainer = GradTrainer(
+            name: "Layer2D",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            _buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    private func _buildModel(context: ModelContext)
+    {
+        let params = GrAI.Model.Params(context: context)
+        
+        var layer: Layer2D = Input2D(
+            nbChannels: 1, width: width, height: height, params: params
+        )
+        
+        layer = Convolution2D(
+            layerPrev: layer, size: 1, nbChannels: 5, stride: 1,
+            activation: SoftReLU.str, biases: true, bn: false, params: params
+        )
+        
+        layer = SelfCorrelate2D(layerPrev: layer, params: params)
+        
+        layer = Normalize122D(layerPrev: layer, params: params)
+        
+        _ = SimilarityBatchError2D(layerPrev: layer, params: params)
+    }
+    
+    func testCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+}

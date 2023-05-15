@@ -2500,3 +2500,98 @@ kernel void normalize122DBackward(
         deltaPrev[offset] += newValue;
     }
 }
+
+kernel void similarBatchError2DLoss(
+    const device float * outs,
+    constant uint * pNbChannels,
+    constant uint * pDimensions,
+    constant uint * pNbBatch,
+    device float * losses,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint height, width;
+    uint nbChannels;
+    uint nbBatch;
+    
+    if (pNbChannels && pDimensions && pNbBatch && outs && losses)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        nbChannels = *pNbChannels;
+        nbBatch = *pNbBatch;
+    }
+    else
+        return ;
+    
+    uint elem1 = id[0];
+    uint elem2 = id[1];
+    
+    if (elem1 >= nbBatch || elem2 >= nbBatch)
+    {
+        return ;
+    }
+    
+    if (elem1 == elem2)
+    {
+        losses[elem2 + nbBatch * elem1] = 0.0;
+    }
+    else
+    {
+        float sum = 0.0;
+        for (uint i=0; i<height; i++) {
+        for (uint j=0; j<width; j++)
+        {
+            uint offset1 = j + (elem1 * height + i) * width;
+            uint offset2 = j + (elem2 * height + i) * width;
+        
+            sum += outs[offset1] * outs[offset2];
+        }}
+        losses[elem2 + nbBatch * elem1] = sum;
+    }
+}
+
+kernel void similarBatchError2DLossDerivative(
+    const device float * outs,
+    constant uint * pNbChannels,
+    constant uint * pDimensions,
+    constant float * pCoeff,
+    constant uint * pNbBatch,
+    device float * deltaPrev,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint height, width;
+    uint nbChannels;
+    float coeff;
+    uint nbBatch;
+    
+    if (pNbChannels && pDimensions && pNbBatch && pCoeff &&
+        outs && deltaPrev)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        nbChannels = *pNbChannels;
+        coeff = *pCoeff;
+        nbBatch = *pNbBatch;
+    }
+    else
+        return ;
+    
+    uint i = id[0] / width;
+    uint j = id[0] % width;
+    uint elem = id[1];
+    
+    if (i * j >= width * height || elem >= nbBatch)
+    {
+        return ;
+    }
+    
+    float sum = 0.0;
+    for (uint elem1=0; elem1<nbBatch; elem1++)
+    {
+        uint offset1 = j + (elem1 * height + i) * width;
+        sum += 2 * outs[offset1];
+    }
+    
+    uint offset = j + (elem * height + i) * width;
+    deltaPrev[offset] = coeff / nbBatch * sum;
+}

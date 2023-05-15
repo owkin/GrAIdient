@@ -230,7 +230,7 @@ open class LayerOutput1D: Layer1D
     {
         // Note that backward is not called except when it is
         // an intermediate layer.
-        // Model.backward is only called on not dirty layers.
+        // Model.backward is only called on non dirty layers.
         if let layerPrev = self.layerPrev as? Layer1D, mustComputeBackward
         {
             let neuronsPrev = layerPrev.neurons
@@ -260,7 +260,7 @@ open class LayerOutput1D: Layer1D
     {
         // Note that backward is not called except when it is
         // an intermediate layer.
-        // Model.backward is only called on not dirty layers.
+        // Model.backward is only called on non dirty layers.
         if let layerPrev = self.layerPrev as? Layer1D, mustComputeBackward
         {
             try layerPrev.checkStateBackwardGPU(batchSize: batchSize)

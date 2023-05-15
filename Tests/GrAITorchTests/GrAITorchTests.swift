@@ -148,6 +148,90 @@ final class GrAITorchTests: XCTestCase
         return gradNormOutput
     }
     
+    ///
+    /// Compute the gradient norm on the first layer of the model.
+    ///
+    /// - Parameters:
+    ///     - model: The model we want to evalulate the gradient norm on.
+    ///     - size: The size of the input data.
+    ///     - batchSize: The number of images in the batch.
+    /// - Returns: The gradient norm on the first layer.
+    ///
+    func _getGradientNormGram2D(
+        model: Model,
+        size: Int,
+        batchSize: Int) -> Double
+    {
+        // Create the context to build a graph of layers
+        // that come after the layers inside `model`.
+        let context = ModelContext(name: "ModelTest", models: [model])
+        let params = GrAI.Model.Params(context: context)
+        
+        var layer: Layer2D = SelfCorrelate2D(
+            layerPrev: model.layers[1] as! Layer2D,
+            params: params
+        )
+        
+        layer = Normalize122D(layerPrev: layer, params: params)
+        
+        let similarityLayer = SimilarityBatchError2D(
+            layerPrev: layer,
+            params: params
+        )
+        
+        // Append a loss layer.
+        let lastLayer = MSE1D(
+            layerPrev: model.layers.last! as! Layer1D,
+            params: params
+        )
+        lastLayer.coeff = 1.0 / 2.0
+        
+        // Initialize the finalModel with the links (`layerPrev` updated).
+        context.model.layers = model.layers + context.model.layers
+        let finalModel = Model(model: context.model, modelsPrev: [])
+        
+        // Initialize for inference.
+        finalModel.initKernel(phase: .Inference)
+        // Avoid the compute of every gradients of weights.
+        model.computeDeltaWeights = false
+        
+        let optimizerParams = getOptimizerParams(nbLoops: 1)
+        finalModel.setupOptimizers(params: optimizerParams)
+        
+        let firstLayer: Input2D = model.layers.first as! Input2D
+        // Allow backward pass go through the first layer.
+        firstLayer.computeDelta = true
+        // Allow to compute the gradients of weights for the first layer.
+        firstLayer.computeDeltaWeights = true
+        
+        // Set data.
+        let data: [Float] = getBatchData(size: size, batchSize: batchSize)
+        try! firstLayer.setDataGPU(data, batchSize: batchSize, format: .RGB)
+        
+        // Update internal batch size.
+        finalModel.updateKernel(batchSize: batchSize)
+        
+        // Forward.
+        try! finalModel.forward()
+        
+        // Apply loss derivative.
+        var groundTruth = [[Double]]()
+        for _ in 0..<batchSize
+        {
+            groundTruth.append([0.0])
+        }
+        try! similarityLayer.lossDerivativeGPU()
+        try! lastLayer.lossDerivativeGPU(groundTruth)
+        
+        // Backward.
+        try! finalModel.backward()
+        
+        // Get the gradient norm on the first layer.
+        let gradNormOutput: Double =
+            try! finalModel.getGradientNorm(layers: [firstLayer])
+        return gradNormOutput
+    }
+    
     /// Test that modelConv1 backward pass returns the same gradient norm in GrAIdient and PyTorch.
     func testModelConv1()
     {
@@ -1233,13 +1317,17 @@ final class GrAITorchTests: XCTestCase
     /// Test that modelGram backward pass returns the same gradient norm in GrAIdient and PyTorch.
     func testModelGram()
     {
+        let batchSize = 4
+        
         // Build model.
         let model = ModelTestGram.build(_size)
         
         // Get the gradient norm on the first layer.
-        let expectedNorm: Double = Double(computeGramGradNorm(_size))
-        let gradNormOutput: Double = _getGradientNormMSE1D(
-            model: model, size: _size
+        let expectedNorm: Double = Double(computeGramGradNorm(
+            size: _size, batchSize: batchSize
+        ))
+        let gradNormOutput: Double = _getGradientNormGram2D(
+            model: model, size: _size, batchSize: batchSize
         )
         
         // Compare difference.

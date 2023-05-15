@@ -243,7 +243,7 @@ open class LayerOutput2D: Layer2D
                 for j in 0..<width
                 {
                     neurons[depth].get(i, j)!.v[elem].out =
-                    neuronsPrev[depth].get(i, j)!.v[elem].out
+                        neuronsPrev[depth].get(i, j)!.v[elem].out
                 }}
             }}
         }
@@ -280,7 +280,7 @@ open class LayerOutput2D: Layer2D
     {
         // Note that backward is not called except when it is
         // an intermediate layer.
-        // Model.backward is only called on not dirty layers.
+        // Model.backward is only called on non dirty layers.
         if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
             let neuronsPrev = layerPrev.neurons
@@ -314,7 +314,7 @@ open class LayerOutput2D: Layer2D
     {
         // Note that backward is not called except when it is
         // an intermediate layer.
-        // Model.backward is only called on not dirty layers.
+        // Model.backward is only called on non dirty layers.
         if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
             try layerPrev.checkStateBackwardGPU(batchSize: batchSize)

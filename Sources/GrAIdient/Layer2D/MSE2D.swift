@@ -5,7 +5,7 @@
 // Created by Jean-François Reboud on 04/03/2023.
 //
 
-/// Loss layer with a 2D shape neural structure and a loss that computes mean squared error.
+/// Output layer with a 2D shape neural structure and a loss that computes mean squared error.
 public class MSE2D: LayerOutput2D
 {
     ///

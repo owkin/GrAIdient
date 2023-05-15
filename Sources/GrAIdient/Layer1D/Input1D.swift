@@ -79,7 +79,7 @@ class InputBuffers1D: InputBuffers<Layer1D>, IWeightBuffers
     }
 }
 
-/// First layer with a 1D shape neural structure.
+/// Input layer with a 1D shape neural structure.
 public class Input1D: LayerInput1D, LayerUpdate
 {
     /// Grid of "weights".

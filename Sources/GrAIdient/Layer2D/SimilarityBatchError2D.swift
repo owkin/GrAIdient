@@ -5,6 +5,8 @@
 // Created by Jean-François Reboud on 14/05/2023.
 //
 
+import Foundation
+
 /// Output layer with a 2D shape neural structure and a loss that computes pairwise similarity within batch.
 public class SimilarityBatchError2D: LayerOutput2D
 {
@@ -63,6 +65,28 @@ public class SimilarityBatchError2D: LayerOutput2D
         layer.coeff = self.coeff
         
         return layer
+    }
+    
+    ///
+    /// Setup loss state  in the GPU execution context.
+    ///
+    /// Throw an error if batch size or ground truth are incoherent.
+    ///
+    /// - Parameter batchSize: The batch size of data.
+    ///
+    public override func checkLossGPU(batchSize: Int) throws
+    {
+        if loss == nil
+        {
+            loss = MetalSharedBuffer<Float>(
+                batchSize * batchSize,
+                deviceID: deviceID
+            )
+        }
+        else if batchSize <= 0 || batchSize > loss.nbElems
+        {
+            throw LayerError.BatchSize
+        }
     }
     
     ///
@@ -147,48 +171,39 @@ public class SimilarityBatchError2D: LayerOutput2D
     ///
     /// Throw an error if batch size or ground truth are incoherent.
     ///
-    /// - Parameters:
-    ///     - groundTruth: The ground truth.
-    ///     - batchSize: The batch size of data.
     /// - Returns: The loss value.
     ///
-    /*public func getLossGPU(
-        _ groundTruth: MetalBuffer<Float>,
-        batchSize: Int) throws -> Float
+    public func getLossGPU() throws -> Float
     {
         try checkLossGPU(batchSize: batchSize)
-        if batchSize != self.batchSize
-        {
-            throw LayerError.BatchSize
-        }
         
         let pNbChannels: [UInt32] = [UInt32(nbChannels)]
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         
         let command = MetalKernel.get.createCommand(
-            "MSE2DLoss", deviceID: deviceID
+            "similarBatchError2DLoss", deviceID: deviceID
         )
         command.setBuffer(outs.metal, atIndex: 0)
-        command.setBuffer(groundTruth.metal, atIndex: 1)
-        command.setBytes(pNbChannels, atIndex: 2)
-        command.setBytes(pDimensions, atIndex: 3)
-        command.setBytes(pNbBatch, atIndex: 4)
-        command.setBuffer(loss.metal, atIndex: 5)
+        command.setBytes(pNbChannels, atIndex: 1)
+        command.setBytes(pDimensions, atIndex: 2)
+        command.setBytes(pNbBatch, atIndex: 3)
+        command.setBuffer(loss.metal, atIndex: 4)
         
-        command.dispatchThreads(batchSize)
+        command.dispatchThreads(width: batchSize, height: batchSize)
         command.enqueue()
         
         MetalKernel.get.download([loss])
         var loss: Float = 0.0
         let lossPtr = self.loss.buffer
-        for i in 0..<batchSize
+        let firstBatch = Int(sqrt(Double(self.loss.nbElems)))
+        for elem1 in 0..<firstBatch {
+        for elem2 in 0..<firstBatch
         {
-            loss += lossPtr[i]
-        }
-        return Float(coeff) * loss /
-               Float(batchSize * nbChannels * height * width)
-    }*/
+            loss += lossPtr[elem2 + firstBatch * elem1]
+        }}
+        return Float(coeff) * loss / Float(batchSize)
+    }
     
     ///
     /// Compute the derivative of the loss in the CPU execution context.
@@ -227,24 +242,10 @@ public class SimilarityBatchError2D: LayerOutput2D
     /// This function is necessary to initialize the backward pass !
     /// In a way, it plays a similar role as the `setData` of the first layer.
     ///
-    /// The `setData` API sets data to the first layer to initialize the forward pass.
-    /// Here we use the `groundTruth` to initialize the backward pass.
-    ///
     /// Throw an error if batch size or ground truth are incoherent.
     ///
-    /// - Parameters:
-    ///     -  groundTruth: The ground truth.
-    ///     - batchSize: The batch size of data.
-    ///
-    /*public func lossDerivativeGPU(
-        _ groundTruth: MetalBuffer<Float>,
-        batchSize: Int) throws
+    public func lossDerivativeGPU() throws
     {
-        if batchSize != self.batchSize
-        {
-            throw LayerError.BatchSize
-        }
-        
         if let layerPrev = self.layerPrev as? Layer2D
         {
             try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
@@ -255,23 +256,22 @@ public class SimilarityBatchError2D: LayerOutput2D
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             
             let command = MetalKernel.get.createCommand(
-                "MSE2DLossDerivative", deviceID: deviceID
+                "similarBatchError2DLossDerivative", deviceID: deviceID
             )
             command.setBuffer(outs.metal, atIndex: 0)
-            command.setBuffer(groundTruth.metal, atIndex: 1)
-            command.setBytes(pNbChannels, atIndex: 2)
-            command.setBytes(pDimensions, atIndex: 3)
-            command.setBytes(pCoeff, atIndex: 4)
-            command.setBytes(pNbBatch, atIndex: 5)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 6)
+            command.setBytes(pNbChannels, atIndex: 1)
+            command.setBytes(pDimensions, atIndex: 2)
+            command.setBytes(pCoeff, atIndex: 3)
+            command.setBytes(pNbBatch, atIndex: 4)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 5)
             
             command.dispatchThreads(
-                width: nbChannels * width,
-                height: batchSize * height
+                width: width * height,
+                height: batchSize
             )
             command.enqueue()
             
             propagateDirty()
         }
-    }*/
+    }
 }

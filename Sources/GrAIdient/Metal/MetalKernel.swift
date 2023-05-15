@@ -657,6 +657,8 @@ private class MetalDevice
                 "normalize12DBackward",
                 "normalize122DForward",
                 "normalize122DBackward",
+                "similarBatchError2DLoss",
+                "similarBatchError2DLossDerivative",
             ],
             "LayerNorm": [
                 "computeLayerNormSeqμ",

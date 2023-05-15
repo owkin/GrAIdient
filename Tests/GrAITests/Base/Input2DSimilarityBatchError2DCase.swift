@@ -101,7 +101,7 @@ class Input2DSimilarityBatchError2DCase: XCTestCase
         
         if GrAI.Opti.GPU
         {
-            //lastLayer.lossDerivativeGPU()
+            try! lastLayer.lossDerivativeGPU()
         }
         else
         {
@@ -123,8 +123,7 @@ class Input2DSimilarityBatchError2DCase: XCTestCase
         let lastLayer = model.layers.last as! SimilarityBatchError2D
         if GrAI.Opti.GPU
         {
-            fatalError()
-            // return Double(try! lastLayer.getLossGPU(groundTruth))
+            return Double(try! lastLayer.getLossGPU())
         }
         else
         {

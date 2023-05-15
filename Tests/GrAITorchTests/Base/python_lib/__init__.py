@@ -1,5 +1,6 @@
 from python_lib.gradient import (
     get_input_data,
+    get_batch_data,
     get_complex_data,
     compute_conv1_grad_norm,
     compute_conv2_grad_norm,
@@ -32,6 +33,7 @@ from python_lib.weight import (
 
 __all__ = [
     "get_input_data",
+    "get_batch_data",
     "get_complex_data",
     "compute_conv1_grad_norm",
     "compute_conv2_grad_norm",

@@ -1322,6 +1322,7 @@ class ModelTestGram
     /// Principle features:
     ///   - SelfCorrelate
     ///   - Normalize12
+    ///   - SimilarityBatchError
     ///
     /// - Parameter size: The size of the input data.
     /// - Returns: The built model.
@@ -1346,12 +1347,12 @@ class ModelTestGram
             params: params
         )
         
-        layer = SelfCorrelate2D(layerPrev: layer, params: params)
-        
-        layer = Normalize122D(layerPrev: layer, params: params)
+        let head: Layer1D = AvgPool2D(
+            layerPrev: layer, params: params
+        )
         
         _ = FullyConnected(
-            layerPrev: layer,
+            layerPrev: head,
             nbNeurons: 1,
             activation: nil,
             biases: true,

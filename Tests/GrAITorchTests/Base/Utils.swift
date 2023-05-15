@@ -60,6 +60,21 @@ func getInputData(_ size: Int) -> [Float]
 }
 
 ///
+/// Get data image from Python.
+///
+/// - Parameters:
+///     - size: The size of the image.
+///     - batchSize: The number of elements in the batch.
+/// - Returns: The data image.
+///
+func getBatchData(size: Int, batchSize: Int) -> [Float]
+{
+    let pythonLib = Python.import("python_lib")
+    let data = pythonLib.get_batch_data(size, batchSize)
+    return [Float](data)!
+}
+
+///
 /// Get data "complex" image from Python.
 ///
 /// - Parameter size: The size of the image.
@@ -260,13 +275,15 @@ func computeAutoEncoder2GradNorm(_ size: Int) -> Float
 ///
 /// Get gradient norm computed with PyTorch for ModelTestGram.
 ///
-/// - Parameter size: The size of the input data.
+/// - Parameters:
+///     - size: The size of the input data.
+///     - batchSize: The number of images in the batch.
 /// - Returns: The gradient norm.
 ///
-func computeGramGradNorm(_ size: Int) -> Float
+func computeGramGradNorm(size: Int, batchSize: Int) -> Float
 {
     let pythonLib = Python.import("python_lib")
-    let data = pythonLib.compute_gram_grad_norm(size)
+    let data = pythonLib.compute_gram_grad_norm(size, batchSize)
     return Float(data)!
 }
 

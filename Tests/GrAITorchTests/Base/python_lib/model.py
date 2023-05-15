@@ -1,6 +1,7 @@
 import math
 import torch
 import numpy as np
+from typing import Tuple
 
 
 class ModelTestConv1(torch.nn.Module):
@@ -899,6 +900,7 @@ class ModelTestGram(torch.nn.Module):
     Principle features:
         - SelfCorrelate
         - Normalize12
+        - SimilarityBatchError
     """
 
     def __init__(self):
@@ -907,7 +909,8 @@ class ModelTestGram(torch.nn.Module):
             3, 5,
             kernel_size=1
         )
-        self.classifier = torch.nn.Linear(in_features=25, out_features=1)
+        self.avgpool = torch.nn.AdaptiveAvgPool2d((1, 1))
+        self.classifier = torch.nn.Linear(in_features=5, out_features=1)
 
         self.features.apply(self.weight_init)
         self.classifier.apply(self.weight_init)
@@ -929,7 +932,7 @@ class ModelTestGram(torch.nn.Module):
             if module.bias is not None:
                 torch.nn.init.normal_(module.bias)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Forward pass.
 
@@ -940,16 +943,14 @@ class ModelTestGram(torch.nn.Module):
 
         Returns
         -------
-        _: torch.Tensor
+        _: (torch.Tensor, torch.Tensor)
             The output tensor.
+            The features tensor.
         """
         x = self.features(x)
+        features = x
 
-        nb_batch, nb_channels, _, _ = x.shape
-        x = x.view(nb_batch, nb_channels, -1)
-        x = torch.matmul(x, torch.transpose(x, 1, 2))
-        x = torch.nn.functional.normalize(x, p=2, dim=(1, 2))
-
+        x = self.avgpool(x)
         x = torch.flatten(x, 1)
         x = self.classifier(x)
-        return x
+        return x, features

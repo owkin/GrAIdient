@@ -107,6 +107,61 @@ def get_input_data(size: int) -> List[float]:
     return data
 
 
+def _build_batch_data(size: int, nb_batch: int) -> np.ndarray:
+    """
+    Build data image.
+
+    Parameters
+    ----------
+    size: int
+        The size of the image to build.
+    nb_batch: int
+        Number of images in the batch.
+
+    Returns
+    -------
+    _: np.ndarray
+        The batch images with 3 channels.
+    """
+    img_array = np.zeros((nb_batch, size, size, 3))
+    for batch in range(nb_batch):
+        for depth in range(3):
+            for row in range(size):
+                if depth == 0:
+                    img_array[batch, row, :, depth] = \
+                        (np.arange(0, size, 1) + row) / (2 * size) \
+                        + batch
+                elif depth == 1:
+                    img_array[batch, row, :, depth] = \
+                        (np.arange(size - 1, -1, -1) + row) / (2 * size) \
+                        + batch
+                else:
+                    img_array[batch, row, :, depth] = \
+                        (np.arange(0, size, 1) + size - 1 - row) / (2 * size) \
+                        + batch
+    return img_array
+
+
+def get_batch_data(size: int, nb_batch: int) -> List[float]:
+    """
+    Get data image and flatten it.
+
+    Parameters
+    ----------
+    size: int
+        The size of the image to build.
+    nb_batch: int
+        The number of images in the batch.
+
+    Returns
+    -------
+    _: List[float]
+        The images with 3 channels flattened.
+    """
+    data: List[float] = _build_batch_data(size, nb_batch).flatten().tolist()
+    return data
+
+
 def _build_complex_data(size: int) -> np.ndarray:
     """
     Build data "complex" image.
@@ -171,6 +226,8 @@ def _compute_grad_norm(input: torch.Tensor, model: torch.nn.Module) -> float:
 
     Parameters
     ----------
+    input: torch.Tensor
+        The input tensor.
     model: torch.nn.Module
         The model to test.
 
@@ -507,7 +564,50 @@ def compute_auto_encoder1_grad_norm(size: int) -> float:
     return _compute_auto_encoder_grad_norm(img_tensor, model)
 
 
-def compute_gram_grad_norm(size: int) -> float:
+def _compute_gram_grad_norm(
+    input: torch.Tensor,
+    model: torch.nn.Module
+) -> float:
+    """
+    Compute the gradient norm of one backward pass in a specific context.
+
+    Parameters
+    ----------
+    input: torch.Tensor
+        The input tensor.
+    model: torch.nn.Module
+        The model to test.
+
+    Returns
+    -------
+    _: float
+        The gradient norm.
+    """
+    img_var = Variable(input, requires_grad=True)
+    gradient = GetGradient(img_var)
+
+    x = img_var
+    x, features = model(x)
+
+    nb_batch, nb_channels, _, _ = features.shape
+    similarity = features.view(nb_batch, nb_channels, -1)
+    similarity = torch.matmul(similarity, torch.transpose(similarity, 1, 2))
+    similarity = torch.nn.functional.normalize(similarity, p=2, dim=(1, 2))
+    similarity = sum([ sum([(similarity[i] * similarity[j]).sum()
+        for j in range(nb_batch) if j != i])
+        for i in range(nb_batch)]
+    ) / nb_batch
+
+    x = torch.nn.MSELoss()(x, torch.zeros_like(x))
+    loss = 1.0 / 2.0 * x + similarity
+    loss.backward()
+
+    gradient_norm = gradient.gradient_norm
+    gradient.close()
+    return gradient_norm
+
+
+def compute_gram_grad_norm(size: int, nb_batch: int) -> float:
     """
     Compute the gradient norm of one backward pass of ModelTestGram.
 
@@ -515,6 +615,8 @@ def compute_gram_grad_norm(size: int) -> float:
     ----------
     size: int
         The size of the input data.
+    nb_batch: int
+        The number of images in the batch.
 
     Returns
     -------
@@ -522,7 +624,12 @@ def compute_gram_grad_norm(size: int) -> float:
         The gradient norm.
     """
     torch.manual_seed(42)
-    img_array = _build_input_data(size)
-    img_tensor = ToTensor()(img_array).type(torch.float32)
+    img_array = _build_batch_data(size, nb_batch)
+
+    images = []
+    for batch in range(nb_batch):
+        images.append(ToTensor()(img_array[batch]).type(torch.float32)[None,:])
+    img_tensor = torch.cat(images)
+    
     model = ModelTestGram().eval().cpu()
-    return _compute_grad_norm(img_tensor, model)
+    return _compute_gram_grad_norm(img_tensor, model)

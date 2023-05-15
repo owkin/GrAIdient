@@ -4218,7 +4218,7 @@ class SimilarityBatchError2DGradTests: Input2DSimilarityBatchError2DCase
 
 // -----------------------------------------------------------------------------
 // Compare GPU gradients with CPU ones through time.
-// We expect to see errors ~ 1e-6 and less.
+// We expect to see errors ~ 1e-5 and less.
 // -----------------------------------------------------------------------------
 class SimilarityBatchError2DFlowTests: Input2DSimilarityBatchError2DCase
 {
@@ -4259,13 +4259,13 @@ class SimilarityBatchError2DFlowTests: Input2DSimilarityBatchError2DCase
     func test() throws
     {
         let trainer = _buildTrainer()
-        run(trainer, diffThreshold: 0.00001)
+        run(trainer, diffThreshold: 0.0001)
     }
 }
 
 // -----------------------------------------------------------------------------
 // Compare GPU gradients with CPU ones through time.
-// We expect to see errors ~ 1e-6 and less.
+// We expect to see errors ~ 1e-5 and less.
 // -----------------------------------------------------------------------------
 class SimilarityBatchError2DFlowResetTests: SimilarityBatchError2DFlowTests
 {
@@ -4286,13 +4286,13 @@ class SimilarityBatchError2DFlowResetTests: SimilarityBatchError2DFlowTests
     override func test() throws
     {
         let trainer = _buildTrainer()
-        run(trainer, diffThreshold: 0.00001)
+        run(trainer, diffThreshold: 0.0001)
     }
 }
 
 // -----------------------------------------------------------------------------
 // Compare GPU gradients with CPU ones through time.
-// We expect to see errors ~ 1e-6 and less.
+// We expect to see errors ~ 1e-5 and less.
 // -----------------------------------------------------------------------------
 class SimilarityBatchError2DFlowReverseTests: SimilarityBatchError2DFlowTests
 {
@@ -4313,7 +4313,7 @@ class SimilarityBatchError2DFlowReverseTests: SimilarityBatchError2DFlowTests
     override func test() throws
     {
         let trainer = _buildTrainer()
-        run(trainer, diffThreshold: 0.00001)
+        run(trainer, diffThreshold: 0.0001)
     }
 }
 

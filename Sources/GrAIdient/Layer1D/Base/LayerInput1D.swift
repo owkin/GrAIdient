@@ -5,7 +5,7 @@
 // Created by Jean-François Reboud on 09/10/2022.
 //
 
-/// First layer of a model.
+/// Input layer of a model.
 open class LayerInput1D: Layer1D
 {
     ///

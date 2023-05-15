@@ -98,7 +98,7 @@ class InputBuffers2D: InputBuffers<Layer2D>, IWeightBuffers
     }
 }
 
-/// First layer with a 2D shape neural structure.
+/// Input layer with a 2D shape neural structure.
 public class Input2D: LayerInput2D, LayerResize, LayerUpdate
 {
     /// Grid of "weights".

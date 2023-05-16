@@ -2404,7 +2404,8 @@ kernel void computeSquaredNorm122D(
     uint offsetStart = (depth + nbChannels * elem) * height;
     uint offset = j + (offsetStart + i) * width;
     
-    normShared[threadId[0]] = outsPrev[offset];
+    float outPrev = outsPrev[offset];
+    normShared[threadId[0]] = outPrev * outPrev;
     threadgroup_barrier(mem_flags::mem_threadgroup);
     
     for (uint stride=threadsPerThreadgroup/2; stride>0; stride>>=1)
@@ -2531,7 +2532,6 @@ kernel void computeDeltaTmp122D(
         norm += squaredNorms[offset];
     }
     norm = sqrt(norm);
-    float normTmp = pow(norm, 3);
     
     if (norm > 1e-12)
     {
@@ -2558,7 +2558,7 @@ kernel void computeDeltaTmp122D(
         if (threadId[0] == 0)
         {
             uint offset = elem * nbThreadgroups + groupId[0];
-            deltaTmp[offset] = -deltaShared[0] / (norm * normTmp);
+            deltaTmp[offset] = deltaShared[0];
         }
     }
 }
@@ -2607,28 +2607,30 @@ kernel void normalize122DBackward(
     }
     
     float norm = 0.0;
-    float deltaCur = 0.0;
+    float deltaCurTmp = 0.0;
     for (uint group=0; group<nbThreadgroups; group++)
     {
         uint offset = elem * nbThreadgroups + group;
         norm += squaredNorms[offset];
-        deltaCur += delta[offset];
+        deltaCurTmp += deltaTmp[offset];
     }
     norm = sqrt(norm);
+    float normTmp = pow(norm, 3);
     
     uint offsetStart = (depth + nbChannels * elem) * height;
     uint offset = j + (offsetStart + i) * width;
     
     float outPrev = outsPrev[offset];
+    float deltaCur = delta[offset];
     
     float newValue = 0.0;
     if (norm > 1e-12)
     {
-        newValue = deltaCur * outPrev;
+        newValue = deltaCur / norm - deltaCurTmp * outPrev / normTmp;
     }
     else
     {
-        newValue = delta[offset] / 1e-12;
+        newValue = deltaCur / 1e-12;
     }
     
     if (dirty)

@@ -2389,9 +2389,11 @@ kernel void computeSquaredNorm122D(
         return ;
     
     uint elem = id[1];
-    uint depth = id[0] / (height * width);
-    uint i = id[0] / width;
-    uint j = id[0] % width;
+    uint remains = id[0];
+    uint depth = remains / (height * width);
+    remains = remains % (height * width);
+    uint i = remains / width;
+    uint j = remains % width;
     
     if (depth * i * j >= nbChannels * height * width ||
         elem >= nbBatch)
@@ -2407,7 +2409,9 @@ kernel void computeSquaredNorm122D(
     
     for (uint stride=threadsPerThreadgroup/2; stride>0; stride>>=1)
     {
-        if (threadId[0] < stride)
+        uint index = threadId[0] + groupId[0] * threadsPerThreadgroup;
+        if (threadId[0] < stride &&
+            (index + stride) < nbChannels * height * width)
         {
             normShared[threadId[0]] += normShared[threadId[0] + stride];
         }
@@ -2508,9 +2512,11 @@ kernel void computeDeltaTmp122D(
         return ;
     
     uint elem = id[1];
-    uint depth = id[0] / (height * width);
-    uint i = id[0] / width;
-    uint j = id[0] % width;
+    uint remains = id[0];
+    uint depth = remains / (height * width);
+    remains = remains % (height * width);
+    uint i = remains / width;
+    uint j = remains % width;
     
     if (depth * i * j >= nbChannels * height * width ||
         elem >= nbBatch)
@@ -2540,7 +2546,9 @@ kernel void computeDeltaTmp122D(
         
         for (uint stride=threadsPerThreadgroup/2; stride>0; stride>>=1)
         {
-            if (threadId[0] < stride)
+            uint index = threadId[0] + groupId[0] * threadsPerThreadgroup;
+            if (threadId[0] < stride &&
+                (index + stride) < nbChannels * height * width)
             {
                 deltaShared[threadId[0]] += deltaShared[threadId[0] + stride];
             }
@@ -2550,7 +2558,7 @@ kernel void computeDeltaTmp122D(
         if (threadId[0] == 0)
         {
             uint offset = elem * nbThreadgroups + groupId[0];
-            deltaTmp[offset] = -deltaShared[0]/ (norm * normTmp);
+            deltaTmp[offset] = -deltaShared[0] / (norm * normTmp);
         }
     }
 }

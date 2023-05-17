@@ -655,10 +655,18 @@ private class MetalDevice
                 "selfCorrelate2DBackward",
                 "normalize12DForward",
                 "normalize12DBackward",
+                "computeSquaredNorm122D",
                 "normalize122DForward",
+                "computeDeltaTmp122D",
                 "normalize122DBackward",
                 "similarBatchError2DLoss",
                 "similarBatchError2DLossDerivative",
+            ],
+            "LayerMerge": [
+                "sum1",
+                "sum2",
+                "multiplyForward",
+                "multiplyBackward",
             ],
             "LayerNorm": [
                 "computeLayerNormSeqμ",
@@ -689,12 +697,6 @@ private class MetalDevice
                 "selectSeqForward",
                 "selectSeqBackward",
             ],
-            "Merge": [
-                "sum1",
-                "sum2",
-                "multiplyForward",
-                "multiplyBackward",
-            ],
             "Optimizer": [
                 "clipGradients",
                 "multiplyGradients",
@@ -705,6 +707,10 @@ private class MetalDevice
                 "weightsAdamRectified",
                 "weightsAdaBound",
                 "weightsAMSBound",
+            ],
+            "Reduce": [
+                "reduce64",
+                "reduce",
             ],
             "Reset": [
                 "reset"

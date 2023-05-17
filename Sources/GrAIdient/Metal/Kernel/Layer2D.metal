@@ -2357,24 +2357,97 @@ kernel void normalize12DBackward(
     }
 }
 
+kernel void computeSquaredNorm122D(
+     const device float * outsPrev,
+     constant uint * pNbChannels,
+     constant uint * pDimensions,
+     constant uint * pNbThreadgroups,
+     constant uint * pNbBatch,
+     device float * squaredNorms,
+     uint2 groupId [[ threadgroup_position_in_grid ]],
+     uint2 threadId [[ thread_position_in_threadgroup ]],
+     uint2 id [[ thread_position_in_grid ]])
+{
+    constexpr uint threadsPerThreadgroup = 64;
+    threadgroup float normShared[threadsPerThreadgroup];
+    
+    uint height, width;
+    uint nbChannels;
+    uint nbThreadgroups;
+    uint nbBatch;
+    
+    if (pNbChannels && pDimensions && pNbThreadgroups && pNbBatch &&
+        outsPrev && squaredNorms)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        nbChannels = *pNbChannels;
+        nbThreadgroups = *pNbThreadgroups;
+        nbBatch = *pNbBatch;
+    }
+    else
+        return ;
+    
+    uint elem = id[1];
+    uint remains = id[0];
+    uint depth = remains / (height * width);
+    remains = remains % (height * width);
+    uint i = remains / width;
+    uint j = remains % width;
+    
+    if (depth * i * j >= nbChannels * height * width ||
+        elem >= nbBatch)
+    {
+        return ;
+    }
+    
+    uint offsetStart = (depth + nbChannels * elem) * height;
+    uint offset = j + (offsetStart + i) * width;
+    
+    float outPrev = outsPrev[offset];
+    normShared[threadId[0]] = outPrev * outPrev;
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+    
+    for (uint stride=threadsPerThreadgroup/2; stride>0; stride>>=1)
+    {
+        uint index = threadId[0] + groupId[0] * threadsPerThreadgroup;
+        if (threadId[0] < stride &&
+            (index + stride) < nbChannels * height * width)
+        {
+            normShared[threadId[0]] += normShared[threadId[0] + stride];
+        }
+        threadgroup_barrier(mem_flags::mem_threadgroup);
+    }
+    
+    if (threadId[0] == 0)
+    {
+        uint offset = elem * nbThreadgroups + groupId[0];
+        squaredNorms[offset] = normShared[0];
+    }
+}
+
 kernel void normalize122DForward(
     const device float * outsPrev,
+    const device float * squaredNorms,
     constant uint * pNbChannels,
     constant uint * pDimensions,
+    constant uint * pNbThreadgroups,
     constant uint * pNbBatch,
     device float * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
     uint nbChannels;
+    uint nbThreadgroups;
     uint nbBatch;
     
-    if (pNbChannels && pDimensions && pNbBatch &&
-        outsPrev && outs)
+    if (pNbChannels && pDimensions && pNbThreadgroups && pNbBatch &&
+        outsPrev && squaredNorms && outs)
     {
         width = pDimensions[0];
         height = pDimensions[1];
         nbChannels = *pNbChannels;
+        nbThreadgroups = *pNbThreadgroups;
         nbBatch = *pNbBatch;
     }
     else
@@ -2391,31 +2464,100 @@ kernel void normalize122DForward(
         return ;
     }
     
-    float norm = 0.0;
-    for (uint i1=0; i1<height; i1++){
-    for (uint j1=0; j1<width; j1++){
-    for (uint depth1=0; depth1<nbChannels; depth1++)
-    {
-        uint offsetStart1 = (depth1 + nbChannels * elem) * height;
-        uint offset1 = j1 + (offsetStart1 + i1) * width;
-        
-        float outPrev1 = outsPrev[offset1];
-        norm += outPrev1 * outPrev1;
-    }}}
-    norm = sqrt(norm);
-    
     uint offsetStart = (depth + nbChannels * elem) * height;
     uint offset = j + (offsetStart + i) * width;
     
+    float norm = sqrt(squaredNorms[elem]);
     float outPrev = outsPrev[offset];
+    
     outs[offset] = outPrev / max(norm, 1e-12);
+}
+
+kernel void computeDeltaTmp122D(
+     const device float * delta,
+     const device float * outsPrev,
+     const device float * squaredNorms,
+     constant uint * pNbChannels,
+     constant uint * pDimensions,
+     constant uint * pNbThreadgroups,
+     constant uint * pNbBatch,
+     device float * deltaTmp,
+     uint2 groupId [[ threadgroup_position_in_grid ]],
+     uint2 threadId [[ thread_position_in_threadgroup ]],
+     uint2 id [[ thread_position_in_grid ]])
+{
+    constexpr uint threadsPerThreadgroup = 64;
+    threadgroup float deltaShared[threadsPerThreadgroup];
+    
+    uint height, width;
+    uint nbChannels;
+    uint nbThreadgroups;
+    uint nbBatch;
+    
+    if (pNbChannels && pDimensions && pNbThreadgroups && pNbBatch &&
+        delta && outsPrev && squaredNorms && deltaTmp)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        nbChannels = *pNbChannels;
+        nbThreadgroups = *pNbThreadgroups;
+        nbBatch = *pNbBatch;
+    }
+    else
+        return ;
+    
+    uint elem = id[1];
+    uint remains = id[0];
+    uint depth = remains / (height * width);
+    remains = remains % (height * width);
+    uint i = remains / width;
+    uint j = remains % width;
+    
+    if (depth * i * j >= nbChannels * height * width ||
+        elem >= nbBatch)
+    {
+        return ;
+    }
+    
+    float norm = sqrt(squaredNorms[elem]);
+    if (norm > 1e-12)
+    {
+        uint offsetStart = (depth + nbChannels * elem) * height;
+        uint offset = j + (offsetStart + i) * width;
+        
+        float deltaCur = delta[offset];
+        float outPrev = outsPrev[offset];
+        
+        deltaShared[threadId[0]] = outPrev * deltaCur;
+        threadgroup_barrier(mem_flags::mem_threadgroup);
+        
+        for (uint stride=threadsPerThreadgroup/2; stride>0; stride>>=1)
+        {
+            uint index = threadId[0] + groupId[0] * threadsPerThreadgroup;
+            if (threadId[0] < stride &&
+                (index + stride) < nbChannels * height * width)
+            {
+                deltaShared[threadId[0]] += deltaShared[threadId[0] + stride];
+            }
+            threadgroup_barrier(mem_flags::mem_threadgroup);
+        }
+        
+        if (threadId[0] == 0)
+        {
+            uint offset = elem * nbThreadgroups + groupId[0];
+            deltaTmp[offset] = deltaShared[0];
+        }
+    }
 }
 
 kernel void normalize122DBackward(
     const device float * delta,
     const device float * outsPrev,
+    const device float * squaredNorms,
+    const device float * deltaTmp,
     constant uint * pNbChannels,
     constant uint * pDimensions,
+    constant uint * pNbThreadgroups,
     constant uint * pNbBatch,
     constant uint * pDirty,
     device float * deltaPrev,
@@ -2423,15 +2565,17 @@ kernel void normalize122DBackward(
 {
     uint height, width;
     uint nbChannels;
+    uint nbThreadgroups;
     uint nbBatch;
     uint dirty;
     
-    if (pNbChannels && pDimensions && pNbBatch && pDirty &&
-        delta && outsPrev && deltaPrev)
+    if (pNbChannels && pDimensions && pNbThreadgroups && pNbBatch && pDirty &&
+        delta && outsPrev && squaredNorms && deltaTmp && deltaPrev)
     {
         width = pDimensions[0];
         height = pDimensions[1];
         nbChannels = *pNbChannels;
+        nbThreadgroups = *pNbThreadgroups;
         nbBatch = *pNbBatch;
         dirty = *pDirty;
     }
@@ -2449,42 +2593,20 @@ kernel void normalize122DBackward(
         return ;
     }
     
-    float normTmp = 0.0;
-    for (uint i1=0; i1<height; i1++){
-    for (uint j1=0; j1<width; j1++){
-    for (uint depth1=0; depth1<nbChannels; depth1++)
-    {
-        uint offsetStart1 = (depth1 + nbChannels * elem) * height;
-        uint offset1 = j1 + (offsetStart1 + i1) * width;
-        
-        float outPrev1 = outsPrev[offset1];
-        normTmp += outPrev1 * outPrev1;
-    }}}
-    float norm = sqrt(normTmp);
-    normTmp = pow(norm, 3);
+    float norm = sqrt(squaredNorms[elem]);
+    float deltaCurTmp = deltaTmp[elem];
+    float normTmp = pow(norm, 3);
     
     uint offsetStart = (depth + nbChannels * elem) * height;
     uint offset = j + (offsetStart + i) * width;
     
-    float deltaCur = delta[offset];
     float outPrev = outsPrev[offset];
+    float deltaCur = delta[offset];
     
     float newValue = 0.0;
     if (norm > 1e-12)
     {
-        for (uint i1=0; i1<height; i1++){
-        for (uint j1=0; j1<width; j1++){
-        for (uint depth1=0; depth1<nbChannels; depth1++)
-        {
-            uint offsetStart1 = (depth1 + nbChannels * elem) * height;
-            uint offset1 = j1 + (offsetStart1 + i1) * width;
-            
-            float deltaCur1 = delta[offset1];
-            float outPrev1 = outsPrev[offset1];
-            
-            newValue -= outPrev1 * outPrev / normTmp * deltaCur1;
-        }}}
-        newValue += deltaCur / norm;
+        newValue = deltaCur / norm - deltaCurTmp * outPrev / normTmp;
     }
     else
     {

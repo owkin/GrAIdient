@@ -1,5 +1,5 @@
 //
-// Sum.metal
+// LayerMerge.metal
 // GrAIdient
 //
 // Created by Jean-François Reboud on 14/10/2022.

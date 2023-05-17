@@ -315,7 +315,7 @@ public class Normalize12D: Layer2D
 public class Normalize122D: Layer2D
 {
     /// Number of threads per thread group in the GPU execution context.
-    private let _threadsPerThreadgroup = 32
+    private let _threadsPerThreadgroup = 64
     ///
     /// Squared norm buffer used in the GPU execution context.
     /// Shape ~ (batch, nbThreadgroups).

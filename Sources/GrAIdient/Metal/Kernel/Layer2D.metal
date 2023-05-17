@@ -2368,7 +2368,7 @@ kernel void computeSquaredNorm122D(
      uint2 threadId [[ thread_position_in_threadgroup ]],
      uint2 id [[ thread_position_in_grid ]])
 {
-    constexpr uint threadsPerThreadgroup = 32;
+    constexpr uint threadsPerThreadgroup = 64;
     threadgroup float normShared[threadsPerThreadgroup];
     
     uint height, width;
@@ -2492,7 +2492,7 @@ kernel void computeDeltaTmp122D(
      uint2 threadId [[ thread_position_in_threadgroup ]],
      uint2 id [[ thread_position_in_grid ]])
 {
-    constexpr uint threadsPerThreadgroup = 32;
+    constexpr uint threadsPerThreadgroup = 64;
     threadgroup float deltaShared[threadsPerThreadgroup];
     
     uint height, width;

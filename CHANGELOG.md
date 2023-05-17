@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🚀 **perf:** enhance Normalize122D with reduce ([#89](https://github.com/owkin/GrAIdient/pull/89))\
 🪜 **layer_2d:** SimilarityBatchError2D ([#88](https://github.com/owkin/GrAIdient/pull/88))\
 🪜 **layer_2d:** Normalize2D ([#87](https://github.com/owkin/GrAIdient/pull/87))\
 🪜 **layer_2d:** SelfCorrelate2D ([#86](https://github.com/owkin/GrAIdient/pull/86))\

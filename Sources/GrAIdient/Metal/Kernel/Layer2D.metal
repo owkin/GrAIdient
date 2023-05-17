@@ -2464,18 +2464,12 @@ kernel void normalize122DForward(
         return ;
     }
     
-    float norm = 0.0;
-    for (uint group=0; group<nbThreadgroups; group++)
-    {
-        uint offset = elem * nbThreadgroups + group;
-        norm += squaredNorms[offset];
-    }
-    norm = sqrt(norm);
-    
     uint offsetStart = (depth + nbChannels * elem) * height;
     uint offset = j + (offsetStart + i) * width;
     
+    float norm = sqrt(squaredNorms[elem]);
     float outPrev = outsPrev[offset];
+    
     outs[offset] = outPrev / max(norm, 1e-12);
 }
 
@@ -2525,14 +2519,7 @@ kernel void computeDeltaTmp122D(
         return ;
     }
     
-    float norm = 0.0;
-    for (uint group=0; group<nbThreadgroups; group++)
-    {
-        uint offset = elem * nbThreadgroups + group;
-        norm += squaredNorms[offset];
-    }
-    norm = sqrt(norm);
-    
+    float norm = sqrt(squaredNorms[elem]);
     if (norm > 1e-12)
     {
         uint offsetStart = (depth + nbChannels * elem) * height;
@@ -2606,15 +2593,8 @@ kernel void normalize122DBackward(
         return ;
     }
     
-    float norm = 0.0;
-    float deltaCurTmp = 0.0;
-    for (uint group=0; group<nbThreadgroups; group++)
-    {
-        uint offset = elem * nbThreadgroups + group;
-        norm += squaredNorms[offset];
-        deltaCurTmp += deltaTmp[offset];
-    }
-    norm = sqrt(norm);
+    float norm = sqrt(squaredNorms[elem]);
+    float deltaCurTmp = deltaTmp[elem];
     float normTmp = pow(norm, 3);
     
     uint offsetStart = (depth + nbChannels * elem) * height;

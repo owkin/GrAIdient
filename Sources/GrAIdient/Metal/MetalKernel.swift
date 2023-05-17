@@ -662,6 +662,12 @@ private class MetalDevice
                 "similarBatchError2DLoss",
                 "similarBatchError2DLossDerivative",
             ],
+            "LayerMerge": [
+                "sum1",
+                "sum2",
+                "multiplyForward",
+                "multiplyBackward",
+            ],
             "LayerNorm": [
                 "computeLayerNormSeqμ",
                 "computeLayerNormSeqσ2",
@@ -691,12 +697,6 @@ private class MetalDevice
                 "selectSeqForward",
                 "selectSeqBackward",
             ],
-            "Merge": [
-                "sum1",
-                "sum2",
-                "multiplyForward",
-                "multiplyBackward",
-            ],
             "Optimizer": [
                 "clipGradients",
                 "multiplyGradients",
@@ -707,6 +707,10 @@ private class MetalDevice
                 "weightsAdamRectified",
                 "weightsAdaBound",
                 "weightsAMSBound",
+            ],
+            "Reduce": [
+                "reduce64",
+                "reduce",
             ],
             "Reset": [
                 "reset"

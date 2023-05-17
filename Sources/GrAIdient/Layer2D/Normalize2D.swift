@@ -534,6 +534,10 @@ public class Normalize122D: Layer2D
     {
         if let layerPrev = self.layerPrev as? Layer2D
         {
+            // -----------------------------------------------------------------
+            // Begin the reduction that is specific to the squared norm.
+            // -----------------------------------------------------------------
+            
             try checkStateForwardGPU(batchSize: batchSize)
             
             let pNbChannels: [UInt32] = [UInt32(nbChannels)]
@@ -564,6 +568,14 @@ public class Normalize122D: Layer2D
                 threadsPerThreadgroup: threadsPerThreadgroup
             )
             command.enqueue()
+            
+            // Continue the reduction in a more generic way.
+            reduce(
+                inBuffer: _squaredNorm.metal,
+                outBuffer: _squaredNorm.metal,
+                dim1: nbThreadgroups, dim2: batchSize,
+                deviceID: deviceID
+            )
         }
     }
     
@@ -574,6 +586,7 @@ public class Normalize122D: Layer2D
     ///
     public override func forwardGPU() throws
     {
+        // Reduce the squared norm in a dedicated function for performance.
         try _computeSquaredNormGPU()
         
         if let layerPrev = self.layerPrev as? Layer2D
@@ -676,6 +689,10 @@ public class Normalize122D: Layer2D
     {
         if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
+            // -----------------------------------------------------------------
+            // Begin the reduction that is specific to the delta.
+            // -----------------------------------------------------------------
+            
             let pNbChannels: [UInt32] = [UInt32(nbChannels)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
@@ -706,6 +723,14 @@ public class Normalize122D: Layer2D
                 threadsPerThreadgroup: threadsPerThreadgroup
             )
             command.enqueue()
+            
+            // Continue the reduction in a more generic way.
+            reduce(
+                inBuffer: _deltaTmp.metal,
+                outBuffer: _deltaTmp.metal,
+                dim1: nbThreadgroups, dim2: batchSize,
+                deviceID: deviceID
+            )
         }
     }
     
@@ -716,6 +741,7 @@ public class Normalize122D: Layer2D
     ///
     public override func backwardGPU() throws
     {
+        // Reduce the delta in a dedicated function for performance.
         _computeDeltaTmpGPU()
         
         if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward

@@ -15,7 +15,6 @@ kernel void vq2DForward(
     constant uint * pDimensions,
     constant uint * pK,
     constant uint * pNbBatch,
-    constant uint * pComputeVQ,
     device float * outs,
     device int * indices,
     uint2 id [[ thread_position_in_grid ]])
@@ -24,9 +23,8 @@ kernel void vq2DForward(
     uint nbChannels;
     uint K;
     uint nbBatch;
-    uint computeVQ;
     
-    if (pNbChannels && pDimensions && pK && pNbBatch && pComputeVQ &&
+    if (pNbChannels && pDimensions && pK && pNbBatch &&
         weights && outsPrev && outs && indices)
     {
         width = pDimensions[0];
@@ -34,7 +32,6 @@ kernel void vq2DForward(
         nbChannels = *pNbChannels;
         K = *pK;
         nbBatch = *pNbBatch;
-        computeVQ = *pComputeVQ;
     }
     else
         return ;
@@ -84,15 +81,7 @@ kernel void vq2DForward(
             offset = j + (offsetStart + i) * width;
             
             uint offsetWeights = depth + nbChannels * minIndex;
-            
-            if (computeVQ)
-            {
-                outs[offset] = weights[offsetWeights];
-            }
-            else
-            {
-                outs[offset] = outsPrev[offset];
-            }
+            outs[offset] = weights[offsetWeights];
         }
         indices[j + (elem * height + i) * width] = minIndex;
     }
@@ -108,7 +97,6 @@ kernel void vq2DBackward(
     constant uint * pK,
     constant float * pBeta,
     constant uint * pNbBatch,
-    constant uint * pComputeVQ,
     constant uint * pDirty,
     device float * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
@@ -118,11 +106,9 @@ kernel void vq2DBackward(
     uint K;
     float beta;
     uint nbBatch;
-    uint computeVQ;
     uint dirty;
     
-    if (pNbChannels && pDimensions && pK && pBeta &&
-        pNbBatch && pComputeVQ && pDirty &&
+    if (pNbChannels && pDimensions && pK && pBeta && pNbBatch && pDirty &&
         outsPrev && delta && weights && indices && deltaPrev)
     {
         width = pDimensions[0];
@@ -131,7 +117,6 @@ kernel void vq2DBackward(
         K = *pK;
         beta = *pBeta;
         nbBatch = *pNbBatch;
-        computeVQ = *pComputeVQ;
         dirty = *pDirty;
     }
     else
@@ -167,10 +152,8 @@ kernel void vq2DBackward(
         deltaPrev[offset] += deltaCur;
     }
     
-    if (computeVQ)
-    {
-        deltaPrev[offset] += beta * (outPrev - vq);
-    }
+    // Commitment term.
+    deltaPrev[offset] += beta * (outPrev - vq);
 }
 
 kernel void vq2DBatchDerWeights(

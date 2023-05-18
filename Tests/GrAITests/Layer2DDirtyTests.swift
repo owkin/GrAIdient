@@ -256,6 +256,26 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
         case "Normalize12":
             secondLayer = Normalize122D(layerPrev: layer, params: params)
             
+        case "FlipHorizontal1":
+            secondLayer = FlipHorizontal2D(
+                layerPrev: layer, probability: 1.0, params: params
+            )
+            
+        case "FlipHorizontal2":
+            secondLayer = FlipHorizontal2D(
+                layerPrev: layer, probability: 0.0, params: params
+            )
+        
+        case "FlipVertical1":
+            secondLayer = FlipVertical2D(
+                layerPrev: layer, probability: 1.0, params: params
+            )
+            
+        case "FlipVertical2":
+            secondLayer = FlipVertical2D(
+                layerPrev: layer, probability: 0.0, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -570,6 +590,58 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
         let trainer = _buildTrainer(model: "Normalize12")
         run(trainer)
     }
+    
+    func testFlipHorizontal1CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "FlipHorizontal1")
+        run(trainer)
+    }
+    
+    func testFlipHorizontal1GPU() throws
+    {
+        let trainer = _buildTrainer(model: "FlipHorizontal1")
+        run(trainer)
+    }
+    
+    func testFlipHorizontal2CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "FlipHorizontal2")
+        run(trainer)
+    }
+    
+    func testFlipHorizontal2GPU() throws
+    {
+        let trainer = _buildTrainer(model: "FlipHorizontal2")
+        run(trainer)
+    }
+    
+    func testFlipVertical1CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "FlipVertical1")
+        run(trainer)
+    }
+    
+    func testFlipVertical1GPU() throws
+    {
+        let trainer = _buildTrainer(model: "FlipVertical1")
+        run(trainer)
+    }
+    
+    func testFlipVertical2CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "FlipVertical2")
+        run(trainer)
+    }
+    
+    func testFlipVertical2GPU() throws
+    {
+        let trainer = _buildTrainer(model: "FlipVertical2")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -834,6 +906,26 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
         case "Normalize12":
             secondLayer = Normalize122D(layerPrev: layer, params: params)
             
+        case "FlipHorizontal1":
+            secondLayer = FlipHorizontal2D(
+                layerPrev: layer, probability: 1.0, params: params
+            )
+            
+        case "FlipHorizontal2":
+            secondLayer = FlipHorizontal2D(
+                layerPrev: layer, probability: 0.0, params: params
+            )
+        
+        case "FlipVertical1":
+            secondLayer = FlipVertical2D(
+                layerPrev: layer, probability: 1.0, params: params
+            )
+            
+        case "FlipVertical2":
+            secondLayer = FlipVertical2D(
+                layerPrev: layer, probability: 0.0, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -998,6 +1090,30 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
     func testNormalize12() throws
     {
         let trainer = _buildTrainer(model: "Normalize12")
+        run(trainer)
+    }
+    
+    func testFlipHorizontal1() throws
+    {
+        let trainer = _buildTrainer(model: "FlipHorizontal1")
+        run(trainer)
+    }
+    
+    func testFlipHorizontal2() throws
+    {
+        let trainer = _buildTrainer(model: "FlipHorizontal2")
+        run(trainer)
+    }
+    
+    func testFlipVertical1() throws
+    {
+        let trainer = _buildTrainer(model: "FlipVertical1")
+        run(trainer)
+    }
+    
+    func testFlipVertical2() throws
+    {
+        let trainer = _buildTrainer(model: "FlipVertical2")
         run(trainer)
     }
 }

@@ -374,6 +374,26 @@ class Layer2DGradTests: Input2DMSE1DCase
         case "Normalize12":
             layer = Normalize122D(layerPrev: layer, params: params)
             
+        case "FlipHorizontal1":
+            layer = FlipHorizontal2D(
+                layerPrev: layer, probability: 1.0, params: params
+            )
+            
+        case "FlipHorizontal2":
+            layer = FlipHorizontal2D(
+                layerPrev: layer, probability: 0.0, params: params
+            )
+        
+        case "FlipVertical1":
+            layer = FlipVertical2D(
+                layerPrev: layer, probability: 1.0, params: params
+            )
+            
+        case "FlipVertical2":
+            layer = FlipVertical2D(
+                layerPrev: layer, probability: 0.0, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -1014,6 +1034,58 @@ class Layer2DGradTests: Input2DMSE1DCase
         let trainer = _buildTrainer(model: "Normalize12", bn: false)
         run(trainer)
     }
+    
+    func testFlipHorizontal1CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "FlipHorizontal1", bn: false)
+        run(trainer)
+    }
+    
+    func testFlipHorizontal1GPU() throws
+    {
+        let trainer = _buildTrainer(model: "FlipHorizontal1", bn: false)
+        run(trainer)
+    }
+    
+    func testFlipHorizontal2CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "FlipHorizontal2", bn: false)
+        run(trainer)
+    }
+    
+    func testFlipHorizontal2GPU() throws
+    {
+        let trainer = _buildTrainer(model: "FlipHorizontal2", bn: false)
+        run(trainer)
+    }
+    
+    func testFlipVertical1CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "FlipVertical1", bn: false)
+        run(trainer)
+    }
+    
+    func testFlipVertical1GPU() throws
+    {
+        let trainer = _buildTrainer(model: "FlipVertical1", bn: false)
+        run(trainer)
+    }
+    
+    func testFlipVertical2CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "FlipVertical2", bn: false)
+        run(trainer)
+    }
+    
+    func testFlipVertical2GPU() throws
+    {
+        let trainer = _buildTrainer(model: "FlipVertical2", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -1376,6 +1448,26 @@ class Layer2DFlowTests: Input2DMSE1DCase
         case "Normalize12":
             layer = Normalize122D(layerPrev: layer, params: params)
             
+        case "FlipHorizontal1":
+            layer = FlipHorizontal2D(
+                layerPrev: layer, probability: 1.0, params: params
+            )
+            
+        case "FlipHorizontal2":
+            layer = FlipHorizontal2D(
+                layerPrev: layer, probability: 0.0, params: params
+            )
+        
+        case "FlipVertical1":
+            layer = FlipVertical2D(
+                layerPrev: layer, probability: 1.0, params: params
+            )
+            
+        case "FlipVertical2":
+            layer = FlipVertical2D(
+                layerPrev: layer, probability: 0.0, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -1726,6 +1818,30 @@ class Layer2DFlowTests: Input2DMSE1DCase
     func testNormalize12() throws
     {
         let trainer = _buildTrainer(model: "Normalize12", bn: false)
+        run(trainer)
+    }
+    
+    func testFlipHorizontal1() throws
+    {
+        let trainer = _buildTrainer(model: "FlipHorizontal1", bn: false)
+        run(trainer)
+    }
+    
+    func testFlipHorizontal2() throws
+    {
+        let trainer = _buildTrainer(model: "FlipHorizontal2", bn: false)
+        run(trainer)
+    }
+    
+    func testFlipVertical1() throws
+    {
+        let trainer = _buildTrainer(model: "FlipVertical1", bn: false)
+        run(trainer)
+    }
+    
+    func testFlipVertical2() throws
+    {
+        let trainer = _buildTrainer(model: "FlipVertical2", bn: false)
         run(trainer)
     }
 }
@@ -2098,6 +2214,30 @@ class Layer2DFlowResetTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "Normalize12", bn: false)
         run(trainer)
     }
+    
+    override func testFlipHorizontal1() throws
+    {
+        let trainer = _buildTrainer(model: "FlipHorizontal1", bn: false)
+        run(trainer)
+    }
+    
+    override func testFlipHorizontal2() throws
+    {
+        let trainer = _buildTrainer(model: "FlipHorizontal2", bn: false)
+        run(trainer)
+    }
+    
+    override func testFlipVertical1() throws
+    {
+        let trainer = _buildTrainer(model: "FlipVertical1", bn: false)
+        run(trainer)
+    }
+    
+    override func testFlipVertical2() throws
+    {
+        let trainer = _buildTrainer(model: "FlipVertical2", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -2468,6 +2608,30 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "Normalize12", bn: false)
         run(trainer)
     }
+    
+    override func testFlipHorizontal1() throws
+    {
+        let trainer = _buildTrainer(model: "FlipHorizontal1", bn: false)
+        run(trainer)
+    }
+    
+    override func testFlipHorizontal2() throws
+    {
+        let trainer = _buildTrainer(model: "FlipHorizontal2", bn: false)
+        run(trainer)
+    }
+    
+    override func testFlipVertical1() throws
+    {
+        let trainer = _buildTrainer(model: "FlipVertical1", bn: false)
+        run(trainer)
+    }
+    
+    override func testFlipVertical2() throws
+    {
+        let trainer = _buildTrainer(model: "FlipVertical2", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -2836,6 +3000,30 @@ class Layer2DInferenceTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "Normalize12", bn: false)
         run(trainer)
     }
+    
+    override func testFlipHorizontal1() throws
+    {
+        let trainer = _buildTrainer(model: "FlipHorizontal1", bn: false)
+        run(trainer)
+    }
+    
+    override func testFlipHorizontal2() throws
+    {
+        let trainer = _buildTrainer(model: "FlipHorizontal2", bn: false)
+        run(trainer)
+    }
+    
+    override func testFlipVertical1() throws
+    {
+        let trainer = _buildTrainer(model: "FlipVertical1", bn: false)
+        run(trainer)
+    }
+    
+    override func testFlipVertical2() throws
+    {
+        let trainer = _buildTrainer(model: "FlipVertical2", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -3199,6 +3387,30 @@ class Layer2DLoadTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "Normalize12", bn: false)
         run(trainer)
     }
+    
+    override func testFlipHorizontal1() throws
+    {
+        let trainer = _buildTrainer(model: "FlipHorizontal1", bn: false)
+        run(trainer)
+    }
+    
+    override func testFlipHorizontal2() throws
+    {
+        let trainer = _buildTrainer(model: "FlipHorizontal2", bn: false)
+        run(trainer)
+    }
+    
+    override func testFlipVertical1() throws
+    {
+        let trainer = _buildTrainer(model: "FlipVertical1", bn: false)
+        run(trainer)
+    }
+    
+    override func testFlipVertical2() throws
+    {
+        let trainer = _buildTrainer(model: "FlipVertical2", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -3560,6 +3772,30 @@ class Layer2DTransformTests: Layer2DFlowTests
     override func testNormalize12() throws
     {
         let trainer = _buildTrainer(model: "Normalize12", bn: false)
+        run(trainer)
+    }
+    
+    override func testFlipHorizontal1() throws
+    {
+        let trainer = _buildTrainer(model: "FlipHorizontal1", bn: false)
+        run(trainer)
+    }
+    
+    override func testFlipHorizontal2() throws
+    {
+        let trainer = _buildTrainer(model: "FlipHorizontal2", bn: false)
+        run(trainer)
+    }
+    
+    override func testFlipVertical1() throws
+    {
+        let trainer = _buildTrainer(model: "FlipVertical1", bn: false)
+        run(trainer)
+    }
+    
+    override func testFlipVertical2() throws
+    {
+        let trainer = _buildTrainer(model: "FlipVertical2", bn: false)
         run(trainer)
     }
 }

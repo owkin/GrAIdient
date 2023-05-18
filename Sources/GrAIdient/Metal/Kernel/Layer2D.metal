@@ -2727,3 +2727,215 @@ kernel void similarBatchError2DLossDerivative(
     uint offset = j + (elem * height + i) * width;
     deltaPrev[offset] = coeff / nbBatch * sum;
 }
+
+kernel void flipHorizontal2DForward(
+    const device float * outsPrev,
+    constant uint * pDoFlip,
+    constant uint * pNbChannels,
+    constant uint * pDimensions,
+    constant uint * pNbBatch,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint doFlip;
+    uint height, width;
+    uint nbChannels;
+    uint nbBatch;
+    
+    if (pDoFlip && pNbChannels && pDimensions && pNbBatch &&
+        outsPrev && outs)
+    {
+        doFlip = *pDoFlip;
+        width = pDimensions[0];
+        height = pDimensions[1];
+        nbChannels = *pNbChannels;
+        nbBatch = *pNbBatch;
+    }
+    else
+        return ;
+    
+    uint depth = id[0] / width;
+    uint elem = id[1] / height;
+    uint i = id[1] % height;
+    uint j = id[0] % width;
+    
+    if (i * elem >= height * nbBatch ||
+        j * depth >= width * nbChannels)
+    {
+        return ;
+    }
+        
+    uint offsetStart = (depth + nbChannels * elem) * height;
+    uint offset1 = j + (offsetStart + i) * width;
+    uint offset2 = offset1;
+    if (doFlip)
+    {
+        offset2 = width-1-j + (offsetStart + i) * width;
+    }
+    
+    outs[offset1] = outsPrev[offset2];
+}
+
+kernel void flipHorizontal2DBackward(
+    const device float * delta,
+    constant uint * pDoFlip,
+    constant uint * pNbChannels,
+    constant uint * pDimensions,
+    constant uint * pNbBatch,
+    constant uint * pDirty,
+    device float * deltaPrev,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint doFlip;
+    uint height, width;
+    uint nbChannels;
+    uint nbBatch;
+    uint dirty;
+    
+    if (pDoFlip && pNbChannels && pDimensions && pNbBatch && pDirty &&
+        delta && deltaPrev)
+    {
+        doFlip = *pDoFlip;
+        width = pDimensions[0];
+        height = pDimensions[1];
+        nbChannels = *pNbChannels;
+        nbBatch = *pNbBatch;
+        dirty = *pDirty;
+    }
+    else
+        return ;
+    
+    uint depth = id[0] / width;
+    uint elem = id[1] / height;
+    uint i = id[1] % height;
+    uint j = id[0] % width;
+    
+    if (i * elem >= height * nbBatch ||
+        j * depth >= width * nbChannels)
+    {
+        return ;
+    }
+    
+    uint offsetStart = (depth + nbChannels * elem) * height;
+    uint offset1 = j + (offsetStart + i) * width;
+    uint offset2 = offset1;
+    if (doFlip)
+    {
+        offset2 = width-1-j + (offsetStart + i) * width;
+    }
+    
+    if (dirty)
+    {
+        deltaPrev[offset1] = delta[offset2];
+    }
+    else
+    {
+        deltaPrev[offset1] += delta[offset2];
+    }
+}
+
+kernel void flipVertical2DForward(
+    const device float * outsPrev,
+    constant uint * pDoFlip,
+    constant uint * pNbChannels,
+    constant uint * pDimensions,
+    constant uint * pNbBatch,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint doFlip;
+    uint height, width;
+    uint nbChannels;
+    uint nbBatch;
+    
+    if (pDoFlip && pNbChannels && pDimensions && pNbBatch &&
+        outsPrev && outs)
+    {
+        doFlip = *pDoFlip;
+        width = pDimensions[0];
+        height = pDimensions[1];
+        nbChannels = *pNbChannels;
+        nbBatch = *pNbBatch;
+    }
+    else
+        return ;
+    
+    uint depth = id[0] / width;
+    uint elem = id[1] / height;
+    uint i = id[1] % height;
+    uint j = id[0] % width;
+    
+    if (i * elem >= height * nbBatch ||
+        j * depth >= width * nbChannels)
+    {
+        return ;
+    }
+        
+    uint offsetStart = (depth + nbChannels * elem) * height;
+    uint offset1 = j + (offsetStart + i) * width;
+    uint offset2 = offset1;
+    if (doFlip)
+    {
+        offset2 = j + (offsetStart + height-1-i) * width;
+    }
+    
+    outs[offset1] = outsPrev[offset2];
+}
+
+kernel void flipVertical2DBackward(
+    const device float * delta,
+    constant uint * pDoFlip,
+    constant uint * pNbChannels,
+    constant uint * pDimensions,
+    constant uint * pNbBatch,
+    constant uint * pDirty,
+    device float * deltaPrev,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint doFlip;
+    uint height, width;
+    uint nbChannels;
+    uint nbBatch;
+    uint dirty;
+    
+    if (pDoFlip && pNbChannels && pDimensions && pNbBatch && pDirty &&
+        delta && deltaPrev)
+    {
+        doFlip = *pDoFlip;
+        width = pDimensions[0];
+        height = pDimensions[1];
+        nbChannels = *pNbChannels;
+        nbBatch = *pNbBatch;
+        dirty = *pDirty;
+    }
+    else
+        return ;
+    
+    uint depth = id[0] / width;
+    uint elem = id[1] / height;
+    uint i = id[1] % height;
+    uint j = id[0] % width;
+    
+    if (i * elem >= height * nbBatch ||
+        j * depth >= width * nbChannels)
+    {
+        return ;
+    }
+    
+    uint offsetStart = (depth + nbChannels * elem) * height;
+    uint offset1 = j + (offsetStart + i) * width;
+    uint offset2 = offset1;
+    if (doFlip)
+    {
+        offset2 = j + (offsetStart + height-1-i) * width;
+    }
+    
+    if (dirty)
+    {
+        deltaPrev[offset1] = delta[offset2];
+    }
+    else
+    {
+        deltaPrev[offset1] += delta[offset2];
+    }
+}

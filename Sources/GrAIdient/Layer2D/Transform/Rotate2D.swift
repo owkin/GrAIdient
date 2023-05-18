@@ -86,7 +86,7 @@ public class Rotate2D: Layer2D
         _minAngle = minAngle
         _maxAngle = maxAngle
         
-        if minAngle >= maxAngle || minAngle == 0.0
+        if minAngle >= maxAngle
         {
             fatalError()
         }

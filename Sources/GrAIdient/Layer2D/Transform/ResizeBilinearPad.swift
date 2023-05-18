@@ -29,6 +29,34 @@ public class ResizeBilinearPad: Layer2D
     var _widthResize: Int = 0
     var _heightResize: Int = 0
     
+    ///
+    /// Get padding dimensions.
+    ///
+    /// - Returns:
+    ///     - startI: Start row padding offset.
+    ///     - endI: End row padding offset.
+    ///     - startJ: Start column padding offset.
+    ///     - endJ: End column padding offset.
+    ///
+    var padDimensions: (Int, Int, Int, Int)
+    {
+        get {
+            let blockI = height - _heightResize
+            let blockJ = width - _widthResize
+            
+            let halfBlockI = blockI / 2
+            let halfBlockJ = blockJ / 2
+            
+            let startI = blockI % 2 == 0 ? halfBlockI : halfBlockI + 1
+            let endI = halfBlockI
+            
+            let startJ = blockJ % 2 == 0 ? halfBlockJ : halfBlockJ + 1
+            let endJ = halfBlockJ
+            
+            return (startI, endI, startJ, endJ)
+        }
+    }
+    
     private enum Keys: String, CodingKey
     {
         case scalesList
@@ -79,6 +107,7 @@ public class ResizeBilinearPad: Layer2D
             width = max(width, Int(round(scale * Double(widthPrev))))
             height = max(height, Int(round(scale * Double(heightPrev))))
         }
+        
         super.init(layerPrev: layerPrev,
                    nbChannels: nbChannels,
                    height: height,
@@ -107,7 +136,7 @@ public class ResizeBilinearPad: Layer2D
         _minScale = minScale
         _maxScale = maxScale
         
-        if minScale >= maxScale || minScale == 0.0
+        if minScale >= maxScale || minScale <= 0.0
         {
             fatalError()
         }
@@ -256,8 +285,10 @@ public class ResizeBilinearPad: Layer2D
             let widthPrev = layerPrev.width
             let ratioInOutI = Double(heightPrev - 1) / Double(_heightResize - 1)
             let ratioInOutJ = Double(widthPrev - 1) / Double(_widthResize - 1)
-            let padDimensionI = (height - _heightResize) / 2
-            let padDimensionJ = (width - _widthResize) / 2
+            let (
+                padStartI, padEndI,
+                padStartJ, padEndJ
+            ) = padDimensions
             
             let neuronsPrev = layerPrev.neurons
             for batch in 0..<batchSize {
@@ -267,16 +298,16 @@ public class ResizeBilinearPad: Layer2D
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    if i < padDimensionI || i >= height - padDimensionI ||
-                       j < padDimensionJ || j >= width - padDimensionJ
+                    if i < padStartI || i >= height - padEndI ||
+                       j < padStartJ || j >= width - padEndJ
                     {
                         neurons[depth].get(i, j)!.gc[batch][elem].out =
                             _padValue
                     }
                     else
                     {
-                        let I = i-padDimensionI
-                        let J = j-padDimensionJ
+                        let I = i-padStartI
+                        let J = j-padStartJ
                         
                         let iPrev = Double(I) * ratioInOutI
                         let jPrev = Double(J) * ratioInOutJ
@@ -359,8 +390,10 @@ public class ResizeBilinearPad: Layer2D
             
             let ratioInOutI = Double(heightPrev - 1) / Double(_heightResize - 1)
             let ratioInOutJ = Double(widthPrev - 1) / Double(_widthResize - 1)
-            let padDimensionI = (height - _heightResize) / 2
-            let padDimensionJ = (width - _widthResize) / 2
+            let (
+                padStartI, padEndI,
+                padStartJ, padEndJ
+            ) = padDimensions
             
             let neuronsPrev = layerPrev.neurons
             for elem in 0..<batchSize {
@@ -369,15 +402,15 @@ public class ResizeBilinearPad: Layer2D
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    if i < padDimensionI || i >= height - padDimensionI ||
-                       j < padDimensionJ || j >= width - padDimensionJ
+                    if i < padStartI || i >= height - padEndI ||
+                       j < padStartJ || j >= width - padEndJ
                     {
                         neurons[depth].get(i, j)!.v[elem].out = _padValue
                     }
                     else
                     {
-                        let I = i-padDimensionI
-                        let J = j-padDimensionJ
+                        let I = i-padStartI
+                        let J = j-padStartJ
                         
                         let iPrev = Double(I) * ratioInOutI
                         let jPrev = Double(J) * ratioInOutJ
@@ -448,6 +481,11 @@ public class ResizeBilinearPad: Layer2D
                 fatalError()
             }
             
+            let (
+                padStartI, padEndI,
+                padStartJ, padEndJ
+            ) = padDimensions
+            
             let pNbChannels: [UInt32] = [UInt32(nbChannels)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
@@ -456,6 +494,10 @@ public class ResizeBilinearPad: Layer2D
             ]
             let pDimensionsResize: [UInt32] = [
                 UInt32(_widthResize), UInt32(_heightResize)
+            ]
+            let pPadDimensions: [UInt32] = [
+                UInt32(padStartI), UInt32(padEndI),
+                UInt32(padStartJ), UInt32(padEndJ)
             ]
             let pPadValue: [Float] = [Float(_padValue)]
             
@@ -467,9 +509,10 @@ public class ResizeBilinearPad: Layer2D
             command.setBytes(pDimensions, atIndex: 2)
             command.setBytes(pDimensionsPrev, atIndex: 3)
             command.setBytes(pDimensionsResize, atIndex: 4)
-            command.setBytes(pPadValue, atIndex: 5)
-            command.setBytes(pNbBatch, atIndex: 6)
-            command.setBuffer(outs.metal, atIndex: 7)
+            command.setBytes(pPadDimensions, atIndex: 5)
+            command.setBytes(pPadValue, atIndex: 6)
+            command.setBytes(pNbBatch, atIndex: 7)
+            command.setBuffer(outs.metal, atIndex: 8)
             
             command.dispatchThreads(
                 width: width * nbChannels,
@@ -503,8 +546,7 @@ public class ResizeBilinearPad: Layer2D
             
             let ratioInOutI = Double(heightPrev - 1) / Double(_heightResize - 1)
             let ratioInOutJ = Double(widthPrev - 1) / Double(_widthResize - 1)
-            let padDimensionI = (height - _heightResize) / 2
-            let padDimensionJ = (width - _widthResize) / 2
+            let (padStartI, _, padStartJ, _) = padDimensions
             
             for elem in 0..<batchSize {
             for depth in 0..<nbChannels
@@ -524,7 +566,8 @@ public class ResizeBilinearPad: Layer2D
                     let jWeight = ratioInOutJ * Double(j) - Double(jPrevInf)
                     
                     let delta = neurons[depth].get(
-                        i+padDimensionI, j+padDimensionJ)!.v[elem].delta
+                        i+padStartI, j+padStartJ
+                    )!.v[elem].delta
                     
                     neuronsPrev[depth].get(iPrevInf, jPrevInf)!.v[elem].delta +=
                         delta * (1.0 - iWeight) * (1.0 - jWeight)
@@ -570,6 +613,11 @@ public class ResizeBilinearPad: Layer2D
             let widthPrev = layerPrev.width
             let heightPrev = layerPrev.height
             
+            let (
+                padStartI, padEndI,
+                padStartJ, padEndJ
+            ) = padDimensions
+            
             let pNbChannels: [UInt32] = [UInt32(nbChannels)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
@@ -578,6 +626,10 @@ public class ResizeBilinearPad: Layer2D
             ]
             let pDimensionsResize: [UInt32] = [
                 UInt32(_widthResize), UInt32(_heightResize)
+            ]
+            let pPadDimensions: [UInt32] = [
+                UInt32(padStartI), UInt32(padEndI),
+                UInt32(padStartJ), UInt32(padEndJ)
             ]
             
             command = MetalKernel.get.createCommand(
@@ -588,8 +640,9 @@ public class ResizeBilinearPad: Layer2D
             command.setBytes(pDimensions, atIndex: 2)
             command.setBytes(pDimensionsPrev, atIndex: 3)
             command.setBytes(pDimensionsResize, atIndex: 4)
-            command.setBytes(pNbBatch, atIndex: 5)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 6)
+            command.setBytes(pPadDimensions, atIndex: 5)
+            command.setBytes(pNbBatch, atIndex: 6)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 7)
             
             command.dispatchThreads(
                 width: widthPrev * nbChannels,

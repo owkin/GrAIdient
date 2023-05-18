@@ -1318,6 +1318,7 @@ kernel void resizeBilinearPadForward(
     constant uint * pDimensions,
     constant uint * pDimensionsPrev,
     constant uint * pDimensionsResize,
+    constant uint * pPadDimensions,
     constant float * pPadValue,
     constant uint * pNbBatch,
     device float * outs,
@@ -1327,11 +1328,13 @@ kernel void resizeBilinearPadForward(
     uint heightPrev, widthPrev;
     uint heightResize, widthResize;
     uint nbChannels;
+    uint padStartI, padEndI;
+    uint padStartJ, padEndJ;
     float padValue;
     uint nbBatch;
     
     if (pNbChannels && pDimensions && pDimensionsPrev && pDimensionsResize &&
-        pPadValue && pNbBatch && outsPrev && outs)
+        pPadDimensions && pPadValue && pNbBatch && outsPrev && outs)
     {
         width = pDimensions[0];
         height = pDimensions[1];
@@ -1339,6 +1342,10 @@ kernel void resizeBilinearPadForward(
         heightPrev = pDimensionsPrev[1];
         widthResize = pDimensionsResize[0];
         heightResize = pDimensionsResize[1];
+        padStartI = pPadDimensions[0];
+        padEndI = pPadDimensions[1];
+        padStartJ = pPadDimensions[2];
+        padEndJ = pPadDimensions[3];
         padValue = *pPadValue;
         nbChannels = *pNbChannels;
         nbBatch = *pNbBatch;
@@ -1359,21 +1366,19 @@ kernel void resizeBilinearPadForward(
     
     float ratioInOutI = float(heightPrev - 1) / float(heightResize - 1);
     float ratioInOutJ = float(widthPrev - 1) / float(widthResize - 1);
-    float padDimensionI = (height - heightResize) / 2;
-    float padDimensionJ = (width - widthResize) / 2;
     
     uint offsetStart = (depth + nbChannels * elem) * height;
     uint offset = j + (offsetStart + i) * width;
     
-    if (i < padDimensionI || i >= height - padDimensionI ||
-        j < padDimensionJ || j >= width - padDimensionJ)
+    if (i < padStartI || i >= height - padEndI ||
+        j < padStartJ || j >= width - padEndJ)
     {
         outs[offset] = padValue;
     }
     else
     {
-        float I = i-padDimensionI;
-        float J = j-padDimensionJ;
+        float I = i-padStartI;
+        float J = j-padStartJ;
         
         float iPrev = I * ratioInOutI;
         float jPrev = J * ratioInOutJ;
@@ -1407,6 +1412,7 @@ kernel void resizeBilinearPadBackward(
     constant uint * pDimensions,
     constant uint * pDimensionsPrev,
     constant uint * pDimensionsResize,
+    constant uint * pPadDimensions,
     constant uint * pNbBatch,
     device float * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
@@ -1415,10 +1421,12 @@ kernel void resizeBilinearPadBackward(
     uint heightPrev, widthPrev;
     uint heightResize, widthResize;
     uint nbChannels;
+    uint padStartI, padEndI;
+    uint padStartJ, padEndJ;
     uint nbBatch;
     
     if (pNbChannels && pDimensions && pDimensionsPrev && pDimensionsResize &&
-        pNbBatch && delta && deltaPrev)
+        pPadDimensions && pNbBatch && delta && deltaPrev)
     {
         width = pDimensions[0];
         height = pDimensions[1];
@@ -1426,6 +1434,10 @@ kernel void resizeBilinearPadBackward(
         heightPrev = pDimensionsPrev[1];
         widthResize = pDimensionsResize[0];
         heightResize = pDimensionsResize[1];
+        padStartI = pPadDimensions[0];
+        padEndI = pPadDimensions[1];
+        padStartJ = pPadDimensions[2];
+        padEndJ = pPadDimensions[3];
         nbChannels = *pNbChannels;
         nbBatch = *pNbBatch;
     }
@@ -1445,8 +1457,6 @@ kernel void resizeBilinearPadBackward(
     
     float ratioInOutI = float(heightPrev - 1) / float(heightResize - 1);
     float ratioInOutJ = float(widthPrev - 1) / float(widthResize - 1);
-    float padDimensionI = (height - heightResize) / 2;
-    float padDimensionJ = (width - widthResize) / 2;
     
     uint offsetStart = (depth + nbChannels * elem) * height;
     uint offsetStartPrev = (depth + nbChannels * elem) * heightPrev;
@@ -1481,8 +1491,8 @@ kernel void resizeBilinearPadBackward(
             
             if (kPrevInf == i && lPrevInf == j)
             {
-                uint offset = l+padDimensionJ +
-                    (offsetStart + k+padDimensionI) * width;
+                uint offset = l+padStartJ +
+                    (offsetStart + k+padStartI) * width;
                 float deltaCur = delta[offset];
                 
                 deltaPrev[offsetPrev] +=
@@ -1490,24 +1500,24 @@ kernel void resizeBilinearPadBackward(
             }
             else if (kPrevInf == i && lPrevSup == j)
             {
-                uint offset = l+padDimensionJ +
-                    (offsetStart + k+padDimensionI) * width;
+                uint offset = l+padStartJ +
+                    (offsetStart + k+padStartI) * width;
                 float deltaCur = delta[offset];
                 
                 deltaPrev[offsetPrev] += deltaCur * (1.0 - kWeight) * lWeight;
             }
             else if (kPrevSup == i && lPrevInf == j)
             {
-                uint offset = l+padDimensionJ +
-                    (offsetStart + k+padDimensionI) * width;
+                uint offset = l+padStartJ +
+                    (offsetStart + k+padStartI) * width;
                 float deltaCur = delta[offset];
                 
                 deltaPrev[offsetPrev] += deltaCur * kWeight * (1.0 - lWeight);
             }
             else if (kPrevSup == i && lPrevSup == j)
             {
-                uint offset = l+padDimensionJ +
-                    (offsetStart + k+padDimensionI) * width;
+                uint offset = l+padStartJ +
+                    (offsetStart + k+padStartI) * width;
                 float deltaCur = delta[offset];
                 
                 deltaPrev[offsetPrev] += deltaCur * kWeight * lWeight;

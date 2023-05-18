@@ -159,7 +159,7 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
                 layerPrev: secondLayer, size: width, params: params
             )
             
-        case "ResizeBilinearPad":
+        case "ResizeBilinearPad1":
             secondLayer = ResizeBilinearPad(
                 layerPrev: layer,
                 scalesList: [0.8, 1.2], padValue: 0.5,
@@ -169,17 +169,44 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
                 layerPrev: secondLayer, size: width, params: params
             )
             
-        case "Rotate":
+        case "ResizeBilinearPad2":
+            secondLayer = ResizeBilinearPad(
+                layerPrev: layer,
+                minScale: 0.8, maxScale: 1.2, padValue: 0.5,
+                params: params
+            )
+            secondLayer = AdaptiveAvgPool2D(
+                layerPrev: secondLayer, size: width, params: params
+            )
+            
+        case "Rotate1":
             secondLayer = Rotate2D(
                 layerPrev: layer,
                 anglesList: [20.0, 350.0], padValue: 0.5,
                 params: params
             )
             
-        case "ResizeBilinearCrop":
+        case "Rotate2":
+            secondLayer = Rotate2D(
+                layerPrev: layer,
+                minAngle: 20.0, maxAngle: 350.0, padValue: 0.5,
+                params: params
+            )
+            
+        case "ResizeBilinearCrop1":
             secondLayer = ResizeBilinearCrop(
                 layerPrev: layer,
                 scalesList: [0.6, 0.8],
+                params: params
+            )
+            secondLayer = AdaptiveAvgPool2D(
+                layerPrev: secondLayer, size: width, params: params
+            )
+            
+        case "ResizeBilinearCrop2":
+            secondLayer = ResizeBilinearCrop(
+                layerPrev: layer,
+                minScale: 0.6, maxScale: 0.8,
                 params: params
             )
             secondLayer = AdaptiveAvgPool2D(
@@ -388,42 +415,81 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
         run(trainer)
     }
     
-    func testResizeBilinearPadCPU() throws
+    func testResizeBilinearPad1CPU() throws
     {
         GrAI.Opti.CPU = true
-        let trainer = _buildTrainer(model: "ResizeBilinearPad")
+        let trainer = _buildTrainer(model: "ResizeBilinearPad1")
         run(trainer)
     }
     
-    func testResizeBilinearPadGPU() throws
+    func testResizeBilinearPad1GPU() throws
     {
-        let trainer = _buildTrainer(model: "ResizeBilinearPad")
+        let trainer = _buildTrainer(model: "ResizeBilinearPad1")
         run(trainer)
     }
     
-    func testRotateCPU() throws
-    {
-        GrAI.Opti.CPU = true
-        let trainer = _buildTrainer(model: "Rotate")
-        run(trainer)
-    }
-    
-    func testRotateGPU() throws
-    {
-        let trainer = _buildTrainer(model: "Rotate")
-        run(trainer)
-    }
-    
-    func testResizeBilinearCropCPU() throws
+    func testResizeBilinearPad2CPU() throws
     {
         GrAI.Opti.CPU = true
-        let trainer = _buildTrainer(model: "ResizeBilinearCrop")
+        let trainer = _buildTrainer(model: "ResizeBilinearPad2")
         run(trainer)
     }
     
-    func testResizeBilinearCropGPU() throws
+    func testResizeBilinearPad2GPU() throws
     {
-        let trainer = _buildTrainer(model: "ResizeBilinearCrop")
+        let trainer = _buildTrainer(model: "ResizeBilinearPad2")
+        run(trainer)
+    }
+    
+    func testRotate1CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "Rotate1")
+        run(trainer)
+    }
+    
+    func testRotate1GPU() throws
+    {
+        let trainer = _buildTrainer(model: "Rotate1")
+        run(trainer)
+    }
+    
+    func testRotate2CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "Rotate2")
+        run(trainer)
+    }
+    
+    func testRotate2GPU() throws
+    {
+        let trainer = _buildTrainer(model: "Rotate2")
+        run(trainer)
+    }
+    
+    func testResizeBilinearCrop1CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop1")
+        run(trainer)
+    }
+    
+    func testResizeBilinearCrop1GPU() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop1")
+        run(trainer)
+    }
+    
+    func testResizeBilinearCrop2CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop2")
+        run(trainer)
+    }
+    
+    func testResizeBilinearCrop2GPU() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop2")
         run(trainer)
     }
     

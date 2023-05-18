@@ -85,6 +85,7 @@ public class ResizeBilinearCrop: Layer2D
                 height = min(height, Int(round(scale * Double(heightPrev))))
             }
         }
+        
         super.init(layerPrev: layerPrev,
                    nbChannels: nbChannels,
                    height: height,
@@ -160,7 +161,7 @@ public class ResizeBilinearCrop: Layer2D
         _minScale = minScale
         _maxScale = maxScale
         
-        if minScale >= maxScale || minScale == 0.0
+        if minScale >= maxScale || minScale <= 0.0
         {
             fatalError()
         }

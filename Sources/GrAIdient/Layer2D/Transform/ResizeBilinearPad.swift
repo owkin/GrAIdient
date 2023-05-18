@@ -21,6 +21,9 @@ import Foundation
 public class ResizeBilinearPad: Layer2D
 {
     let _scalesList: [Double]
+    let _minScale: Double?
+    let _maxScale: Double?
+    
     let _padValue: Double
     
     var _widthResize: Int = 0
@@ -29,6 +32,8 @@ public class ResizeBilinearPad: Layer2D
     private enum Keys: String, CodingKey
     {
         case scalesList
+        case minScale
+        case maxScale
         case padValue
     }
     
@@ -48,6 +53,8 @@ public class ResizeBilinearPad: Layer2D
     {
         _padValue = padValue
         _scalesList = scalesList
+        _minScale = nil
+        _maxScale = nil
         
         if scalesList.count == 0
         {
@@ -80,6 +87,46 @@ public class ResizeBilinearPad: Layer2D
     }
     
     ///
+    /// Create a layer with a 2D shape neural structure.
+    ///
+    /// - Parameters:
+    ///     - layerPrev: Previous layer that has been queued to the model.
+    ///     - minScale: Minimum scale to apply to (heightPrev, widthPrev) dimensions.
+    ///     - maxScale: Maximum scale to apply to (heightPrev, widthPrev) dimensions.
+    ///     - padValue: Value to set on the created borders.
+    ///     - params: Contextual parameters linking to the model.
+    ///
+    public init(layerPrev: Layer2D,
+                minScale: Double,
+                maxScale: Double,
+                padValue: Double,
+                params: GrAI.Model.Params)
+    {
+        _padValue = padValue
+        _scalesList = []
+        _minScale = minScale
+        _maxScale = maxScale
+        
+        if minScale >= maxScale || minScale == 0.0
+        {
+            fatalError()
+        }
+        
+        let nbChannels = layerPrev.nbChannels
+        let heightPrev = layerPrev.height
+        let widthPrev = layerPrev.width
+        
+        let width = Int(round(maxScale * Double(widthPrev)))
+        let height = Int(round(maxScale * Double(heightPrev)))
+        
+        super.init(layerPrev: layerPrev,
+                   nbChannels: nbChannels,
+                   height: height,
+                   width: width,
+                   params: params)
+    }
+    
+    ///
     /// Decode from the disk.
     ///
     /// Throw an error if reading from the decoder fails, or
@@ -92,6 +139,12 @@ public class ResizeBilinearPad: Layer2D
         let values = try decoder.container(keyedBy: Keys.self)
         _scalesList = try values.decode(
             [Double].self, forKey: Keys.scalesList
+        )
+        _minScale = try values.decodeIfPresent(
+            Double.self, forKey: Keys.minScale
+        )
+        _maxScale = try values.decodeIfPresent(
+            Double.self, forKey: Keys.maxScale
         )
         _padValue = try values.decode(
             Double.self, forKey: Keys.padValue
@@ -114,6 +167,14 @@ public class ResizeBilinearPad: Layer2D
     {
         var container = encoder.container(keyedBy: Keys.self)
         try container.encode(_scalesList, forKey: Keys.scalesList)
+        if let minScale = _minScale
+        {
+            try container.encode(minScale, forKey: Keys.minScale)
+        }
+        if let maxScale = _maxScale
+        {
+            try container.encode(maxScale, forKey: Keys.maxScale)
+        }
         try container.encode(_padValue, forKey: Keys.padValue)
         try super.encode(to: encoder)
     }
@@ -140,12 +201,30 @@ public class ResizeBilinearPad: Layer2D
         let params = GrAI.Model.Params(context: context)
         params.context.curID = id
             
-        let layer = ResizeBilinearPad(
-            layerPrev: layerPrev,
-            scalesList: _scalesList,
-            padValue: _padValue,
-            params: params
-        )
+        let layer: ResizeBilinearPad
+        if _scalesList.count != 0
+        {
+            layer = ResizeBilinearPad(
+                layerPrev: layerPrev,
+                scalesList: _scalesList,
+                padValue: _padValue,
+                params: params
+            )
+        }
+        else if let minScale = _minScale, let maxScale = _maxScale
+        {
+            layer = ResizeBilinearPad(
+                layerPrev: layerPrev,
+                minScale: minScale,
+                maxScale: maxScale,
+                padValue: _padValue,
+                params: params
+            )
+        }
+        else
+        {
+            fatalError()
+        }
         return layer
     }
     
@@ -265,6 +344,18 @@ public class ResizeBilinearPad: Layer2D
                 _widthResize = Int(round(ratioInOut * Double(widthPrev)))
                 _heightResize = Int(round(ratioInOut * Double(heightPrev)))
             }
+            else if _scalesList.count == 0,
+                 let minScale = _minScale, let maxScale = _maxScale
+            {
+                let ratioInOut = Double.random(in: minScale...maxScale)
+                
+                _widthResize = Int(round(ratioInOut * Double(widthPrev)))
+                _heightResize = Int(round(ratioInOut * Double(heightPrev)))
+            }
+            else if _scalesList.count != 1
+            {
+                fatalError()
+            }
             
             let ratioInOutI = Double(heightPrev - 1) / Double(_heightResize - 1)
             let ratioInOutJ = Double(widthPrev - 1) / Double(_widthResize - 1)
@@ -343,6 +434,18 @@ public class ResizeBilinearPad: Layer2D
                 
                 _widthResize = Int(round(ratioInOut * Double(widthPrev)))
                 _heightResize = Int(round(ratioInOut * Double(heightPrev)))
+            }
+            else if _scalesList.count == 0,
+                 let minScale = _minScale, let maxScale = _maxScale
+            {
+                let ratioInOut = Double.random(in: minScale...maxScale)
+                
+                _widthResize = Int(round(ratioInOut * Double(widthPrev)))
+                _heightResize = Int(round(ratioInOut * Double(heightPrev)))
+            }
+            else if _scalesList.count != 1
+            {
+                fatalError()
             }
             
             let pNbChannels: [UInt32] = [UInt32(nbChannels)]

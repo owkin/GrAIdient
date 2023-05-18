@@ -15,6 +15,9 @@ import Foundation
 public class Rotate2D: Layer2D
 {
     let _anglesList: [Double]
+    let _minAngle: Double?
+    let _maxAngle: Double?
+    
     let _padValue: Double
     
     var _angle: Double = 0.0
@@ -22,6 +25,8 @@ public class Rotate2D: Layer2D
     private enum Keys: String, CodingKey
     {
         case anglesList
+        case minAngle
+        case maxAngle
         case padValue
     }
     
@@ -41,9 +46,49 @@ public class Rotate2D: Layer2D
     {
         _padValue = padValue
         _anglesList = anglesList
+        _minAngle = nil
+        _maxAngle = nil
+        
         if anglesList.count == 0
         {
             fatalError("`anglesList` should have at least one element.")
+        }
+        
+        let nbChannels = layerPrev.nbChannels
+        let height = layerPrev.height
+        let width = layerPrev.width
+        
+        super.init(layerPrev: layerPrev,
+                   nbChannels: nbChannels,
+                   height: height,
+                   width: width,
+                   params: params)
+    }
+    
+    ///
+    /// Create a layer with a 2D shape neural structure.
+    ///
+    /// - Parameters:
+    ///     - layerPrev: Previous layer that has been queued to the model.
+    ///     - minAngle: Minimum angle rotation to apply.
+    ///     - maxAngle: Maximum angle rotation to apply.
+    ///     - padValue: Value to set on the missing values.
+    ///     - params: Contextual parameters linking to the model.
+    ///
+    public init(layerPrev: Layer2D,
+                minAngle: Double,
+                maxAngle: Double,
+                padValue: Double,
+                params: GrAI.Model.Params)
+    {
+        _padValue = padValue
+        _anglesList = []
+        _minAngle = minAngle
+        _maxAngle = maxAngle
+        
+        if minAngle >= maxAngle || minAngle == 0.0
+        {
+            fatalError()
         }
         
         let nbChannels = layerPrev.nbChannels
@@ -71,6 +116,12 @@ public class Rotate2D: Layer2D
         _anglesList = try values.decode(
             [Double].self, forKey: Keys.anglesList
         )
+        _minAngle = try values.decodeIfPresent(
+            Double.self, forKey: Keys.minAngle
+        )
+        _maxAngle = try values.decodeIfPresent(
+            Double.self, forKey: Keys.maxAngle
+        )
         _padValue = try values.decode(
             Double.self, forKey: Keys.padValue
         )
@@ -92,6 +143,14 @@ public class Rotate2D: Layer2D
     {
         var container = encoder.container(keyedBy: Keys.self)
         try container.encode(_anglesList, forKey: Keys.anglesList)
+        if let minAngle = _minAngle
+        {
+            try container.encode(minAngle, forKey: Keys.minAngle)
+        }
+        if let maxAngle = _maxAngle
+        {
+            try container.encode(maxAngle, forKey: Keys.maxAngle)
+        }
         try container.encode(_padValue, forKey: Keys.padValue)
         try super.encode(to: encoder)
     }
@@ -118,12 +177,30 @@ public class Rotate2D: Layer2D
         let params = GrAI.Model.Params(context: context)
         params.context.curID = id
             
-        let layer = Rotate2D(
-            layerPrev: layerPrev,
-            anglesList: _anglesList,
-            padValue: _padValue,
-            params: params
-        )
+        let layer: Rotate2D
+        if _anglesList.count != 0
+        {
+            layer = Rotate2D(
+                layerPrev: layerPrev,
+                anglesList: _anglesList,
+                padValue: _padValue,
+                params: params
+            )
+        }
+        else if let minAngle = _minAngle, let maxAngle = _maxAngle
+        {
+            layer = Rotate2D(
+                layerPrev: layerPrev,
+                minAngle: minAngle,
+                maxAngle: maxAngle,
+                padValue: _padValue,
+                params: params
+            )
+        }
+        else
+        {
+            fatalError()
+        }
         return layer
     }
     
@@ -208,8 +285,21 @@ public class Rotate2D: Layer2D
         {
             try checkStateCPU(batchSize: batchSize)
         
-            let randIndex = Int.random(in: 0..<_anglesList.count)
-            let angle = _anglesList[randIndex]
+            let angle: Double
+            if _anglesList.count != 0
+            {
+                let randIndex = Int.random(in: 0..<_anglesList.count)
+                angle = _anglesList[randIndex]
+            }
+            else if _anglesList.count == 0,
+                 let minAngle = _minAngle, let maxAngle = _maxAngle
+            {
+                angle = Double.random(in: minAngle...maxAngle)
+            }
+            else
+            {
+                fatalError()
+            }
             _angle = angle * Double.pi / 180.0
             
             let centerI = Double(height - 1) / 2.0
@@ -257,8 +347,21 @@ public class Rotate2D: Layer2D
         {
             try checkStateForwardGPU(batchSize: batchSize)
             
-            let randIndex = Int.random(in: 0..<_anglesList.count)
-            let angle = _anglesList[randIndex]
+            let angle: Double
+            if _anglesList.count != 0
+            {
+                let randIndex = Int.random(in: 0..<_anglesList.count)
+                angle = _anglesList[randIndex]
+            }
+            else if _anglesList.count == 0,
+                 let minAngle = _minAngle, let maxAngle = _maxAngle
+            {
+                angle = Double.random(in: minAngle...maxAngle)
+            }
+            else
+            {
+                fatalError()
+            }
             _angle = angle * Double.pi / 180.0
             
             let pNbChannels: [UInt32] = [UInt32(nbChannels)]

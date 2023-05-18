@@ -217,7 +217,7 @@ class Layer2DGradTests: Input2DMSE1DCase
                 params: params
             )
             
-        case "ResizeBilinearPad":
+        case "ResizeBilinearPad1":
             layer = ResizeBilinearPad(
                 layerPrev: layer,
                 scalesList: [0.8, 1.2], padValue: 0.5,
@@ -227,10 +227,27 @@ class Layer2DGradTests: Input2DMSE1DCase
                 layerPrev: layer, size: width, params: params
             )
             
-        case "Rotate":
+        case "ResizeBilinearPad2":
+            layer = ResizeBilinearPad(
+                layerPrev: layer,
+                minScale: 0.8, maxScale: 1.2, padValue: 0.5,
+                params: params
+            )
+            layer = AdaptiveAvgPool2D(
+                layerPrev: layer, size: width, params: params
+            )
+            
+        case "Rotate1":
             layer = Rotate2D(
                 layerPrev: layer,
                 anglesList: [20.0, 350.0], padValue: 0.5,
+                params: params
+            )
+            
+        case "Rotate2":
+            layer = Rotate2D(
+                layerPrev: layer,
+                minAngle: 20.0, maxAngle: 350.0, padValue: 0.5,
                 params: params
             )
             
@@ -248,6 +265,17 @@ class Layer2DGradTests: Input2DMSE1DCase
             layer = ResizeBilinearCrop(
                 layerPrev: layer,
                 scalesList: [0.8, 1.2],
+                params: params
+            )
+            layer = AdaptiveAvgPool2D(
+                layerPrev: layer, size: width, params: params
+            )
+            
+        case "ResizeBilinearCrop3":
+            layer = ResizeBilinearCrop(
+                layerPrev: layer,
+                minScale: 0.8,
+                maxScale: 1.2,
                 params: params
             )
             layer = AdaptiveAvgPool2D(
@@ -705,29 +733,55 @@ class Layer2DGradTests: Input2DMSE1DCase
         run(trainer)
     }
     
-    func testResizeBilinearPadCPU() throws
+    func testResizeBilinearPad1CPU() throws
     {
         GrAI.Opti.CPU = true
-        let trainer = _buildTrainer(model: "ResizeBilinearPad", bn: false)
+        let trainer = _buildTrainer(model: "ResizeBilinearPad1", bn: false)
         run(trainer)
     }
     
-    func testResizeBilinearPadGPU() throws
+    func testResizeBilinearPad1GPU() throws
     {
-        let trainer = _buildTrainer(model: "ResizeBilinearPad", bn: false)
+        let trainer = _buildTrainer(model: "ResizeBilinearPad1", bn: false)
         run(trainer)
     }
     
-    func testRotateCPU() throws
+    func testResizeBilinearPad2CPU() throws
     {
         GrAI.Opti.CPU = true
-        let trainer = _buildTrainer(model: "Rotate", bn: false)
+        let trainer = _buildTrainer(model: "ResizeBilinearPad2", bn: false)
         run(trainer)
     }
     
-    func testRotateGPU() throws
+    func testResizeBilinearPad2GPU() throws
     {
-        let trainer = _buildTrainer(model: "Rotate", bn: false)
+        let trainer = _buildTrainer(model: "ResizeBilinearPad2", bn: false)
+        run(trainer)
+    }
+    
+    func testRotate1CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "Rotate1", bn: false)
+        run(trainer)
+    }
+    
+    func testRotate1GPU() throws
+    {
+        let trainer = _buildTrainer(model: "Rotate1", bn: false)
+        run(trainer)
+    }
+    
+    func testRotate2CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "Rotate2", bn: false)
+        run(trainer)
+    }
+    
+    func testRotate2GPU() throws
+    {
+        let trainer = _buildTrainer(model: "Rotate2", bn: false)
         run(trainer)
     }
     
@@ -754,6 +808,19 @@ class Layer2DGradTests: Input2DMSE1DCase
     func testResizeBilinearCrop2GPU() throws
     {
         let trainer = _buildTrainer(model: "ResizeBilinearCrop2", bn: false)
+        run(trainer)
+    }
+    
+    func testResizeBilinearCrop3CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop3", bn: false)
+        run(trainer)
+    }
+    
+    func testResizeBilinearCrop3GPU() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop3", bn: false)
         run(trainer)
     }
     

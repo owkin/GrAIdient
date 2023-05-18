@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🔨 **layer_2d:** remove computeVQ ([#91](https://github.com/owkin/GrAIdient/pull/91))\
 🔨 **layer_2d:** API for random transforms ([#90](https://github.com/owkin/GrAIdient/pull/90))\
 🚀 **perf:** enhance Normalize122D with reduce ([#89](https://github.com/owkin/GrAIdient/pull/89))\
 🪜 **layer_2d:** SimilarityBatchError2D ([#88](https://github.com/owkin/GrAIdient/pull/88))\

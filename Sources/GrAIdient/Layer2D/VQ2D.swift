@@ -40,9 +40,6 @@ public class VQ2D: Layer2D, LayerUpdate
     ///
     var _wDeltaWeights: MetalPrivateBuffer<Float>! = nil
     
-    /// Whether to forward vectors in the dictionary.
-    public var computeVQ = true
-    
     /// Whether to compute weights' gradients or not.
     public var computeDeltaWeights: Bool = true
     
@@ -414,23 +411,11 @@ public class VQ2D: Layer2D, LayerUpdate
                     fatalError("'minIndex' is negative.")
                 }
                 
-                if computeVQ
+                for depth in 0..<nbChannels
                 {
-                    for depth in 0..<nbChannels
-                    {
-                        neurons[depth].get(i, j)!.v[elem].out =
-                            _wArrays.w(minIndex, depth)
-                    }
+                    neurons[depth].get(i, j)!.v[elem].out =
+                        _wArrays.w(minIndex, depth)
                 }
-                else
-                {
-                    for depth in 0..<nbChannels
-                    {
-                        neurons[depth].get(i, j)!.v[elem].out =
-                            neuronsPrev[depth].get(i, j)!.v[elem].out
-                    }
-                }
-                
                 indicesPtr[j + (elem * height + i) * width] = Int32(minIndex)
             }}}
         }
@@ -451,7 +436,6 @@ public class VQ2D: Layer2D, LayerUpdate
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pK: [UInt32] = [UInt32(_K)]
-            let pComputeVQ: [UInt32] = computeVQ ? [1] : [0]
             
             let command = MetalKernel.get.createCommand(
                 "vq2DForward", deviceID: deviceID
@@ -462,9 +446,8 @@ public class VQ2D: Layer2D, LayerUpdate
             command.setBytes(pDimensions, atIndex: 3)
             command.setBytes(pK, atIndex: 4)
             command.setBytes(pNbBatch, atIndex: 5)
-            command.setBytes(pComputeVQ, atIndex: 6)
-            command.setBuffer(outs.metal, atIndex: 7)
-            command.setBuffer(_indices.metal, atIndex: 8)
+            command.setBuffer(outs.metal, atIndex: 6)
+            command.setBuffer(_indices.metal, atIndex: 7)
             
             command.dispatchThreads(
                 width: height * width,
@@ -510,11 +493,9 @@ public class VQ2D: Layer2D, LayerUpdate
                             deltaCur
                     }
                     
-                    if computeVQ
-                    {
-                        neuronsPrev[depth].get(i, j)!.v[elem].delta +=
-                            beta * (outPrev - vq)
-                    }
+                    // Commitment term.
+                    neuronsPrev[depth].get(i, j)!.v[elem].delta +=
+                        beta * (outPrev - vq)
                 }
             }}}
             propagateDirty()
@@ -581,7 +562,6 @@ public class VQ2D: Layer2D, LayerUpdate
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pK: [UInt32] = [UInt32(_K)]
             let pBeta: [Float] = [Float(beta)]
-            let pComputeVQ: [UInt32] = computeVQ ? [1] : [0]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
             let command = MetalKernel.get.createCommand(
@@ -596,9 +576,8 @@ public class VQ2D: Layer2D, LayerUpdate
             command.setBytes(pK, atIndex: 6)
             command.setBytes(pBeta, atIndex: 7)
             command.setBytes(pNbBatch, atIndex: 8)
-            command.setBytes(pComputeVQ, atIndex: 9)
-            command.setBytes(pDirty, atIndex: 10)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 11)
+            command.setBytes(pDirty, atIndex: 9)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 10)
             
             command.dispatchThreads(
                 width: nbChannels * width,

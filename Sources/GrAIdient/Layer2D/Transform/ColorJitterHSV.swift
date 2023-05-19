@@ -11,6 +11,12 @@ public struct Range<T: BinaryFloatingPoint & Codable>: Codable
 {
     let min: T
     let max: T
+    
+    public init(min: T, max: T)
+    {
+        self.min = min
+        self.max = max
+    }
 }
 
 ///

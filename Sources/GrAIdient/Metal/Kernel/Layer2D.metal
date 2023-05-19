@@ -2952,15 +2952,13 @@ kernel void colorJitterHSVForward(
     uint height, width;
     uint nbBatch;
     
-    if (pNoise && pDimensions && pNbBatch &&
-        outsPrev && outs)
+    if (pNoise && pDimensions && pNbBatch && outsPrev && outs)
     {
         noiseH = pNoise[0];
         noiseS = pNoise[1];
         noiseV = pNoise[2];
         width = pDimensions[0];
         height = pDimensions[1];
-        nbChannels = *pNbChannels;
         nbBatch = *pNbBatch;
     }
     else
@@ -2988,8 +2986,8 @@ kernel void colorJitterHSVForward(
     float g = outsPrev[offsetG];
     float b = outsPrev[offsetB];
     
-    float maxValue = max(r, g, b);
-    float minValue = min(r, g, b);
+    float maxValue = max(max(r, g), b);
+    float minValue = min(min(r, g), b);
     float delta = maxValue - minValue;
     
     float h;
@@ -3011,7 +3009,7 @@ kernel void colorJitterHSVForward(
     }
     h *= 60.0;
     
-    float s = 0.0
+    float s = 0.0;
     if (maxValue != 0)
     {
         s = delta / maxValue;
@@ -3062,7 +3060,7 @@ kernel void colorJitterHSVForward(
         r = v; g = p; b = q;
     }
     
-    outs[offset1] = r;
-    outs[offset2] = g;
-    outs[offset3] = b;
+    outs[offsetR] = r;
+    outs[offsetG] = g;
+    outs[offsetB] = b;
 }

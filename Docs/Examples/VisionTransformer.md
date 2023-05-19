@@ -11,48 +11,48 @@ Here is a subset of images we find for the label 8 (ships) vs label 5 (dogs).
 
 <table align="center" cellspacing="0" cellpadding="0">
     <tr>
-        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_0.png"></td>
-        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_1.png"></td>
-        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_2.png"></td>
-        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_3.png"></td>
+        <td><img src="../../Tests/data/out/cifar-10/CIFAR8_0.png"></td>
+        <td><img src="../../Tests/data/out/cifar-10/CIFAR8_1.png"></td>
+        <td><img src="../../Tests/data/out/cifar-10/CIFAR8_2.png"></td>
+        <td><img src="../../Tests/data/out/cifar-10/CIFAR8_3.png"></td>
         <td> </td>
-        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR5_0.png"></td>
-        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR5_1.png"></td>
-        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR5_2.png"></td>
-        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR5_3.png"></td>
+        <td><img src="../../Tests/data/out/cifar-10/CIFAR5_0.png"></td>
+        <td><img src="../../Tests/data/out/cifar-10/CIFAR5_1.png"></td>
+        <td><img src="../../Tests/data/out/cifar-10/CIFAR5_2.png"></td>
+        <td><img src="../../Tests/data/out/cifar-10/CIFAR5_3.png"></td>
     </tr>
     <tr>
-        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_4.png"></td>
-        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_5.png"></td>
-        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_6.png"></td>
-        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_7.png"></td>
+        <td><img src="../../Tests/data/out/cifar-10/CIFAR8_4.png"></td>
+        <td><img src="../../Tests/data/out/cifar-10/CIFAR8_5.png"></td>
+        <td><img src="../../Tests/data/out/cifar-10/CIFAR8_6.png"></td>
+        <td><img src="../../Tests/data/out/cifar-10/CIFAR8_7.png"></td>
         <td> </td>
-        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR5_4.png"></td>
-        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR5_5.png"></td>
-        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR5_6.png"></td>
-        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR5_7.png"></td>
+        <td><img src="../../Tests/data/out/cifar-10/CIFAR5_4.png"></td>
+        <td><img src="../../Tests/data/out/cifar-10/CIFAR5_5.png"></td>
+        <td><img src="../../Tests/data/out/cifar-10/CIFAR5_6.png"></td>
+        <td><img src="../../Tests/data/out/cifar-10/CIFAR5_7.png"></td>
     </tr>
     <tr>
-        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_8.png"></td>
-        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_9.png"></td>
-        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_10.png"></td>
-        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_11.png"></td>
+        <td><img src="../../Tests/data/out/cifar-10/CIFAR8_8.png"></td>
+        <td><img src="../../Tests/data/out/cifar-10/CIFAR8_9.png"></td>
+        <td><img src="../../Tests/data/out/cifar-10/CIFAR8_10.png"></td>
+        <td><img src="../../Tests/data/out/cifar-10/CIFAR8_11.png"></td>
         <td> </td>
-        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR5_8.png"></td>
-        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR5_9.png"></td>
-        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR5_10.png"></td>
-        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR5_11.png"></td>
+        <td><img src="../../Tests/data/out/cifar-10/CIFAR5_8.png"></td>
+        <td><img src="../../Tests/data/out/cifar-10/CIFAR5_9.png"></td>
+        <td><img src="../../Tests/data/out/cifar-10/CIFAR5_10.png"></td>
+        <td><img src="../../Tests/data/out/cifar-10/CIFAR5_11.png"></td>
     </tr>
     <tr>
-        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_12.png"></td>
-        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_13.png"></td>
-        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_14.png"></td>
-        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR8_15.png"></td>
+        <td><img src="../../Tests/data/out/cifar-10/CIFAR8_12.png"></td>
+        <td><img src="../../Tests/data/out/cifar-10/CIFAR8_13.png"></td>
+        <td><img src="../../Tests/data/out/cifar-10/CIFAR8_14.png"></td>
+        <td><img src="../../Tests/data/out/cifar-10/CIFAR8_15.png"></td>
         <td> </td>
-        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR5_12.png"></td>
-        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR5_13.png"></td>
-        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR5_14.png"></td>
-        <td><img src="../../Tests/GrAIExamples/Base/data/out/CIFAR5_15.png"></td>
+        <td><img src="../../Tests/data/out/cifar-10/CIFAR5_12.png"></td>
+        <td><img src="../../Tests/data/out/cifar-10/CIFAR5_13.png"></td>
+        <td><img src="../../Tests/data/out/cifar-10/CIFAR5_14.png"></td>
+        <td><img src="../../Tests/data/out/cifar-10/CIFAR5_15.png"></td>
     </tr>
 </table>
 

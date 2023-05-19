@@ -8,10 +8,15 @@
 import Foundation
 import Cocoa
 
+/// Error occuring when processing images.
 public enum ImageError: Error
 {
+    /// Problem in the dimensions of the image.
     case UnexpectedSize
+    /// Impossible to get access to the image's pixels.
     case UnexpectedDataStructure
+    /// Not enough space in a buffer.
+    case MissingSpace
 }
 
 extension ImageError: CustomStringConvertible
@@ -24,12 +29,26 @@ extension ImageError: CustomStringConvertible
             return "Size is too big."
         case .UnexpectedDataStructure:
             return "Cannot extract pixels."
+        case .MissingSpace:
+            return "Not enough space."
         }
     }
 }
 
 public class Image
 {
+    ///
+    /// Load images into a buffer of pixels.
+    ///
+    /// Consider the input images are in the .RGB `ImageFormat` and
+    /// the output buffer in the .Neuron format.
+    ///
+    /// - Parameters:
+    ///     - metalBuffer: Buffer of images.
+    ///     - width: Width of the images.
+    ///     - height: Height of the images.
+    /// - Returns: The list of images as list of pixels.
+    ///
     public static func loadImages(
         imagesURL: [URL],
         imagesBuffer: MetalBuffer<Float>,
@@ -39,14 +58,14 @@ public class Image
         let batchSize = imagesURL.count
         if imagesBuffer.nbElems < batchSize * 3 * height * width
         {
-            fatalError("`imagesBuffer` has not enough space.")
+            throw ImageError.MissingSpace
         }
         
         let bufferPtr = imagesBuffer.download()
         for (elem, imageURL) in imagesURL.enumerated()
         {
             let image = NSImage(byReferencing: imageURL)
-            let pixelsData = try image.getPaddedPixels(
+            let pixelsData = try image.extractPaddedPixels(
                 width: CGFloat(width), height: CGFloat(height)
             )
             
@@ -71,7 +90,8 @@ public class Image
     ///
     /// Get pixels out of buffer of images.
     ///
-    /// Consider the buffer of images is in the .Neuron `ImageFormat`.
+    /// Consider the input buffer is in the .Neuron `ImageFormat` and
+    /// the output images are in the .RGB format.
     ///
     /// - Parameters:
     ///     - metalBuffer: Buffer of images.
@@ -79,7 +99,7 @@ public class Image
     ///     - height: Height of the images.
     /// - Returns: The list of images as list of pixels.
     ///
-    public static func getPixels(
+    public static func extractPixels(
         _ metalBuffer: MetalBuffer<Float>,
         width: Int,
         height: Int) -> [[UInt8]]
@@ -126,16 +146,18 @@ public class Image
     }
 
     ///
-    /// Get pixels out of images.
+    /// Convert pixels into another format.
+    ///
+    /// Consider the input images are is in the .RGB `ImageFormat`.
     ///
     /// - Parameters:
     ///     - images: List of images.
     ///     - width: Width of the images.
     ///     - height: Height of the images.
-    ///     - imageFormat: The image format.
+    ///     - imageFormat: The image output format.
     /// - Returns: The list of images as list of pixels.
     ///
-    public static func getPixels(
+    public static func convertPixels(
         _ images: [[UInt8]],
         width: Int,
         height: Int,
@@ -184,7 +206,7 @@ public class Image
     ///     - height: Height of the image.
     /// - Returns: The image built.
     ///
-    public static func getImage(
+    public static func buildImage(
         pixels: [UInt8],
         width: Int,
         height: Int) -> NSImage
@@ -223,36 +245,27 @@ public class Image
         )!
         return NSImage(cgImage: cgImage, size: NSZeroSize)
     }
-    
-    ///
-    /// Save an image to the disk.
-    ///
-    /// - Parameters:
-    ///     - image: The image to save to the disk.
-    ///     - url: The path where to dump the image.
-    ///
-    public static func saveImage(_ image: NSImage, url: URL)
-    {
-        if image.representations.count > 0 {
-        if let imageData = image.tiffRepresentation
-        {
-            let rep = NSBitmapImageRep(data: imageData)!
-            let pngData = rep.representation(
-                using: NSBitmapImageRep.FileType.png,
-                properties: [:]
-            )!
-            try! pngData.write(to: url, options: [])
-        }}
-    }
 }
 
 public extension NSImage
 {
-    func getPaddedPixels(
+    ///
+    /// Extract the underlying pixels in the image.
+    /// Pad with zeros when needed.
+    ///
+    /// Throw an error when image is too big or it is
+    /// impossible to retrieve the pixels.
+    ///
+    /// - Parameters:
+    ///     - width: The expected output image width.
+    ///     - height: The expected output image height.
+    /// - Returns: An array of pixels.
+    ///
+    func extractPaddedPixels(
         width: CGFloat,
         height: CGFloat) throws -> [UInt8]
     {
-        let pixelsIn = try getPixels()
+        let pixelsIn = try extractPixels()
         
         if self.size.height == height &&
            self.size.width == width
@@ -280,7 +293,14 @@ public extension NSImage
         }
     }
     
-    func getPixels() throws -> [UInt8]
+    ///
+    /// Extract the underlying pixels in the image.
+    ///
+    /// Throw an error when it is impossible to retrieve the pixels.
+    ///
+    /// - Returns: An array of pixels.
+    ///
+    func extractPixels() throws -> [UInt8]
     {
         if let imageData = tiffRepresentation,
            let imageRep = NSBitmapImageRep(data: imageData),
@@ -296,5 +316,24 @@ public extension NSImage
         {
             throw ImageError.UnexpectedDataStructure
         }
+    }
+    
+    ///
+    /// Save an image to the disk.
+    ///
+    /// - Parameter url: The path where to dump the image.
+    ///
+    func save(url: URL)
+    {
+        if representations.count > 0 {
+        if let imageData = tiffRepresentation
+        {
+            let rep = NSBitmapImageRep(data: imageData)!
+            let pngData = rep.representation(
+                using: NSBitmapImageRep.FileType.png,
+                properties: [:]
+            )!
+            try! pngData.write(to: url, options: [])
+        }}
     }
 }

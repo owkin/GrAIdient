@@ -306,28 +306,26 @@ final class VGGExample: XCTestCase
         let samples8 = cifar8.getSamples()!
         let samples5 = cifar5.getSamples()!
         
-        let pixels8 = getPixels(
+        let pixels8 = Image.convertPixels(
             samples8, width: _size, height: _size, imageFormat: .Neuron
         )
-        let pixels5 = getPixels(
+        let pixels5 = Image.convertPixels(
             samples5, width: _size, height: _size, imageFormat: .Neuron
         )
         
         for elem in 0..<batchSize
         {
-            var image = getImage(
+            var image = Image.buildImage(
                 pixels: pixels8[elem], width: _size, height: _size
             )
-            saveImage(
-                image,
+            image.save(
                 url: URL(fileURLWithPath: _outputDir + "CIFAR8_\(elem).png")
             )
             
-            image = getImage(
+            image = Image.buildImage(
                 pixels: pixels5[elem], width: _size, height: _size
             )
-            saveImage(
-                image,
+            image.save(
                 url: URL(fileURLWithPath: _outputDir + "CIFAR5_\(elem).png")
             )
         }

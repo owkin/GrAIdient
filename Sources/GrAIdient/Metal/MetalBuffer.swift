@@ -38,6 +38,16 @@ public class MetalBuffer<T>
         self.deviceID = deviceID
         self.nbElems = nbElems
     }
+    
+    public func download() -> UnsafeMutableBufferPointer<T>
+    {
+        fatalError("Not implemented.")
+    }
+    
+    public func upload()
+    {
+        fatalError("Not implemented.")
+    }
 }
 
 ///
@@ -76,6 +86,17 @@ public class MetalPrivateBuffer<T>: MetalBuffer<T>
             }
             return _shared!
         }
+    }
+    
+    public override func download() -> UnsafeMutableBufferPointer<T>
+    {
+        MetalKernel.get.download([self])
+        return shared.buffer
+    }
+    
+    public override func upload()
+    {
+        MetalKernel.get.upload([self])
     }
 }
 
@@ -142,6 +163,17 @@ public class MetalSharedBuffer<T>: MetalBuffer<T>
     
     deinit {
         free(memory)
+    }
+    
+    public override func download() -> UnsafeMutableBufferPointer<T>
+    {
+        MetalKernel.get.download([self])
+        return buffer
+    }
+    
+    public override func upload()
+    {
+        MetalKernel.get.upload([self])
     }
 }
 

@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🪜 **layer_2d:** ColorJitterHSV ([#93](https://github.com/owkin/GrAIdient/pull/93))\
 🪜 **layer_2d:** Flip2D & config_kernels ([#92](https://github.com/owkin/GrAIdient/pull/92))\
 🔨 **layer_2d:** remove computeVQ ([#91](https://github.com/owkin/GrAIdient/pull/91))\
 🔨 **layer_2d:** API for random transforms ([#90](https://github.com/owkin/GrAIdient/pull/90))\

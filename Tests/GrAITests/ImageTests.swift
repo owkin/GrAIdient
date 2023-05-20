@@ -20,6 +20,14 @@ class ImageTests: XCTestCase
         .appending(path: "data")
         .appending(path: "in")
         .appending(path: "224x224")
+    
+    /// Input images.
+    let _imageNames = [
+        "harp.png",
+        "monastery.png",
+        "snail.png"
+    ]
+    
     /// Directory to dump outputs from the tests.
     let _outputDir = NSTemporaryDirectory()
     
@@ -63,6 +71,50 @@ class ImageTests: XCTestCase
         let lastLayer = model.layers.last as! Layer2D
         
         return (model, firstLayer, lastLayer)
+    }
+    
+    func testColorJitterHSVCPU()
+    {
+        GrAI.Opti.CPU = true
+        let (model, firstLayer, lastLayer) = _buildModel(
+            model: "ColorJitterHSV"
+        )
+        
+        let imagesURL = [URL](repeating: _inputURL, count: 3).enumerated().map
+        {
+            (index, element) in
+            return element.appending(path: _imageNames[index])
+        }
+        let batchSize = imagesURL.count
+        
+        var data = [Double]()
+        for imageURL in imagesURL
+        {
+            let image = NSImage(byReferencingFile: imageURL.path)!
+            let pixels = try! image.extractPaddedPixels(
+                width: CGFloat(_size), height: CGFloat(_size)
+            )
+            data += Image.toFloat([pixels])[0]
+        }
+        
+        try! firstLayer.setDataCPU(data, batchSize: batchSize, format: .RGB)
+        model.updateKernel(batchSize: batchSize)
+        try! model.forward()
+        
+        for (elem, name) in _imageNames.enumerated()
+        {
+            let pixelsOut: [Float] = lastLayer.getOutsCPU(elem: elem)
+            var pixels = Image.toPixel([pixelsOut])
+            pixels = Image.toRGB(pixels, width: _size, height: _size)
+            
+            let image = Image.buildImage(
+                pixels: pixels[0],
+                width: _size, height: _size
+            )
+            image.save(
+                url: URL(fileURLWithPath: _outputDir).appending(path: name)
+            )
+        }
     }
     
     func testColorJitterHSVGPU()

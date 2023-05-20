@@ -306,12 +306,8 @@ final class VGGExample: XCTestCase
         let samples8 = cifar8.getSamples()!
         let samples5 = cifar5.getSamples()!
         
-        let pixels8 = Image.convertPixels(
-            samples8, width: _size, height: _size, imageFormat: .Neuron
-        )
-        let pixels5 = Image.convertPixels(
-            samples5, width: _size, height: _size, imageFormat: .Neuron
-        )
+        let pixels8 = Image.toRGB(samples8, width: _size, height: _size)
+        let pixels5 = Image.toRGB(samples5, width: _size, height: _size)
         
         for elem in 0..<batchSize
         {

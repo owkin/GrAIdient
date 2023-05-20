@@ -64,8 +64,8 @@ public class Image
         let bufferPtr = imagesBuffer.download()
         for (elem, imageURL) in imagesURL.enumerated()
         {
-            let image = NSImage(byReferencing: imageURL)
-            let pixelsData = try image.extractPaddedPixels(
+            let image = NSImage(contentsOfFile: imageURL.path)!
+            let pixels = try image.extractPaddedPixels(
                 width: CGFloat(width), height: CGFloat(height)
             )
             
@@ -80,7 +80,7 @@ public class Image
                     let offsetSet = j + (offsetStart + i) * width
                     
                     bufferPtr[offsetSet] =
-                        Float(pixelsData[3 * offsetGet + depth]) / 255.0
+                        Float(pixels[3 * offsetGet + depth]) / 255.0
                 }
             }}
         }
@@ -146,55 +146,138 @@ public class Image
     }
 
     ///
-    /// Convert pixels into another format.
+    /// Convert float images (values in [0; 1]) to pixel images (values in [0; 255]).
     ///
-    /// Consider the input images are is in the .RGB `ImageFormat`.
+    /// - Parameter images: List of images with values in [0; 1].
+    /// - Returns: The list of images with values in [0; 255].
+    ///
+    public static func toPixel<T: BinaryFloatingPoint>(
+        _ images: [[T]]) -> [[UInt8]]
+    {
+        var output = [[UInt8]]()
+        for elem in 0..<images.count
+        {
+            output.append(images[elem].map {
+                let valTmp = $0 * T(255.0)
+                let val: UInt8
+                if valTmp < 0
+                {
+                    val = 0
+                }
+                else if valTmp > 255.0
+                {
+                    val = 255
+                }
+                else
+                {
+                    val = UInt8(valTmp)
+                }
+                return val
+            })
+        }
+        return output
+    }
+    
+    ///
+    /// Convert pixel images (values in [0; 255]) to float images (values in [0; 1]).
+    ///
+    /// - Parameter images: List of images with values in [0; 255].
+    /// - Returns: The list of images with values in [0; 1].
+    ///
+    public static func toFloat<T: BinaryFloatingPoint>(
+        _ images: [[UInt8]]) -> [[T]]
+    {
+        var output = [[T]]()
+        for elem in 0..<images.count
+        {
+            output.append(images[elem].map { T($0) / 255.0 })
+        }
+        return output
+    }
+    
+    ///
+    /// Convert pixels into the RGB format.
+    ///
+    /// Consider the input images are in the .Neuron `ImageFormat` format.
     ///
     /// - Parameters:
     ///     - images: List of images.
     ///     - width: Width of the images.
     ///     - height: Height of the images.
-    ///     - imageFormat: The image output format.
     /// - Returns: The list of images as list of pixels.
     ///
-    public static func convertPixels(
+    public static func toRGB(
         _ images: [[UInt8]],
         width: Int,
-        height: Int,
-        imageFormat: ImageFormat) -> [[UInt8]]
+        height: Int) -> [[UInt8]]
     {
-        switch imageFormat
+        var output = [[UInt8]]()
+        for elem in 0..<images.count
         {
-        case .RGB:
-            return images
-            
-        case .Neuron:
-            var output = [[UInt8]]()
-            for elem in 0..<images.count
+            var grid: [UInt8] = [UInt8](
+                repeating: 0,
+                count: width * height * 3
+            )
+            grid.withUnsafeMutableBufferPointer { gridPtr in
+            Concurrency.slice(gridPtr.count)
             {
-                var grid: [UInt8] = [UInt8](
-                    repeating: 0,
-                    count: width * height * 3
-                )
-                grid.withUnsafeMutableBufferPointer { gridPtr in
-                Concurrency.slice(gridPtr.count)
-                {
-                    (index: Int) in
-                    
-                    let depth = index / (width * height)
-                    let i = (index - depth * width * height) / width
-                    let j = (index - depth * width * height) % width
-                    let offset = j + i * width
-                    
-                    let val = images[elem][index]
-                    gridPtr[3 * offset + depth] = val
-                }}
-                output.append(grid)
-            }
-            return output
+                (index: Int) in
+                
+                let depth = index / (width * height)
+                let i = (index - depth * width * height) / width
+                let j = (index - depth * width * height) % width
+                let offset = j + i * width
+                
+                let val = images[elem][index]
+                gridPtr[3 * offset + depth] = val
+            }}
+            output.append(grid)
         }
+        return output
     }
-
+    
+    ///
+    /// Convert pixels into the Neuron format.
+    ///
+    /// Consider the input images are in the .RGB `ImageFormat` format.
+    ///
+    /// - Parameters:
+    ///     - images: List of images.
+    ///     - width: Width of the images.
+    ///     - height: Height of the images.
+    /// - Returns: The list of images as list of pixels.
+    ///
+    public static func toNeuron(
+        _ images: [[UInt8]],
+        width: Int,
+        height: Int) -> [[UInt8]]
+    {
+        var output = [[UInt8]]()
+        for elem in 0..<images.count
+        {
+            var grid: [UInt8] = [UInt8](
+                repeating: 0,
+                count: width * height * 3
+            )
+            grid.withUnsafeMutableBufferPointer { gridPtr in
+            Concurrency.slice(gridPtr.count)
+            {
+                (index: Int) in
+                
+                let i = index / (3 * width)
+                let j = index % (3 * width)
+                let depth = (index - 3 * (j + i * width)) % 3
+                
+                let offset = j + (depth * height + i) * width
+                
+                let val = images[elem][index]
+                gridPtr[offset] = val
+            }}
+            output.append(grid)
+        }
+        return output
+    }
+    
     ///
     /// Get an image out of pixels.
     ///

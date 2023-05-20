@@ -73,7 +73,8 @@ def load_CIFAR_data(
         The list of flatten images with inner shape:
         (batch, channel, height, width).
     """
-    data_dir = Path(__file__).parent.parent.resolve() / "data" / "in"
+    data_dir = Path(__file__).parent.parent.parent.parent.resolve() / \
+        "data" / "in" / "cifar-10-batches-py"
 
     with open(f"{data_dir}/data_batch_{data_file}", 'rb') as fo:
         dict = pickle.load(fo, encoding='bytes')
@@ -101,7 +102,8 @@ def load_CIFAR_test(
         The list of flatten images with inner shape:
         (batch, channel, height, width).
     """
-    data_dir = Path(__file__).parent.parent.resolve() / "data" / "in"
+    data_dir = Path(__file__).parent.parent.parent.parent.resolve() / \
+        "data" / "in" / "cifar-10-batches-py"
 
     with open(f"{data_dir}/test_batch", 'rb') as fo:
         dict = pickle.load(fo, encoding='bytes')

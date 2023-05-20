@@ -2939,3 +2939,128 @@ kernel void flipVertical2DBackward(
         deltaPrev[offset1] += delta[offset2];
     }
 }
+
+kernel void colorJitterHSVForward(
+    const device float * outsPrev,
+    constant float * pNoise,
+    constant uint * pDimensions,
+    constant uint * pNbBatch,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    float noiseH, noiseS, noiseV;
+    uint height, width;
+    uint nbBatch;
+    
+    if (pNoise && pDimensions && pNbBatch && outsPrev && outs)
+    {
+        noiseH = pNoise[0];
+        noiseS = pNoise[1];
+        noiseV = pNoise[2];
+        width = pDimensions[0];
+        height = pDimensions[1];
+        nbBatch = *pNbBatch;
+    }
+    else
+        return ;
+    
+    uint elem = id[1];
+    uint row = id[0] / width;
+    uint col = id[0] % width;
+    
+    if (row * col >= height * width ||
+        elem >= nbBatch)
+    {
+        return ;
+    }
+        
+    uint offsetStartR = (0 + 3 * elem) * height;
+    uint offsetStartG = (1 + 3 * elem) * height;
+    uint offsetStartB = (2 + 3 * elem) * height;
+    
+    uint offsetR = col + (offsetStartR + row) * width;
+    uint offsetG = col + (offsetStartG + row) * width;
+    uint offsetB = col + (offsetStartB + row) * width;
+    
+    float r = outsPrev[offsetR];
+    float g = outsPrev[offsetG];
+    float b = outsPrev[offsetB];
+    
+    float maxValue = max(max(r, g), b);
+    float minValue = min(min(r, g), b);
+    float delta = maxValue - minValue;
+    
+    float h;
+    if (delta == 0)
+    {
+        h = 0.0;
+    }
+    else if (maxValue == r)
+    {
+        h = (g - b) / delta;
+    }
+    else if (maxValue == g)
+    {
+        h = (g - b) / delta + 2.0;
+    }
+    else
+    {
+        h = (g - b) / delta + 4.0;
+    }
+    h *= 60.0;
+    
+    float s = 0.0;
+    if (maxValue != 0)
+    {
+        s = delta / maxValue;
+    }
+    
+    float v = maxValue;
+    
+    h += noiseH; h = max(h, 0.0); h = min(h, 360.0);
+    s += noiseS; s = max(s, 0.0); s = min(s, 1.0);
+    v += noiseV; v = max(v, 0.0); v = min(v, 1.0);
+    
+    if (s == 0.0)
+    {
+        r = v; g = v; b = v;
+    }
+    
+    float angle = h;
+    float sector = angle / 60; // Sector
+    float i = floor(sector);
+    float f = sector - i; // Factorial part of h
+    
+    float p = v * (1 - s);
+    float q = v * (1 - (s * f));
+    float t = v * (1 - (s * (1 - f)));
+    
+    if (i == 0)
+    {
+        r = v; g = t; b = p;
+    }
+    else if (i == 1)
+    {
+        r = q; g = v; b = p;
+    }
+    else if (i == 2)
+    {
+        r = p; g = v; b = t;
+    }
+    else if (i == 3)
+    {
+        r = p; g = q; b = v;
+    }
+    else if (i == 4)
+    {
+        r = t; g = p; b = v;
+    }
+    else
+    {
+        r = v; g = p; b = q;
+    }
+    
+    outs[offsetR] = r;
+    outs[offsetG] = g;
+    outs[offsetB] = b;
+}

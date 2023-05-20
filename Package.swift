@@ -49,7 +49,6 @@ let package = Package(
             name: "GrAIExamples",
             dependencies: ["GrAIdient", "PythonKit"],
             resources: [
-                .copy("Base/data"),
                 .copy("Base/python_lib"),
                 .copy("Base/setup.py")
             ]

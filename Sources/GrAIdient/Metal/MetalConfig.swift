@@ -143,6 +143,7 @@ let CONFIG_KERNELS =
         "flipHorizontal2DBackward",
         "flipVertical2DForward",
         "flipVertical2DBackward",
+        "colorJitterHSVForward",
     ],
     "LayerMerge": [
         "sum1",

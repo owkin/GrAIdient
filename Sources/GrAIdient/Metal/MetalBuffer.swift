@@ -39,11 +39,17 @@ public class MetalBuffer<T>
         self.nbElems = nbElems
     }
     
+    ///
+    /// Download the content of the buffer to the CPU.
+    ///
+    /// - Returns: the CPU buffer.
+    ///
     public func download() -> UnsafeMutableBufferPointer<T>
     {
         fatalError("Not implemented.")
     }
     
+    /// Upload the content of the buffer to the GPU.
     public func upload()
     {
         fatalError("Not implemented.")
@@ -88,12 +94,18 @@ public class MetalPrivateBuffer<T>: MetalBuffer<T>
         }
     }
     
+    ///
+    /// Download the content of the buffer to the CPU.
+    ///
+    /// - Returns: the CPU buffer.
+    ///
     public override func download() -> UnsafeMutableBufferPointer<T>
     {
         MetalKernel.get.download([self])
         return shared.buffer
     }
     
+    /// Upload the content of the buffer to the GPU.
     public override func upload()
     {
         MetalKernel.get.upload([self])
@@ -161,16 +173,27 @@ public class MetalSharedBuffer<T>: MetalBuffer<T>
         super.init(nbElems, deviceID: deviceID)
     }
     
+    ///
+    /// Free memory.
+    ///
+    /// This is necessary as memory was initialized with a specific method.
+    ///
     deinit {
         free(memory)
     }
     
+    ///
+    /// Download the content of the buffer to the CPU.
+    ///
+    /// - Returns: the CPU buffer.
+    ///
     public override func download() -> UnsafeMutableBufferPointer<T>
     {
         MetalKernel.get.download([self])
         return buffer
     }
     
+    /// Upload the content of the buffer to the GPU.
     public override func upload()
     {
         MetalKernel.get.upload([self])

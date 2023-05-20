@@ -314,14 +314,14 @@ final class VGGExample: XCTestCase
             var image = Image.buildImage(
                 pixels: pixels8[elem], width: _size, height: _size
             )
-            image.save(
+            try! image.save(
                 url: URL(fileURLWithPath: _outputDir + "CIFAR8_\(elem).png")
             )
             
             image = Image.buildImage(
                 pixels: pixels5[elem], width: _size, height: _size
             )
-            image.save(
+            try! image.save(
                 url: URL(fileURLWithPath: _outputDir + "CIFAR5_\(elem).png")
             )
         }

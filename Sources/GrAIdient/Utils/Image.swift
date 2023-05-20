@@ -196,7 +196,7 @@ public class Image
     }
     
     ///
-    /// Convert pixels into the RGB format.
+    /// Organize pixels into the RGB format.
     ///
     /// Consider the input images are in the .Neuron `ImageFormat` format.
     ///
@@ -237,7 +237,7 @@ public class Image
     }
     
     ///
-    /// Convert pixels into the Neuron format.
+    /// Organize pixels into the Neuron format.
     ///
     /// Consider the input images are in the .RGB `ImageFormat` format.
     ///
@@ -404,9 +404,11 @@ public extension NSImage
     ///
     /// Save an image to the disk.
     ///
+    /// Throw an error in the Cocoa domain, if there is an error writing to the `URL`.
+    ///
     /// - Parameter url: The path where to dump the image.
     ///
-    func save(url: URL)
+    func save(url: URL) throws
     {
         if representations.count > 0 {
         if let imageData = tiffRepresentation
@@ -416,7 +418,7 @@ public extension NSImage
                 using: NSBitmapImageRep.FileType.png,
                 properties: [:]
             )!
-            try! pngData.write(to: url, options: [])
+            try pngData.write(to: url, options: [])
         }}
     }
 }

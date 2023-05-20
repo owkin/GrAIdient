@@ -131,7 +131,7 @@ class ImageTests: XCTestCase
                 pixels: pixels[0],
                 width: _size, height: _size
             )
-            image.save(
+            try! image.save(
                 url: URL(fileURLWithPath: _outputDir)
                     .appending(path: "\(name)_\(suffix).png")
             )
@@ -159,7 +159,7 @@ class ImageTests: XCTestCase
                 pixels: pixels,
                 width: _size, height: _size
             )
-            image.save(
+            try! image.save(
                 url: URL(fileURLWithPath: _outputDir)
                     .appending(path: "\(_imageNames[elem])_\(suffix).png")
             )

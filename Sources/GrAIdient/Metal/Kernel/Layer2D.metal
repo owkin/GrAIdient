@@ -2965,7 +2965,7 @@ kernel void colorJitterHSVForward(
         return ;
     
     uint elem = id[1];
-    uint row = id[0] % height;
+    uint row = id[0] / width;
     uint col = id[0] % width;
     
     if (row * col >= height * width ||

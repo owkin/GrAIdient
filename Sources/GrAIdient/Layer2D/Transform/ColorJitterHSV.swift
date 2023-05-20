@@ -7,15 +7,48 @@
 
 import Foundation
 
+/// Error occuring when range could not be built.
+public enum RangeError: Error
+{
+    /// Values specifiied are not coherent.
+    case ValueError
+}
+
+extension RangeError: CustomStringConvertible
+{
+    public var description: String
+    {
+        switch self
+        {
+        case .ValueError:
+            return "Values specified are not coherent."
+        }
+    }
+}
+
+/// A bounded interval.
 public struct Range<T: BinaryFloatingPoint & Codable>: Codable
 {
     let min: T
     let max: T
     
-    public init(min: T, max: T)
+    ///
+    /// Create the bounded interval.
+    ///
+    /// Throw an error when parameter values are not coherent.
+    ///
+    /// - Parameters:
+    ///     - min: The minimum value of the interval.
+    ///     - max: The maximum value of the interval.
+    ///
+    public init(min: T, max: T) throws
     {
         self.min = min
         self.max = max
+        if max < min
+        {
+            throw RangeError.ValueError
+        }
     }
 }
 
@@ -281,7 +314,6 @@ public class ColorJitterHSV: Layer2D
             let noiseS = Double.random(in: _rangeS.min..._rangeS.max)
             let noiseV = Double.random(in: _rangeV.min..._rangeV.max)
             
-            let pNbChannels: [UInt32] = [UInt32(nbChannels)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pNoise: [Float] = [Float(noiseH), Float(noiseS), Float(noiseV)]
@@ -291,10 +323,9 @@ public class ColorJitterHSV: Layer2D
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(pNoise, atIndex: 1)
-            command.setBytes(pNbChannels, atIndex: 2)
-            command.setBytes(pDimensions, atIndex: 3)
-            command.setBytes(pNbBatch, atIndex: 4)
-            command.setBuffer(outs.metal, atIndex: 5)
+            command.setBytes(pDimensions, atIndex: 2)
+            command.setBytes(pNbBatch, atIndex: 3)
+            command.setBuffer(outs.metal, atIndex: 4)
             
             command.dispatchThreads(
                 width: height * width,

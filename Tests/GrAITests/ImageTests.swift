@@ -322,6 +322,132 @@ class ImageTests: XCTestCase
         _compareGPU(lastLayer: lastLayer, suffix: suffix)
     }
     
+    func testRotate1CPU()
+    {
+        _runRGBCPU(
+            modelName: "Rotate",
+            parameters: 0.0,
+            suffix: "cpu_rotate1"
+        )
+    }
+    
+    func testRotate1GPU()
+    {
+        _runNeuronGPU(
+            modelName: "Rotate",
+            parameters: 0.0,
+            suffix: "gpu_rotate1"
+        )
+    }
+    
+    func testRotate2CPU()
+    {
+        _runNeuronCPU(
+            modelName: "Rotate",
+            parameters: 45.0,
+            suffix: "cpu_rotate2"
+        )
+    }
+    
+    func testRotate2GPU()
+    {
+        _runRGBGPU(
+            modelName: "Rotate",
+            parameters: 45.0,
+            suffix: "gpu_rotate2"
+        )
+    }
+    
+    func testRotate3CPU()
+    {
+        _runRGBCPU(
+            modelName: "Rotate",
+            parameters: -90.0,
+            suffix: "cpu_rotate3"
+        )
+    }
+    
+    func testRotate3GPU()
+    {
+        _runBufferGPU(
+            modelName: "Rotate",
+            parameters: -90.0,
+            suffix: "gpu_rotate3"
+        )
+    }
+    
+    func testFlipHorizontal1CPU()
+    {
+        _runRGBCPU(
+            modelName: "FlipHorizontal",
+            parameters: 0.0,
+            suffix: "cpu_fliph1"
+        )
+    }
+    
+    func testFlipHorizontal1GPU()
+    {
+        _runNeuronGPU(
+            modelName: "FlipHorizontal",
+            parameters: 0.0,
+            suffix: "gpu_fliph1"
+        )
+    }
+    
+    func testFlipHorizontal2CPU()
+    {
+        _runNeuronCPU(
+            modelName: "FlipHorizontal",
+            parameters: 1.0,
+            suffix: "cpu_fliph2"
+        )
+    }
+    
+    func testFlipHorizontal2GPU()
+    {
+        _runRGBGPU(
+            modelName: "FlipHorizontal",
+            parameters: 1.0,
+            suffix: "gpu_fliph2"
+        )
+    }
+    
+    func testFlipVertical1CPU()
+    {
+        _runRGBCPU(
+            modelName: "FlipVertical",
+            parameters: 0.0,
+            suffix: "cpu_flipv1"
+        )
+    }
+    
+    func testFlipVertical1GPU()
+    {
+        _runNeuronGPU(
+            modelName: "FlipVertical",
+            parameters: 0.0,
+            suffix: "gpu_flipv1"
+        )
+    }
+    
+    func testFlipVertical2CPU()
+    {
+        _runNeuronCPU(
+            modelName: "FlipVertical",
+            parameters: 1.0,
+            suffix: "cpu_flipv2"
+        )
+    }
+    
+    func testFlipVertical2GPU()
+    {
+        _runBufferGPU(
+            modelName: "FlipVertical",
+            parameters: 1.0,
+            suffix: "gpu_flipv2"
+        )
+    }
+    
     func testColorJitterHSV1CPU()
     {
         let rangeH = try! Range<Double>(min: 0.0, max: 0.0)

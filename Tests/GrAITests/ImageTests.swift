@@ -21,7 +21,7 @@ class ImageTests: XCTestCase
         .appending(path: "in")
         .appending(path: "224x224")
     /// Directory containing rerence images.
-    let _outputURL = URL(string: #file)!
+    let _referenceURL = URL(string: #file)!
         .deletingLastPathComponent()
         .deletingLastPathComponent()
         .appending(path: "data")
@@ -135,6 +135,15 @@ class ImageTests: XCTestCase
                 url: URL(fileURLWithPath: _outputDir)
                     .appending(path: "\(name)_\(suffix).png")
             )
+            
+            let imageRef = NSImage(
+                byReferencingFile: _referenceURL
+                    .appending(path: "\(name)_\(suffix).png").path
+            )!
+            let pixelsRef = try! imageRef.extractPaddedPixels(
+                width: CGFloat(_size), height: CGFloat(_size)
+            )
+            XCTAssert(pixels[0] == pixelsRef)
         }
     }
     
@@ -177,6 +186,15 @@ class ImageTests: XCTestCase
                 url: URL(fileURLWithPath: _outputDir)
                     .appending(path: "\(_imageNames[elem])_\(suffix).png")
             )
+            
+            let imageRef = NSImage(
+                byReferencingFile: _referenceURL
+                    .appending(path: "\(_imageNames[elem])_\(suffix).png").path
+            )!
+            let pixelsRef = try! imageRef.extractPaddedPixels(
+                width: CGFloat(_size), height: CGFloat(_size)
+            )
+            XCTAssert(pixelsBatch[elem] == pixelsRef)
         }
     }
     

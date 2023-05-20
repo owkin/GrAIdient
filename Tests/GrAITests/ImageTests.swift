@@ -59,7 +59,7 @@ class ImageTests: XCTestCase
     }
     
     private func _buildModel(
-        model: String,
+        modelName: String,
         parameters: Any) -> (Model, Input2D, Layer2D)
     {
         let context = ModelContext(name: "Image", curID: 0)
@@ -69,8 +69,33 @@ class ImageTests: XCTestCase
             nbChannels: 3, width: _size, height: _size, params: params
         )
         
-        switch model
+        switch modelName
         {
+        case "Rotate":
+            let p = parameters as! Double
+            layer = Rotate2D(
+                layerPrev: layer,
+                anglesList: [p],
+                padValue: 0.0,
+                params: params
+            )
+            
+        case "FlipHorizontal":
+            let p = parameters as! Double
+            layer = FlipHorizontal2D(
+                layerPrev: layer,
+                probability: p,
+                params: params
+            )
+            
+        case "FlipVertical":
+            let p = parameters as! Double
+            layer = FlipVertical2D(
+                layerPrev: layer,
+                probability: p,
+                params: params
+            )
+            
         case "ColorJitterHSV":
             let p = parameters as! (Range<Double>, Range<Double>, Range<Double>)
             layer = ColorJitterHSV(
@@ -94,33 +119,8 @@ class ImageTests: XCTestCase
         return (model, firstLayer, lastLayer)
     }
     
-    private func _colorJitterHSVCPU(
-        rangeH: Range<Double>,
-        rangeS: Range<Double>,
-        rangeV: Range<Double>,
-        suffix: String)
+    private func _compareCPU(lastLayer: Layer2D, suffix: String)
     {
-        GrAI.Opti.CPU = true
-        let (model, firstLayer, lastLayer) = _buildModel(
-            model: "ColorJitterHSV", parameters: (rangeH, rangeS, rangeV)
-        )
-        
-        let batchSize = imagesURL.count
-        
-        var data = [Double]()
-        for imageURL in imagesURL
-        {
-            let image = NSImage(byReferencingFile: imageURL.path)!
-            let pixels = try! image.extractPaddedPixels(
-                width: CGFloat(_size), height: CGFloat(_size)
-            )
-            data += Image.toFloat([pixels])[0]
-        }
-        
-        try! firstLayer.setDataCPU(data, batchSize: batchSize, format: .RGB)
-        model.updateKernel(batchSize: batchSize)
-        try! model.forward()
-        
         for (elem, name) in _imageNames.enumerated()
         {
             let pixelsOut: [Float] = lastLayer.getOutsCPU(elem: elem)
@@ -147,31 +147,8 @@ class ImageTests: XCTestCase
         }
     }
     
-    private func _colorJitterHSVGPU(
-        rangeH: Range<Double>,
-        rangeS: Range<Double>,
-        rangeV: Range<Double>,
-        suffix: String)
+    private func _compareGPU(lastLayer: Layer2D, suffix: String)
     {
-        let (model, firstLayer, lastLayer) = _buildModel(
-            model: "ColorJitterHSV", parameters: (rangeH, rangeS, rangeV)
-        )
-        
-        let batchSize = imagesURL.count
-        let buffer = MetalPrivateBuffer<Float>(
-            batchSize * 3 * _size * _size, deviceID: 0
-        )
-        
-        try! Image.loadImages(
-            imagesURL: imagesURL,
-            imagesBuffer: buffer,
-            width: _size, height: _size
-        )
-        
-        try! firstLayer.setDataGPU(buffer, batchSize: batchSize)
-        model.updateKernel(batchSize: batchSize)
-        try! model.forward()
-        
         let pixelsBatch = Image.extractPixels(
             lastLayer.outs,
             width: _size, height: _size
@@ -198,15 +175,162 @@ class ImageTests: XCTestCase
         }
     }
     
+    private func _runRGBCPU(
+        modelName: String,
+        parameters: Any,
+        suffix: String)
+    {
+        GrAI.Opti.CPU = true
+        let (model, firstLayer, lastLayer) = _buildModel(
+            modelName: modelName, parameters: parameters
+        )
+        
+        let batchSize = imagesURL.count
+        
+        var data = [Double]()
+        for imageURL in imagesURL
+        {
+            let image = NSImage(byReferencingFile: imageURL.path)!
+            let pixels = try! image.extractPaddedPixels(
+                width: CGFloat(_size), height: CGFloat(_size)
+            )
+            data += Image.toFloat([pixels])[0]
+        }
+        
+        try! firstLayer.setDataCPU(data, batchSize: batchSize, format: .RGB)
+        model.updateKernel(batchSize: batchSize)
+        try! model.forward()
+        
+        _compareCPU(lastLayer: lastLayer, suffix: suffix)
+    }
+    
+    private func _runNeuronCPU(
+        modelName: String,
+        parameters: Any,
+        suffix: String)
+    {
+        GrAI.Opti.CPU = true
+        let (model, firstLayer, lastLayer) = _buildModel(
+            modelName: modelName, parameters: parameters
+        )
+        
+        let batchSize = imagesURL.count
+        
+        var data = [Double]()
+        for imageURL in imagesURL
+        {
+            let image = NSImage(byReferencingFile: imageURL.path)!
+            let pixels1 = try! image.extractPaddedPixels(
+                width: CGFloat(_size), height: CGFloat(_size)
+            )
+            let pixels2 = Image.toNeuron(
+                [pixels1], width: _size, height: _size
+            )
+            data += Image.toFloat(pixels2)[0]
+        }
+        
+        try! firstLayer.setDataCPU(data, batchSize: batchSize, format: .Neuron)
+        model.updateKernel(batchSize: batchSize)
+        try! model.forward()
+        
+        _compareCPU(lastLayer: lastLayer, suffix: suffix)
+    }
+    
+    private func _runRGBGPU(
+        modelName: String,
+        parameters: Any,
+        suffix: String)
+    {
+        let (model, firstLayer, lastLayer) = _buildModel(
+            modelName: modelName, parameters: parameters
+        )
+        
+        let batchSize = imagesURL.count
+        
+        var data = [Double]()
+        for imageURL in imagesURL
+        {
+            let image = NSImage(byReferencingFile: imageURL.path)!
+            let pixels = try! image.extractPaddedPixels(
+                width: CGFloat(_size), height: CGFloat(_size)
+            )
+            data += Image.toFloat([pixels])[0]
+        }
+        
+        try! firstLayer.setDataGPU(data, batchSize: batchSize, format: .RGB)
+        model.updateKernel(batchSize: batchSize)
+        try! model.forward()
+        
+        _compareGPU(lastLayer: lastLayer, suffix: suffix)
+    }
+    
+    private func _runNeuronGPU(
+        modelName: String,
+        parameters: Any,
+        suffix: String)
+    {
+        let (model, firstLayer, lastLayer) = _buildModel(
+            modelName: modelName, parameters: parameters
+        )
+        
+        let batchSize = imagesURL.count
+        
+        var data = [Double]()
+        for imageURL in imagesURL
+        {
+            let image = NSImage(byReferencingFile: imageURL.path)!
+            let pixels1 = try! image.extractPaddedPixels(
+                width: CGFloat(_size), height: CGFloat(_size)
+            )
+            let pixels2 = Image.toNeuron(
+                [pixels1], width: _size, height: _size
+            )
+            data += Image.toFloat(pixels2)[0]
+        }
+        
+        try! firstLayer.setDataGPU(data, batchSize: batchSize, format: .Neuron)
+        model.updateKernel(batchSize: batchSize)
+        try! model.forward()
+        
+        _compareGPU(lastLayer: lastLayer, suffix: suffix)
+    }
+    
+    private func _runBufferGPU(
+        modelName: String,
+        parameters: Any,
+        suffix: String)
+    {
+        let (model, firstLayer, lastLayer) = _buildModel(
+            modelName: modelName, parameters: parameters
+        )
+        
+        let batchSize = imagesURL.count
+        let buffer = MetalPrivateBuffer<Float>(
+            batchSize * 3 * _size * _size, deviceID: 0
+        )
+        
+        try! Image.loadImages(
+            imagesURL: imagesURL,
+            imagesBuffer: buffer,
+            width: _size, height: _size
+        )
+        
+        try! firstLayer.setDataGPU(buffer, batchSize: batchSize)
+        model.updateKernel(batchSize: batchSize)
+        try! model.forward()
+        
+        _compareGPU(lastLayer: lastLayer, suffix: suffix)
+    }
+    
     func testColorJitterHSV1CPU()
     {
         let rangeH = try! Range<Double>(min: 0.0, max: 0.0)
         let rangeS = try! Range<Double>(min: 0.0, max: 0.0)
         let rangeV = try! Range<Double>(min: 0.0, max: 0.0)
-        _colorJitterHSVCPU(
-            rangeH: rangeH,
-            rangeS: rangeS,
-            rangeV: rangeV,
+        let parameters = (rangeH, rangeS, rangeV)
+        _runRGBCPU(
+            modelName: "ColorJitterHSV",
+            parameters: parameters,
             suffix: "cpu_hsv1"
         )
     }
@@ -216,10 +340,10 @@ class ImageTests: XCTestCase
         let rangeH = try! Range<Double>(min: 0.0, max: 0.0)
         let rangeS = try! Range<Double>(min: 0.0, max: 0.0)
         let rangeV = try! Range<Double>(min: 0.0, max: 0.0)
-        _colorJitterHSVGPU(
-            rangeH: rangeH,
-            rangeS: rangeS,
-            rangeV: rangeV,
+        let parameters = (rangeH, rangeS, rangeV)
+        _runNeuronGPU(
+            modelName: "ColorJitterHSV",
+            parameters: parameters,
             suffix: "gpu_hsv1"
         )
     }
@@ -229,10 +353,10 @@ class ImageTests: XCTestCase
         let rangeH = try! Range<Double>(min: 50.0, max: 50.0)
         let rangeS = try! Range<Double>(min: 0.0, max: 0.0)
         let rangeV = try! Range<Double>(min: 0.0, max: 0.0)
-        _colorJitterHSVCPU(
-            rangeH: rangeH,
-            rangeS: rangeS,
-            rangeV: rangeV,
+        let parameters = (rangeH, rangeS, rangeV)
+        _runNeuronCPU(
+            modelName: "ColorJitterHSV",
+            parameters: parameters,
             suffix: "cpu_hsv2"
         )
     }
@@ -242,10 +366,10 @@ class ImageTests: XCTestCase
         let rangeH = try! Range<Double>(min: 50.0, max: 50.0)
         let rangeS = try! Range<Double>(min: 0.0, max: 0.0)
         let rangeV = try! Range<Double>(min: 0.0, max: 0.0)
-        _colorJitterHSVGPU(
-            rangeH: rangeH,
-            rangeS: rangeS,
-            rangeV: rangeV,
+        let parameters = (rangeH, rangeS, rangeV)
+        _runRGBGPU(
+            modelName: "ColorJitterHSV",
+            parameters: parameters,
             suffix: "gpu_hsv2"
         )
     }
@@ -255,10 +379,10 @@ class ImageTests: XCTestCase
         let rangeH = try! Range<Double>(min: 0.0, max: 0.0)
         let rangeS = try! Range<Double>(min: 0.5, max: 0.5)
         let rangeV = try! Range<Double>(min: 0.0, max: 0.0)
-        _colorJitterHSVCPU(
-            rangeH: rangeH,
-            rangeS: rangeS,
-            rangeV: rangeV,
+        let parameters = (rangeH, rangeS, rangeV)
+        _runRGBCPU(
+            modelName: "ColorJitterHSV",
+            parameters: parameters,
             suffix: "cpu_hsv3"
         )
     }
@@ -268,10 +392,10 @@ class ImageTests: XCTestCase
         let rangeH = try! Range<Double>(min: 0.0, max: 0.0)
         let rangeS = try! Range<Double>(min: 0.5, max: 0.5)
         let rangeV = try! Range<Double>(min: 0.0, max: 0.0)
-        _colorJitterHSVGPU(
-            rangeH: rangeH,
-            rangeS: rangeS,
-            rangeV: rangeV,
+        let parameters = (rangeH, rangeS, rangeV)
+        _runBufferGPU(
+            modelName: "ColorJitterHSV",
+            parameters: parameters,
             suffix: "gpu_hsv3"
         )
     }
@@ -281,10 +405,10 @@ class ImageTests: XCTestCase
         let rangeH = try! Range<Double>(min: 0.0, max: 0.0)
         let rangeS = try! Range<Double>(min: 0.0, max: 0.0)
         let rangeV = try! Range<Double>(min: 0.5, max: 0.5)
-        _colorJitterHSVCPU(
-            rangeH: rangeH,
-            rangeS: rangeS,
-            rangeV: rangeV,
+        let parameters = (rangeH, rangeS, rangeV)
+        _runRGBCPU(
+            modelName: "ColorJitterHSV",
+            parameters: parameters,
             suffix: "cpu_hsv4"
         )
     }
@@ -294,10 +418,10 @@ class ImageTests: XCTestCase
         let rangeH = try! Range<Double>(min: 0.0, max: 0.0)
         let rangeS = try! Range<Double>(min: 0.0, max: 0.0)
         let rangeV = try! Range<Double>(min: 0.5, max: 0.5)
-        _colorJitterHSVGPU(
-            rangeH: rangeH,
-            rangeS: rangeS,
-            rangeV: rangeV,
+        let parameters = (rangeH, rangeS, rangeV)
+        _runBufferGPU(
+            modelName: "ColorJitterHSV",
+            parameters: parameters,
             suffix: "gpu_hsv4"
         )
     }

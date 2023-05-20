@@ -265,8 +265,8 @@ public class Image
                 (index: Int) in
                 
                 let i = index / (3 * width)
-                let j = index % (3 * width)
-                let depth = (index - 3 * (j + i * width)) % 3
+                let j = (index % (3 * width)) / 3
+                let depth = index % 3
                 
                 let offset = j + (depth * height + i) * width
                 

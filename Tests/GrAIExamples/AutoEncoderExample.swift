@@ -3,6 +3,7 @@
 // GrAIExamples
 //
 // Created by Aurélien PEDEN on 23/03/2023.
+// Modified by Jean-François Reboud on 21/05/2023.
 //
 
 import XCTest
@@ -19,11 +20,6 @@ final class AutoEncoderExample: XCTestCase
     
     /// Size of one image (height and width are the same).
     let _size = 32
-    
-    /// Mean of the preprocessing to apply to data.
-    let _mean: (Float, Float, Float) = (123.675, 116.28, 103.53)
-    /// Deviation of the preprocessing to apply to data.
-    let _std: (Float, Float, Float) = (58.395, 57.12, 57.375)
     
     /// Initialize test.
     override func setUp()
@@ -291,8 +287,8 @@ final class AutoEncoderExample: XCTestCase
         
         for _ in 0..<5
         {
-            layer = ResizeBilinearCrop(
-                layerPrev: layer, scalesList: [2],
+            layer = ResizeBilinearPad(
+                layerPrev: layer, scalesList: [2], padValue: 0.0,
                 params: params
             )
             layer = Convolution2D(
@@ -382,112 +378,26 @@ final class AutoEncoderExample: XCTestCase
     ///
     func _trainModel(model: Model)
     {
-        let cifar8 = CIFAR.loadDataset(
-            datasetPath: _outputDir + "/datasetTrain8",
-            size: _size
-        )
-        
-        // Get optimizer parameters for iterating over batch size elements.
-        let params = _getOptimizerParams(nbLoops: _batchSize)
-        
-        cifar8.initSamples(batchSize: _batchSize)
-        
-        // Keep a subset of the dataset to have a quicker training.
-        cifar8.keep(1000)
-        
-        // Small trick to force full batches throughout the training:
-        // this enables us to set the ground truth once and for all.
-        let nbWholeBatches =
-            cifar8.nbSamples / cifar8.batchSize * cifar8.batchSize
-        cifar8.keep(nbWholeBatches)
-        
-        // Initialize for training.
-        model.initialize(params: params, phase: .Training)
-        
-        let firstLayer: Input2D = model.layers.first as! Input2D
-        let lastLayer: MSE2D = model.layers.last as! MSE2D
-        
-        let nbEpochs = 5
-        for epoch in 0..<nbEpochs
-        {
-            print("EPOCH \(epoch)/\(nbEpochs-1).")
-            cifar8.shuffle()
-            
-            for step in 0..<cifar8.nbLoops
-            {
-                let samples = cifar8.getSamples()!
-                if samples.count != _batchSize
-                {
-                    fatalError("Unreachable.")
-                }
-                
-                // Pre processing.
-                let data = preprocess(
-                    samples,
-                    height: _size,
-                    width: _size,
-                    mean: _mean,
-                    std: _std,
-                    imageFormat: .Neuron
-                )
-                
-                // Reset gradient validity for backward pass
-                // and update the batch size (although here it stays the same).
-                model.updateKernel(batchSize: _batchSize)
-                
-                // Set data.
-                try! firstLayer.setDataGPU(
-                    data,
-                    batchSize: _batchSize,
-                    format: .Neuron
-                )
-                
-                // Forward.
-                try! model.forward()
-                
-                // Apply loss derivative.
-                try! lastLayer.lossDerivativeGPU(
-                    data,
-                    batchSize: _batchSize,
-                    format: .Neuron
-                )
-                
-                // Backward.
-                try! model.backward()
-                
-                // Update weights.
-                try! model.update()
-                
-                // Get loss result.
-                // Note that backward is explicitly
-                // enabled by `applyGradient` whereas `getLoss` is
-                // just an indicator.
-                let loss = try! lastLayer.getLossGPU(
-                    data,
-                    batchSize: _batchSize,
-                    format: .Neuron
-                )
-                print("Step \(step)/\(cifar8.nbLoops-1): \(sqrt(loss)).")
-                
-                // Update internal step.
-                // This is not mandatory except if we used another
-                // optimizer scheduler: see `_getOptimizerParams`.
-                model.incStep()
-            }
-        }
-    }
-    
-    /// Test1: dump CIFAR train and test datasets for labels 8 and 5.
-    func test1_DumpDataset()
-    {
-        CIFAR.dumpTrain(
-            datasetPath: _outputDir + "/datasetTrain8",
+        let trainer = try! CIFARAutoEncoderTrainer(model: model)
+        trainer.run(
+            batchSize: _batchSize,
             label: 8,
-            size: _size
+            nbEpochs: 5,
+            keep: 1000
         )
     }
     
-    /// Test2: train a simple UNet like auto encoder model.
+    /// Test1: train a simple auto encoder model.
+    func test1_TrainSimpleModel()
+    {
+        // Build a model with randomly initialized weights.
+        let model = SimpleAutoEncoder.build(_size)
+        
+        // Train model.
+        _trainModel(model: model)
+    }
+    
+    /// Test2: train a UNet like auto encoder model.
     func test2_TrainUNetModel()
     {
         // Build a model with randomly initialized weights.
@@ -497,13 +407,13 @@ final class AutoEncoderExample: XCTestCase
         _trainModel(model: model)
     }
     
-    /// Test3: train a simple StyleGAN like auto encoder model.
-    func test3_TrainStyleModel()
+    /// Test3: train a StyleGAN like auto encoder model.
+    /*func test3_TrainStyleModel()
     {
         // Build a model with randomly initialized weights.
         let model = _buildModel(modelType: .Style)
         
         // Train model.
         _trainModel(model: model)
-    }
+    }*/
 }

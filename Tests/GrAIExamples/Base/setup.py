@@ -7,6 +7,8 @@ setup(
     author='Jean-François Reboud',
     license='MIT',
     install_requires=[
+        "torch==1.10.1",
+        "torchvision==0.11.2",
         "numpy==1.23.1",
         "opencv-python==4.6.0.66"
     ],

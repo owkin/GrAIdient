@@ -8,7 +8,7 @@
 import XCTest
 import GrAIdient
 
-/// Compare models created by GrAIdient and PyTorch.
+/// Compare models created in GrAIdient and PyTorch.
 final class GrAITorchTests: XCTestCase
 {
     /// Size of one image (height and width are the same).

@@ -37,8 +37,10 @@ class CIFARAutoEncoderTrainer
     /// Directory to dump outputs from the tests.
     let _outputDir = NSTemporaryDirectory()
     
-    /// Size of one image (height and width are the same).
-    let _size = 32
+    /// Size of one image (height and width are the same) in the CIFAR datasset.
+    let _originalSize = 32
+    /// Size of one image (height and width are the same) after potential resize.
+    let _size: Int
     
     /// Mean of the preprocessing to apply to data.
     let _mean: (Float, Float, Float) = (123.675, 116.28, 103.53)
@@ -49,6 +51,8 @@ class CIFARAutoEncoderTrainer
     var _dataset: CIFAR! = nil
     /// Final model that is being trained.
     var _model: Model! = nil
+    /// Resizer model.
+    var _resizer: Model? = nil
     /// Base model to train.
     let _baseModel: Model
     
@@ -58,10 +62,14 @@ class CIFARAutoEncoderTrainer
     /// Throw an error if the original model's first layer is not an `Input2D` or the size of the latter
     /// is not the size expected by the trainer.
     ///
-    /// - Parameter model: The original model (auto encoder structure) to train.
+    /// - Parameters:
+    ///     - model: The original model (auto encoder structure) to train.
+    ///     - size: Size of one image (height and width are the same).
     ///
-    init(model: Model) throws
+    init(model: Model, size: Int) throws
     {
+        _size = size
+        
         guard let firstLayer = model.layers.first as? Input2D else
         {
             throw TrainerError.Structural
@@ -97,6 +105,37 @@ class CIFARAutoEncoderTrainer
         model = Model(model: model, modelsPrev: [])
         
         return model
+    }
+    
+    ///
+    /// Create a resizer.
+    ///
+    /// - Returns: The resizer model.
+    ///
+    private func _buildResizer() -> Model?
+    {
+        if _size != _originalSize
+        {
+            let context = ModelContext(name: "Resizer", models: [])
+            let params = GrAI.Model.Params(context: context)
+            
+            var layer: Layer2D = Input2D(
+                nbChannels: 3,
+                width: _originalSize,
+                height: _originalSize,
+                params: params
+            )
+            layer = ResizeBilinear(
+                layerPrev: layer,
+                dimension: _size,
+                params: params
+            )
+            return Model(model: context.model, modelsPrev: [])
+        }
+        else
+        {
+            return nil
+        }
     }
     
     ///
@@ -143,13 +182,13 @@ class CIFARAutoEncoderTrainer
         CIFAR.dumpTrain(
             datasetPath: _outputDir + "/datasetTrain\(label)",
             label: label,
-            size: _size
+            size: _originalSize
         )
         
         // Load dataset.
         _dataset = CIFAR.loadDataset(
             datasetPath: _outputDir + "/datasetTrain\(label)",
-            size: _size
+            size: _originalSize
         )
         _dataset.initSamples(batchSize: batchSize)
         if let nbElems = keep
@@ -163,8 +202,12 @@ class CIFARAutoEncoderTrainer
         // Build model
         _model = _buildModel()
         
+        // Build resizer model
+        _resizer = _buildResizer()
+        
         // Initialize for training.
         _model.initialize(params: params, phase: .Training)
+        _resizer?.initKernel()
     }
     
     ///
@@ -184,8 +227,8 @@ class CIFARAutoEncoderTrainer
         // Pre processing.
         let data = preprocess(
             samples,
-            height: _size,
-            width: _size,
+            height: _originalSize,
+            width: _originalSize,
             mean: _mean,
             std: _std,
             imageFormat: .Neuron
@@ -195,12 +238,35 @@ class CIFARAutoEncoderTrainer
         // and update the batch size.
         _model.updateKernel(batchSize: batchSize)
         
-        // Set data.
-        try! firstLayer.setDataGPU(
-            data,
-            batchSize: batchSize,
-            format: .Neuron
-        )
+        let dataLayer: Layer2D
+        if let resizer = _resizer
+        {
+            let resizerFirstLayer = resizer.layers.first as! Input2D
+            dataLayer = resizer.layers.last as! Layer2D
+            
+            resizer.updateKernel(batchSize: batchSize)
+            
+            // Set data.
+            try! resizerFirstLayer.setDataGPU(
+                data,
+                batchSize: batchSize,
+                format: .Neuron
+            )
+            try! resizer.forward()
+            
+            // Set resized data.
+            try! firstLayer.setDataGPU(dataLayer.outs, batchSize: batchSize)
+        }
+        else
+        {
+            // Set data.
+            try! firstLayer.setDataGPU(
+                data,
+                batchSize: batchSize,
+                format: .Neuron
+            )
+            dataLayer = firstLayer
+        }
         
         // Forward.
         try! _model.forward()
@@ -222,7 +288,7 @@ class CIFARAutoEncoderTrainer
         // enabled by `applyGradient` whereas `getLoss` is
         // just an indicator.
         let loss = try! lastLayer.getLossGPU(
-            firstLayer.outs,
+            dataLayer.outs,
             batchSize: batchSize
         )
         
@@ -242,7 +308,7 @@ class CIFARAutoEncoderTrainer
     ///     - label: The class of the CIFAR dataset to use.
     ///     - nbEpochs: The number of epochs for the training to continue.
     ///     - keep: The number of elements to keep in the dataset.
-    ///     
+    ///
     func run(batchSize: Int, label: Int, nbEpochs: Int, keep: Int? = nil)
     {
         initTrain(

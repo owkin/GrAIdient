@@ -33,7 +33,8 @@ final class AutoEncoderTests: XCTestCase
     func testTrain() throws
     {
         let trainer1 = try CIFARAutoEncoderTrainer(
-            model: SimpleAutoEncoder.build(_size)
+            model: SimpleAutoEncoder.build(_size),
+            size: _size
         )
         trainer1.initTrain(
             batchSize: _batchSize,

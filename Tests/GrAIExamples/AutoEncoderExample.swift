@@ -3,12 +3,13 @@
 // GrAIExamples
 //
 // Created by Aurélien PEDEN on 23/03/2023.
+// Modified by Jean-François Reboud on 21/05/2023.
 //
 
 import XCTest
 import GrAIdient
 
-/// Test that we can train a simple Auto Encoder model on the CIFAR dataset.
+/// Train a simple Auto Encoder model on the CIFAR dataset.
 final class AutoEncoderExample: XCTestCase
 {
     /// Directory to dump outputs from the tests.
@@ -16,14 +17,6 @@ final class AutoEncoderExample: XCTestCase
     
     /// Batch size of data.
     let _batchSize = 16
-    
-    /// Size of one image (height and width are the same).
-    let _size = 32
-    
-    /// Mean of the preprocessing to apply to data.
-    let _mean: (Float, Float, Float) = (123.675, 116.28, 103.53)
-    /// Deviation of the preprocessing to apply to data.
-    let _std: (Float, Float, Float) = (58.395, 57.12, 57.375)
     
     /// Initialize test.
     override func setUp()
@@ -64,146 +57,87 @@ final class AutoEncoderExample: XCTestCase
     }
     
     ///
-    /// Build an encoder branch.
+    /// Build an encoder branch with `nbBlock` blocks of dimension reduction (factor of 2).
     ///
-    /// - Parameter params: Contextual parameters linking to the model.
-    /// - Returns: A tuple of layers at different image resolutions.
+    /// - Parameters:
+    ///     - size: Size of one image (height and width are the same) after resize.
+    ///     - nbBlocks: Number of reduction blocks.
+    ///     - params: Contextual parameters linking to the model.
+    /// - Returns: A list of layers at different image resolutions.
     ///
-    func _buildEncoder(params: GrAI.Model.Params)
-        -> (Layer2D, Layer2D, Layer2D, Layer2D, Layer2D)
+    func _buildEncoder(
+        size: Int,
+        nbBlocks: Int,
+        params: GrAI.Model.Params) -> [Layer2D]
     {
-        var layer, layer1, layer2, layer3, layer4: Layer2D
+        var layer: Layer2D
+        var layers = [Layer2D]()
+        
         layer = Input2D(
             nbChannels: 3,
-            width: _size, height: _size,
+            width: size, height: size,
             params: params
         )
         
-        layer = Convolution2D(
-            layerPrev: layer, size: 3, nbChannels: 8, stride: 2,
-            activation: ReLU.str, biases: true, bn: false,
-            params: params
-        )
-        layer4 = layer
-        
-        layer = Convolution2D(
-            layerPrev: layer, size: 3, nbChannels: 8, stride: 2,
-            activation: ReLU.str, biases: true, bn: false,
-            params: params
-        )
-        layer3 = layer
-        
-        layer = Convolution2D(
-            layerPrev: layer, size: 3, nbChannels: 8, stride: 2,
-            activation: ReLU.str, biases: true, bn: false,
-            params: params
-        )
-        layer2 = layer
-        
-        layer = Convolution2D(
-            layerPrev: layer, size: 3, nbChannels: 8, stride: 2,
-            activation: ReLU.str, biases: true, bn: false,
-            params: params
-        )
-        layer1 = layer
-        
-        layer = Convolution2D(
-            layerPrev: layer, size: 3, nbChannels: 8, stride: 2,
-            activation: ReLU.str, biases: true, bn: false,
-            params: params
-        )
-        return (layer, layer1, layer2, layer3, layer4)
+        for _ in 0..<nbBlocks
+        {
+            layer = Convolution2D(
+                layerPrev: layer, size: 3, nbChannels: 8, stride: 2,
+                activation: ReLU.str, biases: true, bn: false,
+                params: params
+            )
+            layers.insert(layer, at: 0)
+        }
+        return layers
     }
     
     ///
     /// Build a UNet like decoder branch.
     ///
     /// - Parameters:
-    ///     - layersPrev: A tuple of layers at different image resolutions.
+    ///     - layersPrev: A list of layers at different image resolutions.
     ///     - params: Contextual parameters linking to the model.
     /// - Returns: The last layer of the decoder branch.
     ///
     func _buildUNetDecoder(
-        layersPrev: (Layer2D, Layer2D, Layer2D, Layer2D, Layer2D),
+        layersPrev: [Layer2D],
         params: GrAI.Model.Params) -> Layer2D
     {
-        var (layer, layer1, layer2, layer3, layer4) = layersPrev
+        var layer: Layer2D = layersPrev.first!
+        var numLayer = 0
         
-        layer = Deconvolution2D(
-            layerPrev: layer, size: 2, nbChannels: 8, stride: 2,
-            activation: nil, biases: true, bn: false,
-            params: params
-        )
-        layer = Concat2D(
-            layersPrev: [layer1, layer],
-            params: params
-        )
-        layer = Convolution2D(
-            layerPrev: layer,
-            size: 3, nbChannels: 8, stride: 1,
-            activation: ReLU.str, biases: true, bn: false,
-            params: params
-        )
-        
-        layer = Deconvolution2D(
-            layerPrev: layer, size: 2, nbChannels: 8, stride: 2,
-            activation: nil, biases: true, bn: false,
-            params: params
-        )
-        layer = Concat2D(
-            layersPrev: [layer2, layer],
-            params: params
-        )
-        layer = Convolution2D(
-            layerPrev: layer,
-            size: 3, nbChannels: 8, stride: 1,
-            activation: ReLU.str, biases: true, bn: false,
-            params: params
-        )
-        
-        layer = Deconvolution2D(
-            layerPrev: layer, size: 2, nbChannels: 8, stride: 2,
-            activation: nil, biases: true, bn: false,
-            params: params
-        )
-        layer = Concat2D(
-            layersPrev: [layer3, layer],
-            params: params
-        )
-        layer = Convolution2D(
-            layerPrev: layer,
-            size: 3, nbChannels: 8, stride: 1,
-            activation: ReLU.str, biases: true, bn: false,
-            params: params
-        )
-        
-        layer = Deconvolution2D(
-            layerPrev: layer, size: 2, nbChannels: 8, stride: 2,
-            activation: nil, biases: true, bn: false,
-            params: params
-        )
-        layer = Concat2D(
-            layersPrev: [layer4, layer],
-            params: params
-        )
-        layer = Convolution2D(
-            layerPrev: layer,
-            size: 3, nbChannels: 8, stride: 1,
-            activation: ReLU.str, biases: true, bn: false,
-            params: params
-        )
-        
-        layer = Deconvolution2D(
-            layerPrev: layer, size: 2, nbChannels: 8, stride: 2,
-            activation: nil, biases: true, bn: false,
-            params: params
-        )
-        layer = Convolution2D(
-            layerPrev: layer,
-            size: 3, nbChannels: 3, stride: 1,
-            activation: Sigmoid.str, biases: true, bn: false,
-            params: params
-        )
+        while numLayer < layersPrev.count
+        {
+            layer = Deconvolution2D(
+                layerPrev: layer, size: 2, nbChannels: 8, stride: 2,
+                activation: nil, biases: true, bn: false,
+                params: params
+            )
+            
+            if numLayer + 1 < layersPrev.count
+            {
+                layer = Concat2D(
+                    layersPrev: [layersPrev[numLayer + 1], layer],
+                    params: params
+                )
+                layer = Convolution2D(
+                    layerPrev: layer,
+                    size: 3, nbChannels: 8, stride: 1,
+                    activation: ReLU.str, biases: true, bn: false,
+                    params: params
+                )
+            }
+            else
+            {
+                layer = Convolution2D(
+                    layerPrev: layer,
+                    size: 3, nbChannels: 3, stride: 1,
+                    activation: Sigmoid.str, biases: true, bn: false,
+                    params: params
+                )
+            }
+            numLayer += 1
+        }
         return layer
     }
     
@@ -216,22 +150,19 @@ final class AutoEncoderExample: XCTestCase
     /// - Returns: The last layer of the style branch.
     ///
     func _buildStyleMapping(
-        layersPrev: (Layer2D, Layer2D, Layer2D, Layer2D, Layer2D),
+        layersPrev: [Layer2D],
         params: GrAI.Model.Params) -> Layer1D
     {
-        let (layer1, layer2, layer3, layer4, layer5) = layersPrev
-        
+        var layers = [Layer1D]()
+        for layerPrev in layersPrev
+        {
+            layers.append(
+                AvgPool2D(layerPrev: layerPrev, params: params)
+            )
+        }
         var layer: Layer1D = Concat1D(
-            layersPrev: [
-                AvgPool2D(layerPrev: layer1, params: params),
-                AvgPool2D(layerPrev: layer2, params: params),
-                AvgPool2D(layerPrev: layer3, params: params),
-                AvgPool2D(layerPrev: layer4, params: params),
-                AvgPool2D(layerPrev: layer5, params: params)
-            ],
-            params: params
+            layersPrev: layers, params: params
         )
-    
         for _ in 0..<8
         {
             layer = FullyConnected(
@@ -244,22 +175,25 @@ final class AutoEncoderExample: XCTestCase
     }
     
     ///
-    /// Build a StyleGAN like decoder branch.
+    /// Build a StyleGAN like decoder branch with `nbBlock` blocks
+    /// of dimension augmentation (factor of 2).
     ///
     /// - Parameters:
+    ///     - nbBlocks: Number of augmentation blocks.
     ///     - style: The last layer of the style branch.
     ///     - params: Contextual parameters linking to the model.
     /// - Returns: The last layer of the decoder branch.
     ///
-    func _buildStyleDecoder(style: Layer1D, params: GrAI.Model.Params)
-        -> Layer2D
+    func _buildStyleDecoder(
+        nbBlocks: Int,
+        style: Layer1D,
+        params: GrAI.Model.Params) -> Layer2D
     {
         var layer: Layer2D
         layer = Constant2D(
-            nbChannels: 8, height: 4, width: 4,
+            nbChannels: 8, height: 2, width: 2,
             params: params
         )
-        
         layer = AdaIN(
             layersPrev: [
                 layer,
@@ -289,29 +223,12 @@ final class AutoEncoderExample: XCTestCase
             params: params
         )
         
-        for _ in 0..<5
+        for _ in 0..<nbBlocks-1
         {
-            layer = ResizeBilinearCrop(
-                layerPrev: layer, scalesList: [2],
+            layer = ResizeBilinearPad(
+                layerPrev: layer, scalesList: [2], padValue: 0.0,
                 params: params
             )
-            layer = Convolution2D(
-                layerPrev: layer, size: 3, nbChannels: 8, stride: 1,
-                activation: ReLU.str, biases: true, bn: false,
-                params: params
-            )
-            layer = AdaIN(
-                layersPrev: [
-                    layer,
-                    FullyConnected(
-                        layerPrev: style, nbNeurons: 2 * 8,
-                        activation: ReLU.str, biases: true,
-                        params: params
-                    )
-                ],
-                params: params
-            )
-            
             layer = Convolution2D(
                 layerPrev: layer, size: 3, nbChannels: 8, stride: 1,
                 activation: ReLU.str, biases: true, bn: false,
@@ -329,6 +246,13 @@ final class AutoEncoderExample: XCTestCase
                 params: params
             )
         }
+        
+        layer = Convolution2D(
+            layerPrev: layer,
+            size: 3, nbChannels: 3, stride: 1,
+            activation: Sigmoid.str, biases: true, bn: false,
+            params: params
+        )
         return layer
     }
     
@@ -339,25 +263,36 @@ final class AutoEncoderExample: XCTestCase
     }
     
     ///
-    /// Build the final model.
+    /// Build the final model that is composed of `nbBlocks` blocks of dimension reduction
+    /// followed by the same number of blocks of dimension augmentation.
     ///
-    /// - Parameter modelType: The model to build.
+    /// - Parameters:
+    ///     - nbBlocks: Number blocks (reduction, augmentation, factor of 2).
+    ///     - size: Size of one image (height and width are the same) after resize.
+    ///     - modelType: The model to build.
     /// - Returns: The model built.
     ///
-    func _buildModel(modelType: ModelClass) -> Model
+    func _buildModel(
+        modelType: ModelClass,
+        size: Int,
+        nbBlocks: Int) -> Model
     {
         // Create the context to build a graph of layers where
         // there is no previous model dependency: layer id starts at 0.
         let context = ModelContext(name: "AutoEncoder", models: [])
         let params = GrAI.Model.Params(context: context)
         
-        let layersPrev = _buildEncoder(params: params)
+        let layersPrev = _buildEncoder(
+            size: size,
+            nbBlocks: nbBlocks,
+            params: params
+        )
         
-        var layer: Layer2D
         switch modelType
         {
         case .Style:
-            layer = _buildStyleDecoder(
+            _ = _buildStyleDecoder(
+                nbBlocks: nbBlocks,
                 style: _buildStyleMapping(
                     layersPrev: layersPrev,
                     params: params
@@ -365,145 +300,86 @@ final class AutoEncoderExample: XCTestCase
                 params: params
             )
         case .UNet:
-            layer = _buildUNetDecoder(
+            _ = _buildUNetDecoder(
                 layersPrev: layersPrev,
                 params: params
             )
         }
-        
-        _ = MSE2D(layerPrev: layer, params: params)
         return Model(model: context.model, modelsPrev: [])
     }
     
     ///
     /// Train the model.
     ///
-    /// - Parameter model: The model to train.
+    /// - Parameters:
+    ///     - model: The model to train.
+    ///     - size: Size of one image (height and width are the same) after resize.
     ///
-    func _trainModel(model: Model)
+    func _trainModel(model: Model, size: Int)
     {
-        let cifar8 = CIFAR.loadDataset(
-            datasetPath: _outputDir + "/datasetTrain8",
-            size: _size
+        let trainer = try! CIFARAutoEncoderTrainer(
+            model: model, size: size
         )
-        
-        // Get optimizer parameters for iterating over batch size elements.
-        let params = _getOptimizerParams(nbLoops: _batchSize)
-        
-        cifar8.initSamples(batchSize: _batchSize)
-        
-        // Keep a subset of the dataset to have a quicker training.
-        cifar8.keep(1000)
-        
-        // Small trick to force full batches throughout the training:
-        // this enables us to set the ground truth once and for all.
-        let nbWholeBatches =
-            cifar8.nbSamples / cifar8.batchSize * cifar8.batchSize
-        cifar8.keep(nbWholeBatches)
-        
-        // Initialize for training.
-        model.initialize(params: params, phase: .Training)
-        
-        let firstLayer: Input2D = model.layers.first as! Input2D
-        let lastLayer: MSE2D = model.layers.last as! MSE2D
-        
-        let nbEpochs = 5
-        for epoch in 0..<nbEpochs
-        {
-            print("EPOCH \(epoch)/\(nbEpochs-1).")
-            cifar8.shuffle()
-            
-            for step in 0..<cifar8.nbLoops
-            {
-                let samples = cifar8.getSamples()!
-                if samples.count != _batchSize
-                {
-                    fatalError("Unreachable.")
-                }
-                
-                // Pre processing.
-                let data = preprocess(
-                    samples,
-                    height: _size,
-                    width: _size,
-                    mean: _mean,
-                    std: _std,
-                    imageFormat: .Neuron
-                )
-                
-                // Reset gradient validity for backward pass
-                // and update the batch size (although here it stays the same).
-                model.updateKernel(batchSize: _batchSize)
-                
-                // Set data.
-                try! firstLayer.setDataGPU(
-                    data,
-                    batchSize: _batchSize,
-                    format: .Neuron
-                )
-                
-                // Forward.
-                try! model.forward()
-                
-                // Apply loss derivative.
-                try! lastLayer.lossDerivativeGPU(
-                    data,
-                    batchSize: _batchSize,
-                    format: .Neuron
-                )
-                
-                // Backward.
-                try! model.backward()
-                
-                // Update weights.
-                try! model.update()
-                
-                // Get loss result.
-                // Note that backward is explicitly
-                // enabled by `applyGradient` whereas `getLoss` is
-                // just an indicator.
-                let loss = try! lastLayer.getLossGPU(
-                    data,
-                    batchSize: _batchSize,
-                    format: .Neuron
-                )
-                print("Step \(step)/\(cifar8.nbLoops-1): \(sqrt(loss)).")
-                
-                // Update internal step.
-                // This is not mandatory except if we used another
-                // optimizer scheduler: see `_getOptimizerParams`.
-                model.incStep()
-            }
-        }
-    }
-    
-    /// Test1: dump CIFAR train and test datasets for labels 8 and 5.
-    func test1_DumpDataset()
-    {
-        CIFAR.dumpTrain(
-            datasetPath: _outputDir + "/datasetTrain8",
+        trainer.run(
+            batchSize: _batchSize,
             label: 8,
-            size: _size
+            nbEpochs: 5,
+            keep: 1000
         )
     }
     
-    /// Test2: train a simple UNet like auto encoder model.
+    /// Test1: train a simple auto encoder model.
+    func test1_TrainSimpleModel()
+    {
+        let size = 32
+        
+        // Build a model with randomly initialized weights.
+        let model = SimpleAutoEncoder.build(size)
+        
+        // Train model.
+        _trainModel(
+            model: model,
+            size: size
+        )
+    }
+    
+    /// Test2: train a UNet like auto encoder model.
     func test2_TrainUNetModel()
     {
+        let nbBlocks = 5
+        let size = min(Int(pow(2.0, Double(nbBlocks))), 32)
+        
         // Build a model with randomly initialized weights.
-        let model = _buildModel(modelType: .UNet)
+        let model = _buildModel(
+            modelType: .UNet,
+            size: size,
+            nbBlocks: nbBlocks
+        )
         
         // Train model.
-        _trainModel(model: model)
+        _trainModel(
+            model: model,
+            size: size
+        )
     }
     
-    /// Test3: train a simple StyleGAN like auto encoder model.
+    /// Test3: train a StyleGAN like auto encoder model.
     func test3_TrainStyleModel()
     {
+        let nbBlocks = 5
+        let size = min(Int(pow(2.0, Double(nbBlocks))), 32)
+        
         // Build a model with randomly initialized weights.
-        let model = _buildModel(modelType: .Style)
+        let model = _buildModel(
+            modelType: .Style,
+            size: size,
+            nbBlocks: nbBlocks
+        )
         
         // Train model.
-        _trainModel(model: model)
+        _trainModel(
+            model: model,
+            size: size
+        )
     }
 }

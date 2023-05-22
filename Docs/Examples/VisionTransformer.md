@@ -85,4 +85,4 @@ conda env remove --name graiexamples
 ## Steps
 
 1. Dump the training dataset.  
-1. Train a simple Vision Transformer model on the training dataset.
+1. Train a simple Vision Transformer model.

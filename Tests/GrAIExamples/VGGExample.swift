@@ -8,7 +8,7 @@
 import XCTest
 import GrAIdient
 
-/// Test that we can train a simple VGG model on the CIFAR dataset.
+/// Train a simple VGG model on the CIFAR dataset.
 final class VGGExample: XCTestCase
 {
     /// Directory to dump outputs from the tests.

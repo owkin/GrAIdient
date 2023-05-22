@@ -9,7 +9,7 @@
 import XCTest
 import GrAIdient
 
-/// Test that we can train a simple Auto Encoder model on the CIFAR dataset.
+/// Train a simple Auto Encoder model on the CIFAR dataset.
 final class AutoEncoderExample: XCTestCase
 {
     /// Directory to dump outputs from the tests.
@@ -57,11 +57,11 @@ final class AutoEncoderExample: XCTestCase
     }
     
     ///
-    /// Build an encoder branch.
+    /// Build an encoder branch with `nbBlock` blocks of dimension reduction (factor of 2).
     ///
     /// - Parameters:
     ///     - size: Size of one image (height and width are the same) after resize.
-    ///     - nbBlocks: Number of the different image resolutions.
+    ///     - nbBlocks: Number of reduction blocks.
     ///     - params: Contextual parameters linking to the model.
     /// - Returns: A list of layers at different image resolutions.
     ///
@@ -153,8 +153,15 @@ final class AutoEncoderExample: XCTestCase
         layersPrev: [Layer2D],
         params: GrAI.Model.Params) -> Layer1D
     {
-        var layer: Layer1D = AvgPool2D(
-            layerPrev: layersPrev.first!, params: params
+        var layers = [Layer1D]()
+        for layerPrev in layersPrev
+        {
+            layers.append(
+                AvgPool2D(layerPrev: layerPrev, params: params)
+            )
+        }
+        var layer: Layer1D = Concat1D(
+            layersPrev: layers, params: params
         )
         for _ in 0..<8
         {
@@ -168,10 +175,11 @@ final class AutoEncoderExample: XCTestCase
     }
     
     ///
-    /// Build a StyleGAN like decoder branch.
+    /// Build a StyleGAN like decoder branch with `nbBlock` blocks
+    /// of dimension augmentation (factor of 2).
     ///
     /// - Parameters:
-    ///     - nbBlocks: Number of the different image resolutions.
+    ///     - nbBlocks: Number of augmentation blocks.
     ///     - style: The last layer of the style branch.
     ///     - params: Contextual parameters linking to the model.
     /// - Returns: The last layer of the decoder branch.
@@ -186,7 +194,6 @@ final class AutoEncoderExample: XCTestCase
             nbChannels: 8, height: 2, width: 2,
             params: params
         )
-        
         layer = AdaIN(
             layersPrev: [
                 layer,
@@ -238,23 +245,6 @@ final class AutoEncoderExample: XCTestCase
                 ],
                 params: params
             )
-            
-            layer = Convolution2D(
-                layerPrev: layer, size: 3, nbChannels: 8, stride: 1,
-                activation: ReLU.str, biases: true, bn: false,
-                params: params
-            )
-            layer = AdaIN(
-                layersPrev: [
-                    layer,
-                    FullyConnected(
-                        layerPrev: style, nbNeurons: 2 * 8,
-                        activation: ReLU.str, biases: true,
-                        params: params
-                    )
-                ],
-                params: params
-            )
         }
         
         layer = Convolution2D(
@@ -273,10 +263,11 @@ final class AutoEncoderExample: XCTestCase
     }
     
     ///
-    /// Build the final model.
+    /// Build the final model that is composed of `nbBlocks` blocks of dimension reduction
+    /// followed by the same number of blocks of dimension augmentation.
     ///
     /// - Parameters:
-    ///     - nbBlocks: Number of the different image resolutions.
+    ///     - nbBlocks: Number blocks (reduction, augmentation, factor of 2).
     ///     - size: Size of one image (height and width are the same) after resize.
     ///     - modelType: The model to build.
     /// - Returns: The model built.
@@ -356,7 +347,7 @@ final class AutoEncoderExample: XCTestCase
     func test2_TrainUNetModel()
     {
         let nbBlocks = 5
-        let size = Int(pow(2.0, Double(nbBlocks)))
+        let size = min(Int(pow(2.0, Double(nbBlocks))), 32)
         
         // Build a model with randomly initialized weights.
         let model = _buildModel(
@@ -376,7 +367,7 @@ final class AutoEncoderExample: XCTestCase
     func test3_TrainStyleModel()
     {
         let nbBlocks = 5
-        let size = Int(pow(2.0, Double(nbBlocks)))
+        let size = min(Int(pow(2.0, Double(nbBlocks))), 32)
         
         // Build a model with randomly initialized weights.
         let model = _buildModel(

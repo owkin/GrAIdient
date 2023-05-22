@@ -24,7 +24,7 @@ extension TrainerError: CustomStringConvertible
         switch self
         {
         case .Size:
-            return "Model size is not coherent with trainer."
+            return "Model size is not coherent."
         case .Structural:
             return "Model first layer should be an Input2D."
         }
@@ -39,7 +39,7 @@ class CIFARAutoEncoderTrainer
     
     /// Size of one image (height and width are the same) in the CIFAR datasset.
     let _originalSize = 32
-    /// Size of one image (height and width are the same) after potential resize.
+    /// Size of one image (height and width are the same) after resize.
     let _size: Int
     
     /// Mean of the preprocessing to apply to data.
@@ -59,6 +59,9 @@ class CIFARAutoEncoderTrainer
     ///
     /// Create the trainer.
     ///
+    /// `size` allows to simulate the fact that the model analyzes a coarse image: the inputs and
+    /// ground truths are resized to `size` in order to do so.
+    ///
     /// Throw an error if the original model's first layer is not an `Input2D` or the size of the latter
     /// is not the size expected by the trainer.
     ///
@@ -69,6 +72,11 @@ class CIFARAutoEncoderTrainer
     init(model: Model, size: Int) throws
     {
         _size = size
+        
+        if size > _originalSize || size < 2
+        {
+            throw TrainerError.Size
+        }
         
         guard let firstLayer = model.layers.first as? Input2D else
         {
@@ -199,10 +207,10 @@ class CIFARAutoEncoderTrainer
         // Get optimizer parameters for iterating over batch size elements.
         let params = _getOptimizerParams(nbLoops: batchSize)
         
-        // Build model
+        // Build model.
         _model = _buildModel()
         
-        // Build resizer model
+        // Build resizer model.
         _resizer = _buildResizer()
         
         // Initialize for training.
@@ -239,6 +247,7 @@ class CIFARAutoEncoderTrainer
         _model.updateKernel(batchSize: batchSize)
         
         let dataLayer: Layer2D
+        // Resize data when `_size` is lower than `_originalSize`.
         if let resizer = _resizer
         {
             let resizerFirstLayer = resizer.layers.first as! Input2D
@@ -252,6 +261,8 @@ class CIFARAutoEncoderTrainer
                 batchSize: batchSize,
                 format: .Neuron
             )
+            
+            // Forward.
             try! resizer.forward()
             
             // Set resized data.
@@ -271,9 +282,9 @@ class CIFARAutoEncoderTrainer
         // Forward.
         try! _model.forward()
         
-        // Apply loss derivative.
+        // Apply loss derivative: take into account the potential coarse image.
         try! lastLayer.lossDerivativeGPU(
-            firstLayer.outs,
+            dataLayer.outs,
             batchSize: batchSize
         )
         

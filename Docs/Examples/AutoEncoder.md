@@ -65,5 +65,6 @@ conda env remove --name graiexamples
 ## Steps
 
 1. Dump the training dataset.  
-1. Train a simple UNet like auto encoder model on the training dataset.
-1. Train a simple StyleGAN like auto encoder model on the training dataset.
+1. Train a simple auto encoder model.
+1. Train a UNet like auto encoder model.
+1. Train a StyleGAN like auto encoder model.

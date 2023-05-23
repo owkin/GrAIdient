@@ -38,6 +38,18 @@ open class ActivationFunction: Codable
         }
     }
     
+    ///
+    /// Coefficient to apply during the weights initialization.
+    ///
+    /// - Returns: The coefficient.
+    ///
+    open var coeffInitWeights: Float
+    {
+        get {
+            return 1.0
+        }
+    }
+    
     private enum Keys: String, CodingKey
     {
         case name
@@ -82,18 +94,6 @@ open class ActivationFunction: Codable
     {
         var container = encoder.container(keyedBy: Keys.self)
         try container.encode(name, forKey: .name)
-    }
-    
-    ///
-    /// Coefficient to apply during the weights initialization.
-    ///
-    /// - Parameters:
-    ///     - nPrev: The number of input connections.
-    ///     - nCur: The number of output connections.
-    ///
-    open func coeffInitWeights(nPrev: Int, nCur: Int) -> Double
-    {
-        return sqrt(2.0 / Double(nPrev + nCur))
     }
     
     ///
@@ -475,6 +475,19 @@ public class ReLU: ActivationFunction
         }
     }
     
+    
+    ///
+    /// Coefficient to apply during the weights initialization.
+    ///
+    /// - Returns: The coefficient.
+    ///
+    open override var coeffInitWeights: Float
+    {
+        get {
+            return sqrt(2.0)
+        }
+    }
+    
     /// Create a ReLU activation function.
     init()
     {
@@ -492,18 +505,6 @@ public class ReLU: ActivationFunction
     required public init(from decoder: Decoder) throws
     {
         try super.init(from: decoder)
-    }
-    
-    ///
-    /// Coefficient to apply during the weights initialization.
-    ///
-    /// - Parameters:
-    ///     - nPrev: The number of input connections.
-    ///     - nCur: The number of output connections.
-    ///
-    public override func coeffInitWeights(nPrev: Int, nCur: Int) -> Double
-    {
-        return sqrt(2.0 / Double(nPrev))
     }
     
     ///
@@ -559,6 +560,18 @@ public class LeakyReLU: ActivationFunction
         }
     }
     
+    ///
+    /// Coefficient to apply during the weights initialization.
+    ///
+    /// - Returns: The coefficient.
+    ///
+    open override var coeffInitWeights: Float
+    {
+        get {
+            return Float(sqrt(2.0 / (1 + Ɛ * Ɛ)))
+        }
+    }
+    
     /// Create a LeakyReLU activation function.
     init()
     {
@@ -576,18 +589,6 @@ public class LeakyReLU: ActivationFunction
     required public init(from decoder: Decoder) throws
     {
         try super.init(from: decoder)
-    }
-    
-    ///
-    /// Coefficient to apply during the weights initialization.
-    ///
-    /// - Parameters:
-    ///     - nPrev: The number of input connections.
-    ///     - nCur: The number of output connections.
-    ///
-    public override func coeffInitWeights(nPrev: Int, nCur: Int) -> Double
-    {
-        return sqrt(2.0 / Double(nPrev))
     }
     
     ///
@@ -643,6 +644,18 @@ public class SoftReLU: ActivationFunction
         }
     }
     
+    ///
+    /// Coefficient to apply during the weights initialization.
+    ///
+    /// - Returns: The coefficient.
+    ///
+    open override var coeffInitWeights: Float
+    {
+        get {
+            return Float(sqrt(2.0 / (1 + Ɛ * Ɛ)))
+        }
+    }
+    
     /// Create a SoftReLU activation function.
     init()
     {
@@ -660,18 +673,6 @@ public class SoftReLU: ActivationFunction
     required public init(from decoder: Decoder) throws
     {
         try super.init(from: decoder)
-    }
-    
-    ///
-    /// Coefficient to apply during the weights initialization.
-    ///
-    /// - Parameters:
-    ///     - nPrev: The number of input connections.
-    ///     - nCur: The number of output connections.
-    ///
-    public override func coeffInitWeights(nPrev: Int, nCur: Int) -> Double
-    {
-        return sqrt(2.0 / Double(nPrev))
     }
     
     ///
@@ -737,18 +738,6 @@ public class Sigmoid: ActivationFunction
     }
     
     ///
-    /// Coefficient to apply during the weights initialization.
-    ///
-    /// - Parameters:
-    ///     - nPrev: The number of input connections.
-    ///     - nCur: The number of output connections.
-    ///
-    public override func coeffInitWeights(nPrev: Int, nCur: Int) -> Double
-    {
-        return sqrt(1.0 / Double(nPrev))
-    }
-    
-    ///
     /// Forward CPU.
     ///
     /// - Parameter x: The input.
@@ -792,6 +781,18 @@ public class GELU: ActivationFunction
         }
     }
     
+    ///
+    /// Coefficient to apply during the weights initialization.
+    ///
+    /// - Returns: The coefficient.
+    ///
+    open override var coeffInitWeights: Float
+    {
+        get {
+            return Float(sqrt(2.0))
+        }
+    }
+    
     /// Create a GELU activation function.
     init()
     {
@@ -809,18 +810,6 @@ public class GELU: ActivationFunction
     required public init(from decoder: Decoder) throws
     {
         try super.init(from: decoder)
-    }
-    
-    ///
-    /// Coefficient to apply during the weights initialization.
-    ///
-    /// - Parameters:
-    ///     - nPrev: The number of input connections.
-    ///     - nCur: The number of output connections.
-    ///
-    public override func coeffInitWeights(nPrev: Int, nCur: Int) -> Double
-    {
-        return sqrt(2.0 / Double(nPrev))
     }
     
     ///

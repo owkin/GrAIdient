@@ -198,3 +198,179 @@ class WeightBuffers: IWeightBuffers
         _vHat = nil
     }
 }
+
+/// Class used to initialize weights values.
+public enum WeightInitClass
+{
+    case XavierUniform, XavierNormal, KaimingUniform, KaimingNormal
+}
+
+public protocol LayerWeightInit: LayerUpdate
+{
+    /// Number of weights values.
+    var weightListSize: Int { get }
+    /// Method used to initialize weights values.
+    var weightInitClass: WeightInitClass { get set }
+    
+    /// Get the number of input and output connections.
+    var connectivityIO: (Int, Int) { get }
+    /// Get coefficient (depending on activation function) to apply during the weights initialization.
+    var coeffInitWeights: Float { get }
+}
+
+extension LayerWeightInit
+{
+    /// Number of weights values.
+    public var weightListSize: Int
+    {
+        get {
+            let io = connectivityIO
+            return io.0 * io.1
+        }
+    }
+    
+    /// Get coefficient (depending on activation function) to apply during the weights initialization.
+    public var coeffInitWeights: Float
+    {
+        get {
+            return 1.0
+        }
+    }
+    
+    /// Generate list of weights values.
+    public func generateWeightsList() -> [Float]
+    {
+        let nbElems = weightListSize
+        let weightsList: [Float]
+        switch weightInitClass {
+        case .XavierUniform:
+            weightsList = Self.XavierUniform(
+                nbElems: nbElems,
+                connectivityIO: connectivityIO
+            )
+        case .XavierNormal:
+            weightsList = Self.XavierNormal(
+                nbElems: nbElems,
+                connectivityIO: connectivityIO
+            )
+        case .KaimingUniform:
+            weightsList = Self.KaimingUniform(
+                nbElems: nbElems,
+                coeff: coeffInitWeights,
+                connectivityIO: connectivityIO
+            )
+        case .KaimingNormal:
+            weightsList = Self.KaimingUniform(
+                nbElems: nbElems,
+                coeff: coeffInitWeights,
+                connectivityIO: connectivityIO
+            )
+        }
+        return weightsList
+    }
+    
+    ///
+    /// Xavier uniform initialization method.
+    ///
+    /// - Parameters:
+    ///     - nbElems: Number of weights to initialize.
+    ///     - connectivityIO: Number of input and output connections.
+    /// - Returns: Weights values.
+    ///
+    static func XavierUniform(
+        nbElems: Int,
+        connectivityIO: (Int, Int)) -> [Float]
+    {
+        var values = [Float]()
+        let bound = sqrt(6) / sqrt(Float(connectivityIO.0 + connectivityIO.1))
+        for _ in 0..<nbElems
+        {
+            values.append(Float.random(in: -bound..<bound))
+        }
+        return values
+    }
+    
+    ///
+    /// Xavier normal initialization method.
+    ///
+    /// - Parameters:
+    ///     - nbElems: Number of weights to initialize.
+    ///     - connectivityIO: Number of input and output connections.
+    /// - Returns: Weights values.
+    ///
+    static func XavierNormal(
+        nbElems: Int,
+        connectivityIO: (Int, Int)) -> [Float]
+    {
+        var values = [Float]()
+        let std = sqrt(2) / sqrt(Float(connectivityIO.0 + connectivityIO.1))
+        for _ in 0..<nbElems
+        {
+            values.append(randomNormal(mean: 0.0, standardDeviation: std))
+        }
+        return values
+    }
+    
+    ///
+    /// Kaiming uniform initialization method.
+    ///
+    /// - Parameters:
+    ///     - nbElems: Number of weights to initialize.
+    ///     - connectivityIO: Number of input and output connections.
+    /// - Returns: Weights values.
+    ///
+    static func KaimingUniform(
+        nbElems: Int,
+        coeff: Float,
+        connectivityIO: (Int, Int)) -> [Float]
+    {
+        var values = [Float]()
+        let bound = sqrt(3) * coeff / sqrt(Float(connectivityIO.1))
+        for _ in 0..<nbElems
+        {
+            values.append(Float.random(in: -bound..<bound))
+        }
+        return values
+    }
+    
+    ///
+    /// Xavier normal initialization method.
+    ///
+    /// - Parameters:
+    ///     - nbElems: Number of weights to initialize.
+    ///     - connectivityIO: Number of input and output connections.
+    /// - Returns: Weights values.
+    ///
+    static func KaimingNormal(
+        nbElems: Int,
+        coeff: Float,
+        connectivityIO: (Int, Int)) -> [Float]
+    {
+        var values = [Float]()
+        let std = coeff / sqrt(Float(connectivityIO.1))
+        for _ in 0..<nbElems
+        {
+            values.append(randomNormal(mean: 0.0, standardDeviation: std))
+        }
+        return values
+    }
+}
+
+///
+/// Generate numbers from a normal distribution.
+///
+/// - Parameters:
+///     - mean: Mean of the normal distribution.
+///     - standardDeviation: Standard deviation of the normal distribution.
+/// - Returns: A number from the normal distribution.
+///
+public func randomNormal<T: BinaryFloatingPoint>(
+    mean: T,
+    standardDeviation: T) -> T
+{
+    let u1 = Double.random(in: 0..<1)
+    let u2 = Double.random(in: 0..<1)
+    let randStdNormal = sqrt(-2 * log(u1)) * cos(2 * .pi * u2)
+    let randNormal = mean + standardDeviation * T(randStdNormal)
+    return randNormal
+}

@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+⚙️ **core:** LayerWeightInit ([#96](https://github.com/owkin/GrAIdient/pull/96))\
 🚨 **test**: FlowAccumulateTrainer ([#95](https://github.com/owkin/GrAIdient/pull/95))\
 🚨 **examples**: compare training with PyTorch ([#94](https://github.com/owkin/GrAIdient/pull/94))\
 🪜 **layer_2d:** ColorJitterHSV, Image & ImageTests ([#93](https://github.com/owkin/GrAIdient/pull/93))\

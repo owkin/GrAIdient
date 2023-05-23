@@ -9,7 +9,7 @@ import Foundation
 
 /// Layer with a sequential shape neural structure, weights and biases and an activation function.
 public class FullyConnectedSeq: ActivationSeq,
-                                LayerWithActivation, LayerUpdate
+                                LayerWithActivation, LayerWeightInit
 {
     ///
     /// Grid of weights.
@@ -114,18 +114,14 @@ public class FullyConnectedSeq: ActivationSeq,
         }
     }
     
-    /// Get the coefficient to apply during the weights initialization.
-    var coeffInitWeights: Double
+    /// Method used to initialize weights values.
+    public var weightInitClass: WeightInitClass = .XavierUniform
+    
+    /// Get the number of input and output connections.
+    public var connectivityIO: (Int, Int)
     {
         get {
-            if let activation = _activation
-            {
-                return activation.coeffInitWeights(
-                    nPrev: weightWidth,
-                    nCur: nbNeurons
-                )
-            }
-            return sqrt(2.0 / Double(weightWidth + nbNeurons))
+            return (weightWidth, weightHeight)
         }
     }
     
@@ -395,50 +391,37 @@ public class FullyConnectedSeq: ActivationSeq,
     ///
     public func initWeightsCPU()
     {
+        if _weightsList.count == 0
+        {
+            _weightsList = generateWeightsList()
+        }
+        
         _wArrays = WeightGrids(width: weightWidth, height: weightHeight)
         _bArrays = WeightArrays(weightHeight)
         
-        if _weightsList.count == 0
+        for i in 0..<weightHeight {
+        for j in 0..<weightWidth
         {
-            let coeff = coeffInitWeights
-            for i in 0..<weightHeight {
-            for j in 0..<weightWidth
+            let offset = j + weightWidth * i
+            _wArrays.w(i, j, Double(_weightsList[offset]))
+        }}
+    
+        if _updateBiases
+        {
+            let offset = weightHeight * weightWidth
+            for depth in 0..<weightHeight
             {
-                _wArrays.w(i, j, coeff * Double.random(in: -1..<1))
-            }}
-            
+                _bArrays.w[depth] = Double(_weightsList[offset + depth])
+            }
+        }
+        else
+        {
             for depth in 0..<weightHeight
             {
                 _bArrays.w[depth] = 0.0
             }
         }
-        else
-        {
-            for i in 0..<weightHeight {
-            for j in 0..<weightWidth
-            {
-                let offset = j + weightWidth * i
-                _wArrays.w(i, j, Double(_weightsList[offset]))
-            }}
-        
-            if _updateBiases
-            {
-                let offset = weightHeight * weightWidth
-                for depth in 0..<weightHeight
-                {
-                    _bArrays.w[depth] = Double(_weightsList[offset + depth])
-                }
-            }
-            else
-            {
-                for depth in 0..<weightHeight
-                {
-                    _bArrays.w[depth] = 0.0
-                }
-            }
-            
-            _weightsList = []
-        }
+        _weightsList = []
     }
     
     ///
@@ -448,6 +431,11 @@ public class FullyConnectedSeq: ActivationSeq,
     ///
     public func initWeightsGPU()
     {
+        if _weightsList.count == 0
+        {
+            _weightsList = generateWeightsList()
+        }
+        
         _wBuffers = WeightBuffers(
             nbElems: weightHeight * weightWidth,
             deviceID: deviceID
@@ -460,44 +448,27 @@ public class FullyConnectedSeq: ActivationSeq,
         let weightsPtr = _wBuffers.w_p!.shared.buffer
         let biasesPtr = _bBuffers.w_p!.shared.buffer
         
-        if _weightsList.count == 0
+        for elem in 0..<weightHeight * weightWidth
         {
-            let coeff = Float(coeffInitWeights)
-            for elem in 0..<weightHeight * weightWidth
+            weightsPtr[elem] = _weightsList[elem]
+        }
+        
+        if _updateBiases
+        {
+            let offset = weightHeight * weightWidth
+            for depth in 0..<weightHeight
             {
-                weightsPtr[elem] = coeff * Float.random(in: -1..<1)
+                biasesPtr[depth] = _weightsList[offset + depth]
             }
-            
+        }
+        else
+        {
             for depth in 0..<weightHeight
             {
                 biasesPtr[depth] = 0.0
             }
         }
-        else
-        {
-            for elem in 0..<weightHeight * weightWidth
-            {
-                weightsPtr[elem] = _weightsList[elem]
-            }
-            
-            if _updateBiases
-            {
-                let offset = weightHeight * weightWidth
-                for depth in 0..<weightHeight
-                {
-                    biasesPtr[depth] = _weightsList[offset + depth]
-                }
-            }
-            else
-            {
-                for depth in 0..<weightHeight
-                {
-                    biasesPtr[depth] = 0.0
-                }
-            }
-            
-            _weightsList = []
-        }
+        _weightsList = []
         
         MetalKernel.get.upload([_wBuffers.w_p!, _bBuffers.w_p!])
         

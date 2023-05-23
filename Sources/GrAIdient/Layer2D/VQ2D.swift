@@ -8,7 +8,7 @@
 import Foundation
 
 /// Layer with a 2D shape neural structure and weights.
-public class VQ2D: Layer2D, LayerUpdate
+public class VQ2D: Layer2D, LayerWeightInit
 {
     /// The number of vector approximations.
     let _K: Int
@@ -91,11 +91,14 @@ public class VQ2D: Layer2D, LayerUpdate
         }
     }
     
-    /// Get the coefficient to apply during the weights initialization.
-    var coeffInitWeights: Double
+    /// Method used to initialize weights values.
+    public var weightInitClass: WeightInitClass = .XavierUniform
+    
+    /// Get the number of input and output connections.
+    public var connectivityIO: (Int, Int)
     {
         get {
-            return sqrt(2.0 / Double(_K + nbChannels))
+            return (nbChannels, _K)
         }
     }
     
@@ -265,27 +268,20 @@ public class VQ2D: Layer2D, LayerUpdate
     ///
     public func initWeightsCPU()
     {
-        _wArrays = WeightGrids(width: nbChannels, height: _K)
-        
         if _weightsList.count == 0
         {
-            let coeff = coeffInitWeights
-            for k in 0..<_K {
-            for depth in 0..<nbChannels
-            {
-                _wArrays.w(k, depth, coeff * Double.random(in: -1..<1))
-            }}
+            _weightsList = generateWeightsList()
         }
-        else
+        
+        _wArrays = WeightGrids(width: nbChannels, height: _K)
+        
+        for k in 0..<_K {
+        for depth in 0..<nbChannels
         {
-            for k in 0..<_K {
-            for depth in 0..<nbChannels
-            {
-                let offset = depth + nbChannels * k
-                _wArrays.w(k, depth, Double(_weightsList[offset]))
-            }}
-            _weightsList = []
-        }
+            let offset = depth + nbChannels * k
+            _wArrays.w(k, depth, Double(_weightsList[offset]))
+        }}
+        _weightsList = []
     }
     
     ///
@@ -295,28 +291,22 @@ public class VQ2D: Layer2D, LayerUpdate
     ///
     public func initWeightsGPU()
     {
+        if _weightsList.count == 0
+        {
+            _weightsList = generateWeightsList()
+        }
+        
         _wBuffers = WeightBuffers(
             nbElems: _K * nbChannels,
             deviceID: deviceID
         )
         
         let weightsPtr = _wBuffers.w_p!.shared.buffer
-        if _weightsList.count == 0
+        for elem in 0..<_K * nbChannels
         {
-            let coeff = Float(coeffInitWeights)
-            for elem in 0..<_K * nbChannels
-            {
-                weightsPtr[elem] = coeff * Float.random(in: -1..<1)
-            }
+            weightsPtr[elem] = _weightsList[elem]
         }
-        else
-        {
-            for elem in 0..<_K * nbChannels
-            {
-                weightsPtr[elem] = _weightsList[elem]
-            }
-            _weightsList = []
-        }
+        _weightsList = []
         
         MetalKernel.get.upload([_wBuffers.w_p!])
         _wDeltaWeights = nil

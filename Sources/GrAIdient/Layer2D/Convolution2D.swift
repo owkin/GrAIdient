@@ -719,6 +719,7 @@ public class Convolution2D: BN2D, LayerWeightInit
         if _weightsList.count == 0
         {
             _weightsList = generateWeightsList()
+            _weightsList += [Float](repeating: 0.0, count: nbChannels)
         }
         
         super.initWeightsCPU()
@@ -743,21 +744,10 @@ public class Convolution2D: BN2D, LayerWeightInit
             }}
         }
         
-        if _updateBiases
+        let offset = nbWeights * weightHeight * weightWidth
+        for depth in 0..<nbChannels
         {
-            let offset = nbWeights * weightHeight * weightWidth
-            for depth in 0..<nbChannels
-            {
-                _bArrays.w[depth] =
-                    Double(_weightsList[offset + depth])
-            }
-        }
-        else
-        {
-            for depth in 0..<nbChannels
-            {
-                _bArrays.w[depth] = 0.0
-            }
+            _bArrays.w[depth] = Double(_weightsList[offset + depth])
         }
         _weightsList = []
     }
@@ -772,6 +762,7 @@ public class Convolution2D: BN2D, LayerWeightInit
         if _weightsList.count == 0
         {
             _weightsList = generateWeightsList()
+            _weightsList += [Float](repeating: 0.0, count: nbChannels)
         }
         
         super.initWeightsGPU()
@@ -793,20 +784,10 @@ public class Convolution2D: BN2D, LayerWeightInit
             weightsPtr[elem] = _weightsList[elem]
         }
         
-        if _updateBiases
+        let offset = nbWeights * weightHeight * weightWidth
+        for depth in 0..<nbChannels
         {
-            let offset = nbWeights * weightHeight * weightWidth
-            for depth in 0..<nbChannels
-            {
-                biasesPtr[depth] = _weightsList[offset + depth]
-            }
-        }
-        else
-        {
-            for depth in 0..<nbChannels
-            {
-                biasesPtr[depth] = 0.0
-            }
+            biasesPtr[depth] = _weightsList[offset + depth]
         }
         _weightsList = []
         

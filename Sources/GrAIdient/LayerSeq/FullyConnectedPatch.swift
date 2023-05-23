@@ -419,6 +419,7 @@ public class FullyConnectedPatch: ActivationSeq,
         if _weightsList.count == 0
         {
             _weightsList = generateWeightsList()
+            _weightsList += [Float](repeating: 0.0, count: weightHeight)
         }
         
         _wArrays = WeightGrids(width: weightWidth, height: weightHeight)
@@ -431,20 +432,10 @@ public class FullyConnectedPatch: ActivationSeq,
             _wArrays.w(i, j, Double(_weightsList[offset]))
         }}
     
-        if _updateBiases
+        let offset = weightHeight * weightWidth
+        for depth in 0..<weightHeight
         {
-            let offset = weightHeight * weightWidth
-            for depth in 0..<weightHeight
-            {
-                _bArrays.w[depth] = Double(_weightsList[offset + depth])
-            }
-        }
-        else
-        {
-            for depth in 0..<weightHeight
-            {
-                _bArrays.w[depth] = 0.0
-            }
+            _bArrays.w[depth] = Double(_weightsList[offset + depth])
         }
         _weightsList = []
     }
@@ -459,6 +450,7 @@ public class FullyConnectedPatch: ActivationSeq,
         if _weightsList.count == 0
         {
             _weightsList = generateWeightsList()
+            _weightsList += [Float](repeating: 0.0, count: weightHeight)
         }
         
         _wBuffers = WeightBuffers(
@@ -478,20 +470,10 @@ public class FullyConnectedPatch: ActivationSeq,
             weightsPtr[elem] = _weightsList[elem]
         }
         
-        if _updateBiases
+        let offset = weightHeight * weightWidth
+        for depth in 0..<weightHeight
         {
-            let offset = weightHeight * weightWidth
-            for depth in 0..<weightHeight
-            {
-                biasesPtr[depth] = _weightsList[offset + depth]
-            }
-        }
-        else
-        {
-            for depth in 0..<weightHeight
-            {
-                biasesPtr[depth] = 0.0
-            }
+            biasesPtr[depth] = _weightsList[offset + depth]
         }
         _weightsList = []
         

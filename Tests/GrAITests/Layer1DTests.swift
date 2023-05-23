@@ -679,6 +679,102 @@ class Layer1DFlowReverseTests: Layer1DFlowTests
 }
 
 // -----------------------------------------------------------------------------
+// Compare GPU gradients with CPU ones through time.
+// We expect to see errors ~ 1e-7 and less.
+// -----------------------------------------------------------------------------
+class Layer1DFlowAccumulateTests: Input1DMSE1DCase
+{
+    private func _buildTrainer(_ model: String) -> FlowTrainer
+    {
+        let trainer = FlowAccumulateTrainer(
+            name: "Layer1D",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(model: model, context: context)
+        }
+        return trainer
+    }
+    
+    func buildModel(model: String, context: ModelContext)
+    {
+        let params = GrAI.Model.Params(context: context)
+        
+        var layer: Layer1D = Input1D(nbNeurons: 1, params: params)
+        
+        layer = FullyConnected(
+            layerPrev: layer, nbNeurons: 5,
+            activation: LeakyReLU.str, biases: true,
+            params: params
+        )
+        
+        switch model
+        {
+        case "FullyConnected":
+            layer = FullyConnected(
+                layerPrev: layer, nbNeurons: 12,
+                activation: LeakyReLU.str, biases: true,
+                params: params
+            )
+            
+        case "Constant":
+            var otherLayer: Layer1D = Constant1D(
+                nbNeurons: 5, params: params
+            )
+            (otherLayer as! Constant1D).weightsCPU = [1.0, 2.0, 3.0, 4.0, 5.0]
+            
+            otherLayer = FullyConnected(
+                layerPrev: otherLayer, nbNeurons: 5,
+                activation: LeakyReLU.str, biases: true,
+                params: params
+            )
+            layer = Sum1D(
+                layersPrev: [layer, otherLayer], params: params
+            )
+            
+        default:
+            fatalError("Unreachable.")
+        }
+        
+        layer = FullyConnected(
+            layerPrev: layer, nbNeurons: 1,
+            activation: LeakyReLU.str, biases: true,
+            params: params
+        )
+        
+        layer = MSE1D(layerPrev: layer, params: params)
+    }
+    
+    func testFL() throws
+    {
+        let trainer = _buildTrainer("FullyConnected")
+        run(trainer)
+    }
+    
+    func testFLSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("FullyConnected")
+        run(trainer)
+    }
+    
+    func testConstant() throws
+    {
+        let trainer = _buildTrainer("Constant")
+        run(trainer)
+    }
+    
+    func testConstantSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("Constant")
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
 // Compare GPU Loss in inference mode with CPU one.
 // We expect to see errors ~ 1e-3 and less.
 // -----------------------------------------------------------------------------

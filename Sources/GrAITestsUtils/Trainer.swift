@@ -484,6 +484,40 @@ open class FlowReverseTrainer: FlowTrainer
     }
 }
 
+/// Compares gradients of weights computed in the CPU execution context againt the GPU one
+/// when we accumulate gradients.
+open class FlowAccumulateTrainer: FlowTrainer
+{
+    ///
+    /// Run the test.
+    ///
+    /// The goal is to compare the gradients of weights computed in the CPU execution context with
+    /// the gradients of weights computed in the GPU execution context.
+    ///
+    /// - Parameters:
+    ///     - setData: A function to create/set data to the model.
+    ///     - setLoss: A function to create/set ground truth to the model.
+    ///     - validate: A function that checks whether the relative difference is small enough.
+    ///
+    public override func run<DataT, LossT>(
+        setData: (DataT?, Model)->(DataT, Int),
+        setLoss: (LossT?, Model)->(LossT),
+        validate: (Double) throws -> ()) throws
+    {
+        modelCPU.accumulateDeltaWeights = true
+        modelGPU.accumulateDeltaWeights = true
+        try super.run(setData: setData, setLoss: setLoss, validate: validate)
+        
+        modelCPU.accumulateDeltaWeights = false
+        modelGPU.accumulateDeltaWeights = false
+        try super.run(setData: setData, setLoss: setLoss, validate: validate)
+        
+        modelCPU.accumulateDeltaWeights = true
+        modelGPU.accumulateDeltaWeights = true
+        try super.run(setData: setData, setLoss: setLoss, validate: validate)
+    }
+}
+
 /// Pipeline that compares losses computed in the CPU execution context againt the GPU one
 /// during the inference phase.
 open class InferenceTrainer: FlowTrainer

@@ -2635,6 +2635,292 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
 }
 
 // -----------------------------------------------------------------------------
+// Compare GPU gradients with CPU ones through time.
+// We expect to see errors ~ 1e-7 and less.
+// -----------------------------------------------------------------------------
+class Layer2DFlowAccumulateTests: Input2DMSE1DCase
+{
+    private func _buildTrainer(model: String, bn: Bool) -> FlowTrainer
+    {
+        let trainer = FlowAccumulateTrainer(
+            name: "Layer2D",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(model: model, bn: bn, context: context)
+        }
+        return trainer
+    }
+    
+    func buildModel(model: String, bn: Bool, context: ModelContext)
+    {
+        let params = GrAI.Model.Params(context: context)
+        
+        var layer: Layer2D = Input2D(
+            nbChannels: 1, width: width, height: height, params: params
+        )
+        var head: Layer1D? = nil
+        
+        layer = Convolution2D(
+            layerPrev: layer, size: 1, nbChannels: 3, stride: 1,
+            activation: LeakyReLU.str, biases: true, bn: false, params: params
+        )
+        
+        switch model
+        {
+        case "Convolution1":
+            layer = Convolution2D(
+                layerPrev: layer, size: 3, nbChannels: 5, stride: 1,
+                activation: LeakyReLU.str, biases: !bn, bn: bn, params: params
+            )
+            
+        case "Convolution2":
+            layer = Convolution2D(
+                layerPrev: layer, size: 2, nbChannels: 5, stride: 1,
+                activation: LeakyReLU.str, biases: !bn, bn: bn, params: params
+            )
+            
+        case "ConvolutionStride1":
+            layer = Convolution2D(
+                layerPrev: layer, size: 3, nbChannels: 5, stride: 2,
+                activation: LeakyReLU.str, biases: !bn, bn: bn, params: params
+            )
+            
+        case "ConvolutionStride2":
+            layer = Convolution2D(
+                layerPrev: layer, size: 2, nbChannels: 5, stride: 2,
+                activation: LeakyReLU.str, biases: !bn, bn: bn, params: params
+            )
+            
+        case "BN":
+            layer = BN2D(
+                layerPrev: layer, activation: LeakyReLU.str, params: params
+            )
+            
+        case "Deconvolution1":
+            layer = Deconvolution2D(
+                layerPrev: layer, size: 3, nbChannels: 5, stride: 1,
+                activation: LeakyReLU.str, biases: !bn, bn: bn, params: params
+            )
+            
+        case "Deconvolution2":
+            layer = Deconvolution2D(
+                layerPrev: layer, size: 2, nbChannels: 5, stride: 1,
+                activation: LeakyReLU.str, biases: !bn, bn: bn, params: params
+            )
+            
+        case "DeconvolutionStride1":
+            layer = Deconvolution2D(
+                layerPrev: layer, size: 3, nbChannels: 5, stride: 2,
+                activation: LeakyReLU.str, biases: !bn, bn: bn, params: params
+            )
+            
+        case "DeconvolutionStride2":
+            layer = Deconvolution2D(
+                layerPrev: layer, size: 2, nbChannels: 5, stride: 2,
+                activation: LeakyReLU.str, biases: !bn, bn: bn, params: params
+            )
+            
+        case "InstanceNorm":
+            layer = InstanceNorm2D(
+                layerPrev: layer, activation: LeakyReLU.str, params: params
+            )
+            
+        case "Constant":
+            var otherLayer: Layer2D = Constant2D(
+                nbChannels: 5, height: height, width: width, params: params
+            )
+            (otherLayer as! Constant2D).weightsCPU = [1.0, 2.0, 3.0, 4.0, 5.0]
+            
+            otherLayer = Convolution2D(
+                layerPrev: otherLayer, size: 1, nbChannels: 3, stride: 1,
+                activation: LeakyReLU.str, biases: true, bn: false,
+                params: params
+            )
+            layer = Sum2D(
+                layersPrev: [layer, otherLayer], params: params
+            )
+            
+        case "VQ":
+            layer = VQ2D(layerPrev: layer, K: 5, beta: 0.25, params: params)
+            
+        default:
+            fatalError("Unreachable.")
+        }
+        
+        head = FullyConnected(
+            layerPrev: head != nil ? head! : layer, nbNeurons: 1,
+            activation: LeakyReLU.str, biases: true, params: params
+        )
+        
+        head = MSE1D(layerPrev: head!, params: params)
+    }
+    
+    func testConvolution1BN() throws
+    {
+        let trainer = _buildTrainer(model: "Convolution1", bn: true)
+        run(trainer, diffThreshold: 0.0001)
+    }
+    
+    func testConvolution1BNSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "Convolution1", bn: true)
+        run(trainer, diffThreshold: 0.0001)
+    }
+    
+    func testConvolution1NoBN() throws
+    {
+        let trainer = _buildTrainer(model: "Convolution1", bn: false)
+        run(trainer)
+    }
+    
+    func testConvolution1NoBNSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "Convolution1", bn: false)
+        run(trainer)
+    }
+    
+    func testConvolution2() throws
+    {
+        let trainer = _buildTrainer(model: "Convolution2", bn: false)
+        run(trainer)
+    }
+    
+    func testConvolution2Sample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "Convolution2", bn: false)
+        run(trainer)
+    }
+    
+    func testConvolutionStride1() throws
+    {
+        let trainer = _buildTrainer(model: "ConvolutionStride1", bn: false)
+        run(trainer)
+    }
+    
+    func testConvolutionStride1Sample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "ConvolutionStride1", bn: false)
+        run(trainer)
+    }
+    
+    func testConvolutionStride2() throws
+    {
+        let trainer = _buildTrainer(model: "ConvolutionStride2", bn: false)
+        run(trainer)
+    }
+    
+    func testConvolutionStride2Sample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "ConvolutionStride2", bn: false)
+        run(trainer)
+    }
+    
+    func testBN() throws
+    {
+        let trainer = _buildTrainer(model: "BN", bn: false)
+        run(trainer, diffThreshold: 0.0001)
+    }
+    
+    func testDeconvolution1BN() throws
+    {
+        let trainer = _buildTrainer(model: "Deconvolution1", bn: true)
+        run(trainer, diffThreshold: 0.0001)
+    }
+    
+    func testDeconvolution1SampleBN() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "Deconvolution1", bn: true)
+        run(trainer, diffThreshold: 0.0001)
+    }
+    
+    func testDeconvolution1NoBN() throws
+    {
+        let trainer = _buildTrainer(model: "Deconvolution1", bn: false)
+        run(trainer)
+    }
+    
+    func testDeconvolution1SampleNoBN() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "Deconvolution1", bn: false)
+        run(trainer)
+    }
+    
+    func testDeconvolution2() throws
+    {
+        let trainer = _buildTrainer(model: "Deconvolution2", bn: false)
+        run(trainer)
+    }
+    
+    func testDeconvolution2Sample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "Deconvolution2", bn: false)
+        run(trainer)
+    }
+    
+    func testDeconvolutionStride1() throws
+    {
+        let trainer = _buildTrainer(model: "DeconvolutionStride1", bn: false)
+        run(trainer)
+    }
+    
+    func testDeconvolutionStride1Sample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "DeconvolutionStride1", bn: false)
+        run(trainer)
+    }
+    
+    func testDeconvolutionStride2() throws
+    {
+        let trainer = _buildTrainer(model: "DeconvolutionStride2", bn: false)
+        run(trainer)
+    }
+    
+    func testDeconvolutionStride2Sample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "DeconvolutionStride2", bn: false)
+        run(trainer)
+    }
+    
+    func testInstanceNorm() throws
+    {
+        let trainer = _buildTrainer(model: "InstanceNorm", bn: false)
+        run(trainer)
+    }
+    
+    func testConstant() throws
+    {
+        let trainer = _buildTrainer(model: "Constant", bn: false)
+        run(trainer)
+    }
+    
+    func testVQ() throws
+    {
+        let trainer = _buildTrainer(model: "VQ", bn: false)
+        run(trainer)
+    }
+    
+    func testVQSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "VQ", bn: false)
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
 // Compare GPU Loss in inference mode with CPU one.
 // We expect to see errors ~ 1e-3 and less.
 // -----------------------------------------------------------------------------

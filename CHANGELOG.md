@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🚨 **test**: FlowAccumulateTrainer ([#95](https://github.com/owkin/GrAIdient/pull/95))\
 🚨 **examples**: compare training with PyTorch ([#94](https://github.com/owkin/GrAIdient/pull/94))\
 🪜 **layer_2d:** ColorJitterHSV, Image & ImageTests ([#93](https://github.com/owkin/GrAIdient/pull/93))\
 🪜 **layer_2d:** Flip2D & config_kernels ([#92](https://github.com/owkin/GrAIdient/pull/92))\
@@ -92,7 +93,7 @@ All notable changes to this project will be documented in this file.
 🔨 **refactor:** remove transaction ([#31](https://github.com/owkin/GrAIdient/pull/31))\
 🚨 **integration:** activate DecorrelateRGB in test ([#29](https://github.com/owkin/GrAIdient/pull/29))\
 🚨 **integration:** test IDFT and complex numbers ([#28](https://github.com/owkin/GrAIdient/pull/28))\
-🔨 **tests:** factorize transform tests ([#26](https://github.com/owkin/GrAIdient/pull/26))\
+🔨 **test:** factorize transform tests ([#26](https://github.com/owkin/GrAIdient/pull/26))\
 👷 **ci:** remove swift action ([#20](https://github.com/owkin/GrAIdient/pull/20))\
 👷 **ci:** remove LFS ([#17](https://github.com/owkin/GrAIdient/pull/17))
 

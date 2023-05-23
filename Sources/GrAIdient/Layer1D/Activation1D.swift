@@ -18,6 +18,18 @@ public class Activation1D: Layer1D
     ///
     var _tmp: MetalPrivateBuffer<Float>! = nil
     
+    /// Get coefficient (depending on activation function) to apply during the weights initialization.
+    public var coeffInitWeights: Float
+    {
+        get {
+            if let activation = _activation
+            {
+                return activation.coeffInitWeights
+            }
+            return 1.0
+        }
+    }
+    
     private enum Keys: String, CodingKey
     {
         case activation

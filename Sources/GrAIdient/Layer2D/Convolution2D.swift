@@ -23,7 +23,7 @@ import MetalKit
 /// With a stride of 1, this will preserve the previous layer's size.
 /// With a greater stride, this will divide the previous layer's size by stride.
 ///
-public class Convolution2D: BN2D
+public class Convolution2D: BN2D, LayerWeightInit
 {
     /// Downscale factor of the resolution (height and width).
     let _stride: Int
@@ -266,18 +266,25 @@ public class Convolution2D: BN2D
         }
     }
     
-    /// Get the coefficient to apply during the weights initialization.
-    var coeffInitWeights: Double
+    /// Method used to initialize weights values.
+    public var weightInitClass: WeightInitClass = .XavierUniform
+    
+    /// Number of weights values (not considering the biases).
+    public var weightListSize: Int
     {
         get {
-            if let activation = _activation
-            {
-                return activation.coeffInitWeights(
-                    nPrev: nbChannelsPrev * weightHeight * weightWidth,
-                    nCur: nbChannels)
-            }
-            return sqrt(2.0 /
-                        Double(nbChannelsPrev * weightHeight * weightWidth))
+            return nbChannels * nbChannelsPrev * weightHeight * weightWidth
+        }
+    }
+    
+    /// Get the number of input and output connections.
+    public var connectivityIO: (Int, Int)
+    {
+        get {
+            return (
+                nbChannelsPrev * weightHeight * weightWidth,
+                nbChannels * weightHeight * weightWidth
+            )
         }
     }
     
@@ -709,6 +716,12 @@ public class Convolution2D: BN2D
     ///
     public override func initWeightsCPU()
     {
+        if _weightsList.count == 0
+        {
+            _weightsList = generateWeightsList()
+            _weightsList += [Float](repeating: 0.0, count: nbChannels)
+        }
+        
         super.initWeightsCPU()
         
         _wArrays = [WeightGrids]()
@@ -719,56 +732,36 @@ public class Convolution2D: BN2D
         }
         _bArrays = WeightArrays(nbChannels)
         
-        if _weightsList.count == 0
+        for elem in 0..<nbWeights
         {
-            let coeff = coeffInitWeights
-            for elem in 0..<nbWeights
-            {
-                for i in 0..<weightHeight {
-                for j in 0..<weightWidth
-                {
-                    _wArrays[elem].w(i, j, coeff * Double.random(in: -1..<1))
-                }}
-            }
+            let offsetStart = elem * weightHeight
             
+            for i in 0..<weightHeight {
+            for j in 0..<weightWidth
+            {
+                let offset = j + (offsetStart + i) * weightWidth
+                _wArrays[elem].w(i, j, Double(_weightsList[offset]))
+            }}
+        }
+        
+        // In both cases, biases may have been set by caller or by ourselves.
+        if _updateBiases
+        {
+            let offset = nbWeights * weightHeight * weightWidth
+            for depth in 0..<nbChannels
+            {
+                _bArrays.w[depth] =
+                    Double(_weightsList[offset + depth])
+            }
+        }
+        else
+        {
             for depth in 0..<nbChannels
             {
                 _bArrays.w[depth] = 0.0
             }
         }
-        else
-        {
-            for elem in 0..<nbWeights
-            {
-                let offsetStart = elem * weightHeight
-                
-                for i in 0..<weightHeight {
-                for j in 0..<weightWidth
-                {
-                    let offset = j + (offsetStart + i) * weightWidth
-                    _wArrays[elem].w(i, j, Double(_weightsList[offset]))
-                }}
-            }
-            
-            if _updateBiases
-            {
-                let offset = nbWeights * weightHeight * weightWidth
-                for depth in 0..<nbChannels
-                {
-                    _bArrays.w[depth] =
-                        Double(_weightsList[offset + depth])
-                }
-            }
-            else
-            {
-                for depth in 0..<nbChannels
-                {
-                    _bArrays.w[depth] = 0.0
-                }
-            }
-            
-            _weightsList = []
-        }
+        _weightsList = []
     }
     
     ///
@@ -778,6 +771,12 @@ public class Convolution2D: BN2D
     ///
     public override func initWeightsGPU()
     {
+        if _weightsList.count == 0
+        {
+            _weightsList = generateWeightsList()
+            _weightsList += [Float](repeating: 0.0, count: nbChannels)
+        }
+        
         super.initWeightsGPU()
         
         _wBuffers = WeightBuffers(
@@ -791,45 +790,29 @@ public class Convolution2D: BN2D
         
         let weightsPtr = _wBuffers.w_p!.shared.buffer
         let biasesPtr = _bBuffers.w_p!.shared.buffer
-        
-        if _weightsList.count == 0
+    
+        for elem in 0..<nbWeights * weightHeight * weightWidth
         {
-            let coeff = Float(coeffInitWeights)
-            for elem in 0..<nbWeights * weightHeight * weightWidth
+            weightsPtr[elem] = _weightsList[elem]
+        }
+        
+        // In both cases, biases may have been set by caller or by ourselves.
+        if _updateBiases
+        {
+            let offset = nbWeights * weightHeight * weightWidth
+            for depth in 0..<nbChannels
             {
-                weightsPtr[elem] = coeff * Float.random(in: -1..<1)
+                biasesPtr[depth] = _weightsList[offset + depth]
             }
-            
+        }
+        else
+        {
             for depth in 0..<nbChannels
             {
                 biasesPtr[depth] = 0.0
             }
         }
-        else
-        {
-            for elem in 0..<nbWeights * weightHeight * weightWidth
-            {
-                weightsPtr[elem] = _weightsList[elem]
-            }
-            
-            if _updateBiases
-            {
-                let offset = nbWeights * weightHeight * weightWidth
-                for depth in 0..<nbChannels
-                {
-                    biasesPtr[depth] = _weightsList[offset + depth]
-                }
-            }
-            else
-            {
-                for depth in 0..<nbChannels
-                {
-                    biasesPtr[depth] = 0.0
-                }
-            }
-            
-            _weightsList = []
-        }
+        _weightsList = []
         
         MetalKernel.get.upload([_wBuffers.w_p!, _bBuffers.w_p!])
         

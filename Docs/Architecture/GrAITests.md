@@ -18,6 +18,9 @@ that every layer, optimizer, activation function ... is tested.
   the execution context 
   (the model CPU will be executed on the GPU and vice versa)
   
+- accumulate tests: compare gradients computed in CPU and GPU 
+  after accumulating them
+  
 - inference tests: compare loss in CPU and GPU during the inference phase
 
 - load tests: compare loss in CPU and GPU after loading models from the disk

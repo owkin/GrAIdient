@@ -269,7 +269,7 @@ public class Convolution2D: BN2D, LayerWeightInit
     /// Method used to initialize weights values.
     public var weightInitClass: WeightInitClass = .XavierUniform
     
-    /// Number of weights values (not taking care of biases).
+    /// Number of weights values (not considering the biases).
     public var weightListSize: Int
     {
         get {

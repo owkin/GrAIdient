@@ -475,7 +475,6 @@ public class ReLU: ActivationFunction
         }
     }
     
-    
     ///
     /// Coefficient to apply during the weights initialization.
     ///

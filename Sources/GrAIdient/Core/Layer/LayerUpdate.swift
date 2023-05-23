@@ -325,7 +325,7 @@ extension LayerWeightInit
         connectivityIO: (Int, Int)) -> [Float]
     {
         var values = [Float]()
-        let bound = sqrt(3) * coeff / sqrt(Float(connectivityIO.1))
+        let bound = sqrt(3) * coeff / sqrt(Float(connectivityIO.0))
         for _ in 0..<nbElems
         {
             values.append(Float.random(in: -bound..<bound))
@@ -347,7 +347,7 @@ extension LayerWeightInit
         connectivityIO: (Int, Int)) -> [Float]
     {
         var values = [Float]()
-        let std = coeff / sqrt(Float(connectivityIO.1))
+        let std = coeff / sqrt(Float(connectivityIO.0))
         for _ in 0..<nbElems
         {
             values.append(randomNormal(mean: 0.0, standardDeviation: std))

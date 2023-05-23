@@ -891,6 +891,163 @@ class LayerSeqFlowReverseTests: LayerSeqFlowTests
 }
 
 // -----------------------------------------------------------------------------
+// Compare GPU gradients with CPU ones through time.
+// We expect to see errors ~ 1e-7 and less.
+// -----------------------------------------------------------------------------
+class LayerSeqFlowAccumulateTests: Input2DMSE1DCase
+{
+    private func _buildTrainer(_ model: String) -> FlowTrainer
+    {
+        let trainer = FlowAccumulateTrainer(
+            name: "LayerSeq",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(model: model, context: context)
+        }
+        return trainer
+    }
+    
+    func buildModel(model: String, context: ModelContext)
+    {
+        let params = GrAI.Model.Params(context: context)
+        
+        var layer: Layer2D = Input2D(
+            nbChannels: 1, width: width, height: height, params: params
+        )
+        
+        layer = Convolution2D(
+            layerPrev: layer, size: 1, nbChannels: 3, stride: 1,
+            activation: LeakyReLU.str, biases: true, bn: false, params: params
+        )
+        
+        var layerSeq: LayerSeq
+        switch model
+        {
+        case "FullyConnectedPatch":
+            layerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            
+        case "Constant12":
+            let otherLayer: LayerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: 3, nbNeurons: 2,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = Constant12Seq(
+                sequence: 4, nbNeurons: 2, params: params
+            )
+            (layerSeq as! Constant12Seq).weightsCPU = [
+                1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0
+            ]
+            
+            layerSeq = SumSeq(
+                layersPrev: [layerSeq, otherLayer], params: params
+            )
+            
+        case "Constant2":
+            let otherLayer: LayerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: 2, nbNeurons: 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = Constant2Seq(
+                sequence: 9, nbNeurons: 5, params: params
+            )
+            (layerSeq as! Constant2Seq).weightsCPU = [1.0, 2.0, 3.0, 4.0, 5.0]
+            
+            layerSeq = SumSeq(
+                layersPrev: [layerSeq, otherLayer], params: params
+            )
+            
+        case "FullyConnectedSeq":
+            layerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = FullyConnectedSeq(
+                layerPrev: layerSeq, nbNeurons: 4,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            
+        case "LayerNorm":
+            layerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = LayerNormSeq(
+                layerPrev: layerSeq, activation: nil, params: params
+            )
+            
+        default:
+            fatalError("Unreachable.")
+        }
+        
+        var head: Layer1D = AvgPoolSeq(layerPrev: layerSeq, params: params)
+        
+        head = FullyConnected(
+            layerPrev: head, nbNeurons: 1,
+            activation: LeakyReLU.str, biases: true, params: params
+        )
+        
+        _ = MSE1D(layerPrev: head, params: params)
+    }
+    
+    func testFullyConnectedPatch() throws
+    {
+        let trainer = _buildTrainer("FullyConnectedPatch")
+        run(trainer)
+    }
+    
+    func testFullyConnectedPatchSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("FullyConnectedPatch")
+        run(trainer)
+    }
+    
+    func testConstant12() throws
+    {
+        let trainer = _buildTrainer("Constant12")
+        run(trainer)
+    }
+    
+    func testConstant2() throws
+    {
+        let trainer = _buildTrainer("Constant2")
+        run(trainer)
+    }
+    
+    func testConstant2Sample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("Constant2")
+        run(trainer)
+    }
+    
+    func testFullyConnectedSeq() throws
+    {
+        let trainer = _buildTrainer("FullyConnectedSeq")
+        run(trainer)
+    }
+    
+    func testFullyConnectedSeqSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("FullyConnectedSeq")
+        run(trainer)
+    }
+    
+    func testLayerNormSeq() throws
+    {
+        let trainer = _buildTrainer("LayerNorm")
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
 // Compare GPU Loss in inference mode with CPU one.
 // We expect to see errors ~ 1e-3 and less.
 // -----------------------------------------------------------------------------

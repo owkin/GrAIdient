@@ -260,7 +260,7 @@ extension LayerWeightInit
                 connectivityIO: connectivityIO
             )
         case .KaimingNormal:
-            weightsList = Self.KaimingUniform(
+            weightsList = Self.KaimingNormal(
                 nbElems: nbElems,
                 coeff: coeffInitWeights,
                 connectivityIO: connectivityIO

@@ -199,7 +199,7 @@ class WeightBuffers: IWeightBuffers
     }
 }
 
-/// Class used to initialize weights values.
+/// Class used to initialize weights values (not taking care of biases).
 public enum WeightInitClass
 {
     case XavierUniform, XavierNormal, KaimingUniform, KaimingNormal
@@ -207,7 +207,7 @@ public enum WeightInitClass
 
 public protocol LayerWeightInit: LayerUpdate
 {
-    /// Number of weights values.
+    /// Number of weights values (not taking care of biases).
     var weightListSize: Int { get }
     /// Method used to initialize weights values.
     var weightInitClass: WeightInitClass { get set }

@@ -432,10 +432,21 @@ public class FullyConnectedPatch: ActivationSeq,
             _wArrays.w(i, j, Double(_weightsList[offset]))
         }}
     
-        let offset = weightHeight * weightWidth
-        for depth in 0..<weightHeight
+        // In both cases, biases may have been set by caller or by ourselves.
+        if _updateBiases
         {
-            _bArrays.w[depth] = Double(_weightsList[offset + depth])
+            let offset = weightHeight * weightWidth
+            for depth in 0..<weightHeight
+            {
+                _bArrays.w[depth] = Double(_weightsList[offset + depth])
+            }
+        }
+        else
+        {
+            for depth in 0..<weightHeight
+            {
+                _bArrays.w[depth] = 0.0
+            }
         }
         _weightsList = []
     }
@@ -470,10 +481,21 @@ public class FullyConnectedPatch: ActivationSeq,
             weightsPtr[elem] = _weightsList[elem]
         }
         
-        let offset = weightHeight * weightWidth
-        for depth in 0..<weightHeight
+        // In both cases, biases may have been set by caller or by ourselves.
+        if _updateBiases
         {
-            biasesPtr[depth] = _weightsList[offset + depth]
+            let offset = weightHeight * weightWidth
+            for depth in 0..<weightHeight
+            {
+                biasesPtr[depth] = _weightsList[offset + depth]
+            }
+        }
+        else
+        {
+            for depth in 0..<weightHeight
+            {
+                biasesPtr[depth] = 0.0
+            }
         }
         _weightsList = []
         

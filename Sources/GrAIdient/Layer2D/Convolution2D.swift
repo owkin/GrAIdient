@@ -269,7 +269,7 @@ public class Convolution2D: BN2D, LayerWeightInit
     /// Method used to initialize weights values.
     public var weightInitClass: WeightInitClass = .XavierUniform
     
-    /// Number of weights values.
+    /// Number of weights values (not taking care of biases).
     public var weightListSize: Int
     {
         get {
@@ -744,10 +744,22 @@ public class Convolution2D: BN2D, LayerWeightInit
             }}
         }
         
-        let offset = nbWeights * weightHeight * weightWidth
-        for depth in 0..<nbChannels
+        // In both cases, biases may have been set by caller or by ourselves.
+        if _updateBiases
         {
-            _bArrays.w[depth] = Double(_weightsList[offset + depth])
+            let offset = nbWeights * weightHeight * weightWidth
+            for depth in 0..<nbChannels
+            {
+                _bArrays.w[depth] =
+                    Double(_weightsList[offset + depth])
+            }
+        }
+        else
+        {
+            for depth in 0..<nbChannels
+            {
+                _bArrays.w[depth] = 0.0
+            }
         }
         _weightsList = []
     }
@@ -784,10 +796,21 @@ public class Convolution2D: BN2D, LayerWeightInit
             weightsPtr[elem] = _weightsList[elem]
         }
         
-        let offset = nbWeights * weightHeight * weightWidth
-        for depth in 0..<nbChannels
+        // In both cases, biases may have been set by caller or by ourselves.
+        if _updateBiases
         {
-            biasesPtr[depth] = _weightsList[offset + depth]
+            let offset = nbWeights * weightHeight * weightWidth
+            for depth in 0..<nbChannels
+            {
+                biasesPtr[depth] = _weightsList[offset + depth]
+            }
+        }
+        else
+        {
+            for depth in 0..<nbChannels
+            {
+                biasesPtr[depth] = 0.0
+            }
         }
         _weightsList = []
         

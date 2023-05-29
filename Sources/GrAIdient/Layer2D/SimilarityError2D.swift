@@ -268,7 +268,7 @@ public class SimilarityError2D: LayerMerge2D
         for j in 0..<width
         {
             neurons[0].get(i, j)!.initGC(
-                batchSize: batchSize,
+                batchSize: mergedBatchSize,
                 nbGC: nbGC
             )
         }}
@@ -372,7 +372,6 @@ public class SimilarityError2D: LayerMerge2D
         
         let pNbChannels: [UInt32] = [UInt32(nbChannels)]
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
-        let pNbBatch: [UInt32] = [UInt32(batchSize)]
         
         let metalKernel = MetalKernel.get
         var command: MetalCommand
@@ -381,6 +380,7 @@ public class SimilarityError2D: LayerMerge2D
         for num in 0..<_layersPrev.count
         {
             let batchSize = _layersPrev[num].batchSize
+            let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pGlobalOffset: [UInt32] = [UInt32(globalOffset)]
             
             command = metalKernel.createCommand(
@@ -467,7 +467,6 @@ public class SimilarityError2D: LayerMerge2D
         
         let pNbChannels: [UInt32] = [UInt32(nbChannels)]
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
-        let pNbBatch: [UInt32] = [UInt32(batchSize)]
         
         let metalKernel = MetalKernel.get
         var command: MetalCommand
@@ -487,6 +486,7 @@ public class SimilarityError2D: LayerMerge2D
             try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
             
             let pGlobalOffset: [UInt32] = [UInt32(globalOffset)]
+            let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
             command = metalKernel.createCommand(
@@ -612,7 +612,10 @@ public class SimilarityError2D: LayerMerge2D
         command.setBytes(pNbBatch, atIndex: 3)
         command.setBuffer(loss.metal, atIndex: 4)
         
-        command.dispatchThreads(width: batchSize, height: batchSize)
+        command.dispatchThreads(
+            width: mergedBatchSize,
+            height: mergedBatchSize
+        )
         command.enqueue()
         
         MetalKernel.get.download([loss])

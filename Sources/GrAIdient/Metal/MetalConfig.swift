@@ -124,6 +124,8 @@ let CONFIG_KERNELS =
         "rotate2DBackward",
         "resizeBilinearCropForward",
         "resizeBilinearCropBackward",
+        "concat02DForward",
+        "concat02DBackward",
         "concat12DForward",
         "concat12DBackward",
         "constant2DForward",

@@ -2875,7 +2875,7 @@ kernel void similarError2DLossDerivative(
     uint nbBatch, nbBatchPrev;
     uint dirty;
     
-    if (pGlobalOffset pNbChannels && pDimensions &&
+    if (pGlobalOffset && pNbChannels && pDimensions &&
         pNbBatch && pNbBatchPrev && pCoeff && pDirty &&
         outs && deltaPrev)
     {

@@ -14,7 +14,7 @@
 public class Concat2D: LayerMerge2D
 {
     ///
-    /// Create a layer with a2D shape neural structure.
+    /// Create a layer with a 2D shape neural structure.
     ///
     /// - Parameters:
     ///     - layersPrev: List of previous layers that have been queued to the model.

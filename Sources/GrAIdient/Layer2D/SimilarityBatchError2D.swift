@@ -83,7 +83,7 @@ public class SimilarityBatchError2D: LayerOutput2D
                 deviceID: deviceID
             )
         }
-        else if batchSize <= 0 || batchSize > loss.nbElems
+        else if batchSize <= 0 || batchSize * batchSize > loss.nbElems
         {
             throw LayerError.BatchSize
         }

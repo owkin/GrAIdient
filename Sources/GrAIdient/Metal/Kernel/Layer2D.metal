@@ -1861,7 +1861,109 @@ kernel void resizeBilinearCropBackward(
     }}
 }
 
-kernel void concat2DForward(
+kernel void concat02DForward(
+    const device float * outsPrev,
+    constant uint * pGlobalOffset,
+    constant uint * pNbChannels,
+    constant uint * pDimensions,
+    constant uint * pNbBatch,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint height, width;
+    uint nbChannels;
+    uint nbBatch;
+    uint globalOffset;
+    
+    if (pGlobalOffset && pNbChannels && pDimensions &&
+        pNbBatch && outsPrev && outs)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        nbChannels = *pNbChannels;
+        nbBatch = *pNbBatch;
+        globalOffset = *pGlobalOffset;
+    }
+    else
+        return ;
+    
+    uint depth = id[0] / width;
+    uint elem = id[1] / height;
+    uint i = id[1] % height;
+    uint j = id[0] % width;
+    
+    if (i * elem >= height * nbBatch ||
+        j * depth >= width * nbChannels)
+    {
+        return ;
+    }
+    
+    uint offsetStartPrev = (depth + nbChannels * elem) * height;
+    uint offsetStart = (depth + nbChannels * (globalOffset+elem)) * height;
+    
+    uint offsetPrev = j + (offsetStartPrev + i) * width;
+    uint offset = j + (offsetStart + i) * width;
+    
+    outs[offset] = outsPrev[offsetPrev];
+}
+
+kernel void concat02DBackward(
+    const device float * delta,
+    constant uint * pGlobalOffset,
+    constant uint * pNbChannels,
+    constant uint * pDimensions,
+    constant uint * pNbBatch,
+    constant uint * pDirty,
+    device float * deltaPrev,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint height, width;
+    uint nbChannels;
+    uint nbBatch;
+    uint globalOffset;
+    uint dirty;
+    
+    if (pGlobalOffset && pNbChannels && pDimensions &&
+        pNbBatch && pDirty && delta && deltaPrev)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        nbChannels = *pNbChannels;
+        nbBatch = *pNbBatch;
+        globalOffset = *pGlobalOffset;
+        dirty = *pDirty;
+    }
+    else
+        return ;
+    
+    uint depth = id[0] / width;
+    uint elem = id[1] / height;
+    uint i = id[1] % height;
+    uint j = id[0] % width;
+    
+    if (i * elem >= height * nbBatch ||
+        j * depth >= width * nbChannels)
+    {
+        return ;
+    }
+    
+    uint offsetStartPrev = (depth + nbChannels * elem) * height;
+    uint offsetStart = (depth + nbChannels * (globalOffset+elem)) * height;
+    
+    uint offsetPrev = j + (offsetStartPrev + i) * width;
+    uint offset = j + (offsetStart + i) * width;
+    
+    if (dirty)
+    {
+        deltaPrev[offsetPrev] = delta[offset];
+    }
+    else
+    {
+        deltaPrev[offsetPrev] += delta[offset];
+    }
+}
+
+kernel void concat12DForward(
     const device float * outsPrev,
     constant uint * pGlobalOffset,
     constant uint * pNbChannels,
@@ -1910,7 +2012,7 @@ kernel void concat2DForward(
     outs[offset] = outsPrev[offsetPrev];
 }
 
-kernel void concat2DBackward(
+kernel void concat12DBackward(
     const device float * delta,
     constant uint * pGlobalOffset,
     constant uint * pNbChannels,
@@ -2065,6 +2167,7 @@ kernel void MSE2DLossDerivative(
     constant uint * pDimensions,
     constant float * pCoeff,
     constant uint * pNbBatch,
+    constant uint * pDirty,
     device float * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
@@ -2072,8 +2175,9 @@ kernel void MSE2DLossDerivative(
     uint nbChannels;
     float coeff;
     uint nbBatch;
+    uint dirty;
     
-    if (pNbChannels && pDimensions && pNbBatch && pCoeff &&
+    if (pNbChannels && pDimensions && pNbBatch && pCoeff && pDirty &&
         outs && groundTruth && deltaPrev)
     {
         width = pDimensions[0];
@@ -2081,6 +2185,7 @@ kernel void MSE2DLossDerivative(
         nbChannels = *pNbChannels;
         coeff = *pCoeff;
         nbBatch = *pNbBatch;
+        dirty = *pDirty;
     }
     else
         return ;
@@ -2103,8 +2208,16 @@ kernel void MSE2DLossDerivative(
     float out = outs[offset];
     float diff = out - gt;
     
-    deltaPrev[offset] = 2 * coeff * diff /
-        float(nbBatch * nbChannels * height * width);
+    if (dirty)
+    {
+        deltaPrev[offset] = 2 * coeff * diff /
+            float(nbBatch * nbChannels * height * width);
+    }
+    else
+    {
+        deltaPrev[offset] += 2 * coeff * diff /
+            float(nbBatch * nbChannels * height * width);
+    }
 }
 
 kernel void selfCorrelate2DForward(
@@ -2688,6 +2801,7 @@ kernel void similarBatchError2DLossDerivative(
     constant uint * pDimensions,
     constant float * pCoeff,
     constant uint * pNbBatch,
+    constant uint * pDirty,
     device float * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
@@ -2695,8 +2809,9 @@ kernel void similarBatchError2DLossDerivative(
     uint nbChannels;
     float coeff;
     uint nbBatch;
+    uint dirty;
     
-    if (pNbChannels && pDimensions && pNbBatch && pCoeff &&
+    if (pNbChannels && pDimensions && pNbBatch && pCoeff && pDirty &&
         outs && deltaPrev)
     {
         width = pDimensions[0];
@@ -2704,6 +2819,7 @@ kernel void similarBatchError2DLossDerivative(
         nbChannels = *pNbChannels;
         coeff = *pCoeff;
         nbBatch = *pNbBatch;
+        dirty = *pDirty;
     }
     else
         return ;
@@ -2720,12 +2836,91 @@ kernel void similarBatchError2DLossDerivative(
     float sum = 0.0;
     for (uint elem1=0; elem1<nbBatch; elem1++)
     {
+        if (elem1 == elem)
+        {
+            continue;
+        }
         uint offset1 = j + (elem1 * height + i) * width;
         sum += 2 * outs[offset1];
     }
     
     uint offset = j + (elem * height + i) * width;
-    deltaPrev[offset] = coeff / nbBatch * sum;
+    
+    if (dirty)
+    {
+        deltaPrev[offset] = coeff / nbBatch * sum;
+    }
+    else
+    {
+        deltaPrev[offset] += coeff / nbBatch * sum;
+    }
+}
+
+kernel void similarError2DLossDerivative(
+    const device float * outs,
+    constant uint * pGlobalOffset,
+    constant uint * pNbChannels,
+    constant uint * pDimensions,
+    constant float * pCoeff,
+    constant uint * pNbBatch,
+    constant uint * pNbBatchPrev,
+    constant uint * pDirty,
+    device float * deltaPrev,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint height, width;
+    uint nbChannels;
+    float coeff;
+    uint globalOffset;
+    uint nbBatch, nbBatchPrev;
+    uint dirty;
+    
+    if (pGlobalOffset pNbChannels && pDimensions &&
+        pNbBatch && pNbBatchPrev && pCoeff && pDirty &&
+        outs && deltaPrev)
+    {
+        globalOffset = *pGlobalOffset;
+        width = pDimensions[0];
+        height = pDimensions[1];
+        nbChannels = *pNbChannels;
+        coeff = *pCoeff;
+        nbBatch = *pNbBatch;
+        nbBatchPrev = *pNbBatchPrev;
+        dirty = *pDirty;
+    }
+    else
+        return ;
+    
+    uint i = id[0] / width;
+    uint j = id[0] % width;
+    uint elem = id[1];
+    
+    if (i * j >= width * height || elem >= nbBatchPrev)
+    {
+        return ;
+    }
+    
+    float sum = 0.0;
+    for (uint elem1=0; elem1<nbBatch; elem1++)
+    {
+        if (elem1 == elem+globalOffset)
+        {
+            continue;
+        }
+        uint offset1 = j + (elem1 * height + i) * width;
+        sum += 2 * outs[offset1];
+    }
+    
+    uint offset = j + (elem * height + i) * width;
+    
+    if (dirty)
+    {
+        deltaPrev[offset] = coeff / nbBatch * sum;
+    }
+    else
+    {
+        deltaPrev[offset] += coeff / nbBatch * sum;
+    }
 }
 
 kernel void flipHorizontal2DForward(

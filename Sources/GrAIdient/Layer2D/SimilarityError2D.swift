@@ -366,7 +366,44 @@ public class SimilarityError2D: LayerMerge2D
     ///
     /// Throw an error if batch size is greater than the first batch size.
     ///
-    open override func forwardGPU() throws {}
+    open override func forwardGPU() throws
+    {
+        try checkStateForwardGPU(batchSize: batchSize)
+        
+        let pNbChannels: [UInt32] = [UInt32(nbChannels)]
+        let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
+        let pNbBatch: [UInt32] = [UInt32(batchSize)]
+        
+        let metalKernel = MetalKernel.get
+        var command: MetalCommand
+        
+        var globalOffset = 0
+        for num in 0..<_layersPrev.count
+        {
+            let batchSize = _layersPrev[num].batchSize
+            let pGlobalOffset: [UInt32] = [UInt32(globalOffset)]
+            
+            command = metalKernel.createCommand(
+                "concat02DForward", deviceID: deviceID
+            )
+            command.setBuffer(
+                (_layersPrev[num] as! Layer2D).outs.metal, atIndex: 0
+            )
+            command.setBytes(pGlobalOffset, atIndex: 1)
+            command.setBytes(pNbChannels, atIndex: 2)
+            command.setBytes(pDimensions, atIndex: 3)
+            command.setBytes(pNbBatch, atIndex: 4)
+            command.setBuffer(outs.metal, atIndex: 5)
+            
+            command.dispatchThreads(
+                width: width * nbChannels,
+                height: height * batchSize
+            )
+            command.enqueue()
+            
+            globalOffset += batchSize
+        }
+    }
     
     /// Apply the backward pass in the CPU execution context.
     open override func backwardCPU()
@@ -419,7 +456,59 @@ public class SimilarityError2D: LayerMerge2D
     ///
     open override func backwardGPU() throws
     {
+        // Note that backward is not called except when it is
+        // an intermediate layer.
+        // Model.backward is only called on non dirty layers.
         
+        if !mustComputeBackward
+        {
+            return
+        }
+        
+        let pNbChannels: [UInt32] = [UInt32(nbChannels)]
+        let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
+        let pNbBatch: [UInt32] = [UInt32(batchSize)]
+        
+        let metalKernel = MetalKernel.get
+        var command: MetalCommand
+        
+        var globalOffset = 0
+        for num in 0..<_layersPrev.count
+        {
+            let layerPrev = _layersPrev[num] as! Layer2D
+            let batchSize = layerPrev.batchSize
+            
+            if !_layersPrev[num].computeDelta
+            {
+                globalOffset += batchSize
+                continue
+            }
+            
+            try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
+            
+            let pGlobalOffset: [UInt32] = [UInt32(globalOffset)]
+            let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
+            
+            command = metalKernel.createCommand(
+                "concat02DBackward", deviceID: deviceID
+            )
+            command.setBuffer(delta.metal, atIndex: 0)
+            command.setBytes(pGlobalOffset, atIndex: 1)
+            command.setBytes(pNbChannels, atIndex: 2)
+            command.setBytes(pDimensions, atIndex: 3)
+            command.setBytes(pNbBatch, atIndex: 4)
+            command.setBytes(pDirty, atIndex: 5)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 6)
+            
+            command.dispatchThreads(
+                width: width * nbChannels,
+                height: height * batchSize
+            )
+            command.enqueue()
+            
+            globalOffset += batchSize
+        }
+        propagateDirty()
     }
     
     ///
@@ -468,7 +557,7 @@ public class SimilarityError2D: LayerMerge2D
                 loss += out1 * out2
             }}
         }}
-        return T(coeff) * loss / T(batchSize)
+        return T(coeff) * loss / T(mergedBatchSize)
     }
     
     ///
@@ -496,7 +585,7 @@ public class SimilarityError2D: LayerMerge2D
                 loss += out1 * out2
             }}
         }}
-        return T(coeff) * loss / T(batchSize)
+        return T(coeff) * loss / T(mergedBatchSize)
     }
     
     ///
@@ -508,11 +597,11 @@ public class SimilarityError2D: LayerMerge2D
     ///
     public func getLossGPU() throws -> Float
     {
-        try checkLossGPU(batchSize: batchSize)
+        try checkLossGPU(batchSize: mergedBatchSize)
         
         let pNbChannels: [UInt32] = [UInt32(nbChannels)]
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
-        let pNbBatch: [UInt32] = [UInt32(batchSize)]
+        let pNbBatch: [UInt32] = [UInt32(mergedBatchSize)]
         
         let command = MetalKernel.get.createCommand(
             "similarBatchError2DLoss", deviceID: deviceID
@@ -529,13 +618,16 @@ public class SimilarityError2D: LayerMerge2D
         MetalKernel.get.download([loss])
         var loss: Float = 0.0
         let lossPtr = self.loss.buffer
-        let firstBatch = Int(sqrt(Double(self.loss.nbElems)))
-        for elem1 in 0..<firstBatch {
-        for elem2 in 0..<firstBatch
+        for elem1 in 0..<mergedBatchSize {
+        for elem2 in 0..<mergedBatchSize
         {
-            loss += lossPtr[elem2 + firstBatch * elem1]
+            if elem1 == elem2
+            {
+                continue
+            }
+            loss += lossPtr[elem2 + mergedBatchSize * elem1]
         }}
-        return Float(coeff) * loss / Float(batchSize)
+        return Float(coeff) * loss / Float(mergedBatchSize)
     }
     
     ///
@@ -576,8 +668,17 @@ public class SimilarityError2D: LayerMerge2D
                     }
                     sum += 2 * neurons[0].get(i, j)!.v[elem1].out
                 }
-                neuronsPrev[0].get(i, j)!.v[elem].delta =
-                    coeff / Double(batchSize) * sum
+                
+                if _layersPrev[num].dirty
+                {
+                    neuronsPrev[0].get(i, j)!.v[elem].delta =
+                        coeff / Double(mergedBatchSize) * sum
+                }
+                else
+                {
+                    neuronsPrev[0].get(i, j)!.v[elem].delta +=
+                        coeff / Double(mergedBatchSize) * sum
+                }
             }}}
             curElem += batchSize
         }
@@ -594,24 +695,49 @@ public class SimilarityError2D: LayerMerge2D
     ///
     public func lossDerivativeGPU() throws
     {
-        if let layerPrev = self.layerPrev as? Layer2D
+        if !mustComputeBackward
         {
+            return
+        }
+        
+        let pNbChannels: [UInt32] = [UInt32(nbChannels)]
+        let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
+        let pCoeff: [Float] = [Float(coeff)]
+        let pNbBatch: [UInt32] = [UInt32(mergedBatchSize)]
+        
+        let metalKernel = MetalKernel.get
+        var command: MetalCommand
+        
+        var globalOffset = 0
+        for num in 0..<_layersPrev.count
+        {
+            let layerPrev = _layersPrev[num] as! Layer2D
+            let batchSize = layerPrev.batchSize
+            
+            if !layerPrev.computeDelta
+            {
+                globalOffset += batchSize
+                continue
+            }
+            
             try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
             
-            let pNbChannels: [UInt32] = [UInt32(nbChannels)]
-            let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
-            let pCoeff: [Float] = [Float(coeff)]
-            let pNbBatch: [UInt32] = [UInt32(batchSize)]
+            let pGlobalOffset: [UInt32] = [UInt32(globalOffset)]
+            let pNbBatchPrev: [UInt32] = [UInt32(batchSize)]
+            let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
-            let command = MetalKernel.get.createCommand(
-                "similarBatchError2DLossDerivative", deviceID: deviceID
+            command = metalKernel.createCommand(
+                "similarError2DLossDerivative", deviceID: deviceID
             )
             command.setBuffer(outs.metal, atIndex: 0)
-            command.setBytes(pNbChannels, atIndex: 1)
-            command.setBytes(pDimensions, atIndex: 2)
-            command.setBytes(pCoeff, atIndex: 3)
-            command.setBytes(pNbBatch, atIndex: 4)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 5)
+            command.setBytes(pGlobalOffset, atIndex: 1)
+            command.setBytes(pNbChannels, atIndex: 2)
+            command.setBytes(pDimensions, atIndex: 3)
+            command.setBytes(pCoeff, atIndex: 4)
+            command.setBytes(pNbBatch, atIndex: 5)
+            command.setBytes(pNbBatchPrev, atIndex: 6)
+            command.setBytes(pDirty, atIndex: 7)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 8)
             
             command.dispatchThreads(
                 width: width * height,
@@ -619,7 +745,8 @@ public class SimilarityError2D: LayerMerge2D
             )
             command.enqueue()
             
-            propagateDirty()
+            globalOffset += batchSize
         }
+        propagateDirty()
     }
 }

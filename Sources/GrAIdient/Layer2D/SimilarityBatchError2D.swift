@@ -196,11 +196,14 @@ public class SimilarityBatchError2D: LayerOutput2D
         MetalKernel.get.download([loss])
         var loss: Float = 0.0
         let lossPtr = self.loss.buffer
-        let firstBatch = Int(sqrt(Double(self.loss.nbElems)))
-        for elem1 in 0..<firstBatch {
-        for elem2 in 0..<firstBatch
+        for elem1 in 0..<batchSize {
+        for elem2 in 0..<batchSize
         {
-            loss += lossPtr[elem2 + firstBatch * elem1]
+            if elem1 == elem2
+            {
+                continue
+            }
+            loss += lossPtr[elem2 + batchSize * elem1]
         }}
         return Float(coeff) * loss / Float(batchSize)
     }
@@ -213,7 +216,7 @@ public class SimilarityBatchError2D: LayerOutput2D
     ///
     public func lossDerivativeCPU()
     {
-        if let layerPrev = self.layerPrev as? Layer2D
+        if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
             let neuronsPrev = layerPrev.neurons
             for elem in 0..<batchSize {
@@ -229,8 +232,17 @@ public class SimilarityBatchError2D: LayerOutput2D
                     }
                     sum += 2 * neuronsPrev[0].get(i, j)!.v[elem1].out
                 }
-                neuronsPrev[0].get(i, j)!.v[elem].delta =
-                    coeff / Double(batchSize) * sum
+                
+                if layerPrev.dirty
+                {
+                    neuronsPrev[0].get(i, j)!.v[elem].delta =
+                        coeff / Double(batchSize) * sum
+                }
+                else
+                {
+                    neuronsPrev[0].get(i, j)!.v[elem].delta +=
+                        coeff / Double(batchSize) * sum
+                }
             }}}
             propagateDirty()
         }
@@ -246,7 +258,7 @@ public class SimilarityBatchError2D: LayerOutput2D
     ///
     public func lossDerivativeGPU() throws
     {
-        if let layerPrev = self.layerPrev as? Layer2D
+        if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
             try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
             
@@ -254,6 +266,7 @@ public class SimilarityBatchError2D: LayerOutput2D
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pCoeff: [Float] = [Float(coeff)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
+            let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
             let command = MetalKernel.get.createCommand(
                 "similarBatchError2DLossDerivative", deviceID: deviceID
@@ -263,7 +276,8 @@ public class SimilarityBatchError2D: LayerOutput2D
             command.setBytes(pDimensions, atIndex: 2)
             command.setBytes(pCoeff, atIndex: 3)
             command.setBytes(pNbBatch, atIndex: 4)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 5)
+            command.setBytes(pDirty, atIndex: 5)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 6)
             
             command.dispatchThreads(
                 width: width * height,

@@ -302,7 +302,7 @@ public class MSE2D: LayerOutput2D
             throw LayerError.BatchSize
         }
         
-        if let layerPrev = self.layerPrev as? Layer2D
+        if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
             let neuronsPrev = layerPrev.neurons
             switch format
@@ -320,9 +320,18 @@ public class MSE2D: LayerOutput2D
                         let gt = groundTruth[nbChannels * offset + depth]
                         let diff = out - gt
                         
-                        neuronsPrev[depth].get(i, j)!.v[elem].delta =
-                            2 * coeff * Double(diff) /
-                            Double(batchSize * nbChannels * height * width)
+                        if layerPrev.dirty
+                        {
+                            neuronsPrev[depth].get(i, j)!.v[elem].delta =
+                                2 * coeff * Double(diff) /
+                                Double(batchSize * nbChannels * height * width)
+                        }
+                        else
+                        {
+                            neuronsPrev[depth].get(i, j)!.v[elem].delta +=
+                                2 * coeff * Double(diff) /
+                                Double(batchSize * nbChannels * height * width)
+                        }
                     }}
                 }}
             case .Neuron:
@@ -340,9 +349,18 @@ public class MSE2D: LayerOutput2D
                         let gt = groundTruth[offset]
                         let diff = out - gt
                         
-                        neuronsPrev[depth].get(i, j)!.v[elem].delta =
-                            2 * coeff * Double(diff) /
-                            Double(batchSize * nbChannels * height * width)
+                        if layerPrev.dirty
+                        {
+                            neuronsPrev[depth].get(i, j)!.v[elem].delta =
+                                2 * coeff * Double(diff) /
+                                Double(batchSize * nbChannels * height * width)
+                        }
+                        else
+                        {
+                            neuronsPrev[depth].get(i, j)!.v[elem].delta +=
+                                2 * coeff * Double(diff) /
+                                Double(batchSize * nbChannels * height * width)
+                        }
                     }}
                 }}
             }
@@ -403,7 +421,7 @@ public class MSE2D: LayerOutput2D
             throw LayerError.BatchSize
         }
         
-        if let layerPrev = self.layerPrev as? Layer2D
+        if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
             try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
             
@@ -411,6 +429,7 @@ public class MSE2D: LayerOutput2D
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pCoeff: [Float] = [Float(coeff)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
+            let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
             let command = MetalKernel.get.createCommand(
                 "MSE2DLossDerivative", deviceID: deviceID
@@ -421,7 +440,8 @@ public class MSE2D: LayerOutput2D
             command.setBytes(pDimensions, atIndex: 3)
             command.setBytes(pCoeff, atIndex: 4)
             command.setBytes(pNbBatch, atIndex: 5)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 6)
+            command.setBytes(pDirty, atIndex: 6)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 7)
             
             command.dispatchThreads(
                 width: nbChannels * width,

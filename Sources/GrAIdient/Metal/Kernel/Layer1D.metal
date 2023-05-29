@@ -54,18 +54,22 @@ kernel void MSE1DLossDerivative(
     constant uint * pNbNeurons,
     constant float * pCoeff,
     constant uint * pNbBatch,
+    constant uint * pDirty,
     device float * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
     float coeff;
     uint nbBatch;
+    uint dirty;
     
-    if (pNbNeurons && pNbBatch && pCoeff && outs && groundTruth && deltaPrev)
+    if (pNbNeurons && pNbBatch && pCoeff && pDirty &&
+        outs && groundTruth && deltaPrev)
     {
         nbNeurons = *pNbNeurons;
         coeff = *pCoeff;
         nbBatch = *pNbBatch;
+        dirty = *pDirty;
     }
     else
         return ;
@@ -84,7 +88,14 @@ kernel void MSE1DLossDerivative(
     float out = outs[offset];
     float diff = out - gt;
     
-    deltaPrev[offset] = 2 * coeff * diff / float(nbNeurons * nbBatch);
+    if (dirty)
+    {
+        deltaPrev[offset] = 2 * coeff * diff / float(nbNeurons * nbBatch);
+    }
+    else
+    {
+        deltaPrev[offset] += 2 * coeff * diff / float(nbNeurons * nbBatch);
+    }
 }
 
 kernel void linearErrorLoss(
@@ -132,18 +143,21 @@ kernel void linearErrorLossDerivative(
     constant uint * pNbNeurons,
     constant float * pCoeff,
     constant uint * pNbBatch,
+    constant uint * pDirty,
     device float * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
     float coeff;
     uint nbBatch;
+    uint dirty;
     
-    if (pNbNeurons && pNbBatch && pCoeff && outs && deltaPrev)
+    if (pNbNeurons && pNbBatch && pCoeff && pDirty && outs && deltaPrev)
     {
         nbNeurons = *pNbNeurons;
         coeff = *pCoeff;
         nbBatch = *pNbBatch;
+        dirty = *pDirty;
     }
     else
         return ;
@@ -157,7 +171,15 @@ kernel void linearErrorLossDerivative(
     }
     
     uint offset = depth + nbNeurons * elem;
-    deltaPrev[offset] = coeff / float(nbNeurons * nbBatch);
+    
+    if (dirty)
+    {
+        deltaPrev[offset] = coeff / float(nbNeurons * nbBatch);
+    }
+    else
+    {
+        deltaPrev[offset] += coeff / float(nbNeurons * nbBatch);
+    }
 }
 
 kernel void selectNeurons1DForward(

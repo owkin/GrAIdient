@@ -228,7 +228,7 @@ public class MSE1D: LayerOutput1D
             throw LayerError.BatchSize
         }
         
-        if let layerPrev = self.layerPrev as? Layer1D
+        if let layerPrev = self.layerPrev as? Layer1D, mustComputeBackward
         {
             let neuronsPrev = layerPrev.neurons
             for elem in 0..<batchSize
@@ -244,8 +244,18 @@ public class MSE1D: LayerOutput1D
                     let out = T(neurons.get(depth)!.v[elem].out)
                     let diff = out - gt[depth]
                     
-                    neuronsPrev.get(depth)!.v[elem].delta =
-                        2 * coeff * Double(diff) / Double(nbNeurons * batchSize)
+                    if layerPrev.dirty
+                    {
+                        neuronsPrev.get(depth)!.v[elem].delta =
+                            2 * coeff * Double(diff) /
+                            Double(nbNeurons * batchSize)
+                    }
+                    else
+                    {
+                        neuronsPrev.get(depth)!.v[elem].delta +=
+                            2 * coeff * Double(diff) /
+                            Double(nbNeurons * batchSize)
+                    }
                 }
             }
             propagateDirty()
@@ -300,13 +310,14 @@ public class MSE1D: LayerOutput1D
             throw LayerError.BatchSize
         }
         
-        if let layerPrev = self.layerPrev as? Layer1D
+        if let layerPrev = self.layerPrev as? Layer1D, mustComputeBackward
         {
             try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
             
             let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
             let pCoeff: [Float] = [Float(coeff)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
+            let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
             let command = MetalKernel.get.createCommand(
                 "MSE1DLossDerivative", deviceID: deviceID
@@ -316,7 +327,8 @@ public class MSE1D: LayerOutput1D
             command.setBytes(pNbNeurons, atIndex: 2)
             command.setBytes(pCoeff, atIndex: 3)
             command.setBytes(pNbBatch, atIndex: 4)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 5)
+            command.setBytes(pDirty, atIndex: 5)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 6)
             
             command.dispatchThreads(
                 width: nbNeurons,

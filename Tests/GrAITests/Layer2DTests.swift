@@ -4960,7 +4960,7 @@ class SimilarityBatchError2DTransformTests: SimilarityBatchError2DFlowTests
 
 // -----------------------------------------------------------------------------
 // Gradient Checking
-// We expect to see errors ~ 1e-5 and less.
+// We expect to see errors ~ 1e-7 and less.
 // -----------------------------------------------------------------------------
 class SimilarityError2DGradTests: Input2DSimilarityError2DCase
 {
@@ -5020,13 +5020,13 @@ class SimilarityError2DGradTests: Input2DSimilarityError2DCase
     func testGPU() throws
     {
         let trainer = _buildTrainer()
-        run(trainer, diffThreshold: 0.0001)
+        run(trainer)
     }
 }
 
 // -----------------------------------------------------------------------------
 // Compare GPU gradients with CPU ones through time.
-// We expect to see errors ~ 1e-5 and less.
+// We expect to see errors ~ 1e-7 and less.
 // -----------------------------------------------------------------------------
 class SimilarityError2DFlowTests: Input2DSimilarityError2DCase
 {
@@ -5073,13 +5073,13 @@ class SimilarityError2DFlowTests: Input2DSimilarityError2DCase
     func test() throws
     {
         let trainer = _buildTrainer()
-        run(trainer, diffThreshold: 0.0001)
+        run(trainer)
     }
 }
 
 // -----------------------------------------------------------------------------
 // Compare GPU gradients with CPU ones through time.
-// We expect to see errors ~ 1e-5 and less.
+// We expect to see errors ~ 1e-7 and less.
 // -----------------------------------------------------------------------------
 class SimilarityError2DFlowResetTests: SimilarityError2DFlowTests
 {
@@ -5100,13 +5100,13 @@ class SimilarityError2DFlowResetTests: SimilarityError2DFlowTests
     override func test() throws
     {
         let trainer = _buildTrainer()
-        run(trainer, diffThreshold: 0.0001)
+        run(trainer)
     }
 }
 
 // -----------------------------------------------------------------------------
 // Compare GPU gradients with CPU ones through time.
-// We expect to see errors ~ 1e-5 and less.
+// We expect to see errors ~ 1e-7 and less.
 // -----------------------------------------------------------------------------
 class SimilarityError2DFlowReverseTests: SimilarityError2DFlowTests
 {
@@ -5127,7 +5127,7 @@ class SimilarityError2DFlowReverseTests: SimilarityError2DFlowTests
     override func test() throws
     {
         let trainer = _buildTrainer()
-        run(trainer, diffThreshold: 0.0001)
+        run(trainer)
     }
 }
 

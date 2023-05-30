@@ -368,7 +368,7 @@ public class SimilarityError2D: LayerMerge2D
     ///
     open override func forwardGPU() throws
     {
-        try checkStateForwardGPU(batchSize: batchSize)
+        try checkStateForwardGPU(batchSize: mergedBatchSize)
         
         let pNbChannels: [UInt32] = [UInt32(nbChannels)]
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
@@ -420,10 +420,11 @@ public class SimilarityError2D: LayerMerge2D
         var curElem = 0
         for num in 0..<_layersPrev.count
         {
-            let batchSize = _layersPrev[num].batchSize
-            let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
+            let layerPrev = _layersPrev[num] as! Layer2D
+            let batchSize = layerPrev.batchSize
+            let neuronsPrev = layerPrev.neurons
             
-            if !_layersPrev[num].computeDelta
+            if !layerPrev.computeDelta
             {
                 curElem += batchSize
                 continue
@@ -435,7 +436,7 @@ public class SimilarityError2D: LayerMerge2D
             {
                 let deltaCur = neurons[0].get(i, j)!.v[curElem+elem].delta
                 
-                if _layersPrev[num].dirty
+                if layerPrev.dirty
                 {
                     neuronsPrev[0].get(i, j)!.v[elem].delta = deltaCur
                 }
@@ -477,7 +478,7 @@ public class SimilarityError2D: LayerMerge2D
             let layerPrev = _layersPrev[num] as! Layer2D
             let batchSize = layerPrev.batchSize
             
-            if !_layersPrev[num].computeDelta
+            if !layerPrev.computeDelta
             {
                 globalOffset += batchSize
                 continue
@@ -649,10 +650,11 @@ public class SimilarityError2D: LayerMerge2D
         var curElem = 0
         for num in 0..<_layersPrev.count
         {
-            let batchSize = _layersPrev[num].batchSize
-            let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
+            let layerPrev = _layersPrev[num] as! Layer2D
+            let batchSize = layerPrev.batchSize
+            let neuronsPrev = layerPrev.neurons
             
-            if !_layersPrev[num].computeDelta
+            if !layerPrev.computeDelta
             {
                 curElem += batchSize
                 continue
@@ -672,7 +674,7 @@ public class SimilarityError2D: LayerMerge2D
                     sum += 2 * neurons[0].get(i, j)!.v[elem1].out
                 }
                 
-                if _layersPrev[num].dirty
+                if layerPrev.dirty
                 {
                     neuronsPrev[0].get(i, j)!.v[elem].delta =
                         coeff / Double(mergedBatchSize) * sum

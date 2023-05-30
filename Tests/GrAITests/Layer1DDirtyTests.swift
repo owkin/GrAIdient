@@ -88,6 +88,9 @@ class Layer1DDirtyGradTests: Input1DMSE1DCase
                 layerPrev: layer, nbHeads: 1, params: params
             )
             
+        case "LayerOutput":
+            secondLayer = MSE1D(layerPrev: layer, params: params)
+            
         default:
             fatalError("Unreachable.")
         }
@@ -153,6 +156,19 @@ class Layer1DDirtyGradTests: Input1DMSE1DCase
     func testSoftmaxGPU() throws
     {
         let trainer = _buildTrainer("Softmax")
+        run(trainer)
+    }
+    
+    func testLayerOutputCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("LayerOutput")
+        run(trainer)
+    }
+    
+    func testLayerOutputGPU() throws
+    {
+        let trainer = _buildTrainer("LayerOutput")
         run(trainer)
     }
 }
@@ -273,6 +289,9 @@ class Layer1DDirtyFlowTests: Input1DMSE1DCase
                 params: params
             )
             
+        case "LayerOutput":
+            secondLayer = MSE1D(layerPrev: layer, params: params)
+            
         default:
             fatalError("Unreachable.")
         }
@@ -328,6 +347,12 @@ class Layer1DDirtyFlowTests: Input1DMSE1DCase
     func testDotProduct() throws
     {
         let trainer = _buildTrainer("DotProduct")
+        run(trainer)
+    }
+    
+    func testLayerOutput() throws
+    {
+        let trainer = _buildTrainer("LayerOutput")
         run(trainer)
     }
 }

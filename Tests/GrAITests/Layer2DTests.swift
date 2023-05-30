@@ -394,6 +394,9 @@ class Layer2DGradTests: Input2DMSE1DCase
                 layerPrev: layer, probability: 0.0, params: params
             )
             
+        case "LayerOutput":
+            layer = MSE2D(layerPrev: layer, params: params)
+            
         default:
             fatalError("Unreachable.")
         }
@@ -1086,6 +1089,19 @@ class Layer2DGradTests: Input2DMSE1DCase
         let trainer = _buildTrainer(model: "FlipVertical2", bn: false)
         run(trainer)
     }
+    
+    func testLayerOutputCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "LayerOutput", bn: false)
+        run(trainer)
+    }
+    
+    func testLayerOutputGPU() throws
+    {
+        let trainer = _buildTrainer(model: "LayerOutput", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -1468,6 +1484,9 @@ class Layer2DFlowTests: Input2DMSE1DCase
                 layerPrev: layer, probability: 0.0, params: params
             )
             
+        case "LayerOutput":
+            layer = MSE2D(layerPrev: layer, params: params)
+            
         default:
             fatalError("Unreachable.")
         }
@@ -1842,6 +1861,12 @@ class Layer2DFlowTests: Input2DMSE1DCase
     func testFlipVertical2() throws
     {
         let trainer = _buildTrainer(model: "FlipVertical2", bn: false)
+        run(trainer)
+    }
+    
+    func testLayerOutput() throws
+    {
+        let trainer = _buildTrainer(model: "LayerOutput", bn: false)
         run(trainer)
     }
 }
@@ -2238,6 +2263,12 @@ class Layer2DFlowResetTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "FlipVertical2", bn: false)
         run(trainer)
     }
+    
+    override func testLayerOutput() throws
+    {
+        let trainer = _buildTrainer(model: "LayerOutput", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -2630,6 +2661,12 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
     override func testFlipVertical2() throws
     {
         let trainer = _buildTrainer(model: "FlipVertical2", bn: false)
+        run(trainer)
+    }
+    
+    override func testLayerOutput() throws
+    {
+        let trainer = _buildTrainer(model: "LayerOutput", bn: false)
         run(trainer)
     }
 }
@@ -3310,6 +3347,12 @@ class Layer2DInferenceTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "FlipVertical2", bn: false)
         run(trainer)
     }
+    
+    override func testLayerOutput() throws
+    {
+        let trainer = _buildTrainer(model: "LayerOutput", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -3697,6 +3740,12 @@ class Layer2DLoadTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "FlipVertical2", bn: false)
         run(trainer)
     }
+    
+    override func testLayerOutput() throws
+    {
+        let trainer = _buildTrainer(model: "LayerOutput", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -4082,6 +4131,12 @@ class Layer2DTransformTests: Layer2DFlowTests
     override func testFlipVertical2() throws
     {
         let trainer = _buildTrainer(model: "FlipVertical2", bn: false)
+        run(trainer)
+    }
+    
+    override func testLayerOutput() throws
+    {
+        let trainer = _buildTrainer(model: "LayerOutput", bn: false)
         run(trainer)
     }
 }

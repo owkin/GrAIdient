@@ -276,6 +276,9 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
                 layerPrev: layer, probability: 0.0, params: params
             )
             
+        case "LayerOutput":
+            secondLayer = MSE2D(layerPrev: layer, params: params)
+            
         default:
             fatalError("Unreachable.")
         }
@@ -642,6 +645,19 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
         let trainer = _buildTrainer(model: "FlipVertical2")
         run(trainer)
     }
+    
+    func testLayerOutputCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "LayerOutput")
+        run(trainer)
+    }
+    
+    func testLayerOutputGPU() throws
+    {
+        let trainer = _buildTrainer(model: "LayerOutput")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -926,6 +942,9 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
                 layerPrev: layer, probability: 0.0, params: params
             )
             
+        case "LayerOutput":
+            secondLayer = MSE2D(layerPrev: layer, params: params)
+            
         default:
             fatalError("Unreachable.")
         }
@@ -1114,6 +1133,12 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
     func testFlipVertical2() throws
     {
         let trainer = _buildTrainer(model: "FlipVertical2")
+        run(trainer)
+    }
+    
+    func testLayerOutput() throws
+    {
+        let trainer = _buildTrainer(model: "LayerOutput")
         run(trainer)
     }
 }

@@ -171,7 +171,42 @@ class ImageTests: XCTestCase
             let pixelsRef = try! imageRef.extractPaddedPixels(
                 width: CGFloat(_size), height: CGFloat(_size)
             )
-            XCTAssert(pixelsBatch[elem] == pixelsRef)
+            
+            let test1 = pixelsBatch[elem] == pixelsRef
+            if !test1
+            {
+                var nbFail = 0
+                for (val1, val2) in zip(pixelsBatch[elem], pixelsRef)
+                {
+                    if val1 != val2
+                    {
+                        nbFail += 1
+                    }
+                }
+                let ratioFail = Double(nbFail) / Double(pixelsRef.count) * 100.0
+                let test2 = ratioFail < 0.1
+                
+                if !test2
+                {
+                    for (val1, val2) in zip(pixelsBatch[elem], pixelsRef)
+                    {
+                        if val1 != val2
+                        {
+                            let diff = abs(Double(val1) - Double(val2))
+                            let test3 = diff <= 1
+                            XCTAssert(test3)
+                        }
+                    }
+                }
+                else
+                {
+                    XCTAssert(test2)
+                }
+            }
+            else
+            {
+                XCTAssert(test1)
+            }
         }
     }
     

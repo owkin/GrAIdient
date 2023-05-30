@@ -151,6 +151,9 @@ class Layer1DGradTests: Input1DMSE1DCase
                 layersPrev: [layer, otherLayer], params: params
             )
             
+        case "LayerOutput":
+            layer = MSE1D(layerPrev: layer, params: params)
+            
         default:
             fatalError("Unreachable.")
         }
@@ -279,6 +282,19 @@ class Layer1DGradTests: Input1DMSE1DCase
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer("Constant")
+        run(trainer)
+    }
+    
+    func testLayerOutputCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("LayerOutput")
+        run(trainer)
+    }
+    
+    func testLayerOutputGPU() throws
+    {
+        let trainer = _buildTrainer("LayerOutput")
         run(trainer)
     }
 }
@@ -420,6 +436,9 @@ class Layer1DFlowTests: Input1DMSE1DCase
                 layersPrev: [layer, otherLayer], params: params
             )
             
+        case "LayerOutput":
+            layer = MSE1D(layerPrev: layer, params: params)
+            
         default:
             fatalError("Unreachable.")
         }
@@ -492,6 +511,12 @@ class Layer1DFlowTests: Input1DMSE1DCase
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer("Constant")
+        run(trainer)
+    }
+    
+    func testLayerOutput() throws
+    {
+        let trainer = _buildTrainer("LayerOutput")
         run(trainer)
     }
 }
@@ -585,6 +610,12 @@ class Layer1DFlowResetTests: Layer1DFlowTests
         let trainer = _buildTrainer("Constant")
         run(trainer)
     }
+    
+    override func testLayerOutput() throws
+    {
+        let trainer = _buildTrainer("LayerOutput")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -674,6 +705,12 @@ class Layer1DFlowReverseTests: Layer1DFlowTests
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer("Constant")
+        run(trainer)
+    }
+    
+    override func testLayerOutput() throws
+    {
+        let trainer = _buildTrainer("LayerOutput")
         run(trainer)
     }
 }
@@ -855,6 +892,12 @@ class Layer1DInferenceTests: Layer1DFlowTests
         let trainer = _buildTrainer("Constant")
         run(trainer)
     }
+    
+    override func testLayerOutput() throws
+    {
+        let trainer = _buildTrainer("LayerOutput")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -939,6 +982,12 @@ class Layer1DLoadTests: Layer1DFlowTests
         let trainer = _buildTrainer("Constant")
         run(trainer)
     }
+    
+    override func testLayerOutput() throws
+    {
+        let trainer = _buildTrainer("LayerOutput")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -1021,6 +1070,12 @@ class Layer1DTransformTests: Layer1DFlowTests
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer("Constant")
+        run(trainer)
+    }
+    
+    override func testLayerOutput() throws
+    {
+        let trainer = _buildTrainer("LayerOutput")
         run(trainer)
     }
 }

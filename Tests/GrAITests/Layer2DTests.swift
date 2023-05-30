@@ -394,6 +394,9 @@ class Layer2DGradTests: Input2DMSE1DCase
                 layerPrev: layer, probability: 0.0, params: params
             )
             
+        case "LayerOutput":
+            layer = MSE2D(layerPrev: layer, params: params)
+            
         default:
             fatalError("Unreachable.")
         }
@@ -1086,6 +1089,19 @@ class Layer2DGradTests: Input2DMSE1DCase
         let trainer = _buildTrainer(model: "FlipVertical2", bn: false)
         run(trainer)
     }
+    
+    func testLayerOutputCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "LayerOutput", bn: false)
+        run(trainer)
+    }
+    
+    func testLayerOutputGPU() throws
+    {
+        let trainer = _buildTrainer(model: "LayerOutput", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -1468,6 +1484,9 @@ class Layer2DFlowTests: Input2DMSE1DCase
                 layerPrev: layer, probability: 0.0, params: params
             )
             
+        case "LayerOutput":
+            layer = MSE2D(layerPrev: layer, params: params)
+            
         default:
             fatalError("Unreachable.")
         }
@@ -1842,6 +1861,12 @@ class Layer2DFlowTests: Input2DMSE1DCase
     func testFlipVertical2() throws
     {
         let trainer = _buildTrainer(model: "FlipVertical2", bn: false)
+        run(trainer)
+    }
+    
+    func testLayerOutput() throws
+    {
+        let trainer = _buildTrainer(model: "LayerOutput", bn: false)
         run(trainer)
     }
 }
@@ -2238,6 +2263,12 @@ class Layer2DFlowResetTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "FlipVertical2", bn: false)
         run(trainer)
     }
+    
+    override func testLayerOutput() throws
+    {
+        let trainer = _buildTrainer(model: "LayerOutput", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -2630,6 +2661,12 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
     override func testFlipVertical2() throws
     {
         let trainer = _buildTrainer(model: "FlipVertical2", bn: false)
+        run(trainer)
+    }
+    
+    override func testLayerOutput() throws
+    {
+        let trainer = _buildTrainer(model: "LayerOutput", bn: false)
         run(trainer)
     }
 }
@@ -3310,6 +3347,12 @@ class Layer2DInferenceTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "FlipVertical2", bn: false)
         run(trainer)
     }
+    
+    override func testLayerOutput() throws
+    {
+        let trainer = _buildTrainer(model: "LayerOutput", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -3697,6 +3740,12 @@ class Layer2DLoadTests: Layer2DFlowTests
         let trainer = _buildTrainer(model: "FlipVertical2", bn: false)
         run(trainer)
     }
+    
+    override func testLayerOutput() throws
+    {
+        let trainer = _buildTrainer(model: "LayerOutput", bn: false)
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -4082,6 +4131,12 @@ class Layer2DTransformTests: Layer2DFlowTests
     override func testFlipVertical2() throws
     {
         let trainer = _buildTrainer(model: "FlipVertical2", bn: false)
+        run(trainer)
+    }
+    
+    override func testLayerOutput() throws
+    {
+        let trainer = _buildTrainer(model: "LayerOutput", bn: false)
         run(trainer)
     }
 }
@@ -4881,6 +4936,262 @@ class SimilarityBatchError2DLoadTests: SimilarityBatchError2DFlowTests
 // We expect to see errors ~ 1e-3 and less.
 // -----------------------------------------------------------------------------
 class SimilarityBatchError2DTransformTests: SimilarityBatchError2DFlowTests
+{
+    private func _buildTrainer() -> TransformTrainer
+    {
+        let trainer = TransformTrainer(
+            name: "Layer2D",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    override func test() throws
+    {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Gradient Checking
+// We expect to see errors ~ 1e-7 and less.
+// -----------------------------------------------------------------------------
+class SimilarityError2DGradTests: Input2DSimilarityError2DCase
+{
+    override func setUp()
+    {
+        super.setUp()
+        GrAI.Loop.gradientChecking = true
+    }
+    
+    private func _buildTrainer() -> GradTrainer
+    {
+        let trainer = GradTrainer(
+            name: "Layer2D",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            _buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    private func _buildModel(context: ModelContext)
+    {
+        let params = GrAI.Model.Params(context: context)
+        
+        let layer: Layer2D = Input2D(
+            nbChannels: 1, width: width, height: height, params: params
+        )
+        
+        var layer1, layer2: Layer2D
+        layer1 = Convolution2D(
+            layerPrev: layer, size: 1, nbChannels: 5, stride: 1,
+            activation: SoftReLU.str, biases: true, bn: false, params: params
+        )
+        layer1 = SelfCorrelate2D(layerPrev: layer1, params: params)
+        layer1 = Normalize122D(layerPrev: layer1, params: params)
+        
+        layer2 = Convolution2D(
+            layerPrev: layer, size: 1, nbChannels: 5, stride: 1,
+            activation: SoftReLU.str, biases: true, bn: false, params: params
+        )
+        layer2 = SelfCorrelate2D(layerPrev: layer2, params: params)
+        layer2 = Normalize122D(layerPrev: layer2, params: params)
+        
+        _ = SimilarityError2D(layersPrev: [layer1, layer2], params: params)
+    }
+    
+    func testCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+    
+    func testGPU() throws
+    {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU gradients with CPU ones through time.
+// We expect to see errors ~ 1e-7 and less.
+// -----------------------------------------------------------------------------
+class SimilarityError2DFlowTests: Input2DSimilarityError2DCase
+{
+    private func _buildTrainer() -> FlowTrainer
+    {
+        let trainer = FlowTrainer(
+            name: "Layer2D",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    func buildModel(context: ModelContext)
+    {
+        let params = GrAI.Model.Params(context: context)
+        
+        let layer: Layer2D = Input2D(
+            nbChannels: 1, width: width, height: height, params: params
+        )
+        
+        var layer1, layer2: Layer2D
+        layer1 = Convolution2D(
+            layerPrev: layer, size: 1, nbChannels: 5, stride: 1,
+            activation: ReLU.str, biases: true, bn: false, params: params
+        )
+        layer1 = SelfCorrelate2D(layerPrev: layer1, params: params)
+        layer1 = Normalize122D(layerPrev: layer1, params: params)
+        
+        layer2 = Convolution2D(
+            layerPrev: layer, size: 1, nbChannels: 5, stride: 1,
+            activation: ReLU.str, biases: true, bn: false, params: params
+        )
+        layer2 = SelfCorrelate2D(layerPrev: layer2, params: params)
+        layer2 = Normalize122D(layerPrev: layer2, params: params)
+        
+        _ = SimilarityError2D(layersPrev: [layer1, layer2], params: params)
+    }
+    
+    func test() throws
+    {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU gradients with CPU ones through time.
+// We expect to see errors ~ 1e-7 and less.
+// -----------------------------------------------------------------------------
+class SimilarityError2DFlowResetTests: SimilarityError2DFlowTests
+{
+    private func _buildTrainer() -> FlowResetTrainer
+    {
+        let trainer = FlowResetTrainer(
+            name: "Layer2D",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    override func test() throws
+    {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU gradients with CPU ones through time.
+// We expect to see errors ~ 1e-7 and less.
+// -----------------------------------------------------------------------------
+class SimilarityError2DFlowReverseTests: SimilarityError2DFlowTests
+{
+    private func _buildTrainer() -> FlowReverseTrainer
+    {
+        let trainer = FlowReverseTrainer(
+            name: "Layer2D",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    override func test() throws
+    {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU Loss in inference mode with CPU one.
+// We expect to see errors ~ 1e-3 and less.
+// -----------------------------------------------------------------------------
+class SimilarityError2DFlowInferenceTests: SimilarityError2DFlowTests
+{
+    private func _buildTrainer() -> InferenceTrainer
+    {
+        let trainer = InferenceTrainer(
+            name: "Layer2D",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    override func test() throws
+    {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU/CPU Losses in inference mode with the one obtained from a
+// loaded model.
+// We expect to see errors ~ 1e-3 and less.
+// -----------------------------------------------------------------------------
+class SimilarityError2DLoadTests: SimilarityError2DFlowTests
+{
+    private func _buildTrainer() -> LoadTrainer
+    {
+        let trainer = LoadTrainer(
+            name: "Layer2D",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    override func test() throws
+    {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU/CPU Losses in inference mode with the one obtained from a
+// transformed model.
+// We expect to see errors ~ 1e-3 and less.
+// -----------------------------------------------------------------------------
+class SimilarityError2DTransformTests: SimilarityError2DFlowTests
 {
     private func _buildTrainer() -> TransformTrainer
     {

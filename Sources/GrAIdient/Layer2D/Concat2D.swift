@@ -14,7 +14,7 @@
 public class Concat2D: LayerMerge2D
 {
     ///
-    /// Create a layer with a2D shape neural structure.
+    /// Create a layer with a 2D shape neural structure.
     ///
     /// - Parameters:
     ///     - layersPrev: List of previous layers that have been queued to the model.
@@ -310,7 +310,7 @@ public class Concat2D: LayerMerge2D
             let pNbChannelsPrev: [UInt32] = [UInt32(nbChannelsPrev)]
             
             command = metalKernel.createCommand(
-                "concat2DForward", deviceID: deviceID
+                "concat12DForward", deviceID: deviceID
             )
             command.setBuffer(
                 (_layersPrev[num] as! Layer2D).outs.metal, atIndex: 0
@@ -416,7 +416,7 @@ public class Concat2D: LayerMerge2D
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
             command = metalKernel.createCommand(
-                "concat2DBackward", deviceID: deviceID
+                "concat12DBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBytes(pGlobalOffset, atIndex: 1)

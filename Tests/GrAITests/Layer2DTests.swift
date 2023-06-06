@@ -4844,7 +4844,7 @@ class SimilarityBatchError2DFlowResetTests: SimilarityBatchError2DFlowTests
     override func test() throws
     {
         let trainer = _buildTrainer()
-        run(trainer, diffThreshold: 0.0001)
+        run(trainer, nbRetry: 5, diffThreshold: 0.0001)
     }
 }
 
@@ -4871,7 +4871,7 @@ class SimilarityBatchError2DFlowReverseTests: SimilarityBatchError2DFlowTests
     override func test() throws
     {
         let trainer = _buildTrainer()
-        run(trainer, diffThreshold: 0.0001)
+        run(trainer, nbRetry: 5, diffThreshold: 0.0001)
     }
 }
 

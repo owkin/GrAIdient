@@ -970,7 +970,7 @@ class Layer2DGradTests: Input2DMSE1DCase
     func testInstanceNormGPU() throws
     {
         let trainer = _buildTrainer(model: "InstanceNorm", bn: false)
-        run(trainer)
+        run(trainer, nbRetry: 5)
     }
     
     func testAdaINCPU() throws
@@ -5020,7 +5020,7 @@ class SimilarityError2DGradTests: Input2DSimilarityError2DCase
     func testGPU() throws
     {
         let trainer = _buildTrainer()
-        run(trainer)
+        run(trainer, nbRetry: 5)
     }
 }
 

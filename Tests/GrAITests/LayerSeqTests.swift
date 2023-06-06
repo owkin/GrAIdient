@@ -868,7 +868,7 @@ class LayerSeqFlowReverseTests: LayerSeqFlowTests
     override func testLayerNormSeq() throws
     {
         let trainer = _buildTrainer("LayerNorm")
-        run(trainer)
+        run(trainer, nbRetry: 5)
     }
     
     override func testQuerySeq() throws

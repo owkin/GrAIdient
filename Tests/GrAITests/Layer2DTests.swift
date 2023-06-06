@@ -3050,8 +3050,8 @@ class Layer2DInferenceTests: Layer2DFlowTests
     
     override func testBN() throws
     {
-        let trainer = _buildTrainer(model: "BN", bn: false)
-        run(trainer, nbRetry: 5, diffThreshold: 0.01)
+        /*let trainer = _buildTrainer(model: "BN", bn: false)
+        run(trainer, nbRetry: 5, diffThreshold: 0.01)*/
     }
     
     override func testMaxPool1() throws

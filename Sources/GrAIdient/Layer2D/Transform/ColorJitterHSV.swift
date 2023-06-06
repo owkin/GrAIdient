@@ -90,13 +90,6 @@ public class ColorJitterHSV: Layer2D
         _rangeS = rangeS
         _rangeV = rangeV
         
-        if rangeH.min < 0 || rangeH.max > 360 ||
-           rangeS.min < 0 || rangeS.max > 1 ||
-           rangeV.min < 0 || rangeV.max > 1
-        {
-            fatalError()
-        }
-        
         let width = layerPrev.width
         let height = layerPrev.height
         let nbChannels = layerPrev.nbChannels

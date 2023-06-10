@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🔨 **layer_2d:** expose indices in VQ2D ([#99](https://github.com/owkin/GrAIdient/pull/99))\
 🪜 **layer_2d:** loosen range contraint in ColorJitterHSV ([#98](https://github.com/owkin/GrAIdient/pull/98))\
 🪜 **layer_2d:** SimilarityError2D & dirty losses ([#97](https://github.com/owkin/GrAIdient/pull/97))\
 🔨 **core:** LayerWeightInit ([#96](https://github.com/owkin/GrAIdient/pull/96))\

@@ -20,7 +20,7 @@ public class VQ2D: Layer2D, LayerWeightInit
     /// Indices of maximal elements.
     /// Shape ~ (batch, height, width).
     ///
-    var _indices: MetalBuffer<Int32>! = nil
+    public var indices: MetalBuffer<Int32>! = nil
     
     ///
     /// Grid of weights.
@@ -242,7 +242,7 @@ public class VQ2D: Layer2D, LayerWeightInit
     {
         super.resetKernelCPU()
         _wArrays?.reset()
-        _indices = nil
+        indices = nil
     }
     
     ///
@@ -256,7 +256,7 @@ public class VQ2D: Layer2D, LayerWeightInit
     {
         super.resetKernelGPU()
         
-        _indices = nil
+        indices = nil
         _wDeltaWeights = nil
         _wBuffers?.reset()
     }
@@ -321,9 +321,9 @@ public class VQ2D: Layer2D, LayerWeightInit
     {
         try super.checkStateCPU(batchSize: batchSize)
         
-        if _indices == nil
+        if indices == nil
         {
-            _indices = MetalSharedBuffer<Int32>(
+            indices = MetalSharedBuffer<Int32>(
                 batchSize * height * width,
                 deviceID: deviceID
             )
@@ -348,9 +348,9 @@ public class VQ2D: Layer2D, LayerWeightInit
             )
         }
         
-        if _indices == nil
+        if indices == nil
         {
-            _indices = MetalPrivateBuffer<Int32>(
+            indices = MetalPrivateBuffer<Int32>(
                 batchSize * height * width,
                 deviceID: deviceID
             )
@@ -369,7 +369,7 @@ public class VQ2D: Layer2D, LayerWeightInit
             try checkStateCPU(batchSize: batchSize)
             
             let neuronsPrev = layerPrev.neurons
-            let indicesPtr = (_indices as! MetalSharedBuffer<Int32>).buffer
+            let indicesPtr = (indices as! MetalSharedBuffer<Int32>).buffer
             
             for elem in 0..<batchSize {
             for i in 0..<height {
@@ -437,7 +437,7 @@ public class VQ2D: Layer2D, LayerWeightInit
             command.setBytes(pK, atIndex: 4)
             command.setBytes(pNbBatch, atIndex: 5)
             command.setBuffer(outs.metal, atIndex: 6)
-            command.setBuffer(_indices.metal, atIndex: 7)
+            command.setBuffer(indices.metal, atIndex: 7)
             
             command.dispatchThreads(
                 width: height * width,
@@ -459,7 +459,7 @@ public class VQ2D: Layer2D, LayerWeightInit
         if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
             let neuronsPrev = layerPrev.neurons
-            let indicesPtr = (_indices as! MetalSharedBuffer<Int32>).buffer
+            let indicesPtr = (indices as! MetalSharedBuffer<Int32>).buffer
             
             for elem in 0..<batchSize {
             for i in 0..<height {
@@ -498,7 +498,7 @@ public class VQ2D: Layer2D, LayerWeightInit
         {
             let neuronsPrev = layerPrev.neurons
             let coeff = batchSize * height * width
-            let indicesPtr = (_indices as! MetalSharedBuffer<Int32>).buffer
+            let indicesPtr = (indices as! MetalSharedBuffer<Int32>).buffer
             
             if !accumulateDeltaWeights
             {
@@ -560,7 +560,7 @@ public class VQ2D: Layer2D, LayerWeightInit
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBuffer(delta.metal, atIndex: 1)
             command.setBuffer(_wBuffers.w.metal, atIndex: 2)
-            command.setBuffer(_indices.metal, atIndex: 3)
+            command.setBuffer(indices.metal, atIndex: 3)
             command.setBytes(pNbChannels, atIndex: 4)
             command.setBytes(pDimensions, atIndex: 5)
             command.setBytes(pK, atIndex: 6)
@@ -615,7 +615,7 @@ public class VQ2D: Layer2D, LayerWeightInit
                 )
                 command.setBuffer(layerPrev.outs.metal, atIndex: 0)
                 command.setBuffer(_wBuffers.w.metal, atIndex: 1)
-                command.setBuffer(_indices.metal, atIndex: 2)
+                command.setBuffer(indices.metal, atIndex: 2)
                 command.setBytes(pNbChannels, atIndex: 3)
                 command.setBytes(pDimensions, atIndex: 4)
                 command.setBytes(pK, atIndex: 5)
@@ -647,7 +647,7 @@ public class VQ2D: Layer2D, LayerWeightInit
                 )
                 command.setBuffer(layerPrev.outs.metal, atIndex: 0)
                 command.setBuffer(_wBuffers.w.metal, atIndex: 1)
-                command.setBuffer(_indices.metal, atIndex: 2)
+                command.setBuffer(indices.metal, atIndex: 2)
                 command.setBytes(pNbChannels, atIndex: 3)
                 command.setBytes(pDimensions, atIndex: 4)
                 command.setBytes(pK, atIndex: 5)

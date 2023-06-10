@@ -11,7 +11,7 @@ import Foundation
 public class VQ2D: Layer2D, LayerWeightInit
 {
     /// The number of vector approximations.
-    let _K: Int
+    public let K: Int
     
     /// Coefficient for commitment.
     public var beta: Double
@@ -59,7 +59,7 @@ public class VQ2D: Layer2D, LayerWeightInit
             }
             
             var weightsTmp = [Float]()
-            for k in 0..<_K {
+            for k in 0..<K {
             for depth in 0..<nbChannels
             {
                 weightsTmp.append(Float(_wArrays.w(k, depth)))
@@ -98,7 +98,7 @@ public class VQ2D: Layer2D, LayerWeightInit
     public var connectivityIO: (Int, Int)
     {
         get {
-            return (nbChannels, _K)
+            return (nbChannels, K)
         }
     }
     
@@ -123,7 +123,7 @@ public class VQ2D: Layer2D, LayerWeightInit
                 beta: Double,
                 params: GrAI.Model.Params)
     {
-        _K = K
+        self.K = K
         self.beta = beta
         super.init(
             layerPrev: layerPrev,
@@ -146,7 +146,7 @@ public class VQ2D: Layer2D, LayerWeightInit
     {
         let values = try decoder.container(keyedBy: Keys.self)
         
-        _K = try values.decode(Int.self, forKey: .K)
+        K = try values.decode(Int.self, forKey: .K)
         beta = try values.decode(Double.self, forKey: .beta)
         
         try super.init(from: decoder)
@@ -170,7 +170,7 @@ public class VQ2D: Layer2D, LayerWeightInit
     {
         var container = encoder.container(keyedBy: Keys.self)
         
-        try container.encode(_K, forKey: .K)
+        try container.encode(K, forKey: .K)
         try container.encode(beta, forKey: .beta)
         
         let weightsList: [Float]
@@ -210,7 +210,7 @@ public class VQ2D: Layer2D, LayerWeightInit
         params.context.curID = id
             
         let layer = VQ2D(
-            layerPrev: layerPrev, K: _K, beta: beta, params: params
+            layerPrev: layerPrev, K: K, beta: beta, params: params
         )
         if inPlace
         {
@@ -273,9 +273,9 @@ public class VQ2D: Layer2D, LayerWeightInit
             _weightsList = generateWeightsList()
         }
         
-        _wArrays = WeightGrids(width: nbChannels, height: _K)
+        _wArrays = WeightGrids(width: nbChannels, height: K)
         
-        for k in 0..<_K {
+        for k in 0..<K {
         for depth in 0..<nbChannels
         {
             let offset = depth + nbChannels * k
@@ -297,12 +297,12 @@ public class VQ2D: Layer2D, LayerWeightInit
         }
         
         _wBuffers = WeightBuffers(
-            nbElems: _K * nbChannels,
+            nbElems: K * nbChannels,
             deviceID: deviceID
         )
         
         let weightsPtr = _wBuffers.w_p!.shared.buffer
-        for elem in 0..<_K * nbChannels
+        for elem in 0..<K * nbChannels
         {
             weightsPtr[elem] = _weightsList[elem]
         }
@@ -344,7 +344,7 @@ public class VQ2D: Layer2D, LayerWeightInit
            GrAI.Gradient.sample && _wDeltaWeights == nil
         {
             _wDeltaWeights = MetalPrivateBuffer<Float>(
-                batchSize * _K * nbChannels, deviceID: deviceID
+                batchSize * K * nbChannels, deviceID: deviceID
             )
         }
         
@@ -378,7 +378,7 @@ public class VQ2D: Layer2D, LayerWeightInit
                 var minIndex = -1
                 var minValue: Double? = nil
                 
-                for k in 0..<_K
+                for k in 0..<K
                 {
                     var value: Double = 0.0
                     for depth in 0..<nbChannels
@@ -425,7 +425,7 @@ public class VQ2D: Layer2D, LayerWeightInit
             let pNbChannels: [UInt32] = [UInt32(nbChannels)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
-            let pK: [UInt32] = [UInt32(_K)]
+            let pK: [UInt32] = [UInt32(K)]
             
             let command = MetalKernel.get.createCommand(
                 "vq2DForward", deviceID: deviceID
@@ -502,7 +502,7 @@ public class VQ2D: Layer2D, LayerWeightInit
             
             if !accumulateDeltaWeights
             {
-                for k in 0..<_K {
+                for k in 0..<K {
                 for depth in 0..<nbChannels
                 {
                     _wArrays.g(k, depth, 0.0)
@@ -550,7 +550,7 @@ public class VQ2D: Layer2D, LayerWeightInit
             let pNbChannels: [UInt32] = [UInt32(nbChannels)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
-            let pK: [UInt32] = [UInt32(_K)]
+            let pK: [UInt32] = [UInt32(K)]
             let pBeta: [Float] = [Float(beta)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
@@ -586,7 +586,7 @@ public class VQ2D: Layer2D, LayerWeightInit
             let pNbChannels: [UInt32] = [UInt32(nbChannels)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
-            let pK: [UInt32] = [UInt32(_K)]
+            let pK: [UInt32] = [UInt32(K)]
             let pAccumulate: [UInt32] = accumulateDeltaWeights ? [1] : [0]
             
             var command: MetalCommand
@@ -622,7 +622,7 @@ public class VQ2D: Layer2D, LayerWeightInit
                 command.setBytes(pNbBatch, atIndex: 6)
                 command.setBuffer(_wBuffers.g.metal, atIndex: 7)
                 
-                command.dispatchThreads(width: nbChannels, height: _K)
+                command.dispatchThreads(width: nbChannels, height: K)
                 command.enqueue()
             }
             else
@@ -656,7 +656,7 @@ public class VQ2D: Layer2D, LayerWeightInit
                 
                 command.dispatchThreads(
                     width: nbChannels,
-                    height: batchSize * _K
+                    height: batchSize * K
                 )
                 command.enqueue()
                 
@@ -673,7 +673,7 @@ public class VQ2D: Layer2D, LayerWeightInit
                 command.setBytes(pAccumulate, atIndex: 4)
                 command.setBuffer(_wBuffers.g.metal, atIndex: 5)
                 
-                command.dispatchThreads(width: nbChannels, height: _K)
+                command.dispatchThreads(width: nbChannels, height: K)
                 command.enqueue()
             }
         }

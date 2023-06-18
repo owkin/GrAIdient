@@ -45,9 +45,6 @@ kernel void vq2DForward(
         return ;
     }
     
-    uint offsetStart = (0 + nbChannels * elem) * height;
-    uint offset = j + (offsetStart + i) * width;
-    
     int minIndex = -1;
     float minValue = 0.0;
     for (uint k=0; k<K; k++)
@@ -55,8 +52,8 @@ kernel void vq2DForward(
         float value = 0.0;
         for (uint depth=0; depth<nbChannels; depth++)
         {
-            offsetStart = (depth + nbChannels * elem) * height;
-            offset = j + (offsetStart + i) * width;
+            uint offsetStart = (depth + nbChannels * elem) * height;
+            uint offset = j + (offsetStart + i) * width;
             
             uint offsetWeights = depth + nbChannels * k;
             
@@ -77,8 +74,8 @@ kernel void vq2DForward(
     {
         for (uint depth=0; depth<nbChannels; depth++)
         {
-            offsetStart = (depth + nbChannels * elem) * height;
-            offset = j + (offsetStart + i) * width;
+            uint offsetStart = (depth + nbChannels * elem) * height;
+            uint offset = j + (offsetStart + i) * width;
             
             uint offsetWeights = depth + nbChannels * minIndex;
             outs[offset] = weights[offsetWeights];

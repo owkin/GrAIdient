@@ -207,5 +207,11 @@ let CONFIG_KERNELS =
         "vq2DBatchDerWeights",
         "vq2DDerWeights",
         "vq2DReduceWeights"
+    ],
+    "VQSeq": [
+        "vqSeqForward",
+        "vqSeqBackward",
+        "vqSeqBatchDerWeights",
+        "vqSeqDerWeights"
     ]
 ]

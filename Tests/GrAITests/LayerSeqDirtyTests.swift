@@ -273,6 +273,11 @@ class LayerSeqDirtyFlowTests: Input2DMSE1DCase
                 activation: LeakyReLU.str, biases: true, params: params
             )
             
+        case "VQ":
+            secondLayer = VQSeq(
+                layerPrev: layerSeq, K: 5, beta: 0.25, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -342,6 +347,19 @@ class LayerSeqDirtyFlowTests: Input2DMSE1DCase
     func testValueScoreSeq() throws
     {
         let trainer = _buildTrainer("ValueScore")
+        run(trainer)
+    }
+    
+    func testVQ() throws
+    {
+        let trainer = _buildTrainer("VQ")
+        run(trainer)
+    }
+    
+    func testVQSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("VQ")
         run(trainer)
     }
 }

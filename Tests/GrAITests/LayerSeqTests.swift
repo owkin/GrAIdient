@@ -556,6 +556,15 @@ class LayerSeqFlowTests: Input2DMSE1DCase
                 value: otherLayer, score: layerSeq, nbHeads: 2, params: params
             )
             
+        case "VQ":
+            layerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = VQSeq(
+                layerPrev: layerSeq, K: 5, beta: 0.25, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -654,6 +663,19 @@ class LayerSeqFlowTests: Input2DMSE1DCase
     func testValueSeq() throws
     {
         let trainer = _buildTrainer("Value")
+        run(trainer)
+    }
+    
+    func testVQ() throws
+    {
+        let trainer = _buildTrainer("VQ")
+        run(trainer)
+    }
+    
+    func testVQSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("VQ")
         run(trainer)
     }
 }
@@ -772,6 +794,19 @@ class LayerSeqFlowResetTests: LayerSeqFlowTests
         let trainer = _buildTrainer("Value")
         run(trainer)
     }
+    
+    override func testVQ() throws
+    {
+        let trainer = _buildTrainer("VQ")
+        run(trainer)
+    }
+    
+    override func testVQSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("VQ")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -888,6 +923,19 @@ class LayerSeqFlowReverseTests: LayerSeqFlowTests
         let trainer = _buildTrainer("Value")
         run(trainer)
     }
+    
+    override func testVQ() throws
+    {
+        let trainer = _buildTrainer("VQ")
+        run(trainer)
+    }
+    
+    override func testVQSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("VQ")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -981,6 +1029,15 @@ class LayerSeqFlowAccumulateTests: Input2DMSE1DCase
                 layerPrev: layerSeq, activation: nil, params: params
             )
             
+        case "VQ":
+            layerSeq = FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = VQSeq(
+                layerPrev: layerSeq, K: 5, beta: 0.25, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -1043,6 +1100,19 @@ class LayerSeqFlowAccumulateTests: Input2DMSE1DCase
     func testLayerNormSeq() throws
     {
         let trainer = _buildTrainer("LayerNorm")
+        run(trainer)
+    }
+    
+    func testVQ() throws
+    {
+        let trainer = _buildTrainer("VQ")
+        run(trainer)
+    }
+    
+    func testVQSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("VQ")
         run(trainer)
     }
 }
@@ -1153,6 +1223,19 @@ class LayerSeqInferenceTests: LayerSeqFlowTests
         let trainer = _buildTrainer("Value")
         run(trainer)
     }
+    
+    override func testVQ() throws
+    {
+        let trainer = _buildTrainer("VQ")
+        run(trainer)
+    }
+    
+    override func testVQSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("VQ")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -1260,6 +1343,19 @@ class LayerSeqLoadTests: LayerSeqFlowTests
     override func testValueSeq() throws
     {
         let trainer = _buildTrainer("Value")
+        run(trainer)
+    }
+    
+    override func testVQ() throws
+    {
+        let trainer = _buildTrainer("VQ")
+        run(trainer)
+    }
+    
+    override func testVQSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("VQ")
         run(trainer)
     }
 }
@@ -1413,6 +1509,19 @@ class LayerSeqTransformTests: LayerSeqFlowTests
     override func testValueSeq() throws
     {
         let trainer = _buildTrainer("Value")
+        run(trainer)
+    }
+    
+    override func testVQ() throws
+    {
+        let trainer = _buildTrainer("VQ")
+        run(trainer)
+    }
+    
+    override func testVQSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("VQ")
         run(trainer)
     }
 }

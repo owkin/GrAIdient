@@ -245,8 +245,8 @@ public class BCE1D: LayerOutput1D
                 
                 for depth in 0..<nbNeurons
                 {
-                    let out = T(neurons.get(depth)!.v[elem].out)
-                    let derivative: T
+                    let out = neurons.get(depth)!.v[elem].out
+                    let derivative: Double
                     
                     if gt[depth] == 1.0
                     {
@@ -264,13 +264,13 @@ public class BCE1D: LayerOutput1D
                     if layerPrev.dirty
                     {
                         neuronsPrev.get(depth)!.v[elem].delta =
-                            coeff * Double(derivative) /
+                            coeff * derivative /
                             Double(nbNeurons * batchSize)
                     }
                     else
                     {
                         neuronsPrev.get(depth)!.v[elem].delta +=
-                            coeff * Double(derivative) /
+                            coeff * derivative /
                             Double(nbNeurons * batchSize)
                     }
                 }

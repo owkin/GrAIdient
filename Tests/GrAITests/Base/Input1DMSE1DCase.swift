@@ -13,7 +13,7 @@ import GrAITestsUtils
 /// A class that will test a model with a structural hypothesis:
 /// the model last layer is a MSE1D layer, the model first layer is a Input1D.
 ///
-class Input1DMSE1DCase: XCTestCase, IOCase
+class Input1DMSE1DCase: XCTestCase, Input1DCase, IOCase
 {
     /// Batch size of data.
     var batchSize: Int = -1
@@ -132,48 +132,5 @@ class Input1DMSE1DCase: XCTestCase, IOCase
             try! firstLayer.setDataCPU(ins)
         }
         return (ins, ins.count)
-    }
-    
-    ///
-    /// Copy a model.
-    ///
-    /// We must call the `initKernel` API.
-    ///
-    /// - Parameter model: The model.
-    /// - Returns: The transformed model.
-    ///
-    func copy(_ model: Model) -> Model
-    {
-        let modelNew = Model.copy(models: [model], inPlace: false)[0]
-        modelNew.initialize(
-            params: optimizerParams,
-            phase: .Inference,
-            deviceID: DEVICE_ID
-        )
-        return modelNew
-    }
-    
-    ///
-    /// Copy a model in place.
-    ///
-    /// No need to call the `initKernel` API.
-    ///
-    /// - Parameter model: The model.
-    /// - Returns: The transformed model.
-    ///
-    func copyInPlace(_ model: Model) -> Model
-    {
-        let modelNew = Model.copy(models: [model], inPlace: true)[0]
-        modelNew.setupOptimizers(params: optimizerParams)
-        modelNew.phase = .Inference
-        return modelNew
-    }
-    
-    /// A list of functions that transform the model into another one.
-    var transforms: [(Model) -> Model]
-    {
-        get {
-            return [copy, copyInPlace]
-        }
     }
 }

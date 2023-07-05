@@ -410,3 +410,166 @@ extension IOCase
         )
     }
 }
+
+/// Use case where first layer is an Input1D.
+protocol Input1DCase
+{
+    /// Optimizer parameters.
+    var optimizerParams: GrAI.Optimizer.Params { get }
+}
+
+extension Input1DCase
+{
+    ///
+    /// Copy a model.
+    ///
+    /// We must call the `initKernel` API.
+    ///
+    /// - Parameter model: The model.
+    /// - Returns: The transformed model.
+    ///
+    func copy(_ model: Model) -> Model
+    {
+        let modelNew = Model.copy(models: [model], inPlace: false)[0]
+        modelNew.initialize(
+            params: optimizerParams,
+            phase: .Inference,
+            deviceID: DEVICE_ID
+        )
+        return modelNew
+    }
+    
+    ///
+    /// Copy a model in place.
+    ///
+    /// No need to call the `initKernel` API.
+    ///
+    /// - Parameter model: The model.
+    /// - Returns: The transformed model.
+    ///
+    func copyInPlace(_ model: Model) -> Model
+    {
+        let modelNew = Model.copy(models: [model], inPlace: true)[0]
+        modelNew.setupOptimizers(params: optimizerParams)
+        modelNew.phase = .Inference
+        return modelNew
+    }
+    
+    /// A list of functions that transform the model into another one.
+    var transforms: [(Model) -> Model]
+    {
+        get {
+            return [copy, copyInPlace]
+        }
+    }
+}
+
+/// Use case where first layer is an Input2D.
+protocol Input2DCase
+{
+    /// Height of the Input2D layer.
+    var height: Int { get }
+    /// Width of the Input2D layer.
+    var width: Int { get }
+    
+    /// Batch size of data.
+    var batchSize: Int { get }
+    /// Optimizer parameters.
+    var optimizerParams: GrAI.Optimizer.Params { get }
+}
+
+extension Input2DCase
+{
+    ///
+    /// Copy a model.
+    ///
+    /// We must call the `initKernel` API.
+    ///
+    /// - Parameter model: The model.
+    /// - Returns: The transformed model.
+    ///
+    func copy(_ model: Model) -> Model
+    {
+        let modelNew = Model.copy(models: [model], inPlace: false)[0]
+        modelNew.initialize(
+            params: optimizerParams,
+            phase: .Inference,
+            deviceID: DEVICE_ID
+        )
+        return modelNew
+    }
+    
+    ///
+    /// Copy a model in place.
+    ///
+    /// No need to call the `initKernel` API.
+    ///
+    /// - Parameter model: The model.
+    /// - Returns: The transformed model.
+    ///
+    func copyInPlace(_ model: Model) -> Model
+    {
+        let modelNew = Model.copy(models: [model], inPlace: true)[0]
+        modelNew.setupOptimizers(params: optimizerParams)
+        modelNew.phase = .Inference
+        return modelNew
+    }
+    
+    ///
+    /// Resize a model.
+    ///
+    /// We must call the `initKernel` API.
+    ///
+    /// - Parameter model: The model.
+    /// - Returns: The transformed model.
+    ///
+    func resize(_ model: Model) -> Model
+    {
+        let modelsNew = Model.resize(models: [model],
+                                     imageWidth: 2 * width,
+                                     imageHeight: 2 * height,
+                                     inPlace: false)
+        let modelNew = Model.resize(models: modelsNew,
+                                    imageWidth: width,
+                                    imageHeight: height,
+                                    inPlace: false)[0]
+        modelNew.initialize(
+            params: optimizerParams,
+            phase: .Inference,
+            deviceID: DEVICE_ID
+        )
+        return modelNew
+    }
+    
+    ///
+    /// Resize a model in place.
+    ///
+    /// No need to call the `initKernel` API.
+    ///
+    /// - Parameter model: The model.
+    /// - Returns: The transformed model.
+    ///
+    func resizeInPlace(_ model: Model) -> Model
+    {
+        let modelsNew = Model.resize(models: [model],
+                                     imageWidth: 2 * width,
+                                     imageHeight: 2 * height,
+                                     inPlace: true)
+        let modelNew = Model.resize(models: modelsNew,
+                                    imageWidth: width,
+                                    imageHeight: height,
+                                    inPlace: true)[0]
+        modelNew.updateKernel(batchSize: batchSize)
+        modelNew.setupOptimizers(params: optimizerParams)
+        modelNew.phase = .Inference
+        return modelNew
+    }
+    
+    /// A list of functions that transform the model into another one.
+    var transforms: [(Model) -> Model]
+    {
+        get {
+            return [copy, copyInPlace, resize, resizeInPlace]
+        }
+    }
+}

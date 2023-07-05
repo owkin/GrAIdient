@@ -7,6 +7,25 @@
 
 import Foundation
 
+/// Error occuring in an output layer.
+public enum LossError: Error
+{
+    /// Ground truth has an unexected value.
+    case GroundTruthValue
+}
+
+extension LossError: CustomStringConvertible
+{
+    public var description: String
+    {
+        switch self
+        {
+        case .GroundTruthValue:
+            return "Ground truth has an unexpected value."
+        }
+    }
+}
+
 /// Running phase of a model.
 public enum Phase
 {

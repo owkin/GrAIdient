@@ -142,7 +142,7 @@ final class AutoEncoderExample: XCTestCase
     }
     
     ///
-    /// Build a style controler branch.
+    /// Build a style controller branch.
     ///
     /// - Parameters:
     ///     - layersPrev: A tuple of layers at different image resolutions.

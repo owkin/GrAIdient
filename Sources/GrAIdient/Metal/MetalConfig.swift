@@ -95,6 +95,8 @@ let CONFIG_KERNELS =
         "dotProduct1DForward",
         "dotProduct1DBackward",
         "constant1DForward",
+        "BCE1DLoss",
+        "BCE1DLossDerivative",
     ],
     "Layer2D": [
         "avgPoolForward",

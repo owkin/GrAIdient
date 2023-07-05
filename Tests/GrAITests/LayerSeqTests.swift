@@ -1376,7 +1376,7 @@ class LayerSeqTransformTests: LayerSeqFlowTests
     ///     - nbRetry: The maximum number we can retry the test.
     ///     - diffThreshold: The threshold above which the relative difference is too high.
     ///
-    override func run(
+    func run(
         _ trainer: TransformTrainer,
         nbRetry: Int = NB_RETRY,
         diffThreshold: Double = 0.001)
@@ -1792,7 +1792,7 @@ class SelectSeqTransformTests: SelectSeqFlowTests
     ///     - nbRetry: The maximum number we can retry the test.
     ///     - diffThreshold: The threshold above which the relative difference is too high.
     ///
-    override func run(
+    func run(
         _ trainer: TransformTrainer,
         nbRetry: Int = NB_RETRY,
         diffThreshold: Double = 0.001)

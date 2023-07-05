@@ -3370,12 +3370,12 @@ kernel void BCE2DLossDerivative(
     
     if (dirty)
     {
-        deltaPrev[offset] = 2 * coeff * diff /
+        deltaPrev[offset] = coeff * derivative /
             float(nbBatch * nbChannels * height * width);
     }
     else
     {
-        deltaPrev[offset] += 2 * coeff * diff /
+        deltaPrev[offset] += coeff * derivative /
             float(nbBatch * nbChannels * height * width);
     }
 }

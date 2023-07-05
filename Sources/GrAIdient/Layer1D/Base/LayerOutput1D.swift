@@ -8,7 +8,7 @@
 /// Loss layer of a model with a 1D shape neural structure.
 open class LayerOutput1D: Layer1D
 {
-    /// Coefficient to be applied to the loss compuptation.
+    /// Coefficient to be applied to the loss computation.
     public var coeff: Double = 1.0
     
     ///

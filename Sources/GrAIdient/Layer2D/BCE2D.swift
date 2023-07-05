@@ -382,13 +382,13 @@ public class BCE2D: LayerOutput2D
                         if layerPrev.dirty
                         {
                             neuronsPrev[depth].get(i, j)!.v[elem].delta =
-                                2 * coeff * derivative /
+                                coeff * derivative /
                                 Double(batchSize * nbChannels * height * width)
                         }
                         else
                         {
                             neuronsPrev[depth].get(i, j)!.v[elem].delta +=
-                                2 * coeff * derivative /
+                                coeff * derivative /
                                 Double(batchSize * nbChannels * height * width)
                         }
                     }}

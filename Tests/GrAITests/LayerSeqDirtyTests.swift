@@ -274,9 +274,8 @@ class LayerSeqDirtyFlowTests: Input2DMSE1DCase
             )
             
         case "VQ":
-            secondLayer = VQSeq(
-                layerPrev: layerSeq, K: 5, beta: 0.25, params: params
-            )
+            secondLayer = VQSeq(layerPrev: layerSeq, K: 5, params: params)
+            (secondLayer as! VQSeq).beta = 0.25
             
         default:
             fatalError("Unreachable.")

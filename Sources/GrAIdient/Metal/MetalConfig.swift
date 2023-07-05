@@ -210,12 +210,14 @@ let CONFIG_KERNELS =
         "vq2DBackward",
         "vq2DBatchDerWeights",
         "vq2DDerWeights",
-        "vq2DReduceWeights"
+        "vq2DReduceWeights",
+        "vq2DLoss"
     ],
     "VQSeq": [
         "vqSeqForward",
         "vqSeqBackward",
         "vqSeqBatchDerWeights",
-        "vqSeqDerWeights"
+        "vqSeqDerWeights",
+        "vqSeqLoss"
     ]
 ]

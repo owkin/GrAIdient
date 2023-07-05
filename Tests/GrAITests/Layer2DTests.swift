@@ -1433,7 +1433,8 @@ class Layer2DFlowTests: Input2DMSE1DCase
             )
             
         case "VQ":
-            layer = VQ2D(layerPrev: layer, K: 5, beta: 0.25, params: params)
+            layer = VQ2D(layerPrev: layer, K: 5, params: params)
+            (layer as! VQ2D).beta = 0.25
             
         case "ResizeBilinear1":
             layer = ResizeBilinear(
@@ -2781,7 +2782,8 @@ class Layer2DFlowAccumulateTests: Input2DMSE1DCase
             )
             
         case "VQ":
-            layer = VQ2D(layerPrev: layer, K: 5, beta: 0.25, params: params)
+            layer = VQ2D(layerPrev: layer, K: 5, params: params)
+            (layer as! VQ2D).beta = 0.25
             
         default:
             fatalError("Unreachable.")

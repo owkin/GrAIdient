@@ -7,14 +7,37 @@
 
 import Foundation
 
+/// Error occuring during the layer forward or backward propagation.
+public enum VQError: Error
+{
+    /// Could not find a positive index value.
+    case IndexValue
+    /// Call to loss API is redundant.
+    case RedundantLoss
+}
+
+extension VQError: CustomStringConvertible
+{
+    public var description: String
+    {
+        switch self
+        {
+        case .IndexValue:
+            return "Could not find a positive index value."
+        case .RedundantLoss:
+            return "Call to loss API is redundant."
+        }
+    }
+}
+
 /// Layer with a 2D shape neural structure and weights.
-public class VQ2D: Layer2D, LayerWeightInit
+public class VQ2D: LayerOutput2D, LayerWeightInit
 {
     /// The number of vector approximations.
     public let K: Int
     
     /// Coefficient for commitment.
-    public var beta: Double
+    public var beta: Double = 1.0
     
     ///
     /// Indices of maximal elements.
@@ -115,23 +138,14 @@ public class VQ2D: Layer2D, LayerWeightInit
     /// - Parameters:
     ///     - layerPrev: Previous layer that has been queued to the model.
     ///     - K: The number of vector approximations.
-    ///     - beta: Coefficient for commitment.
     ///     - params: Contextual parameters linking to the model.
     ///
     public init(layerPrev: Layer2D,
                 K: Int,
-                beta: Double,
                 params: GrAI.Model.Params)
     {
         self.K = K
-        self.beta = beta
-        super.init(
-            layerPrev: layerPrev,
-            nbChannels: layerPrev.nbChannels,
-            height: layerPrev.height,
-            width: layerPrev.width,
-            params: params
-        )
+        super.init(layerPrev: layerPrev, params: params)
     }
     
     ///
@@ -147,7 +161,7 @@ public class VQ2D: Layer2D, LayerWeightInit
         let values = try decoder.container(keyedBy: Keys.self)
         
         K = try values.decode(Int.self, forKey: .K)
-        beta = try values.decode(Double.self, forKey: .beta)
+        beta = try Double(values.decode(Float.self, forKey: .beta))
         
         try super.init(from: decoder)
         
@@ -171,7 +185,7 @@ public class VQ2D: Layer2D, LayerWeightInit
         var container = encoder.container(keyedBy: Keys.self)
         
         try container.encode(K, forKey: .K)
-        try container.encode(beta, forKey: .beta)
+        try container.encode(Float(beta), forKey: .beta)
         
         let weightsList: [Float]
         if GrAI.Opti.GPU
@@ -210,8 +224,11 @@ public class VQ2D: Layer2D, LayerWeightInit
         params.context.curID = id
             
         let layer = VQ2D(
-            layerPrev: layerPrev, K: K, beta: beta, params: params
+            layerPrev: layerPrev, K: K, params: params
         )
+        layer.coeff = coeff
+        layer.beta = beta
+        
         if inPlace
         {
             layer._wArrays = _wArrays
@@ -358,6 +375,44 @@ public class VQ2D: Layer2D, LayerWeightInit
     }
     
     ///
+    /// Setup groundTruth state in the GPU execution context.
+    ///
+    /// Throw an error if batch size or ground truth are incoherent.
+    ///
+    /// - Parameters:
+    ///     - groundTruth: The ground truth.
+    ///     - batchSize: The batch size of data.
+    ///     - format: The data format.
+    ///
+    public override func checkGroundTruthGPU<T: BinaryFloatingPoint>(
+        _ groundTruth: [T],
+        batchSize: Int,
+        format: ImageFormat) throws
+    {
+        fatalError("Not implemented.")
+    }
+    
+    ///
+    /// Apply the forward pass of the Gradient Checking in CPU execution context.
+    ///
+    /// Throw an error if batch size is greater than the first batch size.
+    ///
+    public override func forwardGCCPU() throws
+    {
+        fatalError("Not implemented.")
+    }
+    
+    ///
+    /// Apply the forward pass of the Gradient Checking in GPU execution context.
+    ///
+    /// Throw an error if batch size is greater than the first batch size.
+    ///
+    public override func forwardGCGPU() throws
+    {
+        fatalError("Not implemented.")
+    }
+    
+    ///
     /// Apply the forward pass in the CPU execution context.
     ///
     /// Throw an error if batch size is greater than the first batch size.
@@ -387,7 +442,6 @@ public class VQ2D: Layer2D, LayerWeightInit
                         let vq = _wArrays.w(k, depth)
                         value += pow(outPrev - vq, 2.0)
                     }
-                    value = sqrt(value)
                     
                     if minValue == nil || value < minValue!
                     {
@@ -398,7 +452,7 @@ public class VQ2D: Layer2D, LayerWeightInit
                 
                 if minIndex < 0
                 {
-                    fatalError("'minIndex' is negative.")
+                    throw VQError.IndexValue
                 }
                 
                 for depth in 0..<nbChannels
@@ -485,7 +539,7 @@ public class VQ2D: Layer2D, LayerWeightInit
                     
                     // Commitment term.
                     neuronsPrev[depth].get(i, j)!.v[elem].delta +=
-                        beta * (outPrev - vq)
+                        beta * 2.0 * (outPrev - vq)
                 }
             }}}
             propagateDirty()
@@ -497,7 +551,6 @@ public class VQ2D: Layer2D, LayerWeightInit
         if let layerPrev = self.layerPrev as? Layer2D, computeDeltaWeights
         {
             let neuronsPrev = layerPrev.neurons
-            let coeff = batchSize * height * width
             let indicesPtr = (indices as! MetalSharedBuffer<Int32>).buffer
             
             if !accumulateDeltaWeights
@@ -523,7 +576,8 @@ public class VQ2D: Layer2D, LayerWeightInit
                     let g = _wArrays.g(minIndex, depth)
                     _wArrays.g(
                         minIndex, depth,
-                        g + 1.0 / Double(coeff) * (vq - outPrev)
+                        g + coeff / Double(batchSize * height * width) * 2.0 *
+                        (vq - outPrev)
                     )
                 }
             }}}
@@ -587,6 +641,7 @@ public class VQ2D: Layer2D, LayerWeightInit
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pK: [UInt32] = [UInt32(K)]
+            let pCoeff: [Float] = [Float(coeff)]
             let pAccumulate: [UInt32] = accumulateDeltaWeights ? [1] : [0]
             
             var command: MetalCommand
@@ -619,8 +674,9 @@ public class VQ2D: Layer2D, LayerWeightInit
                 command.setBytes(pNbChannels, atIndex: 3)
                 command.setBytes(pDimensions, atIndex: 4)
                 command.setBytes(pK, atIndex: 5)
-                command.setBytes(pNbBatch, atIndex: 6)
-                command.setBuffer(_wBuffers.g.metal, atIndex: 7)
+                command.setBytes(pCoeff, atIndex: 6)
+                command.setBytes(pNbBatch, atIndex: 7)
+                command.setBuffer(_wBuffers.g.metal, atIndex: 8)
                 
                 command.dispatchThreads(width: nbChannels, height: K)
                 command.enqueue()
@@ -651,8 +707,9 @@ public class VQ2D: Layer2D, LayerWeightInit
                 command.setBytes(pNbChannels, atIndex: 3)
                 command.setBytes(pDimensions, atIndex: 4)
                 command.setBytes(pK, atIndex: 5)
-                command.setBytes(pNbBatch, atIndex: 6)
-                command.setBuffer(_wDeltaWeights.metal, atIndex: 7)
+                command.setBytes(pCoeff, atIndex: 6)
+                command.setBytes(pNbBatch, atIndex: 7)
+                command.setBuffer(_wDeltaWeights.metal, atIndex: 8)
                 
                 command.dispatchThreads(
                     width: nbChannels,
@@ -677,6 +734,123 @@ public class VQ2D: Layer2D, LayerWeightInit
                 command.enqueue()
             }
         }
+    }
+    
+    ///
+    /// Get loss in the CPU execution context.
+    ///
+    /// - Returns: The loss value.
+    ///
+    public func getLossCPU<T: BinaryFloatingPoint>() -> T
+    {
+        var losses = [T](repeating: 0.0, count: batchSize)
+        
+        if let layerPrev = self.layerPrev as? Layer2D
+        {
+            let neuronsPrev = layerPrev.neurons
+            
+            for elem in 0..<batchSize {
+            for i in 0..<height {
+            for j in 0..<width
+            {
+                var value: Double = 0.0
+                for depth in 0..<nbChannels
+                {
+                    let outPrev = neuronsPrev[depth].get(i, j)!.v[elem].out
+                    let vq = neurons[depth].get(i, j)!.v[elem].out
+                    value += pow(outPrev - vq, 2.0)
+                }
+                losses[elem] += T(value)
+            }}}
+        }
+        return T(coeff) / T(batchSize * height * width) * losses.reduce(0, +)
+    }
+    
+    ///
+    /// Get loss in the GPU execution context.
+    ///
+    /// - Returns: The loss value.
+    ///
+    public func getLossGPU<T: BinaryFloatingPoint>() throws -> T
+    {
+        try checkLossGPU(batchSize: batchSize)
+        
+        let layerPrev = self.layerPrev as! Layer2D
+        
+        let pNbChannels: [UInt32] = [UInt32(nbChannels)]
+        let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
+        let pNbBatch: [UInt32] = [UInt32(batchSize)]
+        
+        let command = MetalKernel.get.createCommand(
+            "VQ2DLoss", deviceID: deviceID
+        )
+        command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+        command.setBuffer(outs.metal, atIndex: 1)
+        command.setBytes(pNbChannels, atIndex: 2)
+        command.setBytes(pDimensions, atIndex: 3)
+        command.setBytes(pNbBatch, atIndex: 4)
+        command.setBuffer(loss.metal, atIndex: 5)
+        
+        command.dispatchThreads(batchSize)
+        command.enqueue()
+        
+        MetalKernel.get.download([loss])
+        var loss: Float = 0.0
+        let lossPtr = self.loss.buffer
+        for i in 0..<batchSize
+        {
+            loss += lossPtr[i]
+        }
+        
+        return T(coeff) * T(loss) / T(batchSize * height * width)
+    }
+    
+    /// Compute the derivative of the loss in the CPU execution context.
+    public func lossDerivativeCPU() throws
+    {
+        if dirty
+        {
+            for elem in 0..<batchSize {
+            for depth in 0..<nbChannels {
+            for i in 0..<height {
+            for j in 0..<width
+            {
+                neurons[depth].get(i, j)!.v[elem].delta = 0.0
+            }}}}
+        }
+        else
+        {
+            throw VQError.RedundantLoss
+        }
+        
+        backwardCPU()
+        dirty = false
+    }
+    
+    /// Compute the derivative of the loss in the GPU execution context.
+    public func lossDerivativeGPU() throws
+    {
+        if dirty
+        {
+            let nbElems = delta.nbElems
+            let pNbElems: [UInt32] = [UInt32(nbElems)]
+            
+            let command = MetalKernel.get.createCommand(
+                "reset", deviceID: deviceID
+            )
+            command.setBytes(pNbElems, atIndex: 0)
+            command.setBuffer(delta.metal, atIndex: 1)
+            
+            command.dispatchThreads(nbElems)
+            command.enqueue()
+        }
+        else
+        {
+            throw VQError.RedundantLoss
+        }
+        
+        try backwardGPU()
+        dirty = false
     }
     
     /// Get the weights in the CPU execution context.

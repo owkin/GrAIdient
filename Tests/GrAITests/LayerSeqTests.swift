@@ -561,9 +561,8 @@ class LayerSeqFlowTests: Input2DMSE1DCase
                 layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true, params: params
             )
-            layerSeq = VQSeq(
-                layerPrev: layerSeq, K: 5, beta: 0.25, params: params
-            )
+            layerSeq = VQSeq(layerPrev: layerSeq, K: 5, params: params)
+            (layerSeq as! VQSeq).beta = 0.25
             
         default:
             fatalError("Unreachable.")
@@ -1034,9 +1033,8 @@ class LayerSeqFlowAccumulateTests: Input2DMSE1DCase
                 layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true, params: params
             )
-            layerSeq = VQSeq(
-                layerPrev: layerSeq, K: 5, beta: 0.25, params: params
-            )
+            layerSeq = VQSeq(layerPrev: layerSeq, K: 5, params: params)
+            (layerSeq as! VQSeq).beta = 0.25
             
         default:
             fatalError("Unreachable.")

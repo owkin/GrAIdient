@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🪜 **feat:** BCE1D, BCE2D, VQ2D & VQSeq as losses ([#101](https://github.com/owkin/GrAIdient/pull/101))\
 🪜 **layer_seq:** VQSeq ([#100](https://github.com/owkin/GrAIdient/pull/100))\
 🔨 **layer_2d:** expose indices in VQ2D ([#99](https://github.com/owkin/GrAIdient/pull/99))\
 🪜 **layer_2d:** loosen range contraint in ColorJitterHSV ([#98](https://github.com/owkin/GrAIdient/pull/98))\

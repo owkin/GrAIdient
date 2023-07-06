@@ -746,7 +746,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
         let pSequence: [UInt32] = [UInt32(sequence)]
         
         let command = MetalKernel.get.createCommand(
-            "VQSeqLoss", deviceID: deviceID
+            "vqSeqLoss", deviceID: deviceID
         )
         command.setBuffer(layerPrev.outs.metal, atIndex: 0)
         command.setBuffer(outs.metal, atIndex: 1)
@@ -795,6 +795,8 @@ public class VQSeq: LayerSeq, LayerWeightInit
     {
         if dirty
         {
+            try checkStateBackwardGPU(batchSize: batchSize)
+            
             let nbElems = delta.nbElems
             let pNbElems: [UInt32] = [UInt32(nbElems)]
             

@@ -46,6 +46,15 @@ class Input2DVQSeqCase: XCTestCase, Input2DCase, IOCase
     ///
     func setLoss(_ groundTruth: [[Double]]?, _ model: Model) -> [[Double]]
     {
+        let lastLayer = model.layers.last as! VQ2D
+        if GrAI.Opti.GPU
+        {
+            try! lastLayer.lossDerivativeGPU()
+        }
+        else
+        {
+            try! lastLayer.lossDerivativeCPU()
+        }
         return [[Double]]()
     }
     

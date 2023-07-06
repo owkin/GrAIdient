@@ -782,7 +782,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         
         let command = MetalKernel.get.createCommand(
-            "VQ2DLoss", deviceID: deviceID
+            "vq2DLoss", deviceID: deviceID
         )
         command.setBuffer(layerPrev.outs.metal, atIndex: 0)
         command.setBuffer(outs.metal, atIndex: 1)
@@ -832,6 +832,8 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
     {
         if dirty
         {
+            try checkStateBackwardGPU(batchSize: batchSize)
+            
             let nbElems = delta.nbElems
             let pNbElems: [UInt32] = [UInt32(nbElems)]
             

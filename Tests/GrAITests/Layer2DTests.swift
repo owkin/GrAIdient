@@ -5215,3 +5215,249 @@ class SimilarityError2DTransformTests: SimilarityError2DFlowTests
         run(trainer)
     }
 }
+
+// -----------------------------------------------------------------------------
+// Gradient Checking
+// We expect to see errors ~ 1e-7 and less.
+// -----------------------------------------------------------------------------
+class BCE2DGradTests: Input2DBCE2DCase
+{
+    override func setUp()
+    {
+        super.setUp()
+        GrAI.Loop.gradientChecking = true
+    }
+    
+    private func _buildTrainer() -> GradTrainer
+    {
+        let trainer = GradTrainer(
+            name: "Layer2D",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            _buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    private func _buildModel(context: ModelContext)
+    {
+        let params = GrAI.Model.Params(context: context)
+        
+        var layer: Layer2D = Input2D(
+            nbChannels: 1, width: width, height: height, params: params
+        )
+        
+        layer = Convolution2D(
+            layerPrev: layer, size: 1, nbChannels: 6, stride: 1,
+            activation: SoftReLU.str, biases: true, bn: false, params: params
+        )
+        
+        layer = Convolution2D(
+            layerPrev: layer, size: 1, nbChannels: 1, stride: 1,
+            activation: Sigmoid.str, biases: true, bn: false, params: params
+        )
+        
+        _ = BCE2D(layerPrev: layer, params: params)
+    }
+    
+    func testLossCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+    
+    func testLossGPU() throws
+    {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU gradients with CPU ones through time.
+// We expect to see errors ~ 1e-7 and less.
+// -----------------------------------------------------------------------------
+class BCE2DFlowTests: Input2DBCE2DCase
+{
+    private func _buildTrainer() -> FlowTrainer
+    {
+        let trainer = FlowTrainer(
+            name: "Layer2D",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    func buildModel(context: ModelContext)
+    {
+        let params = GrAI.Model.Params(context: context)
+        
+        var layer: Layer2D = Input2D(
+            nbChannels: 1, width: width, height: height, params: params
+        )
+        
+        layer = Convolution2D(
+            layerPrev: layer, size: 1, nbChannels: 6, stride: 1,
+            activation: LeakyReLU.str, biases: true, bn: false, params: params
+        )
+        
+        layer = Convolution2D(
+            layerPrev: layer, size: 1, nbChannels: 1, stride: 1,
+            activation: Sigmoid.str, biases: true, bn: false, params: params
+        )
+        
+        _ = BCE2D(layerPrev: layer, params: params)
+    }
+    
+    func testLoss() throws
+    {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU gradients with CPU ones through time.
+// We expect to see errors ~ 1e-7 and less.
+// -----------------------------------------------------------------------------
+class BCE2DFlowResetTests: BCE2DFlowTests
+{
+    private func _buildTrainer() -> FlowResetTrainer
+    {
+        let trainer = FlowResetTrainer(
+            name: "Layer2D",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    override func testLoss() throws
+    {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU gradients with CPU ones through time.
+// We expect to see errors ~ 1e-7 and less.
+// -----------------------------------------------------------------------------
+class BCE2DFlowReverseTests: BCE2DFlowTests
+{
+    private func _buildTrainer() -> FlowReverseTrainer
+    {
+        let trainer = FlowReverseTrainer(
+            name: "Layer2D",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    override func testLoss() throws
+    {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU Loss in inference mode with CPU one.
+// We expect to see errors ~ 1e-3 and less.
+// -----------------------------------------------------------------------------
+class BCE2DFlowInferenceTests: BCE2DFlowTests
+{
+    private func _buildTrainer() -> InferenceTrainer
+    {
+        let trainer = InferenceTrainer(
+            name: "Layer2D",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    override func testLoss() throws
+    {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU/CPU Losses in inference mode with the one obtained from a
+// loaded model.
+// We expect to see errors ~ 1e-3 and less.
+// -----------------------------------------------------------------------------
+class BCE2DLoadTests: BCE2DFlowTests
+{
+    private func _buildTrainer() -> LoadTrainer
+    {
+        let trainer = LoadTrainer(
+            name: "Layer2D",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    override func testLoss() throws
+    {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU/CPU Losses in inference mode with the one obtained from a
+// transformed model.
+// We expect to see errors ~ 1e-3 and less.
+// -----------------------------------------------------------------------------
+class BCE2DTransformTests: BCE2DFlowTests
+{
+    private func _buildTrainer() -> TransformTrainer
+    {
+        let trainer = TransformTrainer(
+            name: "Layer2D",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    override func testLoss() throws
+    {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+}

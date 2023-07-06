@@ -1540,7 +1540,7 @@ class BCE1DGradTests: Input1DBCE1DCase
         
         layer = FullyConnected(
             layerPrev: layer, nbNeurons: 1,
-            activation: SoftReLU.str, biases: true,
+            activation: Sigmoid.str, biases: true,
             params: params
         )
         
@@ -1635,7 +1635,7 @@ class BCE1DFlowTests: Input1DBCE1DCase
         
         layer = FullyConnected(
             layerPrev: layer, nbNeurons: 1,
-            activation: LeakyReLU.str, biases: true,
+            activation: Sigmoid.str, biases: true,
             params: params
         )
         

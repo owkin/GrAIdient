@@ -739,7 +739,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
     {
         try checkLossGPU(batchSize: batchSize)
         
-        let layerPrev = self.layerPrev as! Layer2D
+        let layerPrev = self.layerPrev as! LayerSeq
         
         let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]

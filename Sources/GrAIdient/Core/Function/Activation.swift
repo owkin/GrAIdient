@@ -744,7 +744,14 @@ public class Sigmoid: ActivationFunction
     ///
     public override func apply(_ x: Double) -> Double
     {
-        return 1 / (1 + exp(-x))
+        if x >= 0
+        {
+            return 1 / (1 + exp(-x))
+        }
+        else
+        {
+            return exp(x) / (1 + exp(x))
+        }
     }
     
     ///

@@ -98,8 +98,8 @@ public class BCESigmoid1D: LayerOutput1D
             for depth in 0..<nbNeurons
             {
                 let out = neurons.get(depth)!.gc[batch][elem].out
-                
                 var value: T
+                
                 if out > 0
                 {
                     value = T(1 - gt[depth]) * T(out)
@@ -148,8 +148,8 @@ public class BCESigmoid1D: LayerOutput1D
             for depth in 0..<nbNeurons
             {
                 let out = neurons.get(depth)!.v[elem].out
-                
                 var value: T
+                
                 if out > 0
                 {
                     value = T(1 - gt[depth]) * T(out)

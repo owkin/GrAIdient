@@ -153,6 +153,8 @@ let CONFIG_KERNELS =
         "colorJitterHSVForward",
         "BCE2DLoss",
         "BCE2DLossDerivative",
+        "BCESigmoid2DLoss",
+        "BCESigmoid2DLossDerivative",
     ],
     "LayerMerge": [
         "sum1",

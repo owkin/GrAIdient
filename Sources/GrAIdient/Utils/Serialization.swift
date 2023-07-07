@@ -37,6 +37,7 @@ let LAYER_REGISTRY: [String: Codable.Type] = buildRegistry(
     BCE1D.self,
     BCE2D.self,
     BCESigmoid1D.self,
+    BCESigmoid2D.self,
     BN2D.self,
     ColorJitterHSV.self,
     Concat1D.self,

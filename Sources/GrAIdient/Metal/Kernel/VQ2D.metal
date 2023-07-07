@@ -210,7 +210,7 @@ kernel void vq2DBatchDerWeights(
             sum += vq - outPrev;
         }
     }}}
-    sum *= coeff / (float)(nbBatch * height * width) * 2.0;
+    sum *= coeff / (float)(nbBatch * nbChannels * height * width) * 2.0;
     
     grads[depth + nbChannels * k] += sum;
 }
@@ -273,7 +273,7 @@ kernel void vq2DDerWeights(
             sum += vq - outPrev;
         }
     }}
-    sum *= coeff / (float)(nbBatch * height * width) * 2.0;
+    sum *= coeff / (float)(nbBatch * nbChannels * height * width) * 2.0;
     
     deltaWeights[depth + nbChannels * k + K * nbChannels * elem] += sum;
 }

@@ -541,8 +541,8 @@ public class VQSeq: LayerSeq, LayerWeightInit
                     let g = _wArrays.g(minIndex, depth)
                     _wArrays.g(
                         minIndex, depth,
-                        g + coeff / Double(batchSize * sequence) * 2.0 *
-                        (vq - outPrev)
+                        g + coeff / Double(batchSize * nbNeurons * sequence) *
+                        2.0 * (vq - outPrev)
                     )
                 }
             }}
@@ -727,7 +727,8 @@ public class VQSeq: LayerSeq, LayerWeightInit
                 losses[elem] += T(value)
             }}
         }
-        return T(coeff) / T(batchSize * sequence) * losses.reduce(0, +)
+        return T(coeff) / T(batchSize * nbNeurons * sequence) *
+            losses.reduce(0, +)
     }
     
     ///
@@ -766,7 +767,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
             loss += lossPtr[i]
         }
         
-        return T(coeff) * T(loss) / T(batchSize * sequence)
+        return T(coeff) * T(loss) / T(batchSize * nbNeurons * sequence)
     }
     
     /// Compute the derivative of the loss in the CPU execution context.

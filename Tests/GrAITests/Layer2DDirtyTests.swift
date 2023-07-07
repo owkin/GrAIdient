@@ -899,10 +899,8 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
             )
             
         case "VQ":
-            secondLayer = VQ2D(
-                layerPrev: layer, K: 5, beta: 0.25,
-                params: params
-            )
+            secondLayer = VQ2D(layerPrev: layer, K: 5, params: params)
+            (secondLayer as! VQ2D).beta = 0.25
             
         case "SelfCorrelate":
             secondLayer = SelfCorrelate2D(layerPrev: layer, params: params)

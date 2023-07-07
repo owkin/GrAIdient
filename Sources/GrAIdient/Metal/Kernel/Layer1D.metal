@@ -592,3 +592,213 @@ kernel void constant1DForward(
     uint offset = depth + nbNeurons * elem;
     outs[offset] = weights[depth];
 }
+
+kernel void BCE1DLoss(
+    const device float * outs,
+    const device float * groundTruth,
+    constant uint * pNbNeurons,
+    constant uint * pNbBatch,
+    device float * losses,
+    uint id [[ thread_position_in_grid ]])
+{
+    uint nbNeurons;
+    uint nbBatch;
+    
+    if (pNbNeurons && pNbBatch && outs && groundTruth && losses)
+    {
+        nbNeurons = *pNbNeurons;
+        nbBatch = *pNbBatch;
+    }
+    else
+        return ;
+    
+    uint elem = id;
+    if (elem >= nbBatch)
+    {
+        return ;
+    }
+    
+    float tmp = 0.0;
+    for (uint depth=0; depth<nbNeurons; depth++)
+    {
+        uint offset = depth + nbNeurons * elem;
+    
+        float gt = groundTruth[offset];
+        float out = outs[offset];
+        float tmp1 = log(out);
+        float tmp2 = log(1 - out);
+        
+        tmp -= (gt * tmp1 + (1 - gt) * tmp2);
+    }
+    
+    losses[elem] = tmp;
+}
+
+kernel void BCE1DLossDerivative(
+    const device float * outs,
+    const device float * groundTruth,
+    constant uint * pNbNeurons,
+    constant float * pCoeff,
+    constant uint * pNbBatch,
+    constant uint * pDirty,
+    device float * deltaPrev,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint nbNeurons;
+    float coeff;
+    uint nbBatch;
+    uint dirty;
+    
+    if (pNbNeurons && pNbBatch && pCoeff && pDirty &&
+        outs && groundTruth && deltaPrev)
+    {
+        nbNeurons = *pNbNeurons;
+        coeff = *pCoeff;
+        nbBatch = *pNbBatch;
+        dirty = *pDirty;
+    }
+    else
+        return ;
+    
+    uint depth = id[0];
+    uint elem = id[1];
+    
+    if (depth >= nbNeurons || elem >= nbBatch)
+    {
+        return ;
+    }
+    
+    uint offset = depth + nbNeurons * elem;
+
+    float gt = groundTruth[offset];
+    float out = outs[offset];
+    float derivative = 0.0;
+    
+    if (gt == 1.0)
+    {
+        derivative = -1 / out;
+    }
+    else if (gt == 0.0)
+    {
+        derivative = 1 / (1 - out);
+    }
+    
+    if (dirty)
+    {
+        deltaPrev[offset] = coeff * derivative / float(nbNeurons * nbBatch);
+    }
+    else
+    {
+        deltaPrev[offset] += coeff * derivative / float(nbNeurons * nbBatch);
+    }
+}
+
+kernel void BCESigmoid1DLoss(
+    const device float * outs,
+    const device float * groundTruth,
+    constant uint * pNbNeurons,
+    constant uint * pNbBatch,
+    device float * losses,
+    uint id [[ thread_position_in_grid ]])
+{
+    uint nbNeurons;
+    uint nbBatch;
+    
+    if (pNbNeurons && pNbBatch && outs && groundTruth && losses)
+    {
+        nbNeurons = *pNbNeurons;
+        nbBatch = *pNbBatch;
+    }
+    else
+        return ;
+    
+    uint elem = id;
+    if (elem >= nbBatch)
+    {
+        return ;
+    }
+    
+    float tmp = 0.0;
+    for (uint depth=0; depth<nbNeurons; depth++)
+    {
+        uint offset = depth + nbNeurons * elem;
+    
+        float gt = groundTruth[offset];
+        float out = outs[offset];
+        float value;
+        
+        if (out > 0)
+        {
+            value = (1 - gt) * out;
+            value += log(1 + exp(-out));
+        }
+        else
+        {
+            value = -out * gt;
+            value += log(exp(out) + 1);
+        }
+        
+        tmp += value;
+    }
+    
+    losses[elem] = tmp;
+}
+
+kernel void BCESigmoid1DLossDerivative(
+    const device float * outs,
+    const device float * groundTruth,
+    constant uint * pNbNeurons,
+    constant float * pCoeff,
+    constant uint * pNbBatch,
+    constant uint * pDirty,
+    device float * deltaPrev,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint nbNeurons;
+    float coeff;
+    uint nbBatch;
+    uint dirty;
+    
+    if (pNbNeurons && pNbBatch && pCoeff && pDirty &&
+        outs && groundTruth && deltaPrev)
+    {
+        nbNeurons = *pNbNeurons;
+        coeff = *pCoeff;
+        nbBatch = *pNbBatch;
+        dirty = *pDirty;
+    }
+    else
+        return ;
+    
+    uint depth = id[0];
+    uint elem = id[1];
+    
+    if (depth >= nbNeurons || elem >= nbBatch)
+    {
+        return ;
+    }
+    
+    uint offset = depth + nbNeurons * elem;
+
+    float gt = groundTruth[offset];
+    float out = outs[offset];
+    float value;
+    
+    if (out >= 0)
+    {
+        value = 1.0 / (1.0 + exp(-out));
+    }
+    else
+    {
+        value = exp(out) / (1.0 + exp(out));
+    }
+    
+    if (dirty)
+    {
+        deltaPrev[offset] = coeff * (value - gt) / float(nbNeurons * nbBatch);
+    }
+    else
+    {
+        deltaPrev[offset] += coeff * (value - gt) / float(nbNeurons * nbBatch);
+    }
+}

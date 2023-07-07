@@ -561,9 +561,8 @@ class LayerSeqFlowTests: Input2DMSE1DCase
                 layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true, params: params
             )
-            layerSeq = VQSeq(
-                layerPrev: layerSeq, K: 5, beta: 0.25, params: params
-            )
+            layerSeq = VQSeq(layerPrev: layerSeq, K: 5, params: params)
+            (layerSeq as! VQSeq).beta = 0.25
             
         default:
             fatalError("Unreachable.")
@@ -1034,9 +1033,8 @@ class LayerSeqFlowAccumulateTests: Input2DMSE1DCase
                 layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true, params: params
             )
-            layerSeq = VQSeq(
-                layerPrev: layerSeq, K: 5, beta: 0.25, params: params
-            )
+            layerSeq = VQSeq(layerPrev: layerSeq, K: 5, params: params)
+            (layerSeq as! VQSeq).beta = 0.25
             
         default:
             fatalError("Unreachable.")
@@ -1378,7 +1376,7 @@ class LayerSeqTransformTests: LayerSeqFlowTests
     ///     - nbRetry: The maximum number we can retry the test.
     ///     - diffThreshold: The threshold above which the relative difference is too high.
     ///
-    override func run(
+    func run(
         _ trainer: TransformTrainer,
         nbRetry: Int = NB_RETRY,
         diffThreshold: Double = 0.001)
@@ -1794,7 +1792,7 @@ class SelectSeqTransformTests: SelectSeqFlowTests
     ///     - nbRetry: The maximum number we can retry the test.
     ///     - diffThreshold: The threshold above which the relative difference is too high.
     ///
-    override func run(
+    func run(
         _ trainer: TransformTrainer,
         nbRetry: Int = NB_RETRY,
         diffThreshold: Double = 0.001)
@@ -1842,6 +1840,207 @@ class SelectSeqTransformTests: SelectSeqFlowTests
     }
     
     override func testSelect() throws
+    {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU gradients with CPU ones through time.
+// We expect to see errors ~ 1e-7 and less.
+// -----------------------------------------------------------------------------
+class VQSeqFlowTests: Input2DVQSeqCase
+{
+    private func _buildTrainer() -> FlowTrainer
+    {
+        let trainer = FlowTrainer(
+            name: "LayerSeq",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    func buildModel(context: ModelContext)
+    {
+        let params = GrAI.Model.Params(context: context)
+        
+        var layer: Layer2D = Input2D(
+            nbChannels: 1, width: width, height: height, params: params
+        )
+        
+        layer = Convolution2D(
+            layerPrev: layer, size: 1, nbChannels: 3, stride: 1,
+            activation: LeakyReLU.str, biases: true, bn: false, params: params
+        )
+        
+        let layerSeq: LayerSeq = FullyConnectedPatch(
+            layerPrev: layer, patch: width / 3, nbNeurons: 5,
+            activation: LeakyReLU.str, biases: true, params: params
+        )
+        
+        _ = VQSeq(layerPrev: layerSeq, K: 5, params: params)
+    }
+    
+    func testLoss() throws
+    {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU gradients with CPU ones through time.
+// We expect to see errors ~ 1e-7 and less.
+// -----------------------------------------------------------------------------
+class VQSeqFlowResetTests: VQSeqFlowTests
+{
+    override func setUp()
+    {
+        super.setUp()
+        
+        setOptimizerParams(params: &optimizerParams,
+                           optimizerClass: .Adam)
+    }
+    
+    private func _buildTrainer() -> FlowResetTrainer
+    {
+        let trainer = FlowResetTrainer(
+            name: "LayerSeq",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    override func testLoss() throws
+    {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU gradients with CPU ones through time.
+// We expect to see errors ~ 1e-7 and less.
+// -----------------------------------------------------------------------------
+class VQSeqFlowReverseTests: VQSeqFlowTests
+{
+    override func setUp()
+    {
+        super.setUp()
+        
+        setOptimizerParams(params: &optimizerParams,
+                           optimizerClass: .Adam)
+    }
+    
+    private func _buildTrainer() -> FlowReverseTrainer
+    {
+        let trainer = FlowReverseTrainer(
+            name: "LayerSeq",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    override func testLoss() throws
+    {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU Loss in inference mode with CPU one.
+// We expect to see errors ~ 1e-3 and less.
+// -----------------------------------------------------------------------------
+class VQSeqInferenceTests: VQSeqFlowTests
+{
+    private func _buildTrainer() -> InferenceTrainer
+    {
+        let trainer = InferenceTrainer(
+            name: "LayerSeq",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    override func testLoss() throws
+    {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU/CPU Losses in inference mode with the one obtained from a
+// loaded model.
+// We expect to see errors ~ 1e-3 and less.
+// -----------------------------------------------------------------------------
+class VQSeqLoadTests: VQSeqFlowTests
+{
+    private func _buildTrainer() -> LoadTrainer
+    {
+        let trainer = LoadTrainer(
+            name: "LayerSeq",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    override func testLoss() throws
+    {
+        let trainer = _buildTrainer()
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU/CPU Losses in inference mode with the one obtained from a
+// transformed model.
+// We expect to see errors ~ 1e-3 and less.
+// -----------------------------------------------------------------------------
+class VQSeqTransformTests: VQSeqFlowTests
+{
+    private func _buildTrainer() -> TransformTrainer
+    {
+        let trainer = TransformTrainer(
+            name: "LayerSeq",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    override func testLoss() throws
     {
         let trainer = _buildTrainer()
         run(trainer)

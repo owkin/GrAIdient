@@ -13,9 +13,16 @@ public class VQSeq: LayerSeq, LayerWeightInit
     /// The number of vector approximations.
     public let K: Int
     
+    /// Coefficient to be applied to the loss computation.
+    public var coeff: Double = 1.0
     /// Coefficient for commitment.
-    public var beta: Double
+    public var beta: Double = 1.0
     
+    ///
+    /// Loss buffer in the GPU execution context.
+    /// Shape ~ (batch,).
+    ///
+    public internal(set) var loss: MetalSharedBuffer<Float>! = nil
     ///
     /// Indices of maximal elements.
     /// Shape ~ (batch, seq).
@@ -105,6 +112,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
     private enum Keys: String, CodingKey
     {
         case K
+        case coeff
         case beta
         case weights
     }
@@ -115,16 +123,13 @@ public class VQSeq: LayerSeq, LayerWeightInit
     /// - Parameters:
     ///     - layerPrev: Previous layer that has been queued to the model.
     ///     - K: The number of vector approximations.
-    ///     - beta: Coefficient for commitment.
     ///     - params: Contextual parameters linking to the model.
     ///
     public init(layerPrev: LayerSeq,
                 K: Int,
-                beta: Double,
                 params: GrAI.Model.Params)
     {
         self.K = K
-        self.beta = beta
         super.init(layerPrev: layerPrev,
                    sequence: layerPrev.sequence,
                    nbNeurons: layerPrev.nbNeurons,
@@ -144,7 +149,8 @@ public class VQSeq: LayerSeq, LayerWeightInit
         let values = try decoder.container(keyedBy: Keys.self)
         
         K = try values.decode(Int.self, forKey: .K)
-        beta = try values.decode(Double.self, forKey: .beta)
+        coeff = try Double(values.decode(Float.self, forKey: .coeff))
+        beta = try Double(values.decode(Float.self, forKey: .beta))
         
         try super.init(from: decoder)
         
@@ -168,7 +174,8 @@ public class VQSeq: LayerSeq, LayerWeightInit
         var container = encoder.container(keyedBy: Keys.self)
         
         try container.encode(K, forKey: .K)
-        try container.encode(beta, forKey: .beta)
+        try container.encode(Float(coeff), forKey: .coeff)
+        try container.encode(Float(beta), forKey: .beta)
         
         let weightsList: [Float]
         if GrAI.Opti.GPU
@@ -207,8 +214,11 @@ public class VQSeq: LayerSeq, LayerWeightInit
         params.context.curID = id
             
         let layer = VQSeq(
-            layerPrev: layerPrev, K: K, beta: beta, params: params
+            layerPrev: layerPrev, K: K, params: params
         )
+        layer.coeff = coeff
+        layer.beta = beta
+        
         if inPlace
         {
             layer._wArrays = _wArrays
@@ -355,6 +365,25 @@ public class VQSeq: LayerSeq, LayerWeightInit
     }
     
     ///
+    /// Setup loss state  in the GPU execution context.
+    ///
+    /// Throw an error if batch size or ground truth are incoherent.
+    ///
+    /// - Parameter batchSize: The batch size of data.
+    ///
+    public func checkLossGPU(batchSize: Int) throws
+    {
+        if loss == nil
+        {
+            loss = MetalSharedBuffer<Float>(batchSize, deviceID: deviceID)
+        }
+        else if batchSize <= 0 || batchSize > loss.nbElems
+        {
+            throw LayerError.BatchSize
+        }
+    }
+    
+    ///
     /// Apply the forward pass in the CPU execution context.
     ///
     /// Throw an error if batch size is greater than the first batch size.
@@ -383,7 +412,6 @@ public class VQSeq: LayerSeq, LayerWeightInit
                         let vq = _wArrays.w(k, depth)
                         value += pow(outPrev - vq, 2.0)
                     }
-                    value = sqrt(value)
                     
                     if minValue == nil || value < minValue!
                     {
@@ -394,7 +422,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
                 
                 if minIndex < 0
                 {
-                    fatalError("'minIndex' is negative.")
+                    throw VQError.IndexValue
                 }
                 
                 for depth in 0..<nbNeurons
@@ -478,7 +506,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
                     
                     // Commitment term.
                     neuronsPrev.get(seq, depth)!.v[elem].delta +=
-                        beta * (outPrev - vq)
+                        beta * 2.0 * (outPrev - vq)
                 }
             }}
             propagateDirty()
@@ -490,7 +518,6 @@ public class VQSeq: LayerSeq, LayerWeightInit
         if let layerPrev = self.layerPrev as? LayerSeq, computeDeltaWeights
         {
             let neuronsPrev = layerPrev.neurons!
-            let coeff = batchSize * sequence
             let indicesPtr = (indices as! MetalSharedBuffer<Int32>).buffer
             
             if !accumulateDeltaWeights
@@ -514,7 +541,8 @@ public class VQSeq: LayerSeq, LayerWeightInit
                     let g = _wArrays.g(minIndex, depth)
                     _wArrays.g(
                         minIndex, depth,
-                        g + 1.0 / Double(coeff) * (vq - outPrev)
+                        g + coeff / Double(batchSize * nbNeurons * sequence) *
+                        2.0 * (vq - outPrev)
                     )
                 }
             }}
@@ -578,6 +606,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pSequence: [UInt32] = [UInt32(sequence)]
             let pK: [UInt32] = [UInt32(K)]
+            let pCoeff: [Float] = [Float(coeff)]
             let pAccumulate: [UInt32] = accumulateDeltaWeights ? [1] : [0]
             
             var command: MetalCommand
@@ -609,9 +638,10 @@ public class VQSeq: LayerSeq, LayerWeightInit
                 command.setBuffer(indices.metal, atIndex: 2)
                 command.setBytes(pNbNeurons, atIndex: 3)
                 command.setBytes(pK, atIndex: 4)
-                command.setBytes(pNbBatch, atIndex: 5)
-                command.setBytes(pSequence, atIndex: 6)
-                command.setBuffer(_wBuffers.g.metal, atIndex: 7)
+                command.setBytes(pCoeff, atIndex: 5)
+                command.setBytes(pNbBatch, atIndex: 6)
+                command.setBytes(pSequence, atIndex: 7)
+                command.setBuffer(_wBuffers.g.metal, atIndex: 8)
                 
                 command.dispatchThreads(width: nbNeurons, height: K)
                 command.enqueue()
@@ -641,9 +671,10 @@ public class VQSeq: LayerSeq, LayerWeightInit
                 command.setBuffer(indices.metal, atIndex: 2)
                 command.setBytes(pNbNeurons, atIndex: 3)
                 command.setBytes(pK, atIndex: 4)
-                command.setBytes(pNbBatch, atIndex: 5)
-                command.setBytes(pSequence, atIndex: 6)
-                command.setBuffer(_wDeltaWeights.metal, atIndex: 7)
+                command.setBytes(pCoeff, atIndex: 5)
+                command.setBytes(pNbBatch, atIndex: 6)
+                command.setBytes(pSequence, atIndex: 7)
+                command.setBuffer(_wDeltaWeights.metal, atIndex: 8)
                 
                 command.dispatchThreads(
                     width: nbNeurons,
@@ -668,6 +699,124 @@ public class VQSeq: LayerSeq, LayerWeightInit
                 command.enqueue()
             }
         }
+    }
+    
+    ///
+    /// Get loss in the CPU execution context.
+    ///
+    /// - Returns: The loss value.
+    ///
+    public func getLossCPU<T: BinaryFloatingPoint>() -> T
+    {
+        var losses = [T](repeating: 0.0, count: batchSize)
+        
+        if let layerPrev = self.layerPrev as? LayerSeq
+        {
+            let neuronsPrev = layerPrev.neurons!
+            
+            for elem in 0..<batchSize {
+            for seq in 0..<sequence
+            {
+                var value: Double = 0.0
+                for depth in 0..<nbNeurons
+                {
+                    let outPrev = neuronsPrev.get(seq, depth)!.v[elem].out
+                    let vq = neurons.get(seq, depth)!.v[elem].out
+                    value += pow(outPrev - vq, 2.0)
+                }
+                losses[elem] += T(value)
+            }}
+        }
+        return T(coeff) / T(batchSize * nbNeurons * sequence) *
+            losses.reduce(0, +)
+    }
+    
+    ///
+    /// Get loss in the GPU execution context.
+    ///
+    /// - Returns: The loss value.
+    ///
+    public func getLossGPU<T: BinaryFloatingPoint>() throws -> T
+    {
+        try checkLossGPU(batchSize: batchSize)
+        
+        let layerPrev = self.layerPrev as! LayerSeq
+        
+        let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
+        let pNbBatch: [UInt32] = [UInt32(batchSize)]
+        let pSequence: [UInt32] = [UInt32(sequence)]
+        
+        let command = MetalKernel.get.createCommand(
+            "vqSeqLoss", deviceID: deviceID
+        )
+        command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+        command.setBuffer(outs.metal, atIndex: 1)
+        command.setBytes(pNbNeurons, atIndex: 2)
+        command.setBytes(pNbBatch, atIndex: 3)
+        command.setBytes(pSequence, atIndex: 4)
+        command.setBuffer(loss.metal, atIndex: 5)
+        
+        command.dispatchThreads(batchSize)
+        command.enqueue()
+        
+        MetalKernel.get.download([loss])
+        var loss: Float = 0.0
+        let lossPtr = self.loss.buffer
+        for i in 0..<batchSize
+        {
+            loss += lossPtr[i]
+        }
+        
+        return T(coeff) * T(loss) / T(batchSize * nbNeurons * sequence)
+    }
+    
+    /// Compute the derivative of the loss in the CPU execution context.
+    public func lossDerivativeCPU() throws
+    {
+        if dirty
+        {
+            for elem in 0..<batchSize {
+            for seq in 0..<sequence {
+            for depth in 0..<nbNeurons 
+            {
+                neurons.get(seq, depth)!.v[elem].delta = 0.0
+            }}}
+        }
+        else
+        {
+            throw VQError.RedundantLoss
+        }
+        
+        backwardCPU()
+        dirty = false
+    }
+    
+    /// Compute the derivative of the loss in the GPU execution context.
+    public func lossDerivativeGPU() throws
+    {
+        if dirty
+        {
+            try checkStateBackwardGPU(batchSize: batchSize)
+            
+            let nbElems = delta.nbElems
+            let pNbElems: [UInt32] = [UInt32(nbElems)]
+            
+            let command = MetalKernel.get.createCommand(
+                "reset", deviceID: deviceID
+            )
+            command.setBytes(pNbElems, atIndex: 0)
+            command.setBuffer(delta.metal, atIndex: 1)
+            
+            command.dispatchThreads(nbElems)
+            command.enqueue()
+        }
+        else
+        {
+            throw VQError.RedundantLoss
+        }
+        
+        try backwardGPU()
+        dirty = false
     }
     
     /// Get the weights in the CPU execution context.

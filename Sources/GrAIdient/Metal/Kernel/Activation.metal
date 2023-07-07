@@ -195,7 +195,14 @@ kernel void forwardSigmoid(
     }
     
     tmps[id] = outs[id];
-    outs[id] = 1.0 / (1.0 + exp(-tmps[id]));
+    if (tmps[id] >= 0)
+    {
+        outs[id] = 1.0 / (1.0 + exp(-tmps[id]));
+    }
+    else
+    {
+        outs[id] = exp(tmps[id]) / (1.0 + exp(tmps[id]));
+    }
 }
 
 kernel void backwardSigmoid(
@@ -218,7 +225,16 @@ kernel void backwardSigmoid(
         return ;
     }
     
-    float tmp = 1.0 / (1.0 + exp(-tmps[id]));
+    float tmp;
+    if (tmps[id] >= 0)
+    {
+        tmp = 1.0 / (1.0 + exp(-tmps[id]));
+    }
+    else
+    {
+        tmp = exp(tmps[id]) / (1.0 + exp(tmps[id]));
+    }
+    
     float derivative = tmp * (1 - tmp);
     delta[id] = delta[id] * derivative;
 }

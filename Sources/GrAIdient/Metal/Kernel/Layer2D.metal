@@ -3259,3 +3259,253 @@ kernel void colorJitterHSVForward(
     outs[offsetG] = g;
     outs[offsetB] = b;
 }
+
+kernel void BCE2DLoss(
+    const device float * outs,
+    const device float * groundTruth,
+    constant uint * pNbChannels,
+    constant uint * pDimensions,
+    constant uint * pNbBatch,
+    device float * losses,
+    uint id [[ thread_position_in_grid ]])
+{
+    uint height, width;
+    uint nbChannels;
+    uint nbBatch;
+    
+    if (pNbChannels && pDimensions && pNbBatch && outs && groundTruth && losses)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        nbChannels = *pNbChannels;
+        nbBatch = *pNbBatch;
+    }
+    else
+        return ;
+    
+    uint elem = id;
+    if (elem >= nbBatch)
+    {
+        return ;
+    }
+    
+    float tmp = 0.0;
+    for (uint depth=0; depth<nbChannels; depth++)
+    {
+        uint offsetStart = (depth + nbChannels * elem) * height;
+        
+        for (uint i=0; i<height; i++) {
+        for (uint j=0; j<width; j++)
+        {
+            uint offset = j + (offsetStart + i) * width;
+            
+            float out = outs[offset];
+            float gt = groundTruth[offset];
+            float tmp1 = log(out);
+            float tmp2 = log(1 - out);
+            
+            tmp -= (gt * tmp1 + (1 - gt) * tmp2);
+        }}
+    }
+    
+    losses[elem] = tmp;
+}
+
+kernel void BCE2DLossDerivative(
+    const device float * outs,
+    const device float * groundTruth,
+    constant uint * pNbChannels,
+    constant uint * pDimensions,
+    constant float * pCoeff,
+    constant uint * pNbBatch,
+    constant uint * pDirty,
+    device float * deltaPrev,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint height, width;
+    uint nbChannels;
+    float coeff;
+    uint nbBatch;
+    uint dirty;
+    
+    if (pNbChannels && pDimensions && pNbBatch && pCoeff && pDirty &&
+        outs && groundTruth && deltaPrev)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        nbChannels = *pNbChannels;
+        coeff = *pCoeff;
+        nbBatch = *pNbBatch;
+        dirty = *pDirty;
+    }
+    else
+        return ;
+    
+    uint depth = id[0] / width;
+    uint elem = id[1] / height;
+    uint i = id[1] % height;
+    uint j = id[0] % width;
+    
+    if (i * elem >= height * nbBatch ||
+        j * depth >= width * nbChannels)
+    {
+        return ;
+    }
+    
+    uint offsetStart = (depth + nbChannels * elem) * height;
+    uint offset = j + (offsetStart + i) * width;
+    
+    float gt = groundTruth[offset];
+    float out = outs[offset];
+    float derivative = 0.0;
+    
+    if (gt == 1.0)
+    {
+        derivative = -1 / out;
+    }
+    else if (gt == 0.0)
+    {
+        derivative = 1 / (1 - out);
+    }
+    
+    if (dirty)
+    {
+        deltaPrev[offset] = coeff * derivative /
+            float(nbBatch * nbChannels * height * width);
+    }
+    else
+    {
+        deltaPrev[offset] += coeff * derivative /
+            float(nbBatch * nbChannels * height * width);
+    }
+}
+
+kernel void BCESigmoid2DLoss(
+    const device float * outs,
+    const device float * groundTruth,
+    constant uint * pNbChannels,
+    constant uint * pDimensions,
+    constant uint * pNbBatch,
+    device float * losses,
+    uint id [[ thread_position_in_grid ]])
+{
+    uint height, width;
+    uint nbChannels;
+    uint nbBatch;
+    
+    if (pNbChannels && pDimensions && pNbBatch && outs && groundTruth && losses)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        nbChannels = *pNbChannels;
+        nbBatch = *pNbBatch;
+    }
+    else
+        return ;
+    
+    uint elem = id;
+    if (elem >= nbBatch)
+    {
+        return ;
+    }
+    
+    float tmp = 0.0;
+    for (uint depth=0; depth<nbChannels; depth++)
+    {
+        uint offsetStart = (depth + nbChannels * elem) * height;
+        
+        for (uint i=0; i<height; i++) {
+        for (uint j=0; j<width; j++)
+        {
+            uint offset = j + (offsetStart + i) * width;
+            
+            float out = outs[offset];
+            float gt = groundTruth[offset];
+            float value;
+            
+            if (out > 0)
+            {
+                value = (1 - gt) * out;
+                value += log(1 + exp(-out));
+            }
+            else
+            {
+                value = -out * gt;
+                value += log(exp(out) + 1);
+            }
+            
+            tmp += value;
+        }}
+    }
+    
+    losses[elem] = tmp;
+}
+
+kernel void BCESigmoid2DLossDerivative(
+    const device float * outs,
+    const device float * groundTruth,
+    constant uint * pNbChannels,
+    constant uint * pDimensions,
+    constant float * pCoeff,
+    constant uint * pNbBatch,
+    constant uint * pDirty,
+    device float * deltaPrev,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint height, width;
+    uint nbChannels;
+    float coeff;
+    uint nbBatch;
+    uint dirty;
+    
+    if (pNbChannels && pDimensions && pNbBatch && pCoeff && pDirty &&
+        outs && groundTruth && deltaPrev)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        nbChannels = *pNbChannels;
+        coeff = *pCoeff;
+        nbBatch = *pNbBatch;
+        dirty = *pDirty;
+    }
+    else
+        return ;
+    
+    uint depth = id[0] / width;
+    uint elem = id[1] / height;
+    uint i = id[1] % height;
+    uint j = id[0] % width;
+    
+    if (i * elem >= height * nbBatch ||
+        j * depth >= width * nbChannels)
+    {
+        return ;
+    }
+    
+    uint offsetStart = (depth + nbChannels * elem) * height;
+    uint offset = j + (offsetStart + i) * width;
+    
+    float gt = groundTruth[offset];
+    float out = outs[offset];
+    float value;
+    
+    if (out >= 0)
+    {
+        value = 1.0 / (1.0 + exp(-out));
+    }
+    else
+    {
+        value = exp(out) / (1.0 + exp(out));
+    }
+    
+    if (dirty)
+    {
+        deltaPrev[offset] = coeff * (value - gt) /
+            float(nbBatch * nbChannels * height * width);
+    }
+    else
+    {
+        deltaPrev[offset] += coeff * (value - gt) /
+            float(nbBatch * nbChannels * height * width);
+    }
+}

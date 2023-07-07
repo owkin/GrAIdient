@@ -95,6 +95,10 @@ let CONFIG_KERNELS =
         "dotProduct1DForward",
         "dotProduct1DBackward",
         "constant1DForward",
+        "BCE1DLoss",
+        "BCE1DLossDerivative",
+        "BCESigmoid1DLoss",
+        "BCESigmoid1DLossDerivative",
     ],
     "Layer2D": [
         "avgPoolForward",
@@ -147,6 +151,10 @@ let CONFIG_KERNELS =
         "flipVertical2DForward",
         "flipVertical2DBackward",
         "colorJitterHSVForward",
+        "BCE2DLoss",
+        "BCE2DLossDerivative",
+        "BCESigmoid2DLoss",
+        "BCESigmoid2DLossDerivative",
     ],
     "LayerMerge": [
         "sum1",
@@ -206,12 +214,14 @@ let CONFIG_KERNELS =
         "vq2DBackward",
         "vq2DBatchDerWeights",
         "vq2DDerWeights",
-        "vq2DReduceWeights"
+        "vq2DReduceWeights",
+        "vq2DLoss"
     ],
     "VQSeq": [
         "vqSeqForward",
         "vqSeqBackward",
         "vqSeqBatchDerWeights",
-        "vqSeqDerWeights"
+        "vqSeqDerWeights",
+        "vqSeqLoss"
     ]
 ]

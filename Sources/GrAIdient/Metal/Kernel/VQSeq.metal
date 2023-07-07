@@ -58,7 +58,6 @@ kernel void vqSeqForward(
             float vq = weights[offsetWeights];
             value += pow(outPrev - vq, 2.0);
         }
-        value = sqrt(value);
         
         if (minIndex < 0 || value < minValue)
         {
@@ -143,7 +142,7 @@ kernel void vqSeqBackward(
     }
     
     // Commitment term.
-    deltaPrev[offset] += beta * (outPrev - vq);
+    deltaPrev[offset] += beta * 2.0 * (outPrev - vq);
 }
 
 kernel void vqSeqBatchDerWeights(
@@ -152,6 +151,7 @@ kernel void vqSeqBatchDerWeights(
     const device int * indices,
     constant uint * pNbNeurons,
     constant uint * pK,
+    constant float * pCoeff,
     constant uint * pNbBatch,
     constant uint * pSequence,
     device float * grads,
@@ -159,14 +159,16 @@ kernel void vqSeqBatchDerWeights(
 {
     uint nbNeurons;
     uint K;
+    float coeff;
     uint nbBatch;
     uint sequence;
     
-    if (pNbNeurons && pK && pNbBatch && pSequence &&
+    if (pNbNeurons && pK && pCoeff && pNbBatch && pSequence &&
         outsPrev && weights && indices && grads)
     {
         nbNeurons = *pNbNeurons;
         K = *pK;
+        coeff = *pCoeff;
         nbBatch = *pNbBatch;
         sequence = *pSequence;
     }
@@ -175,7 +177,6 @@ kernel void vqSeqBatchDerWeights(
     
     uint k = id[1];
     uint depth = id[0];
-    uint coeff = nbBatch * sequence;
     
     if (depth >= nbNeurons || k >= K)
     {
@@ -199,7 +200,7 @@ kernel void vqSeqBatchDerWeights(
             sum += vq - outPrev;
         }
     }}
-    sum /= (float)coeff;
+    sum *= coeff / (float)(nbBatch * nbNeurons * sequence) * 2.0;
     
     grads[depth + nbNeurons * k] += sum;
 }
@@ -210,6 +211,7 @@ kernel void vqSeqDerWeights(
     const device int * indices,
     constant uint * pNbNeurons,
     constant uint * pK,
+    constant float * pCoeff,
     constant uint * pNbBatch,
     constant uint * pSequence,
     device float * deltaWeights,
@@ -217,14 +219,16 @@ kernel void vqSeqDerWeights(
 {
     uint nbNeurons;
     uint K;
+    float coeff;
     uint nbBatch;
     uint sequence;
     
-    if (pNbNeurons && pK && pNbBatch && pSequence &&
+    if (pNbNeurons && pK && pCoeff && pNbBatch && pSequence &&
         outsPrev && weights && indices && deltaWeights)
     {
         nbNeurons = *pNbNeurons;
         K = *pK;
+        coeff = *pCoeff;
         nbBatch = *pNbBatch;
         sequence = *pSequence;
     }
@@ -234,7 +238,6 @@ kernel void vqSeqDerWeights(
     uint elem = id[1] / K;
     uint k = id[1] % K;
     uint depth = id[0];
-    uint coeff = nbBatch * sequence;
     
     if (depth >= nbNeurons || elem * k >= nbBatch * K)
     {
@@ -257,7 +260,51 @@ kernel void vqSeqDerWeights(
             sum += vq - outPrev;
         }
     }
-    sum /= (float)coeff;
+    sum *= coeff / (float)(nbBatch * nbNeurons * sequence) * 2.0;
     
     deltaWeights[depth + nbNeurons * k + K * nbNeurons * elem] += sum;
+}
+
+kernel void vqSeqLoss(
+    const device float * outsPrev,
+    const device float * outs,
+    constant uint * pNbNeurons,
+    constant uint * pNbBatch,
+    constant uint * pSequence,
+    device float * losses,
+    uint id [[ thread_position_in_grid ]])
+{
+    uint nbNeurons;
+    uint nbBatch;
+    uint sequence;
+    
+    if (pNbNeurons && pNbBatch && pSequence &&
+        outsPrev && outs)
+    {
+        nbNeurons = *pNbNeurons;
+        nbBatch = *pNbBatch;
+        sequence = *pSequence;
+    }
+    else
+        return ;
+    
+    uint elem = id;
+    if (elem >= nbBatch)
+    {
+        return ;
+    }
+    
+    float tmp = 0.0;
+    for (uint depth=0; depth<nbNeurons; depth++) {
+    for (uint seq=0; seq<sequence; seq++)
+    {
+        uint offset = depth + nbNeurons * seq + sequence * nbNeurons * elem;
+        
+        float outPrev = outsPrev[offset];
+        float vq = outs[offset];
+        float diff = outPrev - vq;
+        
+        tmp += diff * diff;
+    }}
+    losses[elem] = tmp;
 }

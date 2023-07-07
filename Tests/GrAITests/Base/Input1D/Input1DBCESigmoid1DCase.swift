@@ -1,8 +1,8 @@
 //
-// MSE1DCase.swift
+// Input1DBCESigmoid1DCase.swift
 // GrAITests
 //
-//  Created by Jean-François Reboud on 10/10/2022.
+//  Created by Jean-François Reboud on 07/07/2023.
 //
 
 import XCTest
@@ -11,12 +11,12 @@ import GrAITestsUtils
 
 ///
 /// A class that will test a model with a structural hypothesis:
-/// the model last layer is a MSE1D layer.
+/// the model last layer is a BCESigmoid1D layer, the model first layer is a Input1D.
 ///
-class MSE1DCase: XCTestCase
+class Input1DBCESigmoid1DCase: XCTestCase, Input1DCase, IOCase
 {
     /// Batch size of data.
-    var batchSize: Int! = nil
+    var batchSize: Int = -1
     /// Optimizer parameters.
     var optimizerParams = GrAI.Optimizer.Params()
     
@@ -32,50 +32,6 @@ class MSE1DCase: XCTestCase
     }
     
     ///
-    /// Get the current batch size of data.
-    ///
-    /// This function allows to simulate the fact that the batch size of data may be smalling during the
-    /// last iteration of the training.
-    ///
-    /// - Parameter model: The model.
-    /// - Returns: The batch size of data.
-    ///
-    func getBatchSize(_ model: Model) -> Int
-    {
-        if model.optimizerParams.step == model.optimizerParams.nbLoops-1
-        {
-            return batchSize / 2
-        }
-        else
-        {
-            return batchSize
-        }
-    }
-    
-    ///
-    /// Create synthetic data.
-    ///
-    /// - Parameters:
-    ///     - dim1: The first dimension of the data.
-    ///     - dim2: The second dimension of the data.
-    /// - Returns: The created data.
-    ///
-    func buildData<T: BinaryFloatingPoint>(dim1: Int, dim2: Int) -> [[T]]
-    {
-        var data = [[T]]()
-        for _ in 0..<dim1
-        {
-            var data1 = [T]()
-            for _ in 0..<dim2
-            {
-                data1.append(T(Double.random(in: -1.0..<1.0)))
-            }
-            data.append(data1)
-        }
-        return data
-    }
-    
-    ///
     /// A function to create/set ground truth to the model.
     ///
     /// - Parameters:
@@ -85,7 +41,7 @@ class MSE1DCase: XCTestCase
     ///
     func setLoss(_ groundTruth: [[Double]]?, _ model: Model) -> [[Double]]
     {
-        let lastLayer = model.layers.last as! MSE1D
+        let lastLayer = model.layers.last as! BCESigmoid1D
         let gt: [[Double]]
         if let groundTruthTmp = groundTruth
         {
@@ -93,7 +49,17 @@ class MSE1DCase: XCTestCase
         }
         else
         {
-            gt = buildData(dim1: getBatchSize(model), dim2: 1)
+            var values = [[Double]]()
+            let batchSize = getBatchSize(model)
+            for _ in 0..<batchSize / 2
+            {
+                values.append([0.0])
+            }
+            for _ in batchSize / 2..<batchSize
+            {
+                values.append([1.0])
+            }
+            gt = values
         }
         
         if GrAI.Opti.GPU
@@ -117,7 +83,7 @@ class MSE1DCase: XCTestCase
     ///
     func getLoss(_ groundTruth: [[Double]], _ model: Model) -> Double
     {
-        let lastLayer = model.layers.last as! MSE1D
+        let lastLayer = model.layers.last as! BCESigmoid1D
         if GrAI.Opti.GPU
         {
             return Double(try! lastLayer.getLossGPU(groundTruth))
@@ -140,7 +106,41 @@ class MSE1DCase: XCTestCase
         _ groundTruth: [[Double]],
         _ model: Model) -> [Double]
     {
-        let lastLayer = model.layers.last as! MSE1D
+        let lastLayer = model.layers.last as! BCESigmoid1D
         return try! lastLayer.collectGradientsApprox(groundTruth)
+    }
+    
+    ///
+    /// A function to create/set data to the model.
+    ///
+    /// - Parameters:
+    ///     - inputs: The data to set.
+    ///     - model: The model.
+    /// - Returns: (The data, the batch size).
+    ///
+    public func setData(
+        _ inputs: [[Float]]?,
+        _ model: Model) -> ([[Float]], Int)
+    {
+        let firstLayer = model.layers.first as! Input1D
+        let ins: [[Float]]
+        if let insTmp = inputs
+        {
+            ins = insTmp
+        }
+        else
+        {
+            ins = buildData(dim1: getBatchSize(model), dim2: 1)
+        }
+        
+        if GrAI.Opti.GPU
+        {
+            try! firstLayer.setDataGPU(ins)
+        }
+        else
+        {
+            try! firstLayer.setDataCPU(ins)
+        }
+        return (ins, ins.count)
     }
 }

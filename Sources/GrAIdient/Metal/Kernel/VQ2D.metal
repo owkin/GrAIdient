@@ -61,7 +61,6 @@ kernel void vq2DForward(
             float vq = weights[offsetWeights];
             value += pow(outPrev - vq, 2.0);
         }
-        value = sqrt(value);
         
         if (minIndex < 0 || value < minValue)
         {
@@ -150,7 +149,7 @@ kernel void vq2DBackward(
     }
     
     // Commitment term.
-    deltaPrev[offset] += beta * (outPrev - vq);
+    deltaPrev[offset] += beta * 2.0 * (outPrev - vq);
 }
 
 kernel void vq2DBatchDerWeights(
@@ -160,6 +159,7 @@ kernel void vq2DBatchDerWeights(
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pK,
+    constant float * pCoeff,
     constant uint * pNbBatch,
     device float * grads,
     uint2 id [[ thread_position_in_grid ]])
@@ -167,15 +167,17 @@ kernel void vq2DBatchDerWeights(
     uint height, width;
     uint nbChannels;
     uint K;
+    float coeff;
     uint nbBatch;
     
-    if (pNbChannels && pDimensions && pK && pNbBatch &&
+    if (pNbChannels && pDimensions && pK && pCoeff && pNbBatch &&
         outsPrev && weights && indices && grads)
     {
         width = pDimensions[0];
         height = pDimensions[1];
         nbChannels = *pNbChannels;
         K = *pK;
+        coeff = *pCoeff;
         nbBatch = *pNbBatch;
     }
     else
@@ -183,7 +185,6 @@ kernel void vq2DBatchDerWeights(
     
     uint k = id[1];
     uint depth = id[0];
-    uint coeff = nbBatch * height * width;
     
     if (depth >= nbChannels || k >= K)
     {
@@ -209,7 +210,7 @@ kernel void vq2DBatchDerWeights(
             sum += vq - outPrev;
         }
     }}}
-    sum /= (float)coeff;
+    sum *= coeff / (float)(nbBatch * nbChannels * height * width) * 2.0;
     
     grads[depth + nbChannels * k] += sum;
 }
@@ -221,6 +222,7 @@ kernel void vq2DDerWeights(
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pK,
+    constant float * pCoeff,
     constant uint * pNbBatch,
     device float * deltaWeights,
     uint2 id [[ thread_position_in_grid ]])
@@ -228,15 +230,17 @@ kernel void vq2DDerWeights(
     uint height, width;
     uint nbChannels;
     uint K;
+    float coeff;
     uint nbBatch;
     
-    if (pNbChannels && pDimensions && pK && pNbBatch &&
+    if (pNbChannels && pDimensions && pK && pCoeff && pNbBatch &&
         outsPrev && weights && indices && deltaWeights)
     {
         width = pDimensions[0];
         height = pDimensions[1];
         nbChannels = *pNbChannels;
         K = *pK;
+        coeff = *pCoeff;
         nbBatch = *pNbBatch;
     }
     else
@@ -245,7 +249,6 @@ kernel void vq2DDerWeights(
     uint elem = id[1] / K;
     uint k = id[1] % K;
     uint depth = id[0];
-    uint coeff = nbBatch * height * width;
     
     if (depth >= nbChannels || elem * k >= nbBatch * K)
     {
@@ -270,7 +273,7 @@ kernel void vq2DDerWeights(
             sum += vq - outPrev;
         }
     }}
-    sum /= (float)coeff;
+    sum *= coeff / (float)(nbBatch * nbChannels * height * width) * 2.0;
     
     deltaWeights[depth + nbChannels * k + K * nbChannels * elem] += sum;
 }
@@ -323,4 +326,53 @@ kernel void vq2DReduceWeights(
     {
         grads[depth + nbChannels * k] = sum;
     }
+}
+
+kernel void vq2DLoss(
+    const device float * outsPrev,
+    const device float * outs,
+    constant uint * pNbChannels,
+    constant uint * pDimensions,
+    constant uint * pNbBatch,
+    device float * losses,
+    uint id [[ thread_position_in_grid ]])
+{
+    uint height, width;
+    uint nbChannels;
+    uint nbBatch;
+    
+    if (pNbChannels && pDimensions && pNbBatch && outsPrev && outs && losses)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        nbChannels = *pNbChannels;
+        nbBatch = *pNbBatch;
+    }
+    else
+        return ;
+    
+    uint elem = id;
+    if (elem >= nbBatch)
+    {
+        return ;
+    }
+    
+    float tmp = 0.0;
+    for (uint depth=0; depth<nbChannels; depth++)
+    {
+        uint offsetStart = (depth + nbChannels * elem) * height;
+        
+        for (uint i=0; i<height; i++) {
+        for (uint j=0; j<width; j++)
+        {
+            uint offset = j + (offsetStart + i) * width;
+            
+            float outPrev = outsPrev[offset];
+            float vq = outs[offset];
+            float diff = outPrev - vq;
+            
+            tmp += diff * diff;
+        }}
+    }
+    losses[elem] = tmp;
 }

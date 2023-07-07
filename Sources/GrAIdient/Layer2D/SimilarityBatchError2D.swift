@@ -68,6 +68,24 @@ public class SimilarityBatchError2D: LayerOutput2D
     }
     
     ///
+    /// Setup groundTruth state in the GPU execution context.
+    ///
+    /// Throw an error if batch size or ground truth are incoherent.
+    ///
+    /// - Parameters:
+    ///     - groundTruth: The ground truth.
+    ///     - batchSize: The batch size of data.
+    ///     - format: The data format.
+    ///
+    public override func checkGroundTruthGPU<T: BinaryFloatingPoint>(
+        _ groundTruth: [T],
+        batchSize: Int,
+        format: ImageFormat) throws
+    {
+        fatalError("Not implemented.")
+    }
+    
+    ///
     /// Setup loss state  in the GPU execution context.
     ///
     /// Throw an error if batch size or ground truth are incoherent.

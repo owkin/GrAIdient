@@ -13,7 +13,7 @@ import Foundation
 ///
 public class SimilarityError2D: LayerMerge2D
 {
-    /// Coefficient to be applied to the loss compuptation.
+    /// Coefficient to be applied to the loss computation.
     public var coeff: Double = 1.0
     
     ///

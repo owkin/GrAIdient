@@ -1,39 +1,43 @@
 //
-// Input2DSimilarityBatchError2DCase.swift
+// IOCase.swift
 // GrAITests
 //
-// Created by Jean-François Reboud on 14/05/2023.
+// Created by Jean-François Reboud on 05/07/2023.
 //
 
 import XCTest
 import GrAIdient
 import GrAITestsUtils
 
-///
-/// A class that will test a model with a structural hypothesis:
-/// the model last layer is a SimilarityBatchError2D layer, the model first layer is a Input2D.
-///
-class Input2DSimilarityBatchError2DCase: XCTestCase
+let NB_RETRY = 3
+
+/// Use case with functions to get / set inputs and outputs.
+protocol IOCase
 {
-    var height = 6
-    var width = 6
+    associatedtype DataT
+    associatedtype LossT
     
     /// Batch size of data.
-    var batchSize: Int! = nil
+    var batchSize: Int { get }
     /// Optimizer parameters.
-    var optimizerParams = GrAI.Optimizer.Params()
+    var optimizerParams: GrAI.Optimizer.Params { get }
     
-    /// Systematic call before test begins.
-    override func setUp()
-    {
-        batchSize = 5
-        _ = MetalKernel.get
-        GrAI.Opti.GPU = true
-        
-        setOptimizerParams(params: &optimizerParams)
-        optimizerParams.nbLoops = 2
-    }
+    /// A list of functions that transform the model into another one.
+    var transforms: [(Model)->Model] { get }
     
+    /// A function to create/set data to the model.
+    func setData(_: DataT?, _: Model) -> (DataT, Int)
+    /// A function to get the loss of the model.
+    func getLoss(_: LossT, _: Model) -> Double
+    /// A function to create/set ground truth to the model.
+    func setLoss(_: LossT?, _: Model) -> LossT
+    
+    /// A function that gets gradients of weights approximations.
+    func getGradientsApprox(_: LossT, _: Model) -> [Double]
+}
+
+extension IOCase
+{
     ///
     /// Get the current batch size of data.
     ///
@@ -79,195 +83,6 @@ class Input2DSimilarityBatchError2DCase: XCTestCase
     }
     
     ///
-    /// A function to create/set ground truth to the model.
-    ///
-    /// - Parameters:
-    ///     - groundTruth: The ground truth to set.
-    ///     - model: The model.
-    /// - Returns: The ground truth.
-    ///
-    func setLoss(_ groundTruth: [[Double]]?, _ model: Model) -> [[Double]]
-    {
-        let lastLayer = model.layers.last as! SimilarityBatchError2D
-        let gt: [[Double]]
-        if let groundTruthTmp = groundTruth
-        {
-            gt = groundTruthTmp
-        }
-        else
-        {
-            gt = buildData(dim1: getBatchSize(model), dim2: height * width)
-        }
-        
-        if GrAI.Opti.GPU
-        {
-            try! lastLayer.lossDerivativeGPU()
-        }
-        else
-        {
-            lastLayer.lossDerivativeCPU()
-        }
-        return gt
-    }
-    
-    ///
-    /// A function to get loss of a model.
-    ///
-    /// - Parameters:
-    ///     - groundTruth: The ground truth to set.
-    ///     - model: The model.
-    /// - Returns: The loss value.
-    ///
-    func getLoss(_ groundTruth: [[Double]], _ model: Model) -> Double
-    {
-        let lastLayer = model.layers.last as! SimilarityBatchError2D
-        if GrAI.Opti.GPU
-        {
-            return Double(try! lastLayer.getLossGPU())
-        }
-        else
-        {
-            return lastLayer.getLossCPU()
-        }
-    }
-    
-    ///
-    /// A function to get the gradients of weights approximations..
-    ///
-    /// - Parameters:
-    ///     - groundTruth: The ground truth.
-    ///     - model: The model.
-    /// - Returns: The gradients of weights approximations.
-    ///
-    func getGradientsApprox(
-        _ groundTruth: [[Double]],
-        _ model: Model) -> [Double]
-    {
-        let lastLayer = model.layers.last as! SimilarityBatchError2D
-        return lastLayer.collectGradientsApprox()
-    }
-    
-    ///
-    /// A function to create/set data to the model.
-    ///
-    /// - Parameters:
-    ///     - inputs: The data to set.
-    ///     - model: The model.
-    /// - Returns: (The data, the batch size).
-    ///
-    func setData(
-        _ inputs: [[Float]]?,
-        _ model: Model
-    ) -> ([[Float]], Int)
-    {
-        let firstLayer = model.layers.first as! Input2D
-        let ins: [[Float]]
-        if let insTmp = inputs
-        {
-            ins = insTmp
-        }
-        else
-        {
-            ins = buildData(dim1: getBatchSize(model), dim2: height * width)
-        }
-        
-        if GrAI.Opti.GPU
-        {
-            try! firstLayer.setDataGPU(
-                ins.reduce([], +), batchSize: ins.count, format: .Neuron
-            )
-        }
-        else
-        {
-            try! firstLayer.setDataCPU(
-                ins.reduce([], +), batchSize: ins.count, format: .Neuron
-            )
-        }
-        return (ins, ins.count)
-    }
-    
-    ///
-    /// Copy a model and call the `initKernel` API.
-    ///
-    /// - Parameter model: The model.
-    /// - Returns: The transformed model.
-    ///
-    func copy(_ model: Model) -> Model
-    {
-        let modelNew = Model.copy(models: [model], inPlace: false)[0]
-        modelNew.initialize(
-            params: optimizerParams,
-            phase: .Inference,
-            deviceID: DEVICE_ID
-        )
-        return modelNew
-    }
-    
-    ///
-    /// Copy a model in place: do not call the `initKernel` API.
-    ///
-    /// - Parameter model: The model.
-    /// - Returns: The transformed model.
-    ///
-    func copyInPlace(_ model: Model) -> Model
-    {
-        let modelNew = Model.copy(models: [model], inPlace: true)[0]
-        modelNew.setupOptimizers(params: optimizerParams)
-        modelNew.phase = .Inference
-        return modelNew
-    }
-    
-    ///
-    /// Resize a model.
-    ///
-    /// We must call the `initKernel` API.
-    ///
-    /// - Parameter model: The model.
-    /// - Returns: The transformed model.
-    ///
-    func resize(_ model: Model) -> Model
-    {
-        let modelsNew = Model.resize(models: [model],
-                                     imageWidth: 2 * width,
-                                     imageHeight: 2 * height,
-                                     inPlace: false)
-        let modelNew = Model.resize(models: modelsNew,
-                                    imageWidth: width,
-                                    imageHeight: height,
-                                    inPlace: false)[0]
-        modelNew.initialize(
-            params: optimizerParams,
-            phase: .Inference,
-            deviceID: DEVICE_ID
-        )
-        return modelNew
-    }
-    
-    ///
-    /// Resize a model in place.
-    ///
-    /// No need to call the `initKernel` API.
-    ///
-    /// - Parameter model: The model.
-    /// - Returns: The transformed model.
-    ///
-    func resizeInPlace(_ model: Model) -> Model
-    {
-        let modelsNew = Model.resize(models: [model],
-                                     imageWidth: 2 * width,
-                                     imageHeight: 2 * height,
-                                     inPlace: true)
-        let modelNew = Model.resize(models: modelsNew,
-                                    imageWidth: width,
-                                    imageHeight: height,
-                                    inPlace: true)[0]
-        modelNew.updateKernel(batchSize: batchSize)
-        modelNew.setupOptimizers(params: optimizerParams)
-        modelNew.phase = .Inference
-        return modelNew
-    }
-    
-    ///
     /// Run Gradient Checking test.
     ///
     /// The goal is to compare the gradients of weights that are computed through `backward`
@@ -284,7 +99,7 @@ class Input2DSimilarityBatchError2DCase: XCTestCase
         diffThreshold: Double = 0.000001)
     {
         let model = trainer.model!
-        let lastLayer = model.layers.last as! SimilarityBatchError2D
+        let lastLayer = model.layers.last!
         let layersGraph = model.getGraph(lastLayer)
         
         retryNumeric(
@@ -528,7 +343,7 @@ class Input2DSimilarityBatchError2DCase: XCTestCase
             {
                 () throws in
                 try trainer.run(
-                    transforms: [self.copy, self.copyInPlace],
+                    transforms: self.transforms,
                     setData: self.setData,
                     setLoss: self.setLoss,
                     getLoss: self.getLoss)
@@ -568,9 +383,10 @@ class Input2DSimilarityBatchError2DCase: XCTestCase
         diffThreshold: Double = 0.001,
         normClipping: Double = 0.001)
     {
-        optimizerParams.gradientClipping = true
-        optimizerParams.normThreshold = normClipping
-        trainer.optimizerParams = optimizerParams
+        var params = optimizerParams
+        params.gradientClipping = true
+        params.normThreshold = normClipping
+        trainer.optimizerParams = params
         
         retryNumeric(
             nbRetry: nbRetry,
@@ -592,5 +408,168 @@ class Input2DSimilarityBatchError2DCase: XCTestCase
                 XCTAssert(false)
             }
         )
+    }
+}
+
+/// Use case where first layer is an Input1D.
+protocol Input1DCase
+{
+    /// Optimizer parameters.
+    var optimizerParams: GrAI.Optimizer.Params { get }
+}
+
+extension Input1DCase
+{
+    ///
+    /// Copy a model.
+    ///
+    /// We must call the `initKernel` API.
+    ///
+    /// - Parameter model: The model.
+    /// - Returns: The transformed model.
+    ///
+    func copy(_ model: Model) -> Model
+    {
+        let modelNew = Model.copy(models: [model], inPlace: false)[0]
+        modelNew.initialize(
+            params: optimizerParams,
+            phase: .Inference,
+            deviceID: DEVICE_ID
+        )
+        return modelNew
+    }
+    
+    ///
+    /// Copy a model in place.
+    ///
+    /// No need to call the `initKernel` API.
+    ///
+    /// - Parameter model: The model.
+    /// - Returns: The transformed model.
+    ///
+    func copyInPlace(_ model: Model) -> Model
+    {
+        let modelNew = Model.copy(models: [model], inPlace: true)[0]
+        modelNew.setupOptimizers(params: optimizerParams)
+        modelNew.phase = .Inference
+        return modelNew
+    }
+    
+    /// A list of functions that transform the model into another one.
+    var transforms: [(Model) -> Model]
+    {
+        get {
+            return [copy, copyInPlace]
+        }
+    }
+}
+
+/// Use case where first layer is an Input2D.
+protocol Input2DCase
+{
+    /// Height of the Input2D layer.
+    var height: Int { get }
+    /// Width of the Input2D layer.
+    var width: Int { get }
+    
+    /// Batch size of data.
+    var batchSize: Int { get }
+    /// Optimizer parameters.
+    var optimizerParams: GrAI.Optimizer.Params { get }
+}
+
+extension Input2DCase
+{
+    ///
+    /// Copy a model.
+    ///
+    /// We must call the `initKernel` API.
+    ///
+    /// - Parameter model: The model.
+    /// - Returns: The transformed model.
+    ///
+    func copy(_ model: Model) -> Model
+    {
+        let modelNew = Model.copy(models: [model], inPlace: false)[0]
+        modelNew.initialize(
+            params: optimizerParams,
+            phase: .Inference,
+            deviceID: DEVICE_ID
+        )
+        return modelNew
+    }
+    
+    ///
+    /// Copy a model in place.
+    ///
+    /// No need to call the `initKernel` API.
+    ///
+    /// - Parameter model: The model.
+    /// - Returns: The transformed model.
+    ///
+    func copyInPlace(_ model: Model) -> Model
+    {
+        let modelNew = Model.copy(models: [model], inPlace: true)[0]
+        modelNew.setupOptimizers(params: optimizerParams)
+        modelNew.phase = .Inference
+        return modelNew
+    }
+    
+    ///
+    /// Resize a model.
+    ///
+    /// We must call the `initKernel` API.
+    ///
+    /// - Parameter model: The model.
+    /// - Returns: The transformed model.
+    ///
+    func resize(_ model: Model) -> Model
+    {
+        let modelsNew = Model.resize(models: [model],
+                                     imageWidth: 2 * width,
+                                     imageHeight: 2 * height,
+                                     inPlace: false)
+        let modelNew = Model.resize(models: modelsNew,
+                                    imageWidth: width,
+                                    imageHeight: height,
+                                    inPlace: false)[0]
+        modelNew.initialize(
+            params: optimizerParams,
+            phase: .Inference,
+            deviceID: DEVICE_ID
+        )
+        return modelNew
+    }
+    
+    ///
+    /// Resize a model in place.
+    ///
+    /// No need to call the `initKernel` API.
+    ///
+    /// - Parameter model: The model.
+    /// - Returns: The transformed model.
+    ///
+    func resizeInPlace(_ model: Model) -> Model
+    {
+        let modelsNew = Model.resize(models: [model],
+                                     imageWidth: 2 * width,
+                                     imageHeight: 2 * height,
+                                     inPlace: true)
+        let modelNew = Model.resize(models: modelsNew,
+                                    imageWidth: width,
+                                    imageHeight: height,
+                                    inPlace: true)[0]
+        modelNew.updateKernel(batchSize: batchSize)
+        modelNew.setupOptimizers(params: optimizerParams)
+        modelNew.phase = .Inference
+        return modelNew
+    }
+    
+    /// A list of functions that transform the model into another one.
+    var transforms: [(Model) -> Model]
+    {
+        get {
+            return [copy, copyInPlace, resize, resizeInPlace]
+        }
     }
 }

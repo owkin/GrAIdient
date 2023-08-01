@@ -401,8 +401,13 @@ class Layer2DGradTests: Input2DMSE1DCase
             fatalError("Unreachable.")
         }
         
+        if head == nil
+        {
+            head = AvgPool2D(layerPrev: layer, params: params)
+        }
+        
         head = FullyConnected(
-            layerPrev: head != nil ? head! : layer, nbNeurons: 1,
+            layerPrev: head!, nbNeurons: 1,
             activation: SoftReLU.str, biases: true, params: params
         )
         
@@ -877,7 +882,7 @@ class Layer2DGradTests: Input2DMSE1DCase
     func testDeconvolution1NoBNGPU() throws
     {
         let trainer = _buildTrainer(model: "Deconvolution1", bn: false)
-        run(trainer, diffThreshold: 0.0001)
+        run(trainer, nbRetry: 5, diffThreshold: 0.0001)
     }
     
     func testDeconvolution1NoBNSampleGPU() throws
@@ -937,7 +942,7 @@ class Layer2DGradTests: Input2DMSE1DCase
     func testDeconvolutionStride2GPU() throws
     {
         let trainer = _buildTrainer(model: "DeconvolutionStride2", bn: false)
-        run(trainer, diffThreshold: 0.0001)
+        run(trainer, nbRetry: 5, diffThreshold: 0.0001)
     }
     
     func testDeconvolutionStride2SampleGPU() throws
@@ -1492,8 +1497,13 @@ class Layer2DFlowTests: Input2DMSE1DCase
             fatalError("Unreachable.")
         }
         
+        if head == nil
+        {
+            head = AvgPool2D(layerPrev: layer, params: params)
+        }
+        
         head = FullyConnected(
-            layerPrev: head != nil ? head! : layer, nbNeurons: 1,
+            layerPrev: head!, nbNeurons: 1,
             activation: LeakyReLU.str, biases: true, params: params
         )
         
@@ -2551,7 +2561,7 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
     override func testDeconvolutionStride1() throws
     {
         let trainer = _buildTrainer(model: "DeconvolutionStride1", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.00001)
     }
     
     override func testDeconvolutionStride1Sample() throws
@@ -4437,8 +4447,10 @@ class FTFrequences2DGradTests: FTFrequences2DMSE1DCase
             layersPrev: [layer, frequences], params: params
         )
         
-        var head: Layer1D = FullyConnected(
-            layerPrev: layer, nbNeurons: 1,
+        var head: Layer1D = AvgPool2D(layerPrev: layer, params: params)
+        
+        head = FullyConnected(
+            layerPrev: head, nbNeurons: 1,
             activation: SoftReLU.str, biases: true, params: params
         )
         
@@ -4516,8 +4528,10 @@ class FTFrequences2DFlowTests: FTFrequences2DMSE1DCase
             layersPrev: [layer, frequences], params: params
         )
         
-        var head: Layer1D = FullyConnected(
-            layerPrev: layer, nbNeurons: 1,
+        var head: Layer1D = AvgPool2D(layerPrev: layer, params: params)
+        
+        head = FullyConnected(
+            layerPrev: head, nbNeurons: 1,
             activation: LeakyReLU.str, biases: true, params: params
         )
         

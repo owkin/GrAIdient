@@ -223,7 +223,8 @@ open class LayerOutput2D: Layer2D
         batchSize: Int,
         nbChannels: Int, height: Int, width: Int) throws
     {
-        if groundTruth.nbElems != batchSize * nbChannels * height * width
+        if batchSize <= 0 ||
+           batchSize * nbChannels * height * width > groundTruth.nbElems
         {
             throw LayerError.DataSize
         }
@@ -233,11 +234,6 @@ open class LayerOutput2D: Layer2D
            width != self.width
         {
             throw LayerError.DataSize
-        }
-        if batchSize <= 0 ||
-           batchSize * nbChannels * height * width > self.groundTruth.nbElems
-        {
-            throw LayerError.BatchSize
         }
     }
     

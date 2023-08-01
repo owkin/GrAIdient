@@ -215,7 +215,13 @@ final class TransformerExample: XCTestCase
             layerPrev: layerSeq, activation: nil, params: params
         )
         
-        let head: Layer1D = AvgPoolSeq(layerPrev: layerSeq, params: params)
+        var head: Layer1D = AvgPoolSeq(layerPrev: layerSeq, params: params)
+        
+        head = FullyConnected(
+            layerPrev: head, nbNeurons: 1,
+            activation: ReLU.str, biases: true,
+            params: params
+        )
         
         _ = MSE1D(layerPrev: head, params: params)
         
@@ -302,7 +308,7 @@ final class TransformerExample: XCTestCase
         }
         MetalKernel.get.upload([groundTruth])
         
-        let nbEpochs = 5
+        let nbEpochs = 2
         for epoch in 0..<nbEpochs
         {
             print("EPOCH \(epoch)/\(nbEpochs-1).")

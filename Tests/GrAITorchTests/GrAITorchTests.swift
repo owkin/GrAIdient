@@ -227,7 +227,7 @@ final class GrAITorchTests: XCTestCase
         let data: [Float] = getBatchData(size: size, batchSize: batchSize)
         try! firstLayer.setDataGPU(
             data,
-            batchSize: 1,
+            batchSize: batchSize,
             nbChannels: 3, height: _size, width: _size,
             format: .RGB
         )
@@ -247,7 +247,7 @@ final class GrAITorchTests: XCTestCase
         try! similarityLayer.lossDerivativeGPU()
         try! lastLayer.lossDerivativeGPU(
             groundTruth,
-            batchSize: 1,
+            batchSize: batchSize,
             nbNeurons: 1
         )
         
@@ -338,7 +338,7 @@ final class GrAITorchTests: XCTestCase
         try! firstLayer.setDataGPU(
             data,
             batchSize: 1,
-            nbChannels: 3, height: _size, width: _size,
+            nbChannels: 6, height: _size, width: _size,
             format: .RGB
         )
         try! secondLayer.setDataGPU(batchSize: 1)

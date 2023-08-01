@@ -272,7 +272,7 @@ public class Input1D: LayerInput1D, LayerUpdate
         batchSize: Int,
         nbNeurons: Int) throws
     {
-        try checkInputCPU(data, batchSize: batchSize, nbeurons: nbNeurons)
+        try checkInputCPU(data, batchSize: batchSize, nbNeurons: nbNeurons)
     }
     
     ///
@@ -290,7 +290,7 @@ public class Input1D: LayerInput1D, LayerUpdate
         batchSize: Int,
         nbNeurons: Int) throws
     {
-        try checkInputGPU(data, batchSize: batchSize, nbeurons: nbNeurons)
+        try checkInputGPU(data, batchSize: batchSize, nbNeurons: nbNeurons)
     }
     
     ///
@@ -308,7 +308,7 @@ public class Input1D: LayerInput1D, LayerUpdate
         batchSize: Int,
         nbNeurons: Int) throws
     {
-        try checkInputGPU(data, batchSize: batchSize, nbeurons: nbNeurons)
+        try checkInputGPU(data, batchSize: batchSize, nbNeurons: nbNeurons)
     }
     
     ///

@@ -44,20 +44,35 @@ public class BCESigmoid1D: LayerOutput1D
     ///
     /// Estimate the gradients of weights thanks to Gradient Checking.
     ///
-    /// Throw an error if batch size or ground truth are incoherent.
+    /// Throw an error if data size is incoherent.
     ///
-    /// - Parameter groundTruth: The ground truth.
+    /// - Parameters:
+    ///     - groundTruth: The ground truth.
+    ///     - batchSize: The batch size of data.
+    ///     - nbNeurons: Number of neurons.
     /// - Returns: The estimated gradients of weights.
     ///
     public func collectGradientsApprox<T: BinaryFloatingPoint>(
-        _ groundTruth: [[T]]) throws -> [T]
+        _ groundTruth: [[T]],
+        batchSize: Int,
+        nbNeurons: Int) throws -> [T]
     {
         var gradients = [T]()
         let nbGradients = neurons.get(0)!.nbGC / 2
         for elem in 0..<nbGradients
         {
-            let loss1 = try getLossGC(groundTruth, elem: 2 * elem)
-            let loss2 = try getLossGC(groundTruth, elem: 2 * elem + 1)
+            let loss1 = try getLossGC(
+                groundTruth,
+                batchSize: batchSize,
+                nbNeurons: nbNeurons,
+                elem: 2 * elem
+            )
+            let loss2 = try getLossGC(
+                groundTruth,
+                batchSize: batchSize,
+                nbNeurons: nbNeurons,
+                elem: 2 * elem + 1
+            )
             
             let gradient = (loss1 - loss2) / T(2 * Ɛ)
             gradients.append(gradient)
@@ -68,23 +83,26 @@ public class BCESigmoid1D: LayerOutput1D
     ///
     /// Get the loss consecutive of a modified weights during the Gradient Checking process.
     ///
-    /// Throw an error if batch size or ground truth are incoherent.
+    /// Throw an error if data size is incoherent.
     ///
     /// - Parameters:
     ///     - groundTruth: The ground truth.
+    ///     - batchSize: The batch size of data.
+    ///     - nbNeurons: Number of neurons.
     ///     - elem: The modified weight for which we collect the resulting loss.
     /// - Returns: The loss value.
     ///
     func getLossGC<T: BinaryFloatingPoint>(
         _ groundTruth: [[T]],
+        batchSize: Int,
+        nbNeurons: Int,
         elem: Int) throws -> T
     {
-        let batchSize = groundTruth.count
-        if batchSize != self.batchSize ||
-           batchSize <= 0 || batchSize > neurons.get(0)!.v.count
-        {
-            throw LayerError.BatchSize
-        }
+        try checkGroundTruthCPU(
+            groundTruth,
+            batchSize: batchSize,
+            nbNeurons: nbNeurons
+        )
         
         var losses = [T](repeating: 0.0, count: batchSize)
         for batch in 0..<batchSize
@@ -121,20 +139,24 @@ public class BCESigmoid1D: LayerOutput1D
     ///
     /// Get loss in the CPU execution context.
     ///
-    /// Throw an error if batch size or ground truth are incoherent.
+    /// Throw an error if data size is incoherent.
     ///
-    /// - Parameter groundTruth: The ground truth.
+    /// - Parameters:
+    ///     - groundTruth: The ground truth.
+    ///     - batchSize: The batch size of data.
+    ///     - nbNeurons: Number of neurons.
     /// - Returns: The loss value.
     ///
     public func getLossCPU<T: BinaryFloatingPoint>(
-        _ groundTruth: [[T]]) throws -> T
+        _ groundTruth: [[T]],
+        batchSize: Int,
+        nbNeurons: Int) throws -> T
     {
-        let batchSize = groundTruth.count
-        if batchSize != self.batchSize ||
-           batchSize <= 0 || batchSize > neurons.get(0)!.v.count
-        {
-            throw LayerError.BatchSize
-        }
+        try checkGroundTruthCPU(
+            groundTruth,
+            batchSize: batchSize,
+            nbNeurons: nbNeurons
+        )
         
         var losses = [T](repeating: 0.0, count: batchSize)
         for elem in 0..<batchSize
@@ -171,41 +193,53 @@ public class BCESigmoid1D: LayerOutput1D
     ///
     /// Get loss in the GPU execution context.
     ///
-    /// Throw an error if batch size or ground truth are incoherent.
+    /// Throw an error if data size is incoherent.
     ///
-    /// - Parameter groundTruth: The ground truth.
+    /// - Parameters:
+    ///     - groundTruth: The ground truth.
+    ///     - batchSize: The batch size of data.
+    ///     - nbNeurons: Number of neurons.
     /// - Returns: The loss value.
     ///
     public func getLossGPU<T: BinaryFloatingPoint>(
-        _ groundTruth: [[T]]) throws -> T
+        _ groundTruth: [[T]],
+        batchSize: Int,
+        nbNeurons: Int) throws -> T
     {
-        try checkGroundTruthGPU(groundTruth)
-        
+        try checkGroundTruthGPU(
+            groundTruth,
+            batchSize: batchSize,
+            nbNeurons: nbNeurons
+        )
         return try T(getLossGPU(
             self.groundTruth,
-            batchSize: groundTruth.count
+            batchSize: groundTruth.count,
+            nbNeurons: nbNeurons
         ))
     }
     
     ///
     /// Get loss in the GPU execution context.
     ///
-    /// Throw an error if batch size or ground truth are incoherent.
+    /// Throw an error if data size is incoherent.
     ///
     /// - Parameters:
     ///     -  groundTruth: The ground truth.
     ///     - batchSize: The batch size of data.
+    ///     - nbNeurons: Number of neurons.
     /// - Returns: The loss value.
     ///
     public func getLossGPU(
         _ groundTruth: MetalBuffer<Float>,
-        batchSize: Int) throws -> Float
+        batchSize: Int,
+        nbNeurons: Int) throws -> Float
     {
+        try checkGroundTruthGPU(
+            groundTruth,
+            batchSize: batchSize,
+            nbNeurons: nbNeurons
+        )
         try checkLossGPU(batchSize: batchSize)
-        if batchSize != self.batchSize
-        {
-            throw LayerError.BatchSize
-        }
         
         let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
@@ -241,19 +275,23 @@ public class BCESigmoid1D: LayerOutput1D
     /// The `setData` API sets data to the first layer to initialize the forward pass.
     /// Here we use the `groundTruth` to initialize the backward pass.
     ///
-    /// Throw an error if batch size or ground truth are incoherent.
+    /// Throw an error if data size is incoherent.
     ///
-    /// - Parameter groundTruth: The ground truth.
+    /// - Parameters:
+    ///     - groundTruth: The ground truth.
+    ///     - batchSize: The batch size of data.
+    ///     - nbNeurons: Number of neurons.
     ///
     public func lossDerivativeCPU<T: BinaryFloatingPoint>(
-        _ groundTruth: [[T]]) throws
+        _ groundTruth: [[T]],
+        batchSize: Int,
+        nbNeurons: Int) throws
     {
-        let batchSize = groundTruth.count
-        if batchSize != self.batchSize ||
-           batchSize <= 0 || batchSize > neurons.get(0)!.v.count
-        {
-            throw LayerError.BatchSize
-        }
+        try checkGroundTruthCPU(
+            groundTruth,
+            batchSize: batchSize,
+            nbNeurons: nbNeurons
+        )
         
         if let layerPrev = self.layerPrev as? Layer1D, mustComputeBackward
         {
@@ -307,18 +345,27 @@ public class BCESigmoid1D: LayerOutput1D
     /// The `setData` API sets data to the first layer to initialize the forward pass.
     /// Here we use the `groundTruth` to initialize the backward pass.
     ///
-    /// Throw an error if batch size or ground truth are incoherent.
+    /// Throw an error if data size is incoherent.
     ///
-    /// - Parameter groundTruth: The ground truth.
+    /// - Parameters:
+    ///     - groundTruth: The ground truth.
+    ///     - batchSize: The batch size of data.
+    ///     - nbNeurons: Number of neurons.
     ///
     public func lossDerivativeGPU<T: BinaryFloatingPoint>(
-        _ groundTruth: [[T]]) throws
+        _ groundTruth: [[T]],
+        batchSize: Int,
+        nbNeurons: Int) throws
     {
-        try checkGroundTruthGPU(groundTruth)
-        
+        try checkGroundTruthGPU(
+            groundTruth,
+            batchSize: batchSize,
+            nbNeurons: nbNeurons
+        )
         try lossDerivativeGPU(
             self.groundTruth,
-            batchSize: groundTruth.count
+            batchSize: groundTruth.count,
+            nbNeurons: nbNeurons
         )
     }
     
@@ -331,20 +378,23 @@ public class BCESigmoid1D: LayerOutput1D
     /// The `setData` API sets data to the first layer to initialize the forward pass.
     /// Here we use the `groundTruth` to initialize the backward pass.
     ///
-    /// Throw an error if batch size or ground truth are incoherent.
+    /// Throw an error if data size is incoherent.
     ///
     /// - Parameters:
     ///     -  groundTruth: The ground truth.
     ///     - batchSize: The batch size of data.
+    ///     - nbNeurons: Number of neurons.
     ///
     public func lossDerivativeGPU(
         _ groundTruth: MetalBuffer<Float>,
-        batchSize: Int) throws
+        batchSize: Int,
+        nbNeurons: Int) throws
     {
-        if batchSize != self.batchSize
-        {
-            throw LayerError.BatchSize
-        }
+        try checkGroundTruthGPU(
+            groundTruth,
+            batchSize: batchSize,
+            nbNeurons: nbNeurons
+        )
         
         if let layerPrev = self.layerPrev as? Layer1D, mustComputeBackward
         {

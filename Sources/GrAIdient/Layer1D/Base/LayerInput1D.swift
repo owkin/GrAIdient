@@ -52,7 +52,7 @@ open class LayerInput1D: Layer1D
     public func checkInputCPU<T: BinaryFloatingPoint>(
         _ data: [[T]],
         batchSize: Int,
-        nbeurons: Int) throws
+        nbNeurons: Int) throws
     {
         if data.count != batchSize || data.first!.count != nbNeurons
         {
@@ -92,7 +92,7 @@ open class LayerInput1D: Layer1D
     public func checkInputGPU<T: BinaryFloatingPoint>(
         _ data: [[T]],
         batchSize: Int,
-        nbeurons: Int) throws
+        nbNeurons: Int) throws
     {
         if data.count != batchSize || data.first!.count != nbNeurons
         {
@@ -134,7 +134,7 @@ open class LayerInput1D: Layer1D
     public func checkInputGPU(
         _ data: MetalPrivateBuffer<Float>,
         batchSize: Int,
-        nbeurons: Int) throws
+        nbNeurons: Int) throws
     {
         if data.nbElems > batchSize * nbNeurons
         {

@@ -39,17 +39,21 @@ public class MSE2D: LayerOutput2D
     ///
     /// Estimate the gradients of weights thanks to Gradient Checking.
     ///
-    /// Throw an error if batch size or ground truth are incoherent.
+    /// Throw an error if data size is incoherent.
     ///
     /// - Parameters:
     ///     - groundTruth: The ground truth.
     ///     - batchSize: The batch size of data.
-    ///     - format: TThe data format.
+    ///     - nbChannels: Number of channels.
+    ///     - height: Height of each channel.
+    ///     - width: Width of each channel.
+    ///     - format: The data format.
     /// - Returns: The estimated gradients of weights.
     ///
     public func collectGradientsApprox<T: BinaryFloatingPoint>(
         _ groundTruth: [T],
         batchSize: Int,
+        nbChannels: Int, height: Int, width: Int,
         format: ImageFormat) throws -> [T]
     {
         var gradients = [T]()
@@ -58,10 +62,12 @@ public class MSE2D: LayerOutput2D
         {
             let loss1 = try getLossGC(
                 groundTruth, batchSize: batchSize,
+                nbChannels: nbChannels, height: height, width: width,
                 elem: 2 * elem, format: format
             )
             let loss2 = try getLossGC(
                 groundTruth, batchSize: batchSize,
+                nbChannels: nbChannels, height: height, width: width,
                 elem: 2 * elem + 1, format: format
             )
             
@@ -74,11 +80,14 @@ public class MSE2D: LayerOutput2D
     ///
     /// Get the loss consecutive of a modified weights during the Gradient Checking process.
     ///
-    /// Throw an error if batch size or ground truth are incoherent.
+    /// Throw an error if data size is incoherent.
     ///
     /// - Parameters:
     ///     - groundTruth: The ground truth.
     ///     - batchSize: The batch size of data.
+    ///     - nbChannels: Number of channels.
+    ///     - height: Height of each channel.
+    ///     - width: Width of each channel.
     ///     - elem: The modified weight for which we collect the resulting loss.
     ///     - format: The data format.
     /// - Returns: The loss value.
@@ -86,14 +95,15 @@ public class MSE2D: LayerOutput2D
     func getLossGC<T: BinaryFloatingPoint>(
         _ groundTruth: [T],
         batchSize: Int,
+        nbChannels: Int, height: Int, width: Int,
         elem: Int,
         format: ImageFormat) throws -> T
     {
-        if batchSize != self.batchSize ||
-           batchSize <= 0 || batchSize > neurons.first!.get(0)!.v.count
-        {
-            throw LayerError.BatchSize
-        }
+        try checkGroundTruthCPU(
+            groundTruth,
+            batchSize: batchSize,
+            nbChannels: nbChannels, height: height, width: width
+        )
         
         var losses = [T](repeating: 0.0, count: batchSize)
         switch format
@@ -142,24 +152,28 @@ public class MSE2D: LayerOutput2D
     ///
     /// Get loss in the CPU execution context.
     ///
-    /// Throw an error if batch size or ground truth are incoherent.
+    /// Throw an error if data size is incoherent.
     ///
     /// - Parameters:
     ///     - groundTruth: The ground truth.
     ///     - batchSize: The batch size of data.
+    ///     - nbChannels: Number of channels.
+    ///     - height: Height of each channel.
+    ///     - width: Width of each channel.
     ///     - format: The data format.
     /// - Returns: The loss value.
     ///
     public func getLossCPU<T: BinaryFloatingPoint>(
         _ groundTruth: [T],
         batchSize: Int,
+        nbChannels: Int, height: Int, width: Int,
         format: ImageFormat) throws -> T
     {
-        if batchSize != self.batchSize ||
-           batchSize <= 0 || batchSize > neurons.first!.get(0)!.v.count
-        {
-            throw LayerError.BatchSize
-        }
+        try checkGroundTruthCPU(
+            groundTruth,
+            batchSize: batchSize,
+            nbChannels: nbChannels, height: height, width: width
+        )
         
         var losses = [T](repeating: 0.0, count: batchSize)
         switch format
@@ -206,46 +220,60 @@ public class MSE2D: LayerOutput2D
     ///
     /// Get loss in the GPU execution context.
     ///
-    /// Throw an error if batch size or ground truth are incoherent.
+    /// Throw an error if data size is incoherent.
     ///
     /// - Parameters:
     ///     - groundTruth: The ground truth.
     ///     - batchSize: The batch size of data.
+    ///     - nbChannels: Number of channels.
+    ///     - height: Height of each channel.
+    ///     - width: Width of each channel.
     ///     - format: The data format.
     /// - Returns: The loss value.
     ///
     public func getLossGPU<T: BinaryFloatingPoint>(
         _ groundTruth: [T],
         batchSize: Int,
+        nbChannels: Int, height: Int, width: Int,
         format: ImageFormat) throws -> T
     {
         try checkGroundTruthGPU(
-            groundTruth, batchSize: batchSize, format: format
+            groundTruth,
+            batchSize: batchSize,
+            nbChannels: nbChannels, height: height, width: width,
+            format: format
         )
         return try T(getLossGPU(
-            self.groundTruth, batchSize: batchSize
+            self.groundTruth,
+            batchSize: batchSize,
+            nbChannels: nbChannels, height: height, width: width
         ))
     }
     
     ///
     /// Get loss in the GPU execution context.
     ///
-    /// Throw an error if batch size or ground truth are incoherent.
+    /// Throw an error if data size is incoherent.
     ///
     /// - Parameters:
     ///     - groundTruth: The ground truth.
     ///     - batchSize: The batch size of data.
+    ///     - nbChannels: Number of channels.
+    ///     - height: Height of each channel.
+    ///     - width: Width of each channel.
     /// - Returns: The loss value.
     ///
     public func getLossGPU(
         _ groundTruth: MetalBuffer<Float>,
-        batchSize: Int) throws -> Float
+        batchSize: Int,
+        nbChannels: Int, height: Int, width: Int) throws -> Float
     {
+        try checkGroundTruthGPU(
+            groundTruth,
+            batchSize: batchSize,
+            nbChannels: nbChannels, height: height, width: width
+        )
         try checkLossGPU(batchSize: batchSize)
-        if batchSize != self.batchSize
-        {
-            throw LayerError.BatchSize
-        }
         
         let pNbChannels: [UInt32] = [UInt32(nbChannels)]
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
@@ -284,23 +312,27 @@ public class MSE2D: LayerOutput2D
     /// The `setData` API sets data to the first layer to initialize the forward pass.
     /// Here we use the `groundTruth` to initialize the backward pass.
     ///
-    /// Throw an error if batch size or ground truth are incoherent.
+    /// Throw an error if data size is incoherent.
     ///
     /// - Parameters:
     ///     - groundTruth: The ground truth.
     ///     - batchSize: The batch size of data.
+    ///     - nbChannels: Number of channels.
+    ///     - height: Height of each channel.
+    ///     - width: Width of each channel.
     ///     - format: The data format.
     ///
     public func lossDerivativeCPU<T: BinaryFloatingPoint>(
         _ groundTruth: [T],
         batchSize: Int,
+        nbChannels: Int, height: Int, width: Int,
         format: ImageFormat) throws
     {
-        if batchSize != self.batchSize ||
-           batchSize <= 0 || batchSize > neurons.first!.get(0)!.v.count
-        {
-            throw LayerError.BatchSize
-        }
+        try checkGroundTruthCPU(
+            groundTruth,
+            batchSize: batchSize,
+            nbChannels: nbChannels, height: height, width: width
+        )
         
         if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
@@ -377,23 +409,32 @@ public class MSE2D: LayerOutput2D
     /// The `setData` API sets data to the first layer to initialize the forward pass.
     /// Here we use the `groundTruth` to initialize the backward pass.
     ///
-    /// Throw an error if batch size or ground truth are incoherent.
+    /// Throw an error if data size is incoherent.
     ///
     /// - Parameters:
     ///     - groundTruth: The ground truth.
     ///     - batchSize: The batch size of data.
+    ///     - nbChannels: Number of channels.
+    ///     - height: Height of each channel.
+    ///     - width: Width of each channel.
     ///     - format: The data format.
     ///
     public func lossDerivativeGPU<T: BinaryFloatingPoint>(
         _ groundTruth: [T],
         batchSize: Int,
+        nbChannels: Int, height: Int, width: Int,
         format: ImageFormat) throws
     {
         try checkGroundTruthGPU(
-            groundTruth, batchSize: batchSize, format: format
+            groundTruth,
+            batchSize: batchSize,
+            nbChannels: nbChannels, height: height, width: width,
+            format: format
         )
         try lossDerivativeGPU(
-            self.groundTruth, batchSize: batchSize
+            self.groundTruth,
+            batchSize: batchSize,
+            nbChannels: nbChannels, height: height, width: width
         )
     }
     
@@ -406,20 +447,25 @@ public class MSE2D: LayerOutput2D
     /// The `setData` API sets data to the first layer to initialize the forward pass.
     /// Here we use the `groundTruth` to initialize the backward pass.
     ///
-    /// Throw an error if batch size or ground truth are incoherent.
+    /// Throw an error if data size is incoherent.
     ///
     /// - Parameters:
     ///     -  groundTruth: The ground truth.
     ///     - batchSize: The batch size of data.
+    ///     - nbChannels: Number of channels.
+    ///     - height: Height of each channel.
+    ///     - width: Width of each channel.
     ///
     public func lossDerivativeGPU(
         _ groundTruth: MetalBuffer<Float>,
-        batchSize: Int) throws
+        batchSize: Int,
+        nbChannels: Int, height: Int, width: Int) throws
     {
-        if batchSize != self.batchSize
-        {
-            throw LayerError.BatchSize
-        }
+        try checkGroundTruthGPU(
+            groundTruth,
+            batchSize: batchSize,
+            nbChannels: nbChannels, height: height, width: width
+        )
         
         if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {

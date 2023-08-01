@@ -334,48 +334,25 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
     /// - Parameters:
     ///     - data: The data to set.
     ///     - batchSize: The batch size of data.
+    ///     - nbChannels: Number of channels.
+    ///     - height: Height of each channel.
+    ///     - width: Width of each channel.
     ///     - format: The data format.
     ///
     public func setDataCPU<T: BinaryFloatingPoint>(
         _ data: [T],
         batchSize: Int,
+        nbChannels: Int, height: Int, width: Int,
         format: ImageFormat) throws
     {
-        try checkStateCPU(batchSize: batchSize)
-        
-        switch format
-        {
-        case .RGB:
-            for elem in 0..<batchSize
-            {
-                for i in 0..<height {
-                for j in 0..<width
-                {
-                    let offset = j + (elem * height + i) * width
-                    for depth in 0..<nbChannels
-                    {
-                        neurons[depth].get(i, j)!.v[elem].out =
-                            Double(data[nbChannels * offset + depth])
-                    }
-                }}
-            }
-        case .Neuron:
-            for elem in 0..<batchSize
-            {
-                for i in 0..<height {
-                for j in 0..<width
-                {
-                    for depth in 0..<nbChannels
-                    {
-                        let offsetStart = (depth + nbChannels * elem) * height
-                        let offset = j + (offsetStart + i) * width
-                        
-                        neurons[depth].get(i, j)!.v[elem].out =
-                            Double(data[offset])
-                    }
-                }}
-            }
-        }
+        try checkInputCPU(
+            data,
+            batchSize: batchSize,
+            nbChannels: nbChannels,
+            height: height,
+            width: width,
+            format: format
+        )
     }
     
     ///
@@ -386,58 +363,25 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
     /// - Parameters:
     ///     - data: The data to set.
     ///     - batchSize: The batch size of data.
+    ///     - nbChannels: Number of channels.
+    ///     - height: Height of each channel.
+    ///     - width: Width of each channel.
     ///     - format: The data format.
     ///
     public func setDataGPU<T: BinaryFloatingPoint>(
         _ data: [T],
         batchSize: Int,
+        nbChannels: Int, height: Int, width: Int,
         format: ImageFormat) throws
     {
-        try checkStateForwardGPU(batchSize: batchSize)
-        
-        // Wait for previous loop to end to avoid race condition with
-        // didModifyRange in the following example:
-        // Convolution.backwardWeightsGPU accesses layerPrev.outs.
-        MetalKernel.get.download([outs])
-        
-        let outsPtr = outs.shared.buffer
-        switch format
-        {
-        case .RGB:
-            for elem in 0..<batchSize
-            {
-                for i in 0..<height {
-                for j in 0..<width
-                {
-                    let offsetGet = j + (elem * height + i) * width
-                    for depth in 0..<nbChannels
-                    {
-                        let offsetStartSet =
-                            (depth + nbChannels * elem) * height
-                        let offsetSet = j + (offsetStartSet + i) * width
-                        
-                        outsPtr[offsetSet] =
-                            Float(data[nbChannels * offsetGet + depth])
-                    }
-                }}
-            }
-        case .Neuron:
-            for elem in 0..<batchSize
-            {
-                for i in 0..<height {
-                for j in 0..<width
-                {
-                    for depth in 0..<nbChannels
-                    {
-                        let offsetStart = (depth + nbChannels * elem) * height
-                        let offset = j + (offsetStart + i) * width
-                        
-                        outsPtr[offset] = Float(data[offset])
-                    }
-                }}
-            }
-        }
-        MetalKernel.get.upload([outs])
+        try checkInputGPU(
+            data,
+            batchSize: batchSize,
+            nbChannels: nbChannels,
+            height: height,
+            width: width,
+            format: format
+        )
     }
     
     ///
@@ -448,13 +392,22 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
     /// - Parameters:
     ///     - data: The data to set.
     ///     - batchSize: The batch size of data.
+    ///     - nbChannels: Number of channels.
+    ///     - height: Height of each channel.
+    ///     - width: Width of each channel.
     ///
     public func setDataGPU(
         _ data: MetalPrivateBuffer<Float>,
-        batchSize: Int) throws
+        batchSize: Int,
+        nbChannels: Int, height: Int, width: Int) throws
     {
-        try checkStateForwardGPU(batchSize: batchSize)
-        outs = data
+        try checkInputGPU(
+            data,
+            batchSize: batchSize,
+            nbChannels: nbChannels,
+            height: height,
+            width: width
+        )
     }
     
     ///

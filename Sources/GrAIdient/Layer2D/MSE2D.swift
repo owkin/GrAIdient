@@ -61,14 +61,18 @@ public class MSE2D: LayerOutput2D
         for elem in 0..<nbGradients
         {
             let loss1 = try getLossGC(
-                groundTruth, batchSize: batchSize,
+                groundTruth,
+                batchSize: batchSize,
                 nbChannels: nbChannels, height: height, width: width,
-                elem: 2 * elem, format: format
+                elem: 2 * elem,
+                format: format
             )
             let loss2 = try getLossGC(
-                groundTruth, batchSize: batchSize,
+                groundTruth,
+                batchSize: batchSize,
                 nbChannels: nbChannels, height: height, width: width,
-                elem: 2 * elem + 1, format: format
+                elem: 2 * elem + 1,
+                format: format
             )
             
             let gradient = (loss1 - loss2) / T(2 * Ɛ)

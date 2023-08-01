@@ -64,11 +64,15 @@ class Input1DBCESigmoid1DCase: XCTestCase, Input1DCase, IOCase
         
         if GrAI.Opti.GPU
         {
-            try! lastLayer.lossDerivativeGPU(gt)
+            try! lastLayer.lossDerivativeGPU(
+                gt, batchSize: gt.count, nbNeurons: 1
+            )
         }
         else
         {
-            try! lastLayer.lossDerivativeCPU(gt)
+            try! lastLayer.lossDerivativeCPU(
+                gt, batchSize: gt.count, nbNeurons: 1
+            )
         }
         return gt
     }
@@ -86,11 +90,15 @@ class Input1DBCESigmoid1DCase: XCTestCase, Input1DCase, IOCase
         let lastLayer = model.layers.last as! BCESigmoid1D
         if GrAI.Opti.GPU
         {
-            return Double(try! lastLayer.getLossGPU(groundTruth))
+            return Double(try! lastLayer.getLossGPU(
+                groundTruth, batchSize: groundTruth.count, nbNeurons: 1
+            ))
         }
         else
         {
-            return try! lastLayer.getLossCPU(groundTruth)
+            return try! lastLayer.getLossCPU(
+                groundTruth, batchSize: groundTruth.count, nbNeurons: 1
+            )
         }
     }
     
@@ -107,7 +115,9 @@ class Input1DBCESigmoid1DCase: XCTestCase, Input1DCase, IOCase
         _ model: Model) -> [Double]
     {
         let lastLayer = model.layers.last as! BCESigmoid1D
-        return try! lastLayer.collectGradientsApprox(groundTruth)
+        return try! lastLayer.collectGradientsApprox(
+            groundTruth, batchSize: groundTruth.count, nbNeurons: 1
+        )
     }
     
     ///
@@ -135,11 +145,15 @@ class Input1DBCESigmoid1DCase: XCTestCase, Input1DCase, IOCase
         
         if GrAI.Opti.GPU
         {
-            try! firstLayer.setDataGPU(ins)
+            try! firstLayer.setDataGPU(
+                ins, batchSize: ins.count, nbNeurons: 1
+            )
         }
         else
         {
-            try! firstLayer.setDataCPU(ins)
+            try! firstLayer.setDataCPU(
+                ins, batchSize: ins.count, nbNeurons: 1
+            )
         }
         return (ins, ins.count)
     }

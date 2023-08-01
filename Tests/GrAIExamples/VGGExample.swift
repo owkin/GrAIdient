@@ -234,6 +234,7 @@ final class VGGExample: XCTestCase
                 try! firstLayer.setDataGPU(
                     data,
                     batchSize: samples!.count,
+                    nbChannels: 3, height: _size, width: _size,
                     format: .Neuron
                 )
                 
@@ -443,6 +444,7 @@ final class VGGExample: XCTestCase
                 try! firstLayer.setDataGPU(
                     data,
                     batchSize: _batchSize,
+                    nbChannels: 3, height: _size, width: _size,
                     format: .Neuron
                 )
                 
@@ -452,7 +454,8 @@ final class VGGExample: XCTestCase
                 // Apply loss derivative.
                 try! lastLayer.lossDerivativeGPU(
                     groundTruth,
-                    batchSize: _batchSize
+                    batchSize: _batchSize,
+                    nbNeurons: 1
                 )
                 
                 // Backward.
@@ -467,7 +470,8 @@ final class VGGExample: XCTestCase
                 // just an indicator.
                 let loss = try! lastLayer.getLossGPU(
                     groundTruth,
-                    batchSize: _batchSize
+                    batchSize: _batchSize,
+                    nbNeurons: 1
                 )
                 print("Step \(step)/\(cifar8.nbLoops-1): \(sqrt(loss)).")
                 

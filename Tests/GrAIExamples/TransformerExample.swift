@@ -338,6 +338,7 @@ final class TransformerExample: XCTestCase
                 try! firstLayer.setDataGPU(
                     data,
                     batchSize: _batchSize,
+                    nbChannels: 3, height: _size, width: _size,
                     format: .Neuron
                 )
                 
@@ -347,7 +348,8 @@ final class TransformerExample: XCTestCase
                 // Apply loss derivative.
                 try! lastLayer.lossDerivativeGPU(
                     groundTruth,
-                    batchSize: _batchSize
+                    batchSize: _batchSize,
+                    nbNeurons: 1
                 )
                 
                 // Backward.
@@ -362,7 +364,8 @@ final class TransformerExample: XCTestCase
                 // just an indicator.
                 let loss = try! lastLayer.getLossGPU(
                     groundTruth,
-                    batchSize: _batchSize
+                    batchSize: _batchSize,
+                    nbNeurons: 1
                 )
                 print("Step \(step)/\(cifar8.nbLoops-1): \(sqrt(loss)).")
                 

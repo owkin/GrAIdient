@@ -118,13 +118,19 @@ class Input2DVQSeqCase: XCTestCase, Input2DCase, IOCase
         if GrAI.Opti.GPU
         {
             try! firstLayer.setDataGPU(
-                ins.reduce([], +), batchSize: ins.count, format: .Neuron
+                ins.reduce([], +),
+                batchSize: ins.count,
+                nbChannels: 1, height: height, width: width,
+                format: .Neuron
             )
         }
         else
         {
             try! firstLayer.setDataCPU(
-                ins.reduce([], +), batchSize: ins.count, format: .Neuron
+                ins.reduce([], +),
+                batchSize: ins.count,
+                nbChannels: 1, height: height, width: width,
+                format: .Neuron
             )
         }
         return (ins, ins.count)

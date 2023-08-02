@@ -89,22 +89,73 @@ open class LayerOutput1D: Layer1D
     }
     
     ///
-    /// Setup ground truth state in the GPU execution context.
+    /// Check and setup ground truth in the CPU execution context.
     ///
-    /// Throw an error if batch size or ground truth are incoherent.
+    /// Throw an error if data size is incoherent.
     ///
-    /// - Parameter groundTruth: The ground truth.
+    /// - Parameters:
+    ///     - groundTruth: The ground truth.
+    ///     - batchSize: The batch size of data.
+    ///     - nbNeurons: Number of neurons.
+    ///
+    public func checkGroundTruthCPU<T: BinaryFloatingPoint>(
+        _ groundTruth: [[T]],
+        batchSize: Int,
+        nbNeurons: Int) throws
+    {
+        if groundTruth.count != batchSize ||
+           groundTruth.first!.count != nbNeurons
+        {
+            throw LayerError.DataSize
+        }
+        if batchSize != self.batchSize ||
+           nbNeurons != self.nbNeurons
+        {
+            throw LayerError.DataSize
+        }
+        if batchSize <= 0 || batchSize > neurons.get(0)!.v.count
+        {
+            throw LayerError.BatchSize
+        }
+    }
+    
+    ///
+    /// Check and setup ground truth in the GPU execution context.
+    ///
+    /// Throw an error if data size is incoherent.
+    ///
+    /// - Parameters:
+    ///     - groundTruth: The ground truth.
+    ///     - batchSize: The batch size of data.
+    ///     - nbNeurons: Number of neurons.
     ///
     public func checkGroundTruthGPU<T: BinaryFloatingPoint>(
-        _ groundTruth: [[T]]) throws
+        _ groundTruth: [[T]],
+        batchSize: Int,
+        nbNeurons: Int) throws
     {
-        let batchSize = groundTruth.count
+        if groundTruth.count != batchSize ||
+           groundTruth.first!.count != nbNeurons
+        {
+            throw LayerError.DataSize
+        }
+        if batchSize != self.batchSize ||
+           nbNeurons != self.nbNeurons
+        {
+            throw LayerError.DataSize
+        }
+        
         if self.groundTruth == nil
         {
             self.groundTruth = MetalSharedBuffer<Float>(
                 batchSize * nbNeurons,
                 deviceID: deviceID
             )
+        }
+        else if batchSize <= 0 ||
+                batchSize * nbNeurons > self.groundTruth.nbElems
+        {
+            throw LayerError.BatchSize
         }
         
         let bufferPtr = self.groundTruth.buffer
@@ -120,6 +171,33 @@ open class LayerOutput1D: Layer1D
             }
         }
         MetalKernel.get.upload([self.groundTruth])
+    }
+    
+    ///
+    /// Check and setup ground truth in the GPU execution context.
+    ///
+    /// Throw an error if data size is incoherent.
+    ///
+    /// - Parameters:
+    ///     - groundTruth: The ground truth.
+    ///     - batchSize: The batch size of data.
+    ///     - nbNeurons: Number of neurons.
+    ///
+    public func checkGroundTruthGPU(
+        _ groundTruth: MetalBuffer<Float>,
+        batchSize: Int,
+        nbNeurons: Int) throws
+    {
+        if batchSize <= 0 ||
+           batchSize * nbNeurons > groundTruth.nbElems
+        {
+            throw LayerError.BatchSize
+        }
+        if batchSize != self.batchSize ||
+           nbNeurons != self.nbNeurons
+        {
+            throw LayerError.DataSize
+        }
     }
     
     ///

@@ -76,11 +76,15 @@ class Input1DLinearError1DCase: XCTestCase, IOCase
         let lastLayer = model.layers.last as! LinearError1D
         if GrAI.Opti.GPU
         {
-            return Double(try! lastLayer.getLossGPU(groundTruth))
+            return Double(try! lastLayer.getLossGPU(
+                groundTruth, batchSize: groundTruth.count, nbNeurons: 1
+            ))
         }
         else
         {
-            return try! lastLayer.getLossCPU(groundTruth)
+            return try! lastLayer.getLossCPU(
+                groundTruth, batchSize: groundTruth.count, nbNeurons: 1
+            )
         }
     }
     
@@ -97,7 +101,9 @@ class Input1DLinearError1DCase: XCTestCase, IOCase
         _ model: Model) -> [Double]
     {
         let lastLayer = model.layers.last as! LinearError1D
-        return try! lastLayer.collectGradientsApprox(groundTruth)
+        return try! lastLayer.collectGradientsApprox(
+            groundTruth, batchSize: groundTruth.count, nbNeurons: 1
+        )
     }
     
     ///
@@ -126,11 +132,15 @@ class Input1DLinearError1DCase: XCTestCase, IOCase
         
         if GrAI.Opti.GPU
         {
-            try! firstLayer.setDataGPU(ins)
+            try! firstLayer.setDataGPU(
+                ins, batchSize: ins.count, nbNeurons: 1
+            )
         }
         else
         {
-            try! firstLayer.setDataCPU(ins)
+            try! firstLayer.setDataCPU(
+                ins, batchSize: ins.count, nbNeurons: 1
+            )
         }
         return (ins, ins.count)
     }

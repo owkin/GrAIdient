@@ -323,7 +323,7 @@ final class AutoEncoderExample: XCTestCase
         trainer.run(
             batchSize: _batchSize,
             label: 8,
-            nbEpochs: 5,
+            nbEpochs: 2,
             keep: 1000
         )
     }

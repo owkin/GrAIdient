@@ -232,7 +232,12 @@ class ImageTests: XCTestCase
             data += Image.toFloat([pixels])[0]
         }
         
-        try! firstLayer.setDataCPU(data, batchSize: batchSize, format: .RGB)
+        try! firstLayer.setDataCPU(
+            data,
+            batchSize: batchSize,
+            nbChannels: 3, height: _size, width: _size,
+            format: .RGB
+        )
         model.updateKernel(batchSize: batchSize)
         try! model.forward()
         
@@ -264,7 +269,12 @@ class ImageTests: XCTestCase
             data += Image.toFloat(pixels2)[0]
         }
         
-        try! firstLayer.setDataCPU(data, batchSize: batchSize, format: .Neuron)
+        try! firstLayer.setDataCPU(
+            data,
+            batchSize: batchSize,
+            nbChannels: 3, height: _size, width: _size,
+            format: .Neuron
+        )
         model.updateKernel(batchSize: batchSize)
         try! model.forward()
         
@@ -292,7 +302,12 @@ class ImageTests: XCTestCase
             data += Image.toFloat([pixels])[0]
         }
         
-        try! firstLayer.setDataGPU(data, batchSize: batchSize, format: .RGB)
+        try! firstLayer.setDataGPU(
+            data,
+            batchSize: batchSize,
+            nbChannels: 3, height: _size, width: _size,
+            format: .RGB
+        )
         model.updateKernel(batchSize: batchSize)
         try! model.forward()
         
@@ -323,7 +338,12 @@ class ImageTests: XCTestCase
             data += Image.toFloat(pixels2)[0]
         }
         
-        try! firstLayer.setDataGPU(data, batchSize: batchSize, format: .Neuron)
+        try! firstLayer.setDataGPU(
+            data,
+            batchSize: batchSize,
+            nbChannels: 3, height: _size, width: _size,
+            format: .Neuron
+        )
         model.updateKernel(batchSize: batchSize)
         try! model.forward()
         
@@ -350,7 +370,11 @@ class ImageTests: XCTestCase
             width: _size, height: _size
         )
         
-        try! firstLayer.setDataGPU(buffer, batchSize: batchSize)
+        try! firstLayer.setDataGPU(
+            buffer,
+            batchSize: batchSize,
+            nbChannels: 3, height: _size, width: _size
+        )
         model.updateKernel(batchSize: batchSize)
         try! model.forward()
         

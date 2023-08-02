@@ -60,13 +60,19 @@ class Input2DMSE2DCase: XCTestCase, Input2DCase, IOCase
         if GrAI.Opti.GPU
         {
             try! lastLayer.lossDerivativeGPU(
-                gt.reduce([], +), batchSize: gt.count, format: .Neuron
+                gt.reduce([], +),
+                batchSize: gt.count,
+                nbChannels: 1, height: height, width: width,
+                format: .Neuron
             )
         }
         else
         {
             try! lastLayer.lossDerivativeCPU(
-                gt.reduce([], +), batchSize: gt.count, format: .Neuron
+                gt.reduce([], +),
+                batchSize: gt.count,
+                nbChannels: 1, height: height, width: width,
+                format: .Neuron
             )
         }
         return gt
@@ -88,6 +94,7 @@ class Input2DMSE2DCase: XCTestCase, Input2DCase, IOCase
             return Double(try! lastLayer.getLossGPU(
                 groundTruth.reduce([], +),
                 batchSize: groundTruth.count,
+                nbChannels: 1, height: height, width: width,
                 format: .Neuron
             ))
         }
@@ -96,6 +103,7 @@ class Input2DMSE2DCase: XCTestCase, Input2DCase, IOCase
             return try! lastLayer.getLossCPU(
                 groundTruth.reduce([], +),
                 batchSize: groundTruth.count,
+                nbChannels: 1, height: height, width: width,
                 format: .Neuron
             )
         }
@@ -117,6 +125,7 @@ class Input2DMSE2DCase: XCTestCase, Input2DCase, IOCase
         return try! lastLayer.collectGradientsApprox(
             groundTruth.reduce([], +),
             batchSize: groundTruth.count,
+            nbChannels: 1, height: height, width: width,
             format: .Neuron
         )
     }
@@ -145,13 +154,19 @@ class Input2DMSE2DCase: XCTestCase, Input2DCase, IOCase
         if GrAI.Opti.GPU
         {
             try! firstLayer.setDataGPU(
-                ins.reduce([], +), batchSize: ins.count, format: .Neuron
+                ins.reduce([], +),
+                batchSize: ins.count,
+                nbChannels: 1, height: height, width: width,
+                format: .Neuron
             )
         }
         else
         {
             try! firstLayer.setDataCPU(
-                ins.reduce([], +), batchSize: ins.count, format: .Neuron
+                ins.reduce([], +),
+                batchSize: ins.count,
+                nbChannels: 1, height: height, width: width,
+                format: .Neuron
             )
         }
         return (ins, ins.count)

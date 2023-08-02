@@ -375,19 +375,63 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
     }
     
     ///
-    /// Setup groundTruth state in the GPU execution context.
+    /// Check and setup ground truth in the CPU execution context.
     ///
-    /// Throw an error if batch size or ground truth are incoherent.
+    /// Throw an error if data size is incoherent.
     ///
     /// - Parameters:
     ///     - groundTruth: The ground truth.
     ///     - batchSize: The batch size of data.
+    ///     - nbChannels: Number of channels.
+    ///     - height: Height of each channel.
+    ///     - width: Width of each channel.
+    ///
+    public override func checkGroundTruthCPU<T: BinaryFloatingPoint>(
+        _ groundTruth: [T],
+        batchSize: Int,
+        nbChannels: Int, height: Int, width: Int) throws
+    {
+        fatalError("Not implemented.")
+    }
+    
+    ///
+    /// Setup groundTruth state in the GPU execution context.
+    ///
+    /// Throw an error if data size is incoherent.
+    ///
+    /// - Parameters:
+    ///     - groundTruth: The ground truth.
+    ///     - batchSize: The batch size of data.
+    ///     - nbChannels: Number of channels.
+    ///     - height: Height of each channel.
+    ///     - width: Width of each channel.
     ///     - format: The data format.
     ///
     public override func checkGroundTruthGPU<T: BinaryFloatingPoint>(
         _ groundTruth: [T],
         batchSize: Int,
+        nbChannels: Int, height: Int, width: Int,
         format: ImageFormat) throws
+    {
+        fatalError("Not implemented.")
+    }
+    
+    ///
+    /// Check and setup ground truth in the GPU execution context.
+    ///
+    /// Throw an error if data size is incoherent.
+    ///
+    /// - Parameters:
+    ///     - groundTruth: The ground truth.
+    ///     - batchSize: The batch size of data.
+    ///     - nbChannels: Number of channels.
+    ///     - height: Height of each channel.
+    ///     - width: Width of each channel.
+    ///
+    public override func checkGroundTruthGPU(
+        _ groundTruth: MetalBuffer<Float>,
+        batchSize: Int,
+        nbChannels: Int, height: Int, width: Int) throws
     {
         fatalError("Not implemented.")
     }

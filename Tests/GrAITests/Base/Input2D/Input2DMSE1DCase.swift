@@ -57,11 +57,15 @@ class Input2DMSE1DCase: XCTestCase, IOCase
         
         if GrAI.Opti.GPU
         {
-            try! lastLayer.lossDerivativeGPU(gt)
+            try! lastLayer.lossDerivativeGPU(
+                gt, batchSize: gt.count, nbNeurons: 1
+            )
         }
         else
         {
-            try! lastLayer.lossDerivativeCPU(gt)
+            try! lastLayer.lossDerivativeCPU(
+                gt, batchSize: gt.count, nbNeurons: 1
+            )
         }
         return gt
     }
@@ -79,11 +83,15 @@ class Input2DMSE1DCase: XCTestCase, IOCase
         let lastLayer = model.layers.last as! MSE1D
         if GrAI.Opti.GPU
         {
-            return Double(try! lastLayer.getLossGPU(groundTruth))
+            return Double(try! lastLayer.getLossGPU(
+                groundTruth, batchSize: groundTruth.count, nbNeurons: 1
+            ))
         }
         else
         {
-            return try! lastLayer.getLossCPU(groundTruth)
+            return try! lastLayer.getLossCPU(
+                groundTruth, batchSize: groundTruth.count, nbNeurons: 1
+            )
         }
     }
     
@@ -100,7 +108,9 @@ class Input2DMSE1DCase: XCTestCase, IOCase
         _ model: Model) -> [Double]
     {
         let lastLayer = model.layers.last as! MSE1D
-        return try! lastLayer.collectGradientsApprox(groundTruth)
+        return try! lastLayer.collectGradientsApprox(
+            groundTruth, batchSize: groundTruth.count, nbNeurons: 1
+        )
     }
     
     ///
@@ -127,13 +137,19 @@ class Input2DMSE1DCase: XCTestCase, IOCase
         if GrAI.Opti.GPU
         {
             try! firstLayer.setDataGPU(
-                ins.reduce([], +), batchSize: ins.count, format: .Neuron
+                ins.reduce([], +),
+                batchSize: ins.count,
+                nbChannels: 1, height: height, width: width,
+                format: .Neuron
             )
         }
         else
         {
             try! firstLayer.setDataCPU(
-                ins.reduce([], +), batchSize: ins.count, format: .Neuron
+                ins.reduce([], +),
+                batchSize: ins.count,
+                nbChannels: 1, height: height, width: width,
+                format: .Neuron
             )
         }
         return (ins, ins.count)

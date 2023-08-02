@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🔨 **refactor:** dims checks for inputs and outputs ([#102](https://github.com/owkin/GrAIdient/pull/102))\
 🪜 **feat:** BCE1D, BCE2D, VQ2D & VQSeq as losses ([#101](https://github.com/owkin/GrAIdient/pull/101))\
 🪜 **layer_seq:** VQSeq ([#100](https://github.com/owkin/GrAIdient/pull/100))\
 🔨 **layer_2d:** expose indices in VQ2D ([#99](https://github.com/owkin/GrAIdient/pull/99))\

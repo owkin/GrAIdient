@@ -63,8 +63,8 @@ class UpdateManagementTests: XCTestCase
         
         // Test that by default, layer1 does not forward to layer2.
         
-        try! layer1.setDataCPU(inputData1)
-        try! layer2.setDataCPU(inputData2)
+        try! layer1.setDataCPU(inputData1, batchSize: 1, nbNeurons: 1)
+        try! layer2.setDataCPU(inputData2, batchSize: 1, nbNeurons: 1)
         
         model1.updateKernel(batchSize: 1)
         model2.updateKernel(batchSize: 1)
@@ -80,8 +80,8 @@ class UpdateManagementTests: XCTestCase
         // Test that layer1 does forward to layer2.
         layer2.computeForward = true
         
-        try! layer1.setDataCPU(inputData1)
-        try! layer2.setDataCPU(inputData2)
+        try! layer1.setDataCPU(inputData1, batchSize: 1, nbNeurons: 1)
+        try! layer2.setDataCPU(inputData2, batchSize: 1, nbNeurons: 1)
         
         model1.updateKernel(batchSize: 1)
         model2.updateKernel(batchSize: 1)
@@ -101,8 +101,8 @@ class UpdateManagementTests: XCTestCase
         layer1.computeDelta = true
         layer2.computeForward = false
         
-        try! layer1.setDataCPU(inputData1)
-        try! layer2.setDataCPU(inputData2)
+        try! layer1.setDataCPU(inputData1, batchSize: 1, nbNeurons: 1)
+        try! layer2.setDataCPU(inputData2, batchSize: 1, nbNeurons: 1)
         
         model1.updateKernel(batchSize: 1)
         model2.updateKernel(batchSize: 1)
@@ -110,7 +110,9 @@ class UpdateManagementTests: XCTestCase
         try! model1.forward()
         try! model2.forward()
         
-        try! lastLayer.lossDerivativeCPU(groundTruth)
+        try! lastLayer.lossDerivativeCPU(
+            groundTruth, batchSize: 1, nbNeurons: 1
+        )
         
         try! model2.backward()
         try! model1.backward()
@@ -127,8 +129,8 @@ class UpdateManagementTests: XCTestCase
         layer1.computeDeltaWeights = true
         layer2.computeDeltaWeights = true
         
-        try! layer1.setDataCPU(inputData1)
-        try! layer2.setDataCPU(inputData2)
+        try! layer1.setDataCPU(inputData1, batchSize: 1, nbNeurons: 1)
+        try! layer2.setDataCPU(inputData2, batchSize: 1, nbNeurons: 1)
         
         model1.updateKernel(batchSize: 1)
         model2.updateKernel(batchSize: 1)
@@ -136,7 +138,9 @@ class UpdateManagementTests: XCTestCase
         try! model1.forward()
         try! model2.forward()
         
-        try! lastLayer.lossDerivativeCPU(groundTruth)
+        try! lastLayer.lossDerivativeCPU(
+            groundTruth, batchSize: 1, nbNeurons: 1
+        )
         
         try! model2.backward()
         try! model1.backward()
@@ -152,8 +156,8 @@ class UpdateManagementTests: XCTestCase
         // Test that layer1 is not updated.
         layer1.computeDelta = false
         
-        try! layer1.setDataCPU(inputData1)
-        try! layer2.setDataCPU(inputData2)
+        try! layer1.setDataCPU(inputData1, batchSize: 1, nbNeurons: 1)
+        try! layer2.setDataCPU(inputData2, batchSize: 1, nbNeurons: 1)
         
         model1.updateKernel(batchSize: 1)
         model2.updateKernel(batchSize: 1)
@@ -161,7 +165,9 @@ class UpdateManagementTests: XCTestCase
         try! model1.forward()
         try! model2.forward()
         
-        try! lastLayer.lossDerivativeCPU(groundTruth)
+        try! lastLayer.lossDerivativeCPU(
+            groundTruth, batchSize: 1, nbNeurons: 1
+        )
         
         try! model2.backward()
         try! model1.backward()
@@ -226,8 +232,8 @@ class UpdateManagementTests: XCTestCase
         
         // Test that by default, layer1 does not forward to layer2.
         
-        try! layer1.setDataGPU(inputData1)
-        try! layer2.setDataGPU(inputData2)
+        try! layer1.setDataGPU(inputData1, batchSize: 1, nbNeurons: 1)
+        try! layer2.setDataGPU(inputData2, batchSize: 1, nbNeurons: 1)
         
         model1.updateKernel(batchSize: 1)
         model2.updateKernel(batchSize: 1)
@@ -243,8 +249,8 @@ class UpdateManagementTests: XCTestCase
         // Test that layer1 does forward to layer2.
         layer2.computeForward = true
         
-        try! layer1.setDataGPU(inputData1)
-        try! layer2.setDataGPU(inputData2)
+        try! layer1.setDataGPU(inputData1, batchSize: 1, nbNeurons: 1)
+        try! layer2.setDataGPU(inputData2, batchSize: 1, nbNeurons: 1)
         
         model1.updateKernel(batchSize: 1)
         model2.updateKernel(batchSize: 1)
@@ -264,8 +270,8 @@ class UpdateManagementTests: XCTestCase
         layer1.computeDelta = true
         layer2.computeForward = false
         
-        try! layer1.setDataGPU(inputData1)
-        try! layer2.setDataGPU(inputData2)
+        try! layer1.setDataGPU(inputData1, batchSize: 1, nbNeurons: 1)
+        try! layer2.setDataGPU(inputData2, batchSize: 1, nbNeurons: 1)
         
         model1.updateKernel(batchSize: 1)
         model2.updateKernel(batchSize: 1)
@@ -273,7 +279,9 @@ class UpdateManagementTests: XCTestCase
         try! model1.forward()
         try! model2.forward()
         
-        try! lastLayer.lossDerivativeGPU(groundTruth, batchSize: 1)
+        try! lastLayer.lossDerivativeGPU(
+            groundTruth, batchSize: 1, nbNeurons: 1
+        )
         
         try! model2.backward()
         try! model1.backward()
@@ -290,8 +298,8 @@ class UpdateManagementTests: XCTestCase
         layer1.computeDeltaWeights = true
         layer2.computeDeltaWeights = true
         
-        try! layer1.setDataGPU(inputData1)
-        try! layer2.setDataGPU(inputData2)
+        try! layer1.setDataGPU(inputData1, batchSize: 1, nbNeurons: 1)
+        try! layer2.setDataGPU(inputData2, batchSize: 1, nbNeurons: 1)
         
         model1.updateKernel(batchSize: 1)
         model2.updateKernel(batchSize: 1)
@@ -299,7 +307,9 @@ class UpdateManagementTests: XCTestCase
         try! model1.forward()
         try! model2.forward()
         
-        try! lastLayer.lossDerivativeGPU(groundTruth, batchSize: 1)
+        try! lastLayer.lossDerivativeGPU(
+            groundTruth, batchSize: 1, nbNeurons: 1
+        )
         
         try! model2.backward()
         try! model1.backward()
@@ -315,8 +325,8 @@ class UpdateManagementTests: XCTestCase
         // Test that layer1 is not updated.
         layer1.computeDelta = false
         
-        try! layer1.setDataGPU(inputData1)
-        try! layer2.setDataGPU(inputData2)
+        try! layer1.setDataGPU(inputData1, batchSize: 1, nbNeurons: 1)
+        try! layer2.setDataGPU(inputData2, batchSize: 1, nbNeurons: 1)
         
         model1.updateKernel(batchSize: 1)
         model2.updateKernel(batchSize: 1)
@@ -324,7 +334,9 @@ class UpdateManagementTests: XCTestCase
         try! model1.forward()
         try! model2.forward()
         
-        try! lastLayer.lossDerivativeGPU(groundTruth, batchSize: 1)
+        try! lastLayer.lossDerivativeGPU(
+            groundTruth, batchSize: 1, nbNeurons: 1
+        )
         
         try! model2.backward()
         try! model1.backward()
@@ -388,8 +400,18 @@ class UpdateManagementTests: XCTestCase
         
         // Test that by default, layer1 does not forward to layer2.
         
-        try! layer1.setDataCPU(inputData1, batchSize: 1, format: .Neuron)
-        try! layer2.setDataCPU(inputData2, batchSize: 1, format: .Neuron)
+        try! layer1.setDataCPU(
+            inputData1,
+            batchSize: 1,
+            nbChannels: 1, height: 1, width: 1,
+            format: .Neuron
+        )
+        try! layer2.setDataCPU(
+            inputData2,
+            batchSize: 1,
+            nbChannels: 1, height: 1, width: 1,
+            format: .Neuron
+        )
         
         model1.updateKernel(batchSize: 1)
         model2.updateKernel(batchSize: 1)
@@ -405,8 +427,18 @@ class UpdateManagementTests: XCTestCase
         // Test that layer1 does forward to layer2.
         layer2.computeForward = true
         
-        try! layer1.setDataCPU(inputData1, batchSize: 1, format: .Neuron)
-        try! layer2.setDataCPU(inputData2, batchSize: 1, format: .Neuron)
+        try! layer1.setDataCPU(
+            inputData1,
+            batchSize: 1,
+            nbChannels: 1, height: 1, width: 1,
+            format: .Neuron
+        )
+        try! layer2.setDataCPU(
+            inputData2,
+            batchSize: 1,
+            nbChannels: 1, height: 1, width: 1,
+            format: .Neuron
+        )
         
         model1.updateKernel(batchSize: 1)
         model2.updateKernel(batchSize: 1)
@@ -426,8 +458,18 @@ class UpdateManagementTests: XCTestCase
         layer1.computeDelta = true
         layer2.computeForward = false
         
-        try! layer1.setDataCPU(inputData1, batchSize: 1, format: .Neuron)
-        try! layer2.setDataCPU(inputData2, batchSize: 1, format: .Neuron)
+        try! layer1.setDataCPU(
+            inputData1,
+            batchSize: 1,
+            nbChannels: 1, height: 1, width: 1,
+            format: .Neuron
+        )
+        try! layer2.setDataCPU(
+            inputData2,
+            batchSize: 1,
+            nbChannels: 1, height: 1, width: 1,
+            format: .Neuron
+        )
         
         model1.updateKernel(batchSize: 1)
         model2.updateKernel(batchSize: 1)
@@ -435,7 +477,9 @@ class UpdateManagementTests: XCTestCase
         try! model1.forward()
         try! model2.forward()
         
-        try! lastLayer.lossDerivativeCPU(groundTruth)
+        try! lastLayer.lossDerivativeCPU(
+            groundTruth, batchSize: 1, nbNeurons: 1
+        )
         
         try! model2.backward()
         try! model1.backward()
@@ -452,8 +496,18 @@ class UpdateManagementTests: XCTestCase
         layer1.computeDeltaWeights = true
         layer2.computeDeltaWeights = true
         
-        try! layer1.setDataCPU(inputData1, batchSize: 1, format: .Neuron)
-        try! layer2.setDataCPU(inputData2, batchSize: 1, format: .Neuron)
+        try! layer1.setDataCPU(
+            inputData1,
+            batchSize: 1,
+            nbChannels: 1, height: 1, width: 1,
+            format: .Neuron
+        )
+        try! layer2.setDataCPU(
+            inputData2,
+            batchSize: 1,
+            nbChannels: 1, height: 1, width: 1,
+            format: .Neuron
+        )
         
         model1.updateKernel(batchSize: 1)
         model2.updateKernel(batchSize: 1)
@@ -461,7 +515,9 @@ class UpdateManagementTests: XCTestCase
         try! model1.forward()
         try! model2.forward()
         
-        try! lastLayer.lossDerivativeCPU(groundTruth)
+        try! lastLayer.lossDerivativeCPU(
+            groundTruth, batchSize: 1, nbNeurons: 1
+        )
         
         try! model2.backward()
         try! model1.backward()
@@ -477,8 +533,18 @@ class UpdateManagementTests: XCTestCase
         // Test that layer1 is not updated.
         layer1.computeDelta = false
         
-        try! layer1.setDataCPU(inputData1, batchSize: 1, format: .Neuron)
-        try! layer2.setDataCPU(inputData2, batchSize: 1, format: .Neuron)
+        try! layer1.setDataCPU(
+            inputData1,
+            batchSize: 1,
+            nbChannels: 1, height: 1, width: 1,
+            format: .Neuron
+        )
+        try! layer2.setDataCPU(
+            inputData2,
+            batchSize: 1,
+            nbChannels: 1, height: 1, width: 1,
+            format: .Neuron
+        )
         
         model1.updateKernel(batchSize: 1)
         model2.updateKernel(batchSize: 1)
@@ -486,7 +552,9 @@ class UpdateManagementTests: XCTestCase
         try! model1.forward()
         try! model2.forward()
         
-        try! lastLayer.lossDerivativeCPU(groundTruth)
+        try! lastLayer.lossDerivativeCPU(
+            groundTruth, batchSize: 1, nbNeurons: 1
+        )
         
         try! model2.backward()
         try! model1.backward()
@@ -553,8 +621,18 @@ class UpdateManagementTests: XCTestCase
         
         // Test that by default, layer1 does not forward to layer2.
         
-        try! layer1.setDataGPU(inputData1, batchSize: 1, format: .Neuron)
-        try! layer2.setDataGPU(inputData2, batchSize: 1, format: .Neuron)
+        try! layer1.setDataGPU(
+            inputData1,
+            batchSize: 1,
+            nbChannels: 1, height: 1, width: 1,
+            format: .Neuron
+        )
+        try! layer2.setDataGPU(
+            inputData2,
+            batchSize: 1,
+            nbChannels: 1, height: 1, width: 1,
+            format: .Neuron
+        )
         
         model1.updateKernel(batchSize: 1)
         model2.updateKernel(batchSize: 1)
@@ -570,8 +648,18 @@ class UpdateManagementTests: XCTestCase
         // Test that layer1 does forward to layer2.
         layer2.computeForward = true
         
-        try! layer1.setDataGPU(inputData1, batchSize: 1, format: .Neuron)
-        try! layer2.setDataGPU(inputData2, batchSize: 1, format: .Neuron)
+        try! layer1.setDataGPU(
+            inputData1,
+            batchSize: 1,
+            nbChannels: 1, height: 1, width: 1,
+            format: .Neuron
+        )
+        try! layer2.setDataGPU(
+            inputData2,
+            batchSize: 1,
+            nbChannels: 1, height: 1, width: 1,
+            format: .Neuron
+        )
         
         model1.updateKernel(batchSize: 1)
         model2.updateKernel(batchSize: 1)
@@ -591,8 +679,18 @@ class UpdateManagementTests: XCTestCase
         layer1.computeDelta = true
         layer2.computeForward = false
         
-        try! layer1.setDataGPU(inputData1, batchSize: 1, format: .Neuron)
-        try! layer2.setDataGPU(inputData2, batchSize: 1, format: .Neuron)
+        try! layer1.setDataGPU(
+            inputData1,
+            batchSize: 1,
+            nbChannels: 1, height: 1, width: 1,
+            format: .Neuron
+        )
+        try! layer2.setDataGPU(
+            inputData2,
+            batchSize: 1,
+            nbChannels: 1, height: 1, width: 1,
+            format: .Neuron
+        )
         
         model1.updateKernel(batchSize: 1)
         model2.updateKernel(batchSize: 1)
@@ -600,7 +698,9 @@ class UpdateManagementTests: XCTestCase
         try! model1.forward()
         try! model2.forward()
         
-        try! lastLayer.lossDerivativeGPU(groundTruth, batchSize: 1)
+        try! lastLayer.lossDerivativeGPU(
+            groundTruth, batchSize: 1, nbNeurons: 1
+        )
         
         try! model2.backward()
         try! model1.backward()
@@ -617,8 +717,18 @@ class UpdateManagementTests: XCTestCase
         layer1.computeDeltaWeights = true
         layer2.computeDeltaWeights = true
         
-        try! layer1.setDataGPU(inputData1, batchSize: 1, format: .Neuron)
-        try! layer2.setDataGPU(inputData2, batchSize: 1, format: .Neuron)
+        try! layer1.setDataGPU(
+            inputData1,
+            batchSize: 1,
+            nbChannels: 1, height: 1, width: 1,
+            format: .Neuron
+        )
+        try! layer2.setDataGPU(
+            inputData2,
+            batchSize: 1,
+            nbChannels: 1, height: 1, width: 1,
+            format: .Neuron
+        )
         
         model1.updateKernel(batchSize: 1)
         model2.updateKernel(batchSize: 1)
@@ -626,7 +736,9 @@ class UpdateManagementTests: XCTestCase
         try! model1.forward()
         try! model2.forward()
         
-        try! lastLayer.lossDerivativeGPU(groundTruth, batchSize: 1)
+        try! lastLayer.lossDerivativeGPU(
+            groundTruth, batchSize: 1, nbNeurons: 1
+        )
         
         try! model2.backward()
         try! model1.backward()
@@ -642,8 +754,18 @@ class UpdateManagementTests: XCTestCase
         // Test that layer1 is not updated.
         layer1.computeDelta = false
         
-        try! layer1.setDataGPU(inputData1, batchSize: 1, format: .Neuron)
-        try! layer2.setDataGPU(inputData2, batchSize: 1, format: .Neuron)
+        try! layer1.setDataGPU(
+            inputData1,
+            batchSize: 1,
+            nbChannels: 1, height: 1, width: 1,
+            format: .Neuron
+        )
+        try! layer2.setDataGPU(
+            inputData2,
+            batchSize: 1,
+            nbChannels: 1, height: 1, width: 1,
+            format: .Neuron
+        )
         
         model1.updateKernel(batchSize: 1)
         model2.updateKernel(batchSize: 1)
@@ -651,7 +773,9 @@ class UpdateManagementTests: XCTestCase
         try! model1.forward()
         try! model2.forward()
         
-        try! lastLayer.lossDerivativeGPU(groundTruth, batchSize: 1)
+        try! lastLayer.lossDerivativeGPU(
+            groundTruth, batchSize: 1, nbNeurons: 1
+        )
         
         try! model2.backward()
         try! model1.backward()

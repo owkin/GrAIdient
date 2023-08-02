@@ -372,6 +372,12 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerWeightInit
             biases: _updateBiases,
             params: params
         )
+        // Check fails if previousLayer is a Layer2D that is resized.
+        if weightWidth != layer.weightWidth
+        {
+            fatalError()
+        }
+        
         if inPlace
         {
             layer._wArrays = _wArrays
@@ -418,6 +424,12 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerWeightInit
             biases: _updateBiases,
             params: params
         )
+        // Check fails if previousLayer is a Layer2D that is resized.
+        if weightWidth != layer.weightWidth
+        {
+            fatalError()
+        }
+        
         if inPlace
         {
             layer._wArrays = _wArrays
@@ -456,6 +468,12 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerWeightInit
             biases: _updateBiases,
             params: params
         )
+        // Check fails if previousLayer is a Layer2D that is resized.
+        if weightWidth != layer.weightWidth
+        {
+            fatalError()
+        }
+        
         if GrAI.Opti.GPU
         {
             layer.weightsGPU = weightsGPU

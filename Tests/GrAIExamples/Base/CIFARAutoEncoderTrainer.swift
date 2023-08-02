@@ -259,6 +259,7 @@ class CIFARAutoEncoderTrainer
             try! resizerFirstLayer.setDataGPU(
                 data,
                 batchSize: batchSize,
+                nbChannels: 3, height: _originalSize, width: _originalSize,
                 format: .Neuron
             )
             
@@ -266,7 +267,11 @@ class CIFARAutoEncoderTrainer
             try! resizer.forward()
             
             // Set resized data.
-            try! firstLayer.setDataGPU(dataLayer.outs, batchSize: batchSize)
+            try! firstLayer.setDataGPU(
+                dataLayer.outs,
+                batchSize: batchSize,
+                nbChannels: 3, height: _size, width: _size
+            )
         }
         else
         {
@@ -274,6 +279,7 @@ class CIFARAutoEncoderTrainer
             try! firstLayer.setDataGPU(
                 data,
                 batchSize: batchSize,
+                nbChannels: 3, height: _size, width: _size,
                 format: .Neuron
             )
             dataLayer = firstLayer
@@ -285,7 +291,8 @@ class CIFARAutoEncoderTrainer
         // Apply loss derivative: take into account the potential coarse image.
         try! lastLayer.lossDerivativeGPU(
             dataLayer.outs,
-            batchSize: batchSize
+            batchSize: batchSize,
+            nbChannels: 3, height: _size, width: _size
         )
         
         // Backward.
@@ -300,7 +307,8 @@ class CIFARAutoEncoderTrainer
         // just an indicator.
         let loss = try! lastLayer.getLossGPU(
             dataLayer.outs,
-            batchSize: batchSize
+            batchSize: batchSize,
+            nbChannels: 3, height: _size, width: _size
         )
         
         // Update internal step.

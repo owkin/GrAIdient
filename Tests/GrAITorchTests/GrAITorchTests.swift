@@ -66,7 +66,12 @@ final class GrAITorchTests: XCTestCase
         
         // Set data.
         let data: [Float] = getInputData(size)
-        try! firstLayer.setDataGPU(data, batchSize: 1, format: .RGB)
+        try! firstLayer.setDataGPU(
+            data,
+            batchSize: 1,
+            nbChannels: 3, height: _size, width: _size,
+            format: .RGB
+        )
         
         // Update internal batch size.
         finalModel.updateKernel(batchSize: 1)
@@ -76,7 +81,11 @@ final class GrAITorchTests: XCTestCase
         
         // Apply loss derivative.
         let groundTruth: [[Double]] = [[0.0]]
-        try! lastLayer.lossDerivativeGPU(groundTruth)
+        try! lastLayer.lossDerivativeGPU(
+            groundTruth,
+            batchSize: 1,
+            nbNeurons: 1
+        )
         
         // Backward.
         try! finalModel.backward()
@@ -128,7 +137,12 @@ final class GrAITorchTests: XCTestCase
         
         // Set data.
         let data: [Float] = getInputData(size)
-        try! firstLayer.setDataGPU(data, batchSize: 1, format: .RGB)
+        try! firstLayer.setDataGPU(
+            data,
+            batchSize: 1,
+            nbChannels: 3, height: _size, width: _size,
+            format: .RGB
+        )
         
         // Update internal batch size.
         finalModel.updateKernel(batchSize: 1)
@@ -137,7 +151,12 @@ final class GrAITorchTests: XCTestCase
         try! finalModel.forward()
         
         // Apply loss derivative.
-        try! lastLayer.lossDerivativeGPU(data, batchSize: 1, format: .RGB)
+        try! lastLayer.lossDerivativeGPU(
+            data,
+            batchSize: 1,
+            nbChannels: 3, height: _size, width: _size,
+            format: .RGB
+        )
         
         // Backward.
         try! finalModel.backward()
@@ -206,7 +225,12 @@ final class GrAITorchTests: XCTestCase
         
         // Set data.
         let data: [Float] = getBatchData(size: size, batchSize: batchSize)
-        try! firstLayer.setDataGPU(data, batchSize: batchSize, format: .RGB)
+        try! firstLayer.setDataGPU(
+            data,
+            batchSize: batchSize,
+            nbChannels: 3, height: _size, width: _size,
+            format: .RGB
+        )
         
         // Update internal batch size.
         finalModel.updateKernel(batchSize: batchSize)
@@ -221,7 +245,11 @@ final class GrAITorchTests: XCTestCase
             groundTruth.append([0.0])
         }
         try! similarityLayer.lossDerivativeGPU()
-        try! lastLayer.lossDerivativeGPU(groundTruth)
+        try! lastLayer.lossDerivativeGPU(
+            groundTruth,
+            batchSize: batchSize,
+            nbNeurons: 1
+        )
         
         // Backward.
         try! finalModel.backward()
@@ -307,7 +335,12 @@ final class GrAITorchTests: XCTestCase
         
         // Set data.
         let data: [Float] = getComplexData(_size)
-        try! firstLayer.setDataGPU(data, batchSize: 1, format: .RGB)
+        try! firstLayer.setDataGPU(
+            data,
+            batchSize: 1,
+            nbChannels: 6, height: _size, width: _size,
+            format: .RGB
+        )
         try! secondLayer.setDataGPU(batchSize: 1)
         
         // Update internal batch size.
@@ -318,7 +351,11 @@ final class GrAITorchTests: XCTestCase
         
         // Apply loss derivative.
         let groundTruth: [[Double]] = [[0.0]]
-        try! lastLayer.lossDerivativeGPU(groundTruth)
+        try! lastLayer.lossDerivativeGPU(
+            groundTruth,
+            batchSize: 1,
+            nbNeurons: 1
+        )
         
         // Backward.
         try! finalModel.backward()

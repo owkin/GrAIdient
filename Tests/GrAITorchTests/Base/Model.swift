@@ -55,7 +55,7 @@ class ModelTestConv1
         
         layer = AdaptiveAvgPool2D(layerPrev: layer, size: 7, params: params)
         
-        var head: Layer1D = FullyConnected(
+        var head: Layer1D = try! FullyConnected(
             layerPrev: layer,
             nbNeurons: 10,
             activation: ReLU.str,
@@ -63,7 +63,7 @@ class ModelTestConv1
             params: params
         )
         
-        head = FullyConnected(
+        head = try! FullyConnected(
             layerPrev: head,
             nbNeurons: 1,
             activation: nil,
@@ -157,11 +157,11 @@ class ModelTestConv2
             params: params
         )
         
-        layer = Sum2D(layersPrev: [layer, layer1], params: params)
+        layer = try! Sum2D(layersPrev: [layer, layer1], params: params)
         
         layer = AdaptiveAvgPool2D(layerPrev: layer, size: 7, params: params)
         
-        var head: Layer1D = FullyConnected(
+        var head: Layer1D = try! FullyConnected(
             layerPrev: layer,
             nbNeurons: 10,
             activation: ReLU.str,
@@ -169,7 +169,7 @@ class ModelTestConv2
             params: params
         )
         
-        head = FullyConnected(
+        head = try! FullyConnected(
             layerPrev: head,
             nbNeurons: 1,
             activation: nil,
@@ -250,16 +250,16 @@ class ModelTestFFT
         )
         let firstLayer: Layer2D = layer
         
-        layer = FTFrequences2D(
+        layer = try! FTFrequences2D(
             nbChannels: 6, dimension: size,
             params: params
         )
         
-        layer = Multiply2D(
+        layer = try! Multiply2D(
             layersPrev: [firstLayer, layer], params: params
         )
         
-        layer = IRDFT2RGB(
+        layer = try! IRDFT2RGB(
             layerPrev: layer, params: params
         )
         
@@ -269,7 +269,7 @@ class ModelTestFFT
             params: params
         )
         
-         layer = DecorrelateRGB(
+         layer = try! DecorrelateRGB(
             layerPrev: layer,
             correlation: [
                 0.26, 0.09, 0.02,
@@ -383,7 +383,7 @@ class ModelTestConvSK: ModelTestConv
             layerPrev: layer, params: params
         )
         
-        head = FullyConnected(
+        head = try! FullyConnected(
             layerPrev: head,
             nbNeurons: 1,
             activation: nil,
@@ -443,7 +443,7 @@ class ModelTestDeConvSK: ModelTestConv
             layerPrev: layer, params: params
         )
         
-        head = FullyConnected(
+        head = try! FullyConnected(
             layerPrev: head,
             nbNeurons: 1,
             activation: nil,
@@ -502,7 +502,7 @@ class ModelTestCat
             params: params
         )
         
-        layer = Concat2D(
+        layer = try! Concat2D(
             layersPrev: [layer1, layer2], params: params
         )
         
@@ -510,7 +510,7 @@ class ModelTestCat
             layerPrev: layer, params: params
         )
         
-        head = FullyConnected(
+        head = try! FullyConnected(
             layerPrev: head,
             nbNeurons: 1,
             activation: nil,
@@ -630,7 +630,7 @@ class ModelTestResizeBilinear: ModelTestResize
             params: params
         )
         
-        layer = ResizeBilinear(
+        layer = try! ResizeBilinear(
             layerPrev: layer,
             dimension: sizeOutput,
             params: params
@@ -640,7 +640,7 @@ class ModelTestResizeBilinear: ModelTestResize
             layerPrev: layer, params: params
         )
         
-        head = FullyConnected(
+        head = try! FullyConnected(
             layerPrev: head,
             nbNeurons: 1,
             activation: nil,
@@ -695,7 +695,7 @@ class ModelTestResizeBilinearPad: ModelTestResize
             params: params
         )
         
-        layer = ResizeBilinearPad(
+        layer = try! ResizeBilinearPad(
             layerPrev: layer,
             scalesList: [Double(sizeOutput) / Double(sizeInput)],
             padValue: 0.0,
@@ -706,7 +706,7 @@ class ModelTestResizeBilinearPad: ModelTestResize
             layerPrev: layer, params: params
         )
         
-        head = FullyConnected(
+        head = try! FullyConnected(
             layerPrev: head,
             nbNeurons: 1,
             activation: nil,
@@ -761,7 +761,7 @@ class ModelTestResizeBilinearCrop: ModelTestResize
             params: params
         )
         
-        layer = ResizeBilinearCrop(
+        layer = try! ResizeBilinearCrop(
             layerPrev: layer,
             scalesList: [Double(sizeOutput) / Double(sizeInput)],
             params: params
@@ -771,7 +771,7 @@ class ModelTestResizeBilinearCrop: ModelTestResize
             layerPrev: layer, params: params
         )
         
-        head = FullyConnected(
+        head = try! FullyConnected(
             layerPrev: head,
             nbNeurons: 1,
             activation: nil,
@@ -820,7 +820,7 @@ class ModelTestPatchConv
             params: params
         )
         
-        let layerSeq: LayerSeq = FullyConnectedPatch(
+        let layerSeq: LayerSeq = try! FullyConnectedPatch(
             layerPrev: layer, patch: patch, nbNeurons: 5,
             activation: nil, biases: true,
             params: params
@@ -830,7 +830,7 @@ class ModelTestPatchConv
             layerPrev: layerSeq, params: params
         )
         
-        head = FullyConnected(
+        head = try! FullyConnected(
             layerPrev: head, nbNeurons: 1,
             activation: nil, biases: true,
             params: params
@@ -903,7 +903,7 @@ class ModelTestAttention1
             params: params
         )
         
-        var layerSeq: LayerSeq = FullyConnectedPatch(
+        var layerSeq: LayerSeq = try! FullyConnectedPatch(
             layerPrev: layer, patch: patch, nbNeurons: 5,
             activation: nil, biases: true,
             params: params
@@ -925,12 +925,12 @@ class ModelTestAttention1
             params: params
         )
         
-        var score: LayerSeq = QuerySeq(
+        var score: LayerSeq = try! QuerySeq(
             query: query, key: key, nbHeads: 1, params: params
         )
-        score = SoftmaxSeq(layerPrev: score, nbHeads: 1, params: params)
+        score = try! SoftmaxSeq(layerPrev: score, nbHeads: 1, params: params)
         
-        layerSeq = ValueSeq(
+        layerSeq = try! ValueSeq(
             value: value, score: score, nbHeads: 1,
             params: params
         )
@@ -945,7 +945,7 @@ class ModelTestAttention1
             layerPrev: layerSeq, params: params
         )
         
-        head = FullyConnected(
+        head = try! FullyConnected(
             layerPrev: head, nbNeurons: 1,
             activation: nil, biases: true,
             params: params
@@ -1027,7 +1027,7 @@ class ModelTestAttention2
             params: params
         )
         
-        var layerSeq: LayerSeq = FullyConnectedPatch(
+        var layerSeq: LayerSeq = try! FullyConnectedPatch(
             layerPrev: layer, patch: patch, nbNeurons: 6,
             activation: nil, biases: true,
             params: params
@@ -1050,16 +1050,16 @@ class ModelTestAttention2
         )
         
         let nbHeads = 3
-        layerSeq = QuerySeq(
+        layerSeq = try! QuerySeq(
             query: query, key: key, nbHeads: nbHeads,
             params: params
         )
-        layerSeq = SoftmaxSeq(
+        layerSeq = try! SoftmaxSeq(
             layerPrev: layerSeq, nbHeads: nbHeads,
             params: params
         )
             
-        layerSeq = ValueSeq(
+        layerSeq = try! ValueSeq(
             value: value, score: layerSeq, nbHeads: nbHeads,
             params: params
         )
@@ -1074,7 +1074,7 @@ class ModelTestAttention2
             layerPrev: layerSeq, params: params
         )
         
-        head = FullyConnected(
+        head = try! FullyConnected(
             layerPrev: head, nbNeurons: 1,
             activation: nil, biases: true,
             params: params
@@ -1153,7 +1153,7 @@ class ModelTestLayerNorm
             params: params
         )
         
-        var layerSeq: LayerSeq = FullyConnectedPatch(
+        var layerSeq: LayerSeq = try! FullyConnectedPatch(
             layerPrev: layer, patch: patch, nbNeurons: 5,
             activation: nil, biases: true,
             params: params
@@ -1167,7 +1167,7 @@ class ModelTestLayerNorm
             layerPrev: layerSeq, params: params
         )
         
-        head = FullyConnected(
+        head = try! FullyConnected(
             layerPrev: head, nbNeurons: 1,
             activation: nil, biases: true,
             params: params
@@ -1351,7 +1351,7 @@ class ModelTestGram
             layerPrev: layer, params: params
         )
         
-        _ = FullyConnected(
+        _ = try! FullyConnected(
             layerPrev: head,
             nbNeurons: 1,
             activation: nil,

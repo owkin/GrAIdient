@@ -116,7 +116,7 @@ final class AutoEncoderExample: XCTestCase
             
             if numLayer + 1 < layersPrev.count
             {
-                layer = Concat2D(
+                layer = try! Concat2D(
                     layersPrev: [layersPrev[numLayer + 1], layer],
                     params: params
                 )
@@ -165,7 +165,7 @@ final class AutoEncoderExample: XCTestCase
         )
         for _ in 0..<8
         {
-            layer = FullyConnected(
+            layer = try! FullyConnected(
                 layerPrev: layer, nbNeurons: 8,
                 activation: ReLU.str, biases: true,
                 params: params
@@ -194,7 +194,7 @@ final class AutoEncoderExample: XCTestCase
             nbChannels: 8, height: 2, width: 2,
             params: params
         )
-        layer = AdaIN(
+        layer = try! AdaIN(
             layersPrev: [
                 layer,
                 FullyConnected(
@@ -211,7 +211,7 @@ final class AutoEncoderExample: XCTestCase
             activation: ReLU.str, biases: true, bn: false,
             params: params
         )
-        layer = AdaIN(
+        layer = try! AdaIN(
             layersPrev: [
                 layer,
                 FullyConnected(
@@ -225,7 +225,7 @@ final class AutoEncoderExample: XCTestCase
         
         for _ in 0..<nbBlocks-1
         {
-            layer = ResizeBilinearPad(
+            layer = try! ResizeBilinearPad(
                 layerPrev: layer, scalesList: [2], padValue: 0.0,
                 params: params
             )
@@ -234,7 +234,7 @@ final class AutoEncoderExample: XCTestCase
                 activation: ReLU.str, biases: true, bn: false,
                 params: params
             )
-            layer = AdaIN(
+            layer = try! AdaIN(
                 layersPrev: [
                     layer,
                     FullyConnected(

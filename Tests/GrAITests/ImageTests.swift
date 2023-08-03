@@ -73,7 +73,7 @@ class ImageTests: XCTestCase
         {
         case "Rotate":
             let p = parameters as! Double
-            layer = Rotate2D(
+            layer = try! Rotate2D(
                 layerPrev: layer,
                 anglesList: [p],
                 padValue: 0.0,
@@ -98,7 +98,7 @@ class ImageTests: XCTestCase
             
         case "ColorJitterHSV":
             let p = parameters as! (Range<Double>, Range<Double>, Range<Double>)
-            layer = ColorJitterHSV(
+            layer = try! ColorJitterHSV(
                 layerPrev: layer,
                 rangeH: p.0,
                 rangeS: p.1,

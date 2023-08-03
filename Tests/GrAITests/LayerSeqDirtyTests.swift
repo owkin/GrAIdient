@@ -49,7 +49,7 @@ class LayerSeqDirtyGradTests: Input2DMSE1DCase
             activation: SoftReLU.str, biases: true, bn: false, params: params
         )
         
-        let layerSeq = FullyConnectedPatch(
+        let layerSeq = try! FullyConnectedPatch(
             layerPrev: layer, patch: width / 3, nbNeurons: 5,
             activation: SoftReLU.str, biases: true, params: params
         )
@@ -71,7 +71,7 @@ class LayerSeqDirtyGradTests: Input2DMSE1DCase
             )
             
         case "Softmax":
-            secondLayer = SoftmaxSeq(
+            secondLayer = try! SoftmaxSeq(
                 layerPrev: layerSeq, nbHeads: 1, params: params
             )
             
@@ -79,13 +79,13 @@ class LayerSeqDirtyGradTests: Input2DMSE1DCase
             fatalError("Unreachable.")
         }
         
-        firstLayer = SumSeq(
+        firstLayer = try! SumSeq(
             layersPrev: [firstLayer, secondLayer], params: params
         )
         
         var head: Layer1D = AvgPoolSeq(layerPrev: firstLayer, params: params)
         
-        head = FullyConnected(
+        head = try! FullyConnected(
             layerPrev: head, nbNeurons: 1,
             activation: SoftReLU.str, biases: true, params: params
         )
@@ -166,7 +166,7 @@ class LayerSeqDirtyFlowTests: Input2DMSE1DCase
             activation: LeakyReLU.str, biases: true, bn: false, params: params
         )
         
-        let layerSeq = FullyConnectedPatch(
+        let layerSeq = try! FullyConnectedPatch(
             layerPrev: layer, patch: width / 3, nbNeurons: 5,
             activation: LeakyReLU.str, biases: true, params: params
         )
@@ -177,17 +177,17 @@ class LayerSeqDirtyFlowTests: Input2DMSE1DCase
         switch model
         {
         case "Sum":
-            let otherLayer: LayerSeq = FullyConnectedPatch(
+            let otherLayer: LayerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true, params: params
             )
-            secondLayer = SumSeq(
+            secondLayer = try! SumSeq(
                 layersPrev: [firstLayer, otherLayer],
                 params: params
             )
             
         case "Concat2":
-            let otherLayer: LayerSeq = FullyConnectedPatch(
+            let otherLayer: LayerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 3,
                 activation: LeakyReLU.str, biases: true, params: params
             )
@@ -212,11 +212,11 @@ class LayerSeqDirtyFlowTests: Input2DMSE1DCase
             )
             
         case "QueryQuery":
-            let otherLayer: LayerSeq = FullyConnectedPatch(
+            let otherLayer: LayerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true, params: params
             )
-            secondLayer = QuerySeq(
+            secondLayer = try! QuerySeq(
                 query: layerSeq, key: otherLayer, nbHeads: 1,
                 params: params
             )
@@ -226,11 +226,11 @@ class LayerSeqDirtyFlowTests: Input2DMSE1DCase
             )
             
         case "QueryKey":
-            let otherLayer: LayerSeq = FullyConnectedPatch(
+            let otherLayer: LayerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true, params: params
             )
-            secondLayer = QuerySeq(
+            secondLayer = try! QuerySeq(
                 query: otherLayer, key: layerSeq, nbHeads: 1,
                 params: params
             )
@@ -240,12 +240,12 @@ class LayerSeqDirtyFlowTests: Input2DMSE1DCase
             )
             
         case "Softmax":
-            secondLayer = SoftmaxSeq(
+            secondLayer = try! SoftmaxSeq(
                 layerPrev: layerSeq, nbHeads: 1, params: params
             )
             
         case "ValueValue":
-            var otherLayer: LayerSeq = FullyConnectedPatch(
+            var otherLayer: LayerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: 2, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true, params: params
             )
@@ -253,7 +253,7 @@ class LayerSeqDirtyFlowTests: Input2DMSE1DCase
                 layerPrev: otherLayer, nbNeurons: 9,
                 activation: LeakyReLU.str, biases: true, params: params
             )
-            secondLayer = ValueSeq(
+            secondLayer = try! ValueSeq(
                 value: layerSeq, score: otherLayer, nbHeads: 1,
                 params: params
             )
@@ -264,7 +264,7 @@ class LayerSeqDirtyFlowTests: Input2DMSE1DCase
                 layerPrev: firstLayer, nbNeurons: 9,
                 activation: LeakyReLU.str, biases: true, params: params
             )
-            secondLayer = ValueSeq(
+            secondLayer = try! ValueSeq(
                 value: secondLayer, score: firstLayer, nbHeads: 1,
                 params: params
             )
@@ -281,13 +281,13 @@ class LayerSeqDirtyFlowTests: Input2DMSE1DCase
             fatalError("Unreachable.")
         }
         
-        firstLayer = SumSeq(
+        firstLayer = try! SumSeq(
             layersPrev: [firstLayer, secondLayer], params: params
         )
         
         var head: Layer1D = AvgPoolSeq(layerPrev: firstLayer, params: params)
         
-        head = FullyConnected(
+        head = try! FullyConnected(
             layerPrev: head, nbNeurons: 1,
             activation: LeakyReLU.str, biases: true, params: params
         )

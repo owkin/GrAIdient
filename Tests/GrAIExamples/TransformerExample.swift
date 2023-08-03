@@ -94,16 +94,16 @@ final class TransformerExample: XCTestCase
             params: params
         )
         
-        var layerSeq: LayerSeq = QuerySeq(
+        var layerSeq: LayerSeq = try! QuerySeq(
             query: query, key: key, nbHeads: nbHeads,
             params: params
         )
-        layerSeq = SoftmaxSeq(
+        layerSeq = try! SoftmaxSeq(
             layerPrev: layerSeq, nbHeads: nbHeads,
             params: params
         )
             
-        layerSeq = ValueSeq(
+        layerSeq = try! ValueSeq(
             value: value, score: layerSeq, nbHeads: nbHeads,
             params: params
         )
@@ -153,7 +153,7 @@ final class TransformerExample: XCTestCase
             sequence: 1, nbNeurons: hiddenDim, params: params
         )
         
-        var layerSeq: LayerSeq = FullyConnectedPatch(
+        var layerSeq: LayerSeq = try! FullyConnectedPatch(
             layerPrev: layer, patch: patch, nbNeurons: hiddenDim,
             activation: nil, biases: true,
             params: params
@@ -164,10 +164,10 @@ final class TransformerExample: XCTestCase
             sequence: sequence, nbNeurons: hiddenDim, params: params
         )
         
-        layerSeq = Concat1Seq(
+        layerSeq = try! Concat1Seq(
             layersPrev: [extraClass, layerSeq], params: params
         )
-        layerSeq = SumSeq(
+        layerSeq = try! SumSeq(
             layersPrev: [layerSeq, posEmbedding], params: params
         )
         
@@ -185,7 +185,7 @@ final class TransformerExample: XCTestCase
                 params: params
             )
             
-            layerSeq = SumSeq(
+            layerSeq = try! SumSeq(
                 layersPrev: [layerSeq, layerInput], params: params
             )
             layerInput = layerSeq
@@ -206,7 +206,7 @@ final class TransformerExample: XCTestCase
                 params: params
             )
             
-            layerSeq = SumSeq(
+            layerSeq = try! SumSeq(
                 layersPrev: [layerSeq, layerInput], params: params
             )
         }
@@ -217,7 +217,7 @@ final class TransformerExample: XCTestCase
         
         var head: Layer1D = AvgPoolSeq(layerPrev: layerSeq, params: params)
         
-        head = FullyConnected(
+        head = try! FullyConnected(
             layerPrev: head, nbNeurons: 1,
             activation: ReLU.str, biases: true,
             params: params

@@ -28,7 +28,7 @@ public class ResizeBilinear: ResizeBilinearPad
                 message: "ResizeBilinear only supports squared images."
             )
         }
-        super.init(
+        try super.init(
             layerPrev: layerPrev,
             scalesList: [Double(dimension) / Double(layerPrev.height)],
             padValue: 0.0,

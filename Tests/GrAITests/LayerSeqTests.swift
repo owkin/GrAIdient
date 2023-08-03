@@ -54,53 +54,53 @@ class LayerSeqGradTests: Input2DMSE1DCase
         switch model
         {
         case "FullyConnectedPatch":
-            layerSeq = FullyConnectedPatch(
+            layerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: SoftReLU.str, biases: true, params: params
             )
             
         case "Sum":
-            let otherLayer1: LayerSeq = FullyConnectedPatch(
+            let otherLayer1: LayerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: SoftReLU.str, biases: true, params: params
             )
-            let otherLayer2: LayerSeq = FullyConnectedPatch(
+            let otherLayer2: LayerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: SoftReLU.str, biases: true, params: params
             )
-            layerSeq = FullyConnectedPatch(
+            layerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: SoftReLU.str, biases: true, params: params
             )
-            layerSeq = SumSeq(
+            layerSeq = try! SumSeq(
                 layersPrev: [layerSeq, otherLayer1, otherLayer2],
                 params: params
             )
             
         case "Concat1":
-            let otherLayer: LayerSeq = FullyConnectedPatch(
+            let otherLayer: LayerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: SoftReLU.str, biases: true, params: params
             )
-            layerSeq = FullyConnectedPatch(
+            layerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 2, nbNeurons: 5,
                 activation: SoftReLU.str, biases: true, params: params
             )
-            layerSeq = Concat1Seq(
+            layerSeq = try! Concat1Seq(
                 layersPrev: [layerSeq, otherLayer],
                 params: params
             )
             
         case "Concat2":
-            let otherLayer1: LayerSeq = FullyConnectedPatch(
+            let otherLayer1: LayerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 3,
                 activation: SoftReLU.str, biases: true, params: params
             )
-            let otherLayer2: LayerSeq = FullyConnectedPatch(
+            let otherLayer2: LayerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 6,
                 activation: SoftReLU.str, biases: true, params: params
             )
-            layerSeq = FullyConnectedPatch(
+            layerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 9,
                 activation: SoftReLU.str, biases: true, params: params
             )
@@ -110,7 +110,7 @@ class LayerSeqGradTests: Input2DMSE1DCase
             )
             
         case "Constant12":
-            let otherLayer: LayerSeq = FullyConnectedPatch(
+            let otherLayer: LayerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: 3, nbNeurons: 2,
                 activation: SoftReLU.str, biases: true, params: params
             )
@@ -121,12 +121,12 @@ class LayerSeqGradTests: Input2DMSE1DCase
                 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0
             ]
             
-            layerSeq = SumSeq(
+            layerSeq = try! SumSeq(
                 layersPrev: [layerSeq, otherLayer], params: params
             )
             
         case "Constant2":
-            let otherLayer: LayerSeq = FullyConnectedPatch(
+            let otherLayer: LayerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: 2, nbNeurons: 5,
                 activation: SoftReLU.str, biases: true, params: params
             )
@@ -135,12 +135,12 @@ class LayerSeqGradTests: Input2DMSE1DCase
             )
             (layerSeq as! Constant2Seq).weightsCPU = [1.0, 2.0, 3.0, 4.0, 5.0]
             
-            layerSeq = SumSeq(
+            layerSeq = try! SumSeq(
                 layersPrev: [layerSeq, otherLayer], params: params
             )
             
         case "FullyConnectedSeq":
-            layerSeq = FullyConnectedPatch(
+            layerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: SoftReLU.str, biases: true, params: params
             )
@@ -150,7 +150,7 @@ class LayerSeqGradTests: Input2DMSE1DCase
             )
             
         case "LayerNorm":
-            layerSeq = FullyConnectedPatch(
+            layerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: SoftReLU.str, biases: true, params: params
             )
@@ -159,33 +159,33 @@ class LayerSeqGradTests: Input2DMSE1DCase
             )
             
         case "Query":
-            let otherLayer: LayerSeq = FullyConnectedPatch(
+            let otherLayer: LayerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 6,
                 activation: SoftReLU.str, biases: true, params: params
             )
-            layerSeq = FullyConnectedPatch(
+            layerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 6,
                 activation: SoftReLU.str, biases: true, params: params
             )
-            layerSeq = QuerySeq(
+            layerSeq = try! QuerySeq(
                 query: layerSeq, key: otherLayer, nbHeads: 2, params: params
             )
             
         case "Softmax":
-            layerSeq = FullyConnectedPatch(
+            layerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 15,
                 activation: SoftReLU.str, biases: true, params: params
             )
-            layerSeq = SoftmaxSeq(
+            layerSeq = try! SoftmaxSeq(
                 layerPrev: layerSeq, nbHeads: 3, params: params
             )
             
         case "Value":
-            let otherLayer: LayerSeq = FullyConnectedPatch(
+            let otherLayer: LayerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: 3, nbNeurons: 6,
                 activation: SoftReLU.str, biases: true, params: params
             )
-            layerSeq = FullyConnectedPatch(
+            layerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: 3, nbNeurons: 6,
                 activation: SoftReLU.str, biases: true, params: params
             )
@@ -193,7 +193,7 @@ class LayerSeqGradTests: Input2DMSE1DCase
                 layerPrev: layerSeq, nbNeurons: 2 * 4,
                 activation: SoftReLU.str, biases: true, params: params
             )
-            layerSeq = ValueSeq(
+            layerSeq = try! ValueSeq(
                 value: otherLayer, score: layerSeq, nbHeads: 2, params: params
             )
             
@@ -203,7 +203,7 @@ class LayerSeqGradTests: Input2DMSE1DCase
         
         var head: Layer1D = AvgPoolSeq(layerPrev: layerSeq, params: params)
         
-        head = FullyConnected(
+        head = try! FullyConnected(
             layerPrev: head, nbNeurons: 1,
             activation: SoftReLU.str, biases: true, params: params
         )
@@ -413,53 +413,53 @@ class LayerSeqFlowTests: Input2DMSE1DCase
         switch model
         {
         case "FullyConnectedPatch":
-            layerSeq = FullyConnectedPatch(
+            layerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true, params: params
             )
            
         case "Sum":
-            let otherLayer1: LayerSeq = FullyConnectedPatch(
+            let otherLayer1: LayerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true, params: params
             )
-            let otherLayer2: LayerSeq = FullyConnectedPatch(
+            let otherLayer2: LayerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true, params: params
             )
-            layerSeq = FullyConnectedPatch(
+            layerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true, params: params
             )
-            layerSeq = SumSeq(
+            layerSeq = try! SumSeq(
                 layersPrev: [layerSeq, otherLayer1, otherLayer2],
                 params: params
             )
             
         case "Concat1":
-            let otherLayer: LayerSeq = FullyConnectedPatch(
+            let otherLayer: LayerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true, params: params
             )
-            layerSeq = FullyConnectedPatch(
+            layerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 2, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true, params: params
             )
-            layerSeq = Concat1Seq(
+            layerSeq = try! Concat1Seq(
                 layersPrev: [layerSeq, otherLayer],
                 params: params
             )
             
         case "Concat2":
-            let otherLayer1: LayerSeq = FullyConnectedPatch(
+            let otherLayer1: LayerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 3,
                 activation: LeakyReLU.str, biases: true, params: params
             )
-            let otherLayer2: LayerSeq = FullyConnectedPatch(
+            let otherLayer2: LayerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 6,
                 activation: LeakyReLU.str, biases: true, params: params
             )
-            layerSeq = FullyConnectedPatch(
+            layerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 9,
                 activation: LeakyReLU.str, biases: true, params: params
             )
@@ -469,7 +469,7 @@ class LayerSeqFlowTests: Input2DMSE1DCase
             )
             
         case "Constant12":
-            let otherLayer: LayerSeq = FullyConnectedPatch(
+            let otherLayer: LayerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: 3, nbNeurons: 2,
                 activation: LeakyReLU.str, biases: true, params: params
             )
@@ -480,12 +480,12 @@ class LayerSeqFlowTests: Input2DMSE1DCase
                 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0
             ]
             
-            layerSeq = SumSeq(
+            layerSeq = try! SumSeq(
                 layersPrev: [layerSeq, otherLayer], params: params
             )
             
         case "Constant2":
-            let otherLayer: LayerSeq = FullyConnectedPatch(
+            let otherLayer: LayerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: 2, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true, params: params
             )
@@ -494,12 +494,12 @@ class LayerSeqFlowTests: Input2DMSE1DCase
             )
             (layerSeq as! Constant2Seq).weightsCPU = [1.0, 2.0, 3.0, 4.0, 5.0]
             
-            layerSeq = SumSeq(
+            layerSeq = try! SumSeq(
                 layersPrev: [layerSeq, otherLayer], params: params
             )
             
         case "FullyConnectedSeq":
-            layerSeq = FullyConnectedPatch(
+            layerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true, params: params
             )
@@ -509,7 +509,7 @@ class LayerSeqFlowTests: Input2DMSE1DCase
             )
             
         case "LayerNorm":
-            layerSeq = FullyConnectedPatch(
+            layerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true, params: params
             )
@@ -518,33 +518,33 @@ class LayerSeqFlowTests: Input2DMSE1DCase
             )
             
         case "Query":
-            let otherLayer: LayerSeq = FullyConnectedPatch(
+            let otherLayer: LayerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 6,
                 activation: LeakyReLU.str, biases: true, params: params
             )
-            layerSeq = FullyConnectedPatch(
+            layerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 6,
                 activation: LeakyReLU.str, biases: true, params: params
             )
-            layerSeq = QuerySeq(
+            layerSeq = try! QuerySeq(
                 query: layerSeq, key: otherLayer, nbHeads: 2, params: params
             )
             
         case "Softmax":
-            layerSeq = FullyConnectedPatch(
+            layerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 15,
                 activation: LeakyReLU.str, biases: true, params: params
             )
-            layerSeq = SoftmaxSeq(
+            layerSeq = try! SoftmaxSeq(
                 layerPrev: layerSeq, nbHeads: 3, params: params
             )
             
         case "Value":
-            let otherLayer: LayerSeq = FullyConnectedPatch(
+            let otherLayer: LayerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: 3, nbNeurons: 6,
                 activation: LeakyReLU.str, biases: true, params: params
             )
-            layerSeq = FullyConnectedPatch(
+            layerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: 3, nbNeurons: 6,
                 activation: LeakyReLU.str, biases: true, params: params
             )
@@ -552,12 +552,12 @@ class LayerSeqFlowTests: Input2DMSE1DCase
                 layerPrev: layerSeq, nbNeurons: 2 * 4,
                 activation: LeakyReLU.str, biases: true, params: params
             )
-            layerSeq = ValueSeq(
+            layerSeq = try! ValueSeq(
                 value: otherLayer, score: layerSeq, nbHeads: 2, params: params
             )
             
         case "VQ":
-            layerSeq = FullyConnectedPatch(
+            layerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true, params: params
             )
@@ -570,7 +570,7 @@ class LayerSeqFlowTests: Input2DMSE1DCase
         
         var head: Layer1D = AvgPoolSeq(layerPrev: layerSeq, params: params)
         
-        head = FullyConnected(
+        head = try! FullyConnected(
             layerPrev: head, nbNeurons: 1,
             activation: LeakyReLU.str, biases: true, params: params
         )
@@ -974,13 +974,13 @@ class LayerSeqFlowAccumulateTests: Input2DMSE1DCase
         switch model
         {
         case "FullyConnectedPatch":
-            layerSeq = FullyConnectedPatch(
+            layerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true, params: params
             )
             
         case "Constant12":
-            let otherLayer: LayerSeq = FullyConnectedPatch(
+            let otherLayer: LayerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: 3, nbNeurons: 2,
                 activation: LeakyReLU.str, biases: true, params: params
             )
@@ -991,12 +991,12 @@ class LayerSeqFlowAccumulateTests: Input2DMSE1DCase
                 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0
             ]
             
-            layerSeq = SumSeq(
+            layerSeq = try! SumSeq(
                 layersPrev: [layerSeq, otherLayer], params: params
             )
             
         case "Constant2":
-            let otherLayer: LayerSeq = FullyConnectedPatch(
+            let otherLayer: LayerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: 2, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true, params: params
             )
@@ -1005,12 +1005,12 @@ class LayerSeqFlowAccumulateTests: Input2DMSE1DCase
             )
             (layerSeq as! Constant2Seq).weightsCPU = [1.0, 2.0, 3.0, 4.0, 5.0]
             
-            layerSeq = SumSeq(
+            layerSeq = try! SumSeq(
                 layersPrev: [layerSeq, otherLayer], params: params
             )
             
         case "FullyConnectedSeq":
-            layerSeq = FullyConnectedPatch(
+            layerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true, params: params
             )
@@ -1020,7 +1020,7 @@ class LayerSeqFlowAccumulateTests: Input2DMSE1DCase
             )
             
         case "LayerNorm":
-            layerSeq = FullyConnectedPatch(
+            layerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true, params: params
             )
@@ -1029,7 +1029,7 @@ class LayerSeqFlowAccumulateTests: Input2DMSE1DCase
             )
             
         case "VQ":
-            layerSeq = FullyConnectedPatch(
+            layerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true, params: params
             )
@@ -1042,7 +1042,7 @@ class LayerSeqFlowAccumulateTests: Input2DMSE1DCase
         
         var head: Layer1D = AvgPoolSeq(layerPrev: layerSeq, params: params)
         
-        head = FullyConnected(
+        head = try! FullyConnected(
             layerPrev: head, nbNeurons: 1,
             activation: LeakyReLU.str, biases: true, params: params
         )
@@ -1557,7 +1557,7 @@ class SelectSeqGradTests: Input2DMSE1DCase
             activation: SoftReLU.str, biases: true, bn: false, params: params
         )
         
-        let layerSeq: LayerSeq = FullyConnectedPatch(
+        let layerSeq: LayerSeq = try! FullyConnectedPatch(
             layerPrev: layer, patch: width / 3, nbNeurons: 5,
             activation: SoftReLU.str, biases: true, params: params
         )
@@ -1568,7 +1568,7 @@ class SelectSeqGradTests: Input2DMSE1DCase
             params: params
         )
         
-        head = FullyConnected(
+        head = try! FullyConnected(
             layerPrev: head, nbNeurons: 1,
             activation: SoftReLU.str, biases: true, params: params
         )
@@ -1623,7 +1623,7 @@ class SelectSeqFlowTests: Input2DMSE1DCase
             activation: LeakyReLU.str, biases: true, bn: false, params: params
         )
         
-        let layerSeq: LayerSeq = FullyConnectedPatch(
+        let layerSeq: LayerSeq = try! FullyConnectedPatch(
             layerPrev: layer, patch: width / 3, nbNeurons: 5,
             activation: LeakyReLU.str, biases: true, params: params
         )
@@ -1634,7 +1634,7 @@ class SelectSeqFlowTests: Input2DMSE1DCase
             params: params
         )
         
-        head = FullyConnected(
+        head = try! FullyConnected(
             layerPrev: head, nbNeurons: 1,
             activation: LeakyReLU.str, biases: true, params: params
         )
@@ -1879,7 +1879,7 @@ class VQSeqFlowTests: Input2DVQSeqCase
             activation: LeakyReLU.str, biases: true, bn: false, params: params
         )
         
-        let layerSeq: LayerSeq = FullyConnectedPatch(
+        let layerSeq: LayerSeq = try! FullyConnectedPatch(
             layerPrev: layer, patch: width / 3, nbNeurons: 5,
             activation: LeakyReLU.str, biases: true, params: params
         )

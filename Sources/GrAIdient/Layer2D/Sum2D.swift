@@ -79,7 +79,7 @@ public class Sum2D: LayerMerge2D
             layersPrev.append(mapping[idPrev] as! Layer2D)
         }
         
-        let layer = Sum2D(layersPrev: layersPrev, params: params)
+        let layer = try! Sum2D(layersPrev: layersPrev, params: params)
         return layer
     }
     

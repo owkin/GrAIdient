@@ -142,7 +142,7 @@ class Layer2DGradTests: Input2DMSE1DCase
                 activation: SoftReLU.str, biases: true, bn: false,
                 params: params
             )
-            layer = Sum2D(
+            layer = try! Sum2D(
                 layersPrev: [layer, otherLayer1, otherLayer2],
                 params: params
             )
@@ -166,10 +166,10 @@ class Layer2DGradTests: Input2DMSE1DCase
                 layerPrev: layer, size: 2, nbChannels: 6, stride: 2,
                 activation: SoftReLU.str, biases: true, bn: bn, params: params
             )
-            layer = IRDFT2RGB(layerPrev: layer, params: params)
+            layer = try! IRDFT2RGB(layerPrev: layer, params: params)
             
         case "DecorrelateRGB":
-            layer = DecorrelateRGB(
+            layer = try! DecorrelateRGB(
                 layerPrev: layer,
                 correlation: [
                     0.26, 0.26, 0.27,
@@ -198,7 +198,7 @@ class Layer2DGradTests: Input2DMSE1DCase
                 activation: SoftReLU.str, biases: true, bn: false,
                 params: params
             )
-            layer = Multiply2D(
+            layer = try! Multiply2D(
                 layersPrev: [layer, otherLayer1, otherLayer2],
                 params: params
             )
@@ -211,14 +211,14 @@ class Layer2DGradTests: Input2DMSE1DCase
             )
             
         case "Crop":
-            layer = Crop2D(
+            layer = try! Crop2D(
                 layerPrev: layer,
                 cropDimension: 3,
                 params: params
             )
             
         case "ResizeBilinearPad1":
-            layer = ResizeBilinearPad(
+            layer = try! ResizeBilinearPad(
                 layerPrev: layer,
                 scalesList: [0.8, 1.2], padValue: 0.5,
                 params: params
@@ -228,7 +228,7 @@ class Layer2DGradTests: Input2DMSE1DCase
             )
             
         case "ResizeBilinearPad2":
-            layer = ResizeBilinearPad(
+            layer = try! ResizeBilinearPad(
                 layerPrev: layer,
                 minScale: 0.8, maxScale: 1.2, padValue: 0.5,
                 params: params
@@ -238,21 +238,21 @@ class Layer2DGradTests: Input2DMSE1DCase
             )
             
         case "Rotate1":
-            layer = Rotate2D(
+            layer = try! Rotate2D(
                 layerPrev: layer,
                 anglesList: [20.0, 350.0], padValue: 0.5,
                 params: params
             )
             
         case "Rotate2":
-            layer = Rotate2D(
+            layer = try! Rotate2D(
                 layerPrev: layer,
                 minAngle: 20.0, maxAngle: 350.0, padValue: 0.5,
                 params: params
             )
             
         case "ResizeBilinearCrop1":
-            layer = ResizeBilinearCrop(
+            layer = try! ResizeBilinearCrop(
                 layerPrev: layer,
                 scalesList: [0.6, 0.8],
                 params: params
@@ -262,7 +262,7 @@ class Layer2DGradTests: Input2DMSE1DCase
             )
             
         case "ResizeBilinearCrop2":
-            layer = ResizeBilinearCrop(
+            layer = try! ResizeBilinearCrop(
                 layerPrev: layer,
                 scalesList: [0.8, 1.2],
                 params: params
@@ -272,7 +272,7 @@ class Layer2DGradTests: Input2DMSE1DCase
             )
             
         case "ResizeBilinearCrop3":
-            layer = ResizeBilinearCrop(
+            layer = try! ResizeBilinearCrop(
                 layerPrev: layer,
                 minScale: 0.8,
                 maxScale: 1.2,
@@ -329,7 +329,7 @@ class Layer2DGradTests: Input2DMSE1DCase
                 activation: SoftReLU.str, biases: true, bn: false,
                 params: params
             )
-            layer = Concat2D(
+            layer = try! Concat2D(
                 layersPrev: [layer, otherLayer1, otherLayer2],
                 params: params
             )
@@ -346,7 +346,7 @@ class Layer2DGradTests: Input2DMSE1DCase
             (otherLayer as! Constant1D).weightsCPU = [
                 0.5, -0.5, 1.5, -2.0, 3.0, 1.0
             ]
-            layer = AdaIN(
+            layer = try! AdaIN(
                 layersPrev: [layer, otherLayer], params: params
             )
             
@@ -361,7 +361,7 @@ class Layer2DGradTests: Input2DMSE1DCase
                 activation: SoftReLU.str, biases: true, bn: false,
                 params: params
             )
-            layer = Sum2D(
+            layer = try! Sum2D(
                 layersPrev: [layer, otherLayer], params: params
             )
             
@@ -395,7 +395,7 @@ class Layer2DGradTests: Input2DMSE1DCase
             )
             
         case "LayerOutput":
-            layer = MSE2D(layerPrev: layer, params: params)
+            layer = try! MSE2D(layerPrev: layer, params: params)
             
         default:
             fatalError("Unreachable.")
@@ -406,7 +406,7 @@ class Layer2DGradTests: Input2DMSE1DCase
             head = AvgPool2D(layerPrev: layer, params: params)
         }
         
-        head = FullyConnected(
+        head = try! FullyConnected(
             layerPrev: head!, nbNeurons: 1,
             activation: SoftReLU.str, biases: true, params: params
         )
@@ -1238,7 +1238,7 @@ class Layer2DFlowTests: Input2DMSE1DCase
                 activation: LeakyReLU.str, biases: true, bn: false,
                 params: params
             )
-            layer = Sum2D(
+            layer = try! Sum2D(
                 layersPrev: [layer, otherLayer1, otherLayer2],
                 params: params
             )
@@ -1262,10 +1262,10 @@ class Layer2DFlowTests: Input2DMSE1DCase
                 layerPrev: layer, size: 2, nbChannels: 6, stride: 2,
                 activation: SoftReLU.str, biases: true, bn: bn, params: params
             )
-            layer = IRDFT2RGB(layerPrev: layer, params: params)
+            layer = try! IRDFT2RGB(layerPrev: layer, params: params)
             
         case "DecorrelateRGB":
-            layer = DecorrelateRGB(
+            layer = try! DecorrelateRGB(
                 layerPrev: layer,
                 correlation: [
                     0.26, 0.26, 0.27,
@@ -1294,7 +1294,7 @@ class Layer2DFlowTests: Input2DMSE1DCase
                 activation: LeakyReLU.str, biases: true, bn: false,
                 params: params
             )
-            layer = Multiply2D(
+            layer = try! Multiply2D(
                 layersPrev: [layer, otherLayer1, otherLayer2],
                 params: params
             )
@@ -1307,7 +1307,7 @@ class Layer2DFlowTests: Input2DMSE1DCase
             )
             
         case "Crop":
-            layer = Crop2D(
+            layer = try! Crop2D(
                 layerPrev: layer,
                 cropDimension: 3,
                 offsetI: 2,
@@ -1316,7 +1316,7 @@ class Layer2DFlowTests: Input2DMSE1DCase
             )
             
         case "ResizeBilinearPad1":
-            layer = ResizeBilinearPad(
+            layer = try! ResizeBilinearPad(
                 layerPrev: layer,
                 scalesList: [0.8], padValue: 0.5,
                 params: params
@@ -1326,7 +1326,7 @@ class Layer2DFlowTests: Input2DMSE1DCase
             )
             
         case "ResizeBilinearPad2":
-            layer = ResizeBilinearPad(
+            layer = try! ResizeBilinearPad(
                 layerPrev: layer,
                 scalesList: [1.2], padValue: 0.5,
                 params: params
@@ -1336,14 +1336,14 @@ class Layer2DFlowTests: Input2DMSE1DCase
             )
             
         case "Rotate":
-            layer = Rotate2D(
+            layer = try! Rotate2D(
                 layerPrev: layer,
                 anglesList: [20.0], padValue: 0.5,
                 params: params
             )
             
         case "ResizeBilinearCrop1":
-            layer = ResizeBilinearCrop(
+            layer = try! ResizeBilinearCrop(
                 layerPrev: layer,
                 scale: 0.8,
                 offsetI: 0,
@@ -1355,7 +1355,7 @@ class Layer2DFlowTests: Input2DMSE1DCase
             )
             
         case "ResizeBilinearCrop2":
-            layer = ResizeBilinearCrop(
+            layer = try! ResizeBilinearCrop(
                 layerPrev: layer,
                 scale: 1.2,
                 offsetI: 1,
@@ -1401,7 +1401,7 @@ class Layer2DFlowTests: Input2DMSE1DCase
                 activation: LeakyReLU.str, biases: true, bn: false,
                 params: params
             )
-            layer = Concat2D(
+            layer = try! Concat2D(
                 layersPrev: [layer, otherLayer1, otherLayer2],
                 params: params
             )
@@ -1418,7 +1418,7 @@ class Layer2DFlowTests: Input2DMSE1DCase
             (otherLayer as! Constant1D).weightsCPU = [
                 0.5, -0.5, 1.5, -2.0, 3.0, 1.0
             ]
-            layer = AdaIN(
+            layer = try! AdaIN(
                 layersPrev: [layer, otherLayer], params: params
             )
             
@@ -1433,7 +1433,7 @@ class Layer2DFlowTests: Input2DMSE1DCase
                 activation: LeakyReLU.str, biases: true, bn: false,
                 params: params
             )
-            layer = Sum2D(
+            layer = try! Sum2D(
                 layersPrev: [layer, otherLayer], params: params
             )
             
@@ -1442,7 +1442,7 @@ class Layer2DFlowTests: Input2DMSE1DCase
             (layer as! VQ2D).beta = 0.25
             
         case "ResizeBilinear1":
-            layer = ResizeBilinear(
+            layer = try! ResizeBilinear(
                 layerPrev: layer,
                 dimension: Int(round(0.8 * Double(height))),
                 params: params
@@ -1452,7 +1452,7 @@ class Layer2DFlowTests: Input2DMSE1DCase
             )
             
         case "ResizeBilinear2":
-            layer = ResizeBilinear(
+            layer = try! ResizeBilinear(
                 layerPrev: layer,
                 dimension: Int(round(1.2 * Double(height))),
                 params: params
@@ -1491,7 +1491,7 @@ class Layer2DFlowTests: Input2DMSE1DCase
             )
             
         case "LayerOutput":
-            layer = MSE2D(layerPrev: layer, params: params)
+            layer = try! MSE2D(layerPrev: layer, params: params)
             
         default:
             fatalError("Unreachable.")
@@ -1502,7 +1502,7 @@ class Layer2DFlowTests: Input2DMSE1DCase
             head = AvgPool2D(layerPrev: layer, params: params)
         }
         
-        head = FullyConnected(
+        head = try! FullyConnected(
             layerPrev: head!, nbNeurons: 1,
             activation: LeakyReLU.str, biases: true, params: params
         )
@@ -2787,7 +2787,7 @@ class Layer2DFlowAccumulateTests: Input2DMSE1DCase
                 activation: LeakyReLU.str, biases: true, bn: false,
                 params: params
             )
-            layer = Sum2D(
+            layer = try! Sum2D(
                 layersPrev: [layer, otherLayer], params: params
             )
             
@@ -2799,7 +2799,7 @@ class Layer2DFlowAccumulateTests: Input2DMSE1DCase
             fatalError("Unreachable.")
         }
         
-        head = FullyConnected(
+        head = try! FullyConnected(
             layerPrev: head != nil ? head! : layer, nbNeurons: 1,
             activation: LeakyReLU.str, biases: true, params: params
         )
@@ -4197,7 +4197,7 @@ class MSE2DGradTests: Input2DMSE2DCase
             activation: SoftReLU.str, biases: true, bn: false, params: params
         )
         
-        _ = MSE2D(layerPrev: layer, params: params)
+        _ = try! MSE2D(layerPrev: layer, params: params)
     }
     
     func testLossCPU() throws
@@ -4252,7 +4252,7 @@ class MSE2DFlowTests: Input2DMSE2DCase
             activation: LeakyReLU.str, biases: true, bn: false, params: params
         )
         
-        _ = MSE2D(layerPrev: layer, params: params)
+        _ = try! MSE2D(layerPrev: layer, params: params)
     }
     
     func testLoss() throws
@@ -4434,7 +4434,7 @@ class FTFrequences2DGradTests: FTFrequences2DMSE1DCase
         var layer: Layer2D = Input2D(
             nbChannels: 1, width: width, height: height, params: params
         )
-        let frequences: Layer2D = FTFrequences2D(
+        let frequences: Layer2D = try! FTFrequences2D(
             nbChannels: 6, dimension: width, params: params
         )
         
@@ -4443,13 +4443,13 @@ class FTFrequences2DGradTests: FTFrequences2DMSE1DCase
             activation: SoftReLU.str, biases: true, bn: false, params: params
         )
         
-        layer = Multiply2D(
+        layer = try! Multiply2D(
             layersPrev: [layer, frequences], params: params
         )
         
         var head: Layer1D = AvgPool2D(layerPrev: layer, params: params)
         
-        head = FullyConnected(
+        head = try! FullyConnected(
             layerPrev: head, nbNeurons: 1,
             activation: SoftReLU.str, biases: true, params: params
         )
@@ -4515,7 +4515,7 @@ class FTFrequences2DFlowTests: FTFrequences2DMSE1DCase
         var layer: Layer2D = Input2D(
             nbChannels: 1, width: width, height: height, params: params
         )
-        let frequences: Layer2D = FTFrequences2D(
+        let frequences: Layer2D = try! FTFrequences2D(
             nbChannels: 6, dimension: width, params: params
         )
         
@@ -4524,13 +4524,13 @@ class FTFrequences2DFlowTests: FTFrequences2DMSE1DCase
             activation: LeakyReLU.str, biases: true, bn: false, params: params
         )
         
-        layer = Multiply2D(
+        layer = try! Multiply2D(
             layersPrev: [layer, frequences], params: params
         )
         
         var head: Layer1D = AvgPool2D(layerPrev: layer, params: params)
         
-        head = FullyConnected(
+        head = try! FullyConnected(
             layerPrev: head, nbNeurons: 1,
             activation: LeakyReLU.str, biases: true, params: params
         )
@@ -4773,7 +4773,7 @@ class SimilarityBatchError2DGradTests: Input2DSimilarityBatchError2DCase
         
         layer = Normalize122D(layerPrev: layer, params: params)
         
-        _ = SimilarityBatchError2D(layerPrev: layer, params: params)
+        _ = try! SimilarityBatchError2D(layerPrev: layer, params: params)
     }
     
     func testCPU() throws
@@ -4827,7 +4827,7 @@ class SimilarityBatchError2DFlowTests: Input2DSimilarityBatchError2DCase
         
         layer = Normalize122D(layerPrev: layer, params: params)
         
-        _ = SimilarityBatchError2D(layerPrev: layer, params: params)
+        _ = try! SimilarityBatchError2D(layerPrev: layer, params: params)
     }
     
     func test() throws
@@ -5023,7 +5023,7 @@ class SimilarityError2DGradTests: Input2DSimilarityError2DCase
         layer2 = SelfCorrelate2D(layerPrev: layer2, params: params)
         layer2 = Normalize122D(layerPrev: layer2, params: params)
         
-        _ = SimilarityError2D(layersPrev: [layer1, layer2], params: params)
+        _ = try! SimilarityError2D(layersPrev: [layer1, layer2], params: params)
     }
     
     func testCPU() throws
@@ -5083,7 +5083,7 @@ class SimilarityError2DFlowTests: Input2DSimilarityError2DCase
         layer2 = SelfCorrelate2D(layerPrev: layer2, params: params)
         layer2 = Normalize122D(layerPrev: layer2, params: params)
         
-        _ = SimilarityError2D(layersPrev: [layer1, layer2], params: params)
+        _ = try! SimilarityError2D(layersPrev: [layer1, layer2], params: params)
     }
     
     func test() throws
@@ -5274,7 +5274,7 @@ class BCE2DGradTests: Input2DBCE2DCase
             activation: Sigmoid.str, biases: true, bn: false, params: params
         )
         
-        _ = BCE2D(layerPrev: layer, params: params)
+        _ = try! BCE2D(layerPrev: layer, params: params)
     }
     
     func testLossCPU() throws
@@ -5329,7 +5329,7 @@ class BCE2DFlowTests: Input2DBCE2DCase
             activation: Sigmoid.str, biases: true, bn: false, params: params
         )
         
-        _ = BCE2D(layerPrev: layer, params: params)
+        _ = try! BCE2D(layerPrev: layer, params: params)
     }
     
     func testLoss() throws
@@ -5520,7 +5520,7 @@ class BCESigmoid2DGradTests: Input2DBCESigmoid2DCase
             activation: nil, biases: true, bn: false, params: params
         )
         
-        _ = BCESigmoid2D(layerPrev: layer, params: params)
+        _ = try! BCESigmoid2D(layerPrev: layer, params: params)
     }
     
     func testLossCPU() throws
@@ -5575,7 +5575,7 @@ class BCESigmoid2DFlowTests: Input2DBCESigmoid2DCase
             activation: nil, biases: true, bn: false, params: params
         )
         
-        _ = BCESigmoid2D(layerPrev: layer, params: params)
+        _ = try! BCESigmoid2D(layerPrev: layer, params: params)
     }
     
     func testLoss() throws

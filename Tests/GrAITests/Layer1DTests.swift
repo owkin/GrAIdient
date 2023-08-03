@@ -40,7 +40,7 @@ class Layer1DGradTests: Input1DMSE1DCase
         
         var layer: Layer1D = Input1D(nbNeurons: 1, params: params)
         
-        layer = FullyConnected(
+        layer = try! FullyConnected(
             layerPrev: layer, nbNeurons: 5,
             activation: SoftReLU.str, biases: true,
             params: params
@@ -49,7 +49,7 @@ class Layer1DGradTests: Input1DMSE1DCase
         switch model
         {
         case "FullyConnected":
-            layer = FullyConnected(
+            layer = try! FullyConnected(
                 layerPrev: layer, nbNeurons: 12,
                 activation: SoftReLU.str, biases: true,
                 params: params
@@ -71,17 +71,17 @@ class Layer1DGradTests: Input1DMSE1DCase
             )
             
         case "Concat":
-            let otherLayer1: Layer1D = FullyConnected(
+            let otherLayer1: Layer1D = try! FullyConnected(
                 layerPrev: layer, nbNeurons: 9,
                 activation: SoftReLU.str, biases: true,
                 params: params
             )
-            let otherLayer2: Layer1D = FullyConnected(
+            let otherLayer2: Layer1D = try! FullyConnected(
                 layerPrev: layer, nbNeurons: 6,
                 activation: SoftReLU.str, biases: true,
                 params: params
             )
-            layer = FullyConnected(
+            layer = try! FullyConnected(
                 layerPrev: layer, nbNeurons: 3,
                 activation: SoftReLU.str, biases: true,
                 params: params
@@ -92,42 +92,42 @@ class Layer1DGradTests: Input1DMSE1DCase
             )
             
         case "Sum":
-            let otherLayer1: Layer1D = FullyConnected(
+            let otherLayer1: Layer1D = try! FullyConnected(
                 layerPrev: layer, nbNeurons: 10,
                 activation: SoftReLU.str, biases: true,
                 params: params
             )
-            let otherLayer2: Layer1D = FullyConnected(
+            let otherLayer2: Layer1D = try! FullyConnected(
                 layerPrev: layer, nbNeurons: 10,
                 activation: SoftReLU.str, biases: true,
                 params: params
             )
-            layer = FullyConnected(
+            layer = try! FullyConnected(
                 layerPrev: layer, nbNeurons: 10,
                 activation: SoftReLU.str, biases: true,
                 params: params
             )
-            layer = Sum1D(
+            layer = try! Sum1D(
                 layersPrev: [layer, otherLayer1, otherLayer2],
                 params: params
             )
             
         case "Softmax":
-            layer = FullyConnected(
+            layer = try! FullyConnected(
                 layerPrev: layer, nbNeurons: 15,
                 activation: SoftReLU.str, biases: true,
                 params: params
             )
             
-            layer = Softmax1D(layerPrev: layer, nbHeads: 3, params: params)
+            layer = try! Softmax1D(layerPrev: layer, nbHeads: 3, params: params)
             
         case "DotProduct":
-            let otherLayer: Layer1D = FullyConnected(
+            let otherLayer: Layer1D = try! FullyConnected(
                 layerPrev: layer, nbNeurons: 12,
                 activation: SoftReLU.str, biases: true,
                 params: params
             )
-            layer = FullyConnected(
+            layer = try! FullyConnected(
                 layerPrev: layer, nbNeurons: 12,
                 activation: SoftReLU.str, biases: true,
                 params: params
@@ -142,12 +142,12 @@ class Layer1DGradTests: Input1DMSE1DCase
             )
             (otherLayer as! Constant1D).weightsCPU = [1.0, 2.0, 3.0, 4.0, 5.0]
             
-            otherLayer = FullyConnected(
+            otherLayer = try! FullyConnected(
                 layerPrev: otherLayer, nbNeurons: 5,
                 activation: SoftReLU.str, biases: true,
                 params: params
             )
-            layer = Sum1D(
+            layer = try! Sum1D(
                 layersPrev: [layer, otherLayer], params: params
             )
             
@@ -158,7 +158,7 @@ class Layer1DGradTests: Input1DMSE1DCase
             fatalError("Unreachable.")
         }
         
-        layer = FullyConnected(
+        layer = try! FullyConnected(
             layerPrev: layer, nbNeurons: 1,
             activation: SoftReLU.str, biases: true,
             params: params
@@ -325,7 +325,7 @@ class Layer1DFlowTests: Input1DMSE1DCase
         
         var layer: Layer1D = Input1D(nbNeurons: 1, params: params)
         
-        layer = FullyConnected(
+        layer = try! FullyConnected(
             layerPrev: layer, nbNeurons: 5,
             activation: LeakyReLU.str, biases: true,
             params: params
@@ -334,7 +334,7 @@ class Layer1DFlowTests: Input1DMSE1DCase
         switch model
         {
         case "FullyConnected":
-            layer = FullyConnected(
+            layer = try! FullyConnected(
                 layerPrev: layer, nbNeurons: 12,
                 activation: LeakyReLU.str, biases: true,
                 params: params
@@ -356,17 +356,17 @@ class Layer1DFlowTests: Input1DMSE1DCase
             )
             
         case "Concat":
-            let otherLayer1: Layer1D = FullyConnected(
+            let otherLayer1: Layer1D = try! FullyConnected(
                 layerPrev: layer, nbNeurons: 9,
                 activation: LeakyReLU.str, biases: true,
                 params: params
             )
-            let otherLayer2: Layer1D = FullyConnected(
+            let otherLayer2: Layer1D = try! FullyConnected(
                 layerPrev: layer, nbNeurons: 6,
                 activation: LeakyReLU.str, biases: true,
                 params: params
             )
-            layer = FullyConnected(
+            layer = try! FullyConnected(
                 layerPrev: layer, nbNeurons: 3,
                 activation: LeakyReLU.str, biases: true,
                 params: params
@@ -377,42 +377,42 @@ class Layer1DFlowTests: Input1DMSE1DCase
             )
             
         case "Sum":
-            let otherLayer1: Layer1D = FullyConnected(
+            let otherLayer1: Layer1D = try! FullyConnected(
                 layerPrev: layer, nbNeurons: 10,
                 activation: LeakyReLU.str, biases: true,
                 params: params
             )
-            let otherLayer2: Layer1D = FullyConnected(
+            let otherLayer2: Layer1D = try! FullyConnected(
                 layerPrev: layer, nbNeurons: 10,
                 activation: LeakyReLU.str, biases: true,
                 params: params
             )
-            layer = FullyConnected(
+            layer = try! FullyConnected(
                 layerPrev: layer, nbNeurons: 10,
                 activation: LeakyReLU.str, biases: true,
                 params: params
             )
-            layer = Sum1D(
+            layer = try! Sum1D(
                 layersPrev: [layer, otherLayer1, otherLayer2],
                 params: params
             )
             
         case "Softmax":
-            layer = FullyConnected(
+            layer = try! FullyConnected(
                 layerPrev: layer, nbNeurons: 15,
                 activation: LeakyReLU.str, biases: true,
                 params: params
             )
             
-            layer = Softmax1D(layerPrev: layer, nbHeads: 3, params: params)
+            layer = try! Softmax1D(layerPrev: layer, nbHeads: 3, params: params)
             
         case "DotProduct":
-            let otherLayer: Layer1D = FullyConnected(
+            let otherLayer: Layer1D = try! FullyConnected(
                 layerPrev: layer, nbNeurons: 12,
                 activation: LeakyReLU.str, biases: true,
                 params: params
             )
-            layer = FullyConnected(
+            layer = try! FullyConnected(
                 layerPrev: layer, nbNeurons: 12,
                 activation: LeakyReLU.str, biases: true,
                 params: params
@@ -427,12 +427,12 @@ class Layer1DFlowTests: Input1DMSE1DCase
             )
             (otherLayer as! Constant1D).weightsCPU = [1.0, 2.0, 3.0, 4.0, 5.0]
             
-            otherLayer = FullyConnected(
+            otherLayer = try! FullyConnected(
                 layerPrev: otherLayer, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true,
                 params: params
             )
-            layer = Sum1D(
+            layer = try! Sum1D(
                 layersPrev: [layer, otherLayer], params: params
             )
             
@@ -443,7 +443,7 @@ class Layer1DFlowTests: Input1DMSE1DCase
             fatalError("Unreachable.")
         }
         
-        layer = FullyConnected(
+        layer = try! FullyConnected(
             layerPrev: layer, nbNeurons: 1,
             activation: LeakyReLU.str, biases: true,
             params: params
@@ -741,7 +741,7 @@ class Layer1DFlowAccumulateTests: Input1DMSE1DCase
         
         var layer: Layer1D = Input1D(nbNeurons: 1, params: params)
         
-        layer = FullyConnected(
+        layer = try! FullyConnected(
             layerPrev: layer, nbNeurons: 5,
             activation: LeakyReLU.str, biases: true,
             params: params
@@ -750,7 +750,7 @@ class Layer1DFlowAccumulateTests: Input1DMSE1DCase
         switch model
         {
         case "FullyConnected":
-            layer = FullyConnected(
+            layer = try! FullyConnected(
                 layerPrev: layer, nbNeurons: 12,
                 activation: LeakyReLU.str, biases: true,
                 params: params
@@ -762,12 +762,12 @@ class Layer1DFlowAccumulateTests: Input1DMSE1DCase
             )
             (otherLayer as! Constant1D).weightsCPU = [1.0, 2.0, 3.0, 4.0, 5.0]
             
-            otherLayer = FullyConnected(
+            otherLayer = try! FullyConnected(
                 layerPrev: otherLayer, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true,
                 params: params
             )
-            layer = Sum1D(
+            layer = try! Sum1D(
                 layersPrev: [layer, otherLayer], params: params
             )
             
@@ -775,7 +775,7 @@ class Layer1DFlowAccumulateTests: Input1DMSE1DCase
             fatalError("Unreachable.")
         }
         
-        layer = FullyConnected(
+        layer = try! FullyConnected(
             layerPrev: layer, nbNeurons: 1,
             activation: LeakyReLU.str, biases: true,
             params: params
@@ -1112,7 +1112,7 @@ class LinearError1DGradTests: Input1DLinearError1DCase
         
         var layer: Layer1D = Input1D(nbNeurons: 1, params: params)
         
-        layer = FullyConnected(
+        layer = try! FullyConnected(
             layerPrev: layer, nbNeurons: 5,
             activation: SoftReLU.str, biases: true,
             params: params
@@ -1121,7 +1121,7 @@ class LinearError1DGradTests: Input1DLinearError1DCase
         switch model
         {
         case "FullyConnected":
-            layer = FullyConnected(
+            layer = try! FullyConnected(
                 layerPrev: layer, nbNeurons: 12,
                 activation: SoftReLU.str, biases: true,
                 params: params
@@ -1138,7 +1138,7 @@ class LinearError1DGradTests: Input1DLinearError1DCase
             fatalError("Unreachable.")
         }
         
-        layer = FullyConnected(
+        layer = try! FullyConnected(
             layerPrev: layer, nbNeurons: 1,
             activation: SoftReLU.str, biases: true,
             params: params
@@ -1207,7 +1207,7 @@ class LinearError1DFlowTests: Input1DLinearError1DCase
         
         var layer: Layer1D = Input1D(nbNeurons: 1, params: params)
         
-        layer = FullyConnected(
+        layer = try! FullyConnected(
             layerPrev: layer, nbNeurons: 5,
             activation: LeakyReLU.str, biases: true,
             params: params
@@ -1216,7 +1216,7 @@ class LinearError1DFlowTests: Input1DLinearError1DCase
         switch model
         {
         case "FullyConnected":
-            layer = FullyConnected(
+            layer = try! FullyConnected(
                 layerPrev: layer, nbNeurons: 12,
                 activation: LeakyReLU.str, biases: true,
                 params: params
@@ -1233,7 +1233,7 @@ class LinearError1DFlowTests: Input1DLinearError1DCase
             fatalError("Unreachable.")
         }
         
-        layer = FullyConnected(
+        layer = try! FullyConnected(
             layerPrev: layer, nbNeurons: 1,
             activation: LeakyReLU.str, biases: true,
             params: params
@@ -1512,7 +1512,7 @@ class BCE1DGradTests: Input1DBCE1DCase
         
         var layer: Layer1D = Input1D(nbNeurons: 1, params: params)
         
-        layer = FullyConnected(
+        layer = try! FullyConnected(
             layerPrev: layer, nbNeurons: 5,
             activation: SoftReLU.str, biases: true,
             params: params
@@ -1521,7 +1521,7 @@ class BCE1DGradTests: Input1DBCE1DCase
         switch model
         {
         case "FullyConnected":
-            layer = FullyConnected(
+            layer = try! FullyConnected(
                 layerPrev: layer, nbNeurons: 12,
                 activation: SoftReLU.str, biases: true,
                 params: params
@@ -1538,7 +1538,7 @@ class BCE1DGradTests: Input1DBCE1DCase
             fatalError("Unreachable.")
         }
         
-        layer = FullyConnected(
+        layer = try! FullyConnected(
             layerPrev: layer, nbNeurons: 1,
             activation: Sigmoid.str, biases: true,
             params: params
@@ -1607,7 +1607,7 @@ class BCE1DFlowTests: Input1DBCE1DCase
         
         var layer: Layer1D = Input1D(nbNeurons: 1, params: params)
         
-        layer = FullyConnected(
+        layer = try! FullyConnected(
             layerPrev: layer, nbNeurons: 5,
             activation: LeakyReLU.str, biases: true,
             params: params
@@ -1616,7 +1616,7 @@ class BCE1DFlowTests: Input1DBCE1DCase
         switch model
         {
         case "FullyConnected":
-            layer = FullyConnected(
+            layer = try! FullyConnected(
                 layerPrev: layer, nbNeurons: 12,
                 activation: LeakyReLU.str, biases: true,
                 params: params
@@ -1633,7 +1633,7 @@ class BCE1DFlowTests: Input1DBCE1DCase
             fatalError("Unreachable.")
         }
         
-        layer = FullyConnected(
+        layer = try! FullyConnected(
             layerPrev: layer, nbNeurons: 1,
             activation: Sigmoid.str, biases: true,
             params: params
@@ -1912,7 +1912,7 @@ class BCESigmoid1DGradTests: Input1DBCESigmoid1DCase
         
         var layer: Layer1D = Input1D(nbNeurons: 1, params: params)
         
-        layer = FullyConnected(
+        layer = try! FullyConnected(
             layerPrev: layer, nbNeurons: 5,
             activation: SoftReLU.str, biases: true,
             params: params
@@ -1921,7 +1921,7 @@ class BCESigmoid1DGradTests: Input1DBCESigmoid1DCase
         switch model
         {
         case "FullyConnected":
-            layer = FullyConnected(
+            layer = try! FullyConnected(
                 layerPrev: layer, nbNeurons: 12,
                 activation: SoftReLU.str, biases: true,
                 params: params
@@ -1938,7 +1938,7 @@ class BCESigmoid1DGradTests: Input1DBCESigmoid1DCase
             fatalError("Unreachable.")
         }
         
-        layer = FullyConnected(
+        layer = try! FullyConnected(
             layerPrev: layer, nbNeurons: 1,
             activation: nil, biases: true,
             params: params
@@ -2007,7 +2007,7 @@ class BCESigmoid1DFlowTests: Input1DBCESigmoid1DCase
         
         var layer: Layer1D = Input1D(nbNeurons: 1, params: params)
         
-        layer = FullyConnected(
+        layer = try! FullyConnected(
             layerPrev: layer, nbNeurons: 5,
             activation: LeakyReLU.str, biases: true,
             params: params
@@ -2016,7 +2016,7 @@ class BCESigmoid1DFlowTests: Input1DBCESigmoid1DCase
         switch model
         {
         case "FullyConnected":
-            layer = FullyConnected(
+            layer = try! FullyConnected(
                 layerPrev: layer, nbNeurons: 12,
                 activation: LeakyReLU.str, biases: true,
                 params: params
@@ -2033,7 +2033,7 @@ class BCESigmoid1DFlowTests: Input1DBCESigmoid1DCase
             fatalError("Unreachable.")
         }
         
-        layer = FullyConnected(
+        layer = try! FullyConnected(
             layerPrev: layer, nbNeurons: 1,
             activation: nil, biases: true,
             params: params

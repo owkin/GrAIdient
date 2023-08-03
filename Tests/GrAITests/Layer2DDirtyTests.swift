@@ -112,7 +112,7 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
                 activation: SoftReLU.str, biases: true, bn: false,
                 params: params
             )
-            secondLayer = IRDFT2RGB(layerPrev: firstLayer, params: params)
+            secondLayer = try! IRDFT2RGB(layerPrev: firstLayer, params: params)
             
             secondLayer = Convolution2D(
                 layerPrev: secondLayer, size: 1, nbChannels: 6, stride: 1,
@@ -121,7 +121,7 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
             )
             
         case "DecorrelateRGB":
-            secondLayer = DecorrelateRGB(
+            secondLayer = try! DecorrelateRGB(
                 layerPrev: layer,
                 correlation: [
                     0.26, 0.26, 0.27,
@@ -150,7 +150,7 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
             )
             
         case "Crop":
-            secondLayer = Crop2D(
+            secondLayer = try! Crop2D(
                 layerPrev: layer,
                 cropDimension: 3,
                 params: params
@@ -160,7 +160,7 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
             )
             
         case "ResizeBilinearPad1":
-            secondLayer = ResizeBilinearPad(
+            secondLayer = try! ResizeBilinearPad(
                 layerPrev: layer,
                 scalesList: [0.8, 1.2], padValue: 0.5,
                 params: params
@@ -170,7 +170,7 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
             )
             
         case "ResizeBilinearPad2":
-            secondLayer = ResizeBilinearPad(
+            secondLayer = try! ResizeBilinearPad(
                 layerPrev: layer,
                 minScale: 0.8, maxScale: 1.2, padValue: 0.5,
                 params: params
@@ -180,21 +180,21 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
             )
             
         case "Rotate1":
-            secondLayer = Rotate2D(
+            secondLayer = try! Rotate2D(
                 layerPrev: layer,
                 anglesList: [20.0, 350.0], padValue: 0.5,
                 params: params
             )
             
         case "Rotate2":
-            secondLayer = Rotate2D(
+            secondLayer = try! Rotate2D(
                 layerPrev: layer,
                 minAngle: 20.0, maxAngle: 350.0, padValue: 0.5,
                 params: params
             )
             
         case "ResizeBilinearCrop1":
-            secondLayer = ResizeBilinearCrop(
+            secondLayer = try! ResizeBilinearCrop(
                 layerPrev: layer,
                 scalesList: [0.6, 0.8],
                 params: params
@@ -204,7 +204,7 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
             )
             
         case "ResizeBilinearCrop2":
-            secondLayer = ResizeBilinearCrop(
+            secondLayer = try! ResizeBilinearCrop(
                 layerPrev: layer,
                 minScale: 0.6, maxScale: 0.8,
                 params: params
@@ -277,17 +277,17 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
             )
             
         case "LayerOutput":
-            secondLayer = MSE2D(layerPrev: layer, params: params)
+            secondLayer = try! MSE2D(layerPrev: layer, params: params)
             
         default:
             fatalError("Unreachable.")
         }
         
-        layer = Sum2D(
+        layer = try! Sum2D(
             layersPrev: [firstLayer, secondLayer], params: params
         )
         
-        var head: Layer1D = FullyConnected(
+        var head: Layer1D = try! FullyConnected(
             layerPrev: layer, nbNeurons: 1,
             activation: SoftReLU.str, biases: true, params: params
         )
@@ -756,7 +756,7 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
                 activation: LeakyReLU.str, biases: true, bn: false,
                 params: params
             )
-            secondLayer = IRDFT2RGB(layerPrev: firstLayer, params: params)
+            secondLayer = try! IRDFT2RGB(layerPrev: firstLayer, params: params)
             
             secondLayer = Convolution2D(
                 layerPrev: secondLayer, size: 1, nbChannels: 6, stride: 1,
@@ -765,7 +765,7 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
             )
             
         case "DecorrelateRGB":
-            secondLayer = DecorrelateRGB(
+            secondLayer = try! DecorrelateRGB(
                 layerPrev: layer,
                 correlation: [
                     0.26, 0.26, 0.27,
@@ -794,7 +794,7 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
             )
             
         case "Crop":
-            secondLayer = Crop2D(
+            secondLayer = try! Crop2D(
                 layerPrev: layer,
                 cropDimension: 3,
                 offsetI: 2,
@@ -806,7 +806,7 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
             )
             
         case "ResizeBilinearPad":
-            secondLayer = ResizeBilinearPad(
+            secondLayer = try! ResizeBilinearPad(
                 layerPrev: layer,
                 scalesList: [0.8], padValue: 0.5,
                 params: params
@@ -816,14 +816,14 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
             )
             
         case "Rotate":
-            secondLayer = Rotate2D(
+            secondLayer = try! Rotate2D(
                 layerPrev: layer,
                 anglesList: [20.0], padValue: 0.5,
                 params: params
             )
             
         case "ResizeBilinearCrop":
-            secondLayer = ResizeBilinearCrop(
+            secondLayer = try! ResizeBilinearCrop(
                 layerPrev: layer,
                 scale: 1.2,
                 offsetI: 1,
@@ -860,7 +860,7 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
                 activation: LeakyReLU.str, biases: true, bn: false,
                 params: params
             )
-            secondLayer = Concat2D(
+            secondLayer = try! Concat2D(
                 layersPrev: [firstLayer, otherLayer],
                 params: params
             )
@@ -876,7 +876,7 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
                 activation: LeakyReLU.str, biases: true, bn: false,
                 params: params
             )
-            secondLayer = Sum2D(
+            secondLayer = try! Sum2D(
                 layersPrev: [firstLayer, otherLayer],
                 params: params
             )
@@ -893,7 +893,7 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
             (otherLayer as! Constant1D).weightsCPU = [
                 0.5, -0.5, 1.5, -2.0, 3.0, 1.0
             ]
-            secondLayer = AdaIN(
+            secondLayer = try! AdaIN(
                 layersPrev: [firstLayer, otherLayer],
                 params: params
             )
@@ -941,17 +941,17 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
             )
             
         case "LayerOutput":
-            secondLayer = MSE2D(layerPrev: layer, params: params)
+            secondLayer = try! MSE2D(layerPrev: layer, params: params)
             
         default:
             fatalError("Unreachable.")
         }
         
-        layer = Sum2D(
+        layer = try! Sum2D(
             layersPrev: [firstLayer, secondLayer], params: params
         )
         
-        var head: Layer1D = FullyConnected(
+        var head: Layer1D = try! FullyConnected(
             layerPrev: layer, nbNeurons: 1,
             activation: LeakyReLU.str, biases: true, params: params
         )

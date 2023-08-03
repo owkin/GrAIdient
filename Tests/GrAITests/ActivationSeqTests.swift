@@ -51,7 +51,7 @@ class ActivationSeqGradTests: Input2DMSE1DCase
             activation: SoftReLU.str, biases: true, bn: false, params: params
         )
         
-        var layerSeq: LayerSeq = FullyConnectedPatch(
+        var layerSeq: LayerSeq = try! FullyConnectedPatch(
             layerPrev: layer, patch: width / 3, nbNeurons: 5,
             activation: SoftReLU.str, biases: true, params: params
         )
@@ -78,7 +78,7 @@ class ActivationSeqGradTests: Input2DMSE1DCase
         
         var head: Layer1D = AvgPoolSeq(layerPrev: layerSeq, params: params)
         
-        head = FullyConnected(
+        head = try! FullyConnected(
             layerPrev: head, nbNeurons: 1,
             activation: SoftReLU.str, biases: true, params: params
         )

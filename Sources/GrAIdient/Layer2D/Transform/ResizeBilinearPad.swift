@@ -77,7 +77,7 @@ public class ResizeBilinearPad: Layer2D
     public init(layerPrev: Layer2D,
                 scalesList: [Double],
                 padValue: Double,
-                params: GrAI.Model.Params)
+                params: GrAI.Model.Params) throws
     {
         _padValue = padValue
         _scalesList = scalesList
@@ -86,13 +86,17 @@ public class ResizeBilinearPad: Layer2D
         
         if scalesList.count == 0
         {
-            fatalError("`scalesList` should have at least one element.")
+            throw LayerError.Init(
+                message: "`scalesList` should have at least one element."
+            )
         }
         for scale in scalesList
         {
             if scale == 0
             {
-                fatalError("Only non 0 scales are possible.")
+                throw LayerError.Init(
+                    message: "Only non 0 scales are possible."
+                )
             }
         }
         
@@ -129,7 +133,7 @@ public class ResizeBilinearPad: Layer2D
                 minScale: Double,
                 maxScale: Double,
                 padValue: Double,
-                params: GrAI.Model.Params)
+                params: GrAI.Model.Params) throws
     {
         _padValue = padValue
         _scalesList = []
@@ -138,7 +142,7 @@ public class ResizeBilinearPad: Layer2D
         
         if minScale >= maxScale || minScale <= 0.0
         {
-            fatalError()
+            throw LayerError.Init(message: "`minScale` is not coherent.")
         }
         
         let nbChannels = layerPrev.nbChannels
@@ -233,7 +237,7 @@ public class ResizeBilinearPad: Layer2D
         let layer: ResizeBilinearPad
         if _scalesList.count != 0
         {
-            layer = ResizeBilinearPad(
+            layer = try! ResizeBilinearPad(
                 layerPrev: layerPrev,
                 scalesList: _scalesList,
                 padValue: _padValue,
@@ -242,7 +246,7 @@ public class ResizeBilinearPad: Layer2D
         }
         else if let minScale = _minScale, let maxScale = _maxScale
         {
-            layer = ResizeBilinearPad(
+            layer = try! ResizeBilinearPad(
                 layerPrev: layerPrev,
                 minScale: minScale,
                 maxScale: maxScale,

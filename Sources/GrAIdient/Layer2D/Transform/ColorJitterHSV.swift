@@ -84,7 +84,7 @@ public class ColorJitterHSV: Layer2D
                 rangeH: Range<Double>,
                 rangeS: Range<Double>,
                 rangeV: Range<Double>,
-                params: GrAI.Model.Params)
+                params: GrAI.Model.Params) throws
     {
         _rangeH = rangeH
         _rangeS = rangeS
@@ -96,7 +96,9 @@ public class ColorJitterHSV: Layer2D
         
         if nbChannels != 3
         {
-            fatalError("Previous layer should have 3 channels: RGB.")
+            throw LayerError.Init(
+                message: "Previous layer should have 3 channels: RGB."
+            )
         }
         
         super.init(layerPrev: layerPrev,
@@ -165,7 +167,7 @@ public class ColorJitterHSV: Layer2D
         let params = GrAI.Model.Params(context: context)
         params.context.curID = id
             
-        let layer = ColorJitterHSV(
+        let layer = try! ColorJitterHSV(
             layerPrev: layerPrev,
             rangeH: _rangeH,
             rangeS: _rangeS,

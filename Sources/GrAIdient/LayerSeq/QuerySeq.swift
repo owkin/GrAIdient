@@ -32,19 +32,19 @@ public class QuerySeq: LayerMergeSeq
     ///     - params: Contextual parameters linking to the model.
     ///
     public init(query: LayerSeq, key: LayerSeq, nbHeads: Int,
-                params: GrAI.Model.Params)
+                params: GrAI.Model.Params) throws
     {
         if query.nbNeurons % nbHeads != 0
         {
-            fatalError(
-                "'nbNeurons' (\(query.nbNeurons)) " +
+            throw LayerError.Init(message:
+                "`nbNeurons` (\(query.nbNeurons)) " +
                 "should be a multiple of nbHeads (\(nbHeads))."
             )
         }
         if query.nbNeurons != key.nbNeurons ||
            query.sequence != key.sequence
         {
-            fatalError("Layer structure error.")
+            throw LayerError.Init(message: "Layer structure error.")
         }
         
         _nbHeads = nbHeads
@@ -113,7 +113,7 @@ public class QuerySeq: LayerMergeSeq
             layersPrev.append(mapping[idPrev] as! LayerSeq)
         }
         
-        let layer = QuerySeq(
+        let layer = try! QuerySeq(
             query: layersPrev[0], key: layersPrev[1], nbHeads: _nbHeads,
             params: params
         )

@@ -35,7 +35,7 @@ open class LayerOutput2D: Layer2D
     ///     - layerPrev: Previous layer that has been queued to the model.
     ///     - params: Contextual parameters linking to the model.
     ///
-    public init(layerPrev: Layer2D, params: GrAI.Model.Params)
+    public init(layerPrev: Layer2D, params: GrAI.Model.Params) throws
     {
         super.init(layerPrev: layerPrev,
                    nbChannels: layerPrev.nbChannels,

@@ -23,12 +23,14 @@ public class FTFrequences2D: LayerInput2D, LayerResize
     ///     - params: Contextual parameters linking to the model.
     ///
     public init(nbChannels: Int, dimension: Int,
-                params: GrAI.Model.Params)
+                params: GrAI.Model.Params) throws
     {
         if nbChannels % 2 != 0
         {
-            fatalError("FTFrequences2D input channels " +
-                       "should be a multiple of 2.")
+            throw LayerError.Init(
+                message: "FTFrequences2D input channels " +
+                         "should be a multiple of 2."
+            )
         }
         super.init(layerPrev: nil,
                    nbChannels: nbChannels,
@@ -72,7 +74,7 @@ public class FTFrequences2D: LayerInput2D, LayerResize
         let params = GrAI.Model.Params(context: context)
         params.context.curID = id
         
-        let layer = FTFrequences2D(
+        let layer = try! FTFrequences2D(
             nbChannels: nbChannels, dimension: width,
             params: params
         )
@@ -107,7 +109,7 @@ public class FTFrequences2D: LayerInput2D, LayerResize
         let params = GrAI.Model.Params(context: context)
         params.context.curID = id
         
-        let layer = FTFrequences2D(
+        let layer = try! FTFrequences2D(
             nbChannels: nbChannels, dimension: imageWidth,
             params: params
         )

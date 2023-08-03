@@ -20,11 +20,13 @@ public class ResizeBilinear: ResizeBilinearPad
     ///
     public init(layerPrev: Layer2D,
                 dimension: Int,
-                params: GrAI.Model.Params)
+                params: GrAI.Model.Params) throws
     {
         if layerPrev.height != layerPrev.width
         {
-            fatalError("ResizeBilinear only supports squared images.")
+            throw LayerError.Init(
+                message: "ResizeBilinear only supports squared images."
+            )
         }
         super.init(
             layerPrev: layerPrev,
@@ -70,7 +72,7 @@ public class ResizeBilinear: ResizeBilinearPad
         params.context.curID = id
             
         let dimension = Double(layerPrev.height) * _scalesList[0]
-        let layer = ResizeBilinear(
+        let layer = try! ResizeBilinear(
             layerPrev: layerPrev,
             dimension: Int(round(dimension)),
             params: params

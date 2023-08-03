@@ -19,7 +19,7 @@ public class Sum1D: LayerMerge1D
     ///     - layersPrev: List of previous layers that have been queued to the model.
     ///     - params: Contextual parameters linking to the model.
     ///
-    public init(layersPrev: [Layer1D], params: GrAI.Model.Params)
+    public init(layersPrev: [Layer1D], params: GrAI.Model.Params) throws
     {
         let layer0 = layersPrev[0]
         let nbNeurons = layer0.nbNeurons
@@ -27,7 +27,7 @@ public class Sum1D: LayerMerge1D
         {
             if layerPrev.nbNeurons != nbNeurons
             {
-                fatalError("Layer structure error.")
+                throw LayerError.Init(message: "Layer structure error.")
             }
         }
         
@@ -75,7 +75,7 @@ public class Sum1D: LayerMerge1D
             layersPrev.append(mapping[idPrev] as! Layer1D)
         }
         
-        let layer = Sum1D(layersPrev: layersPrev, params: params)
+        let layer = try! Sum1D(layersPrev: layersPrev, params: params)
         return layer
     }
     

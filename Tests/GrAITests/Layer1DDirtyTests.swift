@@ -280,7 +280,7 @@ class Layer1DDirtyFlowTests: Input1DMSE1DCase
                 activation: LeakyReLU.str, biases: true,
                 params: params
             )
-            secondLayer = DotProduct1D(
+            secondLayer = try! DotProduct1D(
                 layersPrev: [firstLayer, otherLayer], size: 5, params: params
             )
             secondLayer = FullyConnected(

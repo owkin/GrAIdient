@@ -132,7 +132,7 @@ class Layer1DGradTests: Input1DMSE1DCase
                 activation: SoftReLU.str, biases: true,
                 params: params
             )
-            layer = DotProduct1D(
+            layer = try! DotProduct1D(
                 layersPrev: [layer, otherLayer], size: 3, params: params
             )
             
@@ -417,7 +417,7 @@ class Layer1DFlowTests: Input1DMSE1DCase
                 activation: LeakyReLU.str, biases: true,
                 params: params
             )
-            layer = DotProduct1D(
+            layer = try! DotProduct1D(
                 layersPrev: [layer, otherLayer], size: 3, params: params
             )
             

@@ -170,11 +170,11 @@ public class FullyConnectedPatch: ActivationSeq,
     ///
     public init(layerPrev: Layer2D,
                 patch: Int, nbNeurons: Int, activation: String?, biases: Bool,
-                params: GrAI.Model.Params)
+                params: GrAI.Model.Params) throws
     {
         if layerPrev.height % patch != 0 || layerPrev.width % patch != 0
         {
-            fatalError(
+            throw LayerError.Init(message:
                 "Previous layer's size is not divisible by patch \(patch)."
             )
         }
@@ -271,7 +271,7 @@ public class FullyConnectedPatch: ActivationSeq,
         let params = GrAI.Model.Params(context: context)
         params.context.curID = id
             
-        let layer = FullyConnectedPatch(
+        let layer = try! FullyConnectedPatch(
             layerPrev: layerPrev,
             patch: _patch,
             nbNeurons: nbNeurons,
@@ -318,7 +318,7 @@ public class FullyConnectedPatch: ActivationSeq,
         let params = GrAI.Model.Params(context: context)
         params.context.curID = id
         
-        let layer = FullyConnectedPatch(
+        let layer = try! FullyConnectedPatch(
             layerPrev: layerPrev,
             patch: _patch,
             nbNeurons: nbNeurons,
@@ -357,7 +357,7 @@ public class FullyConnectedPatch: ActivationSeq,
     public func removeActivation(params: GrAI.Model.Params) -> Layer
     {
         let layerPrev = self.layerPrev as! Layer2D
-        let layer = FullyConnectedPatch(
+        let layer = try! FullyConnectedPatch(
             layerPrev: layerPrev,
             patch: _patch,
             nbNeurons: nbNeurons,

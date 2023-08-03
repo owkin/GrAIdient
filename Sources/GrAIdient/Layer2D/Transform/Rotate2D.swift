@@ -42,7 +42,7 @@ public class Rotate2D: Layer2D
     public init(layerPrev: Layer2D,
                 anglesList: [Double],
                 padValue: Double,
-                params: GrAI.Model.Params)
+                params: GrAI.Model.Params) throws
     {
         _padValue = padValue
         _anglesList = anglesList
@@ -51,7 +51,9 @@ public class Rotate2D: Layer2D
         
         if anglesList.count == 0
         {
-            fatalError("`anglesList` should have at least one element.")
+            throw LayerError.Init(
+                message: "`anglesList` should have at least one element."
+            )
         }
         
         let nbChannels = layerPrev.nbChannels
@@ -79,7 +81,7 @@ public class Rotate2D: Layer2D
                 minAngle: Double,
                 maxAngle: Double,
                 padValue: Double,
-                params: GrAI.Model.Params)
+                params: GrAI.Model.Params) throws
     {
         _padValue = padValue
         _anglesList = []
@@ -88,7 +90,7 @@ public class Rotate2D: Layer2D
         
         if minAngle >= maxAngle
         {
-            fatalError()
+            throw LayerError.Init(message: "`minAngle` is not coherent.")
         }
         
         let nbChannels = layerPrev.nbChannels
@@ -180,7 +182,7 @@ public class Rotate2D: Layer2D
         let layer: Rotate2D
         if _anglesList.count != 0
         {
-            layer = Rotate2D(
+            layer = try! Rotate2D(
                 layerPrev: layerPrev,
                 anglesList: _anglesList,
                 padValue: _padValue,
@@ -189,7 +191,7 @@ public class Rotate2D: Layer2D
         }
         else if let minAngle = _minAngle, let maxAngle = _maxAngle
         {
-            layer = Rotate2D(
+            layer = try! Rotate2D(
                 layerPrev: layerPrev,
                 minAngle: minAngle,
                 maxAngle: maxAngle,

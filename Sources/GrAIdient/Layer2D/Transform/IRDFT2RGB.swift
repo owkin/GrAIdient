@@ -21,7 +21,7 @@ public class IRDFT2RGB: Layer2D
     ///     - layerPrev: Previous layer that has been queued to the model.
     ///     - params: Contextual parameters linking to the model.
     ///
-    public init(layerPrev: Layer2D, params: GrAI.Model.Params)
+    public init(layerPrev: Layer2D, params: GrAI.Model.Params) throws
     {
         let width = layerPrev.width
         let height = layerPrev.height
@@ -29,7 +29,9 @@ public class IRDFT2RGB: Layer2D
         
         if nbChannels != 6
         {
-            fatalError("IRDFT2RGB input channels should be 6.")
+            throw LayerError.Init(
+                message: "IRDFT2RGB input channels should be 6."
+            )
         }
         super.init(layerPrev: layerPrev,
                    nbChannels: nbChannels / 2,
@@ -73,7 +75,7 @@ public class IRDFT2RGB: Layer2D
         let params = GrAI.Model.Params(context: context)
         params.context.curID = id
             
-        let layer = IRDFT2RGB(
+        let layer = try! IRDFT2RGB(
             layerPrev: layerPrev,
             params: params
         )

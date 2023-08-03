@@ -47,19 +47,21 @@ public class SimilarityError2D: LayerMerge2D
     ///     - layersPrev: List of previous layers that have been queued to the model.
     ///     - params: Contextual parameters linking to the model.
     ///
-    public init(layersPrev: [Layer2D], params: GrAI.Model.Params)
+    public init(layersPrev: [Layer2D], params: GrAI.Model.Params) throws
     {
         let layer0 = layersPrev[0]
         for layerPrev in layersPrev
         {
             if layerPrev.nbChannels != 1
             {
-                fatalError("Previous layer should have only 1 channel.")
+                throw LayerError.Init(
+                    message: "Previous layer should have only 1 channel."
+                )
             }
             if layerPrev.height != layer0.height ||
                layerPrev.width != layer0.width
             {
-                fatalError("Layer structure error.")
+                throw LayerError.Init(message: "Layer structure error.")
             }
         }
         
@@ -130,7 +132,9 @@ public class SimilarityError2D: LayerMerge2D
             layersPrev.append(mapping[idPrev] as! Layer2D)
         }
         
-        let layer = SimilarityError2D(layersPrev: layersPrev, params: params)
+        let layer = try! SimilarityError2D(
+            layersPrev: layersPrev, params: params
+        )
         layer.coeff = self.coeff
         
         return layer

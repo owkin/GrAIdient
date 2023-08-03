@@ -1761,14 +1761,14 @@ class Layer2DFlowTests: Input2DMSE1DCase
     func testDeconvolutionStride1() throws
     {
         let trainer = _buildTrainer(model: "DeconvolutionStride1", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.00001)
     }
     
     func testDeconvolutionStride1Sample() throws
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer(model: "DeconvolutionStride1", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.00001)
     }
     
     func testDeconvolutionStride2() throws
@@ -2168,13 +2168,13 @@ class Layer2DFlowResetTests: Layer2DFlowTests
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer(model: "DeconvolutionStride1", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     override func testDeconvolutionStride2() throws
     {
         let trainer = _buildTrainer(model: "DeconvolutionStride2", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     override func testDeconvolutionStride2Sample() throws
@@ -2199,7 +2199,7 @@ class Layer2DFlowResetTests: Layer2DFlowTests
     override func testAdaIN() throws
     {
         let trainer = _buildTrainer(model: "AdaIN", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     override func testConstant() throws
@@ -2568,7 +2568,7 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer(model: "DeconvolutionStride1", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.00001)
     }
     
     override func testDeconvolutionStride2() throws
@@ -2593,7 +2593,7 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
     override func testInstanceNorm() throws
     {
         let trainer = _buildTrainer(model: "InstanceNorm", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.00001)
     }
     
     override func testAdaIN() throws

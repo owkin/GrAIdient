@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🔨 **refactor:** throwable init ([#103](https://github.com/owkin/GrAIdient/pull/103))\
 🔨 **refactor:** dims checks for inputs and outputs ([#102](https://github.com/owkin/GrAIdient/pull/102))\
 🪜 **feat:** BCE1D, BCE2D, VQ2D & VQSeq as losses ([#101](https://github.com/owkin/GrAIdient/pull/101))\
 🪜 **layer_seq:** VQSeq ([#100](https://github.com/owkin/GrAIdient/pull/100))\

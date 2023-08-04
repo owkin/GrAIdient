@@ -53,7 +53,7 @@ public class ResizeBilinearCrop: Layer2D
     ///
     public init(layerPrev: Layer2D,
                 scalesList: [Double],
-                params: GrAI.Model.Params)
+                params: GrAI.Model.Params) throws
     {
         _scalesList = scalesList
         _minScale = nil
@@ -61,13 +61,17 @@ public class ResizeBilinearCrop: Layer2D
         
         if scalesList.count == 0
         {
-            fatalError("`scalesList` should have at least one element.")
+            throw LayerError.Init(
+                message: "`scalesList` should have at least one element."
+            )
         }
         for scale in scalesList
         {
             if scale == 0
             {
-                fatalError("Only non 0 scales are possible.")
+                throw LayerError.Init(
+                    message: "Only non 0 scales are possible."
+                )
             }
         }
         
@@ -107,7 +111,7 @@ public class ResizeBilinearCrop: Layer2D
                 scale: Double,
                 offsetI: Int,
                 offsetJ: Int,
-                params: GrAI.Model.Params)
+                params: GrAI.Model.Params) throws
     {
         _scalesList = [scale]
         _minScale = nil
@@ -117,11 +121,13 @@ public class ResizeBilinearCrop: Layer2D
         
         if scale == 0
         {
-            fatalError("Only non 0 scales are possible.")
+            throw LayerError.Init(message: "Only non 0 scales are possible.")
         }
         if offsetI < 0 || offsetJ < 0
         {
-            fatalError("`offsetI` and `offsetJ` should be higher than 0.")
+            throw LayerError.Init(
+                message: "`offsetI` and `offsetJ` should be higher than 0."
+            )
         }
         
         let nbChannels = layerPrev.nbChannels
@@ -155,7 +161,7 @@ public class ResizeBilinearCrop: Layer2D
     public init(layerPrev: Layer2D,
                 minScale: Double,
                 maxScale: Double,
-                params: GrAI.Model.Params)
+                params: GrAI.Model.Params) throws
     {
         _scalesList = []
         _minScale = minScale
@@ -163,7 +169,7 @@ public class ResizeBilinearCrop: Layer2D
         
         if minScale >= maxScale || minScale <= 0.0
         {
-            fatalError()
+            throw LayerError.Init(message: "`minScale` is not coherent.")
         }
         
         let nbChannels = layerPrev.nbChannels
@@ -260,7 +266,7 @@ public class ResizeBilinearCrop: Layer2D
         let layer: ResizeBilinearCrop
         if _scalesList.count > 1
         {
-            layer = ResizeBilinearCrop(
+            layer = try! ResizeBilinearCrop(
                 layerPrev: layerPrev,
                 scalesList: _scalesList,
                 params: params
@@ -268,7 +274,7 @@ public class ResizeBilinearCrop: Layer2D
         }
         else if _scalesList.count == 1
         {
-            layer = ResizeBilinearCrop(
+            layer = try! ResizeBilinearCrop(
                 layerPrev: layerPrev,
                 scale: _scalesList[0],
                 offsetI: _offsetI,
@@ -278,7 +284,7 @@ public class ResizeBilinearCrop: Layer2D
         }
         else if let minScale = _minScale, let maxScale = _maxScale
         {
-            layer = ResizeBilinearCrop(
+            layer = try! ResizeBilinearCrop(
                 layerPrev: layerPrev,
                 minScale: minScale,
                 maxScale: maxScale,

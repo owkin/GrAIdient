@@ -19,7 +19,7 @@ public class SumSeq: LayerMergeSeq
     ///     - layersPrev: List of previous layers that have been queued to the model.
     ///     - params: Contextual parameters linking to the model.
     ///
-    public init(layersPrev: [LayerSeq], params: GrAI.Model.Params)
+    public init(layersPrev: [LayerSeq], params: GrAI.Model.Params) throws
     {
         let layer0 = layersPrev[0]
         let sequence = layer0.sequence
@@ -29,7 +29,7 @@ public class SumSeq: LayerMergeSeq
             if layerPrev.nbNeurons != nbNeurons ||
                layerPrev.sequence != sequence
             {
-                fatalError("Layer structure error.")
+                throw LayerError.Init(message: "Layer structure error.")
             }
         }
         
@@ -78,7 +78,7 @@ public class SumSeq: LayerMergeSeq
             layersPrev.append(mapping[idPrev] as! LayerSeq)
         }
         
-        let layer = SumSeq(layersPrev: layersPrev, params: params)
+        let layer = try! SumSeq(layersPrev: layersPrev, params: params)
         return layer
     }
     

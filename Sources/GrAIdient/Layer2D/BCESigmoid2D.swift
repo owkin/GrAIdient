@@ -35,7 +35,7 @@ public class BCESigmoid2D: LayerOutput2D
         let params = GrAI.Model.Params(context: context)
         params.context.curID = id
         
-        let layer = BCESigmoid2D(layerPrev: layerPrev, params: params)
+        let layer = try! BCESigmoid2D(layerPrev: layerPrev, params: params)
         layer.coeff = self.coeff
         
         return layer

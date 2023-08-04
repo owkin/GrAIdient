@@ -30,25 +30,25 @@ public class ValueSeq: LayerMergeSeq
     ///     - params: Contextual parameters linking to the model.
     ///
     public init(value: LayerSeq, score: LayerSeq, nbHeads: Int,
-                params: GrAI.Model.Params)
+                params: GrAI.Model.Params) throws
     {
         if value.nbNeurons % nbHeads != 0
         {
-            fatalError(
-                "'nbNeurons' (\(value.nbNeurons)) " +
+            throw LayerError.Init(message:
+                "`nbNeurons` (\(value.nbNeurons)) " +
                 "should be a multiple of nbHeads (\(nbHeads))."
             )
         }
         if score.nbNeurons % nbHeads != 0
         {
-            fatalError(
-                "'nbNeurons' (\(score.nbNeurons)) " +
+            throw LayerError.Init(message:
+                "`nbNeurons` (\(score.nbNeurons)) " +
                 "should be a multiple of nbHeads (\(nbHeads))."
             )
         }
         if value.sequence != score.sequence
         {
-            fatalError("Layer structure error.")
+            throw LayerError.Init(message: "Layer structure error.")
         }
 
         _nbHeads = nbHeads
@@ -117,7 +117,7 @@ public class ValueSeq: LayerMergeSeq
             layersPrev.append(mapping[idPrev] as! LayerSeq)
         }
         
-        let layer = ValueSeq(
+        let layer = try! ValueSeq(
             value: layersPrev[0], score: layersPrev[1], nbHeads: _nbHeads,
             params: params
         )

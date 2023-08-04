@@ -103,7 +103,7 @@ class CIFARAutoEncoderTrainer
         let context = ModelContext(name: "Final", models: [_baseModel])
         let params = GrAI.Model.Params(context: context)
         
-        _ = MSE2D(
+        _ = try! MSE2D(
             layerPrev: _baseModel.layers.last as! Layer2D,
             params: params
         )
@@ -133,7 +133,7 @@ class CIFARAutoEncoderTrainer
                 height: _originalSize,
                 params: params
             )
-            layer = ResizeBilinear(
+            layer = try! ResizeBilinear(
                 layerPrev: layer,
                 dimension: _size,
                 params: params

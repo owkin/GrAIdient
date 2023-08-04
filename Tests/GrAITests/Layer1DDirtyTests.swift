@@ -40,7 +40,7 @@ class Layer1DDirtyGradTests: Input1DMSE1DCase
         
         var layer: Layer1D = Input1D(nbNeurons: 1, params: params)
         
-        layer = FullyConnected(
+        layer = try! FullyConnected(
             layerPrev: layer, nbNeurons: 5,
             activation: SoftReLU.str, biases: true,
             params: params
@@ -52,12 +52,12 @@ class Layer1DDirtyGradTests: Input1DMSE1DCase
         switch model
         {
         case "FullyConnected":
-            firstLayer = FullyConnected(
+            firstLayer = try! FullyConnected(
                 layerPrev: layer, nbNeurons: 12,
                 activation: SoftReLU.str, biases: true,
                 params: params
             )
-            secondLayer = FullyConnected(
+            secondLayer = try! FullyConnected(
                 layerPrev: firstLayer, nbNeurons: 12,
                 activation: SoftReLU.str, biases: true,
                 params: params
@@ -77,14 +77,14 @@ class Layer1DDirtyGradTests: Input1DMSE1DCase
                 coeffs: [0.6, 0.4],
                 params: params
             )
-            secondLayer = FullyConnected(
+            secondLayer = try! FullyConnected(
                 layerPrev: secondLayer, nbNeurons: 5,
                 activation: SoftReLU.str, biases: true,
                 params: params
             )
             
         case "Softmax":
-            secondLayer = Softmax1D(
+            secondLayer = try! Softmax1D(
                 layerPrev: layer, nbHeads: 1, params: params
             )
             
@@ -95,11 +95,11 @@ class Layer1DDirtyGradTests: Input1DMSE1DCase
             fatalError("Unreachable.")
         }
         
-        layer = Sum1D(
+        layer = try! Sum1D(
             layersPrev: [firstLayer, secondLayer], params: params
         )
         
-        var head: Layer1D = FullyConnected(
+        var head: Layer1D = try! FullyConnected(
             layerPrev: layer, nbNeurons: 1,
             activation: SoftReLU.str, biases: true, params: params
         )
@@ -199,7 +199,7 @@ class Layer1DDirtyFlowTests: Input1DMSE1DCase
         
         var layer: Layer1D = Input1D(nbNeurons: 1, params: params)
         
-        layer = FullyConnected(
+        layer = try! FullyConnected(
             layerPrev: layer, nbNeurons: 5,
             activation: LeakyReLU.str, biases: true,
             params: params
@@ -211,12 +211,12 @@ class Layer1DDirtyFlowTests: Input1DMSE1DCase
         switch model
         {
         case "FullyConnected":
-            firstLayer = FullyConnected(
+            firstLayer = try! FullyConnected(
                 layerPrev: layer, nbNeurons: 12,
                 activation: LeakyReLU.str, biases: true,
                 params: params
             )
-            secondLayer = FullyConnected(
+            secondLayer = try! FullyConnected(
                 layerPrev: firstLayer, nbNeurons: 12,
                 activation: LeakyReLU.str, biases: true,
                 params: params
@@ -236,14 +236,14 @@ class Layer1DDirtyFlowTests: Input1DMSE1DCase
                 coeffs: [0.6, 0.4],
                 params: params
             )
-            secondLayer = FullyConnected(
+            secondLayer = try! FullyConnected(
                 layerPrev: secondLayer, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true,
                 params: params
             )
             
         case "Concat":
-            let otherLayer: Layer1D = FullyConnected(
+            let otherLayer: Layer1D = try! FullyConnected(
                 layerPrev: layer, nbNeurons: 6,
                 activation: LeakyReLU.str, biases: true,
                 params: params
@@ -252,38 +252,38 @@ class Layer1DDirtyFlowTests: Input1DMSE1DCase
                 layersPrev: [firstLayer, otherLayer],
                 params: params
             )
-            secondLayer = FullyConnected(
+            secondLayer = try! FullyConnected(
                 layerPrev: secondLayer, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true,
                 params: params
             )
             
         case "Sum":
-            let otherLayer: Layer1D = FullyConnected(
+            let otherLayer: Layer1D = try! FullyConnected(
                 layerPrev: layer, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true,
                 params: params
             )
-            secondLayer = Sum1D(
+            secondLayer = try! Sum1D(
                 layersPrev: [firstLayer, otherLayer],
                 params: params
             )
             
         case "Softmax":
-            secondLayer = Softmax1D(
+            secondLayer = try! Softmax1D(
                 layerPrev: layer, nbHeads: 1, params: params
             )
             
         case "DotProduct":
-            let otherLayer: Layer1D = FullyConnected(
+            let otherLayer: Layer1D = try! FullyConnected(
                 layerPrev: layer, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true,
                 params: params
             )
-            secondLayer = DotProduct1D(
+            secondLayer = try! DotProduct1D(
                 layersPrev: [firstLayer, otherLayer], size: 5, params: params
             )
-            secondLayer = FullyConnected(
+            secondLayer = try! FullyConnected(
                 layerPrev: secondLayer, nbNeurons: 5,
                 activation: LeakyReLU.str, biases: true,
                 params: params
@@ -296,11 +296,11 @@ class Layer1DDirtyFlowTests: Input1DMSE1DCase
             fatalError("Unreachable.")
         }
         
-        layer = Sum1D(
+        layer = try! Sum1D(
             layersPrev: [firstLayer, secondLayer], params: params
         )
         
-        var head: Layer1D = FullyConnected(
+        var head: Layer1D = try! FullyConnected(
             layerPrev: layer, nbNeurons: 1,
             activation: LeakyReLU.str, biases: true, params: params
         )

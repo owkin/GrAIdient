@@ -136,7 +136,7 @@ final class VGGExample: XCTestCase
         
         var head: Layer1D = AvgPool2D(layerPrev: layer, params: params)
 
-        head = FullyConnected(
+        head = try! FullyConnected(
             layerPrev: head, nbNeurons: 1,
             activation: ReLU.str, biases: true, params: params
         )

@@ -20,7 +20,7 @@ public class Concat2D: LayerMerge2D
     ///     - layersPrev: List of previous layers that have been queued to the model.
     ///     - params: Contextual parameters linking to the model.
     ///
-    public init(layersPrev: [Layer2D], params: GrAI.Model.Params)
+    public init(layersPrev: [Layer2D], params: GrAI.Model.Params) throws
     {
         var nbChannels = 0
         let layer0 = layersPrev[0]
@@ -31,7 +31,7 @@ public class Concat2D: LayerMerge2D
             if layerPrev.height != layer0.height ||
                layerPrev.width != layer0.width
             {
-                fatalError("Layer structure error.")
+                throw LayerError.Init(message: "Layer structure error.")
             }
         }
         super.init(layersPrev: layersPrev,
@@ -68,7 +68,7 @@ public class Concat2D: LayerMerge2D
             layersPrev.append(mapping[idPrev] as! Layer2D)
         }
         
-        let layer = Concat2D(layersPrev: layersPrev, params: params)
+        let layer = try! Concat2D(layersPrev: layersPrev, params: params)
         return layer
     }
     

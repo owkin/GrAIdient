@@ -28,13 +28,15 @@ public class DotProduct1D: LayerMerge1D
     ///     - size: The number of neurons per block.
     ///     - params: Contextual parameters linking to the model.
     ///
-    public init(layersPrev: [Layer1D], size: Int, params: GrAI.Model.Params)
+    public init(layersPrev: [Layer1D],
+                size: Int,
+                params: GrAI.Model.Params) throws
     {
         if layersPrev.count != 2 ||
            layersPrev[0].nbNeurons != layersPrev[1].nbNeurons ||
            layersPrev[0].nbNeurons % size != 0
         {
-            fatalError()
+            throw LayerError.Init(message: "Inconsistent number of neurons.")
         }
         
         _size = size
@@ -102,7 +104,7 @@ public class DotProduct1D: LayerMerge1D
             layersPrev.append(mapping[idPrev] as! Layer1D)
         }
         
-        let layer = DotProduct1D(
+        let layer = try! DotProduct1D(
             layersPrev: layersPrev,
             size: _size,
             params: params

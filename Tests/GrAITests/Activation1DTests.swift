@@ -44,7 +44,7 @@ class Activation1DGradTests: Input1DMSE1DCase
         
         var layer: Layer1D = Input1D(nbNeurons: 1, params: params)
         
-        layer = FullyConnected(
+        layer = try! FullyConnected(
             layerPrev: layer, nbNeurons: 5,
             activation: SoftReLU.str, biases: true,
             params: params
@@ -53,7 +53,7 @@ class Activation1DGradTests: Input1DMSE1DCase
         switch model
         {
         case "FullyConnected":
-            layer = FullyConnected(
+            layer = try! FullyConnected(
                 layerPrev: layer, nbNeurons: 12,
                 activation: activation, biases: true,
                 params: params
@@ -70,7 +70,7 @@ class Activation1DGradTests: Input1DMSE1DCase
             fatalError("Unreachable.")
         }
         
-        layer = FullyConnected(
+        layer = try! FullyConnected(
             layerPrev: layer, nbNeurons: 1,
             activation: SoftReLU.str, biases: true,
             params: params

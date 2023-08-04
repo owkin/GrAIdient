@@ -29,14 +29,16 @@ public class Softmax1D: Layer1D
     ///     - nbHeads: Number of heads (groups) of neurons.
     ///     - params: Contextual parameters linking to the model.
     ///
-    public init(layerPrev: Layer1D, nbHeads: Int, params: GrAI.Model.Params)
+    public init(layerPrev: Layer1D,
+                nbHeads: Int,
+                params: GrAI.Model.Params) throws
     {
         let nbNeurons = layerPrev.nbNeurons
         if nbNeurons % nbHeads != 0
         {
-            fatalError(
-                "'nbNeurons' (\(nbNeurons) " +
-                "should be a multiple of nbHeads (\(nbHeads))."
+            throw LayerError.Init(
+                message: "`nbNeurons` (\(nbNeurons) " +
+                         "should be a multiple of nbHeads (\(nbHeads))."
             )
         }
         
@@ -101,7 +103,7 @@ public class Softmax1D: Layer1D
         let params = GrAI.Model.Params(context: context)
         params.context.curID = id
             
-        let layer = Softmax1D(
+        let layer = try! Softmax1D(
             layerPrev: layerPrev,
             nbHeads: _nbHeads,
             params: params

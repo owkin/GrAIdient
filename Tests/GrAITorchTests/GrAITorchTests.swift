@@ -112,7 +112,7 @@ final class GrAITorchTests: XCTestCase
         let params = GrAI.Model.Params(context: context)
         
         // Append a loss layer.
-        let lastLayer = MSE2D(
+        let lastLayer = try! MSE2D(
             layerPrev: model.layers.last! as! Layer2D,
             params: params
         )
@@ -193,7 +193,7 @@ final class GrAITorchTests: XCTestCase
         
         layer = Normalize122D(layerPrev: layer, params: params)
         
-        let similarityLayer = SimilarityBatchError2D(
+        let similarityLayer = try! SimilarityBatchError2D(
             layerPrev: layer,
             params: params
         )

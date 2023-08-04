@@ -17,13 +17,15 @@ public class SimilarityBatchError2D: LayerOutput2D
     ///     - layerPrev: Previous layer that has been queued to the model.
     ///     - params: Contextual parameters linking to the model.
     ///
-    public override init(layerPrev: Layer2D, params: GrAI.Model.Params)
+    public override init(layerPrev: Layer2D, params: GrAI.Model.Params) throws
     {
         if layerPrev.nbChannels != 1
         {
-            fatalError("Previous layer should have only 1 channel.")
+            throw LayerError.Init(
+                message: "Previous layer should have only 1 channel."
+            )
         }
-        super.init(layerPrev: layerPrev, params: params)
+        try super.init(layerPrev: layerPrev, params: params)
     }
     
     ///
@@ -61,7 +63,9 @@ public class SimilarityBatchError2D: LayerOutput2D
         let params = GrAI.Model.Params(context: context)
         params.context.curID = id
         
-        let layer = SimilarityBatchError2D(layerPrev: layerPrev, params: params)
+        let layer = try! SimilarityBatchError2D(
+            layerPrev: layerPrev, params: params
+        )
         layer.coeff = self.coeff
         
         return layer

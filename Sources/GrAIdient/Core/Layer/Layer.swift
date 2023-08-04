@@ -10,6 +10,8 @@ import Foundation
 /// Error occuring during the layer forward or backward propagation.
 public enum LayerError: Error
 {
+    /// Error during the initialization of a layer.
+    case Init(message: String)
     /// Data has not the correct dimensions.
     case DataSize
     /// Batch size is not coherent.
@@ -22,6 +24,8 @@ extension LayerError: CustomStringConvertible
     {
         switch self
         {
+        case .Init(let message):
+            return message
         case .DataSize:
             return "The parameters do not have the expected number of elements."
         case .BatchSize:

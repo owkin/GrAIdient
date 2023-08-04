@@ -145,7 +145,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
                 params: GrAI.Model.Params)
     {
         self.K = K
-        super.init(layerPrev: layerPrev, params: params)
+        try! super.init(layerPrev: layerPrev, params: params)
     }
     
     ///

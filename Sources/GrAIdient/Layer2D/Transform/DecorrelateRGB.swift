@@ -29,7 +29,7 @@ public class DecorrelateRGB: Layer2D
     ///
     public init(layerPrev: Layer2D,
                 correlation: [Double],
-                params: GrAI.Model.Params)
+                params: GrAI.Model.Params) throws
     {
         _correlation = correlation
         
@@ -39,7 +39,9 @@ public class DecorrelateRGB: Layer2D
         
         if nbChannels != 3
         {
-            fatalError("DecorrelateRGB can only be used with 3 channels.")
+            throw LayerError.Init(
+                message: "DecorrelateRGB can only be used with 3 channels."
+            )
         }
         super.init(layerPrev: layerPrev,
                    nbChannels: nbChannels,
@@ -105,7 +107,7 @@ public class DecorrelateRGB: Layer2D
         let params = GrAI.Model.Params(context: context)
         params.context.curID = id
             
-        let layer = DecorrelateRGB(
+        let layer = try! DecorrelateRGB(
             layerPrev: layerPrev,
             correlation: _correlation,
             params: params

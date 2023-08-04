@@ -261,7 +261,7 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerWeightInit
     ///
     public init(layerPrev: Layer,
                 nbNeurons: Int, activation: String?, biases: Bool,
-                params: GrAI.Model.Params)
+                params: GrAI.Model.Params) throws
     {
         let nbNeuronsPrev: Int
         if let layerPrev = layerPrev as? Layer1D
@@ -276,7 +276,7 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerWeightInit
         }
         else
         {
-            fatalError("Layer structure error.")
+            throw LayerError.Init(message: "Layer structure error.")
         }
         
         weightWidth = nbNeuronsPrev
@@ -365,7 +365,7 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerWeightInit
         let params = GrAI.Model.Params(context: context)
         params.context.curID = id
             
-        let layer = FullyConnected(
+        let layer = try! FullyConnected(
             layerPrev: layerPrev,
             nbNeurons: nbNeurons,
             activation: _activation?.name,
@@ -417,7 +417,7 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerWeightInit
         let params = GrAI.Model.Params(context: context)
         params.context.curID = id
         
-        let layer = FullyConnected(
+        let layer = try! FullyConnected(
             layerPrev: layerPrev,
             nbNeurons: nbNeurons,
             activation: nil,
@@ -461,7 +461,7 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerWeightInit
     public func removeActivation(params: GrAI.Model.Params) -> Layer
     {
         let layerPrev = self.layerPrev!
-        let layer = FullyConnected(
+        let layer = try! FullyConnected(
             layerPrev: layerPrev,
             nbNeurons: nbNeurons,
             activation: nil,

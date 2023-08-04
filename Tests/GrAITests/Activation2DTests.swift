@@ -78,7 +78,7 @@ class Activation2DGradTests: Input2DMSE1DCase
             fatalError("Unreachable.")
         }
         
-        var head: Layer1D = FullyConnected(
+        var head: Layer1D = try! FullyConnected(
             layerPrev: layer, nbNeurons: 1,
             activation: SoftReLU.str, biases: true, params: params
         )

@@ -20,7 +20,7 @@ public class Concat1Seq: LayerMergeSeq
     ///     - layersPrev: List of previous layers that have been queued to the model.
     ///     - params: Contextual parameters linking to the model.
     ///
-    public init(layersPrev: [LayerSeq], params: GrAI.Model.Params)
+    public init(layersPrev: [LayerSeq], params: GrAI.Model.Params) throws
     {
         let layer0 = layersPrev[0]
         let nbNeurons = layer0.nbNeurons
@@ -28,7 +28,7 @@ public class Concat1Seq: LayerMergeSeq
         {
             if layerPrev.nbNeurons != nbNeurons
             {
-                fatalError("Layer structure error.")
+                throw LayerError.Init(message: "Layer structure error.")
             }
         }
         
@@ -70,7 +70,7 @@ public class Concat1Seq: LayerMergeSeq
             layersPrev.append(mapping[idPrev] as! LayerSeq)
         }
         
-        let layer = Concat1Seq(layersPrev: layersPrev, params: params)
+        let layer = try! Concat1Seq(layersPrev: layersPrev, params: params)
         return layer
     }
     

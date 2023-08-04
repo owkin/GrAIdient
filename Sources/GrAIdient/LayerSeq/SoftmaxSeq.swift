@@ -29,13 +29,15 @@ public class SoftmaxSeq: LayerSeq
     ///     - nbHeads: Number of heads (groups) of neurons.
     ///     - params: Contextual parameters linking to the model.
     ///
-    public init(layerPrev: LayerSeq, nbHeads: Int, params: GrAI.Model.Params)
+    public init(layerPrev: LayerSeq,
+                nbHeads: Int,
+                params: GrAI.Model.Params) throws
     {
         let nbNeurons = layerPrev.nbNeurons
         if nbNeurons % nbHeads != 0
         {
-            fatalError(
-                "'nbNeurons' (\(nbNeurons) " +
+            throw LayerError.Init(message:
+                "`nbNeurons` (\(nbNeurons) " +
                 "should be a multiple of nbHeads (\(nbHeads))."
             )
         }
@@ -102,7 +104,7 @@ public class SoftmaxSeq: LayerSeq
         let params = GrAI.Model.Params(context: context)
         params.context.curID = id
             
-        let layer = SoftmaxSeq(
+        let layer = try! SoftmaxSeq(
             layerPrev: layerPrev,
             nbHeads: _nbHeads,
             params: params

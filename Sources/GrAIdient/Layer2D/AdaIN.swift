@@ -54,13 +54,13 @@ public class AdaIN: LayerMerge2D
     ///     - layersPrev: List of previous layers that have been queued to the model.
     ///     - params: Contextual parameters linking to the model.
     ///
-    public init(layersPrev: [Layer], params: GrAI.Model.Params)
+    public init(layersPrev: [Layer], params: GrAI.Model.Params) throws
     {
         if layersPrev.count != 2 ||
            (layersPrev.first as? Layer2D) == nil ||
            (layersPrev.last as? Layer1D) == nil
         {
-            fatalError("Layer structure error.")
+            throw LayerError.Init(message: "Layer structure error.")
         }
         
         let layerFirst = layersPrev.first as! Layer2D
@@ -68,7 +68,7 @@ public class AdaIN: LayerMerge2D
         
         if layerLast.nbNeurons != 2 * layerFirst.nbChannels
         {
-            fatalError("Layer structure error.")
+            throw LayerError.Init(message: "Layer structure error.")
         }
         
         super.init(layersPrev: layersPrev,
@@ -148,7 +148,7 @@ public class AdaIN: LayerMerge2D
             layersPrev.append(mapping[idPrev]!)
         }
         
-        let layer = AdaIN(layersPrev: layersPrev, params: params)
+        let layer = try! AdaIN(layersPrev: layersPrev, params: params)
         if inPlace
         {
             layer._norm = _norm

@@ -5,10 +5,10 @@
 // Created by Jean-François Reboud on 09/10/2022.
 //
 
-/// Last layer of a model.
+/// Loss layer of a model with a 1D shape neural structure.
 open class LayerOutput1D: Layer1D
 {
-    /// Coefficient to be applied to the loss compuptation.
+    /// Coefficient to be applied to the loss computation.
     public var coeff: Double = 1.0
     
     ///
@@ -86,6 +86,137 @@ open class LayerOutput1D: Layer1D
         super.resetKernelGPU()
         groundTruth = nil
         loss = nil
+    }
+    
+    ///
+    /// Check and setup ground truth in the CPU execution context.
+    ///
+    /// Throw an error if data size is incoherent.
+    ///
+    /// - Parameters:
+    ///     - groundTruth: The ground truth.
+    ///     - batchSize: The batch size of data.
+    ///     - nbNeurons: Number of neurons.
+    ///
+    public func checkGroundTruthCPU<T: BinaryFloatingPoint>(
+        _ groundTruth: [[T]],
+        batchSize: Int,
+        nbNeurons: Int) throws
+    {
+        if groundTruth.count != batchSize ||
+           groundTruth.first!.count != nbNeurons
+        {
+            throw LayerError.DataSize
+        }
+        if batchSize != self.batchSize ||
+           nbNeurons != self.nbNeurons
+        {
+            throw LayerError.DataSize
+        }
+        if batchSize <= 0 || batchSize > neurons.get(0)!.v.count
+        {
+            throw LayerError.BatchSize
+        }
+    }
+    
+    ///
+    /// Check and setup ground truth in the GPU execution context.
+    ///
+    /// Throw an error if data size is incoherent.
+    ///
+    /// - Parameters:
+    ///     - groundTruth: The ground truth.
+    ///     - batchSize: The batch size of data.
+    ///     - nbNeurons: Number of neurons.
+    ///
+    public func checkGroundTruthGPU<T: BinaryFloatingPoint>(
+        _ groundTruth: [[T]],
+        batchSize: Int,
+        nbNeurons: Int) throws
+    {
+        if groundTruth.count != batchSize ||
+           groundTruth.first!.count != nbNeurons
+        {
+            throw LayerError.DataSize
+        }
+        if batchSize != self.batchSize ||
+           nbNeurons != self.nbNeurons
+        {
+            throw LayerError.DataSize
+        }
+        
+        if self.groundTruth == nil
+        {
+            self.groundTruth = MetalSharedBuffer<Float>(
+                batchSize * nbNeurons,
+                deviceID: deviceID
+            )
+        }
+        else if batchSize <= 0 ||
+                batchSize * nbNeurons > self.groundTruth.nbElems
+        {
+            throw LayerError.BatchSize
+        }
+        
+        let bufferPtr = self.groundTruth.buffer
+        for (i, dataI) in groundTruth.enumerated()
+        {
+            if dataI.count != nbNeurons
+            {
+                throw LayerError.DataSize
+            }
+            for (j, dataIJ) in dataI.enumerated()
+            {
+                bufferPtr[j + i * nbNeurons] = Float(dataIJ)
+            }
+        }
+        MetalKernel.get.upload([self.groundTruth])
+    }
+    
+    ///
+    /// Check and setup ground truth in the GPU execution context.
+    ///
+    /// Throw an error if data size is incoherent.
+    ///
+    /// - Parameters:
+    ///     - groundTruth: The ground truth.
+    ///     - batchSize: The batch size of data.
+    ///     - nbNeurons: Number of neurons.
+    ///
+    public func checkGroundTruthGPU(
+        _ groundTruth: MetalBuffer<Float>,
+        batchSize: Int,
+        nbNeurons: Int) throws
+    {
+        if batchSize <= 0 ||
+           batchSize * nbNeurons > groundTruth.nbElems
+        {
+            throw LayerError.BatchSize
+        }
+        if batchSize != self.batchSize ||
+           nbNeurons != self.nbNeurons
+        {
+            throw LayerError.DataSize
+        }
+    }
+    
+    ///
+    /// Setup loss state  in the GPU execution context.
+    ///
+    /// Throw an error if batch size or ground truth are incoherent.
+    ///
+    /// - Parameter batchSize: The batch size of data.
+    ///
+    public func checkLossGPU(batchSize: Int) throws
+    {
+        if loss == nil
+        {
+            loss = MetalSharedBuffer<Float>(batchSize, deviceID: deviceID)
+        }
+        else if batchSize > loss.nbElems
+        {
+            throw LayerError.BatchSize
+        }
     }
     
     ///
@@ -177,7 +308,7 @@ open class LayerOutput1D: Layer1D
     {
         // Note that backward is not called except when it is
         // an intermediate layer.
-        // Model.backward is only called on not dirty layers.
+        // Model.backward is only called on non dirty layers.
         if let layerPrev = self.layerPrev as? Layer1D, mustComputeBackward
         {
             let neuronsPrev = layerPrev.neurons
@@ -207,7 +338,7 @@ open class LayerOutput1D: Layer1D
     {
         // Note that backward is not called except when it is
         // an intermediate layer.
-        // Model.backward is only called on not dirty layers.
+        // Model.backward is only called on non dirty layers.
         if let layerPrev = self.layerPrev as? Layer1D, mustComputeBackward
         {
             try layerPrev.checkStateBackwardGPU(batchSize: batchSize)

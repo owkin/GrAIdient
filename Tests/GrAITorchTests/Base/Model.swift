@@ -9,7 +9,7 @@ import GrAIdient
 import PythonKit
 
 /// Model to test against PyTorch.
-class ModelTest1
+class ModelTestConv1
 {
     ///
     /// Create the model and import weights from PyTorch.
@@ -24,7 +24,7 @@ class ModelTest1
     ///
     static func build(_ size: Int) -> Model
     {
-        let context = ModelContext(name: "ModelTest1", curID: 0)
+        let context = ModelContext(name: "ModelTestConv1", curID: 0)
         let params = GrAI.Model.Params(context: context)
         
         var layer: Layer2D
@@ -55,7 +55,7 @@ class ModelTest1
         
         layer = AdaptiveAvgPool2D(layerPrev: layer, size: 7, params: params)
         
-        var head: Layer1D = FullyConnected(
+        var head: Layer1D = try! FullyConnected(
             layerPrev: layer,
             nbNeurons: 10,
             activation: ReLU.str,
@@ -63,7 +63,7 @@ class ModelTest1
             params: params
         )
         
-        head = FullyConnected(
+        head = try! FullyConnected(
             layerPrev: head,
             nbNeurons: 1,
             activation: nil,
@@ -75,7 +75,7 @@ class ModelTest1
         
         // Load weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
-        let data = pythonLib.load_test1_weights()
+        let data = pythonLib.load_conv1_weights()
         
         let weights = [[Float]](data.tuple2.0)!
         
@@ -110,7 +110,7 @@ class ModelTest1
 }
 
 /// Model to test against PyTorch.
-class ModelTest2
+class ModelTestConv2
 {
     ///
     /// Create the model and import weights from PyTorch.
@@ -125,7 +125,7 @@ class ModelTest2
     ///
     static func build(_ size: Int) -> Model
     {
-        let context = ModelContext(name: "ModelTest2", curID: 0)
+        let context = ModelContext(name: "ModelTestConv2", curID: 0)
         let params = GrAI.Model.Params(context: context)
         
         var layer: Layer2D
@@ -157,11 +157,11 @@ class ModelTest2
             params: params
         )
         
-        layer = Sum2D(layersPrev: [layer, layer1], params: params)
+        layer = try! Sum2D(layersPrev: [layer, layer1], params: params)
         
         layer = AdaptiveAvgPool2D(layerPrev: layer, size: 7, params: params)
         
-        var head: Layer1D = FullyConnected(
+        var head: Layer1D = try! FullyConnected(
             layerPrev: layer,
             nbNeurons: 10,
             activation: ReLU.str,
@@ -169,7 +169,7 @@ class ModelTest2
             params: params
         )
         
-        head = FullyConnected(
+        head = try! FullyConnected(
             layerPrev: head,
             nbNeurons: 1,
             activation: nil,
@@ -181,7 +181,7 @@ class ModelTest2
         
         // Load weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
-        let data = pythonLib.load_test2_weights()
+        let data = pythonLib.load_conv2_weights()
         
         let weights = [[Float]](data.tuple2.0)!
         
@@ -225,7 +225,7 @@ class ModelTest2
 }
 
 /// Model to test against PyTorch.
-class ModelTest3
+class ModelTestFFT
 {
     ///
     /// Create the model.
@@ -240,7 +240,7 @@ class ModelTest3
     ///
     static func build(_ size: Int) -> Model
     {
-        let context = ModelContext(name: "ModelTest2", curID: 0)
+        let context = ModelContext(name: "ModelTestFFT", curID: 0)
         let params = GrAI.Model.Params(context: context)
         
         var layer: Layer2D
@@ -250,16 +250,16 @@ class ModelTest3
         )
         let firstLayer: Layer2D = layer
         
-        layer = FTFrequences2D(
+        layer = try! FTFrequences2D(
             nbChannels: 6, dimension: size,
             params: params
         )
         
-        layer = Multiply2D(
+        layer = try! Multiply2D(
             layersPrev: [firstLayer, layer], params: params
         )
         
-        layer = IRDFT2RGB(
+        layer = try! IRDFT2RGB(
             layerPrev: layer, params: params
         )
         
@@ -269,7 +269,7 @@ class ModelTest3
             params: params
         )
         
-         layer = DecorrelateRGB(
+         layer = try! DecorrelateRGB(
             layerPrev: layer,
             correlation: [
                 0.26, 0.09, 0.02,
@@ -304,58 +304,18 @@ class ModelTest3
     }
 }
 
-/// Model to test against PyTorch.
-class ModelTest4
+/// Generic model to test against PyTorch.
+class ModelTestConv
 {
     ///
-    /// Create the model and import weights from PyTorch.
+    /// Load weights in the model.
     ///
-    /// Principle features:
-    ///   - Deconvolution with odd kernel and stride
+    /// - Parameters:
+    ///     - model: The model.
+    ///     - weights: The weights.
     ///
-    /// - Parameter size: The size of the input data.
-    /// - Returns: The built model.
-    ///
-    static func build(_ size: Int) -> Model
+    static func initWeights(model: Model, weights: [[Float]])
     {
-        let context = ModelContext(name: "ModelTest4", curID: 0)
-        let params = GrAI.Model.Params(context: context)
-        
-        var layer: Layer2D
-        layer = Input2D(
-            nbChannels: 3,
-            width: size,
-            height: size,
-            params: params
-        )
-        
-        layer = Deconvolution2D(
-            layerPrev: layer,
-            size: 3, nbChannels: 5, stride: 2,
-            activation: nil, biases: true, bn: false,
-            params: params
-        )
-        
-        var head: Layer1D = AvgPool2D(
-            layerPrev: layer, params: params
-        )
-        
-        head = FullyConnected(
-            layerPrev: head,
-            nbNeurons: 1,
-            activation: nil,
-            biases: true,
-            params: params
-        )
-        
-        let model = Model(model: context.model, modelsPrev: [])
-        
-        // Load weights from `PyTorch`.
-        let pythonLib = Python.import("python_lib")
-        let data = pythonLib.load_test4_weights()
-        
-        let weights = [[Float]](data.tuple2.0)!
-        
         // Apply weights on the `GrAIdient` model's layers.
         var cur = 0
         for num_layer in 0..<model.layers.count
@@ -381,26 +341,87 @@ class ModelTest4
                 flLayer.weightsCPU = weightsTmp + biases
             }
         }
+    }
+}
+
+/// Model to test against PyTorch.
+class ModelTestConvSK: ModelTestConv
+{
+    ///
+    /// Create the model and import weights from PyTorch.
+    ///
+    /// Principle features:
+    ///   - Convolution
+    ///
+    /// - Parameters:
+    ///     - size: The size of the input data.
+    ///     - stride: The stride of the model.
+    ///     - kernel: The kernel size of the model.
+    /// - Returns: The built model.
+    ///
+    static func build(size: Int, stride: Int, kernel: Int) -> Model
+    {
+        let context = ModelContext(name: "ModelTestConvSK", curID: 0)
+        let params = GrAI.Model.Params(context: context)
+        
+        var layer: Layer2D
+        layer = Input2D(
+            nbChannels: 3,
+            width: size,
+            height: size,
+            params: params
+        )
+        
+        layer = Convolution2D(
+            layerPrev: layer,
+            size: kernel, nbChannels: 5, stride: stride,
+            activation: nil, biases: true, bn: false,
+            params: params
+        )
+        
+        var head: Layer1D = AvgPool2D(
+            layerPrev: layer, params: params
+        )
+        
+        head = try! FullyConnected(
+            layerPrev: head,
+            nbNeurons: 1,
+            activation: nil,
+            biases: true,
+            params: params
+        )
+        
+        let model = Model(model: context.model, modelsPrev: [])
+        
+        // Load weights from `PyTorch`.
+        let pythonLib = Python.import("python_lib")
+        let data = pythonLib.load_conv_sk_weights(stride, kernel)
+        
+        let weights = [[Float]](data.tuple2.0)!
+        super.initWeights(model: model, weights: weights)
         
         return model
     }
 }
 
 /// Model to test against PyTorch.
-class ModelTest5
+class ModelTestDeConvSK: ModelTestConv
 {
     ///
     /// Create the model and import weights from PyTorch.
     ///
     /// Principle features:
-    ///   - Deconvolution with even kernel and stride
+    ///   - Deconvolution
     ///
-    /// - Parameter size: The size of the input data.
+    /// - Parameters:
+    ///     - size: The size of the input data.
+    ///     - stride: The stride of the model.
+    ///     - kernel: The kernel size of the model.
     /// - Returns: The built model.
     ///
-    static func build(_ size: Int) -> Model
+    static func build(size: Int, stride: Int, kernel: Int) -> Model
     {
-        let context = ModelContext(name: "ModelTest5", curID: 0)
+        let context = ModelContext(name: "ModelTestDeConvSK", curID: 0)
         let params = GrAI.Model.Params(context: context)
         
         var layer: Layer2D
@@ -413,7 +434,7 @@ class ModelTest5
         
         layer = Deconvolution2D(
             layerPrev: layer,
-            size: 2, nbChannels: 5, stride: 2,
+            size: kernel, nbChannels: 5, stride: stride,
             activation: nil, biases: true, bn: false,
             params: params
         )
@@ -422,7 +443,7 @@ class ModelTest5
             layerPrev: layer, params: params
         )
         
-        head = FullyConnected(
+        head = try! FullyConnected(
             layerPrev: head,
             nbNeurons: 1,
             activation: nil,
@@ -434,206 +455,17 @@ class ModelTest5
         
         // Load weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
-        let data = pythonLib.load_test5_weights()
+        let data = pythonLib.load_deconv_sk_weights(stride, kernel)
         
         let weights = [[Float]](data.tuple2.0)!
-        
-        // Apply weights on the `GrAIdient` model's layers.
-        var cur = 0
-        for num_layer in 0..<model.layers.count
-        {
-            // Load weights and biases.
-            if let convLayer = model.layers[num_layer] as? Convolution2D
-            {
-                let weightsTmp: [Float] = weights[cur]
-                cur += 1
-                let biases: [Float] = weights[cur]
-                cur += 1
-                
-                convLayer.weightsCPU = weightsTmp + biases
-            }
-            // Load weights and biases.
-            else if let flLayer = model.layers[num_layer] as? FullyConnected
-            {
-                let weightsTmp: [Float] = weights[cur]
-                cur += 1
-                let biases: [Float] = weights[cur]
-                cur += 1
-                
-                flLayer.weightsCPU = weightsTmp + biases
-            }
-        }
+        super.initWeights(model: model, weights: weights)
         
         return model
     }
 }
 
 /// Model to test against PyTorch.
-class ModelTest6
-{
-    ///
-    /// Create the model and import weights from PyTorch.
-    ///
-    /// Principle features:
-    ///   - Deconvolution with odd kernel and no stride
-    ///
-    /// - Parameter size: The size of the input data.
-    /// - Returns: The built model.
-    ///
-    static func build(_ size: Int) -> Model
-    {
-        let context = ModelContext(name: "ModelTest6", curID: 0)
-        let params = GrAI.Model.Params(context: context)
-        
-        var layer: Layer2D
-        layer = Input2D(
-            nbChannels: 3,
-            width: size,
-            height: size,
-            params: params
-        )
-        
-        layer = Deconvolution2D(
-            layerPrev: layer,
-            size: 3, nbChannels: 5, stride: 1,
-            activation: nil, biases: true, bn: false,
-            params: params
-        )
-        
-        var head: Layer1D = AvgPool2D(
-            layerPrev: layer, params: params
-        )
-        
-        head = FullyConnected(
-            layerPrev: head,
-            nbNeurons: 1,
-            activation: nil,
-            biases: true,
-            params: params
-        )
-        
-        let model = Model(model: context.model, modelsPrev: [])
-        
-        // Load weights from `PyTorch`.
-        let pythonLib = Python.import("python_lib")
-        let data = pythonLib.load_test6_weights()
-        
-        let weights = [[Float]](data.tuple2.0)!
-        
-        // Apply weights on the `GrAIdient` model's layers.
-        var cur = 0
-        for num_layer in 0..<model.layers.count
-        {
-            // Load weights and biases.
-            if let convLayer = model.layers[num_layer] as? Convolution2D
-            {
-                let weightsTmp: [Float] = weights[cur]
-                cur += 1
-                let biases: [Float] = weights[cur]
-                cur += 1
-                
-                convLayer.weightsCPU = weightsTmp + biases
-            }
-            // Load weights and biases.
-            else if let flLayer = model.layers[num_layer] as? FullyConnected
-            {
-                let weightsTmp: [Float] = weights[cur]
-                cur += 1
-                let biases: [Float] = weights[cur]
-                cur += 1
-                
-                flLayer.weightsCPU = weightsTmp + biases
-            }
-        }
-        
-        return model
-    }
-}
-
-/// Model to test against PyTorch.
-class ModelTest7
-{
-    ///
-    /// Create the model and import weights from PyTorch.
-    ///
-    /// Principle features:
-    ///   - Deconvolution with even kernel and no stride
-    ///
-    /// - Parameter size: The size of the input data.
-    /// - Returns: The built model.
-    ///
-    static func build(_ size: Int) -> Model
-    {
-        let context = ModelContext(name: "ModelTest7", curID: 0)
-        let params = GrAI.Model.Params(context: context)
-        
-        var layer: Layer2D
-        layer = Input2D(
-            nbChannels: 3,
-            width: size,
-            height: size,
-            params: params
-        )
-        
-        layer = Deconvolution2D(
-            layerPrev: layer,
-            size: 2, nbChannels: 5, stride: 1,
-            activation: nil, biases: true, bn: false,
-            params: params
-        )
-        
-        var head: Layer1D = AvgPool2D(
-            layerPrev: layer, params: params
-        )
-        
-        head = FullyConnected(
-            layerPrev: head,
-            nbNeurons: 1,
-            activation: nil,
-            biases: true,
-            params: params
-        )
-        
-        let model = Model(model: context.model, modelsPrev: [])
-        
-        // Load weights from `PyTorch`.
-        let pythonLib = Python.import("python_lib")
-        let data = pythonLib.load_test7_weights()
-        
-        let weights = [[Float]](data.tuple2.0)!
-        
-        // Apply weights on the `GrAIdient` model's layers.
-        var cur = 0
-        for num_layer in 0..<model.layers.count
-        {
-            // Load weights and biases.
-            if let convLayer = model.layers[num_layer] as? Convolution2D
-            {
-                let weightsTmp: [Float] = weights[cur]
-                cur += 1
-                let biases: [Float] = weights[cur]
-                cur += 1
-                
-                convLayer.weightsCPU = weightsTmp + biases
-            }
-            // Load weights and biases.
-            else if let flLayer = model.layers[num_layer] as? FullyConnected
-            {
-                let weightsTmp: [Float] = weights[cur]
-                cur += 1
-                let biases: [Float] = weights[cur]
-                cur += 1
-                
-                flLayer.weightsCPU = weightsTmp + biases
-            }
-        }
-        
-        return model
-    }
-}
-
-/// Model to test against PyTorch.
-class ModelTest8
+class ModelTestCat
 {
     ///
     /// Create the model and import weights from PyTorch.
@@ -646,7 +478,7 @@ class ModelTest8
     ///
     static func build(_ size: Int) -> Model
     {
-        let context = ModelContext(name: "ModelTest8", curID: 0)
+        let context = ModelContext(name: "ModelTestCat", curID: 0)
         let params = GrAI.Model.Params(context: context)
         
         var layer: Layer2D
@@ -670,7 +502,7 @@ class ModelTest8
             params: params
         )
         
-        layer = Concat2D(
+        layer = try! Concat2D(
             layersPrev: [layer1, layer2], params: params
         )
         
@@ -678,7 +510,7 @@ class ModelTest8
             layerPrev: layer, params: params
         )
         
-        head = FullyConnected(
+        head = try! FullyConnected(
             layerPrev: head,
             nbNeurons: 1,
             activation: nil,
@@ -690,7 +522,848 @@ class ModelTest8
         
         // Load weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
-        let data = pythonLib.load_test8_weights()
+        let data = pythonLib.load_cat_weights()
+        
+        let weights = [[Float]](data.tuple2.0)!
+        
+        // Apply weights on the `GrAIdient` model's layers.
+        var cur = 0
+        for num_layer in 0..<model.layers.count
+        {
+            // Load weights and biases.
+            if let convLayer = model.layers[num_layer] as? Convolution2D
+            {
+                let weightsTmp: [Float] = weights[cur]
+                cur += 1
+                let biases: [Float] = weights[cur]
+                cur += 1
+                
+                convLayer.weightsCPU = weightsTmp + biases
+            }
+            // Load weights and biases.
+            else if let flLayer = model.layers[num_layer] as? FullyConnected
+            {
+                let weightsTmp: [Float] = weights[cur]
+                cur += 1
+                let biases: [Float] = weights[cur]
+                cur += 1
+                
+                flLayer.weightsCPU = weightsTmp + biases
+            }
+        }
+        
+        return model
+    }
+}
+
+/// Model to test against PyTorch.
+class ModelTestResize
+{
+    ///
+    /// Load weights in the model.
+    ///
+    /// - Parameters:
+    ///     - model: The model.
+    ///     - weights: The weights.
+    ///
+    static func initWeights(model: Model, weights: [[Float]])
+    {
+        // Apply weights on the `GrAIdient` model's layers.
+        var cur = 0
+        for num_layer in 0..<model.layers.count
+        {
+            // Load weights and biases.
+            if let convLayer = model.layers[num_layer] as? Convolution2D
+            {
+                let weightsTmp: [Float] = weights[cur]
+                cur += 1
+                let biases: [Float] = weights[cur]
+                cur += 1
+                
+                convLayer.weightsCPU = weightsTmp + biases
+            }
+            // Load weights and biases.
+            else if let flLayer = model.layers[num_layer] as? FullyConnected
+            {
+                let weightsTmp: [Float] = weights[cur]
+                cur += 1
+                let biases: [Float] = weights[cur]
+                cur += 1
+                
+                flLayer.weightsCPU = weightsTmp + biases
+            }
+        }
+    }
+}
+
+/// Model to test against PyTorch.
+class ModelTestResizeBilinear: ModelTestResize
+{
+    ///
+    /// Create the model and import weights from PyTorch.
+    ///
+    /// Principle features:
+    ///   - ResizeBilinear
+    ///
+    /// - Parameters:
+    ///     - sizeInput: The size of the input data.
+    ///     - sizeOutput: The output size of the resize operation.
+    /// - Returns: The built model.
+    ///
+    static func build(sizeInput: Int, sizeOutput: Int) -> Model
+    {
+        let context = ModelContext(name: "ModelTestResize", curID: 0)
+        let params = GrAI.Model.Params(context: context)
+        
+        var layer: Layer2D
+        layer = Input2D(
+            nbChannels: 3,
+            width: sizeInput,
+            height: sizeInput,
+            params: params
+        )
+        
+        layer = Convolution2D(
+            layerPrev: layer,
+            size: 1, nbChannels: 5, stride: 1,
+            activation: nil, biases: true, bn: false,
+            params: params
+        )
+        
+        layer = try! ResizeBilinear(
+            layerPrev: layer,
+            dimension: sizeOutput,
+            params: params
+        )
+        
+        var head: Layer1D = AvgPool2D(
+            layerPrev: layer, params: params
+        )
+        
+        head = try! FullyConnected(
+            layerPrev: head,
+            nbNeurons: 1,
+            activation: nil,
+            biases: true,
+            params: params
+        )
+        
+        let model = Model(model: context.model, modelsPrev: [])
+        
+        // Load weights from `PyTorch`.
+        let pythonLib = Python.import("python_lib")
+        let data = pythonLib.load_resize_weights(sizeOutput)
+        
+        let weights = [[Float]](data.tuple2.0)!
+        super.initWeights(model: model, weights: weights)
+        
+        return model
+    }
+}
+
+/// Model to test against PyTorch.
+class ModelTestResizeBilinearPad: ModelTestResize
+{
+    ///
+    /// Create the model and import weights from PyTorch.
+    ///
+    /// Principle features:
+    ///   - ResizeBilinearPad
+    ///
+    /// - Parameters:
+    ///     - sizeInput: The size of the input data.
+    ///     - sizeOutput: The output size of the resize operation.
+    /// - Returns: The built model.
+    ///
+    static func build(sizeInput: Int, sizeOutput: Int) -> Model
+    {
+        let context = ModelContext(name: "ModelTestResize", curID: 0)
+        let params = GrAI.Model.Params(context: context)
+        
+        var layer: Layer2D
+        layer = Input2D(
+            nbChannels: 3,
+            width: sizeInput,
+            height: sizeInput,
+            params: params
+        )
+        
+        layer = Convolution2D(
+            layerPrev: layer,
+            size: 1, nbChannels: 5, stride: 1,
+            activation: nil, biases: true, bn: false,
+            params: params
+        )
+        
+        layer = try! ResizeBilinearPad(
+            layerPrev: layer,
+            scalesList: [Double(sizeOutput) / Double(sizeInput)],
+            padValue: 0.0,
+            params: params
+        )
+        
+        var head: Layer1D = AvgPool2D(
+            layerPrev: layer, params: params
+        )
+        
+        head = try! FullyConnected(
+            layerPrev: head,
+            nbNeurons: 1,
+            activation: nil,
+            biases: true,
+            params: params
+        )
+        
+        let model = Model(model: context.model, modelsPrev: [])
+        
+        // Load weights from `PyTorch`.
+        let pythonLib = Python.import("python_lib")
+        let data = pythonLib.load_resize_weights(sizeOutput)
+        
+        let weights = [[Float]](data.tuple2.0)!
+        super.initWeights(model: model, weights: weights)
+        
+        return model
+    }
+}
+
+/// Model to test against PyTorch.
+class ModelTestResizeBilinearCrop: ModelTestResize
+{
+    ///
+    /// Create the model and import weights from PyTorch.
+    ///
+    /// Principle features:
+    ///   - ResizeBilinearCrop
+    ///
+    /// - Parameters:
+    ///     - sizeInput: The size of the input data.
+    ///     - sizeOutput: The output size of the resize operation.
+    /// - Returns: The built model.
+    ///
+    static func build(sizeInput: Int, sizeOutput: Int) -> Model
+    {
+        let context = ModelContext(name: "ModelTestResize", curID: 0)
+        let params = GrAI.Model.Params(context: context)
+        
+        var layer: Layer2D
+        layer = Input2D(
+            nbChannels: 3,
+            width: sizeInput,
+            height: sizeInput,
+            params: params
+        )
+        
+        layer = Convolution2D(
+            layerPrev: layer,
+            size: 1, nbChannels: 5, stride: 1,
+            activation: nil, biases: true, bn: false,
+            params: params
+        )
+        
+        layer = try! ResizeBilinearCrop(
+            layerPrev: layer,
+            scalesList: [Double(sizeOutput) / Double(sizeInput)],
+            params: params
+        )
+        
+        var head: Layer1D = AvgPool2D(
+            layerPrev: layer, params: params
+        )
+        
+        head = try! FullyConnected(
+            layerPrev: head,
+            nbNeurons: 1,
+            activation: nil,
+            biases: true,
+            params: params
+        )
+        
+        let model = Model(model: context.model, modelsPrev: [])
+        
+        // Load weights from `PyTorch`.
+        let pythonLib = Python.import("python_lib")
+        let data = pythonLib.load_resize_weights(sizeOutput)
+        
+        let weights = [[Float]](data.tuple2.0)!
+        super.initWeights(model: model, weights: weights)
+        
+        return model
+    }
+}
+
+/// Model to test against PyTorch.
+class ModelTestPatchConv
+{
+    ///
+    /// Create the model and import weights from PyTorch.
+    ///
+    /// Principle features:
+    ///   - FullyConnectedPatch
+    ///   - AvgPoolSeq
+    ///
+    /// - Parameters:
+    ///     - size: The size of the input data.
+    ///     - patch: The kernel split size of the input data.
+    /// - Returns: The built model.
+    ///
+    static func build(size: Int, patch: Int) -> Model
+    {
+        let context = ModelContext(name: "ModelTestPatchConv", curID: 0)
+        let params = GrAI.Model.Params(context: context)
+        
+        var layer: Layer2D
+        layer = Input2D(
+            nbChannels: 3,
+            width: size,
+            height: size,
+            params: params
+        )
+        
+        let layerSeq: LayerSeq = try! FullyConnectedPatch(
+            layerPrev: layer, patch: patch, nbNeurons: 5,
+            activation: nil, biases: true,
+            params: params
+        )
+        
+        var head: Layer1D = AvgPoolSeq(
+            layerPrev: layerSeq, params: params
+        )
+        
+        head = try! FullyConnected(
+            layerPrev: head, nbNeurons: 1,
+            activation: nil, biases: true,
+            params: params
+        )
+        
+        let model = Model(model: context.model, modelsPrev: [])
+        
+        // Load weights from `PyTorch`.
+        let pythonLib = Python.import("python_lib")
+        let data = pythonLib.load_patch_conv_weights(size, patch)
+        
+        let weights = [[Float]](data.tuple2.0)!
+        
+        // Apply weights on the `GrAIdient` model's layers.
+        var cur = 0
+        for num_layer in 0..<model.layers.count
+        {
+            // Load weights and biases.
+            if let flLayer = model.layers[num_layer] as? FullyConnectedPatch
+            {
+                let weightsTmp: [Float] = weights[cur]
+                cur += 1
+                let biases: [Float] = weights[cur]
+                cur += 1
+                
+                flLayer.weightsCPU = weightsTmp + biases
+            }
+            else if let flLayer = model.layers[num_layer] as? FullyConnected
+            {
+                let weightsTmp: [Float] = weights[cur]
+                cur += 1
+                let biases: [Float] = weights[cur]
+                cur += 1
+                
+                flLayer.weightsCPU = weightsTmp + biases
+            }
+        }
+        
+        return model
+    }
+}
+
+/// Model to test against PyTorch.
+class ModelTestAttention1
+{
+    ///
+    /// Create the model and import weights from PyTorch.
+    ///
+    /// Principle features:
+    ///   - FullyConnectedSeq
+    ///   - QuerySeq
+    ///   - SoftmaxSeq
+    ///   - ValueSeq
+    ///
+    /// - Parameters:
+    ///     - size: The size of the input data.
+    ///     - patch: The kernel split size of the input data.
+    /// - Returns: The built model.
+    ///
+    static func build(size: Int, patch: Int) -> Model
+    {
+        let context = ModelContext(name: "ModelTestAttention1", curID: 0)
+        let params = GrAI.Model.Params(context: context)
+        
+        var layer: Layer2D
+        layer = Input2D(
+            nbChannels: 3,
+            width: size,
+            height: size,
+            params: params
+        )
+        
+        var layerSeq: LayerSeq = try! FullyConnectedPatch(
+            layerPrev: layer, patch: patch, nbNeurons: 5,
+            activation: nil, biases: true,
+            params: params
+        )
+        
+        let query = FullyConnectedSeq(
+            layerPrev: layerSeq, nbNeurons: 5,
+            activation: nil, biases: true,
+            params: params
+        )
+        let key = FullyConnectedSeq(
+            layerPrev: layerSeq, nbNeurons: 5,
+            activation: nil, biases: true,
+            params: params
+        )
+        let value = FullyConnectedSeq(
+            layerPrev: layerSeq, nbNeurons: 5,
+            activation: nil, biases: true,
+            params: params
+        )
+        
+        var score: LayerSeq = try! QuerySeq(
+            query: query, key: key, nbHeads: 1, params: params
+        )
+        score = try! SoftmaxSeq(layerPrev: score, nbHeads: 1, params: params)
+        
+        layerSeq = try! ValueSeq(
+            value: value, score: score, nbHeads: 1,
+            params: params
+        )
+        
+        layerSeq = FullyConnectedSeq(
+            layerPrev: layerSeq, nbNeurons: 5,
+            activation: nil, biases: true,
+            params: params
+        )
+        
+        var head: Layer1D = AvgPoolSeq(
+            layerPrev: layerSeq, params: params
+        )
+        
+        head = try! FullyConnected(
+            layerPrev: head, nbNeurons: 1,
+            activation: nil, biases: true,
+            params: params
+        )
+        
+        let model = Model(model: context.model, modelsPrev: [])
+        
+        // Load weights from `PyTorch`.
+        let pythonLib = Python.import("python_lib")
+        let data = pythonLib.load_attention1_weights(size, patch)
+        
+        let weights = [[Float]](data.tuple2.0)!
+        
+        // Apply weights on the `GrAIdient` model's layers.
+        var cur = 0
+        for num_layer in 0..<model.layers.count
+        {
+            // Load weights and biases.
+            if let flLayer = model.layers[num_layer] as? FullyConnectedPatch
+            {
+                let weightsTmp: [Float] = weights[cur]
+                cur += 1
+                let biases: [Float] = weights[cur]
+                cur += 1
+                
+                flLayer.weightsCPU = weightsTmp + biases
+            }
+            else if let flLayer = model.layers[num_layer] as? FullyConnectedSeq
+            {
+                let weightsTmp: [Float] = weights[cur]
+                cur += 1
+                let biases: [Float] = weights[cur]
+                cur += 1
+                
+                flLayer.weightsCPU = weightsTmp + biases
+            }
+            else if let flLayer = model.layers[num_layer] as? FullyConnected
+            {
+                let weightsTmp: [Float] = weights[cur]
+                cur += 1
+                let biases: [Float] = weights[cur]
+                cur += 1
+                
+                flLayer.weightsCPU = weightsTmp + biases
+            }
+        }
+        
+        return model
+    }
+}
+
+/// Model to test against PyTorch.
+class ModelTestAttention2
+{
+    ///
+    /// Create the model and import weights from PyTorch.
+    ///
+    /// Principle features:
+    ///   - FullyConnectedSeq
+    ///   - QuerySeq
+    ///   - SoftmaxSeq
+    ///   - ValueSeq
+    ///
+    /// - Parameters:
+    ///     - size: The size of the input data.
+    ///     - patch: The kernel split size of the input data.
+    /// - Returns: The built model.
+    ///
+    static func build(size: Int, patch: Int) -> Model
+    {
+        let context = ModelContext(name: "ModelTestAttention2", curID: 0)
+        let params = GrAI.Model.Params(context: context)
+        
+        var layer: Layer2D
+        layer = Input2D(
+            nbChannels: 3,
+            width: size,
+            height: size,
+            params: params
+        )
+        
+        var layerSeq: LayerSeq = try! FullyConnectedPatch(
+            layerPrev: layer, patch: patch, nbNeurons: 6,
+            activation: nil, biases: true,
+            params: params
+        )
+        
+        let query: LayerSeq = FullyConnectedSeq(
+            layerPrev: layerSeq, nbNeurons: 6,
+            activation: nil, biases: true,
+            params: params
+        )
+        let key: LayerSeq = FullyConnectedSeq(
+            layerPrev: layerSeq, nbNeurons: 6,
+            activation: nil, biases: true,
+            params: params
+        )
+        let value: LayerSeq = FullyConnectedSeq(
+            layerPrev: layerSeq, nbNeurons: 6,
+            activation: nil, biases: true,
+            params: params
+        )
+        
+        let nbHeads = 3
+        layerSeq = try! QuerySeq(
+            query: query, key: key, nbHeads: nbHeads,
+            params: params
+        )
+        layerSeq = try! SoftmaxSeq(
+            layerPrev: layerSeq, nbHeads: nbHeads,
+            params: params
+        )
+            
+        layerSeq = try! ValueSeq(
+            value: value, score: layerSeq, nbHeads: nbHeads,
+            params: params
+        )
+        
+        layerSeq = FullyConnectedSeq(
+            layerPrev: layerSeq, nbNeurons: 6,
+            activation: nil, biases: true,
+            params: params
+        )
+        
+        var head: Layer1D = AvgPoolSeq(
+            layerPrev: layerSeq, params: params
+        )
+        
+        head = try! FullyConnected(
+            layerPrev: head, nbNeurons: 1,
+            activation: nil, biases: true,
+            params: params
+        )
+        
+        let model = Model(model: context.model, modelsPrev: [])
+        
+        // Load weights from `PyTorch`.
+        let pythonLib = Python.import("python_lib")
+        let data = pythonLib.load_attention2_weights(size, patch)
+        
+        let weights = [[Float]](data.tuple2.0)!
+        
+        // Apply weights on the `GrAIdient` model's layers.
+        var cur = 0
+        for num_layer in 0..<model.layers.count
+        {
+            // Load weights and biases.
+            if let flLayer = model.layers[num_layer] as? FullyConnectedPatch
+            {
+                let weightsTmp: [Float] = weights[cur]
+                cur += 1
+                let biases: [Float] = weights[cur]
+                cur += 1
+                
+                flLayer.weightsCPU = weightsTmp + biases
+            }
+            else if let flLayer = model.layers[num_layer] as? FullyConnectedSeq
+            {
+                let weightsTmp: [Float] = weights[cur]
+                cur += 1
+                let biases: [Float] = weights[cur]
+                cur += 1
+                
+                flLayer.weightsCPU = weightsTmp + biases
+            }
+            else if let flLayer = model.layers[num_layer] as? FullyConnected
+            {
+                let weightsTmp: [Float] = weights[cur]
+                cur += 1
+                let biases: [Float] = weights[cur]
+                cur += 1
+                
+                flLayer.weightsCPU = weightsTmp + biases
+            }
+        }
+        
+        return model
+    }
+}
+
+/// Model to test against PyTorch.
+class ModelTestLayerNorm
+{
+    ///
+    /// Create the model and import weights from PyTorch.
+    ///
+    /// Principle features:
+    ///   - LayerNormSeq
+    ///
+    /// - Parameters:
+    ///     - size: The size of the input data.
+    ///     - patch: The kernel split size of the input data.
+    /// - Returns: The built model.
+    ///
+    static func build(size: Int, patch: Int) -> Model
+    {
+        let context = ModelContext(name: "ModelTestLayerNorm", curID: 0)
+        let params = GrAI.Model.Params(context: context)
+        
+        var layer: Layer2D
+        layer = Input2D(
+            nbChannels: 3,
+            width: size,
+            height: size,
+            params: params
+        )
+        
+        var layerSeq: LayerSeq = try! FullyConnectedPatch(
+            layerPrev: layer, patch: patch, nbNeurons: 5,
+            activation: nil, biases: true,
+            params: params
+        )
+        
+        layerSeq = LayerNormSeq(
+            layerPrev: layerSeq, activation: nil, params: params
+        )
+        
+        var head: Layer1D = AvgPoolSeq(
+            layerPrev: layerSeq, params: params
+        )
+        
+        head = try! FullyConnected(
+            layerPrev: head, nbNeurons: 1,
+            activation: nil, biases: true,
+            params: params
+        )
+        
+        let model = Model(model: context.model, modelsPrev: [])
+        
+        // Load weights from `PyTorch`.
+        let pythonLib = Python.import("python_lib")
+        let data = pythonLib.load_layer_norm_weights(size, patch)
+        
+        let weights = [[Float]](data.tuple2.0)!
+        
+        // Apply weights on the `GrAIdient` model's layers.
+        var cur = 0
+        for num_layer in 0..<model.layers.count
+        {
+            // Load weights and biases.
+            if let flLayer = model.layers[num_layer] as? FullyConnectedPatch
+            {
+                let weightsTmp: [Float] = weights[cur]
+                cur += 1
+                let biases: [Float] = weights[cur]
+                cur += 1
+                
+                flLayer.weightsCPU = weightsTmp + biases
+            }
+            else if let layer = model.layers[num_layer] as? LayerNormSeq
+            {
+                let weightsTmp: [Float] = weights[cur]
+                cur += 1
+                let biases: [Float] = weights[cur]
+                cur += 1
+                
+                layer.weightsCPU = weightsTmp + biases
+            }
+            else if let flLayer = model.layers[num_layer] as? FullyConnected
+            {
+                let weightsTmp: [Float] = weights[cur]
+                cur += 1
+                let biases: [Float] = weights[cur]
+                cur += 1
+                
+                flLayer.weightsCPU = weightsTmp + biases
+            }
+        }
+        
+        return model
+    }
+}
+
+/// Generic model to test against PyTorch.
+class ModelTestAutoEncoder
+{
+    ///
+    /// Load weights in the model.
+    ///
+    /// - Parameters:
+    ///     - model: The model.
+    ///     - weights: The weights.
+    ///
+    static func initWeights(model: Model, weights: [[Float]])
+    {
+        // Apply weights on the `GrAIdient` model's layers.
+        var cur = 0
+        for num_layer in 0..<model.layers.count
+        {
+            // Load weights and biases.
+            if let convLayer = model.layers[num_layer] as? Convolution2D
+            {
+                let weightsTmp: [Float] = weights[cur]
+                cur += 1
+                let biases: [Float] = weights[cur]
+                cur += 1
+                
+                convLayer.weightsCPU = weightsTmp + biases
+            }
+            // Load weights and biases.
+            else if let flLayer = model.layers[num_layer] as? FullyConnected
+            {
+                let weightsTmp: [Float] = weights[cur]
+                cur += 1
+                let biases: [Float] = weights[cur]
+                cur += 1
+                
+                flLayer.weightsCPU = weightsTmp + biases
+            }
+        }
+    }
+}
+
+/// Model to test against PyTorch.
+class ModelTestAutoEncoder1: ModelTestAutoEncoder
+{
+    ///
+    /// Create the model and import weights from PyTorch.
+    ///
+    /// Principle features:
+    ///   - Convolution
+    ///   - Deconvolution
+    ///
+    /// - Parameter size: The size of the input data.
+    /// - Returns: The built model.
+    ///
+    static func build(_ size: Int) -> Model
+    {
+        let context = ModelContext(name: "ModelTestAutoEncoder1", curID: 0)
+        let params = GrAI.Model.Params(context: context)
+        
+        var layer: Layer2D
+        layer = Input2D(
+            nbChannels: 3,
+            width: size,
+            height: size,
+            params: params
+        )
+        
+        layer = Convolution2D(
+            layerPrev: layer,
+            size: 3, nbChannels: 5, stride: 2,
+            activation: nil,
+            biases: true, bn: false,
+            params: params
+        )
+        
+        layer = Deconvolution2D(
+            layerPrev: layer,
+            size: 2, nbChannels: 3, stride: 2,
+            activation: nil, biases: true, bn: false,
+            params: params
+        )
+        
+        let model = Model(model: context.model, modelsPrev: [])
+        
+        // Load weights from `PyTorch`.
+        let pythonLib = Python.import("python_lib")
+        let data = pythonLib.load_auto_encoder1_weights()
+        
+        let weights = [[Float]](data.tuple2.0)!
+        super.initWeights(model: model, weights: weights)
+        
+        return model
+    }
+}
+
+/// Model to test against PyTorch.
+class ModelTestGram
+{
+    ///
+    /// Create the model and import weights from PyTorch.
+    ///
+    /// Principle features:
+    ///   - SelfCorrelate
+    ///   - Normalize12
+    ///   - SimilarityBatchError
+    ///
+    /// - Parameter size: The size of the input data.
+    /// - Returns: The built model.
+    ///
+    static func build(_ size: Int) -> Model
+    {
+        let context = ModelContext(name: "ModelTestGram", curID: 0)
+        let params = GrAI.Model.Params(context: context)
+        
+        var layer: Layer2D
+        layer = Input2D(
+            nbChannels: 3,
+            width: size,
+            height: size,
+            params: params
+        )
+        
+        layer = Convolution2D(
+            layerPrev: layer,
+            size: 1, nbChannels: 5, stride: 1,
+            activation: nil, biases: true, bn: false,
+            params: params
+        )
+        
+        let head: Layer1D = AvgPool2D(
+            layerPrev: layer, params: params
+        )
+        
+        _ = try! FullyConnected(
+            layerPrev: head,
+            nbNeurons: 1,
+            activation: nil,
+            biases: true,
+            params: params
+        )
+        
+        let model = Model(model: context.model, modelsPrev: [])
+        
+        // Load weights from `PyTorch`.
+        let pythonLib = Python.import("python_lib")
+        let data = pythonLib.load_gram_weights()
         
         let weights = [[Float]](data.tuple2.0)!
         

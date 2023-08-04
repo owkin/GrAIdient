@@ -28,13 +28,15 @@ public class DotProduct1D: LayerMerge1D
     ///     - size: The number of neurons per block.
     ///     - params: Contextual parameters linking to the model.
     ///
-    public init(layersPrev: [Layer1D], size: Int, params: GrAI.Model.Params)
+    public init(layersPrev: [Layer1D],
+                size: Int,
+                params: GrAI.Model.Params) throws
     {
         if layersPrev.count != 2 ||
            layersPrev[0].nbNeurons != layersPrev[1].nbNeurons ||
            layersPrev[0].nbNeurons % size != 0
         {
-            fatalError()
+            throw LayerError.Init(message: "Inconsistent number of neurons.")
         }
         
         _size = size
@@ -102,7 +104,7 @@ public class DotProduct1D: LayerMerge1D
             layersPrev.append(mapping[idPrev] as! Layer1D)
         }
         
-        let layer = DotProduct1D(
+        let layer = try! DotProduct1D(
             layersPrev: layersPrev,
             size: _size,
             params: params
@@ -320,7 +322,7 @@ public class DotProduct1D: LayerMerge1D
         let nbNeuronsPrev = (_layersPrev[0] as! Layer1D).nbNeurons
         
         let pSize: [UInt32] = [UInt32(_size)]
-        let pNbNeurones: [UInt32] = [UInt32(nbNeurons)]
+        let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
         let pNbneuronsPrev: [UInt32] = [UInt32(nbNeuronsPrev)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         
@@ -330,7 +332,7 @@ public class DotProduct1D: LayerMerge1D
         command.setBuffer((_layersPrev[0] as! Layer1D).outs.metal, atIndex: 0)
         command.setBuffer((_layersPrev[1] as! Layer1D).outs.metal, atIndex: 1)
         command.setBytes(pSize, atIndex: 2)
-        command.setBytes(pNbNeurones, atIndex: 3)
+        command.setBytes(pNbNeurons, atIndex: 3)
         command.setBytes(pNbneuronsPrev, atIndex: 4)
         command.setBytes(pNbBatch, atIndex: 5)
         command.setBuffer(outs.metal, atIndex: 6)
@@ -406,7 +408,7 @@ public class DotProduct1D: LayerMerge1D
         let nbNeuronsPrev = layerPrev1.nbNeurons
         
         let pSize: [UInt32] = [UInt32(_size)]
-        let pNbNeurones: [UInt32] = [UInt32(nbNeurons)]
+        let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
         let pNbneuronsPrev: [UInt32] = [UInt32(nbNeuronsPrev)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         
@@ -425,7 +427,7 @@ public class DotProduct1D: LayerMerge1D
             command.setBuffer(layerPrev2.outs.metal, atIndex: 0)
             command.setBuffer(delta.metal, atIndex: 1)
             command.setBytes(pSize, atIndex: 2)
-            command.setBytes(pNbNeurones, atIndex: 3)
+            command.setBytes(pNbNeurons, atIndex: 3)
             command.setBytes(pNbneuronsPrev, atIndex: 4)
             command.setBytes(pNbBatch, atIndex: 5)
             command.setBytes(pDirty, atIndex: 6)
@@ -452,7 +454,7 @@ public class DotProduct1D: LayerMerge1D
             command.setBuffer(layerPrev1.outs.metal, atIndex: 0)
             command.setBuffer(delta.metal, atIndex: 1)
             command.setBytes(pSize, atIndex: 2)
-            command.setBytes(pNbNeurones, atIndex: 3)
+            command.setBytes(pNbNeurons, atIndex: 3)
             command.setBytes(pNbneuronsPrev, atIndex: 4)
             command.setBytes(pNbBatch, atIndex: 5)
             command.setBytes(pDirty, atIndex: 6)

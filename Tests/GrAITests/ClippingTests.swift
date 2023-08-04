@@ -34,19 +34,19 @@ class ClippingTests: Input1DMSE1DCase
         
         var layer: Layer1D = Input1D(nbNeurons: 1, params: params)
         
-        layer = FullyConnected(
+        layer = try! FullyConnected(
             layerPrev: layer, nbNeurons: 5,
             activation: LeakyReLU.str, biases: true,
             params: params
         )
         
-        layer = FullyConnected(
+        layer = try! FullyConnected(
             layerPrev: layer, nbNeurons: 12,
             activation: LeakyReLU.str, biases: true,
             params: params
         )
         
-        layer = FullyConnected(
+        layer = try! FullyConnected(
             layerPrev: layer, nbNeurons: 1,
             activation: LeakyReLU.str, biases: true,
             params: params

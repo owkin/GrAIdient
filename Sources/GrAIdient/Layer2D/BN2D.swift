@@ -9,9 +9,9 @@
 public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
 {
     /// Batch normalization by default or batch normalization in the CPU execution context.
-    var _bn: BatchNormalizationBase? = nil
+    var _norm: LayerWeightsStatsNormalization? = nil
     /// Batch normalization in the GPU execution context.
-    var _bnGPU: BatchNormalizationGPU? = nil
+    var _normGPU: BatchNormalizationGPU? = nil
     
     /// Whether to compute weights' gradients or not.
     public var computeDeltaWeights: Bool = true
@@ -24,16 +24,16 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
     {
         get {
             var weightsTmp = [Float]()
-            if let bn = _bn
+            if let norm = _norm
             {
-                weightsTmp += bn.weights
+                weightsTmp += norm.weights
             }
             return weightsTmp
         }
         set {
-            if let bn = _bn
+            if let norm = _norm
             {
-                bn.weights = newValue
+                norm.weights = newValue
             }
         }
     }
@@ -43,24 +43,24 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
     {
         get {
             var weightsTmp = [Float]()
-            if let bn = _bnGPU
+            if let norm = _normGPU
             {
-                weightsTmp += bn.weights
+                weightsTmp += norm.weights
             }
-            else if let bn = _bn
+            else if let norm = _norm
             {
-                weightsTmp += bn.weights
+                weightsTmp += norm.weights
             }
             return weightsTmp
         }
         set {
-            if let bn = _bnGPU
+            if let norm = _normGPU
             {
-                bn.weights = newValue
+                norm.weights = newValue
             }
-            else if let bn = _bn
+            else if let norm = _norm
             {
-                bn.weights = newValue
+                norm.weights = newValue
             }
         }
     }
@@ -70,16 +70,16 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
     {
         get {
             var statsTmp = [Float]()
-            if let bn = _bn
+            if let norm = _norm
             {
-                statsTmp += bn.stats
+                statsTmp += norm.stats
             }
             return statsTmp
         }
         set {
-            if let bn = _bn
+            if let norm = _norm
             {
-                bn.stats = newValue
+                norm.stats = newValue
             }
         }
     }
@@ -89,33 +89,33 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
     {
         get {
             var statsTmp = [Float]()
-            if let bn = _bnGPU
+            if let norm = _normGPU
             {
-                statsTmp += bn.stats
+                statsTmp += norm.stats
             }
-            else if let bn = _bn
+            else if let norm = _norm
             {
-                statsTmp += bn.stats
+                statsTmp += norm.stats
             }
             return statsTmp
         }
         set {
-            if let bn = _bnGPU
+            if let norm = _normGPU
             {
-                bn.stats = newValue
+                norm.stats = newValue
             }
-            else if let bn = _bn
+            else if let norm = _norm
             {
-                bn.stats = newValue
+                norm.stats = newValue
             }
         }
     }
     
     /// Get batch normalization in the CPU execution context.
-    var bn: BatchNormalization?
+    var norm: BatchNormalization?
     {
         get {
-            return _bn as? BatchNormalization
+            return _norm as? BatchNormalization
         }
     }
     
@@ -129,7 +129,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
     
     private enum Keys: String, CodingKey
     {
-        case BN = "BatchNormalization"
+        case norm
     }
     
     ///
@@ -150,7 +150,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
                    activation: activation,
                    params: params)
         
-        _bn = BatchNormalizationBase(self)
+        _norm = LayerWeightsStatsNormalization(self)
     }
     
     ///
@@ -178,7 +178,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
                    params: params)
         if bn
         {
-            _bn = BatchNormalizationBase(self)
+            _norm = LayerWeightsStatsNormalization(self)
         }
     }
     
@@ -193,8 +193,9 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
     public required init(from decoder: Decoder) throws
     {
         let values = try decoder.container(keyedBy: Keys.self)
-        _bn = try values.decodeIfPresent(BatchNormalizationBase.self,
-                                         forKey: .BN)
+        _norm = try values.decodeIfPresent(
+            LayerWeightsStatsNormalization.self, forKey: .norm
+        )
         try super.init(from: decoder)
     }
     
@@ -212,13 +213,13 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
     public override func encode(to encoder: Encoder) throws
     {
         var container = encoder.container(keyedBy: Keys.self)
-        if let bn = _bnGPU
+        if let norm = _normGPU
         {
-            try container.encode(bn, forKey: Keys.BN)
+            try container.encode(norm, forKey: Keys.norm)
         }
-        else if let bn = _bn
+        else if let norm = _norm
         {
-            try container.encode(bn, forKey: Keys.BN)
+            try container.encode(norm, forKey: Keys.norm)
         }
         try super.encode(to: encoder)
     }
@@ -252,19 +253,19 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
         )
         if inPlace
         {
-            layer._bn = _bn
-            layer._bnGPU = _bnGPU
+            layer._norm = _norm
+            layer._normGPU = _normGPU
         }
         else
         {
             // only one of them should be cloned
-            if let bn = _bnGPU
+            if let norm = _normGPU
             {
-                layer._bn = bn.clone()
+                layer._norm = norm.clone()
             }
-            else if let bn = _bn
+            else if let norm = _norm
             {
-                layer._bn = bn.clone()
+                layer._norm = norm.clone()
             }
         }
         return layer
@@ -295,19 +296,19 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
         )
         if inPlace
         {
-            layer._bn = _bn
-            layer._bnGPU = _bnGPU
+            layer._norm = _norm
+            layer._normGPU = _normGPU
         }
         else
         {
             // only one of them should be cloned
-            if let bn = _bnGPU
+            if let norm = _normGPU
             {
-                layer._bn = bn.clone()
+                layer._norm = norm.clone()
             }
-            else if let bn = _bn
+            else if let norm = _norm
             {
-                layer._bn = bn.clone()
+                layer._norm = norm.clone()
             }
         }
         
@@ -330,13 +331,13 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
             params: params
         )
         // only one of them should be cloned
-        if let bn = _bnGPU
+        if let norm = _normGPU
         {
-            layer._bn = bn.clone()
+            layer._norm = norm.clone()
         }
-        else if let bn = _bn
+        else if let norm = _norm
         {
-            layer._bn = bn.clone()
+            layer._norm = norm.clone()
         }
         return layer
     }
@@ -349,7 +350,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
     public override func resetKernelCPU()
     {
         super.resetKernelCPU()
-        bn?.resetKernel()
+        norm?.resetKernel()
     }
     ///
     /// Clean state resources in the GPU execution context.
@@ -359,7 +360,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
     public override func resetKernelGPU()
     {
         super.resetKernelGPU()
-        _bnGPU?.resetKernel()
+        _normGPU?.resetKernel()
     }
     
     ///
@@ -371,19 +372,19 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
     {
         super.initKernelCPU()
         
-        if let bn = _bnGPU
+        if let norm = _normGPU
         {
-            _bn = BatchNormalization(bn: bn)
+            _norm = BatchNormalization(norm: norm)
         }
-        else if let bn = _bn
+        else if let norm = _norm
         {
-            _bn = BatchNormalization(bn: bn)
+            _norm = BatchNormalization(norm: norm)
         }
-        bn?.initKernel()
+        norm?.initKernel()
         
         if !GrAI.Loop.gradientChecking
         {
-            _bnGPU = nil
+            _normGPU = nil
         }
     }
     
@@ -396,19 +397,19 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
     {
         super.initKernelGPU()
         
-        if let bn = _bnGPU
+        if let norm = _normGPU
         {
-            _bnGPU = BatchNormalizationGPU(bn: bn)
+            _normGPU = BatchNormalizationGPU(norm: norm)
         }
-        else if let bn = _bn
+        else if let norm = _norm
         {
-            _bnGPU = BatchNormalizationGPU(bn: bn)
+            _normGPU = BatchNormalizationGPU(norm: norm)
         }
-        _bnGPU?.initKernel(deviceID: deviceID)
+        _normGPU?.initKernel(deviceID: deviceID)
         
         if !GrAI.Loop.gradientChecking
         {
-            _bn = nil
+            _norm = nil
         }
     }
     
@@ -419,7 +420,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
     ///
     public func initWeightsCPU()
     {
-        bn?.initWeights()
+        norm?.initWeights()
     }
     ///
     /// Initialize weights in the GPU execution context.
@@ -428,7 +429,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
     ///
     public func initWeightsGPU()
     {
-        _bnGPU?.initWeights()
+        _normGPU?.initWeights()
     }
     
     ///
@@ -439,7 +440,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
     public override func forwardGCCPU() throws
     {
         try _forwardGCCPU()
-        bn!.forwardGC(self)
+        norm!.forwardGC(self)
         _activation?.forwardGC(self)
     }
     
@@ -474,7 +475,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
                 }}}
             }}
             
-            // Prepare GC for BN weights: Ɣ and β.
+            // Prepare GC for norm weights: Ɣ and β.
             for batch in 0..<batchSize {
             for elem in newGC-4*nbChannels..<newGC
             {
@@ -497,7 +498,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
     public override func forwardGCGPU() throws
     {
         try _forwardGCGPU()
-        bn!.forwardFlowGC(self)
+        norm!.forwardFlowGC(self)
         _activation?.forwardGC(self)
     }
     
@@ -535,7 +536,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
             MetalKernel.get.download([layerPrev.outs])
             let outsPrevPtr = layerPrev.outs.shared.buffer
             
-            // Prepare GC for BN weights: Ɣ and β.
+            // Prepare GC for norm weights: Ɣ and β.
             for batch in 0..<batchSize {
             for elem in newGC-4*nbChannels..<newGC
             {
@@ -580,7 +581,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
                 }}}
             }
             
-            bn!.forward(self)
+            norm!.forward(self)
             _activation?.forwardCPU(self)
         }
     }
@@ -609,7 +610,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
             command.dispatchThreads(nbElems)
             command.enqueue()
             
-            _bnGPU!.forward(self)
+            _normGPU!.forward(self)
             _activation?.forwardGPU(self)
         }
     }
@@ -618,7 +619,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
     public override func backwardCPU()
     {
         _activation?.backwardCPU(self)
-        bn!.backward(self)
+        norm!.backward(self)
         
         if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
@@ -653,7 +654,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
     public override func backwardGPU() throws
     {
         _activation?.backwardGPU(self)
-        _bnGPU!.backward(self)
+        _normGPU!.backward(self)
         
         if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
@@ -691,9 +692,9 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
     public func collectWeightsCPU() -> [IWeightArrays]
     {
         var weights = [IWeightArrays]()
-        if let bn = self.bn
+        if let norm = self.norm
         {
-            weights += bn.collectWeights()
+            weights += norm.collectWeights()
         }
         return weights
     }
@@ -701,7 +702,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
     /// Get the weights in the GPU execution context.
     public func collectWeightsGPU() -> [IWeightBuffers]
     {
-        return _bnGPU!.collectWeights()
+        return _normGPU!.collectWeights()
     }
     
     ///
@@ -714,9 +715,8 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
     ///
     func getOutsGC(depth: Int, elem: Int) -> [Double]
     {
-        var sorties = [Double](repeating: 0.0,
-                               count: batchSize * height * width)
-        
+        var outs = [Double](repeating: 0.0,
+                            count: batchSize * height * width)
         for batch in 0..<batchSize
         {
             let offsetStart = batch * height
@@ -725,12 +725,10 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
             for j in 0..<width
             {
                 let offset = j + (offsetStart + i) * width
-                sorties[offset] =
-                    neurons[depth].get(i, j)!.gc[batch][elem].out
+                outs[offset] = neurons[depth].get(i, j)!.gc[batch][elem].out
             }}
         }
-        
-        return sorties
+        return outs
     }
     
     ///
@@ -831,7 +829,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
     ///
     /// - Parameters:
     ///     - depth: Channel index.
-    ///     - outs: The gradients to set.
+    ///     - delta: The gradients to set.
     ///
     func setDelta(depth: Int, delta: [Double])
     {

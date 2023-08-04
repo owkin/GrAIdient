@@ -5,8 +5,6 @@
 // Created by Jean-François Reboud on 28/01/2023.
 //
 
-import Foundation
-
 /// Layer with a 1D shape neural structure and weights.
 public class Constant1D: Layer1D, LayerUpdate
 {
@@ -316,13 +314,13 @@ public class Constant1D: Layer1D, LayerUpdate
         }
         
         for batch in 0..<batchSize {
-        for I in 0..<nbNeurons {
+        for DEPTH in 0..<nbNeurons {
         for elem in 0...1
         {
             for depth in 0..<nbNeurons
             {
                 var tmp: Double = _wArrays.w[depth]
-                if depth == I
+                if depth == DEPTH
                 {
                     if elem % 2 == 0
                     {
@@ -334,7 +332,7 @@ public class Constant1D: Layer1D, LayerUpdate
                     }
                 }
                 
-                let offset = 2 * I + elem
+                let offset = 2 * DEPTH + elem
                 neurons.get(depth)!.gc[batch][offset].out = tmp
             }
         }}}
@@ -359,13 +357,13 @@ public class Constant1D: Layer1D, LayerUpdate
         let weightsPtr = _wBuffers.w_p!.shared.buffer
     
         for batch in 0..<batchSize {
-        for I in 0..<nbNeurons {
+        for DEPTH in 0..<nbNeurons {
         for elem in 0...1
         {
             for depth in 0..<nbNeurons
             {
                 var tmp: Double = Double(weightsPtr[depth])
-                if depth == I
+                if depth == DEPTH
                 {
                     if elem % 2 == 0
                     {
@@ -377,7 +375,7 @@ public class Constant1D: Layer1D, LayerUpdate
                     }
                 }
                 
-                let offset = 2 * I + elem
+                let offset = 2 * DEPTH + elem
                 neurons.get(depth)!.gc[batch][offset].out = tmp
             }
         }}}

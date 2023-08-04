@@ -5,7 +5,7 @@
 // Created by Jean-François Reboud on 10/10/2022.
 //
 
-/// Last layer with a 1D shape neural structure and a loss function that depends linearly on its inputs.
+/// Output layer with a 1D shape neural structure and a loss function that depends linearly on its inputs.
 public class LinearError1D: LayerOutput1D
 {
     ///
@@ -39,20 +39,35 @@ public class LinearError1D: LayerOutput1D
     ///
     /// Estimate the gradients of weights thanks to Gradient Checking.
     ///
-    /// Throw an error if batch size or ground truth are incoherent.
+    /// Throw an error if data size is incoherent.
     ///
-    /// - Parameter groundTruth: The ground truth.
+    /// - Parameters:
+    ///     - groundTruth: The ground truth.
+    ///     - batchSize: The batch size of data.
+    ///     - nbNeurons: Number of neurons.
     /// - Returns: The estimated gradients of weights.
     ///
     public func collectGradientsApprox<T: BinaryFloatingPoint>(
-        _ groundTruth: [[T]]) throws -> [T]
+        _ groundTruth: [[T]],
+        batchSize: Int,
+        nbNeurons: Int) throws -> [T]
     {
         var gradients = [T]()
         let nbGradients = neurons.get(0)!.nbGC / 2
         for elem in 0..<nbGradients
         {
-            let loss1 = try getLossGC(groundTruth, elem: 2 * elem)
-            let loss2 = try getLossGC(groundTruth, elem: 2 * elem + 1)
+            let loss1 = try getLossGC(
+                groundTruth,
+                batchSize: batchSize,
+                nbNeurons: nbNeurons,
+                elem: 2 * elem
+            )
+            let loss2 = try getLossGC(
+                groundTruth,
+                batchSize: batchSize,
+                nbNeurons: nbNeurons,
+                elem: 2 * elem + 1
+            )
             
             let gradient = (loss1 - loss2) / T(2 * Ɛ)
             gradients.append(gradient)
@@ -63,23 +78,26 @@ public class LinearError1D: LayerOutput1D
     ///
     /// Get the loss consecutive of a modified weights during the Gradient Checking process.
     ///
-    /// Throw an error if batch size or ground truth are incoherent.
+    /// Throw an error if data size is incoherent.
     ///
     /// - Parameters:
     ///     - groundTruth: The ground truth.
+    ///     - batchSize: The batch size of data.
+    ///     - nbNeurons: Number of neurons.
     ///     - elem: The modified weight for which we collect the resulting loss.
     /// - Returns: The loss value.
     ///
     func getLossGC<T: BinaryFloatingPoint>(
         _ groundTruth: [[T]],
+        batchSize: Int,
+        nbNeurons: Int,
         elem: Int) throws -> T
     {
-        let batchSize = groundTruth.count
-        if batchSize != self.batchSize ||
-           batchSize <= 0 || batchSize > neurons.get(0)!.v.count
-        {
-            throw LayerError.BatchSize
-        }
+        try checkGroundTruthCPU(
+            groundTruth,
+            batchSize: batchSize,
+            nbNeurons: nbNeurons
+        )
         
         var losses = [T](repeating: 0.0, count: batchSize)
         for batch in 0..<batchSize
@@ -105,20 +123,24 @@ public class LinearError1D: LayerOutput1D
     ///
     /// Get loss in the CPU execution context.
     ///
-    /// Throw an error if batch size or ground truth are incoherent.
+    /// Throw an error if data size is incoherent.
     ///
-    /// - Parameter groundTruth: The ground truth.
+    /// - Parameters:
+    ///     - groundTruth: The ground truth.
+    ///     - batchSize: The batch size of data.
+    ///     - nbNeurons: Number of neurons.
     /// - Returns: The loss value.
     ///
     public func getLossCPU<T: BinaryFloatingPoint>(
-        _ groundTruth: [[T]]) throws -> T
+        _ groundTruth: [[T]],
+        batchSize: Int,
+        nbNeurons: Int) throws -> T
     {
-        let batchSize = groundTruth.count
-        if batchSize != self.batchSize ||
-           batchSize <= 0 || batchSize > neurons.get(0)!.v.count
-        {
-            throw LayerError.BatchSize
-        }
+        try checkGroundTruthCPU(
+            groundTruth,
+            batchSize: batchSize,
+            nbNeurons: nbNeurons
+        )
         
         var losses = [T](repeating: 0.0, count: batchSize)
         for elem in 0..<batchSize
@@ -144,37 +166,24 @@ public class LinearError1D: LayerOutput1D
     ///
     /// Get loss in the GPU execution context.
     ///
-    /// Throw an error if batch size or ground truth are incoherent.
+    /// Throw an error if data size is incoherent.
     ///
-    /// - Parameter groundTruth: The ground truth.
+    /// - Parameters:
+    ///     - groundTruth: The ground truth.
+    ///     - batchSize: The batch size of data.
+    ///     - nbNeurons: Number of neurons.
     /// - Returns: The loss value.
     ///
     public func getLossGPU<T: BinaryFloatingPoint>(
-        _ groundTruth: [[T]]) throws -> T
+        _ groundTruth: [[T]],
+        batchSize: Int,
+        nbNeurons: Int) throws -> T
     {
-        let batchSize = groundTruth.count
-        if self.groundTruth == nil
-        {
-            self.groundTruth = MetalSharedBuffer<Float>(
-                batchSize * nbNeurons,
-                deviceID: deviceID
-            )
-        }
-        
-        let bufferPtr = self.groundTruth.buffer
-        for (i, dataI) in groundTruth.enumerated()
-        {
-            if dataI.count != nbNeurons
-            {
-                throw LayerError.DataSize
-            }
-            for (j, dataIJ) in dataI.enumerated()
-            {
-                bufferPtr[j + i * nbNeurons] = Float(dataIJ)
-            }
-        }
-        MetalKernel.get.upload([self.groundTruth])
-        
+        try checkGroundTruthGPU(
+            groundTruth,
+            batchSize: batchSize,
+            nbNeurons: nbNeurons
+        )
         return try T(getLossGPU(
             self.groundTruth,
             batchSize: groundTruth.count
@@ -195,26 +204,14 @@ public class LinearError1D: LayerOutput1D
         _ groundTruth: MetalBuffer<Float>,
         batchSize: Int) throws -> Float
     {
+        try checkLossGPU(batchSize: batchSize)
         if batchSize != self.batchSize
         {
             throw LayerError.BatchSize
         }
-        if batchSize * nbNeurons > groundTruth.nbElems
-        {
-            throw LayerError.DataSize
-        }
         
         let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
-        
-        if loss == nil
-        {
-            loss = MetalSharedBuffer<Float>(batchSize, deviceID: deviceID)
-        }
-        if batchSize > loss.nbElems
-        {
-            throw LayerError.BatchSize
-        }
         
         let command = MetalKernel.get.createCommand(
             "linearErrorLoss", deviceID: deviceID
@@ -256,15 +253,23 @@ public class LinearError1D: LayerOutput1D
             throw LayerError.BatchSize
         }
         
-        if let layerPrev = self.layerPrev as? Layer1D
+        if let layerPrev = self.layerPrev as? Layer1D, mustComputeBackward
         {
             let neuronsPrev = layerPrev.neurons
             for elem in 0..<batchSize
             {
                 for depth in 0..<nbNeurons
                 {
-                    neuronsPrev.get(depth)!.v[elem].delta =
-                        coeff / Double(nbNeurons * batchSize)
+                    if layerPrev.dirty
+                    {
+                        neuronsPrev.get(depth)!.v[elem].delta =
+                            coeff / Double(nbNeurons * batchSize)
+                    }
+                    else
+                    {
+                        neuronsPrev.get(depth)!.v[elem].delta +=
+                            coeff / Double(nbNeurons * batchSize)
+                    }
                 }
             }
             propagateDirty()
@@ -284,21 +289,14 @@ public class LinearError1D: LayerOutput1D
     ///
     public func lossDerivativeGPU() throws
     {
-        if let layerPrev = self.layerPrev as? Layer1D
+        if let layerPrev = self.layerPrev as? Layer1D, mustComputeBackward
         {
+            try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
+            
             let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
             let pCoeff: [Float] = [Float(coeff)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
-            
-            if layerPrev.delta == nil
-            {
-                layerPrev.delta = MetalPrivateBuffer<Float>(
-                    batchSize * nbNeurons, deviceID: deviceID)
-            }
-            if batchSize * nbNeurons > layerPrev.delta.nbElems
-            {
-                throw LayerError.BatchSize
-            }
+            let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
             let command = MetalKernel.get.createCommand(
                 "linearErrorLossDerivative", deviceID: deviceID
@@ -307,7 +305,8 @@ public class LinearError1D: LayerOutput1D
             command.setBytes(pNbNeurons, atIndex: 1)
             command.setBytes(pCoeff, atIndex: 2)
             command.setBytes(pNbBatch, atIndex: 3)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 4)
+            command.setBytes(pDirty, atIndex: 4)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 5)
             
             command.dispatchThreads(
                 width: nbNeurons,

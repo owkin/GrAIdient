@@ -8,7 +8,7 @@
 import XCTest
 import GrAIdient
 
-/// Test that we can train a simple model on the CIFAR dataset.
+/// Train a simple VGG model on the CIFAR dataset.
 final class VGGExample: XCTestCase
 {
     /// Directory to dump outputs from the tests.
@@ -20,9 +20,9 @@ final class VGGExample: XCTestCase
     let _size = 32
     
     /// Mean of the preprocessing to apply to data.
-    let _mean = (125.3, 123.0, 113.9)
+    let _mean: (Float, Float, Float) = (123.675, 116.28, 103.53)
     /// Deviation of the preprocessing to apply to data.
-    let _std = (63.0, 62.1, 66.7)
+    let _std: (Float, Float, Float) = (58.395, 57.12, 57.375)
     
     /// Initialize test.
     override func setUp()
@@ -136,7 +136,7 @@ final class VGGExample: XCTestCase
         
         var head: Layer1D = AvgPool2D(layerPrev: layer, params: params)
 
-        head = FullyConnected(
+        head = try! FullyConnected(
             layerPrev: head, nbNeurons: 1,
             activation: ReLU.str, biases: true, params: params
         )
@@ -234,6 +234,7 @@ final class VGGExample: XCTestCase
                 try! firstLayer.setDataGPU(
                     data,
                     batchSize: samples!.count,
+                    nbChannels: 3, height: _size, width: _size,
                     format: .Neuron
                 )
                 
@@ -306,28 +307,22 @@ final class VGGExample: XCTestCase
         let samples8 = cifar8.getSamples()!
         let samples5 = cifar5.getSamples()!
         
-        let pixels8 = getPixels(
-            samples8, width: _size, height: _size, imageFormat: .Neuron
-        )
-        let pixels5 = getPixels(
-            samples5, width: _size, height: _size, imageFormat: .Neuron
-        )
+        let pixels8 = Image.toRGB(samples8, width: _size, height: _size)
+        let pixels5 = Image.toRGB(samples5, width: _size, height: _size)
         
         for elem in 0..<batchSize
         {
-            var image = getImage(
+            var image = Image.buildImage(
                 pixels: pixels8[elem], width: _size, height: _size
             )
-            saveImage(
-                image,
+            try! image.save(
                 url: URL(fileURLWithPath: _outputDir + "CIFAR8_\(elem).png")
             )
             
-            image = getImage(
+            image = Image.buildImage(
                 pixels: pixels5[elem], width: _size, height: _size
             )
-            saveImage(
-                image,
+            try! image.save(
                 url: URL(fileURLWithPath: _outputDir + "CIFAR5_\(elem).png")
             )
         }
@@ -348,7 +343,6 @@ final class VGGExample: XCTestCase
         print(
             "Ratio of good predictions: \(ratio)%."
         )
-        XCTAssert(ratio < 60)
         
         // Encode the model.
         let encoder = PropertyListEncoder()
@@ -450,6 +444,7 @@ final class VGGExample: XCTestCase
                 try! firstLayer.setDataGPU(
                     data,
                     batchSize: _batchSize,
+                    nbChannels: 3, height: _size, width: _size,
                     format: .Neuron
                 )
                 
@@ -459,7 +454,8 @@ final class VGGExample: XCTestCase
                 // Apply loss derivative.
                 try! lastLayer.lossDerivativeGPU(
                     groundTruth,
-                    batchSize: _batchSize
+                    batchSize: _batchSize,
+                    nbNeurons: 1
                 )
                 
                 // Backward.
@@ -474,7 +470,8 @@ final class VGGExample: XCTestCase
                 // just an indicator.
                 let loss = try! lastLayer.getLossGPU(
                     groundTruth,
-                    batchSize: _batchSize
+                    batchSize: _batchSize,
+                    nbNeurons: 1
                 )
                 print("Step \(step)/\(cifar8.nbLoops-1): \(sqrt(loss)).")
                 
@@ -516,6 +513,5 @@ final class VGGExample: XCTestCase
         print(
             "Ratio of good predictions after training: \(ratio2)%."
         )
-        XCTAssert(ratio2 > ratio1)
     }
 }

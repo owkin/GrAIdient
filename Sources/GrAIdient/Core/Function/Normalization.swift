@@ -33,6 +33,27 @@ class Normalization
         let outsNew = vDSP.add(β, vDSP.multiply(Ɣ, xHat))
         return outsNew
     }
+    
+    ///
+    /// Forward Gradient Checking LayerNorm CPU.
+    ///
+    /// - Parameters:
+    ///     - outs: The data to normalize.
+    ///     - β: The biases to add to the normalization result.
+    ///     - Ɣ: The weights to scale the normalization result.
+    /// - Returns: The data normalized.
+    ///
+    static func forwardGC(outs: [Double],
+                          β: [Double],
+                          Ɣ: [Double]) -> [Double]
+    {
+        let μ = vDSP.mean(outs)
+        let tmp1 = vDSP.add(-μ, outs)
+        let σ2 = vDSP.meanSquare(tmp1)
+        let xHat = vDSP.divide(tmp1, sqrt(σ2 + _Ɛ))
+        let outsNew = vDSP.add(β, vDSP.multiply(Ɣ, xHat))
+        return outsNew
+    }
 
     ///
     /// Forward Training CPU.
@@ -52,6 +73,38 @@ class Normalization
                                        xHat: [Double],
                                        μ: Double,
                                        σ2: Double)
+    {
+        
+        let μ = vDSP.mean(outs)
+        let tmp1 = vDSP.add(-μ, outs)
+        let σ2 = vDSP.meanSquare(tmp1)
+        let xHat = vDSP.divide(tmp1, sqrt(σ2 + _Ɛ))
+        let outsNew = vDSP.add(β, vDSP.multiply(Ɣ, xHat))
+        
+        return (outsNew: outsNew,
+                xHat: xHat,
+                μ: μ,
+                σ2: σ2)
+    }
+    
+    ///
+    /// Forward LayerNorm CPU.
+    ///
+    /// - Parameters:
+    ///     - outs: The data to normalize.
+    ///     - β: The biases to add to the normalization result.
+    ///     - Ɣ: The weights to scale the normalization result.
+    /// - Returns: (The data normalized,
+    ///            The data normalized without taking into account the bias and the weight,
+    ///            The average of the data,
+    ///            The deviation of the data).
+    ///
+    static func forward(outs: [Double],
+                        β: [Double],
+                        Ɣ: [Double]) -> (outsNew: [Double],
+                                         xHat: [Double],
+                                         μ: Double,
+                                         σ2: Double)
     {
         
         let μ = vDSP.mean(outs)
@@ -128,6 +181,39 @@ class Normalization
         return (deltaNew: deltaNew,
                 dβ: dβ,
                 dƔ: dƔ)
+    }
+    
+    ///
+    /// Backward LayerNorm CPU.
+    ///
+    /// - Parameters:
+    ///     - delta: The gradients to back propagate.
+    ///     - xHat: The data normalized without taking into account the bias and the weight.
+    ///     - σ2: The deviation of the data.
+    ///     - Ɣ: The weights that scaled the normalization result.
+    /// - Returns: (The gradient taking into account the normalization,
+    ///            The gradient of β,
+    ///            The gradient of Ɣ).
+    ///
+    static func backward(delta: [Double],
+                         xHat: [Double],
+                         σ2: Double,
+                         Ɣ: [Double]) -> [Double]
+    {
+        let nbElems = delta.count
+        let factor = 1.0 / (Double(nbElems) * sqrt(σ2 + _Ɛ))
+        
+        let Ɣdelta = vDSP.multiply(Ɣ, delta)
+        let sum1 = vDSP.sum(Ɣdelta)
+        let sum2 = vDSP.sum(vDSP.multiply(Ɣdelta, xHat))
+        
+        let tmp1 = vDSP.add(
+            multiplication: (Ɣdelta, Double(nbElems)),
+            multiplication: (xHat, -sum2))
+        let deltaNew = vDSP.add(
+            multiplication: (tmp1, factor), -factor * sum1)
+        
+        return deltaNew
     }
 
     ///

@@ -79,10 +79,10 @@ kernel void deconvForward(
         for (int k=startI; k<=endI; k++){
         for (int l=startJ; l<=endJ; l++)
         {
-            if ((i+k-endI) % stride == 0 && (j+l-endJ) % stride == 0)
+            if ((i-k+startI) % stride == 0 && (j-l+startJ) % stride == 0)
             {
-                int i1 = (i+k-endI) / stride;
-                int j1 = (j+l-endJ) / stride;
+                int i1 = (i-k+startI) / stride;
+                int j1 = (j-l+startJ) / stride;
                 
                 if (j1 >= 0 && j1 < (int)widthPrev &&
                     i1 >= 0 && i1 < (int)heightPrev)
@@ -177,11 +177,13 @@ kernel void deconvBackward(
         for (int k=startI; k<=endI; k++){
         for (int l=startJ; l<=endJ; l++)
         {
-            if ((int)(stride*j)+endJ-l >= 0 && stride*j+endJ-l < width
-                && (int)(stride*i)+endI-k >= 0 && stride*i+endI-k < height)
+            if ((int)(stride*j)+l-startJ >= 0 &&
+                (int)(stride*j)+l-startJ < (int)width &&
+                (int)(stride*i)+k-startI >= 0 &&
+                (int)(stride*i)+k-startI < (int)height)
             {
-                uint offset = stride*j+endJ-l +
-                    (offsetStart + stride*i+endI-k) * width;
+                uint offset = (int)(stride*j)+l-startJ +
+                    (offsetStart + (int)(stride*i)+k-startI) * width;
                 float deltaCur = delta[offset];
                 
                 uint offsetWeights = l-startJ +
@@ -279,10 +281,10 @@ kernel void deconvBatchDerWeights(
         for (uint k=0; k<height; k++){
         for (uint l=0; l<width; l++)
         {
-            if ((i+k-endI) % stride == 0 && (j+l-endJ) % stride == 0)
+            if ((k-i+startI) % stride == 0 && (l-j+startJ) % stride == 0)
             {
-                int i1 = (i+k-endI) / stride;
-                int j1 = (j+l-endJ) / stride;
+                int i1 = (k-i+startI) / stride;
+                int j1 = (l-j+startJ) / stride;
                 
                 if (j1 >= 0 && j1 < (int)widthPrev &&
                     i1 >= 0 && i1 < (int)heightPrev)
@@ -391,10 +393,10 @@ kernel void deconvDerWeights(
     for (uint k=0; k<height; k++){
     for (uint l=0; l<width; l++)
     {
-        if ((i+k-endI) % stride == 0 && (j+l-endJ) % stride == 0)
+        if ((k-i+startI) % stride == 0 && (l-j+startJ) % stride == 0)
         {
-            int i1 = (i+k-endI) / stride;
-            int j1 = (j+l-endJ) / stride;
+            int i1 = (k-i+startI) / stride;
+            int j1 = (l-j+startJ) / stride;
             
             if (j1 >= 0 && j1 < (int)widthPrev &&
                 i1 >= 0 && i1 < (int)heightPrev)

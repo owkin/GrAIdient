@@ -295,6 +295,33 @@ public class Model: BaseModel
         }
     }
     
+    /// The method used to initialize weights values (not considering the biases).
+    public var weightInitClass: WeightInitClass?
+    {
+        get {
+            for layer in layers
+            {
+                if let layerInit = layer as? LayerWeightInit
+                {
+                    return layerInit.weightInitClass
+                }
+            }
+            return nil
+        }
+        set {
+            if let initClass = newValue
+            {
+                for layer in layers
+                {
+                    if let layerInit = layer as? LayerWeightInit
+                    {
+                        layerInit.weightInitClass = initClass
+                    }
+                }
+            }
+        }
+    }
+    
     /// Get/Set the weights of the different layers.
     public var weights: [[Float]]
     {

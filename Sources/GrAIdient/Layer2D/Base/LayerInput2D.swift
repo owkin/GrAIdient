@@ -5,7 +5,7 @@
 // Created by Jean-François Reboud on 09/10/2022.
 //
 
-/// First layer of a model.
+/// Input layer of a model.
 open class LayerInput2D: Layer2D
 {
     ///
@@ -37,5 +37,179 @@ open class LayerInput2D: Layer2D
         {
             computeDelta = true
         }
+    }
+    
+    ///
+    /// Check and setup input in the CPU execution context.
+    ///
+    /// Throw an error if data size is not coherent.
+    ///
+    /// - Parameters:
+    ///     - data: The input data.
+    ///     - batchSize: The batch size of data.
+    ///     - nbChannels: Number of channels.
+    ///     - height: Height of each channel.
+    ///     - width: Width of each channel.
+    ///     - format: The data format.
+    ///
+    public func checkInputCPU<T: BinaryFloatingPoint>(
+        _ data: [T],
+        batchSize: Int,
+        nbChannels: Int, height: Int, width: Int,
+        format: ImageFormat) throws
+    {
+        if data.count != batchSize * nbChannels * height * width
+        {
+            throw LayerError.DataSize
+        }
+        if nbChannels != self.nbChannels ||
+           height != self.height ||
+           width != self.width
+        {
+            throw LayerError.DataSize
+        }
+        try checkStateCPU(batchSize: batchSize)
+        
+        switch format
+        {
+        case .RGB:
+            for elem in 0..<batchSize
+            {
+                for i in 0..<height {
+                for j in 0..<width
+                {
+                    let offset = j + (elem * height + i) * width
+                    for depth in 0..<nbChannels
+                    {
+                        neurons[depth].get(i, j)!.v[elem].out =
+                            Double(data[nbChannels * offset + depth])
+                    }
+                }}
+            }
+        case .Neuron:
+            for elem in 0..<batchSize
+            {
+                for i in 0..<height {
+                for j in 0..<width
+                {
+                    for depth in 0..<nbChannels
+                    {
+                        let offsetStart = (depth + nbChannels * elem) * height
+                        let offset = j + (offsetStart + i) * width
+                        
+                        neurons[depth].get(i, j)!.v[elem].out =
+                            Double(data[offset])
+                    }
+                }}
+            }
+        }
+    }
+    
+    ///
+    /// Check and setup input in the GPU execution context.
+    ///
+    /// Throw an error if data size is not coherent.
+    ///
+    /// - Parameters:
+    ///     - data: The input data.
+    ///     - batchSize: The batch size of data.
+    ///     - nbChannels: Number of channels.
+    ///     - height: Height of each channel.
+    ///     - width: Width of each channel.
+    ///     - format: The data format.
+    ///
+    public func checkInputGPU<T: BinaryFloatingPoint>(
+        _ data: [T],
+        batchSize: Int,
+        nbChannels: Int, height: Int, width: Int,
+        format: ImageFormat) throws
+    {
+        if data.count != batchSize * nbChannels * height * width
+        {
+            throw LayerError.DataSize
+        }
+        if nbChannels != self.nbChannels ||
+           height != self.height ||
+           width != self.width
+        {
+            throw LayerError.DataSize
+        }
+        try checkStateForwardGPU(batchSize: batchSize)
+        
+        // Wait for previous loop to end to avoid race condition with
+        // didModifyRange in the following example:
+        // Convolution.backwardWeightsGPU accesses layerPrev.outs.
+        MetalKernel.get.download([outs])
+        
+        let outsPtr = outs.shared.buffer
+        switch format
+        {
+        case .RGB:
+            for elem in 0..<batchSize
+            {
+                for i in 0..<height {
+                for j in 0..<width
+                {
+                    let offsetGet = j + (elem * height + i) * width
+                    for depth in 0..<nbChannels
+                    {
+                        let offsetStartSet =
+                            (depth + nbChannels * elem) * height
+                        let offsetSet = j + (offsetStartSet + i) * width
+                        
+                        outsPtr[offsetSet] =
+                            Float(data[nbChannels * offsetGet + depth])
+                    }
+                }}
+            }
+        case .Neuron:
+            for elem in 0..<batchSize
+            {
+                for i in 0..<height {
+                for j in 0..<width
+                {
+                    for depth in 0..<nbChannels
+                    {
+                        let offsetStart = (depth + nbChannels * elem) * height
+                        let offset = j + (offsetStart + i) * width
+                        
+                        outsPtr[offset] = Float(data[offset])
+                    }
+                }}
+            }
+        }
+        MetalKernel.get.upload([outs])
+    }
+    
+    ///
+    /// Check and setup input in the GPU execution context.
+    ///
+    /// Throw an error if data size is not coherent.
+    ///
+    /// - Parameters:
+    ///     - data: The input data.
+    ///     - batchSize: The batch size of data.
+    ///     - nbChannels: Number of channels.
+    ///     - height: Height of each channel.
+    ///     - width: Width of each channel.
+    ///     - format: The data format.
+    ///
+    public func checkInputGPU(
+        _ data: MetalPrivateBuffer<Float>,
+        batchSize: Int,
+        nbChannels: Int, height: Int, width: Int) throws
+    {
+        if data.nbElems > batchSize * nbChannels * height * width
+        {
+            throw LayerError.DataSize
+        }
+        if nbChannels != self.nbChannels ||
+           height != self.height ||
+           width != self.width
+        {
+            throw LayerError.DataSize
+        }
+        try checkStateForwardGPU(batchSize: batchSize)
+        outs = data
     }
 }

@@ -13,7 +13,8 @@ let ACTIVATION_REGISTRY: [String: Codable.Type] = buildRegistry(
     ReLU.self,
     LeakyReLU.self,
     SoftReLU.self,
-    Sigmoid.self
+    Sigmoid.self,
+    GELU.self
 ])
 
 /// Activation function to be used in a layer.
@@ -34,6 +35,18 @@ open class ActivationFunction: Codable
     {
         get {
             fatalError("Not implemented.")
+        }
+    }
+    
+    ///
+    /// Coefficient to apply during the weights initialization.
+    ///
+    /// - Returns: The coefficient.
+    ///
+    open var coeffInitWeights: Float
+    {
+        get {
+            return 1.0
         }
     }
     
@@ -81,18 +94,6 @@ open class ActivationFunction: Codable
     {
         var container = encoder.container(keyedBy: Keys.self)
         try container.encode(name, forKey: .name)
-    }
-    
-    ///
-    /// Coefficient to apply during the weights initialization.
-    ///
-    /// - Parameters:
-    ///     - nPrev: The number of input connections.
-    ///     - nCur: The number of output connections.
-    ///
-    open func coeffInitWeights(nPrev: Int, nCur: Int) -> Double
-    {
-        return sqrt(2.0 / Double(nPrev + nCur))
     }
     
     ///
@@ -163,6 +164,28 @@ open class ActivationFunction: Codable
     }
     
     ///
+    /// Forward Gradient Checking CPU.
+    ///
+    /// - Parameter layer: Layer to execute the activation function for.
+    ///
+    func forwardGC(_ layer: ActivationSeq)
+    {
+        let nbBatch = layer.batchSize
+        let neurons = layer.neurons!
+        let nbGC = layer.nbGC
+        
+        for neuron in neurons.all {
+        for batch in 0..<nbBatch {
+        for elem in 0..<nbGC
+        {
+            let tmp = neuron.gc[batch][elem].out
+            let out = apply(tmp)
+        
+            neuron.gc[batch][elem].out = out
+        }}}
+    }
+    
+    ///
     /// Forward CPU.
     ///
     /// - Parameter layer: Layer to execute the activation function for.
@@ -202,6 +225,25 @@ open class ActivationFunction: Codable
     }
     
     ///
+    /// Forward CPU.
+    ///
+    /// - Parameter layer: Layer to execute the activation function for.
+    ///
+    func forwardCPU(_ layer: ActivationSeq)
+    {
+        let nbBatch = layer.batchSize
+        for neuron in layer.neurons!.all {
+        for elem in 0..<nbBatch
+        {
+            let tmp = neuron.v[elem].out
+            let out = apply(tmp)
+            
+            neuron.v[elem].tmp = tmp
+            neuron.v[elem].out = out
+        }}
+    }
+    
+    ///
     /// Backward CPU.
     ///
     /// - Parameter layer: Layer to execute the activation function for.
@@ -236,6 +278,24 @@ open class ActivationFunction: Codable
             
             neuron.v[elem].delta *= derivative
         }}}
+    }
+    
+    ///
+    /// Backward CPU.
+    ///
+    /// - Parameter layer: Layer to execute the activation function for.
+    ///
+    func backwardCPU(_ layer: ActivationSeq)
+    {
+        let nbBatch = layer.batchSize
+        for neuron in layer.neurons!.all {
+        for elem in 0..<nbBatch
+        {
+            let tmp = neuron.v[elem].tmp
+            let derivative = derivate(tmp)
+            
+            neuron.v[elem].delta *= derivative
+        }}
     }
     
     ///
@@ -306,6 +366,26 @@ open class ActivationFunction: Codable
     }
     
     ///
+    /// Forward GPU.
+    ///
+    /// - Parameter layer: Layer to execute the activation function for.
+    ///
+    open func forwardGPU(_ layer: ActivationSeq)
+    {
+        let nbElems = layer.outs.nbElems
+        if layer._tmp == nil
+        {
+            layer._tmp = MetalPrivateBuffer<Float>(
+                nbElems, deviceID: layer.deviceID)
+        }
+        _forwardGPU(
+            tmp: layer._tmp,
+            outs: layer.outs,
+            deviceID: layer.deviceID
+        )
+    }
+    
+    ///
     /// Backward GPU.
     ///
     /// - Parameters:
@@ -359,6 +439,20 @@ open class ActivationFunction: Codable
             deviceID: layer.deviceID
         )
     }
+    
+    ///
+    /// Backward GPU.
+    ///
+    /// - Parameter layer: Layer to execute the activation function for.
+    ///
+    open func backwardGPU(_ layer: ActivationSeq)
+    {
+        _backwardGPU(
+            tmp: layer._tmp,
+            delta: layer.delta,
+            deviceID: layer.deviceID
+        )
+    }
 }
 
 /// ReLU activation function.
@@ -381,6 +475,18 @@ public class ReLU: ActivationFunction
         }
     }
     
+    ///
+    /// Coefficient to apply during the weights initialization.
+    ///
+    /// - Returns: The coefficient.
+    ///
+    open override var coeffInitWeights: Float
+    {
+        get {
+            return sqrt(2.0)
+        }
+    }
+    
     /// Create a ReLU activation function.
     init()
     {
@@ -398,18 +504,6 @@ public class ReLU: ActivationFunction
     required public init(from decoder: Decoder) throws
     {
         try super.init(from: decoder)
-    }
-    
-    ///
-    /// Coefficient to apply during the weights initialization.
-    ///
-    /// - Parameters:
-    ///     - nPrev: The number of input connections.
-    ///     - nCur: The number of output connections.
-    ///
-    public override func coeffInitWeights(nPrev: Int, nCur: Int) -> Double
-    {
-        return sqrt(2.0 / Double(nPrev))
     }
     
     ///
@@ -465,6 +559,18 @@ public class LeakyReLU: ActivationFunction
         }
     }
     
+    ///
+    /// Coefficient to apply during the weights initialization.
+    ///
+    /// - Returns: The coefficient.
+    ///
+    open override var coeffInitWeights: Float
+    {
+        get {
+            return Float(sqrt(2.0 / (1 + Ɛ * Ɛ)))
+        }
+    }
+    
     /// Create a LeakyReLU activation function.
     init()
     {
@@ -482,18 +588,6 @@ public class LeakyReLU: ActivationFunction
     required public init(from decoder: Decoder) throws
     {
         try super.init(from: decoder)
-    }
-    
-    ///
-    /// Coefficient to apply during the weights initialization.
-    ///
-    /// - Parameters:
-    ///     - nPrev: The number of input connections.
-    ///     - nCur: The number of output connections.
-    ///
-    public override func coeffInitWeights(nPrev: Int, nCur: Int) -> Double
-    {
-        return sqrt(2.0 / Double(nPrev))
     }
     
     ///
@@ -549,6 +643,18 @@ public class SoftReLU: ActivationFunction
         }
     }
     
+    ///
+    /// Coefficient to apply during the weights initialization.
+    ///
+    /// - Returns: The coefficient.
+    ///
+    open override var coeffInitWeights: Float
+    {
+        get {
+            return Float(sqrt(2.0 / (1 + Ɛ * Ɛ)))
+        }
+    }
+    
     /// Create a SoftReLU activation function.
     init()
     {
@@ -566,18 +672,6 @@ public class SoftReLU: ActivationFunction
     required public init(from decoder: Decoder) throws
     {
         try super.init(from: decoder)
-    }
-    
-    ///
-    /// Coefficient to apply during the weights initialization.
-    ///
-    /// - Parameters:
-    ///     - nPrev: The number of input connections.
-    ///     - nCur: The number of output connections.
-    ///
-    public override func coeffInitWeights(nPrev: Int, nCur: Int) -> Double
-    {
-        return sqrt(2.0 / Double(nPrev))
     }
     
     ///
@@ -643,18 +737,6 @@ public class Sigmoid: ActivationFunction
     }
     
     ///
-    /// Coefficient to apply during the weights initialization.
-    ///
-    /// - Parameters:
-    ///     - nPrev: The number of input connections.
-    ///     - nCur: The number of output connections.
-    ///
-    public override func coeffInitWeights(nPrev: Int, nCur: Int) -> Double
-    {
-        return sqrt(1.0 / Double(nPrev))
-    }
-    
-    ///
     /// Forward CPU.
     ///
     /// - Parameter x: The input.
@@ -662,7 +744,14 @@ public class Sigmoid: ActivationFunction
     ///
     public override func apply(_ x: Double) -> Double
     {
-        return 1 / (1 + exp(-x))
+        if x >= 0
+        {
+            return 1 / (1 + exp(-x))
+        }
+        else
+        {
+            return exp(x) / (1 + exp(x))
+        }
     }
     
     ///
@@ -675,6 +764,104 @@ public class Sigmoid: ActivationFunction
     {
         let fx = apply(x)
         return fx * (1 - fx)
+    }
+}
+
+/// GELU activation function.
+public class GELU: ActivationFunction
+{
+    public static let str = "GELU"
+    
+    /// Forward GPU kernel.
+    public override var forwardKernel: String
+    {
+        get {
+            return "forwardGELU"
+        }
+    }
+    /// Backward GPU kernel.
+    public override var backwardKernel: String
+    {
+        get {
+            return "backwardGELU"
+        }
+    }
+    
+    ///
+    /// Coefficient to apply during the weights initialization.
+    ///
+    /// - Returns: The coefficient.
+    ///
+    open override var coeffInitWeights: Float
+    {
+        get {
+            return Float(sqrt(2.0))
+        }
+    }
+    
+    /// Create a GELU activation function.
+    init()
+    {
+        super.init(GELU.str)
+    }
+    
+    ///
+    /// Decode from the disk.
+    ///
+    /// Throw an error if reading from the decoder fails, or
+    /// if the data read is corrupted or otherwise invalid.
+    ///
+    /// - Parameter decoder: The decoder to read data from.
+    ///
+    required public init(from decoder: Decoder) throws
+    {
+        try super.init(from: decoder)
+    }
+    
+    ///
+    /// Forward CPU.
+    ///
+    /// - Parameter x: The input.
+    /// - Returns: The output.
+    ///
+    public override func apply(_ x: Double) -> Double
+    {
+        let cst = sqrt(2.0 / Double.pi)
+        let tmp1 = cst * (x + 0.044715 * pow(x, 3))
+        let tmp2: Double
+        if tmp1 >= 0
+        {
+            tmp2 = (1.0 - exp(-2.0 * tmp1)) / (1.0 + exp(-2.0 * tmp1))
+        }
+        else
+        {
+            tmp2 = (exp(2.0 * tmp1) - 1.0) / (exp(2.0 * tmp1) + 1.0)
+        }
+        return 0.5 * x * (1 + tmp2)
+    }
+    
+    ///
+    /// Backward CPU.
+    ///
+    /// - Parameter x: The input.
+    /// - Returns: The output.
+    ///
+    public override func derivate(_ x: Double) -> Double
+    {
+        let cst = sqrt(2.0 / Double.pi)
+        let tmp1 = cst * (x + 0.044715 * pow(x, 3))
+        let tmp2: Double
+        if tmp1 >= 0
+        {
+            tmp2 = (1.0 - exp(-2.0 * tmp1)) / (1.0 + exp(-2.0 * tmp1))
+        }
+        else
+        {
+            tmp2 = (exp(2.0 * tmp1) - 1.0) / (exp(2.0 * tmp1) + 1.0)
+        }
+        let tmp3 = cst * (1 + 3 * 0.044715 * x * x) * (1 - tmp2 * tmp2)
+        let derivative = 0.5 * (1 + tmp2 + x * tmp3)
+        return derivative
     }
 }
 
@@ -698,7 +885,8 @@ class ActivationKernelImpl: ActivationKernel
         ReLU.str: ReLUKernel(),
         LeakyReLU.str: LeakyReLUKernel(),
         SoftReLU.str: SoftReLUKernel(),
-        Sigmoid.str: SigmoidKernel()
+        Sigmoid.str: SigmoidKernel(),
+        GELU.str: GELUKernel()
     ]
     
     ///
@@ -763,5 +951,15 @@ private class SigmoidKernel: ActivationKernelImpl
     override func build() -> ActivationFunction
     {
         return Sigmoid()
+    }
+}
+
+/// Factory to build a Sigmoid function.
+private class GELUKernel: ActivationKernelImpl
+{
+    /// Build a Sigmoid function.
+    override func build() -> ActivationFunction
+    {
+        return GELU()
     }
 }

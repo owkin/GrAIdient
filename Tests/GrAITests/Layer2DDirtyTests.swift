@@ -112,7 +112,7 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
                 activation: SoftReLU.str, biases: true, bn: false,
                 params: params
             )
-            secondLayer = IRDFT2RGB(layerPrev: firstLayer, params: params)
+            secondLayer = try! IRDFT2RGB(layerPrev: firstLayer, params: params)
             
             secondLayer = Convolution2D(
                 layerPrev: secondLayer, size: 1, nbChannels: 6, stride: 1,
@@ -121,7 +121,7 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
             )
             
         case "DecorrelateRGB":
-            secondLayer = DecorrelateRGB(
+            secondLayer = try! DecorrelateRGB(
                 layerPrev: layer,
                 correlation: [
                     0.26, 0.26, 0.27,
@@ -150,7 +150,7 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
             )
             
         case "Crop":
-            secondLayer = Crop2D(
+            secondLayer = try! Crop2D(
                 layerPrev: layer,
                 cropDimension: 3,
                 params: params
@@ -159,8 +159,8 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
                 layerPrev: secondLayer, size: width, params: params
             )
             
-        case "ResizeBilinearPad":
-            secondLayer = ResizeBilinearPad(
+        case "ResizeBilinearPad1":
+            secondLayer = try! ResizeBilinearPad(
                 layerPrev: layer,
                 scalesList: [0.8, 1.2], padValue: 0.5,
                 params: params
@@ -169,17 +169,44 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
                 layerPrev: secondLayer, size: width, params: params
             )
             
-        case "Rotate":
-            secondLayer = Rotate2D(
+        case "ResizeBilinearPad2":
+            secondLayer = try! ResizeBilinearPad(
+                layerPrev: layer,
+                minScale: 0.8, maxScale: 1.2, padValue: 0.5,
+                params: params
+            )
+            secondLayer = AdaptiveAvgPool2D(
+                layerPrev: secondLayer, size: width, params: params
+            )
+            
+        case "Rotate1":
+            secondLayer = try! Rotate2D(
                 layerPrev: layer,
                 anglesList: [20.0, 350.0], padValue: 0.5,
                 params: params
             )
             
-        case "ResizeBilinearCrop":
-            secondLayer = ResizeBilinearCrop(
+        case "Rotate2":
+            secondLayer = try! Rotate2D(
+                layerPrev: layer,
+                minAngle: 20.0, maxAngle: 350.0, padValue: 0.5,
+                params: params
+            )
+            
+        case "ResizeBilinearCrop1":
+            secondLayer = try! ResizeBilinearCrop(
                 layerPrev: layer,
                 scalesList: [0.6, 0.8],
+                params: params
+            )
+            secondLayer = AdaptiveAvgPool2D(
+                layerPrev: secondLayer, size: width, params: params
+            )
+            
+        case "ResizeBilinearCrop2":
+            secondLayer = try! ResizeBilinearCrop(
+                layerPrev: layer,
+                minScale: 0.6, maxScale: 0.8,
                 params: params
             )
             secondLayer = AdaptiveAvgPool2D(
@@ -206,15 +233,61 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
                 layerPrev: secondLayer, size: width, params: params
             )
             
+        case "InstanceNorm":
+            secondLayer = InstanceNorm2D(
+                layerPrev: layer, activation: SoftReLU.str, params: params
+            )
+            
+        case "SelfCorrelate":
+            secondLayer = SelfCorrelate2D(layerPrev: layer, params: params)
+            
+            secondLayer = Convolution2D(
+                layerPrev: secondLayer, size: 1, nbChannels: 3, stride: 1,
+                activation: LeakyReLU.str, biases: true, bn: false,
+                params: params
+            )
+            secondLayer = AdaptiveAvgPool2D(
+                layerPrev: secondLayer, size: width, params: params
+            )
+            
+        case "Normalize1":
+            secondLayer = Normalize12D(layerPrev: layer, params: params)
+            
+        case "Normalize12":
+            secondLayer = Normalize122D(layerPrev: layer, params: params)
+            
+        case "FlipHorizontal1":
+            secondLayer = FlipHorizontal2D(
+                layerPrev: layer, probability: 1.0, params: params
+            )
+            
+        case "FlipHorizontal2":
+            secondLayer = FlipHorizontal2D(
+                layerPrev: layer, probability: 0.0, params: params
+            )
+        
+        case "FlipVertical1":
+            secondLayer = FlipVertical2D(
+                layerPrev: layer, probability: 1.0, params: params
+            )
+            
+        case "FlipVertical2":
+            secondLayer = FlipVertical2D(
+                layerPrev: layer, probability: 0.0, params: params
+            )
+            
+        case "LayerOutput":
+            secondLayer = try! MSE2D(layerPrev: layer, params: params)
+            
         default:
             fatalError("Unreachable.")
         }
         
-        layer = Sum2D(
+        layer = try! Sum2D(
             layersPrev: [firstLayer, secondLayer], params: params
         )
         
-        var head: Layer1D = FullyConnected(
+        var head: Layer1D = try! FullyConnected(
             layerPrev: layer, nbNeurons: 1,
             activation: SoftReLU.str, biases: true, params: params
         )
@@ -365,42 +438,81 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
         run(trainer)
     }
     
-    func testResizeBilinearPadCPU() throws
+    func testResizeBilinearPad1CPU() throws
     {
         GrAI.Opti.CPU = true
-        let trainer = _buildTrainer(model: "ResizeBilinearPad")
+        let trainer = _buildTrainer(model: "ResizeBilinearPad1")
         run(trainer)
     }
     
-    func testResizeBilinearPadGPU() throws
+    func testResizeBilinearPad1GPU() throws
     {
-        let trainer = _buildTrainer(model: "ResizeBilinearPad")
+        let trainer = _buildTrainer(model: "ResizeBilinearPad1")
         run(trainer)
     }
     
-    func testRotateCPU() throws
-    {
-        GrAI.Opti.CPU = true
-        let trainer = _buildTrainer(model: "Rotate")
-        run(trainer)
-    }
-    
-    func testRotateGPU() throws
-    {
-        let trainer = _buildTrainer(model: "Rotate")
-        run(trainer)
-    }
-    
-    func testResizeBilinearCropCPU() throws
+    func testResizeBilinearPad2CPU() throws
     {
         GrAI.Opti.CPU = true
-        let trainer = _buildTrainer(model: "ResizeBilinearCrop")
+        let trainer = _buildTrainer(model: "ResizeBilinearPad2")
         run(trainer)
     }
     
-    func testResizeBilinearCropGPU() throws
+    func testResizeBilinearPad2GPU() throws
     {
-        let trainer = _buildTrainer(model: "ResizeBilinearCrop")
+        let trainer = _buildTrainer(model: "ResizeBilinearPad2")
+        run(trainer)
+    }
+    
+    func testRotate1CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "Rotate1")
+        run(trainer)
+    }
+    
+    func testRotate1GPU() throws
+    {
+        let trainer = _buildTrainer(model: "Rotate1")
+        run(trainer)
+    }
+    
+    func testRotate2CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "Rotate2")
+        run(trainer)
+    }
+    
+    func testRotate2GPU() throws
+    {
+        let trainer = _buildTrainer(model: "Rotate2")
+        run(trainer)
+    }
+    
+    func testResizeBilinearCrop1CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop1")
+        run(trainer)
+    }
+    
+    func testResizeBilinearCrop1GPU() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop1")
+        run(trainer)
+    }
+    
+    func testResizeBilinearCrop2CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop2")
+        run(trainer)
+    }
+    
+    func testResizeBilinearCrop2GPU() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop2")
         run(trainer)
     }
     
@@ -428,6 +540,123 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
     {
         let trainer = _buildTrainer(model: "DeconvolutionStride")
         run(trainer, diffThreshold: 0.0001)
+    }
+    
+    func testInstanceNormCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "InstanceNorm")
+        run(trainer)
+    }
+    
+    func testInstanceNormGPU() throws
+    {
+        let trainer = _buildTrainer(model: "InstanceNorm")
+        run(trainer)
+    }
+    
+    func testSelfCorrelateCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "SelfCorrelate")
+        run(trainer)
+    }
+    
+    func testSelfCorrelateGPU() throws
+    {
+        let trainer = _buildTrainer(model: "SelfCorrelate")
+        run(trainer)
+    }
+    
+    func testNormalize1CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "Normalize1")
+        run(trainer)
+    }
+    
+    func testNormalize1GPU() throws
+    {
+        let trainer = _buildTrainer(model: "Normalize1")
+        run(trainer)
+    }
+    
+    func testNormalize12CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "Normalize12")
+        run(trainer)
+    }
+    
+    func testNormalize12GPU() throws
+    {
+        let trainer = _buildTrainer(model: "Normalize12")
+        run(trainer)
+    }
+    
+    func testFlipHorizontal1CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "FlipHorizontal1")
+        run(trainer)
+    }
+    
+    func testFlipHorizontal1GPU() throws
+    {
+        let trainer = _buildTrainer(model: "FlipHorizontal1")
+        run(trainer)
+    }
+    
+    func testFlipHorizontal2CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "FlipHorizontal2")
+        run(trainer)
+    }
+    
+    func testFlipHorizontal2GPU() throws
+    {
+        let trainer = _buildTrainer(model: "FlipHorizontal2")
+        run(trainer)
+    }
+    
+    func testFlipVertical1CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "FlipVertical1")
+        run(trainer)
+    }
+    
+    func testFlipVertical1GPU() throws
+    {
+        let trainer = _buildTrainer(model: "FlipVertical1")
+        run(trainer)
+    }
+    
+    func testFlipVertical2CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "FlipVertical2")
+        run(trainer)
+    }
+    
+    func testFlipVertical2GPU() throws
+    {
+        let trainer = _buildTrainer(model: "FlipVertical2")
+        run(trainer)
+    }
+    
+    func testLayerOutputCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "LayerOutput")
+        run(trainer)
+    }
+    
+    func testLayerOutputGPU() throws
+    {
+        let trainer = _buildTrainer(model: "LayerOutput")
+        run(trainer)
     }
 }
 
@@ -527,7 +756,7 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
                 activation: LeakyReLU.str, biases: true, bn: false,
                 params: params
             )
-            secondLayer = IRDFT2RGB(layerPrev: firstLayer, params: params)
+            secondLayer = try! IRDFT2RGB(layerPrev: firstLayer, params: params)
             
             secondLayer = Convolution2D(
                 layerPrev: secondLayer, size: 1, nbChannels: 6, stride: 1,
@@ -536,7 +765,7 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
             )
             
         case "DecorrelateRGB":
-            secondLayer = DecorrelateRGB(
+            secondLayer = try! DecorrelateRGB(
                 layerPrev: layer,
                 correlation: [
                     0.26, 0.26, 0.27,
@@ -565,7 +794,7 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
             )
             
         case "Crop":
-            secondLayer = Crop2D(
+            secondLayer = try! Crop2D(
                 layerPrev: layer,
                 cropDimension: 3,
                 offsetI: 2,
@@ -577,7 +806,7 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
             )
             
         case "ResizeBilinearPad":
-            secondLayer = ResizeBilinearPad(
+            secondLayer = try! ResizeBilinearPad(
                 layerPrev: layer,
                 scalesList: [0.8], padValue: 0.5,
                 params: params
@@ -587,14 +816,14 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
             )
             
         case "Rotate":
-            secondLayer = Rotate2D(
+            secondLayer = try! Rotate2D(
                 layerPrev: layer,
                 anglesList: [20.0], padValue: 0.5,
                 params: params
             )
             
         case "ResizeBilinearCrop":
-            secondLayer = ResizeBilinearCrop(
+            secondLayer = try! ResizeBilinearCrop(
                 layerPrev: layer,
                 scale: 1.2,
                 offsetI: 1,
@@ -631,7 +860,7 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
                 activation: LeakyReLU.str, biases: true, bn: false,
                 params: params
             )
-            secondLayer = Concat2D(
+            secondLayer = try! Concat2D(
                 layersPrev: [firstLayer, otherLayer],
                 params: params
             )
@@ -647,20 +876,82 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
                 activation: LeakyReLU.str, biases: true, bn: false,
                 params: params
             )
-            secondLayer = Sum2D(
+            secondLayer = try! Sum2D(
                 layersPrev: [firstLayer, otherLayer],
                 params: params
             )
+            
+        case "InstanceNorm":
+            secondLayer = InstanceNorm2D(
+                layerPrev: layer, activation: LeakyReLU.str, params: params
+            )
+            
+        case "AdaIN":
+            let otherLayer: Layer = Constant1D(
+                nbNeurons: 6, params: params
+            )
+            (otherLayer as! Constant1D).weightsCPU = [
+                0.5, -0.5, 1.5, -2.0, 3.0, 1.0
+            ]
+            secondLayer = try! AdaIN(
+                layersPrev: [firstLayer, otherLayer],
+                params: params
+            )
+            
+        case "VQ":
+            secondLayer = VQ2D(layerPrev: layer, K: 5, params: params)
+            (secondLayer as! VQ2D).beta = 0.25
+            
+        case "SelfCorrelate":
+            secondLayer = SelfCorrelate2D(layerPrev: layer, params: params)
+            
+            secondLayer = Convolution2D(
+                layerPrev: secondLayer, size: 1, nbChannels: 3, stride: 1,
+                activation: LeakyReLU.str, biases: true, bn: false,
+                params: params
+            )
+            secondLayer = AdaptiveAvgPool2D(
+                layerPrev: secondLayer, size: width, params: params
+            )
+            
+        case "Normalize1":
+            secondLayer = Normalize12D(layerPrev: layer, params: params)
+            
+        case "Normalize12":
+            secondLayer = Normalize122D(layerPrev: layer, params: params)
+            
+        case "FlipHorizontal1":
+            secondLayer = FlipHorizontal2D(
+                layerPrev: layer, probability: 1.0, params: params
+            )
+            
+        case "FlipHorizontal2":
+            secondLayer = FlipHorizontal2D(
+                layerPrev: layer, probability: 0.0, params: params
+            )
+        
+        case "FlipVertical1":
+            secondLayer = FlipVertical2D(
+                layerPrev: layer, probability: 1.0, params: params
+            )
+            
+        case "FlipVertical2":
+            secondLayer = FlipVertical2D(
+                layerPrev: layer, probability: 0.0, params: params
+            )
+            
+        case "LayerOutput":
+            secondLayer = try! MSE2D(layerPrev: layer, params: params)
             
         default:
             fatalError("Unreachable.")
         }
         
-        layer = Sum2D(
+        layer = try! Sum2D(
             layersPrev: [firstLayer, secondLayer], params: params
         )
         
-        var head: Layer1D = FullyConnected(
+        var head: Layer1D = try! FullyConnected(
             layerPrev: layer, nbNeurons: 1,
             activation: LeakyReLU.str, biases: true, params: params
         )
@@ -773,6 +1064,79 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
     func testSum() throws
     {
         let trainer = _buildTrainer(model: "Sum")
+        run(trainer)
+    }
+    
+    func testInstanceNorm() throws
+    {
+        let trainer = _buildTrainer(model: "InstanceNorm")
+        run(trainer)
+    }
+    
+    func testAdaIN() throws
+    {
+        let trainer = _buildTrainer(model: "AdaIN")
+        run(trainer)
+    }
+    
+    func testVQ() throws
+    {
+        let trainer = _buildTrainer(model: "VQ")
+        run(trainer)
+    }
+    
+    func testVQSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "VQ")
+        run(trainer)
+    }
+    
+    func testSelfCorrelate() throws
+    {
+        let trainer = _buildTrainer(model: "SelfCorrelate")
+        run(trainer)
+    }
+    
+    func testNormalize1() throws
+    {
+        let trainer = _buildTrainer(model: "Normalize1")
+        run(trainer)
+    }
+    
+    func testNormalize12() throws
+    {
+        let trainer = _buildTrainer(model: "Normalize12")
+        run(trainer)
+    }
+    
+    func testFlipHorizontal1() throws
+    {
+        let trainer = _buildTrainer(model: "FlipHorizontal1")
+        run(trainer)
+    }
+    
+    func testFlipHorizontal2() throws
+    {
+        let trainer = _buildTrainer(model: "FlipHorizontal2")
+        run(trainer)
+    }
+    
+    func testFlipVertical1() throws
+    {
+        let trainer = _buildTrainer(model: "FlipVertical1")
+        run(trainer)
+    }
+    
+    func testFlipVertical2() throws
+    {
+        let trainer = _buildTrainer(model: "FlipVertical2")
+        run(trainer)
+    }
+    
+    func testLayerOutput() throws
+    {
+        let trainer = _buildTrainer(model: "LayerOutput")
         run(trainer)
     }
 }

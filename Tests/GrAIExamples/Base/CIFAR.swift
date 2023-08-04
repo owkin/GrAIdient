@@ -51,7 +51,7 @@ class CIFAR: DataSamplerImpl<UInt8>
         var dataset = [UInt8]()
         for dataFile in 1...5
         {
-            let data = pythonLib.load_CIFAR_data(dataFile, label, size)
+            let data = pythonLib.load_CIFAR_train(dataFile, label, size)
             dataset += Array<UInt8>(data)!
         }
         
@@ -108,5 +108,41 @@ class CIFAR: DataSamplerImpl<UInt8>
         }
         return CIFAR(data: dataset, size: size)
     }
+    
+    ///
+    /// Build an iterator on CIFAR dataset.
+    ///
+    /// - Parameters:
+    ///     - train: Train of test dataset.
+    ///     - batchSize: The batch size.
+    ///     - label: The label we want the data associated to.
+    ///     - shuffle: Whether to shuffle indices of data.
+    ///
+    /// - Returns: A Python iterator.
+    ///
+    static func buildIterator(
+        train: Bool,
+        batchSize: Int,
+        label: Int,
+        shuffle: Bool) -> PythonObject
+    {
+        let pythonLib = Python.import("python_lib")
+        return pythonLib.iter_CIFAR(train, batchSize, label, shuffle)
+    }
+    
+    ///
+    /// Load next data from a Python iterator.
+    ///
+    /// - Parameter iterator: The Python iterator.
+    ///
+    static func getSamples(_ iterator: PythonObject) -> ([Float], Int)
+    {
+        let pythonLib = Python.import("python_lib")
+        let data = pythonLib.next_data_CIFAR(iterator)
+        
+        let samples = [Float](data.tuple2.0)!
+        let batchSize = Int(data.tuple2.1)!
+        
+        return (samples, batchSize)
+    }
 }
-

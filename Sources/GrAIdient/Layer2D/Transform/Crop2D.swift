@@ -39,7 +39,7 @@ public class Crop2D: Layer2D
     ///
     public init(layerPrev: Layer2D,
                 cropDimension: Int,
-                params: GrAI.Model.Params)
+                params: GrAI.Model.Params) throws
     {
         _cropDimension = cropDimension
         
@@ -49,7 +49,7 @@ public class Crop2D: Layer2D
         
         if width <= 0 || height <= 0
         {
-            fatalError(
+            throw LayerError.Init(message:
                 "`cropDimension` should be lower than width and height."
             )
         }
@@ -77,7 +77,7 @@ public class Crop2D: Layer2D
                 cropDimension: Int,
                 offsetI: Int,
                 offsetJ: Int,
-                params: GrAI.Model.Params)
+                params: GrAI.Model.Params) throws
     {
         _doNotRandom = true
         _offsetI = offsetI
@@ -90,14 +90,14 @@ public class Crop2D: Layer2D
         
         if width <= 0 || height <= 0
         {
-            fatalError(
+            throw LayerError.Init(message:
                 "`cropDimension` should be lower than width and height."
             )
         }
         if offsetI < 0 || offsetJ < 0 ||
            offsetI >= cropDimension || offsetJ >= cropDimension
         {
-            fatalError(
+            throw LayerError.Init(message:
                 """
                 `offsetI` and `offsetJ` should be lower than `cropDimension`
                 and higher than 0.
@@ -177,7 +177,7 @@ public class Crop2D: Layer2D
         let layer: Crop2D
         if !_doNotRandom
         {
-            layer = Crop2D(
+            layer = try! Crop2D(
                 layerPrev: layerPrev,
                 cropDimension: _cropDimension,
                 params: params
@@ -185,7 +185,7 @@ public class Crop2D: Layer2D
         }
         else
         {
-            layer = Crop2D(
+            layer = try! Crop2D(
                 layerPrev: layerPrev,
                 cropDimension: _cropDimension,
                 offsetI: _offsetI,

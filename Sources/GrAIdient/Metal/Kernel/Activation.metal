@@ -195,7 +195,14 @@ kernel void forwardSigmoid(
     }
     
     tmps[id] = outs[id];
-    outs[id] = 1.0 / (1.0 + exp(-tmps[id]));
+    if (tmps[id] >= 0)
+    {
+        outs[id] = 1.0 / (1.0 + exp(-tmps[id]));
+    }
+    else
+    {
+        outs[id] = exp(tmps[id]) / (1.0 + exp(tmps[id]));
+    }
 }
 
 kernel void backwardSigmoid(
@@ -218,7 +225,89 @@ kernel void backwardSigmoid(
         return ;
     }
     
-    float tmp = 1.0 / (1.0 + exp(-tmps[id]));
+    float tmp;
+    if (tmps[id] >= 0)
+    {
+        tmp = 1.0 / (1.0 + exp(-tmps[id]));
+    }
+    else
+    {
+        tmp = exp(tmps[id]) / (1.0 + exp(tmps[id]));
+    }
+    
     float derivative = tmp * (1 - tmp);
+    delta[id] = delta[id] * derivative;
+}
+
+kernel void forwardGELU(
+   constant uint * pNbElems,
+   device float * tmps,
+   device float * outs,
+   uint id [[ thread_position_in_grid ]])
+{
+    uint nbElems;
+    
+    if (pNbElems)
+    {
+        nbElems = pNbElems[0];
+    }
+    else
+        return ;
+    
+    if (id >= nbElems)
+    {
+        return ;
+    }
+    
+    float cst = sqrt(2.0 / 3.14159);
+    float x = outs[id];
+    float tmp1 = cst * (x + 0.044715 * pow(x, 3));
+    float tmp2;
+    if (tmp1 >= 0)
+    {
+        tmp2 = (1.0 - exp(-2.0 * tmp1)) / (1.0 + exp(-2.0 * tmp1));
+    }
+    else
+    {
+        tmp2 = (exp(2.0 * tmp1) - 1.0) / (exp(2.0 * tmp1) + 1.0);
+    }
+    tmps[id] = x;
+    outs[id] = 0.5 * x * (1 + tmp2);
+}
+
+kernel void backwardGELU(
+    const device float * tmps,
+    constant uint * pNbElems,
+    device float * delta,
+    uint id [[ thread_position_in_grid ]])
+{
+    uint nbElems;
+    
+    if (pNbElems)
+    {
+        nbElems = pNbElems[0];
+    }
+    else
+        return ;
+    
+    if (id >= nbElems)
+    {
+        return ;
+    }
+    
+    float cst = sqrt(2.0 / 3.14159);
+    float x = tmps[id];
+    float tmp1 = cst * (x + 0.044715 * pow(x, 3));
+    float tmp2;
+    if (tmp1 >= 0)
+    {
+        tmp2 = (1.0 - exp(-2.0 * tmp1)) / (1.0 + exp(-2.0 * tmp1));
+    }
+    else
+    {
+        tmp2 = (exp(2.0 * tmp1) - 1.0) / (exp(2.0 * tmp1) + 1.0);
+    }
+    float tmp3 = cst * (1 + 3 * 0.044715 * x * x) * (1 - tmp2 * tmp2);
+    float derivative = 0.5 * (1 + tmp2 + x * tmp3);
     delta[id] = delta[id] * derivative;
 }

@@ -14,13 +14,13 @@
 public class Concat2D: LayerMerge2D
 {
     ///
-    /// Create a layer with a2D shape neural structure.
+    /// Create a layer with a 2D shape neural structure.
     ///
     /// - Parameters:
     ///     - layersPrev: List of previous layers that have been queued to the model.
     ///     - params: Contextual parameters linking to the model.
     ///
-    public init(layersPrev: [Layer2D], params: GrAI.Model.Params)
+    public init(layersPrev: [Layer2D], params: GrAI.Model.Params) throws
     {
         var nbChannels = 0
         let layer0 = layersPrev[0]
@@ -31,7 +31,7 @@ public class Concat2D: LayerMerge2D
             if layerPrev.height != layer0.height ||
                layerPrev.width != layer0.width
             {
-                fatalError("Layer structure error.")
+                throw LayerError.Init(message: "Layer structure error.")
             }
         }
         super.init(layersPrev: layersPrev,
@@ -68,7 +68,7 @@ public class Concat2D: LayerMerge2D
             layersPrev.append(mapping[idPrev] as! Layer2D)
         }
         
-        let layer = Concat2D(layersPrev: layersPrev, params: params)
+        let layer = try! Concat2D(layersPrev: layersPrev, params: params)
         return layer
     }
     
@@ -310,7 +310,7 @@ public class Concat2D: LayerMerge2D
             let pNbChannelsPrev: [UInt32] = [UInt32(nbChannelsPrev)]
             
             command = metalKernel.createCommand(
-                "concat2DForward", deviceID: deviceID
+                "concat12DForward", deviceID: deviceID
             )
             command.setBuffer(
                 (_layersPrev[num] as! Layer2D).outs.metal, atIndex: 0
@@ -416,7 +416,7 @@ public class Concat2D: LayerMerge2D
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
             command = metalKernel.createCommand(
-                "concat2DBackward", deviceID: deviceID
+                "concat12DBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBytes(pGlobalOffset, atIndex: 1)

@@ -44,7 +44,7 @@ class Activation1DGradTests: Input1DMSE1DCase
         
         var layer: Layer1D = Input1D(nbNeurons: 1, params: params)
         
-        layer = FullyConnected(
+        layer = try! FullyConnected(
             layerPrev: layer, nbNeurons: 5,
             activation: SoftReLU.str, biases: true,
             params: params
@@ -53,7 +53,7 @@ class Activation1DGradTests: Input1DMSE1DCase
         switch model
         {
         case "FullyConnected":
-            layer = FullyConnected(
+            layer = try! FullyConnected(
                 layerPrev: layer, nbNeurons: 12,
                 activation: activation, biases: true,
                 params: params
@@ -70,7 +70,7 @@ class Activation1DGradTests: Input1DMSE1DCase
             fatalError("Unreachable.")
         }
         
-        layer = FullyConnected(
+        layer = try! FullyConnected(
             layerPrev: layer, nbNeurons: 1,
             activation: SoftReLU.str, biases: true,
             params: params
@@ -164,6 +164,23 @@ class Activation1DGradTests: Input1DMSE1DCase
         run(trainer)
     }
     
+    func testFLGELUCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(
+            model: "FullyConnected", activation: GELU.str
+        )
+        run(trainer)
+    }
+    
+    func testFLGELUGPU() throws
+    {
+        let trainer = _buildTrainer(
+            model: "FullyConnected", activation: GELU.str
+        )
+        run(trainer)
+    }
+    
     func testReLUCPU() throws
     {
         GrAI.Opti.CPU = true
@@ -228,6 +245,23 @@ class Activation1DGradTests: Input1DMSE1DCase
     {
         let trainer = _buildTrainer(
             model: "Activation", activation: Sigmoid.str
+        )
+        run(trainer)
+    }
+    
+    func testGELUCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(
+            model: "Activation", activation: GELU.str
+        )
+        run(trainer)
+    }
+    
+    func testGELUGPU() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Activation", activation: GELU.str
         )
         run(trainer)
     }

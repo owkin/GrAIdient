@@ -16,8 +16,14 @@ import MetalKit
 ///
 /// The implementation here corresponds to the half padding version of the link below:
 /// https://github.com/vdumoulin/conv_arithmetic/blob/master/README.md
+/// In the PyTorch documentation, we have padding = floor(kernel / 2) and dilation = 1:
+/// https://pytorch.org/docs/stable/generated/torch.nn.Conv2d.html
 ///
-public class Convolution2D: BN2D
+/// The most standard way is to use an odd kernel size.
+/// With a stride of 1, this will preserve the previous layer's size.
+/// With a greater stride, this will divide the previous layer's size by stride.
+///
+public class Convolution2D: BN2D, LayerWeightInit
 {
     /// Downscale factor of the resolution (height and width).
     let _stride: Int
@@ -260,18 +266,25 @@ public class Convolution2D: BN2D
         }
     }
     
-    /// Get the coefficient to apply during the weights initialization.
-    var coeffInitWeights: Double
+    /// Method used to initialize weights values.
+    public var weightInitClass: WeightInitClass = .XavierUniform
+    
+    /// Number of weights values (not considering the biases).
+    public var weightListSize: Int
     {
         get {
-            if let activation = _activation
-            {
-                return activation.coeffInitWeights(
-                    nPrev: nbChannelsPrev * weightHeight * weightWidth,
-                    nCur: nbChannels)
-            }
-            return sqrt(2.0 /
-                        Double(nbChannelsPrev * weightHeight * weightWidth))
+            return nbChannels * nbChannelsPrev * weightHeight * weightWidth
+        }
+    }
+    
+    /// Get the number of input and output connections.
+    public var connectivityIO: (Int, Int)
+    {
+        get {
+            return (
+                nbChannelsPrev * weightHeight * weightWidth,
+                nbChannels * weightHeight * weightWidth
+            )
         }
     }
     
@@ -285,7 +298,7 @@ public class Convolution2D: BN2D
             {
                 nbGC += nbChannels
             }
-            if _bn != nil || _bnGPU != nil
+            if _norm != nil || _normGPU != nil
             {
                 nbGC += 2 * nbChannels
             }
@@ -328,19 +341,40 @@ public class Convolution2D: BN2D
         }
     }
     
-    var _kernelIndices: (Int, Int, Int, Int)
+    ///
+    /// Get indices needed to compute kernel convolution patchs.
+    ///
+    /// - Returns:
+    ///     - startI: Start index row offset from a pixel target position.
+    ///     - endI: End index row offset from a pixel target position.
+    ///     - startJ: Start index column offset from a pixel target position.
+    ///     - endJ: End index column offset from a pixel target position.
+    ///     - offI: Padding row offset.
+    ///     - offJ: Padding column offset.
+    ///
+    /// For a convolution, there are two situations:
+    ///     - odd kernel: Patchs exclusively target the pixels of the previous layer's grid.
+    ///     - even kernel: Patchs first targets are a void border on the left of the previous layer's grid.
+    ///
+    /// For a deconvolution:
+    ///     - Patchs first targets are a void border on the left of the previous layer's grid.
+    ///
+    var kernelIndices: (Int, Int, Int, Int, Int, Int)
     {
         get {
             let weightHeightHalf = weightHeight / 2
             let weightWidthHalf = weightWidth / 2
-            let startI = weightWidth % 2 == 1 ? -weightHeightHalf :
-                                                -weightHeightHalf+1
+            let startI = weightHeight % 2 == 1 ? -weightHeightHalf :
+                                                 -weightHeightHalf+1
             let endI = weightHeightHalf
-            let startJ = weightHeight % 2 == 1 ? -weightWidthHalf :
-                                                 -weightWidthHalf+1
+            let startJ = weightWidth % 2 == 1 ? -weightWidthHalf :
+                                                -weightWidthHalf+1
             let endJ = weightWidthHalf
             
-            return (startI, endI, startJ, endJ)
+            let offI = endI + startI
+            let offJ = endJ + startJ
+            
+            return (startI, endI, startJ, endJ, offI, offJ)
         }
     }
     
@@ -375,10 +409,14 @@ public class Convolution2D: BN2D
         
         let width = layerPrev.width
         let height = layerPrev.height
-        let widthRes = width % _stride
-        let heightRes = height % _stride
-        let widthNew = widthRes == 0 ? width / _stride : width / _stride + 1
-        let heightNew = heightRes == 0 ? height / _stride : height / _stride + 1
+        let padding = Int(floor(Double(size) / 2.0))
+        
+        var tmp = Double(width + 2 * padding - size)
+        tmp = tmp / Double(stride) + 1.0
+        let widthNew = Int(floor(tmp))
+        tmp = Double(height + 2 * padding - size)
+        tmp = tmp / Double(stride) + 1.0
+        let heightNew = Int(floor(tmp))
         
         nbWeights = nbChannels * layerPrev.nbChannels
         weightWidth = size
@@ -517,7 +555,7 @@ public class Convolution2D: BN2D
             stride: _stride,
             activation: _activation?.name,
             biases: _updateBiases,
-            bn: _bn != nil || _bnGPU != nil,
+            bn: _norm != nil || _normGPU != nil,
             params: params
         )
         if inPlace
@@ -526,19 +564,19 @@ public class Convolution2D: BN2D
             layer._bArrays = _bArrays
             layer._wBuffers = _wBuffers
             layer._bBuffers = _bBuffers
-            layer._bn = _bn
-            layer._bnGPU = _bnGPU
+            layer._norm = _norm
+            layer._normGPU = _normGPU
         }
         else
         {
             // only one of them should be cloned
-            if let bn = _bnGPU
+            if let bn = _normGPU
             {
-                layer._bn = bn.clone()
+                layer._norm = bn.clone()
             }
-            else if let bn = _bn
+            else if let bn = _norm
             {
-                layer._bn = bn.clone()
+                layer._norm = bn.clone()
             }
             
             if GrAI.Opti.GPU
@@ -587,8 +625,8 @@ public class Convolution2D: BN2D
             layer._bArrays = _bArrays
             layer._wBuffers = _wBuffers
             layer._bBuffers = _bBuffers
-            layer._bn = nil
-            layer._bnGPU = nil
+            layer._norm = nil
+            layer._normGPU = nil
         }
         else
         {
@@ -678,6 +716,12 @@ public class Convolution2D: BN2D
     ///
     public override func initWeightsCPU()
     {
+        if _weightsList.count == 0
+        {
+            _weightsList = generateWeightsList()
+            _weightsList += [Float](repeating: 0.0, count: nbChannels)
+        }
+        
         super.initWeightsCPU()
         
         _wArrays = [WeightGrids]()
@@ -688,56 +732,36 @@ public class Convolution2D: BN2D
         }
         _bArrays = WeightArrays(nbChannels)
         
-        if _weightsList.count == 0
+        for elem in 0..<nbWeights
         {
-            let coeff = coeffInitWeights
-            for elem in 0..<nbWeights
-            {
-                for i in 0..<weightHeight {
-                for j in 0..<weightWidth
-                {
-                    _wArrays[elem].w(i, j, coeff * Double.random(in: -1..<1))
-                }}
-            }
+            let offsetStart = elem * weightHeight
             
+            for i in 0..<weightHeight {
+            for j in 0..<weightWidth
+            {
+                let offset = j + (offsetStart + i) * weightWidth
+                _wArrays[elem].w(i, j, Double(_weightsList[offset]))
+            }}
+        }
+        
+        // In both cases, biases may have been set by caller or by ourselves.
+        if _updateBiases
+        {
+            let offset = nbWeights * weightHeight * weightWidth
+            for depth in 0..<nbChannels
+            {
+                _bArrays.w[depth] =
+                    Double(_weightsList[offset + depth])
+            }
+        }
+        else
+        {
             for depth in 0..<nbChannels
             {
                 _bArrays.w[depth] = 0.0
             }
         }
-        else
-        {
-            for elem in 0..<nbWeights
-            {
-                let offsetStart = elem * weightHeight
-                
-                for i in 0..<weightHeight {
-                for j in 0..<weightWidth
-                {
-                    let offset = j + (offsetStart + i) * weightWidth
-                    _wArrays[elem].w(i, j, Double(_weightsList[offset]))
-                }}
-            }
-            
-            if _updateBiases
-            {
-                let offset = nbWeights * weightHeight * weightWidth
-                for depth in 0..<nbChannels
-                {
-                    _bArrays.w[depth] =
-                        Double(_weightsList[offset + depth])
-                }
-            }
-            else
-            {
-                for depth in 0..<nbChannels
-                {
-                    _bArrays.w[depth] = 0.0
-                }
-            }
-            
-            _weightsList = []
-        }
+        _weightsList = []
     }
     
     ///
@@ -747,6 +771,12 @@ public class Convolution2D: BN2D
     ///
     public override func initWeightsGPU()
     {
+        if _weightsList.count == 0
+        {
+            _weightsList = generateWeightsList()
+            _weightsList += [Float](repeating: 0.0, count: nbChannels)
+        }
+        
         super.initWeightsGPU()
         
         _wBuffers = WeightBuffers(
@@ -760,45 +790,29 @@ public class Convolution2D: BN2D
         
         let weightsPtr = _wBuffers.w_p!.shared.buffer
         let biasesPtr = _bBuffers.w_p!.shared.buffer
-        
-        if _weightsList.count == 0
+    
+        for elem in 0..<nbWeights * weightHeight * weightWidth
         {
-            let coeff = Float(coeffInitWeights)
-            for elem in 0..<nbWeights * weightHeight * weightWidth
+            weightsPtr[elem] = _weightsList[elem]
+        }
+        
+        // In both cases, biases may have been set by caller or by ourselves.
+        if _updateBiases
+        {
+            let offset = nbWeights * weightHeight * weightWidth
+            for depth in 0..<nbChannels
             {
-                weightsPtr[elem] = coeff * Float.random(in: -1..<1)
+                biasesPtr[depth] = _weightsList[offset + depth]
             }
-            
+        }
+        else
+        {
             for depth in 0..<nbChannels
             {
                 biasesPtr[depth] = 0.0
             }
         }
-        else
-        {
-            for elem in 0..<nbWeights * weightHeight * weightWidth
-            {
-                weightsPtr[elem] = _weightsList[elem]
-            }
-            
-            if _updateBiases
-            {
-                let offset = nbWeights * weightHeight * weightWidth
-                for depth in 0..<nbChannels
-                {
-                    biasesPtr[depth] = _weightsList[offset + depth]
-                }
-            }
-            else
-            {
-                for depth in 0..<nbChannels
-                {
-                    biasesPtr[depth] = 0.0
-                }
-            }
-            
-            _weightsList = []
-        }
+        _weightsList = []
         
         MetalKernel.get.upload([_wBuffers.w_p!, _bBuffers.w_p!])
         
@@ -841,7 +855,7 @@ public class Convolution2D: BN2D
     public override func forwardGCCPU() throws
     {
         try _forwardGCCPU()
-        bn?.forwardGC(self)
+        norm?.forwardGC(self)
         _activation?.forwardGC(self)
     }
     
@@ -867,7 +881,7 @@ public class Convolution2D: BN2D
             }
             
             let neuronsPrev = layerPrev.neurons
-            let (startI, endI, startJ, endJ) = _kernelIndices
+            let (startI, endI, startJ, endJ, offI, offJ) = kernelIndices
             
             for batch in 0..<batchSize {
             for elem in 0..<nbGC {
@@ -886,7 +900,8 @@ public class Convolution2D: BN2D
                         for l in startJ...endJ
                         {
                             if let outPrev = neuronsPrev[depthPrev].get(
-                                _stride*i+k, _stride*j+l)?.gc[batch][elem].out
+                                _stride*i+k-offI, _stride*j+l-offJ)?
+                                .gc[batch][elem].out
                             {
                                 let w = weights.w(k-startI, l-startJ)
                                 tmp += outPrev * w
@@ -918,7 +933,8 @@ public class Convolution2D: BN2D
                         for l in startJ...endJ
                         {
                             if let outPrev = neuronsPrev[depthPrev].get(
-                                _stride*i+k, _stride*j+l)?.v[batch].out
+                                _stride*i+k-offI, _stride*j+l-offJ)?
+                                .v[batch].out
                             {
                                 var w = weights.w(k-startI, l-startJ)
                                 
@@ -978,7 +994,8 @@ public class Convolution2D: BN2D
                         for l in startJ...endJ
                         {
                             if let outPrev = neuronsPrev[depthPrev].get(
-                                _stride*i+k, _stride*j+l)?.v[batch].out
+                                _stride*i+k-offI, _stride*j+l-offJ)?
+                                .v[batch].out
                             {
                                 let w = weights.w(k-startI, l-startJ)
                                 tmp += outPrev * w
@@ -994,7 +1011,7 @@ public class Convolution2D: BN2D
             }}}}}
             
             // Prepare GC for BN weights: Ɣ and β.
-            if _bn != nil {
+            if _norm != nil {
             for batch in 0..<batchSize {
             for elem in newGC-4*nbChannels..<newGC {
             for depth in 0..<nbChannels
@@ -1012,7 +1029,8 @@ public class Convolution2D: BN2D
                         for l in startJ...endJ
                         {
                             if let outPrev = neuronsPrev[depthPrev].get(
-                                _stride*i+k, _stride*j+l)?.v[batch].out
+                                _stride*i+k-offI, _stride*j+l-offJ)?
+                                .v[batch].out
                             {
                                 let w = weights.w(k-startI, l-startJ)
                                 tmp += outPrev * w
@@ -1033,7 +1051,7 @@ public class Convolution2D: BN2D
     public override func forwardGCGPU() throws
     {
         try _forwardGCGPU()
-        bn?.forwardFlowGC(self)
+        norm?.forwardFlowGC(self)
         _activation?.forwardGC(self)
     }
     
@@ -1068,7 +1086,7 @@ public class Convolution2D: BN2D
             let widthPrev = layerPrev.width
             let heightPrev = layerPrev.height
             
-            let (startI, endI, startJ, endJ) = _kernelIndices
+            let (startI, endI, startJ, endJ, offI, offJ) = kernelIndices
             
             for batch in 0..<batchSize {
             for elem in 0..<nbGC {
@@ -1090,7 +1108,8 @@ public class Convolution2D: BN2D
                                 (offsetStartWeights + k-startI) * weightWidth
                             
                             if let outPrev = neuronsPrev[depthPrev].get(
-                                _stride*i+k, _stride*j+l)?.gc[batch][elem].out
+                                _stride*i+k-offI, _stride*j+l-offJ)?
+                                .gc[batch][elem].out
                             {
                                 let w = Double(weightsPtr[offsetWeights])
                                 tmp += outPrev * w
@@ -1128,8 +1147,8 @@ public class Convolution2D: BN2D
                             let offsetWeights = l-startJ +
                                 (offsetStartWeights + k-startI) * weightWidth
                             
-                            let I1 = _stride * i + k
-                            let J1 = _stride * j + l
+                            let I1 = _stride * i + k - offI
+                            let J1 = _stride * j + l - offJ
                             if I1 >= 0, I1 < heightPrev, J1 >= 0, J1 < widthPrev
                             {
                                 var w = Double(weightsPtr[offsetWeights])
@@ -1199,8 +1218,8 @@ public class Convolution2D: BN2D
                             let offsetWeights = l-startJ +
                                 (offsetStartWeights + k-startI) * weightWidth
                             
-                            let I1 = _stride * i + k
-                            let J1 = _stride * j + l
+                            let I1 = _stride * i + k - offI
+                            let J1 = _stride * j + l - offJ
                             if I1 >= 0, I1 < heightPrev, J1 >= 0, J1 < widthPrev
                             {
                                 let w = Double(weightsPtr[offsetWeights])
@@ -1222,7 +1241,7 @@ public class Convolution2D: BN2D
             }}}}}
             
             // Prepare GC for BN weights: Ɣ and β.
-            if _bnGPU != nil {
+            if _normGPU != nil {
             for batch in 0..<batchSize {
             for elem in newGC-4*nbChannels..<newGC {
             for depth in 0..<nbChannels
@@ -1244,8 +1263,8 @@ public class Convolution2D: BN2D
                             let offsetWeights = l-startJ +
                                 (offsetStartWeights + k-startI) * weightWidth
                             
-                            let I1 = _stride * i + k
-                            let J1 = _stride * j + l
+                            let I1 = _stride * i + k - offI
+                            let J1 = _stride * j + l - offJ
                             if I1 >= 0, I1 < heightPrev, J1 >= 0, J1 < widthPrev
                             {
                                 let w = Double(weightsPtr[offsetWeights])
@@ -1272,7 +1291,7 @@ public class Convolution2D: BN2D
     public override func forwardCPU() throws
     {
         try _forwardCPU()
-        bn?.forward(self)
+        norm?.forward(self)
         _activation?.forwardCPU(self)
     }
     
@@ -1283,7 +1302,7 @@ public class Convolution2D: BN2D
             try checkStateCPU(batchSize: batchSize)
             
             let neuronsPrev = layerPrev.neurons
-            let (startI, endI, startJ, endJ) = _kernelIndices
+            let (startI, endI, startJ, endJ, offI, offJ) = kernelIndices
             
             for elem in 0..<batchSize {
             for depth in 0..<nbChannels
@@ -1301,7 +1320,8 @@ public class Convolution2D: BN2D
                         for l in startJ...endJ
                         {
                             if let outPrev = neuronsPrev[depthPrev].get(
-                                _stride*i+k, _stride*j+l)?.v[elem].out
+                                _stride*i+k-offI, _stride*j+l-offJ)?
+                                .v[elem].out
                             {
                                 let w = weights.w(k-startI, l-startJ)
                                 tmp += outPrev * w
@@ -1322,7 +1342,7 @@ public class Convolution2D: BN2D
     public override func forwardGPU() throws
     {
         try _forwardGPU()
-        _bnGPU?.forward(self)
+        _normGPU?.forward(self)
         _activation?.forwardGPU(self)
     }
     
@@ -1332,10 +1352,11 @@ public class Convolution2D: BN2D
         {
             try checkStateForwardGPU(batchSize: batchSize)
             
-            let (startI, endI, startJ, endJ) = _kernelIndices
+            let (startI, endI, startJ, endJ, offI, offJ) = kernelIndices
             
             let pStart: [Int32] = [Int32(startI), Int32(endI),
-                                   Int32(startJ), Int32(endJ)]
+                                   Int32(startJ), Int32(endJ),
+                                   Int32(offI), Int32(offJ)]
             let pStride: [UInt32] = [UInt32(_stride)]
             let pNbChannels: [UInt32] = [UInt32(nbChannels)]
             let pNbChannelsPrev: [UInt32] = [UInt32(nbChannelsPrev)]
@@ -1345,12 +1366,6 @@ public class Convolution2D: BN2D
             let pDimWeights: [UInt32] = [UInt32(weightWidth),
                                          UInt32(weightHeight)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
-            
-            if outs == nil
-            {
-                outs = MetalPrivateBuffer<Float>(
-                    batchSize * nbChannels * width * height, deviceID: deviceID)
-            }
             
             let command = MetalKernel.get.createCommand(
                 forwardKernel, deviceID: deviceID
@@ -1380,7 +1395,7 @@ public class Convolution2D: BN2D
     public override func backwardCPU()
     {
         _activation?.backwardCPU(self)
-        bn?.backward(self)
+        norm?.backward(self)
         
         _backwardCPU()
         _backwardWeightsCPU()
@@ -1391,7 +1406,7 @@ public class Convolution2D: BN2D
         if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
             let neuronsPrev = layerPrev.neurons
-            let (startI, endI, startJ, endJ) = _kernelIndices
+            let (startI, endI, startJ, endJ, offI, offJ) = kernelIndices
             
             for elem in 0..<batchSize {
             for depthPrev in 0..<nbChannelsPrev
@@ -1408,11 +1423,12 @@ public class Convolution2D: BN2D
                         for k in startI...endI {
                         for l in startJ...endJ
                         {
-                            if (i-k) % _stride == 0 && (j-l) % _stride == 0
+                            if (i-k+offI) % _stride == 0 &&
+                               (j-l+offJ) % _stride == 0
                             {
                                 if let deltaCur = neurons[depth]
-                                    .get((i-k) / _stride, (j-l) / _stride)?
-                                    .v[elem].delta
+                                    .get((i-k+offI) / _stride,
+                                         (j-l+offJ) / _stride)?.v[elem].delta
                                 {
                                     let w = weights.w(k-startI, l-startJ)
                                     tmp += deltaCur * w
@@ -1443,7 +1459,7 @@ public class Convolution2D: BN2D
             // Compute Gradients per batch
             // -----------------------------------------------------------------
             let neuronsPrev = layerPrev.neurons
-            let (startI, endI, startJ, endJ) = _kernelIndices
+            let (startI, endI, startJ, endJ, offI, offJ) = kernelIndices
             
             for depth in 0..<nbChannels
             {
@@ -1460,7 +1476,8 @@ public class Convolution2D: BN2D
                         for l in 0..<width
                         {
                             if let outPrev = neuronsPrev[depthPrev]
-                                .get(_stride*k+i, _stride*l+j)?.v[elem].out
+                                .get(_stride*k+i-offI, _stride*l+j-offJ)?
+                                .v[elem].out
                             {
                                 let deltaCur =
                                     neurons[depth].get(k, l)!.v[elem].delta
@@ -1505,7 +1522,7 @@ public class Convolution2D: BN2D
     public override func backwardGPU() throws
     {
         _activation?.backwardGPU(self)
-        _bnGPU?.backward(self)
+        _normGPU?.backward(self)
         
         try _backwardGPU()
         _backwardWeightsGPU()
@@ -1517,10 +1534,11 @@ public class Convolution2D: BN2D
         {
             try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
             
-            let (startI, endI, startJ, endJ) = _kernelIndices
+            let (startI, endI, startJ, endJ, offI, offJ) = kernelIndices
             
             let pStart: [Int32] = [Int32(startI), Int32(endI),
-                                   Int32(startJ), Int32(endJ)]
+                                   Int32(startJ), Int32(endJ),
+                                   Int32(offI), Int32(offJ)]
             let pStride: [UInt32] = [UInt32(_stride)]
             let pNbChannels: [UInt32] = [UInt32(nbChannels)]
             let pNbChannelsPrev: [UInt32] = [UInt32(nbChannelsPrev)]
@@ -1565,10 +1583,11 @@ public class Convolution2D: BN2D
             // -----------------------------------------------------------------
             // Compute Gradients per batch
             // -----------------------------------------------------------------
-            let (startI, endI, startJ, endJ) = _kernelIndices
+            let (startI, endI, startJ, endJ, offI, offJ) = kernelIndices
             
             let pStart: [Int32] = [Int32(startI), Int32(endI),
-                                   Int32(startJ), Int32(endJ)]
+                                   Int32(startJ), Int32(endJ),
+                                   Int32(offI), Int32(offJ)]
             let pStride: [UInt32] = [UInt32(_stride)]
             let pNbChannels: [UInt32] = [UInt32(nbChannels)]
             let pNbChannelsPrev: [UInt32] = [UInt32(nbChannelsPrev)]
@@ -1713,7 +1732,7 @@ public class Convolution2D: BN2D
         {
             weights.append(_bArrays)
         }
-        if let bn = self.bn
+        if let bn = self.norm
         {
             weights += bn.collectWeights()
         }
@@ -1729,7 +1748,7 @@ public class Convolution2D: BN2D
         {
             weights.append(_bBuffers)
         }
-        if let bnFlow = _bnGPU
+        if let bnFlow = _normGPU
         {
             weights += bnFlow.collectWeights()
         }

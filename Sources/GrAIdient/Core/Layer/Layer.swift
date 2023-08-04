@@ -10,6 +10,8 @@ import Foundation
 /// Error occuring during the layer forward or backward propagation.
 public enum LayerError: Error
 {
+    /// Error during the initialization of a layer.
+    case Init(message: String)
     /// Data has not the correct dimensions.
     case DataSize
     /// Batch size is not coherent.
@@ -22,6 +24,8 @@ extension LayerError: CustomStringConvertible
     {
         switch self
         {
+        case .Init(let message):
+            return message
         case .DataSize:
             return "The parameters do not have the expected number of elements."
         case .BatchSize:
@@ -91,7 +95,7 @@ open class Layer: Codable
     
     /// Whether the gradient has been updated or not.
     public var dirty = true
-    /// Whether to compute gradients of not.
+    /// Whether to compute gradients or not.
     public var computeDelta = true
     
     /// Slight modification to use during gradient checking.
@@ -222,6 +226,11 @@ open class Layer: Codable
     ///
     open func initLinks(_ layers: [Layer])
     {
+        if idPrev < 0
+        {
+            layerPrev = nil
+            return
+        }
         for testLayer in layers
         {
             if testLayer.id == idPrev

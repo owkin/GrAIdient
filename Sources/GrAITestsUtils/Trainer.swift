@@ -65,6 +65,28 @@ extension TestError: CustomStringConvertible
 }
 
 ///
+/// Set one weight initialization scheme between the ones available.
+///
+/// - Parameter model: The model on which to select the initialization scheme.
+///
+func randomSelectWeightsInitializationScheme(model: Model)
+{
+    let choice = Int.random(in: 0...4)
+    switch choice {
+    case 1:
+        model.weightInitClass = .XavierUniform
+    case 2:
+        model.weightInitClass = .XavierNormal
+    case 3:
+        model.weightInitClass = .KaimingUniform
+    case 4:
+        model.weightInitClass = .KaimingNormal
+    default:
+        break
+    }
+}
+
+///
 /// Function used to retry flaky numeric tests.
 ///
 /// This function is used to assert failure when internal function did not complete.
@@ -162,6 +184,7 @@ open class GradTrainer: Trainer
         getGradientsApprox: (LossT, Model)->[Double],
         validate: (Double) throws -> ()) throws
     {
+        randomSelectWeightsInitializationScheme(model: model)
         model.initialize(
             params: optimizerParams,
             phase: .Training,
@@ -256,6 +279,7 @@ open class FlowTrainer: Trainer
             if i == 0
             {
                 GrAI.Opti.CPU = true
+                randomSelectWeightsInitializationScheme(model: modelCPU)
             }
             
             if i > 0
@@ -481,6 +505,40 @@ open class FlowReverseTrainer: FlowTrainer
             }
             epoch += 1
         }
+    }
+}
+
+/// Compares gradients of weights computed in the CPU execution context againt the GPU one
+/// when we accumulate gradients.
+open class FlowAccumulateTrainer: FlowTrainer
+{
+    ///
+    /// Run the test.
+    ///
+    /// The goal is to compare the gradients of weights computed in the CPU execution context with
+    /// the gradients of weights computed in the GPU execution context.
+    ///
+    /// - Parameters:
+    ///     - setData: A function to create/set data to the model.
+    ///     - setLoss: A function to create/set ground truth to the model.
+    ///     - validate: A function that checks whether the relative difference is small enough.
+    ///
+    public override func run<DataT, LossT>(
+        setData: (DataT?, Model)->(DataT, Int),
+        setLoss: (LossT?, Model)->(LossT),
+        validate: (Double) throws -> ()) throws
+    {
+        modelCPU.accumulateDeltaWeights = true
+        modelGPU.accumulateDeltaWeights = true
+        try super.run(setData: setData, setLoss: setLoss, validate: validate)
+        
+        modelCPU.accumulateDeltaWeights = false
+        modelGPU.accumulateDeltaWeights = false
+        try super.run(setData: setData, setLoss: setLoss, validate: validate)
+        
+        modelCPU.accumulateDeltaWeights = true
+        modelGPU.accumulateDeltaWeights = true
+        try super.run(setData: setData, setLoss: setLoss, validate: validate)
     }
 }
 

@@ -79,7 +79,7 @@ class InputBuffers1D: InputBuffers<Layer1D>, IWeightBuffers
     }
 }
 
-/// First layer with a 1D shape neural structure.
+/// Input layer with a 1D shape neural structure.
 public class Input1D: LayerInput1D, LayerUpdate
 {
     /// Grid of "weights".
@@ -262,60 +262,17 @@ public class Input1D: LayerInput1D, LayerUpdate
     ///
     /// Throw an error if data size is not coherent.
     ///
-    /// - Parameter data: The data to set.
+    /// - Parameters:
+    ///     - data: The input data.
+    ///     - batchSize: The batch size of data.
+    ///     - nbNeurons: Number of neurons.
     ///
-    public func setDataCPU<T: BinaryFloatingPoint>(_ data: [[T]]) throws
+    public func setDataCPU<T: BinaryFloatingPoint>(
+        _ data: [[T]],
+        batchSize: Int,
+        nbNeurons: Int) throws
     {
-        let batchSize = data.count
-        try checkStateCPU(batchSize: batchSize)
-        
-        for (elem, sample) in data.enumerated()
-        {
-            if sample.count != nbNeurons
-            {
-                throw LayerError.DataSize
-            }
-            
-            for (i, feature) in sample.enumerated() {
-            if let neuron = neurons.get(i)
-            {
-                neuron.v[elem].out = Double(feature)
-            }}
-        }
-    }
-    
-    ///
-    /// API to set data in the GPU execution context.
-    ///
-    /// Throw an error if data size is not coherent.
-    ///
-    /// - Parameter data: The data to set.
-    ///
-    public func setDataGPU<T: BinaryFloatingPoint>(_ data: [[T]]) throws
-    {
-        let batchSize = data.count
-        try checkStateForwardGPU(batchSize: batchSize)
-        
-        if nbNeurons != data.first!.count
-        {
-            throw LayerError.DataSize
-        }
-        
-        // Wait for previous loop to end to avoid race condition with
-        // didModifyRange in the following example:
-        // FullyConnected.backwardWeightsGPU accesses layerPrev.outs.
-        MetalKernel.get.download([outs])
-        
-        let outsPtr = outs.shared.buffer
-        for elem in 0..<batchSize
-        {
-            for depth in 0..<nbNeurons
-            {
-                let offset = depth + nbNeurons * elem
-                outsPtr[offset] = Float(data[elem][depth])
-            }
-        }
-        MetalKernel.get.upload([outs])
+        try checkInputCPU(data, batchSize: batchSize, nbNeurons: nbNeurons)
     }
     
     ///
@@ -324,15 +281,34 @@ public class Input1D: LayerInput1D, LayerUpdate
     /// Throw an error if data size is not coherent.
     ///
     /// - Parameters:
-    ///     - data: The data to set.
+    ///     - data: The input data.
     ///     - batchSize: The batch size of data.
+    ///     - nbNeurons: Number of neurons.
+    ///
+    public func setDataGPU<T: BinaryFloatingPoint>(
+        _ data: [[T]],
+        batchSize: Int,
+        nbNeurons: Int) throws
+    {
+        try checkInputGPU(data, batchSize: batchSize, nbNeurons: nbNeurons)
+    }
+    
+    ///
+    /// API to set data in the GPU execution context.
+    ///
+    /// Throw an error if data size is not coherent.
+    ///
+    /// - Parameters:
+    ///     - data: The input data.
+    ///     - batchSize: The batch size of data.
+    ///     - nbNeurons: Number of neurons.
     ///
     public func setDataGPU(
         _ data: MetalPrivateBuffer<Float>,
-        batchSize: Int) throws
+        batchSize: Int,
+        nbNeurons: Int) throws
     {
-        try checkStateForwardGPU(batchSize: batchSize)
-        outs = data
+        try checkInputGPU(data, batchSize: batchSize, nbNeurons: nbNeurons)
     }
     
     ///

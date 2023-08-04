@@ -78,7 +78,7 @@ class Activation2DGradTests: Input2DMSE1DCase
             fatalError("Unreachable.")
         }
         
-        var head: Layer1D = FullyConnected(
+        var head: Layer1D = try! FullyConnected(
             layerPrev: layer, nbNeurons: 1,
             activation: SoftReLU.str, biases: true, params: params
         )
@@ -256,6 +256,40 @@ class Activation2DGradTests: Input2DMSE1DCase
         run(trainer)
     }
     
+    func testConvGELUNoBNCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: GELU.str, bn: false
+        )
+        run(trainer)
+    }
+    
+    func testConvGELUBNCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: GELU.str, bn: true
+        )
+        run(trainer)
+    }
+    
+    func testConvGELUNoBNGPU() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: GELU.str, bn: false
+        )
+        run(trainer)
+    }
+    
+    func testConvGELUBNGPU() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: GELU.str, bn: true
+        )
+        run(trainer)
+    }
+    
     func testReLUCPU() throws
     {
         GrAI.Opti.CPU = true
@@ -320,6 +354,23 @@ class Activation2DGradTests: Input2DMSE1DCase
     {
         let trainer = _buildTrainer(
             model: "Activation", activation: Sigmoid.str, bn: false
+        )
+        run(trainer)
+    }
+    
+    func testGELUCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(
+            model: "Activation", activation: GELU.str, bn: false
+        )
+        run(trainer)
+    }
+    
+    func testGELUGPU() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Activation", activation: GELU.str, bn: false
         )
         run(trainer)
     }

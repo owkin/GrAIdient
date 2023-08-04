@@ -17,7 +17,7 @@ import Foundation
 ///
 /// When one unique scale is used, there are 2 scenario to consider.
 /// - if scale >= 1: a crop will be needed to extract patches of the input grids so that
-/// the resize of these patches match the expected scale. The final dimensions of the
+/// the resize of these patches matches the expected scale. The final dimensions of the
 /// output grids are exactly the same as the dimensions of the input grids.
 /// - if scale < 1: no crop is needed. The final dimensions will
 /// correspond to the scale of the dimensions of the input grids.
@@ -25,10 +25,11 @@ import Foundation
 public class ResizeBilinearCrop: Layer2D
 {
     let _scalesList: [Double]
+    let _minScale: Double?
+    let _maxScale: Double?
     
     var _offsetI: Int = 0
     var _offsetJ: Int = 0
-    var _doNotRandom: Bool = false
     
     var _width2Resize: Int = 0
     var _height2Resize: Int = 0
@@ -36,7 +37,8 @@ public class ResizeBilinearCrop: Layer2D
     private enum Keys: String, CodingKey
     {
         case scalesList
-        case doNotRandom
+        case minScale
+        case maxScale
         case offsetI
         case offsetJ
     }
@@ -51,19 +53,25 @@ public class ResizeBilinearCrop: Layer2D
     ///
     public init(layerPrev: Layer2D,
                 scalesList: [Double],
-                params: GrAI.Model.Params)
+                params: GrAI.Model.Params) throws
     {
         _scalesList = scalesList
+        _minScale = nil
+        _maxScale = nil
         
         if scalesList.count == 0
         {
-            fatalError("`scalesList` should have at least one element.")
+            throw LayerError.Init(
+                message: "`scalesList` should have at least one element."
+            )
         }
         for scale in scalesList
         {
             if scale == 0
             {
-                fatalError("Only non 0 scales are possible.")
+                throw LayerError.Init(
+                    message: "Only non 0 scales are possible."
+                )
             }
         }
         
@@ -81,6 +89,7 @@ public class ResizeBilinearCrop: Layer2D
                 height = min(height, Int(round(scale * Double(heightPrev))))
             }
         }
+        
         super.init(layerPrev: layerPrev,
                    nbChannels: nbChannels,
                    height: height,
@@ -102,20 +111,23 @@ public class ResizeBilinearCrop: Layer2D
                 scale: Double,
                 offsetI: Int,
                 offsetJ: Int,
-                params: GrAI.Model.Params)
+                params: GrAI.Model.Params) throws
     {
         _scalesList = [scale]
-        _doNotRandom = true
+        _minScale = nil
+        _maxScale = nil
         _offsetI = offsetI
         _offsetJ = offsetJ
         
         if scale == 0
         {
-            fatalError("Only non 0 scales are possible.")
+            throw LayerError.Init(message: "Only non 0 scales are possible.")
         }
         if offsetI < 0 || offsetJ < 0
         {
-            fatalError("`offsetI` and `offsetJ` should be higher than 0.")
+            throw LayerError.Init(
+                message: "`offsetI` and `offsetJ` should be higher than 0."
+            )
         }
         
         let nbChannels = layerPrev.nbChannels
@@ -138,6 +150,45 @@ public class ResizeBilinearCrop: Layer2D
     }
     
     ///
+    /// Create a layer with a 2D shape neural structure.
+    ///
+    /// - Parameters:
+    ///     - layerPrev: Previous layer that has been queued to the model.
+    ///     - minScale: Minimum scale to apply to (heightPrev, widthPrev) dimensions.
+    ///     - maxScale: Maximum scale to apply to (heightPrev, widthPrev) dimensions.
+    ///     - params: Contextual parameters linking to the model.
+    ///
+    public init(layerPrev: Layer2D,
+                minScale: Double,
+                maxScale: Double,
+                params: GrAI.Model.Params) throws
+    {
+        _scalesList = []
+        _minScale = minScale
+        _maxScale = maxScale
+        
+        if minScale >= maxScale || minScale <= 0.0
+        {
+            throw LayerError.Init(message: "`minScale` is not coherent.")
+        }
+        
+        let nbChannels = layerPrev.nbChannels
+        let heightPrev = layerPrev.height
+        let widthPrev = layerPrev.width
+        
+        let width = minScale < 1.0 ?
+            Int(round(minScale * Double(widthPrev))) : widthPrev
+        let height = minScale < 1.0 ?
+            Int(round(minScale * Double(heightPrev))) : heightPrev
+
+        super.init(layerPrev: layerPrev,
+                   nbChannels: nbChannels,
+                   height: height,
+                   width: width,
+                   params: params)
+    }
+    
+    ///
     /// Decode from the disk.
     ///
     /// Throw an error if reading from the decoder fails, or
@@ -151,7 +202,12 @@ public class ResizeBilinearCrop: Layer2D
         _scalesList = try values.decode(
             [Double].self, forKey: Keys.scalesList
         )
-        _doNotRandom = try values.decode(Bool.self, forKey: Keys.doNotRandom)
+        _minScale = try values.decodeIfPresent(
+            Double.self, forKey: Keys.minScale
+        )
+        _maxScale = try values.decodeIfPresent(
+            Double.self, forKey: Keys.maxScale
+        )
         _offsetI = try values.decode(Int.self, forKey: Keys.offsetI)
         _offsetJ = try values.decode(Int.self, forKey: Keys.offsetJ)
         try super.init(from: decoder)
@@ -172,7 +228,14 @@ public class ResizeBilinearCrop: Layer2D
     {
         var container = encoder.container(keyedBy: Keys.self)
         try container.encode(_scalesList, forKey: Keys.scalesList)
-        try container.encode(_doNotRandom, forKey: Keys.doNotRandom)
+        if let minScale = _minScale
+        {
+            try container.encode(minScale, forKey: Keys.minScale)
+        }
+        if let maxScale = _maxScale
+        {
+            try container.encode(maxScale, forKey: Keys.maxScale)
+        }
         try container.encode(_offsetI, forKey: Keys.offsetI)
         try container.encode(_offsetJ, forKey: Keys.offsetJ)
         try super.encode(to: encoder)
@@ -201,23 +264,36 @@ public class ResizeBilinearCrop: Layer2D
         params.context.curID = id
             
         let layer: ResizeBilinearCrop
-        if !_doNotRandom
+        if _scalesList.count > 1
         {
-            layer = ResizeBilinearCrop(
+            layer = try! ResizeBilinearCrop(
                 layerPrev: layerPrev,
                 scalesList: _scalesList,
                 params: params
             )
         }
-        else
+        else if _scalesList.count == 1
         {
-            layer = ResizeBilinearCrop(
+            layer = try! ResizeBilinearCrop(
                 layerPrev: layerPrev,
                 scale: _scalesList[0],
                 offsetI: _offsetI,
                 offsetJ: _offsetJ,
                 params: params
             )
+        }
+        else if let minScale = _minScale, let maxScale = _maxScale
+        {
+            layer = try! ResizeBilinearCrop(
+                layerPrev: layerPrev,
+                minScale: minScale,
+                maxScale: maxScale,
+                params: params
+            )
+        }
+        else
+        {
+            fatalError()
         }
         return layer
     }
@@ -319,10 +395,19 @@ public class ResizeBilinearCrop: Layer2D
                 let randIndex = Int.random(in: 0..<_scalesList.count)
                 ratioInOut = _scalesList[randIndex]
             }
-            else
+            else if _scalesList.count == 1
             {
                 ratioInOut = _scalesList[0]
             }
+            else if let minScale = _minScale, let maxScale = _maxScale
+            {
+                ratioInOut = Double.random(in: minScale...maxScale)
+            }
+            else
+            {
+                fatalError()
+            }
+            
             _width2Resize = Int(floor(Double(width) / ratioInOut))
             _height2Resize = Int(floor(Double(height) / ratioInOut))
             
@@ -334,7 +419,8 @@ public class ResizeBilinearCrop: Layer2D
             let cropDimensionI = heightPrev - _height2Resize
             let cropDimensionJ = widthPrev - _width2Resize
             
-            if !_doNotRandom
+            if _scalesList.count > 1 ||
+               (_scalesList.count == 0 && _minScale != nil && _maxScale != nil)
             {
                 if cropDimensionI == 0
                 {
@@ -353,14 +439,21 @@ public class ResizeBilinearCrop: Layer2D
                     _offsetJ = Int.random(in: 0..<cropDimensionJ)
                 }
             }
-            else if _offsetI > cropDimensionI || _offsetJ > cropDimensionJ
+            else if _scalesList.count == 1
             {
-                fatalError(
-                     """
-                     `offsetI` and `offsetJ` should be lower than
-                     `cropDimension`.
-                     """
-                )
+                if _offsetI > cropDimensionI || _offsetJ > cropDimensionJ
+                {
+                    fatalError(
+                         """
+                         `offsetI` and `offsetJ` should be lower than
+                         `cropDimension`.
+                         """
+                    )
+                }
+            }
+            else
+            {
+                fatalError()
             }
             
             let neuronsPrev = layerPrev.neurons
@@ -418,10 +511,19 @@ public class ResizeBilinearCrop: Layer2D
                 let randIndex = Int.random(in: 0..<_scalesList.count)
                 ratioInOut = _scalesList[randIndex]
             }
-            else
+            else if _scalesList.count == 1
             {
                 ratioInOut = _scalesList[0]
             }
+            else if let minScale = _minScale, let maxScale = _maxScale
+            {
+                ratioInOut = Double.random(in: minScale...maxScale)
+            }
+            else
+            {
+                fatalError()
+            }
+            
             _width2Resize = Int(floor(Double(width) / ratioInOut))
             _height2Resize = Int(floor(Double(height) / ratioInOut))
             
@@ -430,7 +532,8 @@ public class ResizeBilinearCrop: Layer2D
             let cropDimensionI = heightPrev - _height2Resize
             let cropDimensionJ = widthPrev - _width2Resize
             
-            if !_doNotRandom
+            if _scalesList.count > 1 ||
+               (_scalesList.count == 0 && _minScale != nil && _maxScale != nil)
             {
                 if cropDimensionI == 0
                 {
@@ -449,14 +552,21 @@ public class ResizeBilinearCrop: Layer2D
                     _offsetJ = Int.random(in: 0..<cropDimensionJ)
                 }
             }
-            else if _offsetI > cropDimensionI || _offsetJ > cropDimensionJ
+            else if _scalesList.count == 1
             {
-                fatalError(
-                     """
-                     `offsetI` and `offsetJ` should be lower than
-                     `cropDimension`.
-                     """
-                )
+                if _offsetI > cropDimensionI || _offsetJ > cropDimensionJ
+                {
+                    fatalError(
+                         """
+                         `offsetI` and `offsetJ` should be lower than
+                         `cropDimension`.
+                         """
+                    )
+                }
+            }
+            else
+            {
+                fatalError()
             }
             
             let pNbChannels: [UInt32] = [UInt32(nbChannels)]

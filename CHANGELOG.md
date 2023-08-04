@@ -4,39 +4,22 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
-🔨 **refactor:** throwable init ([#103](https://github.com/owkin/GrAIdient/pull/103))\
-🔨 **refactor:** dims checks for inputs and outputs ([#102](https://github.com/owkin/GrAIdient/pull/102))\
+## 0.3.0 (2023-08-04)
+
+### Features
+
 🪜 **feat:** BCE1D, BCE2D, VQ2D & VQSeq as losses ([#101](https://github.com/owkin/GrAIdient/pull/101))\
 🪜 **layer_seq:** VQSeq ([#100](https://github.com/owkin/GrAIdient/pull/100))\
-🔨 **layer_2d:** expose indices in VQ2D ([#99](https://github.com/owkin/GrAIdient/pull/99))\
 🪜 **layer_2d:** loosen range contraint in ColorJitterHSV ([#98](https://github.com/owkin/GrAIdient/pull/98))\
 🪜 **layer_2d:** SimilarityError2D & dirty losses ([#97](https://github.com/owkin/GrAIdient/pull/97))\
-🔨 **core:** LayerWeightInit ([#96](https://github.com/owkin/GrAIdient/pull/96))\
-🚨 **test**: FlowAccumulateTrainer ([#95](https://github.com/owkin/GrAIdient/pull/95))\
-🚨 **examples**: compare training with PyTorch ([#94](https://github.com/owkin/GrAIdient/pull/94))\
 🪜 **layer_2d:** ColorJitterHSV, Image & ImageTests ([#93](https://github.com/owkin/GrAIdient/pull/93))\
 🪜 **layer_2d:** Flip2D & config_kernels ([#92](https://github.com/owkin/GrAIdient/pull/92))\
-🔨 **layer_2d:** remove computeVQ ([#91](https://github.com/owkin/GrAIdient/pull/91))\
-🔨 **layer_2d:** API for random transforms ([#90](https://github.com/owkin/GrAIdient/pull/90))\
-🚀 **perf:** enhance Normalize122D with reduce ([#89](https://github.com/owkin/GrAIdient/pull/89))\
 🪜 **layer_2d:** SimilarityBatchError2D ([#88](https://github.com/owkin/GrAIdient/pull/88))\
 🪜 **layer_2d:** Normalize2D ([#87](https://github.com/owkin/GrAIdient/pull/87))\
 🪜 **layer_2d:** SelfCorrelate2D ([#86](https://github.com/owkin/GrAIdient/pull/86))\
-🚨 **integration**: resize alignment with PyTorch ([#85](https://github.com/owkin/GrAIdient/pull/85))\
-🐛 **layer_2d**: align Convolution & Deconvolution on PyTorch ([#84](https://github.com/owkin/GrAIdient/pull/84))\
-🐛 **fix**: numerical stability of tanh for GELU ([#83](https://github.com/owkin/GrAIdient/pull/83))\
-🔨 **layer_seq**: SelectSeq ([#82](https://github.com/owkin/GrAIdient/pull/82))\
-🚀 **examples**: AutoEncoder models ([#79](https://github.com/owkin/GrAIdient/pull/79))\
 🪜 **layer_2d**: VQ2D ([#81](https://github.com/owkin/GrAIdient/pull/81))\
-🚀 **layer_seq**: factorize by nbHeads ([#78](https://github.com/owkin/GrAIdient/pull/78))\
 🪜 **layer_seq**: Adding new layer SelectNeuronsSeq ([#77](https://github.com/owkin/GrAIdient/pull/77))\
-🐛 **fix:** numerical instability of Softmax ([#76](https://github.com/owkin/GrAIdient/pull/76))\
-🚀 **examples:** make Transformer example very simple ([#75](https://github.com/owkin/GrAIdient/pull/75))\
-🚀 **examples:** adding Transformer training example ([#74](https://github.com/owkin/GrAIdient/pull/74))\
 ⚙️ **core:** GELU activation function ([#73](https://github.com/owkin/GrAIdient/pull/73))\
-🐛 **fix:** update ValueSeq operation ([#72](https://github.com/owkin/GrAIdient/pull/72))\
-🚨 **integration:** update & validate LayerNormSeq ([#71](https://github.com/owkin/GrAIdient/pull/71))\
-🚨 **integration:** validate MultiHeadAttention & fix Softmax stability ([#70](https://github.com/owkin/GrAIdient/pull/70))\
 🪜 **layer_seq:** ValueSeq ([#69](https://github.com/owkin/GrAIdient/pull/69))\
 🪜 **layer_seq:** SoftmaxSeq ([#68](https://github.com/owkin/GrAIdient/pull/68))\
 🪜 **layer_seq:** QuerySeq ([#67](https://github.com/owkin/GrAIdient/pull/67))\
@@ -50,6 +33,33 @@ All notable changes to this project will be documented in this file.
 🪜 **layer_2d:** Constant2D ([#56](https://github.com/owkin/GrAIdient/pull/56))\
 🪜 **layer_2d:** AdaIN ([#55](https://github.com/owkin/GrAIdient/pull/55))\
 🪜 **layer_2d:** InstanceNorm2D & InstanceNormalization ([#54](https://github.com/owkin/GrAIdient/pull/54))
+
+### Bug Fixes
+
+🐛 **layer_2d**: align Convolution & Deconvolution on PyTorch ([#84](https://github.com/owkin/GrAIdient/pull/84))\
+🐛 **fix**: numerical stability of tanh for GELU ([#83](https://github.com/owkin/GrAIdient/pull/83))\
+🐛 **fix:** numerical instability of Softmax ([#76](https://github.com/owkin/GrAIdient/pull/76))\
+🐛 **fix:** update ValueSeq operation ([#72](https://github.com/owkin/GrAIdient/pull/72))
+
+### Miscellaneous Tasks
+
+🔨 **refactor:** throwable init ([#103](https://github.com/owkin/GrAIdient/pull/103))\
+🔨 **refactor:** dims checks for inputs and outputs ([#102](https://github.com/owkin/GrAIdient/pull/102))\
+🔨 **layer_2d:** expose indices in VQ2D ([#99](https://github.com/owkin/GrAIdient/pull/99))\
+🔨 **core:** LayerWeightInit ([#96](https://github.com/owkin/GrAIdient/pull/96))\
+🚨 **test**: FlowAccumulateTrainer ([#95](https://github.com/owkin/GrAIdient/pull/95))\
+🚨 **examples**: compare training with PyTorch ([#94](https://github.com/owkin/GrAIdient/pull/94))\
+🔨 **layer_2d:** remove computeVQ ([#91](https://github.com/owkin/GrAIdient/pull/91))\
+🔨 **layer_2d:** API for random transforms ([#90](https://github.com/owkin/GrAIdient/pull/90))\
+🚀 **perf:** enhance Normalize122D with reduce ([#89](https://github.com/owkin/GrAIdient/pull/89))\
+🚨 **integration**: resize alignment with PyTorch ([#85](https://github.com/owkin/GrAIdient/pull/85))\
+🔨 **layer_seq**: SelectSeq ([#82](https://github.com/owkin/GrAIdient/pull/82))\
+🚀 **examples**: AutoEncoder models ([#79](https://github.com/owkin/GrAIdient/pull/79))\
+🚀 **layer_seq**: factorize by nbHeads ([#78](https://github.com/owkin/GrAIdient/pull/78))\
+🚀 **examples:** make Transformer example very simple ([#75](https://github.com/owkin/GrAIdient/pull/75))\
+🚀 **examples:** adding Transformer training example ([#74](https://github.com/owkin/GrAIdient/pull/74))\
+🚨 **integration:** update & validate LayerNormSeq ([#71](https://github.com/owkin/GrAIdient/pull/71))\
+🚨 **integration:** validate MultiHeadAttention & fix Softmax stability ([#70](https://github.com/owkin/GrAIdient/pull/70))
 
 ## 0.2.0 (2023-02-27)
 

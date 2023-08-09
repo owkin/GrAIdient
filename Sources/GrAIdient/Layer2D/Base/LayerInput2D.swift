@@ -199,7 +199,7 @@ open class LayerInput2D: Layer2D
         batchSize: Int,
         nbChannels: Int, height: Int, width: Int) throws
     {
-        if data.nbElems > batchSize * nbChannels * height * width
+        if batchSize * nbChannels * height * width > data.nbElems
         {
             throw LayerError.DataSize
         }

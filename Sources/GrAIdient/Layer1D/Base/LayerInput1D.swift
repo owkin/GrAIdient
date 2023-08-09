@@ -136,7 +136,7 @@ open class LayerInput1D: Layer1D
         batchSize: Int,
         nbNeurons: Int) throws
     {
-        if data.nbElems > batchSize * nbNeurons
+        if batchSize * nbNeurons > data.nbElems
         {
             throw LayerError.DataSize
         }

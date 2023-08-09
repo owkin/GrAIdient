@@ -8,7 +8,7 @@ All notable changes to this project will be documented in this file.
 
 ### Bug Fixes
 
-🐛 **fix**: input GPU check ([#102](https://github.com/owkin/GrAIdient/pull/102))\
+🐛 **fix**: input GPU check ([#106](https://github.com/owkin/GrAIdient/pull/106))\
 
 ## 0.3.0 (2023-08-04)
 

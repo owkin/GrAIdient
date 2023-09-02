@@ -9,7 +9,7 @@ import XCTest
 import GrAIdient
 
 /// Test reduce kernel.
-class ReduceTests: XCTestCase
+class ReduceSumTests: XCTestCase
 {
     var _buffer: MetalSharedBuffer<Float>! = nil
     var _array = [Float]()
@@ -48,7 +48,7 @@ class ReduceTests: XCTestCase
             resultsCPU.append(sum)
         }
         
-        reduce(
+        reduceSum(
             inBuffer: _buffer.metal,
             outBuffer: _buffer.metal,
             dim1: dim1, dim2: dim2,

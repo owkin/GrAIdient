@@ -8,7 +8,7 @@
 #include <metal_stdlib>
 using namespace metal;
 
-kernel void reduce64(
+kernel void reduceSum64(
      const device float * ins,
      constant uint * pDimensions,
      constant uint * pNbThreadgroups,
@@ -62,7 +62,7 @@ kernel void reduce64(
     }
 }
 
-kernel void reduce(
+kernel void reduceSum(
      const device float * ins,
      constant uint * pDimensions,
      device float * outs,

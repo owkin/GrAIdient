@@ -35,7 +35,7 @@ private func getNbThreadgroups(
 ///     - dim1: The dimension of the elements to reduce.
 ///     - dim2: A dimension for elements we do not want to reduce.
 ///
-public func reduce(
+public func reduceSum(
     inBuffer: MTLBuffer,
     outBuffer: MTLBuffer,
     dim1: Int,
@@ -59,7 +59,7 @@ public func reduce(
             let pNbThreadgroups: [UInt32] = [UInt32(nbThreadgroups)]
             
             command = MetalKernel.get.createCommand(
-                "reduce64", deviceID: deviceID
+                "reduceSum64", deviceID: deviceID
             )
             command.setBuffer(inBuffer, atIndex: 0)
             command.setBytes(pNbDimensions, atIndex: 1)
@@ -84,7 +84,7 @@ public func reduce(
         else
         {
             command = MetalKernel.get.createCommand(
-                "reduce", deviceID: deviceID
+                "reduceSum", deviceID: deviceID
             )
             command.setBuffer(inBuffer, atIndex: 0)
             command.setBytes(pNbDimensions, atIndex: 1)

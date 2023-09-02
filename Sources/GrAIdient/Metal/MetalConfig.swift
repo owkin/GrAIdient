@@ -203,8 +203,8 @@ let CONFIG_KERNELS =
         "weightsAMSBound",
     ],
     "Reduce": [
-        "reduce64",
-        "reduce",
+        "reduceSum64",
+        "reduceSum",
     ],
     "Reset": [
         "reset"

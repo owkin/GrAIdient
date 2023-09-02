@@ -205,6 +205,8 @@ let CONFIG_KERNELS =
     "Reduce": [
         "reduceSum64",
         "reduceSum",
+        "reduceMax64",
+        "reduceMax",
     ],
     "Reset": [
         "reset"

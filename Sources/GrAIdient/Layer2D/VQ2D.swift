@@ -1253,6 +1253,10 @@ public class VQGradNorm2D: VQ2D
         
         if let layerPrev = self.layerPrev as? Layer2D
         {
+            if layerPrev.dirty
+            {
+                throw UpdateError.Dirty
+            }
             try checkStateForwardGPU(batchSize: batchSize)
             
             let pNbChannels: [UInt32] = [UInt32(nbChannels)]
@@ -1265,15 +1269,16 @@ public class VQGradNorm2D: VQ2D
                 "vqGradNorm2DForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
-            command.setBuffer(_gradNorm.metal, atIndex: 1)
-            command.setBuffer(_wBuffers.w.metal, atIndex: 2)
-            command.setBytes(pNbChannels, atIndex: 3)
-            command.setBytes(pDimensions, atIndex: 4)
-            command.setBytes(pK, atIndex: 5)
-            command.setBytes(pMagnitudeCoeff, atIndex: 6)
-            command.setBytes(pNbBatch, atIndex: 7)
-            command.setBuffer(outs.metal, atIndex: 8)
-            command.setBuffer(indices.metal, atIndex: 9)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 1)
+            command.setBuffer(_gradNorm.metal, atIndex: 2)
+            command.setBuffer(_wBuffers.w.metal, atIndex: 3)
+            command.setBytes(pNbChannels, atIndex: 4)
+            command.setBytes(pDimensions, atIndex: 5)
+            command.setBytes(pK, atIndex: 6)
+            command.setBytes(pMagnitudeCoeff, atIndex: 7)
+            command.setBytes(pNbBatch, atIndex: 8)
+            command.setBuffer(outs.metal, atIndex: 9)
+            command.setBuffer(indices.metal, atIndex: 10)
             
             command.dispatchThreads(
                 width: height * width,

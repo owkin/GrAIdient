@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import MetalKit
 
 /// Layer with a sequential shape neural structure and weights.
 public class VQSeq: LayerSeq, LayerWeightInit
@@ -1091,6 +1092,112 @@ public class VQGradNormSeq: VQSeq
                     }
                 }
             }
+        }
+    }
+    
+    ///
+    /// Compute the squared norm in the GPU execution context.
+    ///
+    /// Throw an error if batch size is greater than the first batch size.
+    ///
+    private func _computeGradNormMaxGPU() throws
+    {
+        if let layerPrev = self.layerPrev as? LayerSeq
+        {
+            if layerPrev.dirty
+            {
+                throw UpdateError.Dirty
+            }
+            
+            // -----------------------------------------------------------------
+            // Begin the reduction that is specific to the gradient norm max.
+            // -----------------------------------------------------------------
+            
+            try checkStateForwardGPU(batchSize: batchSize)
+            
+            let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
+            let pNbBatch: [UInt32] = [UInt32(batchSize)]
+            let pSequence: [UInt32] = [UInt32(sequence)]
+            let pNbThreadgroups: [UInt32] = [UInt32(nbThreadgroups)]
+            
+            let command = MetalKernel.get.createCommand(
+                "vqGradNormSeqMax", deviceID: deviceID
+            )
+            command.setBuffer(layerPrev.delta.metal, atIndex: 0)
+            command.setBytes(pNbNeurons, atIndex: 1)
+            command.setBytes(pNbThreadgroups, atIndex: 2)
+            command.setBytes(pNbBatch, atIndex: 3)
+            command.setBytes(pSequence, atIndex: 4)
+            command.setBuffer(_gradNorm.metal, atIndex: 5)
+            
+            let threadsPerThreadgroup = MTLSizeMake(
+                _threadsPerThreadgroup, 1, 1
+            )
+            let threadsPerGrid = MTLSize(
+                width: sequence,
+                height: batchSize,
+                depth: 1
+            )
+            command.dispatchThreads(
+                threadsPerGrid: threadsPerGrid,
+                threadsPerThreadgroup: threadsPerThreadgroup
+            )
+            command.enqueue()
+            
+            // Continue the reduction in a more generic way.
+            reduceMax(
+                inBuffer: _gradNorm.metal,
+                outBuffer: _gradNorm.metal,
+                dim1: nbThreadgroups, dim2: batchSize,
+                deviceID: deviceID
+            )
+        }
+    }
+    
+    ///
+    /// Apply the forward pass in the GPU execution context.
+    ///
+    /// Throw an error if batch size is greater than the first batch size.
+    ///
+    public override func forwardGPU() throws
+    {
+        // Reduce the gradient norm max in a dedicated function for performance.
+        try _computeGradNormMaxGPU()
+        
+        if let layerPrev = self.layerPrev as? LayerSeq
+        {
+            if layerPrev.dirty
+            {
+                throw UpdateError.Dirty
+            }
+            try checkStateForwardGPU(batchSize: batchSize)
+            
+            let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
+            let pNbBatch: [UInt32] = [UInt32(batchSize)]
+            let pSequence: [UInt32] = [UInt32(sequence)]
+            let pK: [UInt32] = [UInt32(K)]
+            let pMagnitudeCoeff: [Float] = [Float(magnitudeCoeff)]
+            
+            let command = MetalKernel.get.createCommand(
+                "vqGradNormSeqForward", deviceID: deviceID
+            )
+            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 1)
+            command.setBuffer(_gradNorm.metal, atIndex: 2)
+            command.setBuffer(_wBuffers.w.metal, atIndex: 3)
+            command.setBytes(pNbNeurons, atIndex: 4)
+            command.setBytes(pK, atIndex: 5)
+            command.setBytes(pMagnitudeCoeff, atIndex: 6)
+            command.setBytes(pNbBatch, atIndex: 7)
+            command.setBytes(pSequence, atIndex: 8)
+            command.setBuffer(outs.metal, atIndex: 9)
+            command.setBuffer(indices.metal, atIndex: 10)
+            
+            command.dispatchThreads(
+                width: sequence,
+                height: batchSize
+            )
+            command.enqueue()
         }
     }
     

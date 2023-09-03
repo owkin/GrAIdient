@@ -463,6 +463,7 @@ kernel void vqGradNorm2DMax(
 
 kernel void vqGradNorm2DForward(
     const device float * outsPrev,
+    const device float * deltaPrev,
     const device float * gradNorms,
     const device float * weights,
     constant uint * pNbChannels,
@@ -481,7 +482,7 @@ kernel void vqGradNorm2DForward(
     uint nbBatch;
     
     if (pNbChannels && pDimensions && pK && pMagnitudeCoeff && pNbBatch &&
-        weights && gradNorms && outsPrev && outs && indices)
+        weights && gradNorms && outsPrev && deltaPrev && outs && indices)
     {
         width = pDimensions[0];
         height = pDimensions[1];

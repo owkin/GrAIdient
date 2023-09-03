@@ -308,3 +308,165 @@ kernel void vqSeqLoss(
     }}
     losses[elem] = tmp;
 }
+
+kernel void vqGradNormSeqMax(
+     const device float * deltaPrev,
+     constant uint * pNbNeurons,
+     constant uint * pNbThreadgroups,
+     constant uint * pNbBatch,
+     constant uint * pSequence,
+     device float * gradNorms,
+     uint2 groupId [[ threadgroup_position_in_grid ]],
+     uint2 threadId [[ thread_position_in_threadgroup ]],
+     uint2 id [[ thread_position_in_grid ]])
+{
+    constexpr uint threadsPerThreadgroup = 64;
+    threadgroup float normShared[threadsPerThreadgroup];
+    
+    uint nbNeurons;
+    uint nbThreadgroups;
+    uint nbBatch;
+    uint sequence;
+    
+    if (pNbNeurons && pNbThreadgroups && pNbBatch && pSequence &&
+        deltaPrev && gradNorms)
+    {
+        nbNeurons = *pNbNeurons;
+        nbThreadgroups = *pNbThreadgroups;
+        nbBatch = *pNbBatch;
+        sequence = *pSequence;
+    }
+    else
+        return ;
+    
+    uint elem = id[1];
+    uint seq = id[0];
+    
+    if (seq >= sequence || elem >= nbBatch)
+    {
+        return ;
+    }
+    
+    float norm = 0.0;
+    for (uint depth=0; depth<nbNeurons; depth++)
+    {
+        uint offset = depth + nbNeurons * seq + sequence * nbNeurons * elem;
+        
+        norm += pow(deltaPrev[offset], 2.0);
+    }
+    norm = sqrt(norm);
+    
+    normShared[threadId[0]] = norm;
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+    
+    for (uint stride=threadsPerThreadgroup/2; stride>0; stride>>=1)
+    {
+        uint index = threadId[0] + groupId[0] * threadsPerThreadgroup;
+        if (threadId[0] < stride &&
+            (index + stride) < height * width)
+        {
+            normShared[threadId[0]] += normShared[threadId[0] + stride];
+        }
+        threadgroup_barrier(mem_flags::mem_threadgroup);
+    }
+    
+    if (threadId[0] == 0)
+    {
+        uint offset = elem * nbThreadgroups + groupId[0];
+        gradNorms[offset] = normShared[0];
+    }
+}
+
+kernel void vqGradNormSeqForward(
+    const device float * outsPrev,
+    const device float * deltaPrev,
+    const device float * gradNorms,
+    const device float * weights,
+    constant uint * pNbNeurons,
+    constant uint * pK,
+    constant float * pMagnitudeCoeff,
+    constant uint * pNbBatch,
+    constant uint * pSequence,
+    device float * outs,
+    device int * indices,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint nbNeurons;
+    uint K;
+    float magnitudeCoeff;
+    uint nbBatch;
+    uint sequence;
+    
+    if (pNbNeurons && pK && pMagnitudeCoeff && pNbBatch && pSequence &&
+        weights && gradNorms && outsPrev && deltaPrev && outs && indices)
+    {
+        nbNeurons = *pNbNeurons;
+        K = *pK;
+        magnitudeCoeff = *pMagnitudeCoeff;
+        nbBatch = *pNbBatch;
+        sequence = *pSequence;
+    }
+    else
+        return ;
+    
+    uint elem = id[1];
+    uint seq = id[0];
+    
+    if (seq >= sequence || elem >= nbBatch)
+    {
+        return ;
+    }
+    
+    float norm = 0.0;
+    for (uint depth=0; depth<nbNeurons; depth++)
+    {
+        uint offset = depth + nbNeurons * seq + sequence * nbNeurons * elem;
+        
+        norm += pow(deltaPrev[offset], 2.0);
+    }
+    norm = sqrt(norm);
+    
+    if (norm >= gradNorms[elem] / magnitudeCoeff)
+    {
+        int minIndex = -1;
+        float minValue = 0.0;
+        for (uint k=0; k<K; k++)
+        {
+            float value = 0.0;
+            for (uint depth=0; depth<nbNeurons; depth++)
+            {
+                uint offset =
+                    depth + nbNeurons * seq + sequence * nbNeurons * elem;
+                
+                uint offsetWeights = depth + nbNeurons * k;
+                
+                float outPrev = outsPrev[offset];
+                float vq = weights[offsetWeights];
+                value += pow(outPrev - vq, 2.0);
+            }
+            
+            if (minIndex < 0 || value < minValue)
+            {
+                minValue = value;
+                minIndex = k;
+            }
+        }
+        
+        if (minIndex >= 0)
+        {
+            for (uint depth=0; depth<nbNeurons; depth++)
+            {
+                uint offset =
+                    depth + nbNeurons * seq + sequence * nbNeurons * elem;
+                
+                uint offsetWeights = depth + nbNeurons * minIndex;
+                outs[offset] = weights[offsetWeights];
+            }
+            indices[seq + elem * sequence] = minIndex;
+        }
+    }
+    else
+    {
+        indices[seq + elem * sequence] = -1;
+    }
+}

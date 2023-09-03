@@ -226,6 +226,8 @@ let CONFIG_KERNELS =
         "vqSeqBackward",
         "vqSeqBatchDerWeights",
         "vqSeqDerWeights",
-        "vqSeqLoss"
+        "vqSeqLoss",
+        "vqGradNormSeqMax",
+        "vqGradNormSeqForward"
     ]
 ]

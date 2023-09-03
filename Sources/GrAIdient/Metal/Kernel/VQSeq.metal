@@ -126,23 +126,30 @@ kernel void vqSeqBackward(
     uint offset = depth + nbNeurons * seq + sequence * nbNeurons * elem;
     
     int minIndex = indices[seq + elem * sequence];
-    uint offsetWeights = depth + nbNeurons * minIndex;
-    
-    float vq = weights[offsetWeights];
-    float deltaCur = delta[offset];
-    float outPrev = outsPrev[offset];
-    
-    if (dirty)
+    if (minIndex >= 0)
     {
-        deltaPrev[offset] = deltaCur;
+        uint offsetWeights = depth + nbNeurons * minIndex;
+        
+        float vq = weights[offsetWeights];
+        float deltaCur = delta[offset];
+        float outPrev = outsPrev[offset];
+        
+        if (dirty)
+        {
+            deltaPrev[offset] = deltaCur;
+        }
+        else
+        {
+            deltaPrev[offset] += deltaCur;
+        }
+        
+        // Commitment term.
+        deltaPrev[offset] += beta * 2.0 * (outPrev - vq);
     }
-    else
+    else if (dirty)
     {
-        deltaPrev[offset] += deltaCur;
+        deltaPrev[offset] = 0.0;
     }
-    
-    // Commitment term.
-    deltaPrev[offset] += beta * 2.0 * (outPrev - vq);
 }
 
 kernel void vqSeqBatchDerWeights(
@@ -268,6 +275,7 @@ kernel void vqSeqDerWeights(
 kernel void vqSeqLoss(
     const device float * outsPrev,
     const device float * outs,
+    const device int * indices,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
@@ -279,7 +287,7 @@ kernel void vqSeqLoss(
     uint sequence;
     
     if (pNbNeurons && pNbBatch && pSequence &&
-        outsPrev && outs)
+        outsPrev && outs && indices && losses)
     {
         nbNeurons = *pNbNeurons;
         nbBatch = *pNbBatch;
@@ -298,13 +306,18 @@ kernel void vqSeqLoss(
     for (uint depth=0; depth<nbNeurons; depth++) {
     for (uint seq=0; seq<sequence; seq++)
     {
-        uint offset = depth + nbNeurons * seq + sequence * nbNeurons * elem;
-        
-        float outPrev = outsPrev[offset];
-        float vq = outs[offset];
-        float diff = outPrev - vq;
-        
-        tmp += diff * diff;
+        int minIndex = indices[seq + elem * sequence];
+        if (minIndex >= 0)
+        {
+            uint offset =
+                depth + nbNeurons * seq + sequence * nbNeurons * elem;
+            
+            float outPrev = outsPrev[offset];
+            float vq = outs[offset];
+            float diff = outPrev - vq;
+            
+            tmp += diff * diff;
+        }
     }}
     losses[elem] = tmp;
 }

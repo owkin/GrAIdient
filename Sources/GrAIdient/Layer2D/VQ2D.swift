@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import MetalKit
 
 /// Error occuring during the layer forward or backward propagation.
 public enum VQError: Error
@@ -647,7 +648,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
         _backwardWeightsGPU()
     }
     
-    private func _backwardGPU() throws
+    fileprivate func _backwardGPU() throws
     {
         if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
@@ -685,7 +686,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
         }
     }
     
-    private func _backwardWeightsGPU()
+    fileprivate func _backwardWeightsGPU()
     {
         if let layerPrev = self.layerPrev as? Layer2D, computeDeltaWeights
         {
@@ -845,10 +846,11 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
         )
         command.setBuffer(layerPrev.outs.metal, atIndex: 0)
         command.setBuffer(outs.metal, atIndex: 1)
-        command.setBytes(pNbChannels, atIndex: 2)
-        command.setBytes(pDimensions, atIndex: 3)
-        command.setBytes(pNbBatch, atIndex: 4)
-        command.setBuffer(loss.metal, atIndex: 5)
+        command.setBuffer(indices.metal, atIndex: 2)
+        command.setBytes(pNbChannels, atIndex: 3)
+        command.setBytes(pDimensions, atIndex: 4)
+        command.setBytes(pNbBatch, atIndex: 5)
+        command.setBuffer(loss.metal, atIndex: 6)
         
         command.dispatchThreads(batchSize)
         command.enqueue()
@@ -933,11 +935,24 @@ public class VQGradNorm2D: VQ2D
     /// Scale coefficient for taking into account pixels with high magnitude of gradient norm.
     public var magnitudeCoeff: Double = 2.0
     
+    /// Number of threads per thread group in the GPU execution context.
+    private let _threadsPerThreadgroup = 64
+    
     ///
     /// Indices of maximal elements.
     /// Shape ~ (batch, height, width).
     ///
     private var _gradNorm: MetalPrivateBuffer<Float>! = nil
+    
+    /// Number of thread groups in the GPU execution context.
+    var nbThreadgroups: Int
+    {
+        get {
+            let value = Double(height * width) /
+                        Double(_threadsPerThreadgroup)
+            return Int(ceil(value))
+        }
+    }
     
     private enum Keys: String, CodingKey
     {
@@ -1163,5 +1178,103 @@ public class VQGradNorm2D: VQ2D
         }
     }
     
+    ///
+    /// Compute the squared norm in the GPU execution context.
+    ///
+    /// Throw an error if batch size is greater than the first batch size.
+    ///
+    private func _computeGradNormMaxGPU() throws
+    {
+        if let layerPrev = self.layerPrev as? Layer2D, !layerPrev.dirty
+        {
+            // -----------------------------------------------------------------
+            // Begin the reduction that is specific to the gradient norm max.
+            // -----------------------------------------------------------------
+            
+            try checkStateForwardGPU(batchSize: batchSize)
+            
+            let pNbChannels: [UInt32] = [UInt32(nbChannels)]
+            let pNbBatch: [UInt32] = [UInt32(batchSize)]
+            let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
+            let pNbThreadgroups: [UInt32] = [UInt32(nbThreadgroups)]
+            
+            let command = MetalKernel.get.createCommand(
+                "vqGradNorm2DMax", deviceID: deviceID
+            )
+            command.setBuffer(layerPrev.delta.metal, atIndex: 0)
+            command.setBytes(pNbChannels, atIndex: 1)
+            command.setBytes(pDimensions, atIndex: 2)
+            command.setBytes(pNbThreadgroups, atIndex: 3)
+            command.setBytes(pNbBatch, atIndex: 4)
+            command.setBuffer(_gradNorm.metal, atIndex: 5)
+            
+            let threadsPerThreadgroup = MTLSizeMake(
+                _threadsPerThreadgroup, 1, 1
+            )
+            let threadsPerGrid = MTLSize(
+                width: height * width,
+                height: batchSize,
+                depth: 1
+            )
+            command.dispatchThreads(
+                threadsPerGrid: threadsPerGrid,
+                threadsPerThreadgroup: threadsPerThreadgroup
+            )
+            command.enqueue()
+            
+            // Continue the reduction in a more generic way.
+            reduceMax(
+                inBuffer: _gradNorm.metal,
+                outBuffer: _gradNorm.metal,
+                dim1: nbThreadgroups, dim2: batchSize,
+                deviceID: deviceID
+            )
+        }
+    }
+    
+    ///
+    /// Apply the forward pass in the GPU execution context.
+    ///
+    /// Throw an error if batch size is greater than the first batch size.
+    ///
+    public override func forwardGPU() throws
+    {
+        // Reduce the gradient norm max in a dedicated function for performance.
+        try _computeGradNormMaxGPU()
+        
+        if let layerPrev = self.layerPrev as? Layer2D
+        {
+            try checkStateForwardGPU(batchSize: batchSize)
+            
+            let pNbChannels: [UInt32] = [UInt32(nbChannels)]
+            let pNbBatch: [UInt32] = [UInt32(batchSize)]
+            let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
+            let pK: [UInt32] = [UInt32(K)]
+            let pMagnitudeCoeff: [Float] = [Float(magnitudeCoeff)]
+            
+            let command = MetalKernel.get.createCommand(
+                "vqGradNorm2DForward", deviceID: deviceID
+            )
+            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+            command.setBuffer(_gradNorm.metal, atIndex: 1)
+            command.setBuffer(_wBuffers.w.metal, atIndex: 2)
+            command.setBytes(pNbChannels, atIndex: 3)
+            command.setBytes(pDimensions, atIndex: 4)
+            command.setBytes(pK, atIndex: 5)
+            command.setBytes(pMagnitudeCoeff, atIndex: 6)
+            command.setBytes(pNbBatch, atIndex: 7)
+            command.setBuffer(outs.metal, atIndex: 8)
+            command.setBuffer(indices.metal, atIndex: 9)
+            
+            command.dispatchThreads(
+                width: height * width,
+                height: batchSize
+            )
+            command.enqueue()
+        }
+    }
+    
     override func _backwardCPU() {}
+    
+    override func _backwardGPU() throws {}
 }

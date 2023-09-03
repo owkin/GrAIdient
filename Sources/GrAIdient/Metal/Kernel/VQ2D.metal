@@ -133,23 +133,30 @@ kernel void vq2DBackward(
     uint offset = j + (offsetStart + i) * width;
     
     int minIndex = indices[j + (elem * height + i) * width];
-    uint offsetWeights = depth + nbChannels * minIndex;
-    
-    float vq = weights[offsetWeights];
-    float deltaCur = delta[offset];
-    float outPrev = outsPrev[offset];
-    
-    if (dirty)
+    if (minIndex >= 0)
     {
-        deltaPrev[offset] = deltaCur;
+        uint offsetWeights = depth + nbChannels * minIndex;
+        
+        float vq = weights[offsetWeights];
+        float deltaCur = delta[offset];
+        float outPrev = outsPrev[offset];
+        
+        if (dirty)
+        {
+            deltaPrev[offset] = deltaCur;
+        }
+        else
+        {
+            deltaPrev[offset] += deltaCur;
+        }
+        
+        // Commitment term.
+        deltaPrev[offset] += beta * 2.0 * (outPrev - vq);
     }
-    else
+    else if (dirty)
     {
-        deltaPrev[offset] += deltaCur;
+        deltaPrev[offset] = 0.0;
     }
-    
-    // Commitment term.
-    deltaPrev[offset] += beta * 2.0 * (outPrev - vq);
 }
 
 kernel void vq2DBatchDerWeights(
@@ -331,6 +338,7 @@ kernel void vq2DReduceWeights(
 kernel void vq2DLoss(
     const device float * outsPrev,
     const device float * outs,
+    const device int * indices,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pNbBatch,
@@ -341,7 +349,8 @@ kernel void vq2DLoss(
     uint nbChannels;
     uint nbBatch;
     
-    if (pNbChannels && pDimensions && pNbBatch && outsPrev && outs && losses)
+    if (pNbChannels && pDimensions && pNbBatch &&
+        outsPrev && outs && indices && losses)
     {
         width = pDimensions[0];
         height = pDimensions[1];
@@ -365,13 +374,17 @@ kernel void vq2DLoss(
         for (uint i=0; i<height; i++) {
         for (uint j=0; j<width; j++)
         {
-            uint offset = j + (offsetStart + i) * width;
-            
-            float outPrev = outsPrev[offset];
-            float vq = outs[offset];
-            float diff = outPrev - vq;
-            
-            tmp += diff * diff;
+            int minIndex = indices[j + (elem * height + i) * width];
+            if (minIndex >= 0)
+            {
+                uint offset = j + (offsetStart + i) * width;
+                
+                float outPrev = outsPrev[offset];
+                float vq = outs[offset];
+                float diff = outPrev - vq;
+                
+                tmp += diff * diff;
+            }
         }}
     }
     losses[elem] = tmp;

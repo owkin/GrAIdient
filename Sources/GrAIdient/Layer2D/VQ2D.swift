@@ -928,7 +928,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
 }
 
 /// Layer with a 2D shape neural structure and weights.
-public class VQGrad2D: VQ2D
+public class VQGradNorm2D: VQ2D
 {
     /// Scale coefficient for taking into account pixels with high magnitude of gradient norm.
     public var magnitudeCoeff: Double = 2.0
@@ -937,7 +937,7 @@ public class VQGrad2D: VQ2D
     /// Indices of maximal elements.
     /// Shape ~ (batch, height, width).
     ///
-    private var _gradMax: MetalPrivateBuffer<Float>! = nil
+    private var _gradNorm: MetalPrivateBuffer<Float>! = nil
     
     private enum Keys: String, CodingKey
     {
@@ -1017,7 +1017,7 @@ public class VQGrad2D: VQ2D
         let params = GrAI.Model.Params(context: context)
         params.context.curID = id
             
-        let layer = VQGrad2D(
+        let layer = VQGradNorm2D(
             layerPrev: layerPrev, K: K, params: params
         )
         layer.magnitudeCoeff = magnitudeCoeff
@@ -1053,7 +1053,7 @@ public class VQGrad2D: VQ2D
     public override func resetKernelGPU()
     {
         super.resetKernelGPU()
-        _gradMax = nil
+        _gradNorm = nil
     }
     
     ///
@@ -1066,9 +1066,9 @@ public class VQGrad2D: VQ2D
     {
         try super.checkStateForwardGPU(batchSize: batchSize)
         
-        if _gradMax == nil
+        if _gradNorm == nil
         {
-            _gradMax = MetalPrivateBuffer<Float>(
+            _gradNorm = MetalPrivateBuffer<Float>(
                 batchSize * height * width,
                 deviceID: deviceID
             )
@@ -1091,33 +1091,34 @@ public class VQGrad2D: VQ2D
             
             for elem in 0..<batchSize
             {
-                var gradMax = 0.0
+                var gradNormMax = 0.0
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    var grad: Double = 0.0
+                    var gradNorm: Double = 0.0
                     for depth in 0..<nbChannels
                     {
                         let deltaPrev =
                             neuronsPrev[depth].get(i, j)!.v[elem].delta
-                        grad += pow(deltaPrev, 2.0)
+                        gradNorm += pow(deltaPrev, 2.0)
                     }
-                    gradMax = max(grad, gradMax)
+                    gradNorm = sqrt(gradNorm)
+                    gradNormMax = max(gradNorm, gradNormMax)
                 }}
-                gradMax = sqrt(gradMax)
                 
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    var grad: Double = 0.0
+                    var gradNorm: Double = 0.0
                     for depth in 0..<nbChannels
                     {
                         let deltaPrev =
                             neuronsPrev[depth].get(i, j)!.v[elem].delta
-                        grad += pow(deltaPrev, 2.0)
+                        gradNorm += pow(deltaPrev, 2.0)
                     }
+                    gradNorm = sqrt(gradNorm)
                     
-                    if grad >= gradMax / magnitudeCoeff
+                    if gradNorm >= gradNormMax / magnitudeCoeff
                     {
                         var minIndex = -1
                         var minValue: Double? = nil

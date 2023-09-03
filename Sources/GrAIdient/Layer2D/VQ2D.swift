@@ -1097,8 +1097,12 @@ public class VQGradNorm2D: VQ2D
     ///
     public override func forwardCPU() throws
     {
-        if let layerPrev = self.layerPrev as? Layer2D, !layerPrev.dirty
+        if let layerPrev = self.layerPrev as? Layer2D
         {
+            if layerPrev.dirty
+            {
+                throw UpdateError.Dirty
+            }
             try checkStateCPU(batchSize: batchSize)
             
             let neuronsPrev = layerPrev.neurons
@@ -1106,7 +1110,7 @@ public class VQGradNorm2D: VQ2D
             
             for elem in 0..<batchSize
             {
-                var gradNormMax = 0.0
+                var gradNormMax: Double = 0.0
                 for i in 0..<height {
                 for j in 0..<width
                 {
@@ -1171,7 +1175,7 @@ public class VQGradNorm2D: VQ2D
                     }
                     else
                     {
-                        indicesPtr[j + (elem * height + i) * width] = Int32(-1)
+                        indicesPtr[j + (elem * height + i) * width] = -1
                     }
                 }}
             }
@@ -1185,8 +1189,13 @@ public class VQGradNorm2D: VQ2D
     ///
     private func _computeGradNormMaxGPU() throws
     {
-        if let layerPrev = self.layerPrev as? Layer2D, !layerPrev.dirty
+        if let layerPrev = self.layerPrev as? Layer2D
         {
+            if layerPrev.dirty
+            {
+                throw UpdateError.Dirty
+            }
+            
             // -----------------------------------------------------------------
             // Begin the reduction that is specific to the gradient norm max.
             // -----------------------------------------------------------------

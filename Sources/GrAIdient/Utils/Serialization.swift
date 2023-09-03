@@ -92,7 +92,8 @@ let LAYER_REGISTRY: [String: Codable.Type] = buildRegistry(
     ValueSeq.self,
     VQ2D.self,
     VQGradNorm2D.self,
-    VQSeq.self,
+    VQGradNormSeq.self,
+    VQSeq.self
 ])
 
 ///

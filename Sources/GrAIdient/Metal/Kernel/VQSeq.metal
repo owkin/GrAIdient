@@ -376,7 +376,7 @@ kernel void vqGradNormSeqMax(
     {
         uint index = threadId[0] + groupId[0] * threadsPerThreadgroup;
         if (threadId[0] < stride &&
-            (index + stride) < height * width)
+            (index + stride) < sequence)
         {
             normShared[threadId[0]] += normShared[threadId[0] + stride];
         }

@@ -390,7 +390,7 @@ kernel void vq2DLoss(
     losses[elem] = tmp;
 }
 
-kernel void vqGradNorm2DMax(
+kernel void vqGrad2DMax(
      const device float * deltaPrev,
      constant uint * pNbChannels,
      constant uint * pDimensions,
@@ -449,7 +449,10 @@ kernel void vqGradNorm2DMax(
         if (threadId[0] < stride &&
             (index + stride) < height * width)
         {
-            normShared[threadId[0]] += normShared[threadId[0] + stride];
+            normShared[threadId[0]] = max(
+                normShared[threadId[0] + stride],
+                normShared[threadId[0]]
+            );
         }
         threadgroup_barrier(mem_flags::mem_threadgroup);
     }
@@ -461,7 +464,7 @@ kernel void vqGradNorm2DMax(
     }
 }
 
-kernel void vqGradNorm2DForward(
+kernel void vqGrad2DForward(
     const device float * outsPrev,
     const device float * deltaPrev,
     const device float * gradNorms,

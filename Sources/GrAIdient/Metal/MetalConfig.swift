@@ -218,8 +218,8 @@ let CONFIG_KERNELS =
         "vq2DDerWeights",
         "vq2DReduceWeights",
         "vq2DLoss",
-        "vqGradNorm2DMax",
-        "vqGradNorm2DForward"
+        "vqGrad2DMax",
+        "vqGrad2DForward"
     ],
     "VQSeq": [
         "vqSeqForward",
@@ -227,7 +227,7 @@ let CONFIG_KERNELS =
         "vqSeqBatchDerWeights",
         "vqSeqDerWeights",
         "vqSeqLoss",
-        "vqGradNormSeqMax",
-        "vqGradNormSeqForward"
+        "vqGradSeqMax",
+        "vqGradSeqForward"
     ]
 ]

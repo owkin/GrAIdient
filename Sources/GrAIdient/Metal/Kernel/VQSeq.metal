@@ -322,7 +322,7 @@ kernel void vqSeqLoss(
     losses[elem] = tmp;
 }
 
-kernel void vqGradNormSeqMax(
+kernel void vqGradSeqMax(
      const device float * deltaPrev,
      constant uint * pNbNeurons,
      constant uint * pNbThreadgroups,
@@ -378,7 +378,10 @@ kernel void vqGradNormSeqMax(
         if (threadId[0] < stride &&
             (index + stride) < sequence)
         {
-            normShared[threadId[0]] += normShared[threadId[0] + stride];
+            normShared[threadId[0]] = max(
+                normShared[threadId[0] + stride],
+                normShared[threadId[0]]
+            );
         }
         threadgroup_barrier(mem_flags::mem_threadgroup);
     }
@@ -390,7 +393,7 @@ kernel void vqGradNormSeqMax(
     }
 }
 
-kernel void vqGradNormSeqForward(
+kernel void vqGradSeqForward(
     const device float * outsPrev,
     const device float * deltaPrev,
     const device float * gradNorms,

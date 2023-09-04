@@ -5908,7 +5908,7 @@ class VQ2DTransformTests: VQ2DFlowTests
     }
 }
 
-class VQGradNorm2DTests: XCTestCase
+class VQGrad2DTests: XCTestCase
 {
     var height = 6
     var width = 6
@@ -5957,7 +5957,7 @@ class VQGradNorm2DTests: XCTestCase
         context = ModelContext(name: "VQBranch", models: [mainBranch])
         params = GrAI.Model.Params(context: context)
         
-        _ = VQGradNorm2D(layerPrev: layer, K: 5, params: params)
+        _ = VQGrad2D(layerPrev: layer, K: 5, params: params)
         
         let vqBranch = Model(model: context.model, modelsPrev: [mainBranch])
         
@@ -6086,47 +6086,67 @@ class VQGradNorm2DTests: XCTestCase
         )
         
         let lastLayerCPU = mainCPU.layers.last as! MSE1D
-        let vqLayerCPU = vqCPU.layers.last as! VQ2D
+        let vqLayerCPU = vqCPU.layers.last as! VQGrad2D
         let lastLayerGPU = mainGPU.layers.last as! MSE1D
-        let vqLayerGPU = vqGPU.layers.last as! VQ2D
+        let vqLayerGPU = vqGPU.layers.last as! VQGrad2D
         
         lastLayerCPU.coeff = -1.0
         lastLayerGPU.coeff = -1.0
+        vqLayerCPU.magnitudeCoeff = 1.1
+        vqLayerGPU.magnitudeCoeff = 1.1
         
-        GrAI.Opti.CPU = true
-        
-        let (inputs, batchSize) = setData(nil, mainCPU)
-        mainCPU.updateKernel(batchSize: batchSize)
-        vqCPU.updateKernel(batchSize: batchSize)
-        
-        try! mainCPU.forward()
-        try! lastLayerCPU.lossDerivativeCPU(
-            [[Double]](repeating: [0.0], count: batchSize),
-            batchSize: batchSize,
-            nbNeurons: 1
-        )
-        try! mainCPU.backward()
-        
-        try! vqCPU.forward()
-        try! vqLayerCPU.lossDerivativeCPU()
-        let lossCPU: Double = vqLayerCPU.getLossCPU()
-        
-        GrAI.Opti.GPU = true
-        
-        _ = setData(inputs, mainGPU)
-        mainGPU.updateKernel(batchSize: batchSize)
-        vqGPU.updateKernel(batchSize: batchSize)
-        
-        try! mainGPU.forward()
-        try! lastLayerGPU.lossDerivativeGPU(
-            [[Double]](repeating: [0.0], count: batchSize),
-            batchSize: batchSize,
-            nbNeurons: 1
-        )
-        try! mainGPU.backward()
-        
-        try! vqGPU.forward()
-        try! vqLayerGPU.lossDerivativeGPU()
-        let lossGPU: Double = try! vqLayerGPU.getLossGPU()
+        var numLoop = 0
+        while numLoop < optimizerParams.nbLoops
+        {
+            GrAI.Opti.CPU = true
+            
+            let (inputs, batchSize) = setData(nil, mainCPU)
+            mainCPU.updateKernel(batchSize: batchSize)
+            vqCPU.updateKernel(batchSize: batchSize)
+            
+            try! mainCPU.forward()
+            try! lastLayerCPU.lossDerivativeCPU(
+                [[Double]](repeating: [0.0], count: batchSize),
+                batchSize: batchSize,
+                nbNeurons: 1
+            )
+            try! mainCPU.backward()
+            try! mainCPU.update()
+            
+            try! vqCPU.forward()
+            try! vqLayerCPU.lossDerivativeCPU()
+            let lossCPU: Double = vqLayerCPU.getLossCPU()
+            try! vqCPU.update()
+            
+            GrAI.Opti.GPU = true
+            
+            _ = setData(inputs, mainGPU)
+            mainGPU.updateKernel(batchSize: batchSize)
+            vqGPU.updateKernel(batchSize: batchSize)
+            
+            try! mainGPU.forward()
+            try! lastLayerGPU.lossDerivativeGPU(
+                [[Double]](repeating: [0.0], count: batchSize),
+                batchSize: batchSize,
+                nbNeurons: 1
+            )
+            try! mainGPU.backward()
+            try! mainGPU.update()
+            
+            try! vqGPU.forward()
+            try! vqLayerGPU.lossDerivativeGPU()
+            let lossGPU: Double = try! vqLayerGPU.getLossGPU()
+            try! vqGPU.update()
+            
+            let diff = (lossGPU - lossCPU) * (lossGPU - lossCPU) /
+                       (lossCPU * lossCPU + lossGPU * lossGPU)
+            XCTAssert(diff < 0.001)
+            
+            mainCPU.incStep()
+            vqCPU.incStep()
+            mainGPU.incStep()
+            vqGPU.incStep()
+            numLoop += 1
+        }
     }
 }

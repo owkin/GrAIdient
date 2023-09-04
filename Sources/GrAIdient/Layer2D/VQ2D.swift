@@ -930,7 +930,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
 }
 
 /// Layer with a 2D shape neural structure and weights.
-public class VQGradNorm2D: VQ2D
+public class VQGrad2D: VQ2D
 {
     /// Scale coefficient for taking into account pixels with high magnitude of gradient norm.
     public var magnitudeCoeff: Double = 2.0
@@ -1032,7 +1032,7 @@ public class VQGradNorm2D: VQ2D
         let params = GrAI.Model.Params(context: context)
         params.context.curID = id
             
-        let layer = VQGradNorm2D(
+        let layer = VQGrad2D(
             layerPrev: layerPrev, K: K, params: params
         )
         layer.magnitudeCoeff = magnitudeCoeff
@@ -1084,7 +1084,7 @@ public class VQGradNorm2D: VQ2D
         if _gradNorm == nil
         {
             _gradNorm = MetalPrivateBuffer<Float>(
-                batchSize * height * width,
+                batchSize * nbThreadgroups,
                 deviceID: deviceID
             )
         }
@@ -1208,7 +1208,7 @@ public class VQGradNorm2D: VQ2D
             let pNbThreadgroups: [UInt32] = [UInt32(nbThreadgroups)]
             
             let command = MetalKernel.get.createCommand(
-                "vqGradNorm2DMax", deviceID: deviceID
+                "vqGrad2DMax", deviceID: deviceID
             )
             command.setBuffer(layerPrev.delta.metal, atIndex: 0)
             command.setBytes(pNbChannels, atIndex: 1)
@@ -1266,7 +1266,7 @@ public class VQGradNorm2D: VQ2D
             let pMagnitudeCoeff: [Float] = [Float(magnitudeCoeff)]
             
             let command = MetalKernel.get.createCommand(
-                "vqGradNorm2DForward", deviceID: deviceID
+                "vqGrad2DForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBuffer(layerPrev.delta.metal, atIndex: 1)

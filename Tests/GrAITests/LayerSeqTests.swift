@@ -2411,7 +2411,10 @@ class VQGradSeqTests: XCTestCase
             deviceID: DEVICE_ID
         )
         
-        let branches = Model.copy(models: [mainBranch, vqBranch], inPlace: true)
+        let branches = Model.copy(
+            models: [mainBranch, vqBranch],
+            inPlace: true
+        )
         mainBranch = branches[0]
         vqBranch = branches[1]
         

@@ -5935,7 +5935,7 @@ class VQGrad2DTests: XCTestCase
     ///
     /// - Returns:
     ///     (frist branch, last branch of the model).
-    ///     
+    ///
     func buildModel() -> (Model, Model)
     {
         var context = ModelContext(name: "MainBranch", curID: 0)
@@ -6267,7 +6267,10 @@ class VQGrad2DTests: XCTestCase
             deviceID: DEVICE_ID
         )
         
-        let branches = Model.copy(models: [mainBranch, vqBranch], inPlace: true)
+        let branches = Model.copy(
+            models: [mainBranch, vqBranch],
+            inPlace: true
+        )
         mainBranch = branches[0]
         vqBranch = branches[1]
         

@@ -5908,6 +5908,7 @@ class VQ2DTransformTests: VQ2DFlowTests
     }
 }
 
+// Tests for the VQGrad2D layer.
 class VQGrad2DTests: XCTestCase
 {
     var height = 6
@@ -5929,6 +5930,12 @@ class VQGrad2DTests: XCTestCase
         optimizerParams.nbLoops = 3
     }
     
+    ///
+    /// Build the two branches of the model.
+    ///
+    /// - Returns:
+    ///     (frist branch, last branch of the model).
+    ///     
     func buildModel() -> (Model, Model)
     {
         var context = ModelContext(name: "MainBranch", curID: 0)
@@ -6146,6 +6153,160 @@ class VQGrad2DTests: XCTestCase
             vqCPU.incStep()
             mainGPU.incStep()
             vqGPU.incStep()
+            numLoop += 1
+        }
+    }
+    
+    func testLoad()
+    {
+        GrAI.Opti.GPU = true
+        var (mainBranch, vqBranch) = buildModel()
+        
+        randomSelectWeightsInitializationScheme(model: mainBranch)
+        randomSelectWeightsInitializationScheme(model: vqBranch)
+        
+        mainBranch.initialize(
+            params: optimizerParams,
+            phase: .Inference,
+            deviceID: DEVICE_ID
+        )
+        vqBranch.initialize(
+            params: optimizerParams,
+            phase: .Inference,
+            deviceID: DEVICE_ID
+        )
+        
+        let folderURL = FileManager.default.temporaryDirectory
+        let mainPath =
+            folderURL.appendingPathComponent("testMain.plist").path
+        let vqPath =
+            folderURL.appendingPathComponent("testVQ.plist").path
+        
+        let encoder = PropertyListEncoder()
+    
+        var data = try! encoder.encode(mainBranch)
+        try! data.write(to: URL(fileURLWithPath: mainPath))
+        
+        data = try! encoder.encode(vqBranch)
+        try! data.write(to: URL(fileURLWithPath: vqPath))
+        
+        data = try! Data(contentsOf: URL(fileURLWithPath: mainPath))
+        let mainBase = try! PropertyListDecoder().decode(
+            BaseModel.self, from: data
+        )
+        data = try! Data(contentsOf: URL(fileURLWithPath: vqPath))
+        let vqBase = try! PropertyListDecoder().decode(
+            BaseModel.self, from: data
+        )
+        
+        mainBranch = Model(model: mainBase, modelsPrev: [])
+        vqBranch = Model(model: vqBase, modelsPrev: [mainBranch])
+        
+        mainBranch.initialize(
+            params: optimizerParams,
+            phase: .Inference,
+            deviceID: DEVICE_ID
+        )
+        vqBranch.initialize(
+            params: optimizerParams,
+            phase: .Inference,
+            deviceID: DEVICE_ID
+        )
+        
+        let lastLayer = mainBranch.layers.last as! MSE1D
+        let vqLayer = vqBranch.layers.last as! VQGrad2D
+        
+        lastLayer.coeff = -1.0
+        vqLayer.magnitudeCoeff = 1.1
+        
+        var numLoop = 0
+        while numLoop < optimizerParams.nbLoops
+        {
+            let (_, batchSize) = setData(nil, mainBranch)
+            mainBranch.updateKernel(batchSize: batchSize)
+            vqBranch.updateKernel(batchSize: batchSize)
+            
+            try! mainBranch.forward()
+            try! lastLayer.lossDerivativeGPU(
+                [[Double]](repeating: [0.0], count: batchSize),
+                batchSize: batchSize,
+                nbNeurons: 1
+            )
+            try! mainBranch.backward()
+            try! mainBranch.update()
+            
+            try! vqBranch.forward()
+            try! vqLayer.lossDerivativeGPU()
+            let lossVal: Double = try! vqLayer.getLossGPU()
+            try! vqBranch.update()
+            
+            print(lossVal)
+            
+            mainBranch.incStep()
+            vqBranch.incStep()
+            numLoop += 1
+        }
+    }
+    
+    func testTransform()
+    {
+        GrAI.Opti.GPU = true
+        var (mainBranch, vqBranch) = buildModel()
+        
+        randomSelectWeightsInitializationScheme(model: mainBranch)
+        randomSelectWeightsInitializationScheme(model: vqBranch)
+        
+        mainBranch.initialize(
+            params: optimizerParams,
+            phase: .Inference,
+            deviceID: DEVICE_ID
+        )
+        vqBranch.initialize(
+            params: optimizerParams,
+            phase: .Inference,
+            deviceID: DEVICE_ID
+        )
+        
+        let branches = Model.copy(models: [mainBranch, vqBranch], inPlace: true)
+        mainBranch = branches[0]
+        vqBranch = branches[1]
+        
+        mainBranch.setupOptimizers(params: optimizerParams)
+        vqBranch.setupOptimizers(params: optimizerParams)
+        mainBranch.phase = .Inference
+        vqBranch.phase = .Inference
+        
+        let lastLayer = mainBranch.layers.last as! MSE1D
+        let vqLayer = vqBranch.layers.last as! VQGrad2D
+        
+        lastLayer.coeff = -1.0
+        vqLayer.magnitudeCoeff = 1.1
+        
+        var numLoop = 0
+        while numLoop < optimizerParams.nbLoops
+        {
+            let (_, batchSize) = setData(nil, mainBranch)
+            mainBranch.updateKernel(batchSize: batchSize)
+            vqBranch.updateKernel(batchSize: batchSize)
+            
+            try! mainBranch.forward()
+            try! lastLayer.lossDerivativeGPU(
+                [[Double]](repeating: [0.0], count: batchSize),
+                batchSize: batchSize,
+                nbNeurons: 1
+            )
+            try! mainBranch.backward()
+            try! mainBranch.update()
+            
+            try! vqBranch.forward()
+            try! vqLayer.lossDerivativeGPU()
+            let lossVal: Double = try! vqLayer.getLossGPU()
+            try! vqBranch.update()
+            
+            print(lossVal)
+            
+            mainBranch.incStep()
+            vqBranch.incStep()
             numLoop += 1
         }
     }

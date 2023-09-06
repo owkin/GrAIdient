@@ -585,7 +585,8 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
                     
                     // Commitment term.
                     neuronsPrev[depth].get(i, j)!.v[elem].delta +=
-                        beta * 2.0 * (outPrev - vq)
+                        beta / Double(batchSize * height * width) *
+                        2.0 * (outPrev - vq)
                 }}
                 else if layerPrev.dirty {
                 for depth in 0..<nbChannels
@@ -628,8 +629,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
                     let g = _wArrays.g(minIndex, depth)
                     _wArrays.g(
                         minIndex, depth,
-                        g + coeff /
-                        Double(batchSize * nbChannels * height * width) *
+                        g + coeff / Double(batchSize * height * width) *
                         2.0 * (vq - outPrev)
                     )
                 }}
@@ -822,7 +822,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
                 }
             }}}
         }
-        return T(coeff) / T(batchSize * nbChannels * height * width) *
+        return T(coeff) / T(batchSize * height * width) *
             losses.reduce(0, +)
     }
     
@@ -863,7 +863,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
             loss += lossPtr[i]
         }
         
-        return T(coeff) * T(loss) / T(batchSize * nbChannels * height * width)
+        return T(coeff) * T(loss) / T(batchSize * height * width)
     }
     
     /// Compute the derivative of the loss in the CPU execution context.

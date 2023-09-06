@@ -508,7 +508,8 @@ public class VQSeq: LayerSeq, LayerWeightInit
                     
                     // Commitment term.
                     neuronsPrev.get(seq, depth)!.v[elem].delta +=
-                        beta * 2.0 * (outPrev - vq)
+                        beta / Double(batchSize * sequence) *
+                        2.0 * (outPrev - vq)
                 }}
                 else if layerPrev.dirty {
                 for depth in 0..<nbNeurons
@@ -549,7 +550,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
                     let g = _wArrays.g(minIndex, depth)
                     _wArrays.g(
                         minIndex, depth,
-                        g + coeff / Double(batchSize * nbNeurons * sequence) *
+                        g + coeff / Double(batchSize * sequence) *
                         2.0 * (vq - outPrev)
                     )
                 }}
@@ -740,7 +741,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
                 }
             }}
         }
-        return T(coeff) / T(batchSize * nbNeurons * sequence) *
+        return T(coeff) / T(batchSize * sequence) *
             losses.reduce(0, +)
     }
     
@@ -781,7 +782,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
             loss += lossPtr[i]
         }
         
-        return T(coeff) * T(loss) / T(batchSize * nbNeurons * sequence)
+        return T(coeff) * T(loss) / T(batchSize * sequence)
     }
     
     /// Compute the derivative of the loss in the CPU execution context.

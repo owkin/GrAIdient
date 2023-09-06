@@ -144,7 +144,8 @@ kernel void vqSeqBackward(
         }
         
         // Commitment term.
-        deltaPrev[offset] += beta * 2.0 * (outPrev - vq);
+        deltaPrev[offset] += beta / (float)(nbBatch * sequence) *
+            2.0 * (outPrev - vq);
     }
     else if (dirty)
     {
@@ -207,7 +208,7 @@ kernel void vqSeqBatchDerWeights(
             sum += vq - outPrev;
         }
     }}
-    sum *= coeff / (float)(nbBatch * nbNeurons * sequence) * 2.0;
+    sum *= coeff / (float)(nbBatch * sequence) * 2.0;
     
     grads[depth + nbNeurons * k] += sum;
 }
@@ -267,7 +268,7 @@ kernel void vqSeqDerWeights(
             sum += vq - outPrev;
         }
     }
-    sum *= coeff / (float)(nbBatch * nbNeurons * sequence) * 2.0;
+    sum *= coeff / (float)(nbBatch * sequence) * 2.0;
     
     deltaWeights[depth + nbNeurons * k + K * nbNeurons * elem] += sum;
 }

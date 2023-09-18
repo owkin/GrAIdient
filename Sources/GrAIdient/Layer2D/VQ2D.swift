@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import MetalKit
 
 /// Error occuring during the layer forward or backward propagation.
 public enum VQError: Error
@@ -552,7 +553,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
         _backwardWeightsCPU()
     }
     
-    private func _backwardCPU()
+    fileprivate func _backwardCPU()
     {
         if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
@@ -564,6 +565,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
             for j in 0..<width
             {
                 let minIndex = Int(indicesPtr[j + (elem * height + i) * width])
+                if minIndex >= 0 {
                 for depth in 0..<nbChannels
                 {
                     let vq = _wArrays.w(minIndex, depth)
@@ -583,14 +585,20 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
                     
                     // Commitment term.
                     neuronsPrev[depth].get(i, j)!.v[elem].delta +=
-                        beta * 2.0 * (outPrev - vq)
-                }
+                        beta / Double(batchSize * height * width) *
+                        2.0 * (outPrev - vq)
+                }}
+                else if layerPrev.dirty {
+                for depth in 0..<nbChannels
+                {
+                    neuronsPrev[depth].get(i, j)!.v[elem].delta = 0.0
+                }}
             }}}
             propagateDirty()
         }
     }
     
-    private func _backwardWeightsCPU()
+    fileprivate func _backwardWeightsCPU()
     {
         if let layerPrev = self.layerPrev as? Layer2D, computeDeltaWeights
         {
@@ -612,6 +620,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
             {
                 let minIndex =
                     Int(indicesPtr[j + (elem * height + i) * width])
+                if minIndex >= 0 {
                 for depth in 0..<nbChannels
                 {
                     let vq = _wArrays.w(minIndex, depth)
@@ -620,11 +629,10 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
                     let g = _wArrays.g(minIndex, depth)
                     _wArrays.g(
                         minIndex, depth,
-                        g + coeff /
-                        Double(batchSize * nbChannels * height * width) *
+                        g + coeff / Double(batchSize * height * width) *
                         2.0 * (vq - outPrev)
                     )
-                }
+                }}
             }}}
         }
     }
@@ -640,7 +648,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
         _backwardWeightsGPU()
     }
     
-    private func _backwardGPU() throws
+    fileprivate func _backwardGPU() throws
     {
         if let layerPrev = self.layerPrev as? Layer2D, mustComputeBackward
         {
@@ -678,7 +686,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
         }
     }
     
-    private func _backwardWeightsGPU()
+    fileprivate func _backwardWeightsGPU()
     {
         if let layerPrev = self.layerPrev as? Layer2D, computeDeltaWeights
         {
@@ -793,22 +801,28 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
         if let layerPrev = self.layerPrev as? Layer2D
         {
             let neuronsPrev = layerPrev.neurons
+            let indicesPtr = (indices as! MetalSharedBuffer<Int32>).buffer
             
             for elem in 0..<batchSize {
             for i in 0..<height {
             for j in 0..<width
             {
-                var value: Double = 0.0
-                for depth in 0..<nbChannels
+                let minIndex =
+                    Int(indicesPtr[j + (elem * height + i) * width])
+                if minIndex >= 0
                 {
-                    let outPrev = neuronsPrev[depth].get(i, j)!.v[elem].out
-                    let vq = neurons[depth].get(i, j)!.v[elem].out
-                    value += pow(outPrev - vq, 2.0)
+                    var value: Double = 0.0
+                    for depth in 0..<nbChannels
+                    {
+                        let outPrev = neuronsPrev[depth].get(i, j)!.v[elem].out
+                        let vq = neurons[depth].get(i, j)!.v[elem].out
+                        value += pow(outPrev - vq, 2.0)
+                    }
+                    losses[elem] += T(value)
                 }
-                losses[elem] += T(value)
             }}}
         }
-        return T(coeff) / T(batchSize * nbChannels * height * width) *
+        return T(coeff) / T(batchSize * height * width) *
             losses.reduce(0, +)
     }
     
@@ -832,10 +846,11 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
         )
         command.setBuffer(layerPrev.outs.metal, atIndex: 0)
         command.setBuffer(outs.metal, atIndex: 1)
-        command.setBytes(pNbChannels, atIndex: 2)
-        command.setBytes(pDimensions, atIndex: 3)
-        command.setBytes(pNbBatch, atIndex: 4)
-        command.setBuffer(loss.metal, atIndex: 5)
+        command.setBuffer(indices.metal, atIndex: 2)
+        command.setBytes(pNbChannels, atIndex: 3)
+        command.setBytes(pDimensions, atIndex: 4)
+        command.setBytes(pNbBatch, atIndex: 5)
+        command.setBuffer(loss.metal, atIndex: 6)
         
         command.dispatchThreads(batchSize)
         command.enqueue()
@@ -848,7 +863,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
             loss += lossPtr[i]
         }
         
-        return T(coeff) * T(loss) / T(batchSize * nbChannels * height * width)
+        return T(coeff) * T(loss) / T(batchSize * height * width)
     }
     
     /// Compute the derivative of the loss in the CPU execution context.
@@ -912,4 +927,368 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
     {
         return [_wBuffers]
     }
+}
+
+/// Layer with a 2D shape neural structure and weights.
+public class VQGrad2D: VQ2D
+{
+    /// Scale coefficient for taking into account pixels with high magnitude of gradient norm.
+    public var magnitudeCoeff: Double = 2.0
+    
+    /// Number of threads per thread group in the GPU execution context.
+    private let _threadsPerThreadgroup = 64
+    
+    ///
+    /// Indices of maximal elements.
+    /// Shape ~ (batch, height, width).
+    ///
+    private var _gradNorm: MetalPrivateBuffer<Float>! = nil
+    
+    /// Number of thread groups in the GPU execution context.
+    var nbThreadgroups: Int
+    {
+        get {
+            let value = Double(height * width) /
+                        Double(_threadsPerThreadgroup)
+            return Int(ceil(value))
+        }
+    }
+    
+    private enum Keys: String, CodingKey
+    {
+        case magnitudeCoeff
+    }
+    
+    ///
+    /// Create a layer with a 2D shape neural structure.
+    ///
+    /// - Parameters:
+    ///     - layerPrev: Previous layer that has been queued to the model.
+    ///     - K: The number of vector approximations.
+    ///     - params: Contextual parameters linking to the model.
+    ///
+    public override init(layerPrev: Layer2D,
+                         K: Int,
+                         params: GrAI.Model.Params)
+    {
+        super.init(layerPrev: layerPrev, K: K, params: params)
+    }
+    
+    ///
+    /// Decode from the disk.
+    ///
+    /// Throw an error if reading from the decoder fails, or
+    /// if the data read is corrupted or otherwise invalid.
+    ///
+    /// - Parameter decoder: The decoder to read data from.
+    ///
+    public required init(from decoder: Decoder) throws
+    {
+        let container = try decoder.container(keyedBy: Keys.self)
+        let magnitudeCoeff = try container.decode(
+            Float.self, forKey: .magnitudeCoeff
+        )
+        self.magnitudeCoeff = Double(magnitudeCoeff)
+        try super.init(from: decoder)
+    }
+    
+    ///
+    /// Encode to the disk.
+    ///
+    /// If the value fails to encode anything, `encoder` will encode an empty
+    /// keyed container in its place.
+    ///
+    /// Throw an error if any values are invalid for the given
+    /// encoder's format.
+    ///
+    /// - Parameter encoder: The encoder to write data to.
+    ///
+    public override func encode(to encoder: Encoder) throws
+    {
+        var container = encoder.container(keyedBy: Keys.self)
+        try container.encode(Float(magnitudeCoeff), forKey: .magnitudeCoeff)
+        try super.encode(to: encoder)
+    }
+    
+    ///
+    /// Create a layer with same values as this.
+    ///
+    /// - Parameters:
+    ///     - mapping: Dictionary allowing to find the layer associated to some id.
+    ///     This dictionary is particularly useful when the different layers cannot access
+    ///     their `layerPrev`.
+    ///     - inPlace: Whether hard resources should be copied as is.
+    ///
+    /// - Returns: A new layer. When `inPlace` is false, `initKernel` is
+    /// necessary in order to recreate hard resources.
+    ///
+    public override func copy(
+        mapping: Dictionary<Int, Layer>,
+        inPlace: Bool) -> Layer
+    {
+        let context = ModelContext(name: "", curID: 0)
+        let layerPrev = mapping[idPrev] as! Layer2D
+        
+        let params = GrAI.Model.Params(context: context)
+        params.context.curID = id
+            
+        let layer = VQGrad2D(
+            layerPrev: layerPrev, K: K, params: params
+        )
+        layer.magnitudeCoeff = magnitudeCoeff
+        layer.coeff = coeff
+        layer.beta = beta
+        
+        if inPlace
+        {
+            layer._wArrays = _wArrays
+            layer._wBuffers = _wBuffers
+        }
+        else
+        {
+            if GrAI.Opti.GPU
+            {
+                layer.weightsGPU = weightsGPU
+            }
+            else
+            {
+                layer.weightsCPU = weightsCPU
+            }
+        }
+        return layer
+    }
+    
+    ///
+    /// Clean state resources in the GPU execution context.
+    ///
+    /// We first clean the neurons' state (forward and backward).
+    /// We do not clean weights and biases but must reset their delta (dependent on batch size) and
+    /// momentum state.
+    ///
+    public override func resetKernelGPU()
+    {
+        super.resetKernelGPU()
+        _gradNorm = nil
+    }
+    
+    ///
+    /// Initialize state resources in the GPU execution context.
+    ///
+    /// We initialize the neurons' forward state.
+    /// We initialize the weights and biases' delta.
+    ///
+    public override func checkStateForwardGPU(batchSize: Int) throws
+    {
+        try super.checkStateForwardGPU(batchSize: batchSize)
+        
+        if _gradNorm == nil
+        {
+            _gradNorm = MetalPrivateBuffer<Float>(
+                batchSize * nbThreadgroups,
+                deviceID: deviceID
+            )
+        }
+    }
+    
+    ///
+    /// Apply the forward pass in the CPU execution context.
+    ///
+    /// Throw an error if batch size is greater than the first batch size.
+    ///
+    public override func forwardCPU() throws
+    {
+        if let layerPrev = self.layerPrev as? Layer2D
+        {
+            if layerPrev.dirty
+            {
+                throw UpdateError.Dirty
+            }
+            try checkStateCPU(batchSize: batchSize)
+            
+            let neuronsPrev = layerPrev.neurons
+            let indicesPtr = (indices as! MetalSharedBuffer<Int32>).buffer
+            
+            for elem in 0..<batchSize
+            {
+                var gradNormMax: Double = 0.0
+                for i in 0..<height {
+                for j in 0..<width
+                {
+                    var gradNorm: Double = 0.0
+                    for depth in 0..<nbChannels
+                    {
+                        let deltaPrev =
+                            neuronsPrev[depth].get(i, j)!.v[elem].delta
+                        gradNorm += pow(deltaPrev, 2.0)
+                    }
+                    gradNorm = sqrt(gradNorm)
+                    gradNormMax = max(gradNorm, gradNormMax)
+                }}
+                
+                for i in 0..<height {
+                for j in 0..<width
+                {
+                    var gradNorm: Double = 0.0
+                    for depth in 0..<nbChannels
+                    {
+                        let deltaPrev =
+                            neuronsPrev[depth].get(i, j)!.v[elem].delta
+                        gradNorm += pow(deltaPrev, 2.0)
+                    }
+                    gradNorm = sqrt(gradNorm)
+                    
+                    if gradNorm >= gradNormMax / magnitudeCoeff
+                    {
+                        var minIndex = -1
+                        var minValue: Double? = nil
+                        
+                        for k in 0..<K
+                        {
+                            var value: Double = 0.0
+                            for depth in 0..<nbChannels
+                            {
+                                let outPrev =
+                                    neuronsPrev[depth].get(i, j)!.v[elem].out
+                                let vq = _wArrays.w(k, depth)
+                                value += pow(outPrev - vq, 2.0)
+                            }
+                            
+                            if minValue == nil || value < minValue!
+                            {
+                                minValue = value
+                                minIndex = k
+                            }
+                        }
+                        
+                        if minIndex < 0
+                        {
+                            throw VQError.IndexValue
+                        }
+                        
+                        for depth in 0..<nbChannels
+                        {
+                            neurons[depth].get(i, j)!.v[elem].out =
+                                _wArrays.w(minIndex, depth)
+                        }
+                        indicesPtr[j + (elem * height + i) * width] =
+                            Int32(minIndex)
+                    }
+                    else
+                    {
+                        indicesPtr[j + (elem * height + i) * width] = -1
+                    }
+                }}
+            }
+        }
+    }
+    
+    ///
+    /// Compute the squared norm in the GPU execution context.
+    ///
+    /// Throw an error if batch size is greater than the first batch size.
+    ///
+    private func _computeGradNormMaxGPU() throws
+    {
+        if let layerPrev = self.layerPrev as? Layer2D
+        {
+            if layerPrev.dirty
+            {
+                throw UpdateError.Dirty
+            }
+            
+            // -----------------------------------------------------------------
+            // Begin the reduction that is specific to the gradient norm max.
+            // -----------------------------------------------------------------
+            
+            try checkStateForwardGPU(batchSize: batchSize)
+            
+            let pNbChannels: [UInt32] = [UInt32(nbChannels)]
+            let pNbBatch: [UInt32] = [UInt32(batchSize)]
+            let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
+            let pNbThreadgroups: [UInt32] = [UInt32(nbThreadgroups)]
+            
+            let command = MetalKernel.get.createCommand(
+                "vqGrad2DMax", deviceID: deviceID
+            )
+            command.setBuffer(layerPrev.delta.metal, atIndex: 0)
+            command.setBytes(pNbChannels, atIndex: 1)
+            command.setBytes(pDimensions, atIndex: 2)
+            command.setBytes(pNbThreadgroups, atIndex: 3)
+            command.setBytes(pNbBatch, atIndex: 4)
+            command.setBuffer(_gradNorm.metal, atIndex: 5)
+            
+            let threadsPerThreadgroup = MTLSizeMake(
+                _threadsPerThreadgroup, 1, 1
+            )
+            let threadsPerGrid = MTLSize(
+                width: height * width,
+                height: batchSize,
+                depth: 1
+            )
+            command.dispatchThreads(
+                threadsPerGrid: threadsPerGrid,
+                threadsPerThreadgroup: threadsPerThreadgroup
+            )
+            command.enqueue()
+            
+            // Continue the reduction in a more generic way.
+            reduceMax(
+                inBuffer: _gradNorm.metal,
+                outBuffer: _gradNorm.metal,
+                dim1: nbThreadgroups, dim2: batchSize,
+                deviceID: deviceID
+            )
+        }
+    }
+    
+    ///
+    /// Apply the forward pass in the GPU execution context.
+    ///
+    /// Throw an error if batch size is greater than the first batch size.
+    ///
+    public override func forwardGPU() throws
+    {
+        // Reduce the gradient norm max in a dedicated function for performance.
+        try _computeGradNormMaxGPU()
+        
+        if let layerPrev = self.layerPrev as? Layer2D
+        {
+            if layerPrev.dirty
+            {
+                throw UpdateError.Dirty
+            }
+            try checkStateForwardGPU(batchSize: batchSize)
+            
+            let pNbChannels: [UInt32] = [UInt32(nbChannels)]
+            let pNbBatch: [UInt32] = [UInt32(batchSize)]
+            let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
+            let pK: [UInt32] = [UInt32(K)]
+            let pMagnitudeCoeff: [Float] = [Float(magnitudeCoeff)]
+            
+            let command = MetalKernel.get.createCommand(
+                "vqGrad2DForward", deviceID: deviceID
+            )
+            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 1)
+            command.setBuffer(_gradNorm.metal, atIndex: 2)
+            command.setBuffer(_wBuffers.w.metal, atIndex: 3)
+            command.setBytes(pNbChannels, atIndex: 4)
+            command.setBytes(pDimensions, atIndex: 5)
+            command.setBytes(pK, atIndex: 6)
+            command.setBytes(pMagnitudeCoeff, atIndex: 7)
+            command.setBytes(pNbBatch, atIndex: 8)
+            command.setBuffer(outs.metal, atIndex: 9)
+            command.setBuffer(indices.metal, atIndex: 10)
+            
+            command.dispatchThreads(
+                width: height * width,
+                height: batchSize
+            )
+            command.enqueue()
+        }
+    }
+    
+    override func _backwardCPU() {}
+    
+    override func _backwardGPU() throws {}
 }

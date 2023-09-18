@@ -133,23 +133,31 @@ kernel void vq2DBackward(
     uint offset = j + (offsetStart + i) * width;
     
     int minIndex = indices[j + (elem * height + i) * width];
-    uint offsetWeights = depth + nbChannels * minIndex;
-    
-    float vq = weights[offsetWeights];
-    float deltaCur = delta[offset];
-    float outPrev = outsPrev[offset];
-    
-    if (dirty)
+    if (minIndex >= 0)
     {
-        deltaPrev[offset] = deltaCur;
+        uint offsetWeights = depth + nbChannels * minIndex;
+        
+        float vq = weights[offsetWeights];
+        float deltaCur = delta[offset];
+        float outPrev = outsPrev[offset];
+        
+        if (dirty)
+        {
+            deltaPrev[offset] = deltaCur;
+        }
+        else
+        {
+            deltaPrev[offset] += deltaCur;
+        }
+        
+        // Commitment term.
+        deltaPrev[offset] += beta / (float)(nbBatch * height * width) *
+            2.0 * (outPrev - vq);
     }
-    else
+    else if (dirty)
     {
-        deltaPrev[offset] += deltaCur;
+        deltaPrev[offset] = 0.0;
     }
-    
-    // Commitment term.
-    deltaPrev[offset] += beta * 2.0 * (outPrev - vq);
 }
 
 kernel void vq2DBatchDerWeights(
@@ -210,7 +218,7 @@ kernel void vq2DBatchDerWeights(
             sum += vq - outPrev;
         }
     }}}
-    sum *= coeff / (float)(nbBatch * nbChannels * height * width) * 2.0;
+    sum *= coeff / (float)(nbBatch * height * width) * 2.0;
     
     grads[depth + nbChannels * k] += sum;
 }
@@ -273,7 +281,7 @@ kernel void vq2DDerWeights(
             sum += vq - outPrev;
         }
     }}
-    sum *= coeff / (float)(nbBatch * nbChannels * height * width) * 2.0;
+    sum *= coeff / (float)(nbBatch * height * width) * 2.0;
     
     deltaWeights[depth + nbChannels * k + K * nbChannels * elem] += sum;
 }
@@ -331,6 +339,7 @@ kernel void vq2DReduceWeights(
 kernel void vq2DLoss(
     const device float * outsPrev,
     const device float * outs,
+    const device int * indices,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pNbBatch,
@@ -341,7 +350,8 @@ kernel void vq2DLoss(
     uint nbChannels;
     uint nbBatch;
     
-    if (pNbChannels && pDimensions && pNbBatch && outsPrev && outs && losses)
+    if (pNbChannels && pDimensions && pNbBatch &&
+        outsPrev && outs && indices && losses)
     {
         width = pDimensions[0];
         height = pDimensions[1];
@@ -365,14 +375,189 @@ kernel void vq2DLoss(
         for (uint i=0; i<height; i++) {
         for (uint j=0; j<width; j++)
         {
-            uint offset = j + (offsetStart + i) * width;
-            
-            float outPrev = outsPrev[offset];
-            float vq = outs[offset];
-            float diff = outPrev - vq;
-            
-            tmp += diff * diff;
+            int minIndex = indices[j + (elem * height + i) * width];
+            if (minIndex >= 0)
+            {
+                uint offset = j + (offsetStart + i) * width;
+                
+                float outPrev = outsPrev[offset];
+                float vq = outs[offset];
+                float diff = outPrev - vq;
+                
+                tmp += diff * diff;
+            }
         }}
     }
     losses[elem] = tmp;
+}
+
+kernel void vqGrad2DMax(
+     const device float * deltaPrev,
+     constant uint * pNbChannels,
+     constant uint * pDimensions,
+     constant uint * pNbThreadgroups,
+     constant uint * pNbBatch,
+     device float * gradNorms,
+     uint2 groupId [[ threadgroup_position_in_grid ]],
+     uint2 threadId [[ thread_position_in_threadgroup ]],
+     uint2 id [[ thread_position_in_grid ]])
+{
+    constexpr uint threadsPerThreadgroup = 64;
+    threadgroup float normShared[threadsPerThreadgroup];
+    
+    uint height, width;
+    uint nbChannels;
+    uint nbThreadgroups;
+    uint nbBatch;
+    
+    if (pNbChannels && pDimensions && pNbThreadgroups && pNbBatch &&
+        deltaPrev && gradNorms)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        nbChannels = *pNbChannels;
+        nbThreadgroups = *pNbThreadgroups;
+        nbBatch = *pNbBatch;
+    }
+    else
+        return ;
+    
+    uint elem = id[1];
+    uint i = id[0] / width;
+    uint j = id[0] % width;
+    
+    if (i * j >= height * width || elem >= nbBatch)
+    {
+        return ;
+    }
+    
+    float norm = 0.0;
+    for (uint depth=0; depth<nbChannels; depth++)
+    {
+        uint offsetStart = (depth + nbChannels * elem) * height;
+        uint offset = j + (offsetStart + i) * width;
+        
+        norm += pow(deltaPrev[offset], 2.0);
+    }
+    norm = sqrt(norm);
+    
+    normShared[threadId[0]] = norm;
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+    
+    for (uint stride=threadsPerThreadgroup/2; stride>0; stride>>=1)
+    {
+        uint index = threadId[0] + groupId[0] * threadsPerThreadgroup;
+        if (threadId[0] < stride &&
+            (index + stride) < height * width)
+        {
+            normShared[threadId[0]] = max(
+                normShared[threadId[0] + stride],
+                normShared[threadId[0]]
+            );
+        }
+        threadgroup_barrier(mem_flags::mem_threadgroup);
+    }
+    
+    if (threadId[0] == 0)
+    {
+        uint offset = elem * nbThreadgroups + groupId[0];
+        gradNorms[offset] = normShared[0];
+    }
+}
+
+kernel void vqGrad2DForward(
+    const device float * outsPrev,
+    const device float * deltaPrev,
+    const device float * gradNorms,
+    const device float * weights,
+    constant uint * pNbChannels,
+    constant uint * pDimensions,
+    constant uint * pK,
+    constant float * pMagnitudeCoeff,
+    constant uint * pNbBatch,
+    device float * outs,
+    device int * indices,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint height, width;
+    uint nbChannels;
+    uint K;
+    float magnitudeCoeff;
+    uint nbBatch;
+    
+    if (pNbChannels && pDimensions && pK && pMagnitudeCoeff && pNbBatch &&
+        weights && gradNorms && outsPrev && deltaPrev && outs && indices)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        magnitudeCoeff = *pMagnitudeCoeff;
+        nbChannels = *pNbChannels;
+        K = *pK;
+        nbBatch = *pNbBatch;
+    }
+    else
+        return ;
+    
+    uint elem = id[1];
+    uint i = id[0] / width;
+    uint j = id[0] % width;
+    
+    if (i * j >= height * width || elem >= nbBatch)
+    {
+        return ;
+    }
+    
+    float norm = 0.0;
+    for (uint depth=0; depth<nbChannels; depth++)
+    {
+        uint offsetStart = (depth + nbChannels * elem) * height;
+        uint offset = j + (offsetStart + i) * width;
+        
+        norm += pow(deltaPrev[offset], 2.0);
+    }
+    norm = sqrt(norm);
+    
+    if (norm >= gradNorms[elem] / magnitudeCoeff)
+    {
+        int minIndex = -1;
+        float minValue = 0.0;
+        for (uint k=0; k<K; k++)
+        {
+            float value = 0.0;
+            for (uint depth=0; depth<nbChannels; depth++)
+            {
+                uint offsetStart = (depth + nbChannels * elem) * height;
+                uint offset = j + (offsetStart + i) * width;
+                
+                uint offsetWeights = depth + nbChannels * k;
+                
+                float outPrev = outsPrev[offset];
+                float vq = weights[offsetWeights];
+                value += pow(outPrev - vq, 2.0);
+            }
+            
+            if (minIndex < 0 || value < minValue)
+            {
+                minValue = value;
+                minIndex = k;
+            }
+        }
+        
+        if (minIndex >= 0)
+        {
+            for (uint depth=0; depth<nbChannels; depth++)
+            {
+                uint offsetStart = (depth + nbChannels * elem) * height;
+                uint offset = j + (offsetStart + i) * width;
+                
+                uint offsetWeights = depth + nbChannels * minIndex;
+                outs[offset] = weights[offsetWeights];
+            }
+            indices[j + (elem * height + i) * width] = minIndex;
+        }
+    }
+    else
+    {
+        indices[j + (elem * height + i) * width] = -1;
+    }
 }

@@ -203,8 +203,10 @@ let CONFIG_KERNELS =
         "weightsAMSBound",
     ],
     "Reduce": [
-        "reduce64",
-        "reduce",
+        "reduceSum64",
+        "reduceSum",
+        "reduceMax64",
+        "reduceMax",
     ],
     "Reset": [
         "reset"
@@ -215,13 +217,17 @@ let CONFIG_KERNELS =
         "vq2DBatchDerWeights",
         "vq2DDerWeights",
         "vq2DReduceWeights",
-        "vq2DLoss"
+        "vq2DLoss",
+        "vqGrad2DMax",
+        "vqGrad2DForward"
     ],
     "VQSeq": [
         "vqSeqForward",
         "vqSeqBackward",
         "vqSeqBatchDerWeights",
         "vqSeqDerWeights",
-        "vqSeqLoss"
+        "vqSeqLoss",
+        "vqGradSeqMax",
+        "vqGradSeqForward"
     ]
 ]

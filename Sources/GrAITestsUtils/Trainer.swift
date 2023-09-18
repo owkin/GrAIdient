@@ -69,7 +69,7 @@ extension TestError: CustomStringConvertible
 ///
 /// - Parameter model: The model on which to select the initialization scheme.
 ///
-func randomSelectWeightsInitializationScheme(model: Model)
+public func randomSelectWeightsInitializationScheme(model: Model)
 {
     let choice = Int.random(in: 0...4)
     switch choice {

@@ -2046,3 +2046,415 @@ class VQSeqTransformTests: VQSeqFlowTests
         run(trainer)
     }
 }
+
+// Tests for the VQGradSeq layer.
+class VQGradSeqTests: XCTestCase
+{
+    var height = 6
+    var width = 6
+    
+    /// Batch size of data.
+    var batchSize: Int = -1
+    /// Optimizer parameters.
+    var optimizerParams = GrAI.Optimizer.Params()
+    
+    /// Systematic call before test begins.
+    override func setUp()
+    {
+        batchSize = 5
+        _ = MetalKernel.get
+        GrAI.Opti.GPU = true
+        
+        setOptimizerParams(params: &optimizerParams)
+        optimizerParams.nbLoops = 3
+    }
+    
+    ///
+    /// Build the two branches of the model.
+    ///
+    /// - Returns:
+    ///     (frist branch, last branch of the model).
+    ///
+    func buildModel() -> (Model, Model)
+    {
+        var context = ModelContext(name: "MainBranch", curID: 0)
+        var params = GrAI.Model.Params(context: context)
+        
+        var layer: Layer2D = Input2D(
+            nbChannels: 1, width: width, height: height, params: params
+        )
+        
+        layer = Convolution2D(
+            layerPrev: layer, size: 1, nbChannels: 6, stride: 1,
+            activation: LeakyReLU.str, biases: true, bn: false, params: params
+        )
+        
+        let layerSeq: LayerSeq = try! FullyConnectedPatch(
+            layerPrev: layer, patch: width / 3, nbNeurons: 6,
+            activation: SoftReLU.str, biases: true, params: params
+        )
+        
+        var head: Layer1D = AvgPoolSeq(layerPrev: layerSeq, params: params)
+        
+        head = try! FullyConnected(
+            layerPrev: head, nbNeurons: 1,
+            activation: LeakyReLU.str, biases: true, params: params
+        )
+        
+        head = MSE1D(layerPrev: head, params: params)
+        
+        let mainBranch = Model(model: context.model, modelsPrev: [])
+        
+        context = ModelContext(name: "VQBranch", models: [mainBranch])
+        params = GrAI.Model.Params(context: context)
+        
+        _ = VQGradSeq(layerPrev: layerSeq, K: 5, params: params)
+        
+        let vqBranch = Model(model: context.model, modelsPrev: [mainBranch])
+        
+        return (mainBranch, vqBranch)
+    }
+    
+    ///
+    /// Get the current batch size of data.
+    ///
+    /// This function allows to simulate the fact that the batch size of data may be smalling during the
+    /// last iteration of the training.
+    ///
+    /// - Parameter model: The model.
+    /// - Returns: The batch size of data.
+    ///
+    func getBatchSize(_ model: Model) -> Int
+    {
+        if model.optimizerParams.step == model.optimizerParams.nbLoops-1
+        {
+            return batchSize / 2
+        }
+        else
+        {
+            return batchSize
+        }
+    }
+    
+    ///
+    /// Create synthetic data.
+    ///
+    /// - Parameters:
+    ///     - dim1: The first dimension of the data.
+    ///     - dim2: The second dimension of the data.
+    /// - Returns: The created data.
+    ///
+    func buildData<T: BinaryFloatingPoint>(dim1: Int, dim2: Int) -> [[T]]
+    {
+        var data = [[T]]()
+        for _ in 0..<dim1
+        {
+            var data1 = [T]()
+            for _ in 0..<dim2
+            {
+                data1.append(T(Double.random(in: -1.0..<1.0)))
+            }
+            data.append(data1)
+        }
+        return data
+    }
+    
+    ///
+    /// A function to create/set data to the model.
+    ///
+    /// - Parameters:
+    ///     - inputs: The data to set.
+    ///     - model: The model.
+    /// - Returns: (The data, the batch size).
+    ///
+    func setData(_ inputs: [[Double]]?, _ model: Model) -> ([[Double]], Int)
+    {
+        let firstLayer = model.layers.first as! Input2D
+        let ins: [[Double]]
+        if let insTmp = inputs
+        {
+            ins = insTmp
+        }
+        else
+        {
+            ins = buildData(dim1: getBatchSize(model), dim2: height * width)
+        }
+        
+        if GrAI.Opti.GPU
+        {
+            try! firstLayer.setDataGPU(
+                ins.reduce([], +),
+                batchSize: ins.count,
+                nbChannels: 1, height: height, width: width,
+                format: .Neuron
+            )
+        }
+        else
+        {
+            try! firstLayer.setDataCPU(
+                ins.reduce([], +),
+                batchSize: ins.count,
+                nbChannels: 1, height: height, width: width,
+                format: .Neuron
+            )
+        }
+        return (ins, ins.count)
+    }
+    
+    func testInference()
+    {
+        let (mainCPU, vqCPU) = buildModel()
+        let (mainGPU, vqGPU) = buildModel()
+        
+        GrAI.Opti.CPU = true
+        randomSelectWeightsInitializationScheme(model: mainCPU)
+        randomSelectWeightsInitializationScheme(model: vqCPU)
+        
+        mainCPU.initialize(
+            params: optimizerParams,
+            phase: .Inference,
+            deviceID: DEVICE_ID
+        )
+        vqCPU.initialize(
+            params: optimizerParams,
+            phase: .Inference,
+            deviceID: DEVICE_ID
+        )
+        
+        mainGPU.weights = mainCPU.weights
+        vqGPU.weights = vqCPU.weights
+        
+        GrAI.Opti.GPU = true
+        mainGPU.initialize(
+            params: optimizerParams,
+            phase: .Inference,
+            deviceID: DEVICE_ID
+        )
+        vqGPU.initialize(
+            params: optimizerParams,
+            phase: .Inference,
+            deviceID: DEVICE_ID
+        )
+        
+        let lastLayerCPU = mainCPU.layers.last as! MSE1D
+        let vqLayerCPU = vqCPU.layers.last as! VQGradSeq
+        let lastLayerGPU = mainGPU.layers.last as! MSE1D
+        let vqLayerGPU = vqGPU.layers.last as! VQGradSeq
+        
+        lastLayerCPU.coeff = -1.0
+        lastLayerGPU.coeff = -1.0
+        vqLayerCPU.magnitudeCoeff = 1.1
+        vqLayerGPU.magnitudeCoeff = 1.1
+        
+        var numLoop = 0
+        while numLoop < optimizerParams.nbLoops
+        {
+            GrAI.Opti.CPU = true
+            
+            let (inputs, batchSize) = setData(nil, mainCPU)
+            mainCPU.updateKernel(batchSize: batchSize)
+            vqCPU.updateKernel(batchSize: batchSize)
+            
+            try! mainCPU.forward()
+            try! lastLayerCPU.lossDerivativeCPU(
+                [[Double]](repeating: [0.0], count: batchSize),
+                batchSize: batchSize,
+                nbNeurons: 1
+            )
+            try! mainCPU.backward()
+            try! mainCPU.update()
+            
+            try! vqCPU.forward()
+            try! vqLayerCPU.lossDerivativeCPU()
+            let lossCPU: Double = vqLayerCPU.getLossCPU()
+            try! vqCPU.update()
+            
+            GrAI.Opti.GPU = true
+            
+            _ = setData(inputs, mainGPU)
+            mainGPU.updateKernel(batchSize: batchSize)
+            vqGPU.updateKernel(batchSize: batchSize)
+            
+            try! mainGPU.forward()
+            try! lastLayerGPU.lossDerivativeGPU(
+                [[Double]](repeating: [0.0], count: batchSize),
+                batchSize: batchSize,
+                nbNeurons: 1
+            )
+            try! mainGPU.backward()
+            try! mainGPU.update()
+            
+            try! vqGPU.forward()
+            try! vqLayerGPU.lossDerivativeGPU()
+            let lossGPU: Double = try! vqLayerGPU.getLossGPU()
+            try! vqGPU.update()
+            
+            let diff = (lossGPU - lossCPU) * (lossGPU - lossCPU) /
+                       (lossCPU * lossCPU + lossGPU * lossGPU)
+            XCTAssert(diff < 0.001)
+            
+            mainCPU.incStep()
+            vqCPU.incStep()
+            mainGPU.incStep()
+            vqGPU.incStep()
+            numLoop += 1
+        }
+    }
+    
+    func testLoad()
+    {
+        GrAI.Opti.GPU = true
+        var (mainBranch, vqBranch) = buildModel()
+        
+        randomSelectWeightsInitializationScheme(model: mainBranch)
+        randomSelectWeightsInitializationScheme(model: vqBranch)
+        
+        mainBranch.initialize(
+            params: optimizerParams,
+            phase: .Inference,
+            deviceID: DEVICE_ID
+        )
+        vqBranch.initialize(
+            params: optimizerParams,
+            phase: .Inference,
+            deviceID: DEVICE_ID
+        )
+        
+        let folderURL = FileManager.default.temporaryDirectory
+        let mainPath =
+            folderURL.appendingPathComponent("testMain.plist").path
+        let vqPath =
+            folderURL.appendingPathComponent("testVQ.plist").path
+        
+        let encoder = PropertyListEncoder()
+    
+        var data = try! encoder.encode(mainBranch)
+        try! data.write(to: URL(fileURLWithPath: mainPath))
+        
+        data = try! encoder.encode(vqBranch)
+        try! data.write(to: URL(fileURLWithPath: vqPath))
+        
+        data = try! Data(contentsOf: URL(fileURLWithPath: mainPath))
+        let mainBase = try! PropertyListDecoder().decode(
+            BaseModel.self, from: data
+        )
+        data = try! Data(contentsOf: URL(fileURLWithPath: vqPath))
+        let vqBase = try! PropertyListDecoder().decode(
+            BaseModel.self, from: data
+        )
+        
+        mainBranch = Model(model: mainBase, modelsPrev: [])
+        vqBranch = Model(model: vqBase, modelsPrev: [mainBranch])
+        
+        mainBranch.initialize(
+            params: optimizerParams,
+            phase: .Inference,
+            deviceID: DEVICE_ID
+        )
+        vqBranch.initialize(
+            params: optimizerParams,
+            phase: .Inference,
+            deviceID: DEVICE_ID
+        )
+        
+        let lastLayer = mainBranch.layers.last as! MSE1D
+        let vqLayer = vqBranch.layers.last as! VQGradSeq
+        
+        lastLayer.coeff = -1.0
+        vqLayer.magnitudeCoeff = 1.1
+        
+        var numLoop = 0
+        while numLoop < optimizerParams.nbLoops
+        {
+            let (_, batchSize) = setData(nil, mainBranch)
+            mainBranch.updateKernel(batchSize: batchSize)
+            vqBranch.updateKernel(batchSize: batchSize)
+            
+            try! mainBranch.forward()
+            try! lastLayer.lossDerivativeGPU(
+                [[Double]](repeating: [0.0], count: batchSize),
+                batchSize: batchSize,
+                nbNeurons: 1
+            )
+            try! mainBranch.backward()
+            try! mainBranch.update()
+            
+            try! vqBranch.forward()
+            try! vqLayer.lossDerivativeGPU()
+            let lossVal: Double = try! vqLayer.getLossGPU()
+            try! vqBranch.update()
+            
+            print(lossVal)
+            
+            mainBranch.incStep()
+            vqBranch.incStep()
+            numLoop += 1
+        }
+    }
+    
+    func testTransform()
+    {
+        GrAI.Opti.GPU = true
+        var (mainBranch, vqBranch) = buildModel()
+        
+        randomSelectWeightsInitializationScheme(model: mainBranch)
+        randomSelectWeightsInitializationScheme(model: vqBranch)
+        
+        mainBranch.initialize(
+            params: optimizerParams,
+            phase: .Inference,
+            deviceID: DEVICE_ID
+        )
+        vqBranch.initialize(
+            params: optimizerParams,
+            phase: .Inference,
+            deviceID: DEVICE_ID
+        )
+        
+        let branches = Model.copy(
+            models: [mainBranch, vqBranch],
+            inPlace: true
+        )
+        mainBranch = branches[0]
+        vqBranch = branches[1]
+        
+        mainBranch.setupOptimizers(params: optimizerParams)
+        vqBranch.setupOptimizers(params: optimizerParams)
+        mainBranch.phase = .Inference
+        vqBranch.phase = .Inference
+        
+        let lastLayer = mainBranch.layers.last as! MSE1D
+        let vqLayer = vqBranch.layers.last as! VQGradSeq
+        
+        lastLayer.coeff = -1.0
+        vqLayer.magnitudeCoeff = 1.1
+        
+        var numLoop = 0
+        while numLoop < optimizerParams.nbLoops
+        {
+            let (_, batchSize) = setData(nil, mainBranch)
+            mainBranch.updateKernel(batchSize: batchSize)
+            vqBranch.updateKernel(batchSize: batchSize)
+            
+            try! mainBranch.forward()
+            try! lastLayer.lossDerivativeGPU(
+                [[Double]](repeating: [0.0], count: batchSize),
+                batchSize: batchSize,
+                nbNeurons: 1
+            )
+            try! mainBranch.backward()
+            try! mainBranch.update()
+            
+            try! vqBranch.forward()
+            try! vqLayer.lossDerivativeGPU()
+            let lossVal: Double = try! vqLayer.getLossGPU()
+            try! vqBranch.update()
+            
+            print(lossVal)
+            
+            mainBranch.incStep()
+            vqBranch.incStep()
+            numLoop += 1
+        }
+    }
+}

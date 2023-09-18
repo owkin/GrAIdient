@@ -570,7 +570,7 @@ public class Normalize122D: Layer2D
             command.enqueue()
             
             // Continue the reduction in a more generic way.
-            reduce(
+            reduceSum(
                 inBuffer: _squaredNorm.metal,
                 outBuffer: _squaredNorm.metal,
                 dim1: nbThreadgroups, dim2: batchSize,
@@ -725,7 +725,7 @@ public class Normalize122D: Layer2D
             command.enqueue()
             
             // Continue the reduction in a more generic way.
-            reduce(
+            reduceSum(
                 inBuffer: _deltaTmp.metal,
                 outBuffer: _deltaTmp.metal,
                 dim1: nbThreadgroups, dim2: batchSize,

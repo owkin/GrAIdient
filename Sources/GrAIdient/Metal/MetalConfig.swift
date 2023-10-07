@@ -99,6 +99,8 @@ let CONFIG_KERNELS =
         "BCE1DLossDerivative",
         "BCESigmoid1DLoss",
         "BCESigmoid1DLossDerivative",
+        "dropout1DForward",
+        "dropout1DBackward",
     ],
     "Layer2D": [
         "avgPoolForward",

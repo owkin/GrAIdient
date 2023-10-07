@@ -91,6 +91,16 @@ class Layer1DDirtyGradTests: Input1DMSE1DCase
         case "LayerOutput":
             secondLayer = MSE1D(layerPrev: layer, params: params)
             
+        case "Dropout1":
+            secondLayer = Dropout1D(
+                layerPrev: layer, coeff: 0.0, params: params
+            )
+            
+        case "Dropout2":
+            secondLayer = Dropout1D(
+                layerPrev: layer, coeff: 1.0, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -169,6 +179,32 @@ class Layer1DDirtyGradTests: Input1DMSE1DCase
     func testLayerOutputGPU() throws
     {
         let trainer = _buildTrainer("LayerOutput")
+        run(trainer)
+    }
+    
+    func testDropout1CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("Dropout1")
+        run(trainer)
+    }
+    
+    func testDropout1GPU() throws
+    {
+        let trainer = _buildTrainer("Dropout1")
+        run(trainer)
+    }
+    
+    func testDropout2CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("Dropout2")
+        run(trainer)
+    }
+    
+    func testDropout2GPU() throws
+    {
+        let trainer = _buildTrainer("Dropout2")
         run(trainer)
     }
 }

@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🪜 **feat:** Dropout1D ([#108](https://github.com/owkin/GrAIdient/pull/108))\
 🪜 **feat:** VQGrad, VQGradSeq ([#107](https://github.com/owkin/GrAIdient/pull/107))
 
 ## 0.3.1 (2023-08-09)

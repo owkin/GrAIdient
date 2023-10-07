@@ -802,3 +802,114 @@ kernel void BCESigmoid1DLossDerivative(
         deltaPrev[offset] += coeff * (value - gt) / float(nbNeurons * nbBatch);
     }
 }
+
+kernel void dropout1DForward(
+    const device float * outsPrev,
+    const device bool * dropout,
+    constant uint * pNbNeurons,
+    constant uint * pNbBatch,
+    constant bool * pApplyDropout,
+    constant float * pCoeff,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint nbNeurons;
+    uint nbBatch;
+    bool applyDropout;
+    float coeff;
+    
+    if (pNbNeurons && pNbBatch && pApplyDropout && pCoeff &&
+        dropout && outsPrev && outs)
+    {
+        nbNeurons = *pNbNeurons;
+        nbBatch = *pNbBatch;
+        applyDropout = *pApplyDropout;
+        coeff = *pCoeff;
+    }
+    else
+        return ;
+    
+    uint depth = id[0];
+    uint elem = id[1];
+    
+    if (depth >= nbNeurons || elem >= nbBatch)
+    {
+        return ;
+    }
+    
+    uint offset = depth + nbNeurons * elem;
+    if (applyDropout && !dropout[offset])
+    {
+        outs[offset] = 1.0 / (1.0 - coeff) * outsPrev[offset];
+    }
+    else if (applyDropout)
+    {
+        outs[offset] = 0.0;
+    }
+    else
+    {
+        outs[offset] = outsPrev[offset];
+    }
+}
+
+kernel void dropout1DBackward(
+    const device float * delta,
+    const device bool * dropout,
+    constant uint * pNbNeurons,
+    constant uint * pNbBatch,
+    constant bool * pApplyDropout,
+    constant float * pCoeff,
+    constant uint * pDirty,
+    device float * deltaPrev,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint nbNeurons;
+    uint nbBatch;
+    bool applyDropout;
+    float coeff;
+    uint dirty;
+    
+    if (pNbNeurons && pNbBatch && pApplyDropout && pCoeff &&
+        dropout && delta && deltaPrev)
+    {
+        nbNeurons = *pNbNeurons;
+        nbBatch = *pNbBatch;
+        applyDropout = *pApplyDropout;
+        coeff = *pCoeff;
+        dirty = *pDirty;
+    }
+    else
+        return ;
+    
+    uint depth = id[0];
+    uint elem = id[1];
+    
+    if (depth >= nbNeurons || elem >= nbBatch)
+    {
+        return ;
+    }
+    
+    float newValue = 0.0;
+    uint offset = depth + nbNeurons * elem;
+    if (applyDropout && !dropout[offset])
+    {
+        newValue = 1.0 / (1.0 - coeff) * delta[offset];
+    }
+    else if (applyDropout)
+    {
+        newValue = 0.0;
+    }
+    else
+    {
+        newValue = delta[offset];
+    }
+    
+    if (dirty)
+    {
+        deltaPrev[offset] = newValue;
+    }
+    else
+    {
+        deltaPrev[offset] += newValue;
+    }
+}

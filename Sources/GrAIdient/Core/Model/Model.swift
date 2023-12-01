@@ -687,7 +687,7 @@ public class Model: BaseModel
     ///
     /// We initialize the neurons' forward's state.
     ///
-    func initForward(batchSize: Int) throws
+    public func initForward(batchSize: Int) throws
     {
         if GrAI.Opti.GPU
         {
@@ -710,7 +710,7 @@ public class Model: BaseModel
     ///
     /// We initialize the neurons' backward's state.
     ///
-    func initBackward(batchSize: Int) throws
+    public func initBackward(batchSize: Int) throws
     {
         if GrAI.Opti.GPU
         {

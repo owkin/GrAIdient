@@ -791,6 +791,12 @@ public class Convolution2D: BN2D, LayerWeightInit
         let weightsPtr = _wBuffers.w_p!.shared.buffer
         let biasesPtr = _bBuffers.w_p!.shared.buffer
     
+        /*let data = Data(
+            bytes: _weightsList,
+            count: nbWeights*weightHeight*weightWidth*MemoryLayout<Float>.size
+        )
+        _ = data.copyBytes(to: weightsPtr)*/
+        
         for elem in 0..<nbWeights * weightHeight * weightWidth
         {
             weightsPtr[elem] = _weightsList[elem]

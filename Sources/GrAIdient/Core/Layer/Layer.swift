@@ -272,6 +272,27 @@ open class Layer: Codable
     open func initKernelGPU() {}
     
     ///
+    /// Initialize state resources in the CPU execution context.
+    ///
+    /// We initialize the neurons' state (forward and backward).
+    ///
+    open func checkStateCPU(batchSize: Int) throws {}
+    
+    ///
+    /// Initialize state resources in the GPU execution context.
+    ///
+    /// We initialize the neurons' forward state.
+    ///
+    open func checkStateForwardGPU(batchSize: Int) throws {}
+    
+    ///
+    /// Initialize state resources in the GPU execution context.
+    ///
+    /// We initialize the neurons' backward state.
+    ///
+    open func checkStateBackwardGPU(batchSize: Int) throws {}
+    
+    ///
     /// Update the backward dirty flag for `layerPrev` instance.
     ///
     /// - Parameter dirty: The boolean value for the dirty flag.

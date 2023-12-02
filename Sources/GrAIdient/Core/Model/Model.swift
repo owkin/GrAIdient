@@ -683,6 +683,45 @@ public class Model: BaseModel
     }
     
     ///
+    /// Initialize state resources.
+    ///
+    /// We initialize the neurons' forward's state.
+    ///
+    public func initForward(batchSize: Int) throws
+    {
+        if GrAI.Opti.GPU
+        {
+            for layer in layers
+            {
+                try layer.checkStateForwardGPU(batchSize: batchSize)
+            }
+        }
+        else
+        {
+            for layer in layers
+            {
+                try layer.checkStateCPU(batchSize: batchSize)
+            }
+        }
+    }
+    
+    ///
+    /// Initialize state resources.
+    ///
+    /// We initialize the neurons' backward's state.
+    ///
+    public func initBackward(batchSize: Int) throws
+    {
+        if GrAI.Opti.GPU
+        {
+            for layer in layers
+            {
+                try layer.checkStateBackwardGPU(batchSize: batchSize)
+            }
+        }
+    }
+    
+    ///
     /// Initialize hard resources and set the parameters for the optimizer.
     ///
     /// Hard resources are the resources that are not dependent on the batch size.

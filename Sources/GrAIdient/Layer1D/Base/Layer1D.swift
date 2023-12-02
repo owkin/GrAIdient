@@ -113,7 +113,7 @@ open class Layer1D: Layer
     ///
     /// We initialize the neurons' state (forward and backward).
     ///
-    public func checkStateCPU(batchSize: Int) throws
+    public override func checkStateCPU(batchSize: Int) throws
     {
         if neurons.nbElems == 0
         {
@@ -134,7 +134,7 @@ open class Layer1D: Layer
     ///
     /// We initialize the neurons' forward state.
     ///
-    public func checkStateForwardGPU(batchSize: Int) throws
+    public override func checkStateForwardGPU(batchSize: Int) throws
     {
         if outs == nil
         {
@@ -153,17 +153,20 @@ open class Layer1D: Layer
     ///
     /// We initialize the neurons' backward state.
     ///
-    public func checkStateBackwardGPU(batchSize: Int) throws
+    public override func checkStateBackwardGPU(batchSize: Int) throws
     {
-        if delta == nil
+        if computeDelta
         {
-            delta = MetalPrivateBuffer<Float>(
-                batchSize * nbNeurons, deviceID: deviceID
-            )
-        }
-        else if batchSize <= 0 || batchSize > delta.nbElems / nbNeurons
-        {
-            throw LayerError.BatchSize
+            if delta == nil
+            {
+                delta = MetalPrivateBuffer<Float>(
+                    batchSize * nbNeurons, deviceID: deviceID
+                )
+            }
+            else if batchSize <= 0 || batchSize > delta.nbElems / nbNeurons
+            {
+                throw LayerError.BatchSize
+            }
         }
     }
     

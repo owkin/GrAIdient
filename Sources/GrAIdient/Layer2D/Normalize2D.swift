@@ -418,13 +418,16 @@ public class Normalize122D: Layer2D
     ///
     public override func checkStateBackwardGPU(batchSize: Int) throws
     {
-        if _deltaTmp == nil
+        if computeDelta
         {
-            _deltaTmp = MetalPrivateBuffer<Float>(
-                batchSize * nbThreadgroups, deviceID: deviceID
-            )
+            if _deltaTmp == nil
+            {
+                _deltaTmp = MetalPrivateBuffer<Float>(
+                    batchSize * nbThreadgroups, deviceID: deviceID
+                )
+            }
+            try super.checkStateBackwardGPU(batchSize: batchSize)
         }
-        try super.checkStateBackwardGPU(batchSize: batchSize)
     }
     
     ///

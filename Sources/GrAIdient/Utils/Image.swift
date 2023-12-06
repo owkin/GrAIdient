@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import Cocoa
+import AppKit
 
 /// Error occuring when processing images.
 public enum ImageError: Error

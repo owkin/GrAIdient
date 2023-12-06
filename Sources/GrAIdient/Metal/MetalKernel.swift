@@ -969,10 +969,15 @@ public class MetalCommand
     public func setBytes<T>(_ data: [T], atIndex index: Int)
     {
         let byteLength = data.count * MemoryLayout<T>.size
-        withUnsafePointer(to: data)
+        data.withUnsafeBufferPointer
         {
             dataPtr in
-            _encoder.setBytes(dataPtr, length: byteLength, index: index)
+            
+            _encoder.setBytes(
+                UnsafeRawPointer(dataPtr.baseAddress)!,
+                length: byteLength,
+                index: index
+            )
         }
     }
     

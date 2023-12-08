@@ -12,7 +12,7 @@ import GrAIdient
 /// Python library default path.
 let PYTHON_LIB =
     FileManager.default.homeDirectoryForCurrentUser.path +
-    "/opt/anaconda3/envs/graiexamples/lib/libpython3.9.dylib"
+    "/miniconda3/envs/graiexamples/lib/libpython3.9.dylib"
 
 /// Set the Python library path.
 func setPythonLib()

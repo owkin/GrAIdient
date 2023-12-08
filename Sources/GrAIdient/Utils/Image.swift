@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import Cocoa
+import AppKit
 
 /// Error occuring when processing images.
 public enum ImageError: Error
@@ -107,42 +107,14 @@ public class Image
         let bufferPtr = metalBuffer.download()
         let nbImages = metalBuffer.nbElems / (width * height * 3)
         
-        var output = [[UInt8]]()
-        for elem in 0..<nbImages
+        var images = [[Float]]()
+        for i in 0..<nbImages
         {
-            var grid: [UInt8] = [UInt8](repeating: 0, count: width * height * 3)
-            grid.withUnsafeMutableBufferPointer { gridPtr in
-            Concurrency.slice(gridPtr.count)
-            {
-                (index: Int) in
-                
-                let depth = index / (width * height)
-                let i = (index - depth * width * height) / width
-                let j = (index - depth * width * height) % width
-                
-                let offsetGet = elem * 3 * height * width
-                let offsetSet = j + i * width
-                
-                let valTmp = bufferPtr[index + offsetGet] * 255.0
-                let val: UInt8
-                if valTmp < 0
-                {
-                    val = 0
-                }
-                else if valTmp > 255.0
-                {
-                    val = 255
-                }
-                else
-                {
-                    val = UInt8(valTmp)
-                }
-                    
-                gridPtr[3 * offsetSet + depth] = val
-            }}
-            output.append(grid)
+            images.append([Float](
+                bufferPtr[i * 3 * height * width..<(i+1) * 3 * height * width]
+            ))
         }
-        return output
+        return toRGB(toPixel(images), width: width, height: height)
     }
 
     ///
@@ -157,7 +129,8 @@ public class Image
         var output = [[UInt8]]()
         for elem in 0..<images.count
         {
-            output.append(images[elem].map {
+            output.append(images[elem].map 
+            {
                 let valTmp = $0 * T(255.0)
                 let val: UInt8
                 if valTmp < 0
@@ -385,15 +358,26 @@ public extension NSImage
     ///
     func extractPixels() throws -> [UInt8]
     {
-        if let imageData = tiffRepresentation,
-           let imageRep = NSBitmapImageRep(data: imageData),
-           let dataPtr = imageRep.bitmapData
+        if let pixelData = (cgImage(
+            forProposedRect: nil, context: nil, hints: nil)!).dataProvider?.data
         {
-            let bufferPtr = UnsafeBufferPointer(
-                start: dataPtr,
-                count: Int(3 * size.height * size.width)
-            )
-            return [UInt8](bufferPtr)
+            let data: UnsafePointer<UInt8> = CFDataGetBytePtr(pixelData)
+            
+            var pixels = [UInt8]()
+            for i in 0..<Int(size.height) {
+            for j in 0..<Int(size.width)
+            {
+                let pos = CGPoint(x: j, y: i)
+                
+                let pixelInfo: Int = (Int(size.width) * Int(pos.y) * 4) +
+                    Int(pos.x) * 4
+                
+                let r = data[pixelInfo]
+                let g = data[pixelInfo + 1]
+                let b = data[pixelInfo + 2]
+                pixels += [r, g, b]
+            }}
+            return pixels
         }
         else
         {

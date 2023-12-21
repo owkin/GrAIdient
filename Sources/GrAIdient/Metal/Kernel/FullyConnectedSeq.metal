@@ -1,5 +1,5 @@
 //
-// FullyConnectedPatch.metal
+// FullyConnectedSeq.metal
 // GrAIdient
 //
 // Created by Jean-François Reboud on 08/03/2023.
@@ -56,6 +56,60 @@ kernel void flSeqForward(
         
         tmp += outPrev * w;
     }
+    
+    uint offset = depth + nbNeurons * seq + sequence * nbNeurons * elem;
+    outs[offset] = tmp;
+}
+
+kernel void flSeqForward4(
+    const device float4 * outsPrev,
+    const device float4 * weights,
+    const device float4 * biases,
+    constant uint * pNbNeurons,
+    constant uint * pNbNeuronsPrev,
+    constant uint * pNbBatch,
+    constant uint * pSequence,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint nbNeurons;
+    uint nbNeuronsPrev;
+    uint nbBatch;
+    uint sequence;
+    
+    if (pNbNeurons && pNbNeuronsPrev && pNbBatch && pSequence &&
+        outsPrev && weights && biases && outs)
+    {
+        nbNeurons = *pNbNeurons;
+        nbNeuronsPrev = *pNbNeuronsPrev;
+        nbBatch = *pNbBatch;
+        sequence = *pSequence;
+    }
+    else
+        return ;
+    
+    uint depth = id[0];
+    uint elem = id[1] / sequence;
+    uint seq = id[1] % sequence;
+    
+    if (depth >= nbNeurons || elem >= nbBatch || seq >= sequence)
+    {
+        return ;
+    }
+    
+    float4 tmp4 = biases[depth];
+    for (uint depthPrev=0; depthPrev<nbNeuronsPrev/4; depthPrev++)
+    {
+        uint offsetPrev = (depthPrev * 4 + nbNeuronsPrev * seq +
+            sequence * nbNeuronsPrev * elem) / 4;
+        float4 outPrev = outsPrev[offsetPrev];
+        
+        uint offsetWeights = (depthPrev * 4 + nbNeuronsPrev * depth) / 4;
+        float4 w = weights[offsetWeights];
+        
+        tmp4 += outPrev * w;
+    }
+    float tmp = tmp4[0] + tmp4[1] + tmp4[2] + tmp4[3];
     
     uint offset = depth + nbNeurons * seq + sequence * nbNeurons * elem;
     outs[offset] = tmp;

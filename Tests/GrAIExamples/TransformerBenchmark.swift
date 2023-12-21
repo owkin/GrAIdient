@@ -1,15 +1,15 @@
 //
-// TransformerExample.swift
+// TransformerBenchmark.swift
 // GrAIExamples
 //
-// Created by Aurélien PEDEN on 14/03/2023.
+// Created by Jean-François Reboud on 21/12/2023.
 //
 
 import XCTest
 import GrAIdient
 
 /// Train a simple Vision Transformer model on the CIFAR dataset.
-final class TransformerExample: XCTestCase
+final class TransformerBenchmark: XCTestCase
 {
     /// Directory to dump outputs from the tests.
     let _outputDir = NSTemporaryDirectory()
@@ -17,7 +17,7 @@ final class TransformerExample: XCTestCase
     /// Batch size of data.
     let _batchSize = 64
     /// Size of one image (height and width are the same).
-    let _size = 32
+    let _size = 224
     
     /// Mean of the preprocessing to apply to data.
     let _mean: (Float, Float, Float) = (123.675, 116.28, 103.53)
@@ -282,10 +282,10 @@ final class TransformerExample: XCTestCase
         let transformer = _buildModel(
             size: _size,
             patch: 16,
-            nbLayers: 2,
-            nbHeads: 2,
-            hiddenDim: 16,
-            mlpDim: 32,
+            nbLayers: 12,
+            nbHeads: 12,
+            hiddenDim: 768,
+            mlpDim: 4 * 768,
             mlpActivation: ReLU.str
         )
         
@@ -315,6 +315,7 @@ final class TransformerExample: XCTestCase
             cifar8.shuffle()
             cifar5.shuffle()
             
+            let start = Date()
             for step in 0..<cifar8.nbLoops
             {
                 let samples8 = cifar8.getSamples()!
@@ -380,6 +381,10 @@ final class TransformerExample: XCTestCase
                 // optimizer scheduler: see `_getOptimizerParams`.
                 transformer.incStep()
             }
+            
+            let end = Date()
+            let timeSpent = end.timeIntervalSince(start)
+            print("Epoch \(epoch + 1), time spent: \(timeSpent)s.")
         }
     }
 }

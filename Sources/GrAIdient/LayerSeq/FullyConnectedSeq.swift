@@ -1019,8 +1019,12 @@ public class FullyConnectedSeq: ActivationSeq,
                 // -------------------------------------------------------------
                 // Compute Gradients per batch
                 // -------------------------------------------------------------
+                let kernel = layerPrev.nbNeurons % 4 == 0 ?
+                    "flSeqBatch4DerWeights" : "flSeqBatchDerWeights"
+                let coeff = layerPrev.nbNeurons % 4 == 0 ? 4 : 1
+                
                 command = MetalKernel.get.createCommand(
-                    "flSeqBatchDerWeights", deviceID: deviceID
+                    kernel, deviceID: deviceID
                 )
                 command.setBuffer(layerPrev.outs.metal, atIndex: 0)
                 command.setBuffer(delta.metal, atIndex: 1)
@@ -1033,7 +1037,7 @@ public class FullyConnectedSeq: ActivationSeq,
                 
                 command.dispatchThreads(
                     width: nbNeurons,
-                    height: weightWidth
+                    height: weightWidth / coeff
                 )
                 command.enqueue()
                 

@@ -70,6 +70,7 @@ let CONFIG_KERNELS =
         "flSeqBackward",
         "flSeq4Backward",
         "flSeqBatchDerWeights",
+        "flSeqBatch4DerWeights",
         "flSeqDerWeights",
         "flSeqReduceWeights",
     ],

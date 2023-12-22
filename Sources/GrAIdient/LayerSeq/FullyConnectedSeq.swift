@@ -837,10 +837,10 @@ public class FullyConnectedSeq: ActivationSeq,
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pSequence: [UInt32] = [UInt32(sequence)]
             
-            let kernelFunc = layerPrev.nbNeurons % 4 == 0 ?
+            let kernel = layerPrev.nbNeurons % 4 == 0 ?
                 "flSeqForward4" : "flSeqForward"
             let command = MetalKernel.get.createCommand(
-                kernelFunc, deviceID: deviceID
+                kernel, deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBuffer(_wBuffers.w.metal, atIndex: 1)

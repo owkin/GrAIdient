@@ -11,18 +11,10 @@ import GrAIdient
 /// Train a simple Vision Transformer model on the CIFAR dataset.
 final class TransformerBenchmark: XCTestCase
 {
-    /// Directory to dump outputs from the tests.
-    let _outputDir = NSTemporaryDirectory()
-    
     /// Batch size of data.
     let _batchSize = 64
     /// Size of one image (height and width are the same).
     let _size = 224
-    
-    /// Mean of the preprocessing to apply to data.
-    let _mean: (Float, Float, Float) = (123.675, 116.28, 103.53)
-    /// Deviation of the preprocessing to apply to data.
-    let _std: (Float, Float, Float) = (58.395, 57.12, 57.375)
     
     // Initialize test.
     override func setUp()
@@ -231,52 +223,11 @@ final class TransformerBenchmark: XCTestCase
         return model
     }
     
-    /// Test1: dump CIFAR train and test datasets for labels 8 and 5.
-    func test1_DumpDataset()
+    /// Test: train a ViT model.
+    func test_TrainTransformer()
     {
-        CIFAR.dumpTrain(
-            datasetPath: _outputDir + "/datasetTrain8",
-            label: 8,
-            size: _size
-        )
-        CIFAR.dumpTrain(
-            datasetPath: _outputDir + "/datasetTrain5",
-            label: 5,
-            size: _size
-        )
-    }
-    
-    /// Test2: train a simple model.
-    func test2_TrainTransformer()
-    {
-        let cifar8 = CIFAR.loadDataset(
-            datasetPath: _outputDir + "/datasetTrain8",
-            size: _size
-        )
-        let cifar5 = CIFAR.loadDataset(
-            datasetPath: _outputDir + "/datasetTrain5",
-            size: _size
-        )
-        
         // Get optimizer parameters for iterating over batch size elements.
         let params = _getOptimizerParams(nbLoops: _batchSize)
-        
-        // A batch will in fact be composed of half elements coming from
-        // cifar8 (ships => label: 0) and half elements coming from
-        // cifar5 (dogs => label: 1).
-        cifar8.initSamples(batchSize: _batchSize / 2)
-        cifar5.initSamples(batchSize: _batchSize / 2)
-        
-        // Keep a subset of the dataset to have a quicker training.
-        cifar8.keep(500)
-        cifar5.keep(500)
-        
-        // Small trick to force full batches throughout the training:
-        // this enables us to set the ground truth once and for all.
-        let nbWholeBatches =
-            cifar8.nbSamples / cifar8.batchSize * cifar8.batchSize
-        cifar8.keep(nbWholeBatches)
-        cifar5.keep(nbWholeBatches)
         
         // Build a model with randomly initialized weights.
         let transformer = _buildModel(
@@ -308,46 +259,33 @@ final class TransformerBenchmark: XCTestCase
         }
         MetalKernel.get.upload([groundTruth])
         
+        // Initialize data once and for all.
+        var data = [Float]()
+        for _ in 0..<_batchSize * 3 * _size * _size
+        {
+            data.append(Float.random(in: -1..<1))
+        }
+        try! firstLayer.setDataGPU(
+            data,
+            batchSize: _batchSize, 
+            nbChannels: 3,
+            height: _size,
+            width: _size,
+            format: .Neuron
+        )
+        
         let nbEpochs = 2
+        let nbSteps = 20
         for epoch in 0..<nbEpochs
         {
             print("EPOCH \(epoch)/\(nbEpochs-1).")
-            cifar8.shuffle()
-            cifar5.shuffle()
             
             let start = Date()
-            for step in 0..<cifar8.nbLoops
+            for step in 0..<nbSteps
             {
-                let samples8 = cifar8.getSamples()!
-                let samples5 = cifar5.getSamples()!
-                let samples = samples8 + samples5
-                
-                if samples.count != _batchSize
-                {
-                    fatalError("Unreachable.")
-                }
-                
-                // Pre processing.
-                let data = preprocess(
-                    samples,
-                    height: _size,
-                    width: _size,
-                    mean: _mean,
-                    std: _std,
-                    imageFormat: .Neuron
-                )
-                
                 // Reset gradient validity for backward pass
                 // and update the batch size (although here it stays the same).
                 transformer.updateKernel(batchSize: _batchSize)
-                
-                // Set data.
-                try! firstLayer.setDataGPU(
-                    data,
-                    batchSize: _batchSize,
-                    nbChannels: 3, height: _size, width: _size,
-                    format: .Neuron
-                )
                 
                 // Forward.
                 try! transformer.forward()
@@ -365,16 +303,7 @@ final class TransformerBenchmark: XCTestCase
                 // Update weights.
                 try! transformer.update()
                 
-                // Get loss result.
-                // Note that backward is explicitly
-                // enabled by `applyGradient` whereas `getLoss` is
-                // just an indicator.
-                let loss = try! lastLayer.getLossGPU(
-                    groundTruth,
-                    batchSize: _batchSize,
-                    nbNeurons: 1
-                )
-                print("Step \(step)/\(cifar8.nbLoops-1): \(sqrt(loss)).")
+                print("Step \(step)/\(nbSteps-1).")
                 
                 // Update internal step.
                 // This is not mandatory except if we used another

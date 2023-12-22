@@ -66,8 +66,9 @@ let CONFIG_KERNELS =
     ],
     "FullyConnectedSeq": [
         "flSeqForward",
-        "flSeqForward4",
+        "flSeq4Forward",
         "flSeqBackward",
+        "flSeq4Backward",
         "flSeqBatchDerWeights",
         "flSeqDerWeights",
         "flSeqReduceWeights",

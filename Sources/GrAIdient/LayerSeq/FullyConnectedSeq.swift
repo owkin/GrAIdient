@@ -838,7 +838,7 @@ public class FullyConnectedSeq: ActivationSeq,
             let pSequence: [UInt32] = [UInt32(sequence)]
             
             let kernel = layerPrev.nbNeurons % 4 == 0 ?
-                "flSeqForward4" : "flSeqForward"
+                "flSeq4Forward" : "flSeqForward"
             let command = MetalKernel.get.createCommand(
                 kernel, deviceID: deviceID
             )
@@ -978,8 +978,11 @@ public class FullyConnectedSeq: ActivationSeq,
             let pSequence: [UInt32] = [UInt32(sequence)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
+            let kernel = layerPrev.nbNeurons % 4 == 0 ?
+                "flSeq4Backward" : "flSeqBackward"
+            let coeff = layerPrev.nbNeurons % 4 == 0 ? 4 : 1
             let command = MetalKernel.get.createCommand(
-                "flSeqBackward", deviceID: deviceID
+                kernel, deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBuffer(_wBuffers.w.metal, atIndex: 1)
@@ -991,7 +994,7 @@ public class FullyConnectedSeq: ActivationSeq,
             command.setBuffer(layerPrev.delta.metal, atIndex: 7)
             
             command.dispatchThreads(
-                width: weightWidth,
+                width: weightWidth / coeff,
                 height: batchSize * sequence
             )
             command.enqueue()

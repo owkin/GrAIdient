@@ -141,11 +141,11 @@ class LayerSeqGradTests: Input2DMSE1DCase
             
         case "FullyConnectedSeq":
             layerSeq = try! FullyConnectedPatch(
-                layerPrev: layer, patch: width / 3, nbNeurons: 5,
+                layerPrev: layer, patch: width / 3, nbNeurons: 5 * 3,
                 activation: SoftReLU.str, biases: true, params: params
             )
             layerSeq = FullyConnectedSeq(
-                layerPrev: layerSeq, nbNeurons: 4,
+                layerPrev: layerSeq, nbNeurons: 4 * 5,
                 activation: SoftReLU.str, biases: true, params: params
             )
             
@@ -717,12 +717,25 @@ class LayerSeq4FlowTests: Input2DMSE1DCase
         {
         case "FullyConnectedSeq":
             layerSeq = try! FullyConnectedPatch(
-                layerPrev: layer, patch: width / 3, nbNeurons: 4,
+                layerPrev: layer, patch: width / 3, nbNeurons: 4 * 3,
                 activation: LeakyReLU.str, biases: true, params: params
             )
             layerSeq = FullyConnectedSeq(
-                layerPrev: layerSeq, nbNeurons: 4,
+                layerPrev: layerSeq, nbNeurons: 4 * 5,
                 activation: LeakyReLU.str, biases: true, params: params
+            )
+            
+        case "Query":
+            let otherLayer: LayerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 4 * 2 * 3,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 4 * 2 * 3,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = try! QuerySeq(
+                query: layerSeq, key: otherLayer, nbHeads: 2, params: params
             )
             
         default:
@@ -742,6 +755,12 @@ class LayerSeq4FlowTests: Input2DMSE1DCase
     func testFullyConnectedSeq() throws
     {
         let trainer = _buildTrainer("FullyConnectedSeq")
+        run(trainer)
+    }
+    
+    func testQuerySeq() throws
+    {
+        let trainer = _buildTrainer("Query")
         run(trainer)
     }
 }

@@ -738,6 +738,15 @@ class LayerSeq4FlowTests: Input2DMSE1DCase
                 query: layerSeq, key: otherLayer, nbHeads: 2, params: params
             )
             
+        case "Softmax":
+            layerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 4 * 3 * 3,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = try! SoftmaxSeq(
+                layerPrev: layerSeq, nbHeads: 3, params: params
+            )
+            
         case "Value":
             let otherLayer: LayerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: 3, nbNeurons: 4 * 2 * 3,
@@ -778,6 +787,12 @@ class LayerSeq4FlowTests: Input2DMSE1DCase
     func testQuerySeq() throws
     {
         let trainer = _buildTrainer("Query")
+        run(trainer)
+    }
+    
+    func testSoftmaxSeq() throws
+    {
+        let trainer = _buildTrainer("Softmax")
         run(trainer)
     }
     

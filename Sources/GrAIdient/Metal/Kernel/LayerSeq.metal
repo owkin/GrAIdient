@@ -968,6 +968,78 @@ kernel void softmaxSeqForward(
     outs[offset] = exp(outPrev - cMax) / sum1;
 }
 
+kernel void softmaxSeq4Forward(
+    const device float4 * outsPrev,
+    constant uint * pNbHeads,
+    constant uint * pNbNeurons,
+    constant uint * pNbBatch,
+    constant uint * pSequence,
+    device float4 * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint nbHeads;
+    uint nbNeurons;
+    uint nbBatch;
+    uint sequence;
+    uint size;
+    
+    if (pNbHeads && pNbNeurons && pNbBatch && pSequence && outsPrev && outs)
+    {
+        nbHeads = *pNbHeads;
+        nbNeurons = *pNbNeurons;
+        nbBatch = *pNbBatch;
+        sequence = *pSequence;
+        size = nbNeurons / nbHeads;
+    }
+    else
+        return ;
+    
+    uint depth = id[0];
+    uint elem = id[1] / sequence;
+    uint seq = id[1] % sequence;
+    uint head = depth / (size / 4);
+    
+    if (depth * 4 >= nbNeurons || elem >= nbBatch || seq >= sequence)
+    {
+        return ;
+    }
+    
+    float cMax = outsPrev[
+        (depth * 4 + nbNeurons * seq + sequence * nbNeurons * elem) / 4
+    ][0];
+    for (uint j=0; j<size/4; j++)
+    {
+        uint offset1 = (j*4+head*size +
+            nbNeurons * seq + sequence * nbNeurons * elem) / 4;
+        
+        float4 outPrev = outsPrev[offset1];
+        float max1 = max(outPrev[0], outPrev[1]);
+        float max2 = max(outPrev[2], outPrev[3]);
+        float max3 = max(max1, max2);
+        if (max3 > cMax)
+        {
+            cMax = max3;
+        }
+    }
+    
+    float4 sum1 = 0.0;
+    for (uint j=0; j<size/4; j++)
+    {
+        uint offset1 = (j*4+head*size +
+            nbNeurons * seq + sequence * nbNeurons * elem) / 4;
+        
+        float4 outPrev = outsPrev[offset1];
+        sum1 += exp(outPrev - cMax);
+    }
+    
+    float sum2 = sum1[0] + sum1[1] + sum1[2] + sum1[3];
+    
+    uint offset =
+        (depth * 4 + nbNeurons * seq + sequence * nbNeurons * elem) / 4;
+    float4 outPrev = outsPrev[offset];
+    outs[offset] = exp(outPrev - cMax) / sum2;
+}
+
 kernel void softmaxSeqBackward(
     const device float * outs,
     const device float * delta,
@@ -1031,6 +1103,74 @@ kernel void softmaxSeqBackward(
     else
     {
         deltaPrev[offset] += outCur * (deltaCur - sum1);
+    }
+}
+
+kernel void softmaxSeq4Backward(
+    const device float4 * outs,
+    const device float4 * delta,
+    constant uint * pNbHeads,
+    constant uint * pNbNeurons,
+    constant uint * pNbBatch,
+    constant uint * pSequence,
+    constant uint * pDirty,
+    device float4 * deltaPrev,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint nbHeads;
+    uint nbNeurons;
+    uint nbBatch;
+    uint sequence;
+    uint size;
+    uint dirty;
+    
+    if (pNbHeads && pNbNeurons && pNbBatch && pSequence && pDirty &&
+        deltaPrev && outs && delta)
+    {
+        nbHeads = *pNbHeads;
+        nbNeurons = *pNbNeurons;
+        nbBatch = *pNbBatch;
+        sequence = *pSequence;
+        size = nbNeurons / nbHeads;
+        dirty = *pDirty;
+    }
+    else
+        return ;
+    
+    uint depth = id[0];
+    uint elem = id[1] / sequence;
+    uint seq = id[1] % sequence;
+    uint head = depth / (size / 4);
+    
+    if (depth * 4 >= nbNeurons || elem >= nbBatch || seq >= sequence)
+    {
+        return ;
+    }
+    
+    uint offset =
+        (depth * 4 + nbNeurons * seq + sequence * nbNeurons * elem) / 4;
+    float4 outCur = outs[offset];
+    float4 deltaCur = delta[offset];
+    
+    float4 sum1 = 0.0;
+    for (uint j=0; j<size/4; j++)
+    {
+        uint offset1 = (j*4+head*size +
+            nbNeurons * seq + sequence * nbNeurons * elem) / 4;
+        
+        float4 outCur1 = outs[offset1];
+        float4 deltaCur1 = delta[offset1];
+        sum1 += outCur1 * deltaCur1;
+    }
+    
+    float sum2 = sum1[0] + sum1[1] + sum1[2] + sum1[3];
+    if (dirty)
+    {
+        deltaPrev[offset] = outCur * (deltaCur - sum2);
+    }
+    else
+    {
+        deltaPrev[offset] += outCur * (deltaCur - sum2);
     }
 }
 

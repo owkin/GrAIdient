@@ -247,8 +247,11 @@ public class SoftmaxSeq: LayerSeq
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pSequence: [UInt32] = [UInt32(sequence)]
             
+            let kernel = (nbNeurons / _nbHeads) % 4 == 0 ?
+                "softmaxSeq4Forward" : "softmaxSeqForward"
+            let coeff = (nbNeurons / _nbHeads) % 4 == 0 ? 4 : 1
             let command = MetalKernel.get.createCommand(
-                "softmaxSeqForward", deviceID: deviceID
+                kernel, deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(pNbHeads, atIndex: 1)
@@ -258,7 +261,7 @@ public class SoftmaxSeq: LayerSeq
             command.setBuffer(outs.metal, atIndex: 5)
             
             command.dispatchThreads(
-                width: nbNeurons,
+                width: nbNeurons / coeff,
                 height: batchSize * sequence
             )
             command.enqueue()
@@ -326,8 +329,11 @@ public class SoftmaxSeq: LayerSeq
             let pSequence: [UInt32] = [UInt32(sequence)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
+            let kernel = (nbNeurons / _nbHeads) % 4 == 0 ?
+                "softmaxSeq4Backward" : "softmaxSeqBackward"
+            let coeff = (nbNeurons / _nbHeads) % 4 == 0 ? 4 : 1
             let command = MetalKernel.get.createCommand(
-                "softmaxSeqBackward", deviceID: deviceID
+                kernel, deviceID: deviceID
             )
             command.setBuffer(outs.metal, atIndex: 0)
             command.setBuffer(delta.metal, atIndex: 1)
@@ -339,7 +345,7 @@ public class SoftmaxSeq: LayerSeq
             command.setBuffer(layerPrev.delta.metal, atIndex: 7)
             
             command.dispatchThreads(
-                width: nbNeurons,
+                width: nbNeurons / coeff,
                 height: batchSize * sequence
             )
             command.enqueue()

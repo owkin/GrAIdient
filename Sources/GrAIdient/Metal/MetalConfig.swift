@@ -60,6 +60,7 @@ let CONFIG_KERNELS =
         "flPatchBackward",
         "flPatchBatchDerWeights",
         "flPatchBatchDerBiases",
+        "flPatchBatch4DerBiases",
         "flPatchDerWeights",
         "flPatchDerBiases",
         "flPatchReduceWeights",

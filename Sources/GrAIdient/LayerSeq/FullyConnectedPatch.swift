@@ -1188,8 +1188,11 @@ public class FullyConnectedPatch: ActivationSeq,
                 
                 if _updateBiases
                 {
+                    let kernel = nbNeurons % 4 == 0 ?
+                        "flPatchBatch4DerBiases" : "flPatchBatchDerBiases"
+                    let coeff = nbNeurons % 4 == 0 ? 4 : 1
                     command = MetalKernel.get.createCommand(
-                        "flPatchBatchDerBiases", deviceID: deviceID
+                        kernel, deviceID: deviceID
                     )
                     command.setBuffer(delta.metal, atIndex: 0)
                     command.setBytes(pNbNeurons, atIndex: 1)
@@ -1198,7 +1201,7 @@ public class FullyConnectedPatch: ActivationSeq,
                     command.setBytes(pAccumulate, atIndex: 4)
                     command.setBuffer(_bBuffers.g.metal, atIndex: 5)
                     
-                    command.dispatchThreads(nbNeurons)
+                    command.dispatchThreads(nbNeurons / coeff)
                     command.enqueue()
                 }
             }

@@ -248,31 +248,27 @@ final class TransformerBenchmark: XCTestCase
         
         // Initialize the ground truth once and for all.
         let groundTruth = MetalSharedBuffer<Float>(_batchSize, deviceID: 0)
-        let buffer = groundTruth.buffer
+        let gtBuffer = groundTruth.buffer
         for elem in 0..<_batchSize / 2
         {
-            buffer[elem] = 0.0
+            gtBuffer[elem] = 0.0
         }
         for elem in _batchSize / 2..<_batchSize
         {
-            buffer[elem] = 1.0
+            gtBuffer[elem] = 1.0
         }
-        MetalKernel.get.upload([groundTruth])
+        groundTruth.upload()
         
         // Initialize data once and for all.
-        var data = [Float]()
-        for _ in 0..<_batchSize * 3 * _size * _size
-        {
-            data.append(Float.random(in: -1..<1))
-        }
-        try! firstLayer.setDataGPU(
-            data,
-            batchSize: _batchSize, 
-            nbChannels: 3,
-            height: _size,
-            width: _size,
-            format: .Neuron
+        let data = MetalPrivateBuffer<Float>(
+            _batchSize * 3 * _size * _size, deviceID: 0
         )
+        let dataBuffer = data.shared.buffer
+        for i in 0..<_batchSize * 3 * _size * _size
+        {
+            dataBuffer[i] = Float.random(in: -1..<1)
+        }
+        data.upload()
         
         let nbEpochs = 2
         let nbSteps = 20
@@ -286,6 +282,15 @@ final class TransformerBenchmark: XCTestCase
                 // Reset gradient validity for backward pass
                 // and update the batch size (although here it stays the same).
                 transformer.updateKernel(batchSize: _batchSize)
+                
+                // Set data.
+                try! firstLayer.setDataGPU(
+                    data,
+                    batchSize: _batchSize,
+                    nbChannels: 3,
+                    height: _size,
+                    width: _size
+                )
                 
                 // Forward.
                 try! transformer.forward()
@@ -303,7 +308,16 @@ final class TransformerBenchmark: XCTestCase
                 // Update weights.
                 try! transformer.update()
                 
-                print("Step \(step)/\(nbSteps-1).")
+                // Get loss result.
+                // Note that backward is explicitly
+                // enabled by `applyGradient` whereas `getLoss` is
+                // just an indicator.
+                let loss = try! lastLayer.getLossGPU(
+                    groundTruth,
+                    batchSize: _batchSize,
+                    nbNeurons: 1
+                )
+                print("Step \(step)/\(nbSteps-1): \(sqrt(loss)).")
                 
                 // Update internal step.
                 // This is not mandatory except if we used another

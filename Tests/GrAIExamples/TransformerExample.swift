@@ -306,7 +306,7 @@ final class TransformerExample: XCTestCase
         {
             buffer[elem] = 1.0
         }
-        MetalKernel.get.upload([groundTruth])
+        groundTruth.upload()
         
         let nbEpochs = 2
         for epoch in 0..<nbEpochs

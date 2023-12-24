@@ -288,6 +288,8 @@ public class Concat1Seq: LayerMergeSeq
         let pSequence: [UInt32] = [UInt32(sequence)]
         
         let metalKernel = MetalKernel.get
+        var kernel: String
+        var coeff: Int
         var command: MetalCommand
         
         var globalOffset = 0
@@ -299,8 +301,11 @@ public class Concat1Seq: LayerMergeSeq
             let pGlobalOffset: [UInt32] = [UInt32(globalOffset)]
             let pSequencePrev: [UInt32] = [UInt32(sequencePrev)]
             
+            kernel = nbNeurons % 4 == 0 ?
+                "concat1Seq4Forward" : "concat1SeqForward"
+            coeff = nbNeurons % 4 == 0 ? 4 : 1
             command = metalKernel.createCommand(
-                "concat1SeqForward", deviceID: deviceID
+                kernel, deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(pGlobalOffset, atIndex: 1)
@@ -311,7 +316,7 @@ public class Concat1Seq: LayerMergeSeq
             command.setBuffer(outs.metal, atIndex: 6)
             
             command.dispatchThreads(
-                width: nbNeurons,
+                width: nbNeurons / coeff,
                 height: batchSize * sequencePrev
             )
             command.enqueue()
@@ -382,6 +387,8 @@ public class Concat1Seq: LayerMergeSeq
         let pSequence: [UInt32] = [UInt32(sequence)]
         
         let metalKernel = MetalKernel.get
+        var kernel: String
+        var coeff: Int
         var command: MetalCommand
         
         var globalOffset = 0
@@ -402,8 +409,11 @@ public class Concat1Seq: LayerMergeSeq
             let pSequencePrev: [UInt32] = [UInt32(sequencePrev)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
+            kernel = nbNeurons % 4 == 0 ?
+                "concat1Seq4Backward" : "concat1SeqBackward"
+            coeff = nbNeurons % 4 == 0 ? 4 : 1
             command = metalKernel.createCommand(
-                "concat1SeqBackward", deviceID: deviceID
+                kernel, deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBytes(pGlobalOffset, atIndex: 1)
@@ -415,7 +425,7 @@ public class Concat1Seq: LayerMergeSeq
             command.setBuffer(layerPrev.delta.metal, atIndex: 7)
             
             command.dispatchThreads(
-                width: nbNeurons,
+                width: nbNeurons / coeff,
                 height: batchSize * sequencePrev
             )
             command.enqueue()

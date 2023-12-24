@@ -259,20 +259,20 @@ public class Sum1D: LayerMerge1D
             let nbElems = (_layersPrev[num] as! Layer1D).outs.nbElems
             let pNbElems: [UInt32] = [UInt32(nbElems)]
             
-            let command: MetalCommand
+            let kernel: String
+            let coeff = nbElems % 4 == 0 ? 4 : 1
             if first
             {
-                command = MetalKernel.get.createCommand(
-                    "sum1", deviceID: deviceID
-                )
+                kernel = nbElems % 4 == 0 ? "sum14" : "sum1"
                 first = false
             }
             else
             {
-                command = MetalKernel.get.createCommand(
-                    "sum2", deviceID: deviceID
-                )
+                kernel = nbElems % 4 == 0 ? "sum24" : "sum2"
             }
+            let command = MetalKernel.get.createCommand(
+                kernel, deviceID: deviceID
+            )
             
             command.setBuffer(
                 (_layersPrev[num] as! Layer1D).outs.metal, atIndex: 0
@@ -280,7 +280,7 @@ public class Sum1D: LayerMerge1D
             command.setBytes(pNbElems, atIndex: 1)
             command.setBuffer(outs.metal, atIndex: 2)
             
-            command.dispatchThreads(nbElems)
+            command.dispatchThreads(nbElems / coeff)
             command.enqueue()
         }
     }
@@ -345,19 +345,19 @@ public class Sum1D: LayerMerge1D
             let nbElems = delta.nbElems
             let pNbElems: [UInt32] = [UInt32(nbElems)]
             
-            let command: MetalCommand
+            let kernel: String
+            let coeff = nbElems % 4 == 0 ? 4 : 1
             if _layersPrev[num].dirty
             {
-                command = MetalKernel.get.createCommand(
-                    "sum1", deviceID: deviceID
-                )
+                kernel = nbElems % 4 == 0 ? "sum14" : "sum1"
             }
             else
             {
-                command = MetalKernel.get.createCommand(
-                    "sum2", deviceID: deviceID
-                )
+                kernel = nbElems % 4 == 0 ? "sum24" : "sum2"
             }
+            let command = MetalKernel.get.createCommand(
+                kernel, deviceID: deviceID
+            )
             
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBytes(pNbElems, atIndex: 1)
@@ -365,7 +365,7 @@ public class Sum1D: LayerMerge1D
                 (_layersPrev[num] as! Layer1D).delta.metal, atIndex: 2
             )
             
-            command.dispatchThreads(nbElems)
+            command.dispatchThreads(nbElems / coeff)
             command.enqueue()
         }
         propagateDirty()

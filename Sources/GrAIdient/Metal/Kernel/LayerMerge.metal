@@ -31,6 +31,29 @@ kernel void sum1(
     outs[id] = ins[id];
 }
 
+kernel void sum14(
+    const device float4 * ins,
+    constant uint * pNbElems,
+    device float4 * outs,
+    uint id [[ thread_position_in_grid ]])
+{
+    uint nbElems;
+    
+    if (pNbElems && ins && outs)
+    {
+        nbElems = pNbElems[0];
+    }
+    else
+        return ;
+    
+    if (id * 4 >= nbElems)
+    {
+        return ;
+    }
+    
+    outs[id] = ins[id];
+}
+
 kernel void sum2(
     const device float * ins,
     constant uint * pNbElems,
@@ -47,6 +70,29 @@ kernel void sum2(
         return ;
     
     if (id >= nbElems)
+    {
+        return ;
+    }
+    
+    outs[id] += ins[id];
+}
+
+kernel void sum24(
+    const device float4 * ins,
+    constant uint * pNbElems,
+    device float4 * outs,
+    uint id [[ thread_position_in_grid ]])
+{
+    uint nbElems;
+    
+    if (pNbElems && ins && outs)
+    {
+        nbElems = pNbElems[0];
+    }
+    else
+        return ;
+    
+    if (id * 4 >= nbElems)
     {
         return ;
     }

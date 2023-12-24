@@ -169,11 +169,17 @@ let CONFIG_KERNELS =
     ],
     "LayerNorm": [
         "computeLayerNormSeqμ",
+        "computeLayerNormSeqμ4",
         "computeLayerNormSeqσ2",
+        "computeLayerNormSeqσ24",
         "forwardLayerNormSeq",
+        "forwardLayerNormSeq4",
         "backwardWeights1LayerNormSeq",
+        "backwardWeights1LayerNormSeq4",
         "backwardWeights2LayerNormSeq",
+        "backwardWeights2LayerNormSeq4",
         "backwardLayerNormSeq",
+        "backwardLayerNormSeq4",
     ],
     "LayerSeq": [
         "avgPoolSeqForward",

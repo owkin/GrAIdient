@@ -725,6 +725,15 @@ class LayerSeq4FlowTests: Input2DMSE1DCase
                 activation: LeakyReLU.str, biases: true, params: params
             )
             
+        case "LayerNorm":
+            layerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 4 * 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = LayerNormSeq(
+                layerPrev: layerSeq, activation: nil, params: params
+            )
+            
         case "Query":
             let otherLayer: LayerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 4 * 2 * 3,
@@ -781,6 +790,12 @@ class LayerSeq4FlowTests: Input2DMSE1DCase
     func testFullyConnectedSeq() throws
     {
         let trainer = _buildTrainer("FullyConnectedSeq")
+        run(trainer)
+    }
+    
+    func testLayerNormSeq() throws
+    {
+        let trainer = _buildTrainer("LayerNorm")
         run(trainer)
     }
     

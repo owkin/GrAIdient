@@ -186,7 +186,7 @@ public class Normalize12D: Layer2D
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "normalize12DForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -199,7 +199,7 @@ public class Normalize12D: Layer2D
                 width: width * nbChannels,
                 height: height * batchSize
             )
-            command.enqueue()
+            command.endEncoding()
         }
     }
     
@@ -284,7 +284,7 @@ public class Normalize12D: Layer2D
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "normalize12DBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
@@ -299,7 +299,7 @@ public class Normalize12D: Layer2D
                 width: width * nbChannels,
                 height: height * batchSize
             )
-            command.enqueue()
+            command.endEncoding()
             
             propagateDirty()
         }
@@ -548,7 +548,7 @@ public class Normalize122D: Layer2D
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pNbThreadgroups: [UInt32] = [UInt32(nbThreadgroups)]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "computeSquaredNorm122D", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -570,7 +570,7 @@ public class Normalize122D: Layer2D
                 threadsPerGrid: threadsPerGrid,
                 threadsPerThreadgroup: threadsPerThreadgroup
             )
-            command.enqueue()
+            command.endEncoding()
             
             // Continue the reduction in a more generic way.
             reduceSum(
@@ -601,7 +601,7 @@ public class Normalize122D: Layer2D
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pNbThreadgroups: [UInt32] = [UInt32(nbThreadgroups)]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "normalize122DForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -616,7 +616,7 @@ public class Normalize122D: Layer2D
                 width: width * nbChannels,
                 height: height * batchSize
             )
-            command.enqueue()
+            command.endEncoding()
         }
     }
     
@@ -701,7 +701,7 @@ public class Normalize122D: Layer2D
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pNbThreadgroups: [UInt32] = [UInt32(nbThreadgroups)]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "computeDeltaTmp122D", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
@@ -725,7 +725,7 @@ public class Normalize122D: Layer2D
                 threadsPerGrid: threadsPerGrid,
                 threadsPerThreadgroup: threadsPerThreadgroup
             )
-            command.enqueue()
+            command.endEncoding()
             
             // Continue the reduction in a more generic way.
             reduceSum(
@@ -757,7 +757,7 @@ public class Normalize122D: Layer2D
             let pNbThreadgroups: [UInt32] = [UInt32(nbThreadgroups)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "normalize122DBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
@@ -775,7 +775,7 @@ public class Normalize122D: Layer2D
                 width: width * nbChannels,
                 height: height * batchSize
             )
-            command.enqueue()
+            command.endEncoding()
             
             propagateDirty()
         }

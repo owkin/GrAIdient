@@ -299,7 +299,7 @@ public class Concat2D: LayerMerge2D
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         
         let metalKernel = MetalKernel.get
-        var command: MetalCommand
+        var command: MetalEncoder
         
         var globalOffset = 0
         for num in 0..<_layersPrev.count
@@ -309,7 +309,7 @@ public class Concat2D: LayerMerge2D
             let pGlobalOffset: [UInt32] = [UInt32(globalOffset)]
             let pNbChannelsPrev: [UInt32] = [UInt32(nbChannelsPrev)]
             
-            command = metalKernel.createCommand(
+            command = metalKernel.createEncoder(
                 "concat12DForward", deviceID: deviceID
             )
             command.setBuffer(
@@ -326,7 +326,7 @@ public class Concat2D: LayerMerge2D
                 width: width * nbChannelsPrev,
                 height: height * batchSize
             )
-            command.enqueue()
+            command.endEncoding()
             
             globalOffset += nbChannelsPrev
         }
@@ -395,7 +395,7 @@ public class Concat2D: LayerMerge2D
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         
         let metalKernel = MetalKernel.get
-        var command: MetalCommand
+        var command: MetalEncoder
         
         var globalOffset = 0
         for num in 0..<_layersPrev.count
@@ -415,7 +415,7 @@ public class Concat2D: LayerMerge2D
             let pNbChannelsPrev: [UInt32] = [UInt32(nbChannelsPrev)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
-            command = metalKernel.createCommand(
+            command = metalKernel.createEncoder(
                 "concat12DBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
@@ -431,7 +431,7 @@ public class Concat2D: LayerMerge2D
                 width: width * nbChannelsPrev,
                 height: height * batchSize
             )
-            command.enqueue()
+            command.endEncoding()
             
             globalOffset += nbChannelsPrev
         }

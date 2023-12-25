@@ -313,7 +313,7 @@ public class ColorJitterHSV: Layer2D
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pNoise: [Float] = [Float(noiseH), Float(noiseS), Float(noiseV)]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "colorJitterHSVForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -326,7 +326,7 @@ public class ColorJitterHSV: Layer2D
                 width: height * width,
                 height: batchSize
             )
-            command.enqueue()
+            command.endEncoding()
         }
     }
     

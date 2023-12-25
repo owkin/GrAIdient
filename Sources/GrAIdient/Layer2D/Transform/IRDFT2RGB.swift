@@ -199,7 +199,7 @@ public class IRDFT2RGB: Layer2D
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "IRDFT2RGBForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -212,7 +212,7 @@ public class IRDFT2RGB: Layer2D
                 width: width * nbChannels,
                 height: height * batchSize
             )
-            command.enqueue()
+            command.endEncoding()
         }
     }
     
@@ -281,7 +281,7 @@ public class IRDFT2RGB: Layer2D
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "IRDFT2RGBBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
@@ -295,7 +295,7 @@ public class IRDFT2RGB: Layer2D
                 width: width * nbChannels,
                 height: height * batchSize
             )
-            command.enqueue()
+            command.endEncoding()
             
             propagateDirty()
         }

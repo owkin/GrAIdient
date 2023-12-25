@@ -315,7 +315,7 @@ public class Sum2D: LayerMerge2D
             {
                 kernel = nbElems % 4 == 0 ? "sum24" : "sum2"
             }
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 kernel, deviceID: deviceID
             )
             
@@ -326,7 +326,7 @@ public class Sum2D: LayerMerge2D
             command.setBuffer(outs.metal, atIndex: 2)
             
             command.dispatchThreads(nbElems / coeff)
-            command.enqueue()
+            command.endEncoding()
         }
     }
     
@@ -406,7 +406,7 @@ public class Sum2D: LayerMerge2D
             {
                 kernel = nbElems % 4 == 0 ? "sum24" : "sum2"
             }
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 kernel, deviceID: deviceID
             )
             
@@ -417,7 +417,7 @@ public class Sum2D: LayerMerge2D
             )
             
             command.dispatchThreads(nbElems / coeff)
-            command.enqueue()
+            command.endEncoding()
         }
         propagateDirty()
     }

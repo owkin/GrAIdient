@@ -233,7 +233,7 @@ public class FTFrequences2D: LayerInput2D, LayerResize
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pDimension: [UInt32] = [UInt32(width)]
         
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             "setDataFTFrequences2D", deviceID: deviceID
         )
         command.setBytes(pNbChannels, atIndex: 0)
@@ -245,6 +245,6 @@ public class FTFrequences2D: LayerInput2D, LayerResize
             width: width * nbChannels,
             height: height * batchSize
         )
-        command.enqueue()
+        command.endEncoding()
     }
 }

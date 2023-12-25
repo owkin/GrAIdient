@@ -372,7 +372,7 @@ public class Rotate2D: Layer2D
             let pAngle: [Float] = [Float(_angle)]
             let pPadValue: [Float] = [Float(_padValue)]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "rotate2DForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -387,7 +387,7 @@ public class Rotate2D: Layer2D
                 width: width * nbChannels,
                 height: height * batchSize
             )
-            command.enqueue()
+            command.endEncoding()
         }
     }
     
@@ -451,20 +451,20 @@ public class Rotate2D: Layer2D
         {
             try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
             
-            var command: MetalCommand
+            var command: MetalEncoder
             if layerPrev.dirty
             {
                 let nbElems = layerPrev.delta.nbElems
                 let pNbElems: [UInt32] = [UInt32(nbElems)]
                 
-                command = MetalKernel.get.createCommand(
+                command = MetalKernel.get.createEncoder(
                     "reset", deviceID: deviceID
                 )
                 command.setBytes(pNbElems, atIndex: 0)
                 command.setBuffer(layerPrev.delta.metal, atIndex: 1)
                 
                 command.dispatchThreads(nbElems)
-                command.enqueue()
+                command.endEncoding()
             }
             
             let pNbChannels: [UInt32] = [UInt32(nbChannels)]
@@ -472,7 +472,7 @@ public class Rotate2D: Layer2D
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pAngle: [Float] = [Float(_angle)]
             
-            command = MetalKernel.get.createCommand(
+            command = MetalKernel.get.createEncoder(
                 "rotate2DBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
@@ -486,7 +486,7 @@ public class Rotate2D: Layer2D
                 width: width * nbChannels,
                 height: height * batchSize
             )
-            command.enqueue()
+            command.endEncoding()
             
             propagateDirty()
         }

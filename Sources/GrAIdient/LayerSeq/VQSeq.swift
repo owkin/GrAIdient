@@ -452,7 +452,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
             let pSequence: [UInt32] = [UInt32(sequence)]
             let pK: [UInt32] = [UInt32(K)]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "vqSeqForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -468,7 +468,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
                 width: sequence,
                 height: batchSize
             )
-            command.enqueue()
+            command.endEncoding()
         }
     }
     
@@ -582,7 +582,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
             let pBeta: [Float] = [Float(beta)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "vqSeqBackward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -601,7 +601,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
                 width: nbNeurons,
                 height: batchSize * sequence
             )
-            command.enqueue()
+            command.endEncoding()
             
             propagateDirty()
         }
@@ -618,7 +618,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
             let pCoeff: [Float] = [Float(coeff)]
             let pAccumulate: [UInt32] = accumulateDeltaWeights ? [1] : [0]
             
-            var command: MetalCommand
+            var command: MetalEncoder
             if GrAI.Gradient.batch
             {
                 if !accumulateDeltaWeights
@@ -626,20 +626,20 @@ public class VQSeq: LayerSeq, LayerWeightInit
                     let nbElems = _wBuffers.g.nbElems
                     let pNbElems: [UInt32] = [UInt32(nbElems)]
                     
-                    command = MetalKernel.get.createCommand(
+                    command = MetalKernel.get.createEncoder(
                         "reset", deviceID: deviceID
                     )
                     command.setBytes(pNbElems, atIndex: 0)
                     command.setBuffer(_wBuffers.g.metal, atIndex: 1)
                     
                     command.dispatchThreads(nbElems)
-                    command.enqueue()
+                    command.endEncoding()
                 }
                 
                 // -------------------------------------------------------------
                 // Compute Gradients per batch
                 // -------------------------------------------------------------
-                command = MetalKernel.get.createCommand(
+                command = MetalKernel.get.createEncoder(
                     "vqSeqBatchDerWeights", deviceID: deviceID
                 )
                 command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -653,26 +653,26 @@ public class VQSeq: LayerSeq, LayerWeightInit
                 command.setBuffer(_wBuffers.g.metal, atIndex: 8)
                 
                 command.dispatchThreads(width: nbNeurons, height: K)
-                command.enqueue()
+                command.endEncoding()
             }
             else
             {
                 let nbElems = _wDeltaWeights.nbElems
                 let pNbElems: [UInt32] = [UInt32(nbElems)]
                 
-                command = MetalKernel.get.createCommand(
+                command = MetalKernel.get.createEncoder(
                     "reset", deviceID: deviceID
                 )
                 command.setBytes(pNbElems, atIndex: 0)
                 command.setBuffer(_wDeltaWeights.metal, atIndex: 1)
                 
                 command.dispatchThreads(nbElems)
-                command.enqueue()
+                command.endEncoding()
                 
                 // -------------------------------------------------------------
                 // Compute Gradients per sample
                 // -------------------------------------------------------------
-                command = MetalKernel.get.createCommand(
+                command = MetalKernel.get.createEncoder(
                     "vqSeqDerWeights", deviceID: deviceID
                 )
                 command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -689,12 +689,12 @@ public class VQSeq: LayerSeq, LayerWeightInit
                     width: nbNeurons,
                     height: batchSize * K
                 )
-                command.enqueue()
+                command.endEncoding()
                 
                 // -------------------------------------------------------------
                 // Compute Gradients per batch
                 // -------------------------------------------------------------
-                command = MetalKernel.get.createCommand(
+                command = MetalKernel.get.createEncoder(
                     "vq2DReduceWeights", deviceID: deviceID
                 ) // vqSeq and vq2D do the same reduction.
                 command.setBuffer(_wDeltaWeights.metal, atIndex: 0)
@@ -705,7 +705,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
                 command.setBuffer(_wBuffers.g.metal, atIndex: 5)
                 
                 command.dispatchThreads(width: nbNeurons, height: K)
-                command.enqueue()
+                command.endEncoding()
             }
         }
     }
@@ -760,7 +760,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pSequence: [UInt32] = [UInt32(sequence)]
         
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             "vqSeqLoss", deviceID: deviceID
         )
         command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -772,7 +772,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
         command.setBuffer(loss.metal, atIndex: 6)
         
         command.dispatchThreads(batchSize)
-        command.enqueue()
+        command.endEncoding()
         
         MetalKernel.get.download([loss])
         var loss: Float = 0.0
@@ -816,14 +816,14 @@ public class VQSeq: LayerSeq, LayerWeightInit
             let nbElems = delta.nbElems
             let pNbElems: [UInt32] = [UInt32(nbElems)]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "reset", deviceID: deviceID
             )
             command.setBytes(pNbElems, atIndex: 0)
             command.setBuffer(delta.metal, atIndex: 1)
             
             command.dispatchThreads(nbElems)
-            command.enqueue()
+            command.endEncoding()
         }
         else
         {
@@ -1122,7 +1122,7 @@ public class VQGradSeq: VQSeq
             let pSequence: [UInt32] = [UInt32(sequence)]
             let pNbThreadgroups: [UInt32] = [UInt32(nbThreadgroups)]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "vqGradSeqMax", deviceID: deviceID
             )
             command.setBuffer(layerPrev.delta.metal, atIndex: 0)
@@ -1144,7 +1144,7 @@ public class VQGradSeq: VQSeq
                 threadsPerGrid: threadsPerGrid,
                 threadsPerThreadgroup: threadsPerThreadgroup
             )
-            command.enqueue()
+            command.endEncoding()
             
             // Continue the reduction in a more generic way.
             reduceMax(
@@ -1180,7 +1180,7 @@ public class VQGradSeq: VQSeq
             let pK: [UInt32] = [UInt32(K)]
             let pMagnitudeCoeff: [Float] = [Float(magnitudeCoeff)]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "vqGradSeqForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -1199,7 +1199,7 @@ public class VQGradSeq: VQSeq
                 width: sequence,
                 height: batchSize
             )
-            command.enqueue()
+            command.endEncoding()
         }
     }
     

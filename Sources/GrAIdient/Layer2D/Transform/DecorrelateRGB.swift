@@ -224,7 +224,7 @@ public class DecorrelateRGB: Layer2D
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let correlation: [Float] = _correlation.map { Float($0) }
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "decorrelateRGBForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -238,7 +238,7 @@ public class DecorrelateRGB: Layer2D
                 width: width * nbChannels,
                 height: height * batchSize
             )
-            command.enqueue()
+            command.endEncoding()
         }
     }
     
@@ -295,7 +295,7 @@ public class DecorrelateRGB: Layer2D
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             let correlation: [Float] = _correlation.map { Float($0) }
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "decorrelateRGBBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
@@ -310,7 +310,7 @@ public class DecorrelateRGB: Layer2D
                 width: width * nbChannels,
                 height: height * batchSize
             )
-            command.enqueue()
+            command.endEncoding()
             
             propagateDirty()
         }

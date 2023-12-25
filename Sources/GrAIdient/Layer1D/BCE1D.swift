@@ -221,7 +221,8 @@ public class BCE1D: LayerOutput1D
         let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         
-        let command = MetalKernel.get.createCommand(
+        MetalKernel.get.createCommand(deviceID: deviceID)
+        let command = MetalKernel.get.createEncoder(
             "BCE1DLoss", deviceID: deviceID
         )
         command.setBuffer(outs.metal, atIndex: 0)
@@ -231,7 +232,8 @@ public class BCE1D: LayerOutput1D
         command.setBuffer(loss.metal, atIndex: 4)
         
         command.dispatchThreads(batchSize)
-        command.enqueue()
+        command.endEncoding()
+        MetalKernel.get.enqueue(deviceID: deviceID)
         
         MetalKernel.get.download([loss])
         var loss: Float = 0.0
@@ -386,7 +388,8 @@ public class BCE1D: LayerOutput1D
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
-            let command = MetalKernel.get.createCommand(
+            MetalKernel.get.createCommand(deviceID: deviceID)
+            let command = MetalKernel.get.createEncoder(
                 "BCE1DLossDerivative", deviceID: deviceID
             )
             command.setBuffer(outs.metal, atIndex: 0)
@@ -401,7 +404,8 @@ public class BCE1D: LayerOutput1D
                 width: nbNeurons,
                 height: batchSize
             )
-            command.enqueue()
+            command.endEncoding()
+            MetalKernel.get.enqueue(deviceID: deviceID)
             
             propagateDirty()
         }

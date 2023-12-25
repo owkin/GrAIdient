@@ -235,7 +235,7 @@ public class FlipHorizontal2D: Layer2D
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pDoFlip: [UInt32] = _doFlip ? [1] : [0]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 forwardKernel, deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -249,7 +249,7 @@ public class FlipHorizontal2D: Layer2D
                 width: width * nbChannels,
                 height: height * batchSize
             )
-            command.enqueue()
+            command.endEncoding()
         }
     }
     
@@ -307,7 +307,7 @@ public class FlipHorizontal2D: Layer2D
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             let pDoFlip: [UInt32] = _doFlip ? [1] : [0]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 backwardKernel, deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
@@ -322,7 +322,7 @@ public class FlipHorizontal2D: Layer2D
                 width: width * nbChannels,
                 height: height * batchSize
             )
-            command.enqueue()
+            command.endEncoding()
             
             propagateDirty()
         }

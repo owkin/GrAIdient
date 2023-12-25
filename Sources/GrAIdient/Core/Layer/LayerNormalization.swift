@@ -883,7 +883,7 @@ class BatchNormalizationGPU: LayerWeightsStatsNormalization
             _μ = MetalPrivateBuffer<Float>(_nbNeurons, deviceID: _deviceID)
         }
         
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             "computeBNConvμ", deviceID: _deviceID
         )
         command.setBuffer(layer.outs.metal, atIndex: 0)
@@ -895,7 +895,7 @@ class BatchNormalizationGPU: LayerWeightsStatsNormalization
         command.setBuffer(_Eμ.metal, atIndex: 6)
         
         command.dispatchThreads(_nbNeurons)
-        command.enqueue()
+        command.endEncoding()
     }
     
     /// Compute the deviations of the different independent batch normalization units.
@@ -916,7 +916,7 @@ class BatchNormalizationGPU: LayerWeightsStatsNormalization
             _σ2 = MetalPrivateBuffer<Float>(_nbNeurons, deviceID: _deviceID)
         }
         
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             "computeBNConvσ2", deviceID: _deviceID
         )
         command.setBuffer(layer.outs.metal, atIndex: 0)
@@ -929,7 +929,7 @@ class BatchNormalizationGPU: LayerWeightsStatsNormalization
         command.setBuffer(_Eσ2.metal, atIndex: 7)
         
         command.dispatchThreads(_nbNeurons)
-        command.enqueue()
+        command.endEncoding()
     }
     
     /// Apply the forward training pass in the GPU execution context.
@@ -954,7 +954,7 @@ class BatchNormalizationGPU: LayerWeightsStatsNormalization
             )
         }
         
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             "forwardBNConvTraining", deviceID: _deviceID
         )
         command.setBuffer(_β.w.metal, atIndex: 0)
@@ -971,7 +971,7 @@ class BatchNormalizationGPU: LayerWeightsStatsNormalization
             width: _nbNeurons * width,
             height: batchSize * height
         )
-        command.enqueue()
+        command.endEncoding()
         
         if _nbElems == 0
         {
@@ -991,7 +991,7 @@ class BatchNormalizationGPU: LayerWeightsStatsNormalization
         let pM: [UInt32] = [UInt32(_nbElems)]
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
         
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             "forwardBNConvInference",
             deviceID: _deviceID
         )
@@ -1009,7 +1009,7 @@ class BatchNormalizationGPU: LayerWeightsStatsNormalization
             width: _nbNeurons * width,
             height: batchSize * height
         )
-        command.enqueue()
+        command.endEncoding()
     }
     
     /// Apply the backward pass in the GPU execution context.
@@ -1043,7 +1043,7 @@ class BatchNormalizationGPU: LayerWeightsStatsNormalization
             _sum2 = MetalPrivateBuffer<Float>(_nbNeurons, deviceID: _deviceID)
         }
         
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             "backwardWeightsBNConv", deviceID: _deviceID
         )
         command.setBuffer(layer.delta.metal, atIndex: 0)
@@ -1059,7 +1059,7 @@ class BatchNormalizationGPU: LayerWeightsStatsNormalization
         command.setBuffer(_β.g.metal, atIndex: 10)
         
         command.dispatchThreads(_nbNeurons)
-        command.enqueue()
+        command.endEncoding()
     }
     
     /// Apply the backward training pass in the GPU execution context.
@@ -1075,7 +1075,7 @@ class BatchNormalizationGPU: LayerWeightsStatsNormalization
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
         
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             "backwardBNConvTraining", deviceID: _deviceID
         )
         command.setBuffer(_σ2.metal, atIndex: 0)
@@ -1092,7 +1092,7 @@ class BatchNormalizationGPU: LayerWeightsStatsNormalization
             width: _nbNeurons * width,
             height: batchSize * height
         )
-        command.enqueue()
+        command.endEncoding()
     }
     
     /// Apply the backward inference pass in the GPU execution context.
@@ -1107,7 +1107,7 @@ class BatchNormalizationGPU: LayerWeightsStatsNormalization
         let pM: [UInt32] = [UInt32(_nbElems)]
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
         
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             "backwardBNConvInference", deviceID: _deviceID
         )
         command.setBuffer(_Ɣ.w.metal, atIndex: 0)
@@ -1122,7 +1122,7 @@ class BatchNormalizationGPU: LayerWeightsStatsNormalization
             width: _nbNeurons * width,
             height: batchSize * height
         )
-        command.enqueue()
+        command.endEncoding()
     }
     
     /// Get the weights in the GPU execution context.
@@ -1660,7 +1660,7 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
             )
         }
         
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             "forwardInstanceNormConv", deviceID: _deviceID
         )
         command.setBuffer(_β.w.metal, atIndex: 0)
@@ -1677,7 +1677,7 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
             width: _nbNeurons * width,
             height: batchSize * height
         )
-        command.enqueue()
+        command.endEncoding()
     }
     
     /// Apply the forward pass in the GPU execution context.
@@ -1704,7 +1704,7 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
             )
         }
         
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             "forwardAdaIN", deviceID: _deviceID
         )
         command.setBuffer(layerFirst.outs.metal, atIndex: 0)
@@ -1721,7 +1721,7 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
             width: _nbNeurons * width,
             height: batchSize * height
         )
-        command.enqueue()
+        command.endEncoding()
     }
     
     /// Compute the averages of the different independent normalization units.
@@ -1743,7 +1743,7 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
             )
         }
         
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             "computeInstanceNormConvμ", deviceID: _deviceID
         )
         command.setBuffer(layer.outs.metal, atIndex: 0)
@@ -1753,7 +1753,7 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         command.setBuffer(_μ.metal, atIndex: 4)
         
         command.dispatchThreads(width: _nbNeurons, height: batchSize)
-        command.enqueue()
+        command.endEncoding()
     }
     
     /// Compute the averages of the different independent normalization units.
@@ -1776,7 +1776,7 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
             )
         }
         
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             "computeInstanceNormConvμ", deviceID: _deviceID
         )
         command.setBuffer(layerFirst.outs.metal, atIndex: 0)
@@ -1786,7 +1786,7 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         command.setBuffer(_μ.metal, atIndex: 4)
         
         command.dispatchThreads(width: _nbNeurons, height: batchSize)
-        command.enqueue()
+        command.endEncoding()
     }
     
     /// Compute the deviations of the different independent normalization units.
@@ -1808,7 +1808,7 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
             )
         }
         
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             "computeInstanceNormConvσ2", deviceID: _deviceID
         )
         command.setBuffer(layer.outs.metal, atIndex: 0)
@@ -1819,7 +1819,7 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         command.setBuffer(_σ2.metal, atIndex: 5)
         
         command.dispatchThreads(width: _nbNeurons, height: batchSize)
-        command.enqueue()
+        command.endEncoding()
     }
     
     /// Compute the deviations of the different independent normalization units.
@@ -1842,7 +1842,7 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
             )
         }
         
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             "computeInstanceNormConvσ2", deviceID: _deviceID
         )
         command.setBuffer(layerFirst.outs.metal, atIndex: 0)
@@ -1853,7 +1853,7 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         command.setBuffer(_σ2.metal, atIndex: 5)
         
         command.dispatchThreads(width: _nbNeurons, height: batchSize)
-        command.enqueue()
+        command.endEncoding()
     }
     
     /// Apply the backward pass in the GPU execution context.
@@ -1869,7 +1869,7 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
         
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             "backwardInstanceNormConv", deviceID: _deviceID
         )
         command.setBuffer(_σ2.metal, atIndex: 0)
@@ -1886,7 +1886,7 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
             width: _nbNeurons * width,
             height: batchSize * height
         )
-        command.enqueue()
+        command.endEncoding()
     }
     
     /// Apply the backward pass in the GPU execution context.
@@ -1905,7 +1905,7 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
         let pDirty: [UInt32] = layerFirst.dirty ? [1] : [0]
         
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             "backward1AdaIN", deviceID: _deviceID
         )
         command.setBuffer(layer.delta.metal, atIndex: 0)
@@ -1924,7 +1924,7 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
             width: _nbNeurons * width,
             height: batchSize * height
         )
-        command.enqueue()
+        command.endEncoding()
     }
     
     /// Compute the gradients of weights  in the GPU execution context.
@@ -1949,7 +1949,7 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
             )
         }
         
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             "backwardWeightsInstanceNormConv", deviceID: _deviceID
         )
         command.setBuffer(layer.delta.metal, atIndex: 0)
@@ -1965,7 +1965,7 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         command.setBuffer(_β.g.metal, atIndex: 10)
         
         command.dispatchThreads(_nbNeurons)
-        command.enqueue()
+        command.endEncoding()
     }
     
     /// Compute the gradients of weights  in the GPU execution context.
@@ -1991,7 +1991,7 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
             )
         }
         
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             "backward2AdaIN", deviceID: _deviceID
         )
         command.setBuffer(layer.delta.metal, atIndex: 0)
@@ -2006,7 +2006,7 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         command.setBuffer(layerLast.delta.metal, atIndex: 9)
         
         command.dispatchThreads(width: _nbNeurons, height: batchSize)
-        command.enqueue()
+        command.endEncoding()
     }
     
     /// Get the weights in the GPU execution context.
@@ -2533,7 +2533,7 @@ class LayerNormalizationGPU: LayerWeightsNormalization
         let kernel = _nbNeurons % 4 == 0 ?
             "forwardLayerNormSeq4" : "forwardLayerNormSeq"
         let coeff = _nbNeurons % 4 == 0 ? 4 : 1
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             kernel, deviceID: _deviceID
         )
         command.setBuffer(_β.w.metal, atIndex: 0)
@@ -2550,7 +2550,7 @@ class LayerNormalizationGPU: LayerWeightsNormalization
             width: _nbNeurons / coeff,
             height: batchSize * sequence
         )
-        command.enqueue()
+        command.endEncoding()
     }
     
     /// Compute the averages of the different independent normalization units.
@@ -2572,7 +2572,7 @@ class LayerNormalizationGPU: LayerWeightsNormalization
         
         let kernel = _nbNeurons % 4 == 0 ?
             "computeLayerNormSeqμ4" : "computeLayerNormSeqμ"
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             kernel, deviceID: _deviceID
         )
         command.setBuffer(layer.outs.metal, atIndex: 0)
@@ -2582,7 +2582,7 @@ class LayerNormalizationGPU: LayerWeightsNormalization
         command.setBuffer(_μ.metal, atIndex: 4)
         
         command.dispatchThreads(width: sequence, height: batchSize)
-        command.enqueue()
+        command.endEncoding()
     }
     
     /// Compute the deviations of the different independent normalization units.
@@ -2604,7 +2604,7 @@ class LayerNormalizationGPU: LayerWeightsNormalization
         
         let kernel = _nbNeurons % 4 == 0 ?
             "computeLayerNormSeqσ24" : "computeLayerNormSeqσ2"
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             kernel, deviceID: _deviceID
         )
         command.setBuffer(layer.outs.metal, atIndex: 0)
@@ -2615,7 +2615,7 @@ class LayerNormalizationGPU: LayerWeightsNormalization
         command.setBuffer(_σ2.metal, atIndex: 5)
         
         command.dispatchThreads(width: sequence, height: batchSize)
-        command.enqueue()
+        command.endEncoding()
     }
     
     /// Apply the backward pass in the GPU execution context.
@@ -2634,7 +2634,7 @@ class LayerNormalizationGPU: LayerWeightsNormalization
         let kernel = _nbNeurons % 4 == 0 ?
             "backwardLayerNormSeq4" : "backwardLayerNormSeq"
         let coeff = _nbNeurons % 4 == 0 ? 4 : 1
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             kernel, deviceID: _deviceID
         )
         command.setBuffer(_σ2.metal, atIndex: 0)
@@ -2651,7 +2651,7 @@ class LayerNormalizationGPU: LayerWeightsNormalization
             width: _nbNeurons / coeff,
             height: batchSize * sequence
         )
-        command.enqueue()
+        command.endEncoding()
     }
     
     /// Compute the gradients of weights  in the GPU execution context.
@@ -2676,7 +2676,7 @@ class LayerNormalizationGPU: LayerWeightsNormalization
         
         let kernel = _nbNeurons % 4 == 0 ?
             "backwardWeights1LayerNormSeq4" : "backwardWeights1LayerNormSeq"
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             kernel, deviceID: _deviceID
         )
         command.setBuffer(layer.delta.metal, atIndex: 0)
@@ -2689,7 +2689,7 @@ class LayerNormalizationGPU: LayerWeightsNormalization
         command.setBuffer(_sum2.metal, atIndex: 7)
         
         command.dispatchThreads(width: sequence, height: batchSize)
-        command.enqueue()
+        command.endEncoding()
     }
     
     /// Compute the gradients of weights  in the GPU execution context.
@@ -2706,7 +2706,7 @@ class LayerNormalizationGPU: LayerWeightsNormalization
         let kernel = _nbNeurons % 4 == 0 ?
             "backwardWeights2LayerNormSeq4" : "backwardWeights2LayerNormSeq"
         let coeff = _nbNeurons % 4 == 0 ? 4 : 1
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             kernel, deviceID: _deviceID
         )
         command.setBuffer(layer.delta.metal, atIndex: 0)
@@ -2719,7 +2719,7 @@ class LayerNormalizationGPU: LayerWeightsNormalization
         command.setBuffer(_β.g.metal, atIndex: 7)
         
         command.dispatchThreads(_nbNeurons / coeff)
-        command.enqueue()
+        command.endEncoding()
     }
     
     /// Get the weights in the GPU execution context.

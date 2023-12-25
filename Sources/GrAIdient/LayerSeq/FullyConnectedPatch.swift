@@ -950,7 +950,7 @@ public class FullyConnectedPatch: ActivationSeq,
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pSequence: [UInt32] = [UInt32(sequence)]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "flPatchForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -968,7 +968,7 @@ public class FullyConnectedPatch: ActivationSeq,
                 width: nbNeurons,
                 height: batchSize * sequence
             )
-            command.enqueue()
+            command.endEncoding()
         }
     }
     
@@ -1123,7 +1123,7 @@ public class FullyConnectedPatch: ActivationSeq,
             let pSequence: [UInt32] = [UInt32(sequence)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "flPatchBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
@@ -1141,7 +1141,7 @@ public class FullyConnectedPatch: ActivationSeq,
                 width: weightWidth,
                 height: batchSize * sequence
             )
-            command.enqueue()
+            command.endEncoding()
             
             propagateDirty()
         }
@@ -1160,13 +1160,13 @@ public class FullyConnectedPatch: ActivationSeq,
             let pSequence: [UInt32] = [UInt32(sequence)]
             let pAccumulate: [UInt32] = accumulateDeltaWeights ? [1] : [0]
             
-            var command: MetalCommand
+            var command: MetalEncoder
             if GrAI.Gradient.batch
             {
                 // -------------------------------------------------------------
                 // Compute Gradients per batch
                 // -------------------------------------------------------------
-                command = MetalKernel.get.createCommand(
+                command = MetalKernel.get.createEncoder(
                     "flPatchBatchDerWeights", deviceID: deviceID
                 )
                 command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -1184,14 +1184,14 @@ public class FullyConnectedPatch: ActivationSeq,
                     width: nbNeurons,
                     height: weightWidth
                 )
-                command.enqueue()
+                command.endEncoding()
                 
                 if _updateBiases
                 {
                     let kernel = nbNeurons % 4 == 0 ?
                         "flPatchBatch4DerBiases" : "flPatchBatchDerBiases"
                     let coeff = nbNeurons % 4 == 0 ? 4 : 1
-                    command = MetalKernel.get.createCommand(
+                    command = MetalKernel.get.createEncoder(
                         kernel, deviceID: deviceID
                     )
                     command.setBuffer(delta.metal, atIndex: 0)
@@ -1202,7 +1202,7 @@ public class FullyConnectedPatch: ActivationSeq,
                     command.setBuffer(_bBuffers.g.metal, atIndex: 5)
                     
                     command.dispatchThreads(nbNeurons / coeff)
-                    command.enqueue()
+                    command.endEncoding()
                 }
             }
             else
@@ -1210,7 +1210,7 @@ public class FullyConnectedPatch: ActivationSeq,
                 // -------------------------------------------------------------
                 // Compute Gradients per sample
                 // -------------------------------------------------------------
-                command = MetalKernel.get.createCommand(
+                command = MetalKernel.get.createEncoder(
                     "flPatchDerWeights", deviceID: deviceID
                 )
                 command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -1227,11 +1227,11 @@ public class FullyConnectedPatch: ActivationSeq,
                     width: nbNeurons * batchSize,
                     height: weightWidth
                 )
-                command.enqueue()
+                command.endEncoding()
                 
                 if _updateBiases
                 {
-                    command = MetalKernel.get.createCommand(
+                    command = MetalKernel.get.createEncoder(
                         "flPatchDerBiases", deviceID: deviceID
                     )
                     command.setBuffer(delta.metal, atIndex: 0)
@@ -1244,13 +1244,13 @@ public class FullyConnectedPatch: ActivationSeq,
                         width: nbNeurons,
                         height: batchSize
                     )
-                    command.enqueue()
+                    command.endEncoding()
                 }
                 
                 // -------------------------------------------------------------
                 // Compute Gradients per batch
                 // -------------------------------------------------------------
-                command = MetalKernel.get.createCommand(
+                command = MetalKernel.get.createEncoder(
                     "flPatchReduceWeights", deviceID: deviceID
                 )
                 command.setBuffer(_wDeltaWeights.metal, atIndex: 0)
@@ -1265,11 +1265,11 @@ public class FullyConnectedPatch: ActivationSeq,
                     width: nbNeurons,
                     height: weightWidth
                 )
-                command.enqueue()
+                command.endEncoding()
                 
                 if _updateBiases
                 {
-                    command = MetalKernel.get.createCommand(
+                    command = MetalKernel.get.createEncoder(
                         "reduceBiases", deviceID: deviceID
                     )
                     command.setBuffer(_bDeltaWeights.metal, atIndex: 0)
@@ -1279,7 +1279,7 @@ public class FullyConnectedPatch: ActivationSeq,
                     command.setBuffer(_bBuffers.g.metal, atIndex: 4)
                     
                     command.dispatchThreads(nbNeurons)
-                    command.enqueue()
+                    command.endEncoding()
                 }
             }
         }

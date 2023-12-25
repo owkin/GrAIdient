@@ -281,7 +281,7 @@ public class SumSeq: LayerMergeSeq
             {
                 kernel = nbElems % 4 == 0 ? "sum24" : "sum2"
             }
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 kernel, deviceID: deviceID
             )
             
@@ -292,7 +292,7 @@ public class SumSeq: LayerMergeSeq
             command.setBuffer(outs.metal, atIndex: 2)
             
             command.dispatchThreads(nbElems / coeff)
-            command.enqueue()
+            command.endEncoding()
         }
     }
     
@@ -367,7 +367,7 @@ public class SumSeq: LayerMergeSeq
             {
                 kernel = nbElems % 4 == 0 ? "sum24" : "sum2"
             }
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 kernel, deviceID: deviceID
             )
             
@@ -378,7 +378,7 @@ public class SumSeq: LayerMergeSeq
             )
             
             command.dispatchThreads(nbElems / coeff)
-            command.enqueue()
+            command.endEncoding()
         }
         propagateDirty()
     }

@@ -1373,7 +1373,7 @@ public class Convolution2D: BN2D, LayerWeightInit
                                          UInt32(weightHeight)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 forwardKernel, deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -1393,7 +1393,7 @@ public class Convolution2D: BN2D, LayerWeightInit
                 width: nbChannels * width,
                 height: batchSize * height
             )
-            command.enqueue()
+            command.endEncoding()
         }
     }
     
@@ -1556,7 +1556,7 @@ public class Convolution2D: BN2D, LayerWeightInit
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 backwardKernel, deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
@@ -1576,7 +1576,7 @@ public class Convolution2D: BN2D, LayerWeightInit
                 width: nbChannelsPrev * layerPrev.width,
                 height: batchSize * layerPrev.height
             )
-            command.enqueue()
+            command.endEncoding()
             
             propagateDirty()
         }
@@ -1606,10 +1606,10 @@ public class Convolution2D: BN2D, LayerWeightInit
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pAccumulate: [UInt32] = accumulateDeltaWeights ? [1] : [0]
             
-            var command: MetalCommand
+            var command: MetalEncoder
             if GrAI.Gradient.batch
             {
-                command = MetalKernel.get.createCommand(
+                command = MetalKernel.get.createEncoder(
                     batchDerWeightsKernel, deviceID: deviceID
                 )
                 command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -1629,11 +1629,11 @@ public class Convolution2D: BN2D, LayerWeightInit
                     width: nbChannels * weightWidth,
                     height: nbChannelsPrev * weightHeight
                 )
-                command.enqueue()
+                command.endEncoding()
                 
                 if _updateBiases
                 {
-                    command = MetalKernel.get.createCommand(
+                    command = MetalKernel.get.createEncoder(
                         batchDerBiasesKernel, deviceID: deviceID
                     )
                     command.setBuffer(delta.metal, atIndex: 0)
@@ -1644,7 +1644,7 @@ public class Convolution2D: BN2D, LayerWeightInit
                     command.setBuffer(_bBuffers.g.metal, atIndex: 5)
                     
                     command.dispatchThreads(nbChannels)
-                    command.enqueue()
+                    command.endEncoding()
                 }
             }
             else
@@ -1652,7 +1652,7 @@ public class Convolution2D: BN2D, LayerWeightInit
                 // -------------------------------------------------------------
                 // Compute Gradients per sample
                 // -------------------------------------------------------------
-                command = MetalKernel.get.createCommand(
+                command = MetalKernel.get.createEncoder(
                     derWeightsKernel, deviceID: deviceID
                 )
                 command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -1671,11 +1671,11 @@ public class Convolution2D: BN2D, LayerWeightInit
                     width: batchSize * nbChannels * weightWidth,
                     height: nbChannelsPrev * weightHeight
                 )
-                command.enqueue()
+                command.endEncoding()
             
                 if _updateBiases
                 {
-                    command = MetalKernel.get.createCommand(
+                    command = MetalKernel.get.createEncoder(
                         derBiasesKernel, deviceID: deviceID
                     )
                     command.setBuffer(delta.metal, atIndex: 0)
@@ -1688,13 +1688,13 @@ public class Convolution2D: BN2D, LayerWeightInit
                         width: nbChannels,
                         height: batchSize
                     )
-                    command.enqueue()
+                    command.endEncoding()
                 }
                 
                 // -------------------------------------------------------------
                 // Compute Gradients per batch
                 // -------------------------------------------------------------
-                command = MetalKernel.get.createCommand(
+                command = MetalKernel.get.createEncoder(
                     reduceWeightsKernel, deviceID: deviceID
                 )
                 command.setBuffer(_wDeltaWeights.metal, atIndex: 0)
@@ -1709,11 +1709,11 @@ public class Convolution2D: BN2D, LayerWeightInit
                     width: nbChannels * weightWidth,
                     height: nbChannelsPrev * weightHeight
                 )
-                command.enqueue()
+                command.endEncoding()
             
                 if _updateBiases
                 {
-                    command = MetalKernel.get.createCommand(
+                    command = MetalKernel.get.createEncoder(
                         reduceBiasesKernel, deviceID: deviceID
                     )
                     command.setBuffer(_bDeltaWeights.metal, atIndex: 0)
@@ -1723,7 +1723,7 @@ public class Convolution2D: BN2D, LayerWeightInit
                     command.setBuffer(_bBuffers.g.metal, atIndex: 4)
                     
                     command.dispatchThreads(nbChannels)
-                    command.enqueue()
+                    command.endEncoding()
                 }
             }
         }

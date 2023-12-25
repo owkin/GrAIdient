@@ -314,7 +314,7 @@ open class ActivationFunction: Codable
         let nbElems = outs.nbElems
         let pNbElems: [UInt32] = [UInt32(nbElems)]
         
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             forwardKernel, deviceID: deviceID
         )
         command.setBytes(pNbElems, atIndex: 0)
@@ -322,7 +322,7 @@ open class ActivationFunction: Codable
         command.setBuffer(outs.metal, atIndex: 2)
         
         command.dispatchThreads(nbElems)
-        command.enqueue()
+        command.endEncoding()
     }
     
     ///
@@ -401,7 +401,7 @@ open class ActivationFunction: Codable
         let nbElems = delta.nbElems
         let pNbElems: [UInt32] = [UInt32(nbElems)]
         
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             backwardKernel, deviceID: deviceID
         )
         command.setBuffer(tmp.metal, atIndex: 0)
@@ -409,7 +409,7 @@ open class ActivationFunction: Codable
         command.setBuffer(delta.metal, atIndex: 2)
         
         command.dispatchThreads(nbElems)
-        command.enqueue()
+        command.endEncoding()
     }
     
     ///

@@ -245,7 +245,7 @@ public class SelectNeurons1D: Layer1D
             let pNbNeuronsPrev: [UInt32] = [UInt32(layerPrev.nbNeurons)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "selectNeurons1DForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -260,7 +260,7 @@ public class SelectNeurons1D: Layer1D
                 width: nbNeurons,
                 height: batchSize
             )
-            command.enqueue()
+            command.endEncoding()
         }
     }
     
@@ -306,23 +306,23 @@ public class SelectNeurons1D: Layer1D
             let pNbNeuronsPrev: [UInt32] = [UInt32(layerPrev.nbNeurons)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             
-            var command: MetalCommand
+            var command: MetalEncoder
             if layerPrev.dirty
             {
                 let nbElems = layerPrev.delta.nbElems
                 let pNbElems: [UInt32] = [UInt32(nbElems)]
                 
-                command = MetalKernel.get.createCommand(
+                command = MetalKernel.get.createEncoder(
                     "reset", deviceID: deviceID
                 )
                 command.setBytes(pNbElems, atIndex: 0)
                 command.setBuffer(layerPrev.delta.metal, atIndex: 1)
                 
                 command.dispatchThreads(nbElems)
-                command.enqueue()
+                command.endEncoding()
             }
             
-            command = MetalKernel.get.createCommand(
+            command = MetalKernel.get.createEncoder(
                 "selectNeurons1DBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
@@ -337,7 +337,7 @@ public class SelectNeurons1D: Layer1D
                 width: nbNeurons,
                 height: batchSize
             )
-            command.enqueue()
+            command.endEncoding()
             
             propagateDirty()
         }

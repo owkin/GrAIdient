@@ -379,7 +379,7 @@ public class ValueSeq: LayerMergeSeq
         let kernel = (nbNeurons / _nbHeads) % 4 == 0 ?
             "valueSeq4Forward" : "valueSeqForward"
         let coeff = (nbNeurons / _nbHeads) % 4 == 0 ? 4 : 1
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             kernel, deviceID: deviceID
         )
         command.setBuffer(value.outs.metal, atIndex: 0)
@@ -395,7 +395,7 @@ public class ValueSeq: LayerMergeSeq
             width: nbNeurons / coeff,
             height: batchSize * sequence
         )
-        command.enqueue()
+        command.endEncoding()
     }
     
     /// Apply the backward pass in the CPU execution context.
@@ -495,7 +495,7 @@ public class ValueSeq: LayerMergeSeq
         let pSequence: [UInt32] = [UInt32(sequence)]
         
         let metalKernel = MetalKernel.get
-        var command: MetalCommand
+        var command: MetalEncoder
         
         if value.computeDelta
         {
@@ -506,7 +506,7 @@ public class ValueSeq: LayerMergeSeq
             let kernel = (nbNeurons / _nbHeads) % 4 == 0 ?
                 "valueValueSeq4Backward" : "valueValueSeqBackward"
             let coeff = (nbNeurons / _nbHeads) % 4 == 0 ? 4 : 1
-            command = metalKernel.createCommand(
+            command = metalKernel.createEncoder(
                 kernel, deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
@@ -523,7 +523,7 @@ public class ValueSeq: LayerMergeSeq
                 width: nbNeurons / coeff,
                 height: batchSize * sequence
             )
-            command.enqueue()
+            command.endEncoding()
         }
         if score.computeDelta
         {
@@ -533,7 +533,7 @@ public class ValueSeq: LayerMergeSeq
             
             let kernel = (nbNeurons / _nbHeads) % 4 == 0 ?
                 "valueScoreSeq4Backward" : "valueScoreSeqBackward"
-            command = metalKernel.createCommand(
+            command = metalKernel.createEncoder(
                 kernel, deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
@@ -550,7 +550,7 @@ public class ValueSeq: LayerMergeSeq
                 width: nbNeuronsPrev,
                 height: batchSize * sequence
             )
-            command.enqueue()
+            command.endEncoding()
         }
         propagateDirty()
     }

@@ -250,7 +250,7 @@ public class SoftmaxSeq: LayerSeq
             let kernel = (nbNeurons / _nbHeads) % 4 == 0 ?
                 "softmaxSeq4Forward" : "softmaxSeqForward"
             let coeff = (nbNeurons / _nbHeads) % 4 == 0 ? 4 : 1
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 kernel, deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -264,7 +264,7 @@ public class SoftmaxSeq: LayerSeq
                 width: nbNeurons / coeff,
                 height: batchSize * sequence
             )
-            command.enqueue()
+            command.endEncoding()
         }
     }
     
@@ -332,7 +332,7 @@ public class SoftmaxSeq: LayerSeq
             let kernel = (nbNeurons / _nbHeads) % 4 == 0 ?
                 "softmaxSeq4Backward" : "softmaxSeqBackward"
             let coeff = (nbNeurons / _nbHeads) % 4 == 0 ? 4 : 1
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 kernel, deviceID: deviceID
             )
             command.setBuffer(outs.metal, atIndex: 0)
@@ -348,7 +348,7 @@ public class SoftmaxSeq: LayerSeq
                 width: nbNeurons / coeff,
                 height: batchSize * sequence
             )
-            command.enqueue()
+            command.endEncoding()
             
             propagateDirty()
         }

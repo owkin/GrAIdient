@@ -290,7 +290,7 @@ public class Concat1Seq: LayerMergeSeq
         let metalKernel = MetalKernel.get
         var kernel: String
         var coeff: Int
-        var command: MetalCommand
+        var command: MetalEncoder
         
         var globalOffset = 0
         for num in 0..<_layersPrev.count
@@ -304,7 +304,7 @@ public class Concat1Seq: LayerMergeSeq
             kernel = nbNeurons % 4 == 0 ?
                 "concat1Seq4Forward" : "concat1SeqForward"
             coeff = nbNeurons % 4 == 0 ? 4 : 1
-            command = metalKernel.createCommand(
+            command = metalKernel.createEncoder(
                 kernel, deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -319,7 +319,7 @@ public class Concat1Seq: LayerMergeSeq
                 width: nbNeurons / coeff,
                 height: batchSize * sequencePrev
             )
-            command.enqueue()
+            command.endEncoding()
             
             globalOffset += sequencePrev
         }
@@ -389,7 +389,7 @@ public class Concat1Seq: LayerMergeSeq
         let metalKernel = MetalKernel.get
         var kernel: String
         var coeff: Int
-        var command: MetalCommand
+        var command: MetalEncoder
         
         var globalOffset = 0
         for num in 0..<_layersPrev.count
@@ -412,7 +412,7 @@ public class Concat1Seq: LayerMergeSeq
             kernel = nbNeurons % 4 == 0 ?
                 "concat1Seq4Backward" : "concat1SeqBackward"
             coeff = nbNeurons % 4 == 0 ? 4 : 1
-            command = metalKernel.createCommand(
+            command = metalKernel.createEncoder(
                 kernel, deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
@@ -428,7 +428,7 @@ public class Concat1Seq: LayerMergeSeq
                 width: nbNeurons / coeff,
                 height: batchSize * sequencePrev
             )
-            command.enqueue()
+            command.endEncoding()
             
             globalOffset += sequencePrev
         }
@@ -719,7 +719,7 @@ public class Concat2Seq: LayerMergeSeq
         let pSequence: [UInt32] = [UInt32(sequence)]
         
         let metalKernel = MetalKernel.get
-        var command: MetalCommand
+        var command: MetalEncoder
         
         var globalOffset = 0
         for num in 0..<_layersPrev.count
@@ -730,7 +730,7 @@ public class Concat2Seq: LayerMergeSeq
             let pGlobalOffset: [UInt32] = [UInt32(globalOffset)]
             let pNbNeuronsPrev: [UInt32] = [UInt32(nbNeuronsPrev)]
             
-            command = metalKernel.createCommand(
+            command = metalKernel.createEncoder(
                 "concat2SeqForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -745,7 +745,7 @@ public class Concat2Seq: LayerMergeSeq
                 width: nbNeuronsPrev,
                 height: batchSize * sequence
             )
-            command.enqueue()
+            command.endEncoding()
             
             globalOffset += nbNeuronsPrev
         }
@@ -813,7 +813,7 @@ public class Concat2Seq: LayerMergeSeq
         let pSequence: [UInt32] = [UInt32(sequence)]
         
         let metalKernel = MetalKernel.get
-        var command: MetalCommand
+        var command: MetalEncoder
         
         var globalOffset = 0
         for num in 0..<_layersPrev.count
@@ -833,7 +833,7 @@ public class Concat2Seq: LayerMergeSeq
             let pNbNeuronsPrev: [UInt32] = [UInt32(nbNeuronsPrev)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
-            command = metalKernel.createCommand(
+            command = metalKernel.createEncoder(
                 "concat2SeqBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
@@ -849,7 +849,7 @@ public class Concat2Seq: LayerMergeSeq
                 width: nbNeuronsPrev,
                 height: batchSize * sequence
             )
-            command.enqueue()
+            command.endEncoding()
             
             globalOffset += nbNeuronsPrev
         }

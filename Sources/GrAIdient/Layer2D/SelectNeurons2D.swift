@@ -267,7 +267,7 @@ public class SelectNeurons2D: Layer1D, LayerResize
             let pDimensionsPrev: [UInt32] = [UInt32(widthPrev),
                                              UInt32(heightPrev)]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "selectNeurons2DForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -281,7 +281,7 @@ public class SelectNeurons2D: Layer1D, LayerResize
                 width: nbNeurons,
                 height: batchSize
             )
-            command.enqueue()
+            command.endEncoding()
         }
     }
     
@@ -342,7 +342,7 @@ public class SelectNeurons2D: Layer1D, LayerResize
                                              UInt32(heightPrev)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "selectNeurons2DBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
@@ -357,7 +357,7 @@ public class SelectNeurons2D: Layer1D, LayerResize
                 width: widthPrev * nbNeurons,
                 height: heightPrev * batchSize
             )
-            command.enqueue()
+            command.endEncoding()
             
             propagateDirty()
         }

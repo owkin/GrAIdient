@@ -335,7 +335,7 @@ public class Dropout1D: Layer1D
             let pApplyDropout: [Bool] = [applyDropout]
             let pCoeff: [Float] = [Float(coeff)]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "dropout1DForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -350,7 +350,7 @@ public class Dropout1D: Layer1D
                 width: nbNeurons,
                 height: batchSize
             )
-            command.enqueue()
+            command.endEncoding()
         }
     }
     
@@ -415,7 +415,7 @@ public class Dropout1D: Layer1D
             let pCoeff: [Float] = [Float(coeff)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "dropout1DBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
@@ -431,7 +431,7 @@ public class Dropout1D: Layer1D
                 width: nbNeurons,
                 height: batchSize
             )
-            command.enqueue()
+            command.endEncoding()
             
             propagateDirty()
         }

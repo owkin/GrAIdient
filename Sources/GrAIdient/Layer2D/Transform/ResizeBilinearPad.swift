@@ -505,7 +505,7 @@ public class ResizeBilinearPad: Layer2D
             ]
             let pPadValue: [Float] = [Float(_padValue)]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "resizeBilinearPadForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -522,7 +522,7 @@ public class ResizeBilinearPad: Layer2D
                 width: width * nbChannels,
                 height: height * batchSize
             )
-            command.enqueue()
+            command.endEncoding()
         }
     }
     
@@ -598,20 +598,20 @@ public class ResizeBilinearPad: Layer2D
         {
             try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
             
-            var command: MetalCommand
+            var command: MetalEncoder
             if layerPrev.dirty
             {
                 let nbElems = layerPrev.delta.nbElems
                 let pNbElems: [UInt32] = [UInt32(nbElems)]
                 
-                command = MetalKernel.get.createCommand(
+                command = MetalKernel.get.createEncoder(
                     "reset", deviceID: deviceID
                 )
                 command.setBytes(pNbElems, atIndex: 0)
                 command.setBuffer(layerPrev.delta.metal, atIndex: 1)
                 
                 command.dispatchThreads(nbElems)
-                command.enqueue()
+                command.endEncoding()
             }
             
             let widthPrev = layerPrev.width
@@ -636,7 +636,7 @@ public class ResizeBilinearPad: Layer2D
                 UInt32(padStartJ), UInt32(padEndJ)
             ]
             
-            command = MetalKernel.get.createCommand(
+            command = MetalKernel.get.createEncoder(
                 "resizeBilinearPadBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
@@ -652,7 +652,7 @@ public class ResizeBilinearPad: Layer2D
                 width: widthPrev * nbChannels,
                 height: heightPrev * batchSize
             )
-            command.enqueue()
+            command.endEncoding()
             
             propagateDirty()
         }

@@ -235,7 +235,7 @@ public class OptimizerAlgorithm
                     let pNbElems: [UInt32] = [UInt32(nbElems)]
                     let pFactor: [Float] = [Float(factor)]
                     
-                    let command = MetalKernel.get.createCommand(
+                    let command = MetalKernel.get.createEncoder(
                         "multiplyGradients", deviceID: layer.deviceID
                     )
                     command.setBytes(pNbElems, atIndex: 0)
@@ -243,7 +243,7 @@ public class OptimizerAlgorithm
                     command.setBuffer(buffers.g.metal, atIndex: 2)
                     
                     command.dispatchThreads(nbElems)
-                    command.enqueue()
+                    command.endEncoding()
                 }
             }
         }
@@ -470,38 +470,44 @@ public class OptimizerAlgorithm
                          gradientNorm: Float,
                          normThreshold: Double) throws
     {
-        if gradientNorm > Float(normThreshold) {
-        for layer in layers
+        if gradientNorm > Float(normThreshold) 
         {
-            if let layerUpdate = layer as? LayerUpdate,
-               layerUpdate.computeDeltaWeights
+            MetalKernel.get.createCommand(deviceID: layers.first!.deviceID)
+            
+            for layer in layers
             {
-                if layerUpdate.dirty
+                if let layerUpdate = layer as? LayerUpdate,
+                   layerUpdate.computeDeltaWeights
                 {
-                    throw UpdateError.Dirty
-                }
-                
-                for buffers in layerUpdate.collectWeightsGPU()
-                {
-                    let nbElems = buffers.g.nbElems
+                    if layerUpdate.dirty
+                    {
+                        throw UpdateError.Dirty
+                    }
                     
-                    let pNbElems: [UInt32] = [UInt32(nbElems)]
-                    let pGradientNorm: [Float] = [Float(gradientNorm)]
-                    let pNormThreshold: [Float] = [Float(normThreshold)]
-                    
-                    let command = MetalKernel.get.createCommand(
-                        "clipGradients", deviceID: layer.deviceID
-                    )
-                    command.setBytes(pNbElems, atIndex: 0)
-                    command.setBytes(pGradientNorm, atIndex: 1)
-                    command.setBytes(pNormThreshold, atIndex: 2)
-                    command.setBuffer(buffers.g.metal, atIndex: 3)
-                    
-                    command.dispatchThreads(nbElems)
-                    command.enqueue()
+                    for buffers in layerUpdate.collectWeightsGPU()
+                    {
+                        let nbElems = buffers.g.nbElems
+                        
+                        let pNbElems: [UInt32] = [UInt32(nbElems)]
+                        let pGradientNorm: [Float] = [Float(gradientNorm)]
+                        let pNormThreshold: [Float] = [Float(normThreshold)]
+                        
+                        let command = MetalKernel.get.createEncoder(
+                            "clipGradients", deviceID: layer.deviceID
+                        )
+                        command.setBytes(pNbElems, atIndex: 0)
+                        command.setBytes(pGradientNorm, atIndex: 1)
+                        command.setBytes(pNormThreshold, atIndex: 2)
+                        command.setBuffer(buffers.g.metal, atIndex: 3)
+                        
+                        command.dispatchThreads(nbElems)
+                        command.endEncoding()
+                    }
                 }
             }
-        }}
+            
+            MetalKernel.get.enqueue(deviceID: layers.first!.deviceID)
+        }
     }
     
     ///
@@ -537,6 +543,8 @@ public class OptimizerAlgorithm
     ///
     func updateWeightsGPU(_ layers: [Layer]) throws
     {
+        MetalKernel.get.createCommand(deviceID: layers.first!.deviceID)
+        
         for layer in layers
         {
             if let layerUpdate = layer as? LayerUpdate,
@@ -550,6 +558,8 @@ public class OptimizerAlgorithm
                 stepGPU(layerUpdate.collectWeightsGPU())
             }
         }
+        
+        MetalKernel.get.enqueue(deviceID: layers.first!.deviceID)
     }
     
     ///

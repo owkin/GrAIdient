@@ -301,7 +301,7 @@ public class Crop2D: Layer2D
             let pCropDimension: [UInt32] = [UInt32(_cropDimension)]
             let pCropOffsets: [UInt32] = [UInt32(_offsetJ), UInt32(_offsetI)]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "crop2DForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -316,7 +316,7 @@ public class Crop2D: Layer2D
                 width: width * nbChannels,
                 height: height * batchSize
             )
-            command.enqueue()
+            command.endEncoding()
         }
     }
     
@@ -378,7 +378,7 @@ public class Crop2D: Layer2D
             let pCropOffsets: [UInt32] = [UInt32(_offsetJ), UInt32(_offsetI)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "crop2DBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
@@ -394,7 +394,7 @@ public class Crop2D: Layer2D
                 width: layerPrev.width * nbChannels,
                 height: layerPrev.height * batchSize
             )
-            command.enqueue()
+            command.endEncoding()
             
             propagateDirty()
         }

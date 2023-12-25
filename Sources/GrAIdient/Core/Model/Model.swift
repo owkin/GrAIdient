@@ -857,10 +857,14 @@ public class Model: BaseModel
     {
         if GrAI.Opti.GPU
         {
+            MetalKernel.get.createCommand(deviceID: deviceID)
+            
             for layer in layers
             {
                 try layer.forwardGPU()
             }
+            
+            MetalKernel.get.enqueue(deviceID: deviceID)
         }
         else
         {
@@ -880,6 +884,8 @@ public class Model: BaseModel
     {
         if GrAI.Opti.GPU
         {
+            MetalKernel.get.createCommand(deviceID: deviceID)
+            
             for layer in layers.reversed()
             {
                 // Note that there are two steps in backward:
@@ -896,6 +902,8 @@ public class Model: BaseModel
                     try layer.backwardGPU()
                 }
             }
+            
+            MetalKernel.get.enqueue(deviceID: deviceID)
         }
         else
         {

@@ -237,7 +237,7 @@ public class Softmax1D: Layer1D
             let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "softmax1DForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -250,7 +250,7 @@ public class Softmax1D: Layer1D
                 width: nbNeurons,
                 height: batchSize
             )
-            command.enqueue()
+            command.endEncoding()
         }
     }
     
@@ -311,7 +311,7 @@ public class Softmax1D: Layer1D
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "softmax1DBackward", deviceID: deviceID
             )
             command.setBuffer(outs.metal, atIndex: 0)
@@ -326,7 +326,7 @@ public class Softmax1D: Layer1D
                 width: nbNeurons,
                 height: batchSize
             )
-            command.enqueue()
+            command.endEncoding()
             
             propagateDirty()
         }

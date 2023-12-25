@@ -477,7 +477,7 @@ public class Constant2D: Layer2D, LayerResize, LayerUpdate
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
         
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             "constant2DForward", deviceID: deviceID
         )
         command.setBuffer(_wBuffers.w.metal, atIndex: 0)
@@ -490,7 +490,7 @@ public class Constant2D: Layer2D, LayerResize, LayerUpdate
             width: width * nbChannels,
             height: height * batchSize
         )
-        command.enqueue()
+        command.endEncoding()
     }
     
     /// Apply the backward pass in the CPU execution context.
@@ -535,13 +535,13 @@ public class Constant2D: Layer2D, LayerResize, LayerUpdate
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pAccumulate: [UInt32] = accumulateDeltaWeights ? [1] : [0]
             
-            var command: MetalCommand
+            var command: MetalEncoder
             if GrAI.Gradient.batch
             {
                 // -------------------------------------------------------------
                 // Compute Gradients per batch
                 // -------------------------------------------------------------
-                command = MetalKernel.get.createCommand(
+                command = MetalKernel.get.createEncoder(
                     "convBatchDerBiases", deviceID: deviceID
                 )
                 command.setBuffer(delta.metal, atIndex: 0)
@@ -552,14 +552,14 @@ public class Constant2D: Layer2D, LayerResize, LayerUpdate
                 command.setBuffer(_wBuffers.g.metal, atIndex: 5)
                 
                 command.dispatchThreads(nbChannels)
-                command.enqueue()
+                command.endEncoding()
             }
             else
             {
                 // -------------------------------------------------------------
                 // Compute Gradients per sample
                 // -------------------------------------------------------------
-                command = MetalKernel.get.createCommand(
+                command = MetalKernel.get.createEncoder(
                     "convDerBiases", deviceID: deviceID
                 )
                 command.setBuffer(delta.metal, atIndex: 0)
@@ -572,12 +572,12 @@ public class Constant2D: Layer2D, LayerResize, LayerUpdate
                     width: nbChannels,
                     height: batchSize
                 )
-                command.enqueue()
+                command.endEncoding()
                 
                 // -------------------------------------------------------------
                 // Compute Gradients per batch
                 // -------------------------------------------------------------
-                command = MetalKernel.get.createCommand(
+                command = MetalKernel.get.createEncoder(
                     "reduceBiases", deviceID: deviceID
                 )
                 command.setBuffer(_wDeltaWeights.metal, atIndex: 0)
@@ -587,7 +587,7 @@ public class Constant2D: Layer2D, LayerResize, LayerUpdate
                 command.setBuffer(_wBuffers.g.metal, atIndex: 4)
                 
                 command.dispatchThreads(nbChannels)
-                command.enqueue()
+                command.endEncoding()
             }
         }
     }

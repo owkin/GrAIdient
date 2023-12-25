@@ -283,7 +283,7 @@ public class MSE2D: LayerOutput2D
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             "MSE2DLoss", deviceID: deviceID
         )
         command.setBuffer(outs.metal, atIndex: 0)
@@ -294,7 +294,7 @@ public class MSE2D: LayerOutput2D
         command.setBuffer(loss.metal, atIndex: 5)
         
         command.dispatchThreads(batchSize)
-        command.enqueue()
+        command.endEncoding()
         
         MetalKernel.get.download([loss])
         var loss: Float = 0.0
@@ -481,7 +481,7 @@ public class MSE2D: LayerOutput2D
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "MSE2DLossDerivative", deviceID: deviceID
             )
             command.setBuffer(outs.metal, atIndex: 0)
@@ -497,7 +497,7 @@ public class MSE2D: LayerOutput2D
                 width: nbChannels * width,
                 height: batchSize * height
             )
-            command.enqueue()
+            command.endEncoding()
             
             propagateDirty()
         }

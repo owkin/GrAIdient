@@ -526,7 +526,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pK: [UInt32] = [UInt32(K)]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "vq2DForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -542,7 +542,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
                 width: height * width,
                 height: batchSize
             )
-            command.enqueue()
+            command.endEncoding()
         }
     }
     
@@ -661,7 +661,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
             let pBeta: [Float] = [Float(beta)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "vq2DBackward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -680,7 +680,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
                 width: nbChannels * width,
                 height: batchSize * height
             )
-            command.enqueue()
+            command.endEncoding()
             
             propagateDirty()
         }
@@ -697,7 +697,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
             let pCoeff: [Float] = [Float(coeff)]
             let pAccumulate: [UInt32] = accumulateDeltaWeights ? [1] : [0]
             
-            var command: MetalCommand
+            var command: MetalEncoder
             if GrAI.Gradient.batch
             {
                 if !accumulateDeltaWeights
@@ -705,20 +705,20 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
                     let nbElems = _wBuffers.g.nbElems
                     let pNbElems: [UInt32] = [UInt32(nbElems)]
                     
-                    command = MetalKernel.get.createCommand(
+                    command = MetalKernel.get.createEncoder(
                         "reset", deviceID: deviceID
                     )
                     command.setBytes(pNbElems, atIndex: 0)
                     command.setBuffer(_wBuffers.g.metal, atIndex: 1)
                     
                     command.dispatchThreads(nbElems)
-                    command.enqueue()
+                    command.endEncoding()
                 }
                 
                 // -------------------------------------------------------------
                 // Compute Gradients per batch
                 // -------------------------------------------------------------
-                command = MetalKernel.get.createCommand(
+                command = MetalKernel.get.createEncoder(
                     "vq2DBatchDerWeights", deviceID: deviceID
                 )
                 command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -732,26 +732,26 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
                 command.setBuffer(_wBuffers.g.metal, atIndex: 8)
                 
                 command.dispatchThreads(width: nbChannels, height: K)
-                command.enqueue()
+                command.endEncoding()
             }
             else
             {
                 let nbElems = _wDeltaWeights.nbElems
                 let pNbElems: [UInt32] = [UInt32(nbElems)]
                 
-                command = MetalKernel.get.createCommand(
+                command = MetalKernel.get.createEncoder(
                     "reset", deviceID: deviceID
                 )
                 command.setBytes(pNbElems, atIndex: 0)
                 command.setBuffer(_wDeltaWeights.metal, atIndex: 1)
                 
                 command.dispatchThreads(nbElems)
-                command.enqueue()
+                command.endEncoding()
                 
                 // -------------------------------------------------------------
                 // Compute Gradients per sample
                 // -------------------------------------------------------------
-                command = MetalKernel.get.createCommand(
+                command = MetalKernel.get.createEncoder(
                     "vq2DDerWeights", deviceID: deviceID
                 )
                 command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -768,12 +768,12 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
                     width: nbChannels,
                     height: batchSize * K
                 )
-                command.enqueue()
+                command.endEncoding()
                 
                 // -------------------------------------------------------------
                 // Compute Gradients per batch
                 // -------------------------------------------------------------
-                command = MetalKernel.get.createCommand(
+                command = MetalKernel.get.createEncoder(
                     "vq2DReduceWeights", deviceID: deviceID
                 )
                 command.setBuffer(_wDeltaWeights.metal, atIndex: 0)
@@ -784,7 +784,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
                 command.setBuffer(_wBuffers.g.metal, atIndex: 5)
                 
                 command.dispatchThreads(width: nbChannels, height: K)
-                command.enqueue()
+                command.endEncoding()
             }
         }
     }
@@ -841,7 +841,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             "vq2DLoss", deviceID: deviceID
         )
         command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -853,7 +853,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
         command.setBuffer(loss.metal, atIndex: 6)
         
         command.dispatchThreads(batchSize)
-        command.enqueue()
+        command.endEncoding()
         
         MetalKernel.get.download([loss])
         var loss: Float = 0.0
@@ -898,14 +898,14 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
             let nbElems = delta.nbElems
             let pNbElems: [UInt32] = [UInt32(nbElems)]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "reset", deviceID: deviceID
             )
             command.setBytes(pNbElems, atIndex: 0)
             command.setBuffer(delta.metal, atIndex: 1)
             
             command.dispatchThreads(nbElems)
-            command.enqueue()
+            command.endEncoding()
         }
         else
         {
@@ -1207,7 +1207,7 @@ public class VQGrad2D: VQ2D
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pNbThreadgroups: [UInt32] = [UInt32(nbThreadgroups)]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "vqGrad2DMax", deviceID: deviceID
             )
             command.setBuffer(layerPrev.delta.metal, atIndex: 0)
@@ -1229,7 +1229,7 @@ public class VQGrad2D: VQ2D
                 threadsPerGrid: threadsPerGrid,
                 threadsPerThreadgroup: threadsPerThreadgroup
             )
-            command.enqueue()
+            command.endEncoding()
             
             // Continue the reduction in a more generic way.
             reduceMax(
@@ -1265,7 +1265,7 @@ public class VQGrad2D: VQ2D
             let pK: [UInt32] = [UInt32(K)]
             let pMagnitudeCoeff: [Float] = [Float(magnitudeCoeff)]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "vqGrad2DForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -1284,7 +1284,7 @@ public class VQGrad2D: VQ2D
                 width: height * width,
                 height: batchSize
             )
-            command.enqueue()
+            command.endEncoding()
         }
     }
     

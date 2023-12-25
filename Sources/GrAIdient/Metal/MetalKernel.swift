@@ -171,9 +171,27 @@ public class MetalKernel
     ///     - deviceID: The GPU device where to execute the command.
     /// - Returns: The command.
     ///
-    public func createCommand(_ pipeline: String, deviceID: Int) -> MetalCommand
+    public func createCommand(deviceID: Int)
     {
-        return _context.createCommand(pipeline, deviceID: deviceID)
+        return _context.createCommand(deviceID: deviceID)
+    }
+    
+    ///
+    /// Create a new command to execute on the GPU.
+    ///
+    /// - Parameters:
+    ///     - pipeline: The name of the command to create.
+    ///     - deviceID: The GPU device where to execute the command.
+    /// - Returns: The command.
+    ///
+    public func createEncoder(_ pipeline: String, deviceID: Int) -> MetalEncoder
+    {
+        return _context.createEncoder(pipeline, deviceID: deviceID)
+    }
+    
+    public func enqueue(deviceID: Int)
+    {
+        return _context.enqueue(deviceID: deviceID)
     }
     
     ///
@@ -391,9 +409,27 @@ private class MetalListDevices
     ///     - deviceID: The GPU device where to execute the command.
     /// - Returns: The command.
     ///
-    func createCommand(_ pipeline: String, deviceID: Int) -> MetalCommand
+    func createCommand(deviceID: Int)
     {
-        return _listDevices[deviceID].createCommand(pipeline)
+        return _listDevices[deviceID].createCommand()
+    }
+    
+    ///
+    /// Create a new command to execute on the GPU.
+    ///
+    /// - Parameters:
+    ///     - pipeline: The name of the command to create.
+    ///     - deviceID: The GPU device where to execute the command.
+    /// - Returns: The command.
+    ///
+    func createEncoder(_ pipeline: String, deviceID: Int) -> MetalEncoder
+    {
+        return _listDevices[deviceID].createEncoder(pipeline)
+    }
+    
+    func enqueue(deviceID: Int)
+    {
+        return _listDevices[deviceID].enqueue()
     }
     
     ///
@@ -491,6 +527,8 @@ private class MetalDevice
     let _device: MTLDevice
     /// The queue associated with the GPU device.
     let _queue: MTLCommandQueue
+    /// The command associated with the GPU device.
+    var _command: MTLCommandBuffer! = nil
     
     /// The different kernels' state available.
     var _pipelines: [String : MTLComputePipelineState] = [:]
@@ -508,6 +546,14 @@ private class MetalDevice
     {
         get {
             return _queue
+        }
+    }
+    
+    /// Get the command.
+    var command: MTLCommandBuffer
+    {
+        get {
+            return _command
         }
     }
     
@@ -702,11 +748,25 @@ private class MetalDevice
     ///     - deviceID: The GPU device where to execute the command.
     /// - Returns: The command.
     ///
-    func createCommand(_ pipeline: String) -> MetalCommand
+    func createCommand()
+    {
+        // Buffer for storing encoded commands that are sent to GPU.
+        _command = queue.makeCommandBuffer()
+    }
+    
+    ///
+    /// Create a new command to execute on the GPU.
+    ///
+    /// - Parameters:
+    ///     - pipeline: The name of the command to create.
+    ///     - deviceID: The GPU device where to execute the command.
+    /// - Returns: The command.
+    ///
+    func createEncoder(_ pipeline: String) -> MetalEncoder
     {
         if let pipelineTmp = _pipelines[pipeline]
         {
-            return MetalCommand(queue: _queue, pipeline: pipelineTmp)
+            return MetalEncoder(command: _command, pipeline: pipelineTmp)
         }
         fatalError("Could not find pipeline: \(pipeline).")
     }
@@ -906,13 +966,20 @@ private class MetalDevice
             metalBuffer._shared = nil
         }
     }
+    
+    func enqueue()
+    {
+        // Add command buffer to the queue.
+        _command.enqueue()
+        
+        // Start job.
+        _command.commit()
+    }
 }
 
 /// A command to run on the GPU
-public class MetalCommand
+public class MetalEncoder
 {
-    /// The command to run on the GPU.
-    var _command: MTLCommandBuffer!
     /// The encoder used load parameters in the command.
     var _encoder: MTLComputeCommandEncoder!
     /// The state of the command.
@@ -942,17 +1009,14 @@ public class MetalCommand
     ///     - queue: The command queue.
     ///     - pipeline: The command to run.
     ///
-    init(queue: MTLCommandQueue, pipeline: MTLComputePipelineState)
+    init(command: MTLCommandBuffer, pipeline: MTLComputePipelineState)
     {
         _pipeline = pipeline
-        
-        // Buffer for storing encoded commands that are sent to GPU.
-        _command = queue.makeCommandBuffer()
         
         // Create the command encoder from the command buffer.
         autoreleasepool()
         {
-            _encoder = _command.makeComputeCommandEncoder()
+            _encoder = command.makeComputeCommandEncoder()
         }
         
         // Encodes the pipeline state command.
@@ -1099,15 +1163,9 @@ public class MetalCommand
     }
     
     /// Enqueue command and start job.
-    public func enqueue()
+    public func endEncoding()
     {
         // Finalize configuration.
         _encoder.endEncoding()
-        
-        // Add command buffer to the queue.
-        _command.enqueue()
-        
-        // Start job.
-        _command.commit()
     }
 }

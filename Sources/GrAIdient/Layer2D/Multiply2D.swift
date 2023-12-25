@@ -395,17 +395,17 @@ public class Multiply2D: LayerMerge2D
             let nbElems = (_layersPrev[num1] as! Layer2D).outs.nbElems
             let pNbElems: [UInt32] = [UInt32(nbElems)]
             
-            var command: MetalCommand
+            var command: MetalEncoder
             if first1
             {
-                command = MetalKernel.get.createCommand(
+                command = MetalKernel.get.createEncoder(
                     "sum1", deviceID: deviceID
                 )
                 first1 = false
             }
             else
             {
-                command = MetalKernel.get.createCommand(
+                command = MetalKernel.get.createEncoder(
                     "multiplyForward", deviceID: deviceID
                 )
             }
@@ -417,7 +417,7 @@ public class Multiply2D: LayerMerge2D
             command.setBuffer(outs.metal, atIndex: 2)
             
             command.dispatchThreads(nbElems)
-            command.enqueue()
+            command.endEncoding()
             
             var first2 = true
             for num2 in 0..<_layersPrev.count {
@@ -425,14 +425,14 @@ public class Multiply2D: LayerMerge2D
             {
                 if first2
                 {
-                    command = MetalKernel.get.createCommand(
+                    command = MetalKernel.get.createEncoder(
                         "sum1", deviceID: deviceID
                     )
                     first2 = false
                 }
                 else
                 {
-                    command = MetalKernel.get.createCommand(
+                    command = MetalKernel.get.createEncoder(
                         "multiplyForward", deviceID: deviceID
                     )
                 }
@@ -444,7 +444,7 @@ public class Multiply2D: LayerMerge2D
                 command.setBuffer(_otherOuts[num1].metal, atIndex: 2)
                 
                 command.dispatchThreads(nbElems)
-                command.enqueue()
+                command.endEncoding()
             }}
         }
     }
@@ -522,7 +522,7 @@ public class Multiply2D: LayerMerge2D
             let pNbElems: [UInt32] = [UInt32(nbElems)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "multiplyBackward", deviceID: deviceID
             )
             command.setBuffer(_otherOuts[num].metal, atIndex: 0)
@@ -532,7 +532,7 @@ public class Multiply2D: LayerMerge2D
             command.setBuffer(layerPrev.delta.metal, atIndex: 4)
             
             command.dispatchThreads(nbElems)
-            command.enqueue()
+            command.endEncoding()
         }
         propagateDirty()
     }

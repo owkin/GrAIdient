@@ -346,7 +346,7 @@ open class LayerOutput2D: Layer2D
             
             let kernel = nbElems % 4 == 0 ? "sum14" : "sum1"
             let coeff = nbElems % 4 == 0 ? 4 : 1
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 kernel, deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -354,7 +354,7 @@ open class LayerOutput2D: Layer2D
             command.setBuffer(outs.metal, atIndex: 2)
             
             command.dispatchThreads(nbElems / coeff)
-            command.enqueue()
+            command.endEncoding()
         }
     }
     
@@ -415,7 +415,7 @@ open class LayerOutput2D: Layer2D
             {
                 kernel = nbElems % 4 == 0 ? "sum24" : "sum2"
             }
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 kernel, deviceID: deviceID
             )
             
@@ -424,7 +424,7 @@ open class LayerOutput2D: Layer2D
             command.setBuffer(layerPrev.delta.metal, atIndex: 2)
             
             command.dispatchThreads(nbElems / coeff)
-            command.enqueue()
+            command.endEncoding()
             
             propagateDirty()
         }

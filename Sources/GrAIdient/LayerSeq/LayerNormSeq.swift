@@ -522,7 +522,7 @@ public class LayerNormSeq: ActivationSeq, LayerUpdate, LayerWithActivation
             
             let kernel = nbElems % 4 == 0 ? "sum14" : "sum1"
             let coeff = nbElems % 4 == 0 ? 4 : 1
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 kernel, deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -530,7 +530,7 @@ public class LayerNormSeq: ActivationSeq, LayerUpdate, LayerWithActivation
             command.setBuffer(outs.metal, atIndex: 2)
             
             command.dispatchThreads(nbElems / coeff)
-            command.enqueue()
+            command.endEncoding()
             
             _normGPU!.forward(self)
             _activation?.forwardGPU(self)
@@ -594,7 +594,7 @@ public class LayerNormSeq: ActivationSeq, LayerUpdate, LayerWithActivation
             {
                 kernel = nbElems % 4 == 0 ? "sum24" : "sum2"
             }
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 kernel, deviceID: deviceID
             )
             
@@ -603,7 +603,7 @@ public class LayerNormSeq: ActivationSeq, LayerUpdate, LayerWithActivation
             command.setBuffer(layerPrev.delta.metal, atIndex: 2)
             
             command.dispatchThreads(nbElems / coeff)
-            command.enqueue()
+            command.endEncoding()
             
             propagateDirty()
         }

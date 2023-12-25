@@ -43,7 +43,7 @@ public func reduceSum(
     deviceID: Int)
 {
     var nbElems = dim1
-    var command: MetalCommand
+    var command: MetalEncoder
     
     while nbElems > 1
     {
@@ -58,7 +58,7 @@ public func reduceSum(
             )
             let pNbThreadgroups: [UInt32] = [UInt32(nbThreadgroups)]
             
-            command = MetalKernel.get.createCommand(
+            command = MetalKernel.get.createEncoder(
                 "reduceSum64", deviceID: deviceID
             )
             command.setBuffer(inBuffer, atIndex: 0)
@@ -83,7 +83,7 @@ public func reduceSum(
         // Simple reduce.
         else
         {
-            command = MetalKernel.get.createCommand(
+            command = MetalKernel.get.createEncoder(
                 "reduceSum", deviceID: deviceID
             )
             command.setBuffer(inBuffer, atIndex: 0)
@@ -94,7 +94,7 @@ public func reduceSum(
             
             nbElems = 1
         }
-        command.enqueue()
+        command.endEncoding()
     }
 }
 
@@ -115,7 +115,7 @@ public func reduceMax(
     deviceID: Int)
 {
     var nbElems = dim1
-    var command: MetalCommand
+    var command: MetalEncoder
     
     while nbElems > 1
     {
@@ -130,7 +130,7 @@ public func reduceMax(
             )
             let pNbThreadgroups: [UInt32] = [UInt32(nbThreadgroups)]
             
-            command = MetalKernel.get.createCommand(
+            command = MetalKernel.get.createEncoder(
                 "reduceMax64", deviceID: deviceID
             )
             command.setBuffer(inBuffer, atIndex: 0)
@@ -155,7 +155,7 @@ public func reduceMax(
         // Simple reduce.
         else
         {
-            command = MetalKernel.get.createCommand(
+            command = MetalKernel.get.createEncoder(
                 "reduceMax", deviceID: deviceID
             )
             command.setBuffer(inBuffer, atIndex: 0)
@@ -166,6 +166,6 @@ public func reduceMax(
             
             nbElems = 1
         }
-        command.enqueue()
+        command.endEncoding()
     }
 }

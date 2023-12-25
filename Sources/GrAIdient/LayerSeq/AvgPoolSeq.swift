@@ -159,7 +159,7 @@ public class AvgPoolSeq: Layer1D
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pSequence: [UInt32] = [UInt32(layerPrev.sequence)]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "avgPoolSeqForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -172,7 +172,7 @@ public class AvgPoolSeq: Layer1D
                 width: nbNeurons,
                 height: batchSize
             )
-            command.enqueue()
+            command.endEncoding()
         }
     }
     
@@ -225,7 +225,7 @@ public class AvgPoolSeq: Layer1D
             let pSequence: [UInt32] = [UInt32(layerPrev.sequence)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "avgPoolSeqBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
@@ -239,7 +239,7 @@ public class AvgPoolSeq: Layer1D
                 width: nbNeurons,
                 height: batchSize * layerPrev.sequence
             )
-            command.enqueue()
+            command.endEncoding()
             
             propagateDirty()
         }

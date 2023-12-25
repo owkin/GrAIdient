@@ -169,7 +169,7 @@ public class AvgPool2D: Layer1D
             let pDimensionsPrev: [UInt32] = [UInt32(widthPrev),
                                              UInt32(heightPrev)]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "avgPoolForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -182,7 +182,7 @@ public class AvgPool2D: Layer1D
                 width: nbNeurons,
                 height: batchSize
             )
-            command.enqueue()
+            command.endEncoding()
         }
     }
     
@@ -241,7 +241,7 @@ public class AvgPool2D: Layer1D
                                              UInt32(heightPrev)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "avgPoolBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
@@ -255,7 +255,7 @@ public class AvgPool2D: Layer1D
                 width: widthPrev * nbNeurons,
                 height: heightPrev * batchSize
             )
-            command.enqueue()
+            command.endEncoding()
             
             propagateDirty()
         }

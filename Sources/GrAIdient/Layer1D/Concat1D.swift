@@ -260,7 +260,7 @@ public class Concat1D: LayerMerge1D
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         
         let metalKernel = MetalKernel.get
-        var command: MetalCommand
+        var command: MetalEncoder
         
         var globalOffset = 0
         for num in 0..<_layersPrev.count
@@ -270,7 +270,7 @@ public class Concat1D: LayerMerge1D
             let pGlobalOffset: [UInt32] = [UInt32(globalOffset)]
             let pNbNeuronsPrev: [UInt32] = [UInt32(nbNeuronsPrev)]
             
-            command = metalKernel.createCommand(
+            command = metalKernel.createEncoder(
                 "concat1DForward", deviceID: deviceID
             )
             command.setBuffer(
@@ -286,7 +286,7 @@ public class Concat1D: LayerMerge1D
                 width: nbNeuronsPrev,
                 height: batchSize
             )
-            command.enqueue()
+            command.endEncoding()
             
             globalOffset += nbNeuronsPrev
         }
@@ -351,7 +351,7 @@ public class Concat1D: LayerMerge1D
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         
         let metalKernel = MetalKernel.get
-        var command: MetalCommand
+        var command: MetalEncoder
         
         var globalOffset = 0
         for num in 0..<_layersPrev.count
@@ -371,7 +371,7 @@ public class Concat1D: LayerMerge1D
             let pNbNeuronsPrev: [UInt32] = [UInt32(nbNeuronsPrev)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
-            command = metalKernel.createCommand(
+            command = metalKernel.createEncoder(
                 "concat1DBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
@@ -386,7 +386,7 @@ public class Concat1D: LayerMerge1D
                 width: nbNeuronsPrev,
                 height: batchSize
             )
-            command.enqueue()
+            command.endEncoding()
             
             globalOffset += nbNeuronsPrev
         }

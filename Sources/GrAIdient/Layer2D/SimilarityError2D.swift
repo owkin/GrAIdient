@@ -378,7 +378,7 @@ public class SimilarityError2D: LayerMerge2D
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
         
         let metalKernel = MetalKernel.get
-        var command: MetalCommand
+        var command: MetalEncoder
         
         var globalOffset = 0
         for num in 0..<_layersPrev.count
@@ -387,7 +387,7 @@ public class SimilarityError2D: LayerMerge2D
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pGlobalOffset: [UInt32] = [UInt32(globalOffset)]
             
-            command = metalKernel.createCommand(
+            command = metalKernel.createEncoder(
                 "concat02DForward", deviceID: deviceID
             )
             command.setBuffer(
@@ -403,7 +403,7 @@ public class SimilarityError2D: LayerMerge2D
                 width: width * nbChannels,
                 height: height * batchSize
             )
-            command.enqueue()
+            command.endEncoding()
             
             globalOffset += batchSize
         }
@@ -474,7 +474,7 @@ public class SimilarityError2D: LayerMerge2D
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
         
         let metalKernel = MetalKernel.get
-        var command: MetalCommand
+        var command: MetalEncoder
         
         var globalOffset = 0
         for num in 0..<_layersPrev.count
@@ -494,7 +494,7 @@ public class SimilarityError2D: LayerMerge2D
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
-            command = metalKernel.createCommand(
+            command = metalKernel.createEncoder(
                 "concat02DBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
@@ -509,7 +509,7 @@ public class SimilarityError2D: LayerMerge2D
                 width: width * nbChannels,
                 height: height * batchSize
             )
-            command.enqueue()
+            command.endEncoding()
             
             globalOffset += batchSize
         }
@@ -608,7 +608,7 @@ public class SimilarityError2D: LayerMerge2D
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
         let pNbBatch: [UInt32] = [UInt32(mergedBatchSize)]
         
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             "similarBatchError2DLoss", deviceID: deviceID
         )
         command.setBuffer(outs.metal, atIndex: 0)
@@ -621,7 +621,7 @@ public class SimilarityError2D: LayerMerge2D
             width: mergedBatchSize,
             height: mergedBatchSize
         )
-        command.enqueue()
+        command.endEncoding()
         
         MetalKernel.get.download([loss])
         var loss: Float = 0.0
@@ -715,7 +715,7 @@ public class SimilarityError2D: LayerMerge2D
         let pNbBatch: [UInt32] = [UInt32(mergedBatchSize)]
         
         let metalKernel = MetalKernel.get
-        var command: MetalCommand
+        var command: MetalEncoder
         
         var globalOffset = 0
         for num in 0..<_layersPrev.count
@@ -735,7 +735,7 @@ public class SimilarityError2D: LayerMerge2D
             let pNbBatchPrev: [UInt32] = [UInt32(batchSize)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
-            command = metalKernel.createCommand(
+            command = metalKernel.createEncoder(
                 "similarError2DLossDerivative", deviceID: deviceID
             )
             command.setBuffer(outs.metal, atIndex: 0)
@@ -752,7 +752,7 @@ public class SimilarityError2D: LayerMerge2D
                 width: width * height,
                 height: batchSize
             )
-            command.enqueue()
+            command.endEncoding()
             
             globalOffset += batchSize
         }

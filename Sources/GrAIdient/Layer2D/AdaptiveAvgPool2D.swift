@@ -561,11 +561,11 @@ public class AdaptiveAvgPool2D: Layer2D
             let pDimensionsPrev: [UInt32] = [UInt32(widthPrev),
                                              UInt32(heightPrev)]
             let metalKernel = MetalKernel.get
-            var command: MetalCommand
+            var command: MetalEncoder
             
             if heightPrev >= height
             {
-                command = metalKernel.createCommand(
+                command = metalKernel.createEncoder(
                     "adaptiveAvgPoolForward1", deviceID: deviceID
                 )
                 command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -579,33 +579,33 @@ public class AdaptiveAvgPool2D: Layer2D
                     width: width * nbChannels,
                     height: height * batchSize
                 )
-                command.enqueue()
+                command.endEncoding()
             }
             else
             {
                 var nbElems = _nbElems.nbElems
                 var pNbElems: [UInt32] = [UInt32(nbElems)]
                 
-                command = metalKernel.createCommand("reset", deviceID: deviceID)
+                command = metalKernel.createEncoder("reset", deviceID: deviceID)
                 
                 command.setBytes(pNbElems, atIndex: 0)
                 command.setBuffer(_nbElems.metal, atIndex: 1)
                 
                 command.dispatchThreads(nbElems)
-                command.enqueue()
+                command.endEncoding()
                 
                 nbElems = outs.nbElems
                 pNbElems = [UInt32(nbElems)]
                 
-                command = metalKernel.createCommand("reset", deviceID: deviceID)
+                command = metalKernel.createEncoder("reset", deviceID: deviceID)
                 
                 command.setBytes(pNbElems, atIndex: 0)
                 command.setBuffer(outs.metal, atIndex: 1)
                 
                 command.dispatchThreads(nbElems)
-                command.enqueue()
+                command.endEncoding()
                 
-                command = metalKernel.createCommand(
+                command = metalKernel.createEncoder(
                     "adaptiveAvgPoolForward2", deviceID: deviceID
                 )
                 command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -620,7 +620,7 @@ public class AdaptiveAvgPool2D: Layer2D
                     width: nbChannels,
                     height: batchSize
                 )
-                command.enqueue()
+                command.endEncoding()
             }
         }
     }
@@ -757,25 +757,25 @@ public class AdaptiveAvgPool2D: Layer2D
             let pDimensionsPrev: [UInt32] = [UInt32(widthPrev),
                                              UInt32(heightPrev)]
             let metalKernel = MetalKernel.get
-            var command: MetalCommand
+            var command: MetalEncoder
             
             if layerPrev.dirty
             {
                 let nbElems = layerPrev.delta.nbElems
                 let pNbElems: [UInt32] = [UInt32(nbElems)]
                 
-                command = metalKernel.createCommand("reset", deviceID: deviceID)
+                command = metalKernel.createEncoder("reset", deviceID: deviceID)
                 
                 command.setBytes(pNbElems, atIndex: 0)
                 command.setBuffer(layerPrev.delta.metal, atIndex: 1)
                 
                 command.dispatchThreads(nbElems)
-                command.enqueue()
+                command.endEncoding()
             }
             
             if heightPrev >= height
             {
-                command = metalKernel.createCommand(
+                command = metalKernel.createEncoder(
                     "adaptiveAvgPoolBackward1", deviceID: deviceID
                 )
                 command.setBuffer(delta.metal, atIndex: 0)
@@ -789,11 +789,11 @@ public class AdaptiveAvgPool2D: Layer2D
                     width: nbChannels,
                     height: batchSize
                 )
-                command.enqueue()
+                command.endEncoding()
             }
             else
             {
-                command = metalKernel.createCommand(
+                command = metalKernel.createEncoder(
                     "adaptiveAvgPoolBackward2", deviceID: deviceID
                 )
                 command.setBuffer(delta.metal, atIndex: 0)
@@ -808,7 +808,7 @@ public class AdaptiveAvgPool2D: Layer2D
                     width: nbChannels,
                     height: batchSize
                 )
-                command.enqueue()
+                command.endEncoding()
             }
             propagateDirty()
         }

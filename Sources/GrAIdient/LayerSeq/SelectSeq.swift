@@ -181,7 +181,7 @@ public class SelectSeq: Layer1D
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pSequence: [UInt32] = [UInt32(layerPrev.sequence)]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "selectSeqForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -195,7 +195,7 @@ public class SelectSeq: Layer1D
                 width: nbNeurons,
                 height: batchSize
             )
-            command.enqueue()
+            command.endEncoding()
         }
     }
     
@@ -241,20 +241,20 @@ public class SelectSeq: Layer1D
         {
             try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
             
-            var command: MetalCommand
+            var command: MetalEncoder
             if layerPrev.dirty
             {
                 let nbElems = layerPrev.delta.nbElems
                 let pNbElems: [UInt32] = [UInt32(nbElems)]
                 
-                command = MetalKernel.get.createCommand(
+                command = MetalKernel.get.createEncoder(
                     "reset", deviceID: deviceID
                 )
                 command.setBytes(pNbElems, atIndex: 0)
                 command.setBuffer(layerPrev.delta.metal, atIndex: 1)
                 
                 command.dispatchThreads(nbElems)
-                command.enqueue()
+                command.endEncoding()
             }
             
             let pTargetSeq: [UInt32] = [UInt32(_targetSeq)]
@@ -262,7 +262,7 @@ public class SelectSeq: Layer1D
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pSequence: [UInt32] = [UInt32(layerPrev.sequence)]
             
-            command = MetalKernel.get.createCommand(
+            command = MetalKernel.get.createEncoder(
                 "selectSeqBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
@@ -276,7 +276,7 @@ public class SelectSeq: Layer1D
                 width: nbNeurons,
                 height: batchSize
             )
-            command.enqueue()
+            command.endEncoding()
             
             propagateDirty()
         }

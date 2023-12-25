@@ -370,7 +370,7 @@ public class MaxPool2D: Layer2D
             let pDimensionsPrev: [UInt32] = [UInt32(widthPrev),
                                              UInt32(heightPrev)]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "maxPoolForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
@@ -387,7 +387,7 @@ public class MaxPool2D: Layer2D
                 width: width * nbChannels,
                 height: height * batchSize
             )
-            command.enqueue()
+            command.endEncoding()
         }
     }
     
@@ -461,7 +461,7 @@ public class MaxPool2D: Layer2D
                                              UInt32(heightPrev)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 "maxPoolBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
@@ -479,7 +479,7 @@ public class MaxPool2D: Layer2D
                 width: widthPrev * nbChannels,
                 height: heightPrev * batchSize
             )
-            command.enqueue()
+            command.endEncoding()
             
             propagateDirty()
         }

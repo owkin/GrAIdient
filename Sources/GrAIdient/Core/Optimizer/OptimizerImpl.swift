@@ -179,7 +179,7 @@ class SGDOptimizer: OptimizerImpl
         let pAlpha: [Float] = [Float(alpha)]
         let pLambda: [Float] = [lambda != nil ? Float(lambda!) : 0.0]
         
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             "weightsSGD", deviceID: weights.deviceID
         )
         command.setBuffer(weights.g.metal, atIndex: 0)
@@ -189,7 +189,7 @@ class SGDOptimizer: OptimizerImpl
         command.setBuffer(weights.w.metal, atIndex: 4)
         
         command.dispatchThreads(nbElems)
-        command.enqueue()
+        command.endEncoding()
     }
 }
 
@@ -233,7 +233,7 @@ class SGDMomentumOptimizer: OptimizerImpl
         let pAlpha: [Float] = [Float(alpha)]
         let pLambda: [Float] = [lambda != nil ? Float(lambda!) : 0.0]
         
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             "weightsMomentum", deviceID: weights.deviceID
         )
         command.setBuffer(weights.g.metal, atIndex: 0)
@@ -244,7 +244,7 @@ class SGDMomentumOptimizer: OptimizerImpl
         command.setBuffer(weights.m.metal, atIndex: 5)
         
         command.dispatchThreads(nbElems)
-        command.enqueue()
+        command.endEncoding()
     }
 }
 
@@ -301,7 +301,7 @@ class AdamOptimizer: OptimizerImpl
         let pLambda: [Float] = [lambda != nil ? Float(lambda!) : 0.0]
         let pT: [Float] = [Float(t)]
         
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             "weightsAdam", deviceID: weights.deviceID
         )
         command.setBuffer(weights.g.metal, atIndex: 0)
@@ -314,7 +314,7 @@ class AdamOptimizer: OptimizerImpl
         command.setBuffer(weights.v.metal, atIndex: 7)
         
         command.dispatchThreads(nbElems)
-        command.enqueue()
+        command.endEncoding()
     }
 }
 
@@ -373,7 +373,7 @@ class AMSGradOptimizer: OptimizerImpl
         let pLambda: [Float] = [lambda != nil ? Float(lambda!) : 0.0]
         let pT: [Float] = [Float(t)]
         
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             "weightsAMSGrad", deviceID: weights.deviceID
         )
         command.setBuffer(weights.g.metal, atIndex: 0)
@@ -387,7 +387,7 @@ class AMSGradOptimizer: OptimizerImpl
         command.setBuffer(weights.vHat.metal, atIndex: 8)
         
         command.dispatchThreads(nbElems)
-        command.enqueue()
+        command.endEncoding()
     }
 }
 
@@ -456,7 +456,7 @@ class AdamRectifiedOptimizer: OptimizerImpl
         let pLambda: [Float] = [lambda != nil ? Float(lambda!) : 0.0]
         let pT: [Float] = [Float(t)]
         
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             "weightsAdamRectified", deviceID: weights.deviceID
         )
         command.setBuffer(weights.g.metal, atIndex: 0)
@@ -469,7 +469,7 @@ class AdamRectifiedOptimizer: OptimizerImpl
         command.setBuffer(weights.v.metal, atIndex: 7)
         
         command.dispatchThreads(nbElems)
-        command.enqueue()
+        command.endEncoding()
     }
 }
 
@@ -592,7 +592,7 @@ class AdaBoundOptimizer: BoundOptimizer
         let pLowerBound: [Float] = [Float(lowerBound!)]
         let pUpperBound: [Float] = [Float(upperBound!)]
         
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             "weightsAdaBound", deviceID: weights.deviceID
         )
         command.setBuffer(weights.g.metal, atIndex: 0)
@@ -607,7 +607,7 @@ class AdaBoundOptimizer: BoundOptimizer
         command.setBuffer(weights.v.metal, atIndex: 9)
         
         command.dispatchThreads(nbElems)
-        command.enqueue()
+        command.endEncoding()
     }
 }
 
@@ -676,7 +676,7 @@ class AMSBoundOptimizer: BoundOptimizer
         let pLowerBound: [Float] = [Float(lowerBound!)]
         let pUpperBound: [Float] = [Float(upperBound!)]
         
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             "weightsAMSBound", deviceID: weights.deviceID
         )
         command.setBuffer(weights.g.metal, atIndex: 0)
@@ -692,6 +692,6 @@ class AMSBoundOptimizer: BoundOptimizer
         command.setBuffer(weights.vHat.metal, atIndex: 10)
         
         command.dispatchThreads(nbElems)
-        command.enqueue()
+        command.endEncoding()
     }
 }

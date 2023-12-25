@@ -326,7 +326,7 @@ public class DotProduct1D: LayerMerge1D
         let pNbneuronsPrev: [UInt32] = [UInt32(nbNeuronsPrev)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             "dotProduct1DForward", deviceID: deviceID
         )
         command.setBuffer((_layersPrev[0] as! Layer1D).outs.metal, atIndex: 0)
@@ -341,7 +341,7 @@ public class DotProduct1D: LayerMerge1D
             width: nbNeurons,
             height: batchSize
         )
-        command.enqueue()
+        command.endEncoding()
     }
     
     /// Apply the backward pass in the CPU execution context.
@@ -412,7 +412,7 @@ public class DotProduct1D: LayerMerge1D
         let pNbneuronsPrev: [UInt32] = [UInt32(nbNeuronsPrev)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         
-        var command: MetalCommand
+        var command: MetalEncoder
         if layerPrev1.computeDelta
         {
             try layerPrev1.checkStateBackwardGPU(
@@ -421,7 +421,7 @@ public class DotProduct1D: LayerMerge1D
             
             let pDirty: [UInt32] = layerPrev1.dirty ? [1] : [0]
             
-            command = MetalKernel.get.createCommand(
+            command = MetalKernel.get.createEncoder(
                 "dotProduct1DBackward", deviceID: deviceID
             )
             command.setBuffer(layerPrev2.outs.metal, atIndex: 0)
@@ -437,7 +437,7 @@ public class DotProduct1D: LayerMerge1D
                 width: nbNeurons,
                 height: batchSize
             )
-            command.enqueue()
+            command.endEncoding()
         }
         
         if layerPrev2.computeDelta
@@ -448,7 +448,7 @@ public class DotProduct1D: LayerMerge1D
             
             let pDirty: [UInt32] = layerPrev2.dirty ? [1] : [0]
             
-            command = MetalKernel.get.createCommand(
+            command = MetalKernel.get.createEncoder(
                 "dotProduct1DBackward", deviceID: deviceID
             )
             command.setBuffer(layerPrev1.outs.metal, atIndex: 0)
@@ -464,7 +464,7 @@ public class DotProduct1D: LayerMerge1D
                 width: nbNeurons,
                 height: batchSize
             )
-            command.enqueue()
+            command.endEncoding()
         }
         propagateDirty()
     }

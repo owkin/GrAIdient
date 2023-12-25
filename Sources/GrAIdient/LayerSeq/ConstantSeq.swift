@@ -409,7 +409,7 @@ public class Constant12Seq: LayerSeq, LayerUpdate
         let kernel = nbNeurons % 4 == 0 ?
             "constant12Seq4Forward" : "constant12SeqForward"
         let coeff = nbNeurons % 4 == 0 ? 4 : 1
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             kernel, deviceID: deviceID
         )
         command.setBuffer(_wBuffers.w.metal, atIndex: 0)
@@ -422,7 +422,7 @@ public class Constant12Seq: LayerSeq, LayerUpdate
             width: nbNeurons / coeff,
             height: batchSize * sequence
         )
-        command.enqueue()
+        command.endEncoding()
     }
     
     /// Apply the backward pass in the CPU execution context.
@@ -469,7 +469,7 @@ public class Constant12Seq: LayerSeq, LayerUpdate
             let kernel = nbNeurons % 4 == 0 ?
                 "constant12Seq4Backward" : "constant12SeqBackward"
             let coeff = nbNeurons % 4 == 0 ? 4 : 1
-            let command = MetalKernel.get.createCommand(
+            let command = MetalKernel.get.createEncoder(
                 kernel, deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
@@ -483,7 +483,7 @@ public class Constant12Seq: LayerSeq, LayerUpdate
                 width: nbNeurons / coeff,
                 height: sequence
             )
-            command.enqueue()
+            command.endEncoding()
         }
     }
     
@@ -926,7 +926,7 @@ public class Constant2Seq: LayerSeq, LayerUpdate
         let kernel = nbNeurons % 4 == 0 ?
             "constant2Seq4Forward" : "constant2SeqForward"
         let coeff = nbNeurons % 4 == 0 ? 4 : 1
-        let command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createEncoder(
             kernel, deviceID: deviceID
         )
         command.setBuffer(_wBuffers.w.metal, atIndex: 0)
@@ -939,7 +939,7 @@ public class Constant2Seq: LayerSeq, LayerUpdate
             width: nbNeurons / coeff,
             height: batchSize * sequence
         )
-        command.enqueue()
+        command.endEncoding()
     }
     
     /// Apply the backward pass in the CPU execution context.
@@ -983,7 +983,7 @@ public class Constant2Seq: LayerSeq, LayerUpdate
             let pSequence: [UInt32] = [UInt32(sequence)]
             let pAccumulate: [UInt32] = accumulateDeltaWeights ? [1] : [0]
             
-            var command: MetalCommand
+            var command: MetalEncoder
             if GrAI.Gradient.batch
             {
                 // -------------------------------------------------------------
@@ -992,7 +992,7 @@ public class Constant2Seq: LayerSeq, LayerUpdate
                 let kernel = nbNeurons % 4 == 0 ?
                     "flPatchBatch4DerBiases" : "flPatchBatchDerBiases"
                 let coeff = nbNeurons % 4 == 0 ? 4 : 1
-                command = MetalKernel.get.createCommand(
+                command = MetalKernel.get.createEncoder(
                     kernel, deviceID: deviceID
                 )
                 command.setBuffer(delta.metal, atIndex: 0)
@@ -1003,14 +1003,14 @@ public class Constant2Seq: LayerSeq, LayerUpdate
                 command.setBuffer(_wBuffers.g.metal, atIndex: 5)
                 
                 command.dispatchThreads(nbNeurons / coeff)
-                command.enqueue()
+                command.endEncoding()
             }
             else
             {
                 // -------------------------------------------------------------
                 // Compute Gradients per sample
                 // -------------------------------------------------------------
-                command = MetalKernel.get.createCommand(
+                command = MetalKernel.get.createEncoder(
                     "flPatchDerBiases", deviceID: deviceID
                 )
                 command.setBuffer(delta.metal, atIndex: 0)
@@ -1023,12 +1023,12 @@ public class Constant2Seq: LayerSeq, LayerUpdate
                     width: nbNeurons,
                     height: batchSize
                 )
-                command.enqueue()
+                command.endEncoding()
                 
                 // -------------------------------------------------------------
                 // Compute Gradients per batch
                 // -------------------------------------------------------------
-                command = MetalKernel.get.createCommand(
+                command = MetalKernel.get.createEncoder(
                     "reduceBiases", deviceID: deviceID
                 )
                 command.setBuffer(_wDeltaWeights.metal, atIndex: 0)
@@ -1038,7 +1038,7 @@ public class Constant2Seq: LayerSeq, LayerUpdate
                 command.setBuffer(_wBuffers.g.metal, atIndex: 4)
                 
                 command.dispatchThreads(nbNeurons)
-                command.enqueue()
+                command.endEncoding()
             }
         }
     }

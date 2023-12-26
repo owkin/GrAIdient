@@ -560,15 +560,18 @@ public class QuerySeq: LayerMergeSeq
 ///
 /// Layer with a sequential shape neural structure.
 ///
-/// This layer computes the attention scores between a query layer and a key layer.
+/// This layer computes the attention scores between 2 different groups of neurons in the previous layer.
 ///
 public class QuerySelfSeq: LayerSeq
 {
     
-    /// Number of heads (groups) of neurons.
+    /// Number of heads (groups) of neurons in the current layer.
     let _nbHeads: Int
+    /// Offset of neurons for the query in the previous layer.
     let _queryOffset: Int
+    /// Offset of neurons for the key in the previous layer.
     let _keyOffset: Int
+    /// Number of different groups of neurons in the previous layer.
     let _nbBlocksPrev: Int
     
     private enum Keys: String, CodingKey
@@ -583,9 +586,11 @@ public class QuerySelfSeq: LayerSeq
     /// Create a layer with a sequential shape neural structure.
     ///
     /// - Parameters:
-    ///     - query: Previous layer containing the query to look for.
-    ///     - key: Previous layer containing the keys of reference.
-    ///     - nbHeads: Number of heads (groups) of neurons.
+    ///     - layerPrev: Previous layer.
+    ///     - query: Offset of neurons for the query in the previous layer.
+    ///     - key: Offset of neurons for the key in the previous layer.
+    ///     - nbBlocksPrev: Number of different groups of neurons in the previous layer.
+    ///     - nbHeads: Number of heads (groups) of neurons in the current layer.
     ///     - params: Contextual parameters linking to the model.
     ///
     public init(layerPrev: LayerSeq, 
@@ -609,6 +614,10 @@ public class QuerySelfSeq: LayerSeq
         }
         
         _nbHeads = nbHeads
+        _nbBlocksPrev = nbBlocksPrev
+        _queryOffset = query
+        _keyOffset = key
+        
         super.init(layerPrev: layerPrev,
                    sequence: layerPrev.sequence,
                    nbNeurons: layerPrev.sequence * nbHeads,
@@ -796,37 +805,43 @@ public class QuerySelfSeq: LayerSeq
     ///
     public override func forwardGPU() throws
     {
-        try checkStateForwardGPU(batchSize: batchSize)
-        
-        let query = _layersPrev[0] as! LayerSeq
-        let key = _layersPrev[1] as! LayerSeq
-        let nbNeuronsPrev = query.nbNeurons
-        
-        let pNbHeads: [UInt32] = [UInt32(_nbHeads)]
-        let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
-        let pNbNeuronsPrev: [UInt32] = [UInt32(nbNeuronsPrev)]
-        let pNbBatch: [UInt32] = [UInt32(batchSize)]
-        let pSequence: [UInt32] = [UInt32(sequence)]
-        
-        let kernel = (nbNeuronsPrev / _nbHeads) % 4 == 0 ?
-            "querySeq4Forward" : "querySeqForward"
-        let command = MetalKernel.get.createCommand(
-            kernel, deviceID: deviceID
-        )
-        command.setBuffer(query.outs.metal, atIndex: 0)
-        command.setBuffer(key.outs.metal, atIndex: 1)
-        command.setBytes(pNbHeads, atIndex: 2)
-        command.setBytes(pNbNeurons, atIndex: 3)
-        command.setBytes(pNbNeuronsPrev, atIndex: 4)
-        command.setBytes(pNbBatch, atIndex: 5)
-        command.setBytes(pSequence, atIndex: 6)
-        command.setBuffer(outs.metal, atIndex: 7)
-        
-        command.dispatchThreads(
-            width: nbNeurons,
-            height: batchSize * sequence
-        )
-        command.enqueue()
+        if let layerPrev = self.layerPrev as? LayerSeq
+        {
+            try checkStateForwardGPU(batchSize: batchSize)
+            
+            let nbNeuronsPrev = layerPrev.nbNeurons
+            
+            let pNbHeads: [UInt32] = [UInt32(_nbHeads)]
+            let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
+            let pNbNeuronsPrev: [UInt32] = [UInt32(nbNeuronsPrev)]
+            let pNbBlocksPrev: [UInt32] = [UInt32(_nbBlocksPrev)]
+            let pGlobalOffset: [UInt32] = [
+                UInt32(_queryOffset), UInt32(_keyOffset)
+            ]
+            let pNbBatch: [UInt32] = [UInt32(batchSize)]
+            let pSequence: [UInt32] = [UInt32(sequence)]
+            
+            let kernel = (nbNeuronsPrev / _nbHeads) % 4 == 0 ?
+                "querySelfSeq4Forward" : "querySelfSeqForward"
+            let command = MetalKernel.get.createCommand(
+                kernel, deviceID: deviceID
+            )
+            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+            command.setBytes(pNbHeads, atIndex: 1)
+            command.setBytes(pNbNeurons, atIndex: 2)
+            command.setBytes(pNbNeuronsPrev, atIndex: 3)
+            command.setBytes(pNbBlocksPrev, atIndex: 4)
+            command.setBytes(pGlobalOffset, atIndex: 5)
+            command.setBytes(pNbBatch, atIndex: 6)
+            command.setBytes(pSequence, atIndex: 7)
+            command.setBuffer(outs.metal, atIndex: 8)
+            
+            command.dispatchThreads(
+                width: nbNeurons,
+                height: batchSize * sequence
+            )
+            command.enqueue()
+        }
     }
     
     /// Apply the backward pass in the CPU execution context.
@@ -914,80 +929,75 @@ public class QuerySelfSeq: LayerSeq
     ///
     public override func backwardGPU() throws
     {
-        if !mustComputeBackward
+        if let layerPrev = self.layerPrev as? LayerSeq, mustComputeBackward
         {
-            return
-        }
-        
-        let query = _layersPrev[0] as! LayerSeq
-        let key = _layersPrev[1] as! LayerSeq
-        let nbNeuronsPrev = query.nbNeurons
-        
-        let pNbHeads: [UInt32] = [UInt32(_nbHeads)]
-        let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
-        let pNbNeuronsPrev: [UInt32] = [UInt32(nbNeuronsPrev)]
-        let pNbBatch: [UInt32] = [UInt32(batchSize)]
-        let pSequence: [UInt32] = [UInt32(sequence)]
-        
-        let metalKernel = MetalKernel.get
-        var command: MetalCommand
-        
-        if query.computeDelta
-        {
-            try query.checkStateBackwardGPU(batchSize: batchSize)
+            try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
             
-            let pDirty: [UInt32] = query.dirty ? [1] : [0]
+            let nbNeuronsPrev = layerPrev.nbNeurons
             
-            let kernel = (nbNeuronsPrev / _nbHeads) % 4 == 0 ?
-                "queryQuerySeq4Backward" : "queryQuerySeqBackward"
+            let pNbHeads: [UInt32] = [UInt32(_nbHeads)]
+            let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
+            let pNbNeuronsPrev: [UInt32] = [UInt32(nbNeuronsPrev)]
+            let pNbBlocksPrev: [UInt32] = [UInt32(_nbBlocksPrev)]
+            let pGlobalOffset: [UInt32] = [
+                UInt32(_queryOffset), UInt32(_keyOffset)
+            ]
+            let pNbBatch: [UInt32] = [UInt32(batchSize)]
+            let pSequence: [UInt32] = [UInt32(sequence)]
+            
+            let metalKernel = MetalKernel.get
+            var command: MetalCommand
+                
+            let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
+            
+            var kernel = (nbNeuronsPrev / _nbHeads) % 4 == 0 ?
+                "querySelfQuerySeq4Backward" : "querySelfQuerySeqBackward"
             let coeff = (nbNeuronsPrev / _nbHeads) % 4 == 0 ? 4 : 1
             command = metalKernel.createCommand(
                 kernel, deviceID: deviceID
             )
-            command.setBuffer(delta.metal, atIndex: 0)
-            command.setBuffer(key.outs.metal, atIndex: 1)
+            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+            command.setBuffer(delta.metal, atIndex: 1)
             command.setBytes(pNbHeads, atIndex: 2)
             command.setBytes(pNbNeurons, atIndex: 3)
             command.setBytes(pNbNeuronsPrev, atIndex: 4)
-            command.setBytes(pNbBatch, atIndex: 5)
-            command.setBytes(pSequence, atIndex: 6)
-            command.setBytes(pDirty, atIndex: 7)
-            command.setBuffer(query.delta.metal, atIndex: 8)
+            command.setBytes(pNbBlocksPrev, atIndex: 5)
+            command.setBytes(pGlobalOffset, atIndex: 6)
+            command.setBytes(pNbBatch, atIndex: 7)
+            command.setBytes(pSequence, atIndex: 8)
+            command.setBytes(pDirty, atIndex: 9)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 10)
             
             command.dispatchThreads(
                 width: nbNeuronsPrev / coeff,
                 height: batchSize * sequence
             )
             command.enqueue()
-        }
-        if key.computeDelta
-        {
-            try key.checkStateBackwardGPU(batchSize: batchSize)
             
-            let pDirty: [UInt32] = key.dirty ? [1] : [0]
-            
-            let kernel = (nbNeuronsPrev / _nbHeads) % 4 == 0 ?
-                "queryKeySeq4Backward" : "queryKeySeqBackward"
-            let coeff = (nbNeuronsPrev / _nbHeads) % 4 == 0 ? 4 : 1
+            kernel = (nbNeuronsPrev / _nbHeads) % 4 == 0 ?
+                "querySelfKeySeq4Backward" : "querySelfKeySeqBackward"
             command = metalKernel.createCommand(
                 kernel, deviceID: deviceID
             )
-            command.setBuffer(delta.metal, atIndex: 0)
-            command.setBuffer(query.outs.metal, atIndex: 1)
+            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+            command.setBuffer(delta.metal, atIndex: 1)
             command.setBytes(pNbHeads, atIndex: 2)
             command.setBytes(pNbNeurons, atIndex: 3)
             command.setBytes(pNbNeuronsPrev, atIndex: 4)
-            command.setBytes(pNbBatch, atIndex: 5)
-            command.setBytes(pSequence, atIndex: 6)
-            command.setBytes(pDirty, atIndex: 7)
-            command.setBuffer(key.delta.metal, atIndex: 8)
+            command.setBytes(pNbBlocksPrev, atIndex: 5)
+            command.setBytes(pGlobalOffset, atIndex: 6)
+            command.setBytes(pNbBatch, atIndex: 7)
+            command.setBytes(pSequence, atIndex: 8)
+            command.setBytes(pDirty, atIndex: 9)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 10)
             
             command.dispatchThreads(
                 width: nbNeuronsPrev / coeff,
                 height: batchSize * sequence
             )
             command.enqueue()
+            
+            propagateDirty()
         }
-        propagateDirty()
     }
 }

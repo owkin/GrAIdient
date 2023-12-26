@@ -556,6 +556,17 @@ class LayerSeqFlowTests: Input2DMSE1DCase
                 query: layerSeq, key: otherLayer, nbHeads: 2, params: params
             )
             
+        case "QuerySelf":
+            layerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 3 * 6,
+                activation: SoftReLU.str, biases: true, params: params
+            )
+            layerSeq = try! QuerySelfSeq(
+                layerPrev: layerSeq,
+                query: 0, key: 1, nbBlocksPrev: 3, nbHeads: 2,
+                params: params
+            )
+            
         case "Softmax":
             layerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 15,
@@ -676,6 +687,12 @@ class LayerSeqFlowTests: Input2DMSE1DCase
     func testQuerySeq() throws
     {
         let trainer = _buildTrainer("Query")
+        run(trainer)
+    }
+    
+    func testQuerySelfSeq() throws
+    {
+        let trainer = _buildTrainer("QuerySelf")
         run(trainer)
     }
     
@@ -838,6 +855,17 @@ class LayerSeq4FlowTests: Input2DMSE1DCase
                 query: layerSeq, key: otherLayer, nbHeads: 2, params: params
             )
             
+        case "QuerySelf":
+            layerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 3 * 4 * 2 * 3,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = try! QuerySelfSeq(
+                layerPrev: layerSeq,
+                query: 0, key: 1, nbBlocksPrev: 3, nbHeads: 2,
+                params: params
+            )
+            
         case "Softmax":
             layerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 4 * 3 * 3,
@@ -917,6 +945,12 @@ class LayerSeq4FlowTests: Input2DMSE1DCase
     func testQuerySeq() throws
     {
         let trainer = _buildTrainer("Query")
+        run(trainer)
+    }
+    
+    func testQuerySelfSeq() throws
+    {
+        let trainer = _buildTrainer("QuerySelf")
         run(trainer)
     }
     
@@ -1033,6 +1067,12 @@ class LayerSeqFlowResetTests: LayerSeqFlowTests
     override func testQuerySeq() throws
     {
         let trainer = _buildTrainer("Query")
+        run(trainer)
+    }
+    
+    override func testQuerySelfSeq() throws
+    {
+        let trainer = _buildTrainer("QuerySelf")
         run(trainer)
     }
     
@@ -1162,6 +1202,12 @@ class LayerSeqFlowReverseTests: LayerSeqFlowTests
     override func testQuerySeq() throws
     {
         let trainer = _buildTrainer("Query")
+        run(trainer)
+    }
+    
+    override func testQuerySelfSeq() throws
+    {
+        let trainer = _buildTrainer("QuerySelf")
         run(trainer)
     }
     
@@ -1464,6 +1510,12 @@ class LayerSeqInferenceTests: LayerSeqFlowTests
         run(trainer)
     }
     
+    override func testQuerySelfSeq() throws
+    {
+        let trainer = _buildTrainer("QuerySelf")
+        run(trainer)
+    }
+    
     override func testSoftmaxSeq() throws
     {
         let trainer = _buildTrainer("Softmax")
@@ -1583,6 +1635,12 @@ class LayerSeqLoadTests: LayerSeqFlowTests
     override func testQuerySeq() throws
     {
         let trainer = _buildTrainer("Query")
+        run(trainer)
+    }
+    
+    override func testQuerySelfSeq() throws
+    {
+        let trainer = _buildTrainer("QuerySelf")
         run(trainer)
     }
     
@@ -1749,6 +1807,12 @@ class LayerSeqTransformTests: LayerSeqFlowTests
     override func testQuerySeq() throws
     {
         let trainer = _buildTrainer("Query")
+        run(trainer)
+    }
+    
+    override func testQuerySelfSeq() throws
+    {
+        let trainer = _buildTrainer("QuerySelf")
         run(trainer)
     }
     

@@ -735,7 +735,7 @@ public class QuerySelfSeq: LayerSeq
                         seqQ, depthPrev + _queryOffset * nbNeuronsPrev
                     )!.gc[batch][elem].out
                     let keyTmp = neuronsPrev.get(
-                        seqK, depthPrev + _queryOffset * nbNeuronsPrev
+                        seqK, depthPrev + _keyOffset * nbNeuronsPrev
                     )!.gc[batch][elem].out
                     
                     sum += queryTmp * keyTmp
@@ -950,9 +950,10 @@ public class QuerySelfSeq: LayerSeq
                 
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
-            var kernel = (nbNeuronsPrev / _nbHeads) % 4 == 0 ?
+            var kernel = (nbNeuronsPrev / _nbBlocksPrev / _nbHeads) % 4 == 0 ?
                 "querySelfQuerySeq4Backward" : "querySelfQuerySeqBackward"
-            let coeff = (nbNeuronsPrev / _nbHeads) % 4 == 0 ? 4 : 1
+            let coeff = (nbNeuronsPrev / _nbBlocksPrev / _nbHeads) % 4 == 0 ?
+                4 : 1
             command = metalKernel.createCommand(
                 kernel, deviceID: deviceID
             )
@@ -969,12 +970,12 @@ public class QuerySelfSeq: LayerSeq
             command.setBuffer(layerPrev.delta.metal, atIndex: 10)
             
             command.dispatchThreads(
-                width: nbNeuronsPrev / coeff,
+                width: nbNeuronsPrev / _nbBlocksPrev / coeff,
                 height: batchSize * sequence
             )
             command.enqueue()
             
-            kernel = (nbNeuronsPrev / _nbHeads) % 4 == 0 ?
+            kernel = (nbNeuronsPrev / _nbBlocksPrev / _nbHeads) % 4 == 0 ?
                 "querySelfKeySeq4Backward" : "querySelfKeySeqBackward"
             command = metalKernel.createCommand(
                 kernel, deviceID: deviceID
@@ -992,7 +993,7 @@ public class QuerySelfSeq: LayerSeq
             command.setBuffer(layerPrev.delta.metal, atIndex: 10)
             
             command.dispatchThreads(
-                width: nbNeuronsPrev / coeff,
+                width: nbNeuronsPrev / _nbBlocksPrev / coeff,
                 height: batchSize * sequence
             )
             command.enqueue()

@@ -1180,7 +1180,7 @@ kernel void querySelfSeqForward(
         uint offsetKey = depthPrev + keyOffset * nbNeuronsPrev +
             nbNeuronsPrev * seqK + sequence * nbNeuronsPrev * elem;
         
-        tmp += query[offsetQuery] * key[offsetKey];
+        tmp += outsPrev[offsetQuery] * outsPrev[offsetKey];
     }
     tmp /= sqrt((float)size);
     
@@ -1248,7 +1248,7 @@ kernel void querySelfSeq4Forward(
         uint offsetKey = (depthPrev + keyOffset * nbNeuronsPrev +
             nbNeuronsPrev * seqK + sequence * nbNeuronsPrev * elem) / 4;
         
-        tmp += query[offsetQuery] * key[offsetKey];
+        tmp += outsPrev[offsetQuery] * outsPrev[offsetKey];
     }
     tmp /= sqrt((float)size);
     
@@ -1500,6 +1500,8 @@ kernel void querySelfKeySeq4Backward(
     constant uint * pNbHeads,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
+    constant uint * pNbBlocksPrev,
+    constant uint * pGlobalOffset,
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pDirty,

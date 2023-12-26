@@ -171,6 +171,17 @@ class LayerSeqGradTests: Input2DMSE1DCase
                 query: layerSeq, key: otherLayer, nbHeads: 2, params: params
             )
             
+        case "QuerySelf":
+            layerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 3 * 6,
+                activation: SoftReLU.str, biases: true, params: params
+            )
+            layerSeq = try! QuerySelfSeq(
+                layerPrev: layerSeq,
+                query: 0, key: 1, nbBlocksPrev: 3, nbHeads: 2,
+                params: params
+            )
+            
         case "Softmax":
             layerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 15,
@@ -346,6 +357,19 @@ class LayerSeqGradTests: Input2DMSE1DCase
     func testQuerySeqGPU() throws
     {
         let trainer = _buildTrainer("Query")
+        run(trainer)
+    }
+    
+    func testQuerySelfSeqCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("QuerySelf")
+        run(trainer)
+    }
+    
+    func testQuerySelfSeqGPU() throws
+    {
+        let trainer = _buildTrainer("QuerySelf")
         run(trainer)
     }
     

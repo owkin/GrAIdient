@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import MetalKit
 
 /// Layer with a sequential shape neural structure, weights and biases and an activation function.
 public class FullyConnectedSeq: ActivationSeq,
@@ -851,9 +852,15 @@ public class FullyConnectedSeq: ActivationSeq,
             command.setBytes(pSequence, atIndex: 6)
             command.setBuffer(outs.metal, atIndex: 7)
             
+            let threadsPerThreadgroup = MTLSizeMake(
+                1, 64, 1
+            )
+            let threadsPerGrid = MTLSizeMake(
+                nbNeurons, batchSize * sequence, 1
+            )
             command.dispatchThreads(
-                width: nbNeurons,
-                height: batchSize * sequence
+                threadsPerGrid: threadsPerGrid,
+                threadsPerThreadgroup: threadsPerThreadgroup
             )
             command.enqueue()
         }

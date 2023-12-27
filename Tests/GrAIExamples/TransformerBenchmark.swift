@@ -70,33 +70,24 @@ final class TransformerBenchmark: XCTestCase
         hiddenDim: Int,
         params: GrAI.Model.Params) -> LayerSeq
     {
-        let query: LayerSeq = FullyConnectedSeq(
-            layerPrev: layerPrev, nbNeurons: hiddenDim,
-            activation: nil, biases: true,
-            params: params
-        )
-        let key: LayerSeq = FullyConnectedSeq(
-            layerPrev: layerPrev, nbNeurons: hiddenDim,
-            activation: nil, biases: true,
-            params: params
-        )
-        let value: LayerSeq = FullyConnectedSeq(
-            layerPrev: layerPrev, nbNeurons: hiddenDim,
+        let qkv: LayerSeq = FullyConnectedSeq(
+            layerPrev: layerPrev, nbNeurons: 3 * hiddenDim,
             activation: nil, biases: true,
             params: params
         )
         
-        var layerSeq: LayerSeq = try! QuerySeq(
-            query: query, key: key, nbHeads: nbHeads,
+        var layerSeq: LayerSeq = try! QuerySelfSeq(
+            layerPrev: qkv,
+            query: 0, key: 1, nbBlocksPrev: 3, nbHeads: nbHeads,
             params: params
         )
         layerSeq = try! SoftmaxSeq(
             layerPrev: layerSeq, nbHeads: nbHeads,
             params: params
         )
-            
-        layerSeq = try! ValueSeq(
-            value: value, score: layerSeq, nbHeads: nbHeads,
+        layerSeq = try! ValueSelfSeq(
+            value: qkv, score: layerSeq,
+            offset: 2, nbBlocksPrev: 3, nbHeads: nbHeads,
             params: params
         )
         

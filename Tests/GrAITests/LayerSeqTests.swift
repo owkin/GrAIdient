@@ -210,7 +210,7 @@ class LayerSeqGradTests: Input2DMSE1DCase
             
         case "ValueSelf":
             let otherLayer: LayerSeq = try! FullyConnectedPatch(
-                layerPrev: layer, patch: 3, nbNeurons: 3 * 4,
+                layerPrev: layer, patch: 3, nbNeurons: 3 * 6,
                 activation: SoftReLU.str, biases: true, params: params
             )
             layerSeq = try! FullyConnectedPatch(
@@ -624,6 +624,24 @@ class LayerSeqFlowTests: Input2DMSE1DCase
                 value: otherLayer, score: layerSeq, nbHeads: 2, params: params
             )
             
+        case "ValueSelf":
+            let otherLayer: LayerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: 3, nbNeurons: 3 * 6,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: 3, nbNeurons: 6,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = FullyConnectedSeq(
+                layerPrev: layerSeq, nbNeurons: 2 * 4,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = try! ValueSelfSeq(
+                value: otherLayer, score: layerSeq,
+                offset: 2, nbBlocksPrev: 3, nbHeads: 2, params: params
+            )
+            
         case "VQ":
             layerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 5,
@@ -736,6 +754,12 @@ class LayerSeqFlowTests: Input2DMSE1DCase
     func testValueSeq() throws
     {
         let trainer = _buildTrainer("Value")
+        run(trainer)
+    }
+    
+    func testValueSelfSeq() throws
+    {
+        let trainer = _buildTrainer("ValueSelf")
         run(trainer)
     }
     
@@ -923,6 +947,24 @@ class LayerSeq4FlowTests: Input2DMSE1DCase
                 value: otherLayer, score: layerSeq, nbHeads: 2, params: params
             )
             
+        case "ValueSelf":
+            let otherLayer: LayerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: 3, nbNeurons: 3 * 4 * 2 * 3,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: 3, nbNeurons: 4 * 3,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = FullyConnectedSeq(
+                layerPrev: layerSeq, nbNeurons: 4 * 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = try! ValueSelfSeq(
+                value: otherLayer, score: layerSeq,
+                offset: 2, nbBlocksPrev: 3, nbHeads: 2, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -994,6 +1036,12 @@ class LayerSeq4FlowTests: Input2DMSE1DCase
     func testValueSeq() throws
     {
         let trainer = _buildTrainer("Value")
+        run(trainer)
+    }
+    
+    func testValueSelfSeq() throws
+    {
+        let trainer = _buildTrainer("ValueSelf")
         run(trainer)
     }
 }
@@ -1116,6 +1164,12 @@ class LayerSeqFlowResetTests: LayerSeqFlowTests
     override func testValueSeq() throws
     {
         let trainer = _buildTrainer("Value")
+        run(trainer)
+    }
+    
+    override func testValueSelfSeq() throws
+    {
+        let trainer = _buildTrainer("ValueSelf")
         run(trainer)
     }
     
@@ -1251,6 +1305,12 @@ class LayerSeqFlowReverseTests: LayerSeqFlowTests
     override func testValueSeq() throws
     {
         let trainer = _buildTrainer("Value")
+        run(trainer)
+    }
+    
+    override func testValueSelfSeq() throws
+    {
+        let trainer = _buildTrainer("ValueSelf")
         run(trainer)
     }
     
@@ -1559,6 +1619,12 @@ class LayerSeqInferenceTests: LayerSeqFlowTests
         run(trainer)
     }
     
+    override func testValueSelfSeq() throws
+    {
+        let trainer = _buildTrainer("ValueSelf")
+        run(trainer)
+    }
+    
     override func testVQ() throws
     {
         let trainer = _buildTrainer("VQ")
@@ -1684,6 +1750,12 @@ class LayerSeqLoadTests: LayerSeqFlowTests
     override func testValueSeq() throws
     {
         let trainer = _buildTrainer("Value")
+        run(trainer)
+    }
+    
+    override func testValueSelfSeq() throws
+    {
+        let trainer = _buildTrainer("ValueSelf")
         run(trainer)
     }
     
@@ -1856,6 +1928,12 @@ class LayerSeqTransformTests: LayerSeqFlowTests
     override func testValueSeq() throws
     {
         let trainer = _buildTrainer("Value")
+        run(trainer)
+    }
+    
+    override func testValueSelfSeq() throws
+    {
+        let trainer = _buildTrainer("ValueSelf")
         run(trainer)
     }
     

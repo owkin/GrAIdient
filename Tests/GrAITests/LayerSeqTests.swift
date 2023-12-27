@@ -208,6 +208,24 @@ class LayerSeqGradTests: Input2DMSE1DCase
                 value: otherLayer, score: layerSeq, nbHeads: 2, params: params
             )
             
+        case "ValueSelf":
+            let otherLayer: LayerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: 3, nbNeurons: 3 * 4,
+                activation: SoftReLU.str, biases: true, params: params
+            )
+            layerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: 3, nbNeurons: 6,
+                activation: SoftReLU.str, biases: true, params: params
+            )
+            layerSeq = FullyConnectedSeq(
+                layerPrev: layerSeq, nbNeurons: 2 * 4,
+                activation: SoftReLU.str, biases: true, params: params
+            )
+            layerSeq = try! ValueSelfSeq(
+                value: otherLayer, score: layerSeq,
+                offset: 2, nbBlocksPrev: 3, nbHeads: 2, params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -396,6 +414,19 @@ class LayerSeqGradTests: Input2DMSE1DCase
     func testValueSeqGPU() throws
     {
         let trainer = _buildTrainer("Value")
+        run(trainer)
+    }
+    
+    func testValueSelfSeqCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("ValueSelf")
+        run(trainer)
+    }
+    
+    func testValueSelfSeqGPU() throws
+    {
+        let trainer = _buildTrainer("ValueSelf")
         run(trainer)
     }
 }

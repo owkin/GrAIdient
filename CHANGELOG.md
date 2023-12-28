@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🚀 **perf:** benchmark ViT base model ([111](https://github.com/owkin/GrAIdient/pull/111))\
 🐛 **fix:** run on Apple Silicon ([110](https://github.com/owkin/GrAIdient/pull/110))\
 ⚙️ **core:** initForward,Backward model API ([109](https://github.com/owkin/GrAIdient/pull/109))\
 🪜 **layer_1d:** Dropout1D ([#108](https://github.com/owkin/GrAIdient/pull/108))\

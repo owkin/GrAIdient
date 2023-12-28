@@ -267,9 +267,11 @@ final class TransformerBenchmark: XCTestCase
         {
             print("EPOCH \(epoch)/\(nbEpochs-1).")
             
-            let start = Date()
+            let start1 = Date()
             for step in 0..<nbSteps
             {
+                let start2 = Date()
+                
                 // Reset gradient validity for backward pass
                 // and update the batch size (although here it stays the same).
                 transformer.updateKernel(batchSize: _batchSize)
@@ -308,16 +310,20 @@ final class TransformerBenchmark: XCTestCase
                     batchSize: _batchSize,
                     nbNeurons: 1
                 )
-                print("Step \(step)/\(nbSteps-1): \(sqrt(loss)).")
                 
                 // Update internal step.
                 // This is not mandatory except if we used another
                 // optimizer scheduler: see `_getOptimizerParams`.
                 transformer.incStep()
+                
+                let end2 = Date()
+                let timeSpent = end2.timeIntervalSince(start2)
+                print("Step \(step + 1)/\(nbSteps): " +
+                      "\(sqrt(loss)) in \(timeSpent)s.")
             }
             
-            let end = Date()
-            let timeSpent = end.timeIntervalSince(start)
+            let end1 = Date()
+            let timeSpent = end1.timeIntervalSince(start1)
             print("Epoch \(epoch + 1), time spent: \(timeSpent)s.")
         }
     }

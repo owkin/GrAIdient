@@ -838,8 +838,19 @@ public class FullyConnectedSeq: ActivationSeq,
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pSequence: [UInt32] = [UInt32(sequence)]
             
-            let kernel = layerPrev.nbNeurons % 4 == 0 ?
-                "flSeq4Forward" : "flSeqForward"
+            let kernel: String
+            let coeff: Int
+            if layerPrev.nbNeurons % 4 == 0 && batchSize % 4 == 0
+            {
+                kernel = "flSeq4Forward"
+                coeff = 4
+            }
+            else
+            {
+                kernel = "flSeqForward"
+                coeff = 1
+            }
+            
             let command = MetalKernel.get.createCommand(
                 kernel, deviceID: deviceID
             )
@@ -852,15 +863,9 @@ public class FullyConnectedSeq: ActivationSeq,
             command.setBytes(pSequence, atIndex: 6)
             command.setBuffer(outs.metal, atIndex: 7)
             
-            let threadsPerThreadgroup = MTLSizeMake(
-                1, command.threadExecutionWidth, 1
-            )
-            let threadsPerGrid = MTLSizeMake(
-                nbNeurons, batchSize * sequence, 1
-            )
             command.dispatchThreads(
-                threadsPerGrid: threadsPerGrid,
-                threadsPerThreadgroup: threadsPerThreadgroup
+                width: nbNeurons,
+                height: (batchSize / coeff) * sequence
             )
             command.enqueue()
         }
@@ -985,9 +990,19 @@ public class FullyConnectedSeq: ActivationSeq,
             let pSequence: [UInt32] = [UInt32(sequence)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
-            let kernel = layerPrev.nbNeurons % 4 == 0 ?
-                "flSeq4Backward" : "flSeqBackward"
-            let coeff = layerPrev.nbNeurons % 4 == 0 ? 4 : 1
+            let kernel: String
+            let coeff: Int
+            if layerPrev.nbNeurons % 4 == 0 && batchSize % 4 == 0
+            {
+                kernel = "flSeq4Backward"
+                coeff = 4
+            }
+            else
+            {
+                kernel = "flSeqBackward"
+                coeff = 1
+            }
+            
             let command = MetalKernel.get.createCommand(
                 kernel, deviceID: deviceID
             )
@@ -1002,7 +1017,7 @@ public class FullyConnectedSeq: ActivationSeq,
             
             command.dispatchThreads(
                 width: weightWidth / coeff,
-                height: batchSize * sequence
+                height: (batchSize / coeff) * sequence
             )
             command.enqueue()
             

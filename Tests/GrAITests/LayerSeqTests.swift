@@ -783,6 +783,17 @@ class LayerSeqFlowTests: Input2DMSE1DCase
 // -----------------------------------------------------------------------------
 class LayerSeq4FlowTests: Input2DMSE1DCase
 {
+    /// Systematic call before test begins.
+    override func setUp()
+    {
+        batchSize = 8
+        _ = MetalKernel.get
+        GrAI.Opti.GPU = true
+        
+        setOptimizerParams(params: &optimizerParams)
+        optimizerParams.nbLoops = 3
+    }
+    
     private func _buildTrainer(_ model: String) -> FlowTrainer
     {
         let trainer = FlowTrainer(

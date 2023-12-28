@@ -92,26 +92,34 @@ kernel void flSeq4Forward(
     uint elem = id[1] / sequence;
     uint seq = id[1] % sequence;
     
-    if (depth >= nbNeurons || elem >= nbBatch || seq >= sequence)
+    if (depth >= nbNeurons || elem * 4 >= nbBatch || seq >= sequence)
     {
         return ;
     }
     
-    float4 tmp = 0;
+    float4 tmp [4] = {0};
     for (uint depthPrev=0; depthPrev<nbNeuronsPrev/4; depthPrev++)
     {
-        uint offsetPrev = (depthPrev * 4 + nbNeuronsPrev * seq +
-            sequence * nbNeuronsPrev * elem) / 4;
-        float4 outPrev = outsPrev[offsetPrev];
-        
         uint offsetWeights = (depthPrev * 4 + nbNeuronsPrev * depth) / 4;
         float4 w = weights[offsetWeights];
         
-        tmp += outPrev * w;
+        for (uint i=0; i<4; i++)
+        {
+            uint offsetPrev = (depthPrev * 4 + nbNeuronsPrev * seq +
+                sequence * nbNeuronsPrev * (elem*4+i)) / 4;
+            float4 outPrev = outsPrev[offsetPrev];
+            
+            tmp[i] += outPrev * w;
+        }
     }
     
-    uint offset = depth + nbNeurons * seq + sequence * nbNeurons * elem;
-    outs[offset] = tmp[0] + tmp[1] + tmp[2] + tmp[3] + biases[depth];
+    float bias = biases[depth];
+    for (uint i=0; i<4; i++)
+    {
+        uint offset = depth + nbNeurons * seq +
+            sequence * nbNeurons * (elem*4+i);
+        outs[offset] = tmp[i][0] + tmp[i][1] + tmp[i][2] + tmp[i][3] + bias;
+    }
 }
 
 kernel void flSeqBackward(
@@ -210,33 +218,45 @@ kernel void flSeq4Backward(
     uint elem = id[1] / sequence;
     uint seq = id[1] % sequence;
     
-    if (depthPrev * 4 >= nbNeuronsPrev || elem >= nbBatch || seq >= sequence)
+    if (depthPrev * 4 >= nbNeuronsPrev ||
+        elem * 4 >= nbBatch || seq >= sequence)
     {
         return ;
     }
     
-    float4 tmp = 0.0;
+    float4 tmp [4] = {0};
     for (uint depth=0; depth<nbNeurons; depth++)
     {
         uint offsetWeights = (depthPrev * 4 + nbNeuronsPrev * depth) / 4;
         float4 w = weights[offsetWeights];
         
-        uint offset = depth + nbNeurons * seq + sequence * nbNeurons * elem;
-        float deltaCur = delta[offset];
-        
-        tmp += w * deltaCur;
+        for (uint i=0; i<4; i++)
+        {
+            uint offset = depth + nbNeurons * seq +
+                sequence * nbNeurons * (elem*4+i);
+            float deltaCur = delta[offset];
+            
+            tmp[i] += w * deltaCur;
+        }
     }
-    
-    uint offsetPrev = (depthPrev * 4 + nbNeuronsPrev * seq +
-        sequence * nbNeuronsPrev * elem) / 4;
     
     if (dirty)
     {
-        deltaPrev[offsetPrev] = tmp;
+        for (uint i=0; i<4; i++)
+        {
+            uint offsetPrev = (depthPrev * 4 + nbNeuronsPrev * seq +
+                sequence * nbNeuronsPrev * (elem*4+i)) / 4;
+            deltaPrev[offsetPrev] = tmp[i];
+        }
     }
     else
     {
-        deltaPrev[offsetPrev] += tmp;
+        for (uint i=0; i<4; i++)
+        {
+            uint offsetPrev = (depthPrev * 4 + nbNeuronsPrev * seq +
+                sequence * nbNeuronsPrev * (elem*4+i)) / 4;
+            deltaPrev[offsetPrev] += tmp[i];
+        }
     }
 }
 

@@ -786,7 +786,7 @@ class LayerSeq4FlowTests: Input2DMSE1DCase
     /// Systematic call before test begins.
     override func setUp()
     {
-        batchSize = 8
+        batchSize = 16
         _ = MetalKernel.get
         GrAI.Opti.GPU = true
         

@@ -840,10 +840,10 @@ public class FullyConnectedSeq: ActivationSeq,
             
             let kernel: String
             let coeff: Int
-            if layerPrev.nbNeurons % 4 == 0 && batchSize % 4 == 0
+            if layerPrev.nbNeurons % 4 == 0 && batchSize % 8 == 0
             {
                 kernel = "flSeq4Forward"
-                coeff = 4
+                coeff = 8
             }
             else
             {
@@ -991,16 +991,19 @@ public class FullyConnectedSeq: ActivationSeq,
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
             let kernel: String
-            let coeff: Int
-            if layerPrev.nbNeurons % 4 == 0 && batchSize % 4 == 0
+            let coeff1: Int
+            let coeff2: Int
+            if layerPrev.nbNeurons % 4 == 0 && batchSize % 8 == 0
             {
                 kernel = "flSeq4Backward"
-                coeff = 4
+                coeff1 = 4
+                coeff2 = 8
             }
             else
             {
                 kernel = "flSeqBackward"
-                coeff = 1
+                coeff1 = 1
+                coeff2 = 1
             }
             
             let command = MetalKernel.get.createCommand(
@@ -1016,8 +1019,8 @@ public class FullyConnectedSeq: ActivationSeq,
             command.setBuffer(layerPrev.delta.metal, atIndex: 7)
             
             command.dispatchThreads(
-                width: weightWidth / coeff,
-                height: (batchSize / coeff) * sequence
+                width: weightWidth / coeff1,
+                height: (batchSize / coeff2) * sequence
             )
             command.enqueue()
             

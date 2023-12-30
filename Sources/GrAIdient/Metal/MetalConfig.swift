@@ -16,6 +16,8 @@ let CONFIG_KERNELS =
         "backwardSoftReLU",
         "forwardSigmoid",
         "backwardSigmoid",
+        "forwardGELUApprox",
+        "backwardGELUApprox",
         "forwardGELU",
         "backwardGELU",
     ],

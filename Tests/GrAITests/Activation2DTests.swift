@@ -256,6 +256,40 @@ class Activation2DGradTests: Input2DMSE1DCase
         run(trainer)
     }
     
+    func testConvGELUApproxNoBNCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: GELUApprox.str, bn: false
+        )
+        run(trainer)
+    }
+    
+    func testConvGELUApproxBNCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: GELUApprox.str, bn: true
+        )
+        run(trainer)
+    }
+    
+    func testConvGELUApproxNoBNGPU() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: GELUApprox.str, bn: false
+        )
+        run(trainer)
+    }
+    
+    func testConvGELUApproxBNGPU() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: GELUApprox.str, bn: true
+        )
+        run(trainer)
+    }
+    
     func testConvGELUNoBNCPU() throws
     {
         GrAI.Opti.CPU = true
@@ -354,6 +388,23 @@ class Activation2DGradTests: Input2DMSE1DCase
     {
         let trainer = _buildTrainer(
             model: "Activation", activation: Sigmoid.str, bn: false
+        )
+        run(trainer)
+    }
+    
+    func testGELUApproxCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(
+            model: "Activation", activation: GELUApprox.str, bn: false
+        )
+        run(trainer)
+    }
+    
+    func testGELUApproxGPU() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Activation", activation: GELUApprox.str, bn: false
         )
         run(trainer)
     }

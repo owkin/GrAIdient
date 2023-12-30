@@ -239,7 +239,7 @@ kernel void backwardSigmoid(
     delta[id] = delta[id] * derivative;
 }
 
-kernel void forwardGELU(
+kernel void forwardGELUApprox(
    constant uint * pNbElems,
    device float * tmps,
    device float * outs,
@@ -275,7 +275,7 @@ kernel void forwardGELU(
     outs[id] = 0.5 * x * (1 + tmp2);
 }
 
-kernel void backwardGELU(
+kernel void backwardGELUApprox(
     const device float * tmps,
     constant uint * pNbElems,
     device float * delta,
@@ -309,5 +309,95 @@ kernel void backwardGELU(
     }
     float tmp3 = cst * (1 + 3 * 0.044715 * x * x) * (1 - tmp2 * tmp2);
     float derivative = 0.5 * (1 + tmp2 + x * tmp3);
+    delta[id] = delta[id] * derivative;
+}
+
+/*
+ * Approximation to the error function.
+ * Based on code from:
+ * https://stackoverflow.com/questions/35148198/efficient-faithfully-rounded-implementation-of-error-function-erff#answer-35148199
+ */
+float erf(float a)
+{
+    float r, s, t, u;
+    t = metal::abs(a);
+    s = a * a;
+    if (t > 0.927734375f)
+    {
+        // maximum error 0.99527 ulp
+        r = metal::fma(-1.72853470e-5f, t, 3.83197126e-4f); // -0x1.220000p-16,0x1.91cfb2p-12
+        u = metal::fma(-3.88396438e-3f, t, 2.42546219e-2f); // -0x1.fd1438p-9, 0x1.8d6342p-6
+        r = metal::fma(r, s, u);
+        r = metal::fma(r, t, -1.06777877e-1f); // -0x1.b55cb8p-4
+        r = metal::fma(r, t, -6.34846687e-1f); // -0x1.450aa0p-1
+        r = metal::fma(r, t, -1.28717512e-1f); // -0x1.079d0cp-3
+        r = metal::fma(r, t, -t);
+        // TODO, replace with expm1 when implemented
+        r = 1.0f - metal::exp(r);
+        r = metal::copysign(r, a);
+    }
+    else
+    {
+        // maximum error 0.98929 ulp
+        r = -5.96761703e-4f; // -0x1.38e000p-11
+        r = metal::fma(r, s, 4.99119423e-3f); //  0x1.471a58p-8
+        r = metal::fma(r, s, -2.67681349e-2f); // -0x1.b691b2p-6
+        r = metal::fma(r, s, 1.12819925e-1f); //  0x1.ce1c44p-4
+        r = metal::fma(r, s, -3.76125336e-1f); // -0x1.812700p-2
+        r = metal::fma(r, s, 1.28379166e-1f); //  0x1.06eba8p-3
+        r = metal::fma(r, a, a);
+    }
+    return r;
+}
+
+kernel void forwardGELU(
+   constant uint * pNbElems,
+   device float * tmps,
+   device float * outs,
+   uint id [[ thread_position_in_grid ]])
+{
+    uint nbElems;
+    
+    if (pNbElems)
+    {
+        nbElems = pNbElems[0];
+    }
+    else
+        return ;
+    
+    if (id >= nbElems)
+    {
+        return ;
+    }
+    
+    float x = outs[id];
+    tmps[id] = x;
+    outs[id] = 0.5 * x * (1 + erf(x / sqrt(2.0)));
+}
+
+kernel void backwardGELU(
+    const device float * tmps,
+    constant uint * pNbElems,
+    device float * delta,
+    uint id [[ thread_position_in_grid ]])
+{
+    uint nbElems;
+    
+    if (pNbElems)
+    {
+        nbElems = pNbElems[0];
+    }
+    else
+        return ;
+    
+    if (id >= nbElems)
+    {
+        return ;
+    }
+    
+    float x = tmps[id];
+    float tmp1 = 0.5 * (1.0 + erf(x / sqrt(2.0)));
+    float tmp2 = x / sqrt(2.0 * M_PI_F) * exp(-x * x / 2.0);
+    float derivative = tmp1 + tmp2;
     delta[id] = delta[id] * derivative;
 }

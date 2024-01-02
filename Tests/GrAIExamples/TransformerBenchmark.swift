@@ -265,7 +265,7 @@ final class TransformerBenchmark: XCTestCase
         let nbSteps = 20
         for epoch in 0..<nbEpochs
         {
-            print("EPOCH \(epoch)/\(nbEpochs-1).")
+            print("EPOCH \(epoch + 1)/\(nbEpochs).")
             
             let start1 = Date()
             for step in 0..<nbSteps
@@ -310,7 +310,6 @@ final class TransformerBenchmark: XCTestCase
                     batchSize: _batchSize,
                     nbNeurons: 1
                 )
-                print("Step \(step)/\(nbSteps-1): \(sqrt(loss)).")
                 
                 // Update internal step.
                 // This is not mandatory except if we used another

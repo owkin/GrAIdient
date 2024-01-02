@@ -310,6 +310,7 @@ final class TransformerBenchmark: XCTestCase
                     batchSize: _batchSize,
                     nbNeurons: 1
                 )
+                print("Step \(step)/\(nbSteps-1): \(sqrt(loss)).")
                 
                 // Update internal step.
                 // This is not mandatory except if we used another

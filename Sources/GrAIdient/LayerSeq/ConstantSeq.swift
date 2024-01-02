@@ -406,8 +406,11 @@ public class Constant12Seq: LayerSeq, LayerUpdate
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pSequence: [UInt32] = [UInt32(sequence)]
         
+        let kernel = nbNeurons % 4 == 0 ?
+            "constant12Seq4Forward" : "constant12SeqForward"
+        let coeff = nbNeurons % 4 == 0 ? 4 : 1
         let command = MetalKernel.get.createCommand(
-            "constant12SeqForward", deviceID: deviceID
+            kernel, deviceID: deviceID
         )
         command.setBuffer(_wBuffers.w.metal, atIndex: 0)
         command.setBytes(pNbNeurons, atIndex: 1)
@@ -416,7 +419,7 @@ public class Constant12Seq: LayerSeq, LayerUpdate
         command.setBuffer(outs.metal, atIndex: 4)
         
         command.dispatchThreads(
-            width: nbNeurons,
+            width: nbNeurons / coeff,
             height: batchSize * sequence
         )
         command.enqueue()
@@ -463,8 +466,11 @@ public class Constant12Seq: LayerSeq, LayerUpdate
             let pSequence: [UInt32] = [UInt32(sequence)]
             let pAccumulate: [UInt32] = accumulateDeltaWeights ? [1] : [0]
             
+            let kernel = nbNeurons % 4 == 0 ?
+                "constant12Seq4Backward" : "constant12SeqBackward"
+            let coeff = nbNeurons % 4 == 0 ? 4 : 1
             let command = MetalKernel.get.createCommand(
-                "constant12SeqBackward", deviceID: deviceID
+                kernel, deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBytes(pNbNeurons, atIndex: 1)
@@ -474,7 +480,7 @@ public class Constant12Seq: LayerSeq, LayerUpdate
             command.setBuffer(_wBuffers.g.metal, atIndex: 5)
             
             command.dispatchThreads(
-                width: nbNeurons,
+                width: nbNeurons / coeff,
                 height: sequence
             )
             command.enqueue()
@@ -917,8 +923,11 @@ public class Constant2Seq: LayerSeq, LayerUpdate
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pSequence: [UInt32] = [UInt32(sequence)]
         
+        let kernel = nbNeurons % 4 == 0 ?
+            "constant2Seq4Forward" : "constant2SeqForward"
+        let coeff = nbNeurons % 4 == 0 ? 4 : 1
         let command = MetalKernel.get.createCommand(
-            "constant2SeqForward", deviceID: deviceID
+            kernel, deviceID: deviceID
         )
         command.setBuffer(_wBuffers.w.metal, atIndex: 0)
         command.setBytes(pNbNeurons, atIndex: 1)
@@ -927,7 +936,7 @@ public class Constant2Seq: LayerSeq, LayerUpdate
         command.setBuffer(outs.metal, atIndex: 4)
         
         command.dispatchThreads(
-            width: nbNeurons,
+            width: nbNeurons / coeff,
             height: batchSize * sequence
         )
         command.enqueue()
@@ -980,8 +989,11 @@ public class Constant2Seq: LayerSeq, LayerUpdate
                 // -------------------------------------------------------------
                 // Compute Gradients per batch
                 // -------------------------------------------------------------
+                let kernel = nbNeurons % 4 == 0 ?
+                    "flPatchBatch4DerBiases" : "flPatchBatchDerBiases"
+                let coeff = nbNeurons % 4 == 0 ? 4 : 1
                 command = MetalKernel.get.createCommand(
-                    "flPatchBatchDerBiases", deviceID: deviceID
+                    kernel, deviceID: deviceID
                 )
                 command.setBuffer(delta.metal, atIndex: 0)
                 command.setBytes(pNbNeurons, atIndex: 1)
@@ -990,7 +1002,7 @@ public class Constant2Seq: LayerSeq, LayerUpdate
                 command.setBytes(pAccumulate, atIndex: 4)
                 command.setBuffer(_wBuffers.g.metal, atIndex: 5)
                 
-                command.dispatchThreads(nbNeurons)
+                command.dispatchThreads(nbNeurons / coeff)
                 command.enqueue()
             }
             else

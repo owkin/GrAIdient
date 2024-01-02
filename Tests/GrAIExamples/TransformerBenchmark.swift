@@ -1,28 +1,20 @@
 //
-// TransformerExample.swift
+// TransformerBenchmark.swift
 // GrAIExamples
 //
-// Created by Aurélien PEDEN on 14/03/2023.
+// Created by Jean-François Reboud on 21/12/2023.
 //
 
 import XCTest
 import GrAIdient
 
 /// Train a simple Vision Transformer model on the CIFAR dataset.
-final class TransformerExample: XCTestCase
+final class TransformerBenchmark: XCTestCase
 {
-    /// Directory to dump outputs from the tests.
-    let _outputDir = NSTemporaryDirectory()
-    
     /// Batch size of data.
     let _batchSize = 64
     /// Size of one image (height and width are the same).
-    let _size = 32
-    
-    /// Mean of the preprocessing to apply to data.
-    let _mean: (Float, Float, Float) = (123.675, 116.28, 103.53)
-    /// Deviation of the preprocessing to apply to data.
-    let _std: (Float, Float, Float) = (58.395, 57.12, 57.375)
+    let _size = 224
     
     // Initialize test.
     override func setUp()
@@ -231,61 +223,20 @@ final class TransformerExample: XCTestCase
         return model
     }
     
-    /// Test1: dump CIFAR train and test datasets for labels 8 and 5.
-    func test1_DumpDataset()
+    /// Test: train a ViT model.
+    func test_TrainTransformer()
     {
-        CIFAR.dumpTrain(
-            datasetPath: _outputDir + "/datasetTrain8",
-            label: 8,
-            size: _size
-        )
-        CIFAR.dumpTrain(
-            datasetPath: _outputDir + "/datasetTrain5",
-            label: 5,
-            size: _size
-        )
-    }
-    
-    /// Test2: train a simple model.
-    func test2_TrainTransformer()
-    {
-        let cifar8 = CIFAR.loadDataset(
-            datasetPath: _outputDir + "/datasetTrain8",
-            size: _size
-        )
-        let cifar5 = CIFAR.loadDataset(
-            datasetPath: _outputDir + "/datasetTrain5",
-            size: _size
-        )
-        
         // Get optimizer parameters for iterating over batch size elements.
         let params = _getOptimizerParams(nbLoops: _batchSize)
-        
-        // A batch will in fact be composed of half elements coming from
-        // cifar8 (ships => label: 0) and half elements coming from
-        // cifar5 (dogs => label: 1).
-        cifar8.initSamples(batchSize: _batchSize / 2)
-        cifar5.initSamples(batchSize: _batchSize / 2)
-        
-        // Keep a subset of the dataset to have a quicker training.
-        cifar8.keep(500)
-        cifar5.keep(500)
-        
-        // Small trick to force full batches throughout the training:
-        // this enables us to set the ground truth once and for all.
-        let nbWholeBatches =
-            cifar8.nbSamples / cifar8.batchSize * cifar8.batchSize
-        cifar8.keep(nbWholeBatches)
-        cifar5.keep(nbWholeBatches)
         
         // Build a model with randomly initialized weights.
         let transformer = _buildModel(
             size: _size,
             patch: 16,
-            nbLayers: 2,
-            nbHeads: 2,
-            hiddenDim: 16,
-            mlpDim: 32,
+            nbLayers: 12,
+            nbHeads: 12,
+            hiddenDim: 768,
+            mlpDim: 4 * 768,
             mlpActivation: ReLU.str
         )
         
@@ -297,45 +248,37 @@ final class TransformerExample: XCTestCase
         
         // Initialize the ground truth once and for all.
         let groundTruth = MetalSharedBuffer<Float>(_batchSize, deviceID: 0)
-        let buffer = groundTruth.buffer
+        let gtBuffer = groundTruth.buffer
         for elem in 0..<_batchSize / 2
         {
-            buffer[elem] = 0.0
+            gtBuffer[elem] = 0.0
         }
         for elem in _batchSize / 2..<_batchSize
         {
-            buffer[elem] = 1.0
+            gtBuffer[elem] = 1.0
         }
         groundTruth.upload()
         
+        // Initialize data once and for all.
+        let data = MetalPrivateBuffer<Float>(
+            _batchSize * 3 * _size * _size, deviceID: 0
+        )
+        let dataBuffer = data.shared.buffer
+        for i in 0..<_batchSize * 3 * _size * _size
+        {
+            dataBuffer[i] = Float.random(in: -1..<1)
+        }
+        data.upload()
+        
         let nbEpochs = 2
+        let nbSteps = 20
         for epoch in 0..<nbEpochs
         {
-            print("EPOCH \(epoch+1)/\(nbEpochs).")
-            cifar8.shuffle()
-            cifar5.shuffle()
+            print("EPOCH \(epoch)/\(nbEpochs-1).")
             
-            for step in 0..<cifar8.nbLoops
+            let start = Date()
+            for step in 0..<nbSteps
             {
-                let samples8 = cifar8.getSamples()!
-                let samples5 = cifar5.getSamples()!
-                let samples = samples8 + samples5
-                
-                if samples.count != _batchSize
-                {
-                    fatalError("Unreachable.")
-                }
-                
-                // Pre processing.
-                let data = preprocess(
-                    samples,
-                    height: _size,
-                    width: _size,
-                    mean: _mean,
-                    std: _std,
-                    imageFormat: .Neuron
-                )
-                
                 // Reset gradient validity for backward pass
                 // and update the batch size (although here it stays the same).
                 transformer.updateKernel(batchSize: _batchSize)
@@ -344,8 +287,9 @@ final class TransformerExample: XCTestCase
                 try! firstLayer.setDataGPU(
                     data,
                     batchSize: _batchSize,
-                    nbChannels: 3, height: _size, width: _size,
-                    format: .Neuron
+                    nbChannels: 3,
+                    height: _size,
+                    width: _size
                 )
                 
                 // Forward.
@@ -373,13 +317,17 @@ final class TransformerExample: XCTestCase
                     batchSize: _batchSize,
                     nbNeurons: 1
                 )
-                print("Step \(step+1)/\(cifar8.nbLoops): \(sqrt(loss)).")
+                print("Step \(step)/\(nbSteps-1): \(sqrt(loss)).")
                 
                 // Update internal step.
                 // This is not mandatory except if we used another
                 // optimizer scheduler: see `_getOptimizerParams`.
                 transformer.incStep()
             }
+            
+            let end = Date()
+            let timeSpent = end.timeIntervalSince(start)
+            print("Epoch \(epoch + 1), time spent: \(timeSpent)s.")
         }
     }
 }

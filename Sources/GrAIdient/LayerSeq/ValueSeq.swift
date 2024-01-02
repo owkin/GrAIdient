@@ -376,8 +376,11 @@ public class ValueSeq: LayerMergeSeq
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pSequence: [UInt32] = [UInt32(sequence)]
         
+        let kernel = (nbNeurons / _nbHeads) % 4 == 0 ?
+            "valueSeq4Forward" : "valueSeqForward"
+        let coeff = (nbNeurons / _nbHeads) % 4 == 0 ? 4 : 1
         let command = MetalKernel.get.createCommand(
-            "valueSeqForward", deviceID: deviceID
+            kernel, deviceID: deviceID
         )
         command.setBuffer(value.outs.metal, atIndex: 0)
         command.setBuffer(score.outs.metal, atIndex: 1)
@@ -389,7 +392,7 @@ public class ValueSeq: LayerMergeSeq
         command.setBuffer(outs.metal, atIndex: 7)
         
         command.dispatchThreads(
-            width: nbNeurons,
+            width: nbNeurons / coeff,
             height: batchSize * sequence
         )
         command.enqueue()
@@ -500,8 +503,11 @@ public class ValueSeq: LayerMergeSeq
             
             let pDirty: [UInt32] = value.dirty ? [1] : [0]
             
+            let kernel = (nbNeurons / _nbHeads) % 4 == 0 ?
+                "valueValueSeq4Backward" : "valueValueSeqBackward"
+            let coeff = (nbNeurons / _nbHeads) % 4 == 0 ? 4 : 1
             command = metalKernel.createCommand(
-                "valueValueSeqBackward", deviceID: deviceID
+                kernel, deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBuffer(score.outs.metal, atIndex: 1)
@@ -514,7 +520,7 @@ public class ValueSeq: LayerMergeSeq
             command.setBuffer(value.delta.metal, atIndex: 8)
             
             command.dispatchThreads(
-                width: nbNeurons,
+                width: nbNeurons / coeff,
                 height: batchSize * sequence
             )
             command.enqueue()
@@ -525,8 +531,10 @@ public class ValueSeq: LayerMergeSeq
             
             let pDirty: [UInt32] = score.dirty ? [1] : [0]
             
+            let kernel = (nbNeurons / _nbHeads) % 4 == 0 ?
+                "valueScoreSeq4Backward" : "valueScoreSeqBackward"
             command = metalKernel.createCommand(
-                "valueScoreSeqBackward", deviceID: deviceID
+                kernel, deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBuffer(value.outs.metal, atIndex: 1)

@@ -374,8 +374,10 @@ public class QuerySeq: LayerMergeSeq
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pSequence: [UInt32] = [UInt32(sequence)]
         
+        let kernel = (nbNeuronsPrev / _nbHeads) % 4 == 0 ?
+            "querySeq4Forward" : "querySeqForward"
         let command = MetalKernel.get.createCommand(
-            "querySeqForward", deviceID: deviceID
+            kernel, deviceID: deviceID
         )
         command.setBuffer(query.outs.metal, atIndex: 0)
         command.setBuffer(key.outs.metal, atIndex: 1)
@@ -501,8 +503,11 @@ public class QuerySeq: LayerMergeSeq
             
             let pDirty: [UInt32] = query.dirty ? [1] : [0]
             
+            let kernel = (nbNeuronsPrev / _nbHeads) % 4 == 0 ?
+                "queryQuerySeq4Backward" : "queryQuerySeqBackward"
+            let coeff = (nbNeuronsPrev / _nbHeads) % 4 == 0 ? 4 : 1
             command = metalKernel.createCommand(
-                "queryQuerySeqBackward", deviceID: deviceID
+                kernel, deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBuffer(key.outs.metal, atIndex: 1)
@@ -515,7 +520,7 @@ public class QuerySeq: LayerMergeSeq
             command.setBuffer(query.delta.metal, atIndex: 8)
             
             command.dispatchThreads(
-                width: nbNeuronsPrev,
+                width: nbNeuronsPrev / coeff,
                 height: batchSize * sequence
             )
             command.enqueue()
@@ -526,8 +531,11 @@ public class QuerySeq: LayerMergeSeq
             
             let pDirty: [UInt32] = key.dirty ? [1] : [0]
             
+            let kernel = (nbNeuronsPrev / _nbHeads) % 4 == 0 ?
+                "queryKeySeq4Backward" : "queryKeySeqBackward"
+            let coeff = (nbNeuronsPrev / _nbHeads) % 4 == 0 ? 4 : 1
             command = metalKernel.createCommand(
-                "queryKeySeqBackward", deviceID: deviceID
+                kernel, deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBuffer(query.outs.metal, atIndex: 1)
@@ -540,7 +548,7 @@ public class QuerySeq: LayerMergeSeq
             command.setBuffer(key.delta.metal, atIndex: 8)
             
             command.dispatchThreads(
-                width: nbNeuronsPrev,
+                width: nbNeuronsPrev / coeff,
                 height: batchSize * sequence
             )
             command.enqueue()

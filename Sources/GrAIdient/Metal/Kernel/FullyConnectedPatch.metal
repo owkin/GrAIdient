@@ -304,6 +304,55 @@ kernel void flPatchBatchDerBiases(
     }
 }
 
+kernel void flPatchBatch4DerBiases(
+    const device float4 * delta,
+    constant uint * pNbNeurons,
+    constant uint * pNbBatch,
+    constant uint * pSequence,
+    constant uint * pAccumulate,
+    device float4 * grads,
+    uint id [[ thread_position_in_grid ]])
+{
+    uint nbNeurons;
+    uint nbBatch;
+    uint sequence;
+    uint accumulate;
+    
+    if (pNbNeurons && pNbBatch && pSequence && pAccumulate && delta && grads)
+    {
+        nbNeurons = *pNbNeurons;
+        nbBatch = *pNbBatch;
+        sequence = *pSequence;
+        accumulate = *pAccumulate;
+    }
+    else
+        return ;
+    
+    uint depth = id;
+    if (depth * 4 >= nbNeurons)
+    {
+        return ;
+    }
+    
+    float4 tmp = 0.0;
+    for (uint elem=0; elem<nbBatch; elem++) {
+    for (uint seq=0; seq<sequence; seq++)
+    {
+        uint offset =
+            (depth * 4 + nbNeurons * seq + sequence * nbNeurons * elem) / 4;
+        tmp += delta[offset];
+    }}
+    
+    if (accumulate)
+    {
+        grads[depth] += tmp;
+    }
+    else
+    {
+        grads[depth] = tmp;
+    }
+}
+
 kernel void flPatchDerWeights(
     const device float * outsPrev,
     const device float * delta,

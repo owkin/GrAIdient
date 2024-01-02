@@ -2530,8 +2530,11 @@ class LayerNormalizationGPU: LayerWeightsNormalization
             )
         }
         
+        let kernel = _nbNeurons % 4 == 0 ?
+            "forwardLayerNormSeq4" : "forwardLayerNormSeq"
+        let coeff = _nbNeurons % 4 == 0 ? 4 : 1
         let command = MetalKernel.get.createCommand(
-            "forwardLayerNormSeq", deviceID: _deviceID
+            kernel, deviceID: _deviceID
         )
         command.setBuffer(_β.w.metal, atIndex: 0)
         command.setBuffer(_Ɣ.w.metal, atIndex: 1)
@@ -2544,7 +2547,7 @@ class LayerNormalizationGPU: LayerWeightsNormalization
         command.setBuffer(_xHat.metal, atIndex: 8)
         
         command.dispatchThreads(
-            width: _nbNeurons,
+            width: _nbNeurons / coeff,
             height: batchSize * sequence
         )
         command.enqueue()
@@ -2567,8 +2570,10 @@ class LayerNormalizationGPU: LayerWeightsNormalization
             )
         }
         
+        let kernel = _nbNeurons % 4 == 0 ?
+            "computeLayerNormSeqμ4" : "computeLayerNormSeqμ"
         let command = MetalKernel.get.createCommand(
-            "computeLayerNormSeqμ", deviceID: _deviceID
+            kernel, deviceID: _deviceID
         )
         command.setBuffer(layer.outs.metal, atIndex: 0)
         command.setBytes(pNbNeurons, atIndex: 1)
@@ -2597,8 +2602,10 @@ class LayerNormalizationGPU: LayerWeightsNormalization
             )
         }
         
+        let kernel = _nbNeurons % 4 == 0 ?
+            "computeLayerNormSeqσ24" : "computeLayerNormSeqσ2"
         let command = MetalKernel.get.createCommand(
-            "computeLayerNormSeqσ2", deviceID: _deviceID
+            kernel, deviceID: _deviceID
         )
         command.setBuffer(layer.outs.metal, atIndex: 0)
         command.setBuffer(_μ.metal, atIndex: 1)
@@ -2624,8 +2631,11 @@ class LayerNormalizationGPU: LayerWeightsNormalization
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pSequence: [UInt32] = [UInt32(sequence)]
         
+        let kernel = _nbNeurons % 4 == 0 ?
+            "backwardLayerNormSeq4" : "backwardLayerNormSeq"
+        let coeff = _nbNeurons % 4 == 0 ? 4 : 1
         let command = MetalKernel.get.createCommand(
-            "backwardLayerNormSeq", deviceID: _deviceID
+            kernel, deviceID: _deviceID
         )
         command.setBuffer(_σ2.metal, atIndex: 0)
         command.setBuffer(_xHat.metal, atIndex: 1)
@@ -2638,7 +2648,7 @@ class LayerNormalizationGPU: LayerWeightsNormalization
         command.setBuffer(layer.delta.metal, atIndex: 8)
         
         command.dispatchThreads(
-            width: _nbNeurons,
+            width: _nbNeurons / coeff,
             height: batchSize * sequence
         )
         command.enqueue()
@@ -2664,8 +2674,10 @@ class LayerNormalizationGPU: LayerWeightsNormalization
             )
         }
         
+        let kernel = _nbNeurons % 4 == 0 ?
+            "backwardWeights1LayerNormSeq4" : "backwardWeights1LayerNormSeq"
         let command = MetalKernel.get.createCommand(
-            "backwardWeights1LayerNormSeq", deviceID: _deviceID
+            kernel, deviceID: _deviceID
         )
         command.setBuffer(layer.delta.metal, atIndex: 0)
         command.setBuffer(_xHat.metal, atIndex: 1)
@@ -2691,8 +2703,11 @@ class LayerNormalizationGPU: LayerWeightsNormalization
         let pSequence: [UInt32] = [UInt32(sequence)]
         let pAccumulate: [UInt32] = layer.accumulateDeltaWeights ? [1] : [0]
         
+        let kernel = _nbNeurons % 4 == 0 ?
+            "backwardWeights2LayerNormSeq4" : "backwardWeights2LayerNormSeq"
+        let coeff = _nbNeurons % 4 == 0 ? 4 : 1
         let command = MetalKernel.get.createCommand(
-            "backwardWeights2LayerNormSeq", deviceID: _deviceID
+            kernel, deviceID: _deviceID
         )
         command.setBuffer(layer.delta.metal, atIndex: 0)
         command.setBuffer(_xHat.metal, atIndex: 1)
@@ -2703,7 +2718,7 @@ class LayerNormalizationGPU: LayerWeightsNormalization
         command.setBuffer(_Ɣ.g.metal, atIndex: 6)
         command.setBuffer(_β.g.metal, atIndex: 7)
         
-        command.dispatchThreads(_nbNeurons)
+        command.dispatchThreads(_nbNeurons / coeff)
         command.enqueue()
     }
     

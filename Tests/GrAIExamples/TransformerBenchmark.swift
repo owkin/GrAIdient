@@ -225,9 +225,9 @@ final class TransformerBenchmark: XCTestCase
             size: _size,
             patch: 16,
             nbLayers: 12,
-            nbHeads: 12,
-            hiddenDim: 768,
-            mlpDim: 4 * 768,
+            nbHeads: 6,
+            hiddenDim: 384,
+            mlpDim: 4 * 384,
             mlpActivation: ReLU.str
         )
         

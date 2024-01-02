@@ -311,7 +311,7 @@ final class TransformerExample: XCTestCase
         let nbEpochs = 2
         for epoch in 0..<nbEpochs
         {
-            print("EPOCH \(epoch)/\(nbEpochs-1).")
+            print("EPOCH \(epoch+1)/\(nbEpochs).")
             cifar8.shuffle()
             cifar5.shuffle()
             
@@ -373,7 +373,7 @@ final class TransformerExample: XCTestCase
                     batchSize: _batchSize,
                     nbNeurons: 1
                 )
-                print("Step \(step)/\(cifar8.nbLoops-1): \(sqrt(loss)).")
+                print("Step \(step+1)/\(cifar8.nbLoops): \(sqrt(loss)).")
                 
                 // Update internal step.
                 // This is not mandatory except if we used another

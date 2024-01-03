@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import MetalKit
 
 /// Layer with a sequential shape neural structure, weights and biases and an activation function.
 public class FullyConnectedSeq: ActivationSeq,

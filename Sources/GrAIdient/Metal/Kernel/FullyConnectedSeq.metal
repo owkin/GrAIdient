@@ -61,6 +61,68 @@ kernel void flSeqForward(
     outs[offset] = tmp;
 }
 
+kernel void flSeq48Forward(
+    const device float4 * outsPrev,
+    const device float4 * weights,
+    const device float * biases,
+    constant uint * pNbNeurons,
+    constant uint * pNbNeuronsPrev,
+    constant uint * pNbBatch,
+    constant uint * pSequence,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint nbNeurons;
+    uint nbNeuronsPrev;
+    uint nbBatch;
+    uint sequence;
+    
+    if (pNbNeurons && pNbNeuronsPrev && pNbBatch && pSequence &&
+        outsPrev && weights && biases && outs)
+    {
+        nbNeurons = *pNbNeurons;
+        nbNeuronsPrev = *pNbNeuronsPrev;
+        nbBatch = *pNbBatch;
+        sequence = *pSequence;
+    }
+    else
+        return ;
+    
+    uint coeff = 8;
+    uint depth = id[0];
+    uint elem = id[1] / sequence;
+    uint seq = id[1] % sequence;
+    
+    if (depth >= nbNeurons || elem * coeff >= nbBatch || seq >= sequence)
+    {
+        return ;
+    }
+    
+    float4 tmp[8] = {0};
+    for (uint depthPrev=0; depthPrev<nbNeuronsPrev/4; depthPrev++)
+    {
+        uint offsetWeights = (depthPrev * 4 + nbNeuronsPrev * depth) / 4;
+        float4 w = weights[offsetWeights];
+        
+        for (uint i=0; i<coeff; i++)
+        {
+            uint offsetPrev = (depthPrev * 4 + nbNeuronsPrev * seq +
+                sequence * nbNeuronsPrev * (elem*coeff+i)) / 4;
+            float4 outPrev = outsPrev[offsetPrev];
+            
+            tmp[i] += outPrev * w;
+        }
+    }
+    
+    float bias = biases[depth];
+    for (uint i=0; i<coeff; i++)
+    {
+        uint offset = depth + nbNeurons * seq +
+            sequence * nbNeurons * (elem*coeff+i);
+        outs[offset] = tmp[i][0] + tmp[i][1] + tmp[i][2] + tmp[i][3] + bias;
+    }
+}
+
 kernel void flSeq4Forward(
     const device float4 * outsPrev,
     const device float4 * weights,
@@ -174,6 +236,82 @@ kernel void flSeqBackward(
     else
     {
         deltaPrev[offsetPrev] += tmp;
+    }
+}
+
+kernel void flSeq48Backward(
+    const device float * delta,
+    const device float4 * weights,
+    constant uint * pNbNeurons,
+    constant uint * pNbNeuronsPrev,
+    constant uint * pNbBatch,
+    constant uint * pSequence,
+    constant uint * pDirty,
+    device float4 * deltaPrev,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint nbNeurons;
+    uint nbNeuronsPrev;
+    uint nbBatch;
+    uint sequence;
+    uint dirty;
+    
+    if (pNbNeurons && pNbNeuronsPrev && pNbBatch && pDirty &&
+        deltaPrev && weights && delta)
+    {
+        nbNeurons = *pNbNeurons;
+        nbNeuronsPrev = *pNbNeuronsPrev;
+        nbBatch = *pNbBatch;
+        sequence = *pSequence;
+        dirty = *pDirty;
+    }
+    else
+        return ;
+    
+    uint coeff = 8;
+    uint depthPrev = id[0];
+    uint elem = id[1] / sequence;
+    uint seq = id[1] % sequence;
+    
+    if (depthPrev * 4 >= nbNeuronsPrev ||
+        elem * coeff >= nbBatch || seq >= sequence)
+    {
+        return ;
+    }
+    
+    float4 tmp[8] = {0};
+    for (uint depth=0; depth<nbNeurons; depth++)
+    {
+        uint offsetWeights = (depthPrev * 4 + nbNeuronsPrev * depth) / 4;
+        float4 w = weights[offsetWeights];
+        
+        for (uint i=0; i<coeff; i++)
+        {
+            uint offset = depth + nbNeurons * seq +
+                sequence * nbNeurons * (elem*coeff+i);
+            float deltaCur = delta[offset];
+            
+            tmp[i] += w * deltaCur;
+        }
+    }
+    
+    if (dirty)
+    {
+        for (uint i=0; i<coeff; i++)
+        {
+            uint offsetPrev = (depthPrev * 4 + nbNeuronsPrev * seq +
+                sequence * nbNeuronsPrev * (elem*coeff+i)) / 4;
+            deltaPrev[offsetPrev] = tmp[i];
+        }
+    }
+    else
+    {
+        for (uint i=0; i<coeff; i++)
+        {
+            uint offsetPrev = (depthPrev * 4 + nbNeuronsPrev * seq +
+                sequence * nbNeuronsPrev * (elem*coeff+i)) / 4;
+            deltaPrev[offsetPrev] += tmp[i];
+        }
     }
 }
 

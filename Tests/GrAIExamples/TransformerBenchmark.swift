@@ -8,7 +8,7 @@
 import XCTest
 import GrAIdient
 
-/// Train a simple Vision Transformer model on the CIFAR dataset.
+/// Benchmark time spent for training or evaluating a Vision Transformer model with fake data.
 final class TransformerBenchmark: XCTestCase
 {
     /// Batch size of data.
@@ -70,33 +70,24 @@ final class TransformerBenchmark: XCTestCase
         hiddenDim: Int,
         params: GrAI.Model.Params) -> LayerSeq
     {
-        let query: LayerSeq = FullyConnectedSeq(
-            layerPrev: layerPrev, nbNeurons: hiddenDim,
-            activation: nil, biases: true,
-            params: params
-        )
-        let key: LayerSeq = FullyConnectedSeq(
-            layerPrev: layerPrev, nbNeurons: hiddenDim,
-            activation: nil, biases: true,
-            params: params
-        )
-        let value: LayerSeq = FullyConnectedSeq(
-            layerPrev: layerPrev, nbNeurons: hiddenDim,
+        let qkv: LayerSeq = FullyConnectedSeq(
+            layerPrev: layerPrev, nbNeurons: 3 * hiddenDim,
             activation: nil, biases: true,
             params: params
         )
         
-        var layerSeq: LayerSeq = try! QuerySeq(
-            query: query, key: key, nbHeads: nbHeads,
+        var layerSeq: LayerSeq = try! QuerySelfSeq(
+            layerPrev: qkv,
+            query: 0, key: 1, nbBlocksPrev: 3, nbHeads: nbHeads,
             params: params
         )
         layerSeq = try! SoftmaxSeq(
             layerPrev: layerSeq, nbHeads: nbHeads,
             params: params
         )
-            
-        layerSeq = try! ValueSeq(
-            value: value, score: layerSeq, nbHeads: nbHeads,
+        layerSeq = try! ValueSelfSeq(
+            value: qkv, score: layerSeq,
+            offset: 2, nbBlocksPrev: 3, nbHeads: nbHeads,
             params: params
         )
         
@@ -234,9 +225,9 @@ final class TransformerBenchmark: XCTestCase
             size: _size,
             patch: 16,
             nbLayers: 12,
-            nbHeads: 12,
-            hiddenDim: 768,
-            mlpDim: 4 * 768,
+            nbHeads: 6,
+            hiddenDim: 384,
+            mlpDim: 4 * 384,
             mlpActivation: ReLU.str
         )
         
@@ -274,11 +265,13 @@ final class TransformerBenchmark: XCTestCase
         let nbSteps = 20
         for epoch in 0..<nbEpochs
         {
-            print("EPOCH \(epoch)/\(nbEpochs-1).")
+            print("EPOCH \(epoch + 1)/\(nbEpochs).")
             
-            let start = Date()
+            let start1 = Date()
             for step in 0..<nbSteps
             {
+                let start2 = Date()
+                
                 // Reset gradient validity for backward pass
                 // and update the batch size (although here it stays the same).
                 transformer.updateKernel(batchSize: _batchSize)
@@ -317,16 +310,106 @@ final class TransformerBenchmark: XCTestCase
                     batchSize: _batchSize,
                     nbNeurons: 1
                 )
-                print("Step \(step)/\(nbSteps-1): \(sqrt(loss)).")
                 
                 // Update internal step.
                 // This is not mandatory except if we used another
                 // optimizer scheduler: see `_getOptimizerParams`.
                 transformer.incStep()
+                
+                let end2 = Date()
+                let timeSpent = end2.timeIntervalSince(start2)
+                print("Step \(step + 1)/\(nbSteps): " +
+                      "\(sqrt(loss)) in \(timeSpent)s.")
             }
             
-            let end = Date()
-            let timeSpent = end.timeIntervalSince(start)
+            let end1 = Date()
+            let timeSpent = end1.timeIntervalSince(start1)
+            print("Epoch \(epoch + 1), time spent: \(timeSpent)s.")
+        }
+    }
+    
+    /// Test: evaluate a ViT model.
+    func test_EvalTransformer()
+    {
+        // Build a model with randomly initialized weights.
+        let transformer = _buildModel(
+            size: _size,
+            patch: 16,
+            nbLayers: 12,
+            nbHeads: 12,
+            hiddenDim: 768,
+            mlpDim: 4 * 768,
+            mlpActivation: ReLU.str
+        )
+        
+        // Initialize for inference.
+        transformer.initKernel(phase: .Inference)
+        
+        let firstLayer: Input2D = transformer.layers.first as! Input2D
+        let lastLayer: MSE1D = transformer.layers.last as! MSE1D
+        
+        // Initialize the ground truth once and for all.
+        let groundTruth = MetalSharedBuffer<Float>(_batchSize, deviceID: 0)
+        let gtBuffer = groundTruth.buffer
+        for elem in 0..<_batchSize / 2
+        {
+            gtBuffer[elem] = 0.0
+        }
+        for elem in _batchSize / 2..<_batchSize
+        {
+            gtBuffer[elem] = 1.0
+        }
+        groundTruth.upload()
+        
+        // Initialize data once and for all.
+        let data = MetalPrivateBuffer<Float>(
+            _batchSize * 3 * _size * _size, deviceID: 0
+        )
+        let dataBuffer = data.shared.buffer
+        for i in 0..<_batchSize * 3 * _size * _size
+        {
+            dataBuffer[i] = Float.random(in: -1..<1)
+        }
+        data.upload()
+        
+        let nbEpochs = 2
+        let nbSteps = 20
+        for epoch in 0..<nbEpochs
+        {
+            print("EPOCH \(epoch + 1)/\(nbEpochs).")
+            
+            let start1 = Date()
+            for step in 0..<nbSteps
+            {
+                let start2 = Date()
+                
+                // Reset gradient validity for backward pass
+                // and update the batch size (although here it stays the same).
+                transformer.updateKernel(batchSize: _batchSize)
+                
+                // Set data.
+                try! firstLayer.setDataGPU(
+                    data,
+                    batchSize: _batchSize,
+                    nbChannels: 3,
+                    height: _size,
+                    width: _size
+                )
+                
+                // Forward.
+                try! transformer.forward()
+                
+                // Get predictions.
+                var preds = [Float](lastLayer.outs.download()[0..<_batchSize])
+                preds = preds.map { 1.0 / (1.0 + exp(-$0)) } // Sigmoid.
+                
+                let end2 = Date()
+                let timeSpent = end2.timeIntervalSince(start2)
+                print("Step \(step + 1)/\(nbSteps): in \(timeSpent)s.")
+            }
+            
+            let end1 = Date()
+            let timeSpent = end1.timeIntervalSince(start1)
             print("Epoch \(epoch + 1), time spent: \(timeSpent)s.")
         }
     }

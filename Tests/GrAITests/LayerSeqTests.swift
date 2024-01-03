@@ -171,6 +171,17 @@ class LayerSeqGradTests: Input2DMSE1DCase
                 query: layerSeq, key: otherLayer, nbHeads: 2, params: params
             )
             
+        case "QuerySelf":
+            layerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 3 * 6,
+                activation: SoftReLU.str, biases: true, params: params
+            )
+            layerSeq = try! QuerySelfSeq(
+                layerPrev: layerSeq,
+                query: 0, key: 1, nbBlocksPrev: 3, nbHeads: 2,
+                params: params
+            )
+            
         case "Softmax":
             layerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 15,
@@ -195,6 +206,24 @@ class LayerSeqGradTests: Input2DMSE1DCase
             )
             layerSeq = try! ValueSeq(
                 value: otherLayer, score: layerSeq, nbHeads: 2, params: params
+            )
+            
+        case "ValueSelf":
+            let otherLayer: LayerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: 3, nbNeurons: 3 * 6,
+                activation: SoftReLU.str, biases: true, params: params
+            )
+            layerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: 3, nbNeurons: 6,
+                activation: SoftReLU.str, biases: true, params: params
+            )
+            layerSeq = FullyConnectedSeq(
+                layerPrev: layerSeq, nbNeurons: 2 * 4,
+                activation: SoftReLU.str, biases: true, params: params
+            )
+            layerSeq = try! ValueSelfSeq(
+                value: otherLayer, score: layerSeq,
+                offset: 2, nbBlocksPrev: 3, nbHeads: 2, params: params
             )
             
         default:
@@ -349,6 +378,19 @@ class LayerSeqGradTests: Input2DMSE1DCase
         run(trainer)
     }
     
+    func testQuerySelfSeqCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("QuerySelf")
+        run(trainer)
+    }
+    
+    func testQuerySelfSeqGPU() throws
+    {
+        let trainer = _buildTrainer("QuerySelf")
+        run(trainer)
+    }
+    
     func testSoftmaxSeqCPU() throws
     {
         GrAI.Opti.CPU = true
@@ -372,6 +414,19 @@ class LayerSeqGradTests: Input2DMSE1DCase
     func testValueSeqGPU() throws
     {
         let trainer = _buildTrainer("Value")
+        run(trainer)
+    }
+    
+    func testValueSelfSeqCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("ValueSelf")
+        run(trainer)
+    }
+    
+    func testValueSelfSeqGPU() throws
+    {
+        let trainer = _buildTrainer("ValueSelf")
         run(trainer)
     }
 }
@@ -532,6 +587,17 @@ class LayerSeqFlowTests: Input2DMSE1DCase
                 query: layerSeq, key: otherLayer, nbHeads: 2, params: params
             )
             
+        case "QuerySelf":
+            layerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 3 * 6,
+                activation: SoftReLU.str, biases: true, params: params
+            )
+            layerSeq = try! QuerySelfSeq(
+                layerPrev: layerSeq,
+                query: 0, key: 1, nbBlocksPrev: 3, nbHeads: 2,
+                params: params
+            )
+            
         case "Softmax":
             layerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 15,
@@ -556,6 +622,24 @@ class LayerSeqFlowTests: Input2DMSE1DCase
             )
             layerSeq = try! ValueSeq(
                 value: otherLayer, score: layerSeq, nbHeads: 2, params: params
+            )
+            
+        case "ValueSelf":
+            let otherLayer: LayerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: 3, nbNeurons: 3 * 6,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: 3, nbNeurons: 6,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = FullyConnectedSeq(
+                layerPrev: layerSeq, nbNeurons: 2 * 4,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = try! ValueSelfSeq(
+                value: otherLayer, score: layerSeq,
+                offset: 2, nbBlocksPrev: 3, nbHeads: 2, params: params
             )
             
         case "VQ":
@@ -655,6 +739,12 @@ class LayerSeqFlowTests: Input2DMSE1DCase
         run(trainer)
     }
     
+    func testQuerySelfSeq() throws
+    {
+        let trainer = _buildTrainer("QuerySelf")
+        run(trainer)
+    }
+    
     func testSoftmaxSeq() throws
     {
         let trainer = _buildTrainer("Softmax")
@@ -664,6 +754,12 @@ class LayerSeqFlowTests: Input2DMSE1DCase
     func testValueSeq() throws
     {
         let trainer = _buildTrainer("Value")
+        run(trainer)
+    }
+    
+    func testValueSelfSeq() throws
+    {
+        let trainer = _buildTrainer("ValueSelf")
         run(trainer)
     }
     
@@ -677,6 +773,84 @@ class LayerSeqFlowTests: Input2DMSE1DCase
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer("VQ")
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU gradients with CPU ones through time.
+// We expect to see errors ~ 1e-7 and less.
+// -----------------------------------------------------------------------------
+class LayerSeq48FlowTests: Input2DMSE1DCase
+{
+    /// Systematic call before test begins.
+    override func setUp()
+    {
+        batchSize = 16
+        _ = MetalKernel.get
+        GrAI.Opti.GPU = true
+        
+        setOptimizerParams(params: &optimizerParams)
+        optimizerParams.nbLoops = 3
+    }
+    
+    private func _buildTrainer(_ model: String) -> FlowTrainer
+    {
+        let trainer = FlowTrainer(
+            name: "LayerSeq",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(model: model, context: context)
+        }
+        return trainer
+    }
+    
+    func buildModel(model: String, context: ModelContext)
+    {
+        let params = GrAI.Model.Params(context: context)
+        
+        var layer: Layer2D = Input2D(
+            nbChannels: 1, width: width, height: height, params: params
+        )
+        
+        layer = Convolution2D(
+            layerPrev: layer, size: 1, nbChannels: 4, stride: 1,
+            activation: LeakyReLU.str, biases: true, bn: false, params: params
+        )
+        
+        var layerSeq: LayerSeq
+        switch model
+        {
+        case "FullyConnectedSeq":
+            layerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 4 * 3,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = FullyConnectedSeq(
+                layerPrev: layerSeq, nbNeurons: 4 * 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            
+        default:
+            fatalError("Unreachable.")
+        }
+        
+        var head: Layer1D = AvgPoolSeq(layerPrev: layerSeq, params: params)
+        
+        head = try! FullyConnected(
+            layerPrev: head, nbNeurons: 1,
+            activation: LeakyReLU.str, biases: true, params: params
+        )
+        
+        _ = MSE1D(layerPrev: head, params: params)
+    }
+    
+    func testFullyConnectedSeq() throws
+    {
+        let trainer = _buildTrainer("FullyConnectedSeq")
         run(trainer)
     }
 }
@@ -814,6 +988,17 @@ class LayerSeq4FlowTests: Input2DMSE1DCase
                 query: layerSeq, key: otherLayer, nbHeads: 2, params: params
             )
             
+        case "QuerySelf":
+            layerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 3 * 4 * 2 * 3,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = try! QuerySelfSeq(
+                layerPrev: layerSeq,
+                query: 0, key: 1, nbBlocksPrev: 3, nbHeads: 2,
+                params: params
+            )
+            
         case "Softmax":
             layerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 4 * 3 * 3,
@@ -838,6 +1023,24 @@ class LayerSeq4FlowTests: Input2DMSE1DCase
             )
             layerSeq = try! ValueSeq(
                 value: otherLayer, score: layerSeq, nbHeads: 2, params: params
+            )
+            
+        case "ValueSelf":
+            let otherLayer: LayerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: 3, nbNeurons: 3 * 4 * 2 * 3,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: 3, nbNeurons: 4 * 3,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = FullyConnectedSeq(
+                layerPrev: layerSeq, nbNeurons: 4 * 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = try! ValueSelfSeq(
+                value: otherLayer, score: layerSeq,
+                offset: 2, nbBlocksPrev: 3, nbHeads: 2, params: params
             )
             
         default:
@@ -896,6 +1099,12 @@ class LayerSeq4FlowTests: Input2DMSE1DCase
         run(trainer)
     }
     
+    func testQuerySelfSeq() throws
+    {
+        let trainer = _buildTrainer("QuerySelf")
+        run(trainer)
+    }
+    
     func testSoftmaxSeq() throws
     {
         let trainer = _buildTrainer("Softmax")
@@ -905,6 +1114,12 @@ class LayerSeq4FlowTests: Input2DMSE1DCase
     func testValueSeq() throws
     {
         let trainer = _buildTrainer("Value")
+        run(trainer)
+    }
+    
+    func testValueSelfSeq() throws
+    {
+        let trainer = _buildTrainer("ValueSelf")
         run(trainer)
     }
 }
@@ -1012,6 +1227,12 @@ class LayerSeqFlowResetTests: LayerSeqFlowTests
         run(trainer)
     }
     
+    override func testQuerySelfSeq() throws
+    {
+        let trainer = _buildTrainer("QuerySelf")
+        run(trainer)
+    }
+    
     override func testSoftmaxSeq() throws
     {
         let trainer = _buildTrainer("Softmax")
@@ -1021,6 +1242,12 @@ class LayerSeqFlowResetTests: LayerSeqFlowTests
     override func testValueSeq() throws
     {
         let trainer = _buildTrainer("Value")
+        run(trainer)
+    }
+    
+    override func testValueSelfSeq() throws
+    {
+        let trainer = _buildTrainer("ValueSelf")
         run(trainer)
     }
     
@@ -1141,6 +1368,12 @@ class LayerSeqFlowReverseTests: LayerSeqFlowTests
         run(trainer)
     }
     
+    override func testQuerySelfSeq() throws
+    {
+        let trainer = _buildTrainer("QuerySelf")
+        run(trainer)
+    }
+    
     override func testSoftmaxSeq() throws
     {
         let trainer = _buildTrainer("Softmax")
@@ -1150,6 +1383,12 @@ class LayerSeqFlowReverseTests: LayerSeqFlowTests
     override func testValueSeq() throws
     {
         let trainer = _buildTrainer("Value")
+        run(trainer)
+    }
+    
+    override func testValueSelfSeq() throws
+    {
+        let trainer = _buildTrainer("ValueSelf")
         run(trainer)
     }
     
@@ -1440,6 +1679,12 @@ class LayerSeqInferenceTests: LayerSeqFlowTests
         run(trainer)
     }
     
+    override func testQuerySelfSeq() throws
+    {
+        let trainer = _buildTrainer("QuerySelf")
+        run(trainer)
+    }
+    
     override func testSoftmaxSeq() throws
     {
         let trainer = _buildTrainer("Softmax")
@@ -1449,6 +1694,12 @@ class LayerSeqInferenceTests: LayerSeqFlowTests
     override func testValueSeq() throws
     {
         let trainer = _buildTrainer("Value")
+        run(trainer)
+    }
+    
+    override func testValueSelfSeq() throws
+    {
+        let trainer = _buildTrainer("ValueSelf")
         run(trainer)
     }
     
@@ -1562,6 +1813,12 @@ class LayerSeqLoadTests: LayerSeqFlowTests
         run(trainer)
     }
     
+    override func testQuerySelfSeq() throws
+    {
+        let trainer = _buildTrainer("QuerySelf")
+        run(trainer)
+    }
+    
     override func testSoftmaxSeq() throws
     {
         let trainer = _buildTrainer("Softmax")
@@ -1571,6 +1828,12 @@ class LayerSeqLoadTests: LayerSeqFlowTests
     override func testValueSeq() throws
     {
         let trainer = _buildTrainer("Value")
+        run(trainer)
+    }
+    
+    override func testValueSelfSeq() throws
+    {
+        let trainer = _buildTrainer("ValueSelf")
         run(trainer)
     }
     
@@ -1728,6 +1991,12 @@ class LayerSeqTransformTests: LayerSeqFlowTests
         run(trainer)
     }
     
+    override func testQuerySelfSeq() throws
+    {
+        let trainer = _buildTrainer("QuerySelf")
+        run(trainer)
+    }
+    
     override func testSoftmaxSeq() throws
     {
         let trainer = _buildTrainer("Softmax")
@@ -1737,6 +2006,12 @@ class LayerSeqTransformTests: LayerSeqFlowTests
     override func testValueSeq() throws
     {
         let trainer = _buildTrainer("Value")
+        run(trainer)
+    }
+    
+    override func testValueSelfSeq() throws
+    {
+        let trainer = _buildTrainer("ValueSelf")
         run(trainer)
     }
     

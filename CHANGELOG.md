@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🚀 **perf:** QuerySelf & ValueSelf ([112](https://github.com/owkin/GrAIdient/pull/112))\
 🚀 **perf:** benchmark ViT base model ([111](https://github.com/owkin/GrAIdient/pull/111))\
 🐛 **fix:** run on Apple Silicon ([110](https://github.com/owkin/GrAIdient/pull/110))\
 ⚙️ **core:** initForward,Backward model API ([109](https://github.com/owkin/GrAIdient/pull/109))\

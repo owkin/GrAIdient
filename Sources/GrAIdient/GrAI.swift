@@ -370,6 +370,7 @@ fileprivate class GrAIContext
         case GPU
     }
     
+    /// Used to select GPU device.
     var gpuNamedPriority = [String]()
     
     //--------------------------------------------------------------------------

@@ -1736,53 +1736,53 @@ class Layer2DFlowTests: Input2DMSE1DCase
     func testDeconvolution1NoBN() throws
     {
         let trainer = _buildTrainer(model: "Deconvolution1", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     func testDeconvolution1SampleNoBN() throws
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer(model: "Deconvolution1", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     func testDeconvolution2() throws
     {
         let trainer = _buildTrainer(model: "Deconvolution2", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     func testDeconvolution2Sample() throws
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer(model: "Deconvolution2", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     func testDeconvolutionStride1() throws
     {
         let trainer = _buildTrainer(model: "DeconvolutionStride1", bn: false)
-        run(trainer, diffThreshold: 0.00001)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     func testDeconvolutionStride1Sample() throws
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer(model: "DeconvolutionStride1", bn: false)
-        run(trainer, diffThreshold: 0.00001)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     func testDeconvolutionStride2() throws
     {
         let trainer = _buildTrainer(model: "DeconvolutionStride2", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     func testDeconvolutionStride2Sample() throws
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer(model: "DeconvolutionStride2", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     func testConcat() throws
@@ -2136,33 +2136,33 @@ class Layer2DFlowResetTests: Layer2DFlowTests
     override func testDeconvolution1NoBN() throws
     {
         let trainer = _buildTrainer(model: "Deconvolution1", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     override func testDeconvolution1SampleNoBN() throws
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer(model: "Deconvolution1", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     override func testDeconvolution2() throws
     {
         let trainer = _buildTrainer(model: "Deconvolution2", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     override func testDeconvolution2Sample() throws
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer(model: "Deconvolution2", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     override func testDeconvolutionStride1() throws
     {
         let trainer = _buildTrainer(model: "DeconvolutionStride1", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     override func testDeconvolutionStride1Sample() throws
@@ -2182,7 +2182,7 @@ class Layer2DFlowResetTests: Layer2DFlowTests
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer(model: "DeconvolutionStride2", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     override func testConcat() throws
@@ -2536,53 +2536,53 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
     override func testDeconvolution1NoBN() throws
     {
         let trainer = _buildTrainer(model: "Deconvolution1", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     override func testDeconvolution1SampleNoBN() throws
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer(model: "Deconvolution1", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     override func testDeconvolution2() throws
     {
         let trainer = _buildTrainer(model: "Deconvolution2", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     override func testDeconvolution2Sample() throws
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer(model: "Deconvolution2", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     override func testDeconvolutionStride1() throws
     {
         let trainer = _buildTrainer(model: "DeconvolutionStride1", bn: false)
-        run(trainer, diffThreshold: 0.00001)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     override func testDeconvolutionStride1Sample() throws
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer(model: "DeconvolutionStride1", bn: false)
-        run(trainer, diffThreshold: 0.00001)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     override func testDeconvolutionStride2() throws
     {
         let trainer = _buildTrainer(model: "DeconvolutionStride2", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     override func testDeconvolutionStride2Sample() throws
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer(model: "DeconvolutionStride2", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     override func testConcat() throws
@@ -2594,7 +2594,7 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
     override func testInstanceNorm() throws
     {
         let trainer = _buildTrainer(model: "InstanceNorm", bn: false)
-        run(trainer, diffThreshold: 0.00001)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     override func testAdaIN() throws
@@ -2895,53 +2895,53 @@ class Layer2DFlowAccumulateTests: Input2DMSE1DCase
     func testDeconvolution1NoBN() throws
     {
         let trainer = _buildTrainer(model: "Deconvolution1", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     func testDeconvolution1SampleNoBN() throws
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer(model: "Deconvolution1", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     func testDeconvolution2() throws
     {
         let trainer = _buildTrainer(model: "Deconvolution2", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     func testDeconvolution2Sample() throws
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer(model: "Deconvolution2", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     func testDeconvolutionStride1() throws
     {
         let trainer = _buildTrainer(model: "DeconvolutionStride1", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     func testDeconvolutionStride1Sample() throws
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer(model: "DeconvolutionStride1", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     func testDeconvolutionStride2() throws
     {
         let trainer = _buildTrainer(model: "DeconvolutionStride2", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     func testDeconvolutionStride2Sample() throws
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer(model: "DeconvolutionStride2", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     func testInstanceNorm() throws

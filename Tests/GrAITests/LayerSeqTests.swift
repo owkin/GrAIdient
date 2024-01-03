@@ -781,7 +781,7 @@ class LayerSeqFlowTests: Input2DMSE1DCase
 // Compare GPU gradients with CPU ones through time.
 // We expect to see errors ~ 1e-7 and less.
 // -----------------------------------------------------------------------------
-class LayerSeq4FlowTests: Input2DMSE1DCase
+class LayerSeq48FlowTests: Input2DMSE1DCase
 {
     /// Systematic call before test begins.
     override func setUp()
@@ -794,6 +794,73 @@ class LayerSeq4FlowTests: Input2DMSE1DCase
         optimizerParams.nbLoops = 3
     }
     
+    private func _buildTrainer(_ model: String) -> FlowTrainer
+    {
+        let trainer = FlowTrainer(
+            name: "LayerSeq",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(model: model, context: context)
+        }
+        return trainer
+    }
+    
+    func buildModel(model: String, context: ModelContext)
+    {
+        let params = GrAI.Model.Params(context: context)
+        
+        var layer: Layer2D = Input2D(
+            nbChannels: 1, width: width, height: height, params: params
+        )
+        
+        layer = Convolution2D(
+            layerPrev: layer, size: 1, nbChannels: 4, stride: 1,
+            activation: LeakyReLU.str, biases: true, bn: false, params: params
+        )
+        
+        var layerSeq: LayerSeq
+        switch model
+        {
+        case "FullyConnectedSeq":
+            layerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 4 * 3,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = FullyConnectedSeq(
+                layerPrev: layerSeq, nbNeurons: 4 * 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            
+        default:
+            fatalError("Unreachable.")
+        }
+        
+        var head: Layer1D = AvgPoolSeq(layerPrev: layerSeq, params: params)
+        
+        head = try! FullyConnected(
+            layerPrev: head, nbNeurons: 1,
+            activation: LeakyReLU.str, biases: true, params: params
+        )
+        
+        _ = MSE1D(layerPrev: head, params: params)
+    }
+    
+    func testFullyConnectedSeq() throws
+    {
+        let trainer = _buildTrainer("FullyConnectedSeq")
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU gradients with CPU ones through time.
+// We expect to see errors ~ 1e-7 and less.
+// -----------------------------------------------------------------------------
+class LayerSeq4FlowTests: Input2DMSE1DCase
+{
     private func _buildTrainer(_ model: String) -> FlowTrainer
     {
         let trainer = FlowTrainer(

@@ -20,7 +20,7 @@ from python_lib.model import (
 
 def _flatten_weights(
     weights: np.ndarray
-) -> Tuple[List[float], List[int]]:
+) -> Tuple[np.ndarray, List[int]]:
     """
     Flatten weights and biases.
 
@@ -31,10 +31,10 @@ def _flatten_weights(
 
     Returns
     -------
-    (_, _): List[float], List[int]
+    (_, _): np.ndarray, List[int]
         The flattened weights, their shape.
     """
-    weights_list = weights.flatten().tolist()
+    weights_list = weights.flatten()
     dims_list = list(weights.shape)
 
     return weights_list, dims_list
@@ -42,7 +42,7 @@ def _flatten_weights(
 
 def _extract_weights(
     model: torch.nn.Module
-) -> Tuple[List[List[float]], List[List[int]]]:
+) -> Tuple[List[np.ndarray], List[List[int]]]:
     """
     Get weights and biases.
 
@@ -53,12 +53,12 @@ def _extract_weights(
 
     Returns
     -------
-    (_, _): List[List[float]], List[List[int]]
+    (_, _): List[np.ndarray], List[List[int]]
         The flattened weights, their shape.
     """
     model_weights = model.state_dict()
 
-    layers_weights: List[List[float]] = []
+    layers_weights: List[np.ndarray] = []
     layers_dims: List[List[int]] = []
     for name, layer_weights in model_weights.items():
         print(f"Extracting weigths {name}.")
@@ -74,7 +74,7 @@ def _extract_weights(
 
 def _extract_and_transpose_weights(
     modules: [torch.nn.Module]
-) -> Tuple[List[List[float]], List[List[int]]]:
+) -> Tuple[List[np.ndarray], List[List[int]]]:
     """
     Get weights and biases.
     Transpose weights when they come from a
@@ -87,10 +87,10 @@ def _extract_and_transpose_weights(
 
     Returns
     -------
-    (_, _): List[List[float]], List[List[int]]
+    (_, _): List[np.ndarray], List[List[int]]
         The flattened weights, their shape.
     """
-    layers_weights: List[List[float]] = []
+    layers_weights: List[np.ndarray] = []
     layers_dims: List[List[int]] = []
     for module in modules:
         submodules = list(module.children())
@@ -126,9 +126,9 @@ def _extract_and_transpose_weights(
     return layers_weights, layers_dims
 
 
-def _extract_attention_weights(
+def _extract_vit_weights(
     model: torch.nn.Module,
-) -> Tuple[List[List[float]], List[List[int]]]:
+) -> Tuple[List[np.ndarray], List[List[int]]]:
     """
     Get weights and biases.
 
@@ -139,12 +139,12 @@ def _extract_attention_weights(
 
     Returns
     -------
-    (_, _): List[List[float]], List[List[int]]
+    (_, _): List[np.ndarray], List[List[int]]
         The flattened weights, their shape.
     """
     model_weights = model.state_dict()
 
-    layers_weights: List[List[float]] = []
+    layers_weights: List[np.ndarray] = []
     layers_dims: List[List[int]] = []
 
     cur_item = 0
@@ -219,13 +219,13 @@ def _extract_attention_weights(
     return layers_weights, layers_dims
 
 
-def load_conv1_weights() -> Tuple[List[List[float]], List[List[int]]]:
+def load_conv1_weights() -> Tuple[List[np.ndarray], List[List[int]]]:
     """
     Get weights and biases for ModelTestConv1.
 
     Returns
     -------
-    (_, _): List[float], List[int]
+    (_, _): List[np.ndarray], List[int]
         The flattened weights, their shape.
     """
     torch.manual_seed(42)
@@ -233,13 +233,13 @@ def load_conv1_weights() -> Tuple[List[List[float]], List[List[int]]]:
     return _extract_weights(model)
 
 
-def load_conv2_weights() -> Tuple[List[List[float]], List[List[int]]]:
+def load_conv2_weights() -> Tuple[List[np.ndarray], List[List[int]]]:
     """
     Get weights and biases for ModelTestConv2.
 
     Returns
     -------
-    (_, _): List[float], List[int]
+    (_, _): List[np.ndarray], List[int]
         The flattened weights, their shape.
     """
     torch.manual_seed(42)
@@ -249,7 +249,7 @@ def load_conv2_weights() -> Tuple[List[List[float]], List[List[int]]]:
 
 def load_conv_sk_weights(
     stride: int, kernel: int
-) -> Tuple[List[List[float]], List[List[int]]]:
+) -> Tuple[List[np.ndarray], List[List[int]]]:
     """
     Get weights and biases for ModelTestConvSK.
 
@@ -262,7 +262,7 @@ def load_conv_sk_weights(
 
     Returns
     -------
-    (_, _): List[float], List[int]
+    (_, _): List[np.ndarray], List[int]
         The flattened weights, their shape.
     """
     torch.manual_seed(42)
@@ -272,7 +272,7 @@ def load_conv_sk_weights(
 
 def load_deconv_sk_weights(
     stride: int, kernel: int
-) -> Tuple[List[List[float]], List[List[int]]]:
+) -> Tuple[List[np.ndarray], List[List[int]]]:
     """
     Get weights and biases for ModelTestDeConvSK.
 
@@ -285,7 +285,7 @@ def load_deconv_sk_weights(
 
     Returns
     -------
-    (_, _): List[float], List[int]
+    (_, _): List[np.ndarray], List[int]
         The flattened weights, their shape.
     """
     torch.manual_seed(42)
@@ -293,13 +293,13 @@ def load_deconv_sk_weights(
     return _extract_and_transpose_weights(list(model.children()))
 
 
-def load_cat_weights() -> Tuple[List[List[float]], List[List[int]]]:
+def load_cat_weights() -> Tuple[List[np.ndarray], List[List[int]]]:
     """
     Get weights and biases for ModelTestCat.
 
     Returns
     -------
-    (_, _): List[float], List[int]
+    (_, _): List[np.ndarray], List[int]
         The flattened weights, their shape.
     """
     torch.manual_seed(42)
@@ -307,7 +307,7 @@ def load_cat_weights() -> Tuple[List[List[float]], List[List[int]]]:
     return _extract_weights(model)
 
 
-def load_resize_weights(size: int) -> Tuple[List[List[float]], List[List[int]]]:
+def load_resize_weights(size: int) -> Tuple[List[np.ndarray], List[List[int]]]:
     """
     Get weights and biases for ModelTestResize.
 
@@ -318,7 +318,7 @@ def load_resize_weights(size: int) -> Tuple[List[List[float]], List[List[int]]]:
 
     Returns
     -------
-    (_, _): List[float], List[int]
+    (_, _): List[np.ndarray], List[int]
         The flattened weights, their shape.
     """
     torch.manual_seed(42)
@@ -328,7 +328,7 @@ def load_resize_weights(size: int) -> Tuple[List[List[float]], List[List[int]]]:
 
 def load_patch_conv_weights(
     size: int, patch: int
-) -> Tuple[List[List[float]], List[List[int]]]:
+) -> Tuple[List[np.ndarray], List[List[int]]]:
     """
     Get weights and biases for ModelTestPatchConv.
 
@@ -341,7 +341,7 @@ def load_patch_conv_weights(
 
     Returns
     -------
-    (_, _): List[float], List[int]
+    (_, _): List[np.ndarray], List[int]
         The flattened weights, their shape.
     """
     torch.manual_seed(42)
@@ -351,7 +351,7 @@ def load_patch_conv_weights(
 
 def load_attention1_weights(
     size: int, patch: int
-) -> Tuple[List[List[float]], List[List[int]]]:
+) -> Tuple[List[np.ndarray], List[List[int]]]:
     """
     Get weights and biases for ModelTestAttention1.
 
@@ -364,17 +364,40 @@ def load_attention1_weights(
 
     Returns
     -------
-    (_, _): List[float], List[int]
+    (_, _): List[np.ndarray], List[int]
         The flattened weights, their shape.
     """
     torch.manual_seed(42)
     model = ModelTestAttention1(size=size, patch=patch)
-    return _extract_attention_weights(model=model)
+    return _extract_vit_weights(model=model)
+
+
+def load_attention1_bis_weights(
+    size: int, patch: int
+) -> Tuple[List[np.ndarray], List[List[int]]]:
+    """
+    Get weights and biases for ModelTestAttention1.
+
+    Parameters
+    ----------
+    size: int
+        The size of the input data.
+    patch: int
+        kernel split size of the input data.
+
+    Returns
+    -------
+    (_, _): List[np.ndarray], List[int]
+        The flattened weights, their shape.
+    """
+    torch.manual_seed(42)
+    model = ModelTestAttention1(size=size, patch=patch)
+    return _extract_weights(model=model)
 
 
 def load_attention2_weights(
     size: int, patch: int
-) -> Tuple[List[List[float]], List[List[int]]]:
+) -> Tuple[List[np.ndarray], List[List[int]]]:
     """
     Get weights and biases for ModelTestAttention2.
 
@@ -387,17 +410,40 @@ def load_attention2_weights(
 
     Returns
     -------
-    (_, _): List[float], List[int]
+    (_, _): List[np.ndarray], List[int]
         The flattened weights, their shape.
     """
     torch.manual_seed(42)
     model = ModelTestAttention2(size=size, patch=patch)
-    return _extract_attention_weights(model=model)
+    return _extract_vit_weights(model=model)
+
+
+def load_attention2_bis_weights(
+    size: int, patch: int
+) -> Tuple[List[np.ndarray], List[List[int]]]:
+    """
+    Get weights and biases for ModelTestAttention2.
+
+    Parameters
+    ----------
+    size: int
+        The size of the input data.
+    patch: int
+        kernel split size of the input data.
+
+    Returns
+    -------
+    (_, _): List[np.ndarray], List[int]
+        The flattened weights, their shape.
+    """
+    torch.manual_seed(42)
+    model = ModelTestAttention2(size=size, patch=patch)
+    return _extract_weights(model=model)
 
 
 def load_layer_norm_weights(
     size: int, patch: int
-) -> Tuple[List[List[float]], List[List[int]]]:
+) -> Tuple[List[np.ndarray], List[List[int]]]:
     """
     Get weights and biases for ModelTestLayerNorm.
 
@@ -410,7 +456,7 @@ def load_layer_norm_weights(
 
     Returns
     -------
-    (_, _): List[float], List[int]
+    (_, _): List[np.ndarray], List[int]
         The flattened weights, their shape.
     """
     torch.manual_seed(42)
@@ -418,13 +464,13 @@ def load_layer_norm_weights(
     return _extract_weights(model)
 
 
-def load_auto_encoder1_weights() -> Tuple[List[List[float]], List[List[int]]]:
+def load_auto_encoder1_weights() -> Tuple[List[np.ndarray], List[List[int]]]:
     """
     Get weights and biases for ModelTestAutoEncoder1.
 
     Returns
     -------
-    (_, _): List[float], List[int]
+    (_, _): List[np.ndarray], List[int]
         The flattened weights, their shape.
     """
     torch.manual_seed(42)
@@ -432,13 +478,13 @@ def load_auto_encoder1_weights() -> Tuple[List[List[float]], List[List[int]]]:
     return _extract_and_transpose_weights(list(model.children()))
 
 
-def load_gram_weights() -> Tuple[List[List[float]], List[List[int]]]:
+def load_gram_weights() -> Tuple[List[np.ndarray], List[List[int]]]:
     """
     Get weights and biases for ModelTestGram.
 
     Returns
     -------
-    (_, _): List[float], List[int]
+    (_, _): List[np.ndarray], List[int]
         The flattened weights, their shape.
     """
     torch.manual_seed(42)

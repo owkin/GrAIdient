@@ -1,5 +1,5 @@
 //
-// Layer1D.metal
+// LayerSeq.metal
 // GrAIdient
 //
 // Created by Jean-François Reboud on 27/02/2023.
@@ -1143,7 +1143,7 @@ kernel void querySelfSeqForward(
     uint sequence;
     uint size;
     
-    if (pNbHeads && pNbNeurons && pNbNeuronsPrev && 
+    if (pNbHeads && pNbNeurons && pNbNeuronsPrev &&
         pNbBlocksPrev && pGlobalOffset && pNbBatch && pSequence &&
         outsPrev && outs)
     {
@@ -2346,7 +2346,7 @@ kernel void valueSelfSeq4Forward(
     uint sequence;
     uint size;
     
-    if (pNbHeads && pNbNeurons && pNbNeuronsPrev && 
+    if (pNbHeads && pNbNeurons && pNbNeuronsPrev &&
         pNbBlocksPrev && pGlobalOffset && pNbBatch && pSequence &&
         value && score && outs)
     {

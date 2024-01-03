@@ -302,7 +302,7 @@ final class TransformerExample: XCTestCase
         let nbEpochs = 2
         for epoch in 0..<nbEpochs
         {
-            print("EPOCH \(epoch)/\(nbEpochs-1).")
+            print("EPOCH \(epoch + 1)/\(nbEpochs).")
             cifar8.shuffle()
             cifar5.shuffle()
             

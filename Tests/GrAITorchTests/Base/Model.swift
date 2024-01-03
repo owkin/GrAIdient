@@ -77,7 +77,15 @@ class ModelTestConv1
         let pythonLib = Python.import("python_lib")
         let data = pythonLib.load_conv1_weights()
         
-        let weights = [[Float]](data.tuple2.0)!
+        let weightsNumpy = [PythonObject](data.tuple2.0)!
+        var weights = [[Float]]()
+        for weightsNP in weightsNumpy
+        {
+            if let weightsTmp = Array<Float>(numpy: weightsNP)
+            {
+                weights.append(weightsTmp)
+            }
+        }
         
         // Apply weights on the `GrAIdient` model's layers.
         var cur = 0
@@ -183,7 +191,15 @@ class ModelTestConv2
         let pythonLib = Python.import("python_lib")
         let data = pythonLib.load_conv2_weights()
         
-        let weights = [[Float]](data.tuple2.0)!
+        let weightsNumpy = [PythonObject](data.tuple2.0)!
+        var weights = [[Float]]()
+        for weightsNP in weightsNumpy
+        {
+            if let weightsTmp = Array<Float>(numpy: weightsNP)
+            {
+                weights.append(weightsTmp)
+            }
+        }
         
         // Apply weights on the `GrAIdient` model's layers.
         var cur = 0
@@ -202,7 +218,6 @@ class ModelTestConv2
                 let Eμ: [Float] = weights[cur]
                 cur += 1
                 let Eσ2: [Float] = weights[cur]
-                cur += 1
                 cur += 1
                 
                 convLayer.weightsCPU = weightsTmp + Ɣ + β
@@ -397,7 +412,16 @@ class ModelTestConvSK: ModelTestConv
         let pythonLib = Python.import("python_lib")
         let data = pythonLib.load_conv_sk_weights(stride, kernel)
         
-        let weights = [[Float]](data.tuple2.0)!
+        let weightsNumpy = [PythonObject](data.tuple2.0)!
+        var weights = [[Float]]()
+        for weightsNP in weightsNumpy
+        {
+            if let weightsTmp = Array<Float>(numpy: weightsNP)
+            {
+                weights.append(weightsTmp)
+            }
+        }
+        
         super.initWeights(model: model, weights: weights)
         
         return model
@@ -457,7 +481,16 @@ class ModelTestDeConvSK: ModelTestConv
         let pythonLib = Python.import("python_lib")
         let data = pythonLib.load_deconv_sk_weights(stride, kernel)
         
-        let weights = [[Float]](data.tuple2.0)!
+        let weightsNumpy = [PythonObject](data.tuple2.0)!
+        var weights = [[Float]]()
+        for weightsNP in weightsNumpy
+        {
+            if let weightsTmp = Array<Float>(numpy: weightsNP)
+            {
+                weights.append(weightsTmp)
+            }
+        }
+        
         super.initWeights(model: model, weights: weights)
         
         return model
@@ -524,7 +557,15 @@ class ModelTestCat
         let pythonLib = Python.import("python_lib")
         let data = pythonLib.load_cat_weights()
         
-        let weights = [[Float]](data.tuple2.0)!
+        let weightsNumpy = [PythonObject](data.tuple2.0)!
+        var weights = [[Float]]()
+        for weightsNP in weightsNumpy
+        {
+            if let weightsTmp = Array<Float>(numpy: weightsNP)
+            {
+                weights.append(weightsTmp)
+            }
+        }
         
         // Apply weights on the `GrAIdient` model's layers.
         var cur = 0
@@ -654,7 +695,16 @@ class ModelTestResizeBilinear: ModelTestResize
         let pythonLib = Python.import("python_lib")
         let data = pythonLib.load_resize_weights(sizeOutput)
         
-        let weights = [[Float]](data.tuple2.0)!
+        let weightsNumpy = [PythonObject](data.tuple2.0)!
+        var weights = [[Float]]()
+        for weightsNP in weightsNumpy
+        {
+            if let weightsTmp = Array<Float>(numpy: weightsNP)
+            {
+                weights.append(weightsTmp)
+            }
+        }
+        
         super.initWeights(model: model, weights: weights)
         
         return model
@@ -720,7 +770,16 @@ class ModelTestResizeBilinearPad: ModelTestResize
         let pythonLib = Python.import("python_lib")
         let data = pythonLib.load_resize_weights(sizeOutput)
         
-        let weights = [[Float]](data.tuple2.0)!
+        let weightsNumpy = [PythonObject](data.tuple2.0)!
+        var weights = [[Float]]()
+        for weightsNP in weightsNumpy
+        {
+            if let weightsTmp = Array<Float>(numpy: weightsNP)
+            {
+                weights.append(weightsTmp)
+            }
+        }
+        
         super.initWeights(model: model, weights: weights)
         
         return model
@@ -785,7 +844,16 @@ class ModelTestResizeBilinearCrop: ModelTestResize
         let pythonLib = Python.import("python_lib")
         let data = pythonLib.load_resize_weights(sizeOutput)
         
-        let weights = [[Float]](data.tuple2.0)!
+        let weightsNumpy = [PythonObject](data.tuple2.0)!
+        var weights = [[Float]]()
+        for weightsNP in weightsNumpy
+        {
+            if let weightsTmp = Array<Float>(numpy: weightsNP)
+            {
+                weights.append(weightsTmp)
+            }
+        }
+        
         super.initWeights(model: model, weights: weights)
         
         return model
@@ -842,7 +910,15 @@ class ModelTestPatchConv
         let pythonLib = Python.import("python_lib")
         let data = pythonLib.load_patch_conv_weights(size, patch)
         
-        let weights = [[Float]](data.tuple2.0)!
+        let weightsNumpy = [PythonObject](data.tuple2.0)!
+        var weights = [[Float]]()
+        for weightsNP in weightsNumpy
+        {
+            if let weightsTmp = Array<Float>(numpy: weightsNP)
+            {
+                weights.append(weightsTmp)
+            }
+        }
         
         // Apply weights on the `GrAIdient` model's layers.
         var cur = 0
@@ -957,7 +1033,142 @@ class ModelTestAttention1
         let pythonLib = Python.import("python_lib")
         let data = pythonLib.load_attention1_weights(size, patch)
         
-        let weights = [[Float]](data.tuple2.0)!
+        let weightsNumpy = [PythonObject](data.tuple2.0)!
+        var weights = [[Float]]()
+        for weightsNP in weightsNumpy
+        {
+            if let weightsTmp = Array<Float>(numpy: weightsNP)
+            {
+                weights.append(weightsTmp)
+            }
+        }
+        
+        // Apply weights on the `GrAIdient` model's layers.
+        var cur = 0
+        for num_layer in 0..<model.layers.count
+        {
+            // Load weights and biases.
+            if let flLayer = model.layers[num_layer] as? FullyConnectedPatch
+            {
+                let weightsTmp: [Float] = weights[cur]
+                cur += 1
+                let biases: [Float] = weights[cur]
+                cur += 1
+                
+                flLayer.weightsCPU = weightsTmp + biases
+            }
+            else if let flLayer = model.layers[num_layer] as? FullyConnectedSeq
+            {
+                let weightsTmp: [Float] = weights[cur]
+                cur += 1
+                let biases: [Float] = weights[cur]
+                cur += 1
+                
+                flLayer.weightsCPU = weightsTmp + biases
+            }
+            else if let flLayer = model.layers[num_layer] as? FullyConnected
+            {
+                let weightsTmp: [Float] = weights[cur]
+                cur += 1
+                let biases: [Float] = weights[cur]
+                cur += 1
+                
+                flLayer.weightsCPU = weightsTmp + biases
+            }
+        }
+        
+        return model
+    }
+}
+
+/// Model to test against PyTorch.
+class ModelTestAttention1Bis
+{
+    ///
+    /// Create the model and import weights from PyTorch.
+    ///
+    /// Principle features:
+    ///   - FullyConnectedSeq
+    ///   - QuerySelfSeq
+    ///   - SoftmaxSeq
+    ///   - ValueSelfSeq
+    ///
+    /// - Parameters:
+    ///     - size: The size of the input data.
+    ///     - patch: The kernel split size of the input data.
+    /// - Returns: The built model.
+    ///
+    static func build(size: Int, patch: Int) -> Model
+    {
+        let context = ModelContext(name: "ModelTestAttention1Bis", curID: 0)
+        let params = GrAI.Model.Params(context: context)
+        
+        var layer: Layer2D
+        layer = Input2D(
+            nbChannels: 3,
+            width: size,
+            height: size,
+            params: params
+        )
+        
+        var layerSeq: LayerSeq = try! FullyConnectedPatch(
+            layerPrev: layer, patch: patch, nbNeurons: 5,
+            activation: nil, biases: true,
+            params: params
+        )
+        
+        let qkv: LayerSeq = FullyConnectedSeq(
+            layerPrev: layerSeq, nbNeurons: 3 * 5,
+            activation: nil, biases: true,
+            params: params
+        )
+        
+        layerSeq = try! QuerySelfSeq(
+            layerPrev: qkv,
+            query: 0, key: 1, nbBlocksPrev: 3, nbHeads: 1,
+            params: params
+        )
+        layerSeq = try! SoftmaxSeq(
+            layerPrev: layerSeq, nbHeads: 1,
+            params: params
+        )
+        layerSeq = try! ValueSelfSeq(
+            value: qkv, score: layerSeq,
+            offset: 2, nbBlocksPrev: 3, nbHeads: 1,
+            params: params
+        )
+        
+        layerSeq = FullyConnectedSeq(
+            layerPrev: layerSeq, nbNeurons: 5,
+            activation: nil, biases: true,
+            params: params
+        )
+        
+        var head: Layer1D = AvgPoolSeq(
+            layerPrev: layerSeq, params: params
+        )
+        
+        head = try! FullyConnected(
+            layerPrev: head, nbNeurons: 1,
+            activation: nil, biases: true,
+            params: params
+        )
+        
+        let model = Model(model: context.model, modelsPrev: [])
+        
+        // Load weights from `PyTorch`.
+        let pythonLib = Python.import("python_lib")
+        let data = pythonLib.load_attention1_bis_weights(size, patch)
+        
+        let weightsNumpy = [PythonObject](data.tuple2.0)!
+        var weights = [[Float]]()
+        for weightsNP in weightsNumpy
+        {
+            if let weightsTmp = Array<Float>(numpy: weightsNP)
+            {
+                weights.append(weightsTmp)
+            }
+        }
         
         // Apply weights on the `GrAIdient` model's layers.
         var cur = 0
@@ -1086,7 +1297,143 @@ class ModelTestAttention2
         let pythonLib = Python.import("python_lib")
         let data = pythonLib.load_attention2_weights(size, patch)
         
-        let weights = [[Float]](data.tuple2.0)!
+        let weightsNumpy = [PythonObject](data.tuple2.0)!
+        var weights = [[Float]]()
+        for weightsNP in weightsNumpy
+        {
+            if let weightsTmp = Array<Float>(numpy: weightsNP)
+            {
+                weights.append(weightsTmp)
+            }
+        }
+        
+        // Apply weights on the `GrAIdient` model's layers.
+        var cur = 0
+        for num_layer in 0..<model.layers.count
+        {
+            // Load weights and biases.
+            if let flLayer = model.layers[num_layer] as? FullyConnectedPatch
+            {
+                let weightsTmp: [Float] = weights[cur]
+                cur += 1
+                let biases: [Float] = weights[cur]
+                cur += 1
+                
+                flLayer.weightsCPU = weightsTmp + biases
+            }
+            else if let flLayer = model.layers[num_layer] as? FullyConnectedSeq
+            {
+                let weightsTmp: [Float] = weights[cur]
+                cur += 1
+                let biases: [Float] = weights[cur]
+                cur += 1
+                
+                flLayer.weightsCPU = weightsTmp + biases
+            }
+            else if let flLayer = model.layers[num_layer] as? FullyConnected
+            {
+                let weightsTmp: [Float] = weights[cur]
+                cur += 1
+                let biases: [Float] = weights[cur]
+                cur += 1
+                
+                flLayer.weightsCPU = weightsTmp + biases
+            }
+        }
+        
+        return model
+    }
+}
+
+/// Model to test against PyTorch.
+class ModelTestAttention2Bis
+{
+    ///
+    /// Create the model and import weights from PyTorch.
+    ///
+    /// Principle features:
+    ///   - FullyConnectedSeq
+    ///   - QuerySelfSeq
+    ///   - SoftmaxSeq
+    ///   - ValueSelfSeq
+    ///
+    /// - Parameters:
+    ///     - size: The size of the input data.
+    ///     - patch: The kernel split size of the input data.
+    /// - Returns: The built model.
+    ///
+    static func build(size: Int, patch: Int) -> Model
+    {
+        let context = ModelContext(name: "ModelTestAttention2", curID: 0)
+        let params = GrAI.Model.Params(context: context)
+        
+        var layer: Layer2D
+        layer = Input2D(
+            nbChannels: 3,
+            width: size,
+            height: size,
+            params: params
+        )
+        
+        var layerSeq: LayerSeq = try! FullyConnectedPatch(
+            layerPrev: layer, patch: patch, nbNeurons: 6,
+            activation: nil, biases: true,
+            params: params
+        )
+        
+        let qkv: LayerSeq = FullyConnectedSeq(
+            layerPrev: layerSeq, nbNeurons: 3 * 6,
+            activation: nil, biases: true,
+            params: params
+        )
+        
+        let nbHeads = 3
+        layerSeq = try! QuerySelfSeq(
+            layerPrev: qkv,
+            query: 0, key: 1, nbBlocksPrev: 3, nbHeads: nbHeads,
+            params: params
+        )
+        layerSeq = try! SoftmaxSeq(
+            layerPrev: layerSeq, nbHeads: nbHeads,
+            params: params
+        )
+        layerSeq = try! ValueSelfSeq(
+            value: qkv, score: layerSeq,
+            offset: 2, nbBlocksPrev: 3, nbHeads: nbHeads,
+            params: params
+        )
+        
+        layerSeq = FullyConnectedSeq(
+            layerPrev: layerSeq, nbNeurons: 6,
+            activation: nil, biases: true,
+            params: params
+        )
+        
+        var head: Layer1D = AvgPoolSeq(
+            layerPrev: layerSeq, params: params
+        )
+        
+        head = try! FullyConnected(
+            layerPrev: head, nbNeurons: 1,
+            activation: nil, biases: true,
+            params: params
+        )
+        
+        let model = Model(model: context.model, modelsPrev: [])
+        
+        // Load weights from `PyTorch`.
+        let pythonLib = Python.import("python_lib")
+        let data = pythonLib.load_attention2_bis_weights(size, patch)
+        
+        let weightsNumpy = [PythonObject](data.tuple2.0)!
+        var weights = [[Float]]()
+        for weightsNP in weightsNumpy
+        {
+            if let weightsTmp = Array<Float>(numpy: weightsNP)
+            {
+                weights.append(weightsTmp)
+            }
+        }
         
         // Apply weights on the `GrAIdient` model's layers.
         var cur = 0
@@ -1179,7 +1526,15 @@ class ModelTestLayerNorm
         let pythonLib = Python.import("python_lib")
         let data = pythonLib.load_layer_norm_weights(size, patch)
         
-        let weights = [[Float]](data.tuple2.0)!
+        let weightsNumpy = [PythonObject](data.tuple2.0)!
+        var weights = [[Float]]()
+        for weightsNP in weightsNumpy
+        {
+            if let weightsTmp = Array<Float>(numpy: weightsNP)
+            {
+                weights.append(weightsTmp)
+            }
+        }
         
         // Apply weights on the `GrAIdient` model's layers.
         var cur = 0
@@ -1306,7 +1661,16 @@ class ModelTestAutoEncoder1: ModelTestAutoEncoder
         let pythonLib = Python.import("python_lib")
         let data = pythonLib.load_auto_encoder1_weights()
         
-        let weights = [[Float]](data.tuple2.0)!
+        let weightsNumpy = [PythonObject](data.tuple2.0)!
+        var weights = [[Float]]()
+        for weightsNP in weightsNumpy
+        {
+            if let weightsTmp = Array<Float>(numpy: weightsNP)
+            {
+                weights.append(weightsTmp)
+            }
+        }
+        
         super.initWeights(model: model, weights: weights)
         
         return model
@@ -1365,7 +1729,15 @@ class ModelTestGram
         let pythonLib = Python.import("python_lib")
         let data = pythonLib.load_gram_weights()
         
-        let weights = [[Float]](data.tuple2.0)!
+        let weightsNumpy = [PythonObject](data.tuple2.0)!
+        var weights = [[Float]]()
+        for weightsNP in weightsNumpy
+        {
+            if let weightsTmp = Array<Float>(numpy: weightsNP)
+            {
+                weights.append(weightsTmp)
+            }
+        }
         
         // Apply weights on the `GrAIdient` model's layers.
         var cur = 0

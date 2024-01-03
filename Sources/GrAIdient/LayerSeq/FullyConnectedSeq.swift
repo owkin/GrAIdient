@@ -842,8 +842,13 @@ public class FullyConnectedSeq: ActivationSeq,
             let coeff: Int
             if layerPrev.nbNeurons % 4 == 0 && batchSize % 8 == 0
             {
-                kernel = "flSeq4Forward"
+                kernel = "flSeq48Forward"
                 coeff = 8
+            }
+            else if layerPrev.nbNeurons % 4 == 0
+            {
+                kernel = "flSeq4Forward"
+                coeff = 1
             }
             else
             {
@@ -995,9 +1000,15 @@ public class FullyConnectedSeq: ActivationSeq,
             let coeff2: Int
             if layerPrev.nbNeurons % 4 == 0 && batchSize % 8 == 0
             {
-                kernel = "flSeq4Backward"
+                kernel = "flSeq48Backward"
                 coeff1 = 4
                 coeff2 = 8
+            }
+            else if layerPrev.nbNeurons % 4 == 0
+            {
+                kernel = "flSeq4Backward"
+                coeff1 = 4
+                coeff2 = 1
             }
             else
             {

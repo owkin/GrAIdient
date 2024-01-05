@@ -2401,7 +2401,6 @@ kernel void valueSelfValueSeqBackward(
     constant uint * pGlobalOffset,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    constant uint * pDirty,
     device float * value,
     uint2 id [[ thread_position_in_grid ]])
 {
@@ -2414,10 +2413,9 @@ kernel void valueSelfValueSeqBackward(
     uint nbBatch;
     uint sequence;
     uint size;
-    uint dirty;
     
     if (pNbHeads && pNbNeurons && pNbNeuronsPrev &&
-        pNbBlocksPrev && pGlobalOffset && pNbBatch && pSequence && pDirty &&
+        pNbBlocksPrev && pGlobalOffset && pNbBatch && pSequence &&
         value && score && delta)
     {
         nbHeads = *pNbHeads;
@@ -2429,7 +2427,6 @@ kernel void valueSelfValueSeqBackward(
         nbBatch = *pNbBatch;
         sequence = *pSequence;
         size = nbNeurons2 / nbHeads;
-        dirty = *pDirty;
     }
     else
         return ;
@@ -2459,14 +2456,7 @@ kernel void valueSelfValueSeqBackward(
     
     uint offsetValue = depth + valueOffset * nbNeurons2 +
         nbNeurons1 * seqK + sequence * nbNeurons1 * elem;
-    if (dirty)
-    {
-        value[offsetValue] = tmp;
-    }
-    else
-    {
-        value[offsetValue] += tmp;
-    }
+    value[offsetValue] += tmp;
 }
 
 kernel void valueSelfValueSeq4Backward(
@@ -2479,7 +2469,6 @@ kernel void valueSelfValueSeq4Backward(
     constant uint * pGlobalOffset,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    constant uint * pDirty,
     device float4 * value,
     uint2 id [[ thread_position_in_grid ]])
 {
@@ -2492,10 +2481,9 @@ kernel void valueSelfValueSeq4Backward(
     uint nbBatch;
     uint sequence;
     uint size;
-    uint dirty;
     
     if (pNbHeads && pNbNeurons && pNbNeuronsPrev &&
-        pNbBlocksPrev && pGlobalOffset && pNbBatch && pSequence && pDirty &&
+        pNbBlocksPrev && pGlobalOffset && pNbBatch && pSequence &&
         value && score && delta)
     {
         nbHeads = *pNbHeads;
@@ -2507,7 +2495,6 @@ kernel void valueSelfValueSeq4Backward(
         nbBatch = *pNbBatch;
         sequence = *pSequence;
         size = nbNeurons2 / nbHeads;
-        dirty = *pDirty;
     }
     else
         return ;
@@ -2538,14 +2525,7 @@ kernel void valueSelfValueSeq4Backward(
     
     uint offsetValue = (depth + valueOffset * nbNeurons2 +
         nbNeurons1 * seqK + sequence * nbNeurons1 * elem) / 4;
-    if (dirty)
-    {
-        value[offsetValue] = tmp;
-    }
-    else
-    {
-        value[offsetValue] += tmp;
-    }
+    value[offsetValue] += tmp;
 }
 
 kernel void valueSelfScoreSeqBackward(

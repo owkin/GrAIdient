@@ -767,23 +767,23 @@ public class Sigmoid: ActivationFunction
     }
 }
 
-/// GELU activation function.
-public class GELU: ActivationFunction
+/// GELU approximative activation function.
+public class GELUApprox: ActivationFunction
 {
-    public static let str = "GELU"
+    public static let str = "GELUApprox"
     
     /// Forward GPU kernel.
     public override var forwardKernel: String
     {
         get {
-            return "forwardGELU"
+            return "forwardGELUApprox"
         }
     }
     /// Backward GPU kernel.
     public override var backwardKernel: String
     {
         get {
-            return "backwardGELU"
+            return "backwardGELUApprox"
         }
     }
     
@@ -865,6 +865,83 @@ public class GELU: ActivationFunction
     }
 }
 
+/// GELU activation function.
+public class GELU: ActivationFunction
+{
+    public static let str = "GELU"
+    
+    /// Forward GPU kernel.
+    public override var forwardKernel: String
+    {
+        get {
+            return "forwardGELU"
+        }
+    }
+    /// Backward GPU kernel.
+    public override var backwardKernel: String
+    {
+        get {
+            return "backwardGELU"
+        }
+    }
+    
+    ///
+    /// Coefficient to apply during the weights initialization.
+    ///
+    /// - Returns: The coefficient.
+    ///
+    open override var coeffInitWeights: Float
+    {
+        get {
+            return Float(sqrt(2.0))
+        }
+    }
+    
+    /// Create a GELU activation function.
+    init()
+    {
+        super.init(GELU.str)
+    }
+    
+    ///
+    /// Decode from the disk.
+    ///
+    /// Throw an error if reading from the decoder fails, or
+    /// if the data read is corrupted or otherwise invalid.
+    ///
+    /// - Parameter decoder: The decoder to read data from.
+    ///
+    required public init(from decoder: Decoder) throws
+    {
+        try super.init(from: decoder)
+    }
+    
+    ///
+    /// Forward CPU.
+    ///
+    /// - Parameter x: The input.
+    /// - Returns: The output.
+    ///
+    public override func apply(_ x: Double) -> Double
+    {
+        return 0.5 * x * (1 + erf(x / sqrt(2.0)))
+    }
+    
+    ///
+    /// Backward CPU.
+    ///
+    /// - Parameter x: The input.
+    /// - Returns: The output.
+    ///
+    public override func derivate(_ x: Double) -> Double
+    {
+        let tmp1 = 0.5 * (1.0 + erf(x / sqrt(2.0)))
+        let tmp2 = x / sqrt(2.0 * Double.pi) * exp(-x * x / 2.0)
+        let derivative = tmp1 + tmp2
+        return derivative
+    }
+}
+
 /// Factory API to build an activation function.
 public protocol ActivationKernel
 {
@@ -886,6 +963,7 @@ class ActivationKernelImpl: ActivationKernel
         LeakyReLU.str: LeakyReLUKernel(),
         SoftReLU.str: SoftReLUKernel(),
         Sigmoid.str: SigmoidKernel(),
+        GELUApprox.str: GELUApproxKernel(),
         GELU.str: GELUKernel()
     ]
     
@@ -954,7 +1032,17 @@ private class SigmoidKernel: ActivationKernelImpl
     }
 }
 
-/// Factory to build a Sigmoid function.
+/// Factory to build a GELU approximative function.
+private class GELUApproxKernel: ActivationKernelImpl
+{
+    /// Build a Sigmoid function.
+    override func build() -> ActivationFunction
+    {
+        return GELUApprox()
+    }
+}
+
+/// Factory to build a GELU function.
 private class GELUKernel: ActivationKernelImpl
 {
     /// Build a Sigmoid function.

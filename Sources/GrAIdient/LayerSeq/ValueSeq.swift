@@ -998,6 +998,16 @@ public class ValueSelfSeq: LayerMergeSeq
         
         if _layersPrev[0].computeDelta
         {
+            if _layersPrev[0].dirty
+            {
+                for elem in 0..<batchSize {
+                for seqK in 0..<sequence {
+                for depth in 0..<nbNeurons * _nbBlocksPrev
+                {
+                    value.get(seqK, depth)!.v[elem].delta = 0
+                }}}
+            }
+            
             for elem in 0..<batchSize {
             for head in 0..<_nbHeads {
             for seqK in 0..<sequence {
@@ -1015,18 +1025,9 @@ public class ValueSelfSeq: LayerMergeSeq
                     sum += deltaCur * scoreTmp
                 }
                 
-                if _layersPrev[0].dirty
-                {
-                    value.get(
-                        seqK, depth + _valueOffset * nbNeurons
-                    )!.v[elem].delta = sum
-                }
-                else
-                {
-                    value.get(
-                        seqK, depth + _valueOffset * nbNeurons
-                    )!.v[elem].delta += sum
-                }
+                value.get(
+                    seqK, depth + _valueOffset * nbNeurons
+                )!.v[elem].delta += sum
             }}}}
         }
         if _layersPrev[1].computeDelta
@@ -1095,7 +1096,20 @@ public class ValueSelfSeq: LayerMergeSeq
         {
             try value.checkStateBackwardGPU(batchSize: batchSize)
             
-            let pDirty: [UInt32] = value.dirty ? [1] : [0]
+            if value.dirty
+            {
+                let nbElems = value.delta.nbElems
+                let pNbElems: [UInt32] = [UInt32(nbElems)]
+                
+                command = MetalKernel.get.createCommand(
+                    "reset", deviceID: deviceID
+                )
+                command.setBytes(pNbElems, atIndex: 0)
+                command.setBuffer(value.delta.metal, atIndex: 1)
+                
+                command.dispatchThreads(nbElems)
+                command.enqueue()
+            }
             
             let kernel = (nbNeurons / _nbHeads) % 4 == 0 ?
                 "valueSelfValueSeq4Backward" : "valueSelfValueSeqBackward"
@@ -1112,8 +1126,7 @@ public class ValueSelfSeq: LayerMergeSeq
             command.setBytes(pGlobalOffset, atIndex: 6)
             command.setBytes(pNbBatch, atIndex: 7)
             command.setBytes(pSequence, atIndex: 8)
-            command.setBytes(pDirty, atIndex: 9)
-            command.setBuffer(value.delta.metal, atIndex: 10)
+            command.setBuffer(value.delta.metal, atIndex: 9)
             
             command.dispatchThreads(
                 width: nbNeurons / coeff,

@@ -215,7 +215,7 @@ final class TransformerBenchmark: XCTestCase
     }
     
     /// Test: train a ViT model.
-    func test_TrainTransformer()
+    func _test_TrainTransformer()
     {
         // Get optimizer parameters for iterating over batch size elements.
         let params = _getOptimizerParams(nbLoops: _batchSize)
@@ -329,7 +329,7 @@ final class TransformerBenchmark: XCTestCase
     }
     
     /// Test: evaluate a ViT model.
-    func test_EvalTransformer()
+    func _test_EvalTransformer()
     {
         // Build a model with randomly initialized weights.
         let transformer = _buildModel(

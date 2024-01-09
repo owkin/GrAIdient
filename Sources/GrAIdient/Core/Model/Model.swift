@@ -910,6 +910,42 @@ public class Model: BaseModel
         }
     }
     
+    ///
+    /// Apply a backward guided pass.
+    ///
+    /// Throw an error if batch size is greater than the first batch size.
+    ///
+    /// - Parameter positive:
+    ///     if positive, negative gradients are reset
+    ///     if not, positive gradients are reset
+    ///
+    public func backwardGuided(positive: Bool) throws
+    {
+        if GrAI.Opti.GPU
+        {
+            for layer in layers.reversed()
+            {
+                // Note that there are two steps in backward:
+                // previous.backward and current.backwardWeights.
+                // We could set dirty inside mustComputeBackward in order
+                // to remove the check below...
+                // But then some dirty layers could try to compute their
+                // backwardWeights while we wanted to stop back propagation.
+                // Plus some layers are included in others.
+                // The latter may be dirty when the first ones compute
+                // their backward pass.
+                if !layer.dirty
+                {
+                    try layer.backwardGuidedGPU(positive: positive)
+                }
+            }
+        }
+        else
+        {
+            throw LayerError.NotEmplemented
+        }
+    }
+    
     private func _checkLayers(layers: [Layer])
     {
         for layer1 in layers

@@ -252,7 +252,9 @@ let CONFIG_KERNELS =
         "reduceMax",
     ],
     "Reset": [
-        "reset"
+        "reset",
+        "resetPos",
+        "resetNeg",
     ],
     "VQ2D": [
         "vq2DForward",

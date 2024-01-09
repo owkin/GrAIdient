@@ -16,6 +16,8 @@ public enum LayerError: Error
     case DataSize
     /// Batch size is not coherent.
     case BatchSize
+    /// Operation is not implemented.
+    case NotEmplemented
 }
 
 extension LayerError: CustomStringConvertible
@@ -30,6 +32,8 @@ extension LayerError: CustomStringConvertible
             return "The parameters do not have the expected number of elements."
         case .BatchSize:
             return "Batch size is not coherent with internal state."
+        case .NotEmplemented:
+            return "Operation is not implemented."
         }
     }
 }
@@ -353,4 +357,14 @@ open class Layer: Codable
     /// Throw an error if batch size is greater than the first batch size.
     ///
     open func backwardGPU() throws {}
+    ///
+    /// Apply a backward guided pass in the GPU execution context.
+    ///
+    /// Throw an error if batch size is greater than the first batch size.
+    ///
+    /// - Parameter positive:
+    ///     if positive, negative gradients are reset
+    ///     if not, positive gradients are reset
+    ///
+    open func backwardGuidedGPU(positive: Bool) throws {}
 }

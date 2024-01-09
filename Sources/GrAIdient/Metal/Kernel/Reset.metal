@@ -29,3 +29,53 @@ kernel void reset(
     
     outs[id] = 0.0;
 }
+
+kernel void resetPos(
+    constant uint * pNbElems,
+    device float * outs,
+    uint id [[ thread_position_in_grid ]])
+{
+    uint nbElems;
+    
+    if (pNbElems && outs)
+    {
+        nbElems = pNbElems[0];
+    }
+    else
+        return ;
+    
+    if (id >= nbElems)
+    {
+        return ;
+    }
+    
+    if (outs[id] > 0.0)
+    {
+        outs[id] = 0.0;
+    }
+}
+
+kernel void resetNet(
+    constant uint * pNbElems,
+    device float * outs,
+    uint id [[ thread_position_in_grid ]])
+{
+    uint nbElems;
+    
+    if (pNbElems && outs)
+    {
+        nbElems = pNbElems[0];
+    }
+    else
+        return ;
+    
+    if (id >= nbElems)
+    {
+        return ;
+    }
+    
+    if (outs[id] < 0.0)
+    {
+        outs[id] = 0.0;
+    }
+}

@@ -253,4 +253,41 @@ open class Layer1D: Layer
         }
         return delta
     }
+    
+    ///
+    /// Apply a backward guided pass in the GPU execution context.
+    ///
+    /// Throw an error if batch size is greater than the first batch size.
+    ///
+    /// - Parameter positive:
+    ///     if positive, negative gradients are reset
+    ///     if not, positive gradients are reset
+    ///
+    public override func backwardGuidedGPU(positive: Bool) throws
+    {
+        let nbElems = delta.nbElems
+        let pNbElems: [UInt32] = [UInt32(nbElems)]
+        
+        let command: MetalCommand
+        if positive
+        {
+            command = MetalKernel.get.createCommand(
+                "resetNeg", deviceID: deviceID
+            )
+        }
+        else
+        {
+            command = MetalKernel.get.createCommand(
+                "resetPos", deviceID: deviceID
+            )
+        }
+        
+        command.setBytes(pNbElems, atIndex: 0)
+        command.setBuffer(delta.metal, atIndex: 1)
+        
+        command.dispatchThreads(nbElems)
+        command.enqueue()
+        
+        try backwardGPU()
+    }
 }

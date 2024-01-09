@@ -55,7 +55,7 @@ kernel void resetPos(
     }
 }
 
-kernel void resetNet(
+kernel void resetNeg(
     constant uint * pNbElems,
     device float * outs,
     uint id [[ thread_position_in_grid ]])

@@ -192,9 +192,9 @@ open class LayerSeq: Layer
     ///
     public override func backwardGuidedGPU(positive: Bool) throws
     {
-        let nbElems = delta.nbElems
-        if nbElems > 0
+        if delta != nil
         {
+            let nbElems = delta.nbElems
             let pNbElems: [UInt32] = [UInt32(nbElems)]
             
             let command: MetalCommand

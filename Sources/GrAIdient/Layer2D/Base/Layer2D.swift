@@ -336,28 +336,30 @@ open class Layer2D: Layer
     public override func backwardGuidedGPU(positive: Bool) throws
     {
         let nbElems = delta.nbElems
-        let pNbElems: [UInt32] = [UInt32(nbElems)]
-        
-        let command: MetalCommand
-        if positive
+        if nbElems > 0
         {
-            command = MetalKernel.get.createCommand(
-                "resetNeg", deviceID: deviceID
-            )
+            let pNbElems: [UInt32] = [UInt32(nbElems)]
+            
+            let command: MetalCommand
+            if positive
+            {
+                command = MetalKernel.get.createCommand(
+                    "resetNeg", deviceID: deviceID
+                )
+            }
+            else
+            {
+                command = MetalKernel.get.createCommand(
+                    "resetPos", deviceID: deviceID
+                )
+            }
+            
+            command.setBytes(pNbElems, atIndex: 0)
+            command.setBuffer(delta.metal, atIndex: 1)
+            
+            command.dispatchThreads(nbElems)
+            command.enqueue()
         }
-        else
-        {
-            command = MetalKernel.get.createCommand(
-                "resetPos", deviceID: deviceID
-            )
-        }
-        
-        command.setBytes(pNbElems, atIndex: 0)
-        command.setBuffer(delta.metal, atIndex: 1)
-        
-        command.dispatchThreads(nbElems)
-        command.enqueue()
-        
         try backwardGPU()
     }
 }

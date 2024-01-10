@@ -265,7 +265,7 @@ open class Layer1D: Layer
     ///
     public override func backwardGuidedGPU(positive: Bool) throws
     {
-        if delta != nil
+        /*if delta != nil
         {
             let nbElems = delta.nbElems
             let pNbElems: [UInt32] = [UInt32(nbElems)]
@@ -289,7 +289,7 @@ open class Layer1D: Layer
             
             command.dispatchThreads(nbElems)
             command.enqueue()
-        }
+        }*/
         try backwardGPU()
     }
 }

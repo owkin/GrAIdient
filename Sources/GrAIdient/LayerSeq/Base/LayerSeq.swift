@@ -192,7 +192,7 @@ open class LayerSeq: Layer
     ///
     public override func backwardGuidedGPU(positive: Bool) throws
     {
-        if delta != nil
+        /*if delta != nil
         {
             let nbElems = delta.nbElems
             let pNbElems: [UInt32] = [UInt32(nbElems)]
@@ -216,7 +216,7 @@ open class LayerSeq: Layer
             
             command.dispatchThreads(nbElems)
             command.enqueue()
-        }
+        }*/
         try backwardGPU()
     }
 }

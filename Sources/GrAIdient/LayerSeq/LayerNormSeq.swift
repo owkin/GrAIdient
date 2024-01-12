@@ -609,6 +609,72 @@ public class LayerNormSeq: ActivationSeq, LayerUpdate, LayerWithActivation
         }
     }
     
+    ///
+    /// Apply the backward pass in the GPU execution context.
+    ///
+    /// Throw an error if batch size is greater than the first batch size.
+    ///
+    public override func backwardGuidedGPU(positive: Bool) throws
+    {
+        _activation?.backwardGPU(self)
+        
+        let nbElems = delta.nbElems
+        let pNbElems: [UInt32] = [UInt32(nbElems)]
+        
+        let command: MetalCommand
+        if positive
+        {
+            command = MetalKernel.get.createCommand(
+                "resetNeg", deviceID: deviceID
+            )
+        }
+        else
+        {
+            command = MetalKernel.get.createCommand(
+                "resetPos", deviceID: deviceID
+            )
+        }
+        
+        command.setBytes(pNbElems, atIndex: 0)
+        command.setBuffer(delta.metal, atIndex: 1)
+        
+        command.dispatchThreads(nbElems)
+        command.enqueue()
+        
+        _normGPU!.backward(self)
+        
+        if let layerPrev = self.layerPrev as? LayerSeq, mustComputeBackward
+        {
+            try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
+            
+            let nbElems = delta.nbElems
+            let pNbElems: [UInt32] = [UInt32(nbElems)]
+            
+            let kernel: String
+            let coeff = nbElems % 4 == 0 ? 4 : 1
+            if layerPrev.dirty
+            {
+                kernel = nbElems % 4 == 0 ? "sum14" : "sum1"
+            }
+            else
+            {
+                kernel = nbElems % 4 == 0 ? "sum24" : "sum2"
+            }
+            let command = MetalKernel.get.createCommand(
+                kernel, deviceID: deviceID
+            )
+            
+            command.setBuffer(delta.metal, atIndex: 0)
+            command.setBytes(pNbElems, atIndex: 1)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 2)
+            
+            command.dispatchThreads(nbElems / coeff)
+            command.enqueue()
+            
+            propagateDirty()
+        }
+    }
+    
     /// Get the weights in the CPU execution context.
     public func collectWeightsCPU() -> [IWeightArrays]
     {

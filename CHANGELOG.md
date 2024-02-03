@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
-⚙️ **core:** backwardGuided ([116](https://github.com/owkin/GrAIdient/pull/116))\
+⚙️ **core:** guided backward ([116](https://github.com/owkin/GrAIdient/pull/116))\
 ⚙️ **core:** GELU vs GELUApprox ([113](https://github.com/owkin/GrAIdient/pull/113))\
 🚀 **perf:** QuerySelf & ValueSelf ([112](https://github.com/owkin/GrAIdient/pull/112))\
 🚀 **perf:** benchmark ViT base model ([111](https://github.com/owkin/GrAIdient/pull/111))\

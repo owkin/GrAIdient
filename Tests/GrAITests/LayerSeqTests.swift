@@ -3186,11 +3186,7 @@ class LayerCAMSeqTests: XCTestCase
             try! mainCPU.update()
             
             try! secondCPU.forward()
-            var valuesCPU = [Float]()
-            for elem in 0..<batchSize
-            {
-                valuesCPU += gradLayerCPU.getOutsCPU(elem: elem)
-            }
+            let valuesCPU: [Float] = gradLayerCPU.getOutsCPU()
             
             GrAI.Opti.GPU = true
             
@@ -3208,11 +3204,7 @@ class LayerCAMSeqTests: XCTestCase
             try! mainGPU.update()
             
             try! secondGPU.forward()
-            var valuesGPU = [Float]()
-            for elem in 0..<batchSize
-            {
-                valuesGPU += gradLayerGPU.getOutsGPU(elem: elem)
-            }
+            let valuesGPU: [Float] = gradLayerGPU.getOutsGPU()
             
             for (elem1, elem2) in zip(valuesCPU, valuesGPU)
             {
@@ -3281,8 +3273,6 @@ class LayerCAMSeqTests: XCTestCase
         )
         
         let lastLayer = mainBranch.layers.last as! MSE1D
-        let gradLayer = secondBranch.layers.last as! LayerCAMSeq
-        
         lastLayer.coeff = -1.0
         
         var numLoop = 0
@@ -3302,14 +3292,8 @@ class LayerCAMSeqTests: XCTestCase
             try! mainBranch.update()
             
             try! secondBranch.forward()
-            var values = [Float]()
-            for elem in 0..<batchSize
-            {
-                values += gradLayer.getOutsGPU(elem: elem)
-            }
             
             mainBranch.incStep()
-            secondBranch.incStep()
             numLoop += 1
         }
     }
@@ -3342,8 +3326,6 @@ class LayerCAMSeqTests: XCTestCase
         mainBranch.phase = .Inference
         
         let lastLayer = mainBranch.layers.last as! MSE1D
-        let gradLayer = secondBranch.layers.last as! LayerCAMSeq
-        
         lastLayer.coeff = -1.0
         
         var numLoop = 0
@@ -3363,11 +3345,6 @@ class LayerCAMSeqTests: XCTestCase
             try! mainBranch.update()
             
             try! secondBranch.forward()
-            var values = [Float]()
-            for elem in 0..<batchSize
-            {
-                values += gradLayer.getOutsGPU(elem: elem)
-            }
             
             mainBranch.incStep()
             numLoop += 1

@@ -180,4 +180,69 @@ open class LayerSeq: Layer
             }
         }
     }
+    
+    /// Get the outputs of this layer in the CPU execution context.
+    public func getOutsCPU<T: BinaryFloatingPoint>() -> [T]
+    {
+        var outs = [T]()
+        for elem in 0..<batchSize {
+        for seq in 0..<sequence {
+        for depth in 0..<nbNeurons
+        {
+            let out = T(neurons.get(seq, depth)!.v[elem].out)
+            outs.append(out)
+        }}}
+        return outs
+    }
+    
+    /// Get the outputs of this layer in the GPU execution context.
+    public func getOutsGPU<T: BinaryFloatingPoint>() -> [T]
+    {
+        return outs.download().map
+        {
+            T($0)
+        }
+    }
+    
+    ///
+    /// Get the delta of this layer in the CPU execution context.
+    ///
+    /// Throw an error when layer has not been updated through backward pass.
+    ///
+    public func getDeltaCPU<T: BinaryFloatingPoint>() throws -> [T]
+    {
+        if dirty
+        {
+            throw UpdateError.Dirty
+        }
+        
+        var delta = [T]()
+        for elem in 0..<batchSize {
+        for seq in 0..<sequence {
+        for depth in 0..<nbNeurons
+        {
+            let out = T(neurons.get(seq, depth)!.v[elem].delta)
+            delta.append(out)
+        }}}
+        return delta
+    }
+    
+    ///
+    /// Get the delta of this layer in the GPU execution context.
+    ///
+    /// Throw an error when layer has not been updated through backward pass.
+    ///
+    ///
+    public func getDeltaGPU<T: BinaryFloatingPoint>() throws -> [T]
+    {
+        if dirty
+        {
+            throw UpdateError.Dirty
+        }
+        
+        return delta.download().map
+        {
+            T($0)
+        }
+    }
 }

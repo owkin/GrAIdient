@@ -5961,14 +5961,14 @@ class VQGrad2DTests: XCTestCase
         
         let mainBranch = Model(model: context.model, modelsPrev: [])
         
-        context = ModelContext(name: "VQBranch", models: [mainBranch])
+        context = ModelContext(name: "SecondBranch", models: [mainBranch])
         params = GrAI.Model.Params(context: context)
         
         _ = VQGrad2D(layerPrev: layer, K: 5, params: params)
         
-        let vqBranch = Model(model: context.model, modelsPrev: [mainBranch])
+        let secondBranch = Model(model: context.model, modelsPrev: [mainBranch])
         
-        return (mainBranch, vqBranch)
+        return (mainBranch, secondBranch)
     }
     
     ///
@@ -6059,26 +6059,26 @@ class VQGrad2DTests: XCTestCase
     
     func testInference()
     {
-        let (mainCPU, vqCPU) = buildModel()
-        let (mainGPU, vqGPU) = buildModel()
+        let (mainCPU, secondCPU) = buildModel()
+        let (mainGPU, secondGPU) = buildModel()
         
         GrAI.Opti.CPU = true
         randomSelectWeightsInitializationScheme(model: mainCPU)
-        randomSelectWeightsInitializationScheme(model: vqCPU)
+        randomSelectWeightsInitializationScheme(model: secondCPU)
         
         mainCPU.initialize(
             params: optimizerParams,
             phase: .Inference,
             deviceID: DEVICE_ID
         )
-        vqCPU.initialize(
+        secondCPU.initialize(
             params: optimizerParams,
             phase: .Inference,
             deviceID: DEVICE_ID
         )
         
         mainGPU.weights = mainCPU.weights
-        vqGPU.weights = vqCPU.weights
+        secondGPU.weights = secondCPU.weights
         
         GrAI.Opti.GPU = true
         mainGPU.initialize(
@@ -6086,21 +6086,21 @@ class VQGrad2DTests: XCTestCase
             phase: .Inference,
             deviceID: DEVICE_ID
         )
-        vqGPU.initialize(
+        secondGPU.initialize(
             params: optimizerParams,
             phase: .Inference,
             deviceID: DEVICE_ID
         )
         
         let lastLayerCPU = mainCPU.layers.last as! MSE1D
-        let vqLayerCPU = vqCPU.layers.last as! VQGrad2D
+        let gradLayerCPU = secondCPU.layers.last as! VQGrad2D
         let lastLayerGPU = mainGPU.layers.last as! MSE1D
-        let vqLayerGPU = vqGPU.layers.last as! VQGrad2D
+        let gradLayerGPU = secondGPU.layers.last as! VQGrad2D
         
         lastLayerCPU.coeff = -1.0
         lastLayerGPU.coeff = -1.0
-        vqLayerCPU.magnitudeCoeff = 1.1
-        vqLayerGPU.magnitudeCoeff = 1.1
+        gradLayerCPU.magnitudeCoeff = 1.1
+        gradLayerGPU.magnitudeCoeff = 1.1
         
         var numLoop = 0
         while numLoop < optimizerParams.nbLoops
@@ -6109,7 +6109,7 @@ class VQGrad2DTests: XCTestCase
             
             let (inputs, batchSize) = setData(nil, mainCPU)
             mainCPU.updateKernel(batchSize: batchSize)
-            vqCPU.updateKernel(batchSize: batchSize)
+            secondCPU.updateKernel(batchSize: batchSize)
             
             try! mainCPU.forward()
             try! lastLayerCPU.lossDerivativeCPU(
@@ -6120,16 +6120,16 @@ class VQGrad2DTests: XCTestCase
             try! mainCPU.backward()
             try! mainCPU.update()
             
-            try! vqCPU.forward()
-            try! vqLayerCPU.lossDerivativeCPU()
-            let lossCPU: Double = vqLayerCPU.getLossCPU()
-            try! vqCPU.update()
+            try! secondCPU.forward()
+            try! gradLayerCPU.lossDerivativeCPU()
+            let lossCPU: Double = gradLayerCPU.getLossCPU()
+            try! secondCPU.update()
             
             GrAI.Opti.GPU = true
             
             _ = setData(inputs, mainGPU)
             mainGPU.updateKernel(batchSize: batchSize)
-            vqGPU.updateKernel(batchSize: batchSize)
+            secondGPU.updateKernel(batchSize: batchSize)
             
             try! mainGPU.forward()
             try! lastLayerGPU.lossDerivativeGPU(
@@ -6140,19 +6140,19 @@ class VQGrad2DTests: XCTestCase
             try! mainGPU.backward()
             try! mainGPU.update()
             
-            try! vqGPU.forward()
-            try! vqLayerGPU.lossDerivativeGPU()
-            let lossGPU: Double = try! vqLayerGPU.getLossGPU()
-            try! vqGPU.update()
+            try! secondGPU.forward()
+            try! gradLayerGPU.lossDerivativeGPU()
+            let lossGPU: Double = try! gradLayerGPU.getLossGPU()
+            try! secondGPU.update()
             
             let diff = (lossGPU - lossCPU) * (lossGPU - lossCPU) /
                        (lossCPU * lossCPU + lossGPU * lossGPU)
             XCTAssert(diff < 0.001)
             
             mainCPU.incStep()
-            vqCPU.incStep()
+            secondCPU.incStep()
             mainGPU.incStep()
-            vqGPU.incStep()
+            secondGPU.incStep()
             numLoop += 1
         }
     }
@@ -6160,17 +6160,17 @@ class VQGrad2DTests: XCTestCase
     func testLoad()
     {
         GrAI.Opti.GPU = true
-        var (mainBranch, vqBranch) = buildModel()
+        var (mainBranch, secondBranch) = buildModel()
         
         randomSelectWeightsInitializationScheme(model: mainBranch)
-        randomSelectWeightsInitializationScheme(model: vqBranch)
+        randomSelectWeightsInitializationScheme(model: secondBranch)
         
         mainBranch.initialize(
             params: optimizerParams,
             phase: .Inference,
             deviceID: DEVICE_ID
         )
-        vqBranch.initialize(
+        secondBranch.initialize(
             params: optimizerParams,
             phase: .Inference,
             deviceID: DEVICE_ID
@@ -6179,52 +6179,52 @@ class VQGrad2DTests: XCTestCase
         let folderURL = FileManager.default.temporaryDirectory
         let mainPath =
             folderURL.appendingPathComponent("testMain.plist").path
-        let vqPath =
-            folderURL.appendingPathComponent("testVQ.plist").path
+        let secondPath =
+            folderURL.appendingPathComponent("testSecond.plist").path
         
         let encoder = PropertyListEncoder()
     
         var data = try! encoder.encode(mainBranch)
         try! data.write(to: URL(fileURLWithPath: mainPath))
         
-        data = try! encoder.encode(vqBranch)
-        try! data.write(to: URL(fileURLWithPath: vqPath))
+        data = try! encoder.encode(secondBranch)
+        try! data.write(to: URL(fileURLWithPath: secondPath))
         
         data = try! Data(contentsOf: URL(fileURLWithPath: mainPath))
         let mainBase = try! PropertyListDecoder().decode(
             BaseModel.self, from: data
         )
-        data = try! Data(contentsOf: URL(fileURLWithPath: vqPath))
-        let vqBase = try! PropertyListDecoder().decode(
+        data = try! Data(contentsOf: URL(fileURLWithPath: secondPath))
+        let secondBase = try! PropertyListDecoder().decode(
             BaseModel.self, from: data
         )
         
         mainBranch = Model(model: mainBase, modelsPrev: [])
-        vqBranch = Model(model: vqBase, modelsPrev: [mainBranch])
+        secondBranch = Model(model: secondBase, modelsPrev: [mainBranch])
         
         mainBranch.initialize(
             params: optimizerParams,
             phase: .Inference,
             deviceID: DEVICE_ID
         )
-        vqBranch.initialize(
+        secondBranch.initialize(
             params: optimizerParams,
             phase: .Inference,
             deviceID: DEVICE_ID
         )
         
         let lastLayer = mainBranch.layers.last as! MSE1D
-        let vqLayer = vqBranch.layers.last as! VQGrad2D
+        let gradLayer = secondBranch.layers.last as! VQGrad2D
         
         lastLayer.coeff = -1.0
-        vqLayer.magnitudeCoeff = 1.1
+        gradLayer.magnitudeCoeff = 1.1
         
         var numLoop = 0
         while numLoop < optimizerParams.nbLoops
         {
             let (_, batchSize) = setData(nil, mainBranch)
             mainBranch.updateKernel(batchSize: batchSize)
-            vqBranch.updateKernel(batchSize: batchSize)
+            secondBranch.updateKernel(batchSize: batchSize)
             
             try! mainBranch.forward()
             try! lastLayer.lossDerivativeGPU(
@@ -6235,15 +6235,15 @@ class VQGrad2DTests: XCTestCase
             try! mainBranch.backward()
             try! mainBranch.update()
             
-            try! vqBranch.forward()
-            try! vqLayer.lossDerivativeGPU()
-            let lossVal: Double = try! vqLayer.getLossGPU()
-            try! vqBranch.update()
+            try! secondBranch.forward()
+            try! gradLayer.lossDerivativeGPU()
+            let lossVal: Double = try! gradLayer.getLossGPU()
+            try! secondBranch.update()
             
             print(lossVal)
             
             mainBranch.incStep()
-            vqBranch.incStep()
+            secondBranch.incStep()
             numLoop += 1
         }
     }
@@ -6251,46 +6251,46 @@ class VQGrad2DTests: XCTestCase
     func testTransform()
     {
         GrAI.Opti.GPU = true
-        var (mainBranch, vqBranch) = buildModel()
+        var (mainBranch, secondBranch) = buildModel()
         
         randomSelectWeightsInitializationScheme(model: mainBranch)
-        randomSelectWeightsInitializationScheme(model: vqBranch)
+        randomSelectWeightsInitializationScheme(model: secondBranch)
         
         mainBranch.initialize(
             params: optimizerParams,
             phase: .Inference,
             deviceID: DEVICE_ID
         )
-        vqBranch.initialize(
+        secondBranch.initialize(
             params: optimizerParams,
             phase: .Inference,
             deviceID: DEVICE_ID
         )
         
         let branches = Model.copy(
-            models: [mainBranch, vqBranch],
+            models: [mainBranch, secondBranch],
             inPlace: true
         )
         mainBranch = branches[0]
-        vqBranch = branches[1]
+        secondBranch = branches[1]
         
         mainBranch.setupOptimizers(params: optimizerParams)
-        vqBranch.setupOptimizers(params: optimizerParams)
+        secondBranch.setupOptimizers(params: optimizerParams)
         mainBranch.phase = .Inference
-        vqBranch.phase = .Inference
+        secondBranch.phase = .Inference
         
         let lastLayer = mainBranch.layers.last as! MSE1D
-        let vqLayer = vqBranch.layers.last as! VQGrad2D
+        let gradLayer = secondBranch.layers.last as! VQGrad2D
         
         lastLayer.coeff = -1.0
-        vqLayer.magnitudeCoeff = 1.1
+        gradLayer.magnitudeCoeff = 1.1
         
         var numLoop = 0
         while numLoop < optimizerParams.nbLoops
         {
             let (_, batchSize) = setData(nil, mainBranch)
             mainBranch.updateKernel(batchSize: batchSize)
-            vqBranch.updateKernel(batchSize: batchSize)
+            secondBranch.updateKernel(batchSize: batchSize)
             
             try! mainBranch.forward()
             try! lastLayer.lossDerivativeGPU(
@@ -6301,15 +6301,15 @@ class VQGrad2DTests: XCTestCase
             try! mainBranch.backward()
             try! mainBranch.update()
             
-            try! vqBranch.forward()
-            try! vqLayer.lossDerivativeGPU()
-            let lossVal: Double = try! vqLayer.getLossGPU()
-            try! vqBranch.update()
+            try! secondBranch.forward()
+            try! gradLayer.lossDerivativeGPU()
+            let lossVal: Double = try! gradLayer.getLossGPU()
+            try! secondBranch.update()
             
             print(lossVal)
             
             mainBranch.incStep()
-            vqBranch.incStep()
+            secondBranch.incStep()
             numLoop += 1
         }
     }
@@ -6467,8 +6467,8 @@ class LayerCAM2DTests: XCTestCase
     
     func testInference()
     {
-        let (mainCPU, vqCPU) = buildModel()
-        let (mainGPU, vqGPU) = buildModel()
+        let (mainCPU, secondCPU) = buildModel()
+        let (mainGPU, secondGPU) = buildModel()
         
         GrAI.Opti.CPU = true
         randomSelectWeightsInitializationScheme(model: mainCPU)
@@ -6478,7 +6478,7 @@ class LayerCAM2DTests: XCTestCase
             phase: .Inference,
             deviceID: DEVICE_ID
         )
-        vqCPU.initKernel(
+        secondCPU.initKernel(
             phase: .Inference,
             deviceID: DEVICE_ID
         )
@@ -6491,15 +6491,15 @@ class LayerCAM2DTests: XCTestCase
             phase: .Inference,
             deviceID: DEVICE_ID
         )
-        vqGPU.initKernel(
+        secondGPU.initKernel(
             phase: .Inference,
             deviceID: DEVICE_ID
         )
         
         let lastLayerCPU = mainCPU.layers.last as! MSE1D
-        let vqLayerCPU = vqCPU.layers.last as! LayerCAM2D
+        let gradLayerCPU = secondCPU.layers.last as! LayerCAM2D
         let lastLayerGPU = mainGPU.layers.last as! MSE1D
-        let vqLayerGPU = vqGPU.layers.last as! LayerCAM2D
+        let gradLayerGPU = secondGPU.layers.last as! LayerCAM2D
         
         lastLayerCPU.coeff = -1.0
         lastLayerGPU.coeff = -1.0
@@ -6507,11 +6507,21 @@ class LayerCAM2DTests: XCTestCase
         var numLoop = 0
         while numLoop < optimizerParams.nbLoops
         {
+            if numLoop % 2 == 0
+            {
+                gradLayerCPU.keepPositive = true
+                gradLayerGPU.keepPositive = true
+            }
+            else
+            {
+                gradLayerCPU.keepPositive = false
+                gradLayerGPU.keepPositive = false
+            }
             GrAI.Opti.CPU = true
             
             let (inputs, batchSize) = setData(nil, mainCPU)
             mainCPU.updateKernel(batchSize: batchSize)
-            vqCPU.updateKernel(batchSize: batchSize)
+            secondCPU.updateKernel(batchSize: batchSize)
             
             try! mainCPU.forward()
             try! lastLayerCPU.lossDerivativeCPU(
@@ -6522,18 +6532,18 @@ class LayerCAM2DTests: XCTestCase
             try! mainCPU.backward()
             try! mainCPU.update()
             
-            try! vqCPU.forward()
+            try! secondCPU.forward()
             var valuesCPU = [Float]()
             for elem in 0..<batchSize
             {
-                valuesCPU += vqLayerCPU.getOutsCPU(elem: elem)
+                valuesCPU += gradLayerCPU.getOutsCPU(elem: elem)
             }
             
             GrAI.Opti.GPU = true
             
             _ = setData(inputs, mainGPU)
             mainGPU.updateKernel(batchSize: batchSize)
-            vqGPU.updateKernel(batchSize: batchSize)
+            secondGPU.updateKernel(batchSize: batchSize)
             
             try! mainGPU.forward()
             try! lastLayerGPU.lossDerivativeGPU(
@@ -6544,18 +6554,18 @@ class LayerCAM2DTests: XCTestCase
             try! mainGPU.backward()
             try! mainGPU.update()
             
-            try! vqGPU.forward()
+            try! secondGPU.forward()
             var valuesGPU = [Float]()
             for elem in 0..<batchSize
             {
-                valuesGPU += vqLayerGPU.getOutsGPU(elem: elem)
+                valuesGPU += gradLayerGPU.getOutsGPU(elem: elem)
             }
             
             for (elem1, elem2) in zip(valuesCPU, valuesGPU)
             {
                 let diff = (elem1 - elem2) * (elem1 - elem2) /
                            (elem1 * elem1 + elem2 * elem2)
-                XCTAssert(diff < 0.001)
+                XCTAssert(diff < 0.00001)
             }
             
             mainCPU.incStep()
@@ -6567,17 +6577,16 @@ class LayerCAM2DTests: XCTestCase
     func testLoad()
     {
         GrAI.Opti.GPU = true
-        var (mainBranch, vqBranch) = buildModel()
+        var (mainBranch, secondBranch) = buildModel()
         
         randomSelectWeightsInitializationScheme(model: mainBranch)
-        randomSelectWeightsInitializationScheme(model: vqBranch)
         
         mainBranch.initialize(
             params: optimizerParams,
             phase: .Inference,
             deviceID: DEVICE_ID
         )
-        vqBranch.initialize(
+        secondBranch.initialize(
             params: optimizerParams,
             phase: .Inference,
             deviceID: DEVICE_ID
@@ -6586,52 +6595,50 @@ class LayerCAM2DTests: XCTestCase
         let folderURL = FileManager.default.temporaryDirectory
         let mainPath =
             folderURL.appendingPathComponent("testMain.plist").path
-        let vqPath =
-            folderURL.appendingPathComponent("testVQ.plist").path
+        let secondPath =
+            folderURL.appendingPathComponent("testSecond.plist").path
         
         let encoder = PropertyListEncoder()
     
         var data = try! encoder.encode(mainBranch)
         try! data.write(to: URL(fileURLWithPath: mainPath))
         
-        data = try! encoder.encode(vqBranch)
-        try! data.write(to: URL(fileURLWithPath: vqPath))
+        data = try! encoder.encode(secondBranch)
+        try! data.write(to: URL(fileURLWithPath: secondPath))
         
         data = try! Data(contentsOf: URL(fileURLWithPath: mainPath))
         let mainBase = try! PropertyListDecoder().decode(
             BaseModel.self, from: data
         )
-        data = try! Data(contentsOf: URL(fileURLWithPath: vqPath))
-        let vqBase = try! PropertyListDecoder().decode(
+        data = try! Data(contentsOf: URL(fileURLWithPath: secondPath))
+        let secondBase = try! PropertyListDecoder().decode(
             BaseModel.self, from: data
         )
         
         mainBranch = Model(model: mainBase, modelsPrev: [])
-        vqBranch = Model(model: vqBase, modelsPrev: [mainBranch])
+        secondBranch = Model(model: secondBase, modelsPrev: [mainBranch])
         
         mainBranch.initialize(
             params: optimizerParams,
             phase: .Inference,
             deviceID: DEVICE_ID
         )
-        vqBranch.initialize(
-            params: optimizerParams,
+        secondBranch.initKernel(
             phase: .Inference,
             deviceID: DEVICE_ID
         )
         
         let lastLayer = mainBranch.layers.last as! MSE1D
-        let vqLayer = vqBranch.layers.last as! VQGrad2D
+        let gradLayer = secondBranch.layers.last as! LayerCAM2D
         
         lastLayer.coeff = -1.0
-        vqLayer.magnitudeCoeff = 1.1
         
         var numLoop = 0
         while numLoop < optimizerParams.nbLoops
         {
             let (_, batchSize) = setData(nil, mainBranch)
             mainBranch.updateKernel(batchSize: batchSize)
-            vqBranch.updateKernel(batchSize: batchSize)
+            secondBranch.updateKernel(batchSize: batchSize)
             
             try! mainBranch.forward()
             try! lastLayer.lossDerivativeGPU(
@@ -6642,15 +6649,14 @@ class LayerCAM2DTests: XCTestCase
             try! mainBranch.backward()
             try! mainBranch.update()
             
-            try! vqBranch.forward()
-            try! vqLayer.lossDerivativeGPU()
-            let lossVal: Double = try! vqLayer.getLossGPU()
-            try! vqBranch.update()
-            
-            print(lossVal)
+            try! secondBranch.forward()
+            var values = [Float]()
+            for elem in 0..<batchSize
+            {
+                values += gradLayer.getOutsGPU(elem: elem)
+            }
             
             mainBranch.incStep()
-            vqBranch.incStep()
             numLoop += 1
         }
     }
@@ -6658,46 +6664,43 @@ class LayerCAM2DTests: XCTestCase
     func testTransform()
     {
         GrAI.Opti.GPU = true
-        var (mainBranch, vqBranch) = buildModel()
+        var (mainBranch, secondBranch) = buildModel()
         
         randomSelectWeightsInitializationScheme(model: mainBranch)
-        randomSelectWeightsInitializationScheme(model: vqBranch)
         
         mainBranch.initialize(
             params: optimizerParams,
             phase: .Inference,
             deviceID: DEVICE_ID
         )
-        vqBranch.initialize(
+        secondBranch.initialize(
             params: optimizerParams,
             phase: .Inference,
             deviceID: DEVICE_ID
         )
         
         let branches = Model.copy(
-            models: [mainBranch, vqBranch],
+            models: [mainBranch, secondBranch],
             inPlace: true
         )
         mainBranch = branches[0]
-        vqBranch = branches[1]
+        secondBranch = branches[1]
         
         mainBranch.setupOptimizers(params: optimizerParams)
-        vqBranch.setupOptimizers(params: optimizerParams)
         mainBranch.phase = .Inference
-        vqBranch.phase = .Inference
+        secondBranch.phase = .Inference
         
         let lastLayer = mainBranch.layers.last as! MSE1D
-        let vqLayer = vqBranch.layers.last as! VQGrad2D
+        let gradLayer = secondBranch.layers.last as! LayerCAM2D
         
         lastLayer.coeff = -1.0
-        vqLayer.magnitudeCoeff = 1.1
         
         var numLoop = 0
         while numLoop < optimizerParams.nbLoops
         {
             let (_, batchSize) = setData(nil, mainBranch)
             mainBranch.updateKernel(batchSize: batchSize)
-            vqBranch.updateKernel(batchSize: batchSize)
+            secondBranch.updateKernel(batchSize: batchSize)
             
             try! mainBranch.forward()
             try! lastLayer.lossDerivativeGPU(
@@ -6708,15 +6711,14 @@ class LayerCAM2DTests: XCTestCase
             try! mainBranch.backward()
             try! mainBranch.update()
             
-            try! vqBranch.forward()
-            try! vqLayer.lossDerivativeGPU()
-            let lossVal: Double = try! vqLayer.getLossGPU()
-            try! vqBranch.update()
-            
-            print(lossVal)
+            try! secondBranch.forward()
+            var values = [Float]()
+            for elem in 0..<batchSize
+            {
+                values += gradLayer.getOutsGPU(elem: elem)
+            }
             
             mainBranch.incStep()
-            vqBranch.incStep()
             numLoop += 1
         }
     }

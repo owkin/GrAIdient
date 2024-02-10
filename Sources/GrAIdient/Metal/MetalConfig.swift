@@ -165,6 +165,7 @@ let CONFIG_KERNELS =
         "BCE2DLossDerivative",
         "BCESigmoid2DLoss",
         "BCESigmoid2DLossDerivative",
+        "layerCAM2DForward",
     ],
     "LayerMerge": [
         "sum1",

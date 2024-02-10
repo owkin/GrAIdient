@@ -3550,7 +3550,7 @@ kernel void layerCAM2DForward(
     for (uint depthPrev=0; depthPrev<nbChannelsPrev; depthPrev++)
     {
         uint offsetStartPrev = (depthPrev + nbChannelsPrev * elem) * height;
-        uint offsetPrev = j + (offsetStart + i) * width;
+        uint offsetPrev = j + (offsetStartPrev + i) * width;
         
         float deltaPrevTmp = deltaPrev[offsetPrev];
         if (!keepPositive)
@@ -3562,7 +3562,7 @@ kernel void layerCAM2DForward(
             deltaPrevTmp = 0.0;
         }
         
-        sum = deltaPrevTmp * outsPrev[offsetPrev];
+        sum += deltaPrevTmp * outsPrev[offsetPrev];
     }
     
     uint offset = j + (elem * height + i) * width;

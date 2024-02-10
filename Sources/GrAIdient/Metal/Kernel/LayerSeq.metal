@@ -2737,7 +2737,7 @@ kernel void layerCAMSeqForward(
             deltaPrevTmp = 0.0;
         }
         
-        sum = deltaPrevTmp * outsPrev[offsetPrev];
+        sum += deltaPrevTmp * outsPrev[offsetPrev];
     }
     
     uint offset = seq + sequence * elem;

@@ -234,6 +234,7 @@ let CONFIG_KERNELS =
         "valueSelfScoreSeq4Backward",
         "selectSeqForward",
         "selectSeqBackward",
+        "layerCAMSeqForward",
     ],
     "Optimizer": [
         "clipGradients",

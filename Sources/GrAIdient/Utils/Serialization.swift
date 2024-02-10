@@ -65,6 +65,7 @@ let LAYER_REGISTRY: [String: Codable.Type] = buildRegistry(
     IRDFT2RGB.self,
     InstanceNorm2D.self,
     LayerCAM2D.self,
+    LayerCAMSeq.self,
     LayerNormSeq.self,
     LinearError1D.self,
     LinearScale2D.self,

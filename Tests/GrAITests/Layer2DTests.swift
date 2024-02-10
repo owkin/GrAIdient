@@ -6371,8 +6371,7 @@ class LayerCAM2DTests: XCTestCase
         context = ModelContext(name: "SecondBranch", models: [mainBranch])
         params = GrAI.Model.Params(context: context)
         
-        layer = try! LayerCAM2D(layerPrev: layer, params: params)
-        (layer as! LayerCAM2D).keepPositive = true
+        _ = try! LayerCAM2D(layerPrev: layer, params: params)
         
         let secondBranch = Model(model: context.model, modelsPrev: [mainBranch])
         
@@ -6586,8 +6585,7 @@ class LayerCAM2DTests: XCTestCase
             phase: .Inference,
             deviceID: DEVICE_ID
         )
-        secondBranch.initialize(
-            params: optimizerParams,
+        secondBranch.initKernel(
             phase: .Inference,
             deviceID: DEVICE_ID
         )
@@ -6673,8 +6671,7 @@ class LayerCAM2DTests: XCTestCase
             phase: .Inference,
             deviceID: DEVICE_ID
         )
-        secondBranch.initialize(
-            params: optimizerParams,
+        secondBranch.initKernel(
             phase: .Inference,
             deviceID: DEVICE_ID
         )

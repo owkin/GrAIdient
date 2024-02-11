@@ -426,9 +426,7 @@ kernel void vqGradSeqForward(
     }
     
     float cam = camLayer[seq + sequence * elem];
-    float camMaxTmp = camMax[elem];
-    
-    if (cam / camMaxTmp >= camMaxTmp / magnitudeCoeff)
+    if (cam / camMax[elem] >= magnitudeCoeff)
     {
         int minIndex = -1;
         float minValue = 0.0;

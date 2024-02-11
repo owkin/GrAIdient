@@ -933,7 +933,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
 public class VQGrad2D: VQ2D
 {
     /// Scale coefficient for taking into account pixels with high magnitude of gradient norm.
-    public var magnitudeCoeff: Double = 2.0
+    public var magnitudeCoeff: Double = 1.0
     
     /// Number of threads per thread group in the GPU execution context.
     private let _threadsPerThreadgroup = 64
@@ -1196,7 +1196,7 @@ public class VQGrad2D: VQ2D
                 for j in 0..<width
                 {
                     let cam: Double = neuronsCAM[0].get(i, j)!.v[elem].out
-                    if cam / camMax >= camMax / magnitudeCoeff
+                    if cam / camMax >= magnitudeCoeff
                     {
                         var minIndex = -1
                         var minValue: Double? = nil

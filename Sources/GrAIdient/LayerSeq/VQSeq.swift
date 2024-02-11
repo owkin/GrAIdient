@@ -851,7 +851,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
 public class VQGradSeq: VQSeq
 {
     /// Scale coefficient for taking into account pixels with high magnitude of gradient norm.
-    public var magnitudeCoeff: Double = 2.0
+    public var magnitudeCoeff: Double = 1.0
     
     /// Number of threads per thread group in the GPU execution context.
     private let _threadsPerThreadgroup = 64
@@ -1112,7 +1112,7 @@ public class VQGradSeq: VQSeq
                 for seq in 0..<sequence
                 {
                     let cam: Double = neuronsCAM.get(seq, 0)!.v[elem].out
-                    if cam / camMax >= camMax / magnitudeCoeff
+                    if cam / camMax >= magnitudeCoeff
                     {
                         var minIndex = -1
                         var minValue: Double? = nil

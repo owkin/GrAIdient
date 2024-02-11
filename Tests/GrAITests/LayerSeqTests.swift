@@ -3136,8 +3136,8 @@ class VQGradSeqTests: XCTestCase
         
         lastLayerCPU.coeff = -1.0
         lastLayerGPU.coeff = -1.0
-        gradLayerCPU.magnitudeCoeff = 1.1
-        gradLayerGPU.magnitudeCoeff = 1.1
+        gradLayerCPU.magnitudeCoeff = 0.6
+        gradLayerGPU.magnitudeCoeff = 0.6
         
         var numLoop = 0
         while numLoop < optimizerParams.nbLoops
@@ -3264,7 +3264,7 @@ class VQGradSeqTests: XCTestCase
         let gradLayer = secondBranch.layers.last as! VQGradSeq
         
         lastLayer.coeff = -1.0
-        gradLayer.magnitudeCoeff = 1.1
+        gradLayer.magnitudeCoeff = 0.6
         
         var numLoop = 0
         while numLoop < optimizerParams.nbLoops
@@ -3330,7 +3330,7 @@ class VQGradSeqTests: XCTestCase
         let gradLayer = secondBranch.layers.last as! VQGradSeq
         
         lastLayer.coeff = -1.0
-        gradLayer.magnitudeCoeff = 1.1
+        gradLayer.magnitudeCoeff = 0.6
         
         var numLoop = 0
         while numLoop < optimizerParams.nbLoops

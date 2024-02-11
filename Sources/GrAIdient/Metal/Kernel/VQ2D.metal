@@ -498,9 +498,7 @@ kernel void vqGrad2DForward(
     }
     
     float cam = camLayer[j + (elem * height + i) * width];
-    float camMaxTmp = camMax[elem];
-    
-    if (cam / camMaxTmp >= camMaxTmp / magnitudeCoeff)
+    if (cam / camMax[elem] >= magnitudeCoeff)
     {
         int minIndex = -1;
         float minValue = 0.0;

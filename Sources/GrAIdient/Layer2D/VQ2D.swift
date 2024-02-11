@@ -957,6 +957,17 @@ public class VQGrad2D: VQ2D
         }
     }
     
+    /// Whether to take positive or negative part of gradients.
+    public var keepPositive: Bool
+    {
+        get {
+            return _layerCAM.keepPositive
+        }
+        set {
+            _layerCAM.keepPositive = newValue
+        }
+    }
+    
     /// GPU device on which model is executed.
     public override var deviceID: Int
     {

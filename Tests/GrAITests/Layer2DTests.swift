@@ -6511,6 +6511,16 @@ class VQGrad2DTests: XCTestCase
         var numLoop = 0
         while numLoop < optimizerParams.nbLoops
         {
+            if numLoop % 2 == 0
+            {
+                gradLayerCPU.keepPositive = true
+                gradLayerGPU.keepPositive = true
+            }
+            else
+            {
+                gradLayerCPU.keepPositive = false
+                gradLayerGPU.keepPositive = false
+            }
             GrAI.Opti.CPU = true
             
             let (inputs, batchSize) = setData(nil, mainCPU)

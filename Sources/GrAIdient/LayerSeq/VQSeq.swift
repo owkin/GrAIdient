@@ -1060,6 +1060,17 @@ public class VQGradSeq: VQSeq
     }
     
     ///
+    /// Initialize state resources in the CPU execution context.
+    ///
+    /// We initialize the neurons' state (forward and backward).
+    ///
+    public override func checkStateCPU(batchSize: Int) throws
+    {
+        try super.checkStateCPU(batchSize: batchSize)
+        try _layerCAM.checkStateCPU(batchSize: batchSize)
+    }
+    
+    ///
     /// Initialize state resources in the GPU execution context.
     ///
     /// We initialize the neurons' forward state.
@@ -1068,6 +1079,7 @@ public class VQGradSeq: VQSeq
     public override func checkStateForwardGPU(batchSize: Int) throws
     {
         try super.checkStateForwardGPU(batchSize: batchSize)
+        try _layerCAM.checkStateForwardGPU(batchSize: batchSize)
         
         if _camMax == nil
         {
@@ -1076,6 +1088,17 @@ public class VQGradSeq: VQSeq
                 deviceID: deviceID
             )
         }
+    }
+    
+    ///
+    /// Initialize state resources in the GPU execution context.
+    ///
+    /// We initialize the neurons' backward state.
+    ///
+    public override func checkStateBackwardGPU(batchSize: Int) throws
+    {
+        try super.checkStateBackwardGPU(batchSize: batchSize)
+        try _layerCAM.checkStateBackwardGPU(batchSize: batchSize)
     }
     
     ///

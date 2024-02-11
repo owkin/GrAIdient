@@ -323,19 +323,19 @@ kernel void vqSeqLoss(
     losses[elem] = tmp;
 }
 
-kernel void vqGradSeqMax(
-     const device float * deltaPrev,
+kernel void vqLayerCAMMaxSeq(
+     const device float * camLayer,
      constant uint * pNbNeurons,
      constant uint * pNbThreadgroups,
      constant uint * pNbBatch,
      constant uint * pSequence,
-     device float * gradNorms,
+     device float * camMax,
      uint2 groupId [[ threadgroup_position_in_grid ]],
      uint2 threadId [[ thread_position_in_threadgroup ]],
      uint2 id [[ thread_position_in_grid ]])
 {
     constexpr uint threadsPerThreadgroup = 64;
-    threadgroup float normShared[threadsPerThreadgroup];
+    threadgroup float camShared[threadsPerThreadgroup];
     
     uint nbNeurons;
     uint nbThreadgroups;
@@ -343,7 +343,7 @@ kernel void vqGradSeqMax(
     uint sequence;
     
     if (pNbNeurons && pNbThreadgroups && pNbBatch && pSequence &&
-        deltaPrev && gradNorms)
+        camLayer && camMax)
     {
         nbNeurons = *pNbNeurons;
         nbThreadgroups = *pNbThreadgroups;
@@ -361,16 +361,7 @@ kernel void vqGradSeqMax(
         return ;
     }
     
-    float norm = 0.0;
-    for (uint depth=0; depth<nbNeurons; depth++)
-    {
-        uint offset = depth + nbNeurons * seq + sequence * nbNeurons * elem;
-        
-        norm += pow(deltaPrev[offset], 2.0);
-    }
-    norm = sqrt(norm);
-    
-    normShared[threadId[0]] = norm;
+    camShared[threadId[0]] = camLayer[seq + sequence * elem];
     threadgroup_barrier(mem_flags::mem_threadgroup);
     
     for (uint stride=threadsPerThreadgroup/2; stride>0; stride>>=1)
@@ -379,9 +370,9 @@ kernel void vqGradSeqMax(
         if (threadId[0] < stride &&
             (index + stride) < sequence)
         {
-            normShared[threadId[0]] = max(
-                normShared[threadId[0] + stride],
-                normShared[threadId[0]]
+            camShared[threadId[0]] = max(
+                camShared[threadId[0] + stride],
+                camShared[threadId[0]]
             );
         }
         threadgroup_barrier(mem_flags::mem_threadgroup);
@@ -390,14 +381,14 @@ kernel void vqGradSeqMax(
     if (threadId[0] == 0)
     {
         uint offset = elem * nbThreadgroups + groupId[0];
-        gradNorms[offset] = normShared[0];
+        camMax[offset] = camShared[0];
     }
 }
 
 kernel void vqGradSeqForward(
     const device float * outsPrev,
-    const device float * deltaPrev,
-    const device float * gradNorms,
+    const device float * camLayer,
+    const device float * camMax,
     const device float * weights,
     constant uint * pNbNeurons,
     constant uint * pK,
@@ -415,7 +406,7 @@ kernel void vqGradSeqForward(
     uint sequence;
     
     if (pNbNeurons && pK && pMagnitudeCoeff && pNbBatch && pSequence &&
-        weights && gradNorms && outsPrev && deltaPrev && outs && indices)
+        outsPrev && camLayer && camMax && weights && outs && indices)
     {
         nbNeurons = *pNbNeurons;
         K = *pK;
@@ -434,16 +425,10 @@ kernel void vqGradSeqForward(
         return ;
     }
     
-    float norm = 0.0;
-    for (uint depth=0; depth<nbNeurons; depth++)
-    {
-        uint offset = depth + nbNeurons * seq + sequence * nbNeurons * elem;
-        
-        norm += pow(deltaPrev[offset], 2.0);
-    }
-    norm = sqrt(norm);
+    float cam = camLayer[seq + sequence * elem];
+    float camMaxTmp = camMax[elem];
     
-    if (norm >= gradNorms[elem] / magnitudeCoeff)
+    if (cam / camMaxTmp >= camMaxTmp / magnitudeCoeff)
     {
         int minIndex = -1;
         float minValue = 0.0;

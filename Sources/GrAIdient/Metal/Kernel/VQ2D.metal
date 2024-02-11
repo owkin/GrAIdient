@@ -391,19 +391,19 @@ kernel void vq2DLoss(
     losses[elem] = tmp;
 }
 
-kernel void vqGrad2DMax(
-     const device float * deltaPrev,
+kernel void vqLayerCAMMax2D(
+     const device float * camLayer,
      constant uint * pNbChannels,
      constant uint * pDimensions,
      constant uint * pNbThreadgroups,
      constant uint * pNbBatch,
-     device float * gradNorms,
+     device float * camMax,
      uint2 groupId [[ threadgroup_position_in_grid ]],
      uint2 threadId [[ thread_position_in_threadgroup ]],
      uint2 id [[ thread_position_in_grid ]])
 {
     constexpr uint threadsPerThreadgroup = 64;
-    threadgroup float normShared[threadsPerThreadgroup];
+    threadgroup float camShared[threadsPerThreadgroup];
     
     uint height, width;
     uint nbChannels;
@@ -411,7 +411,7 @@ kernel void vqGrad2DMax(
     uint nbBatch;
     
     if (pNbChannels && pDimensions && pNbThreadgroups && pNbBatch &&
-        deltaPrev && gradNorms)
+        camLayer && camMax)
     {
         width = pDimensions[0];
         height = pDimensions[1];
@@ -431,17 +431,7 @@ kernel void vqGrad2DMax(
         return ;
     }
     
-    float norm = 0.0;
-    for (uint depth=0; depth<nbChannels; depth++)
-    {
-        uint offsetStart = (depth + nbChannels * elem) * height;
-        uint offset = j + (offsetStart + i) * width;
-        
-        norm += pow(deltaPrev[offset], 2.0);
-    }
-    norm = sqrt(norm);
-    
-    normShared[threadId[0]] = norm;
+    camShared[threadId[0]] = camLayer[j + (elem * height + i) * width];
     threadgroup_barrier(mem_flags::mem_threadgroup);
     
     for (uint stride=threadsPerThreadgroup/2; stride>0; stride>>=1)
@@ -450,9 +440,9 @@ kernel void vqGrad2DMax(
         if (threadId[0] < stride &&
             (index + stride) < height * width)
         {
-            normShared[threadId[0]] = max(
-                normShared[threadId[0] + stride],
-                normShared[threadId[0]]
+            camShared[threadId[0]] = max(
+                camShared[threadId[0] + stride],
+                camShared[threadId[0]]
             );
         }
         threadgroup_barrier(mem_flags::mem_threadgroup);
@@ -461,14 +451,14 @@ kernel void vqGrad2DMax(
     if (threadId[0] == 0)
     {
         uint offset = elem * nbThreadgroups + groupId[0];
-        gradNorms[offset] = normShared[0];
+        camMax[offset] = camShared[0];
     }
 }
 
 kernel void vqGrad2DForward(
     const device float * outsPrev,
-    const device float * deltaPrev,
-    const device float * gradNorms,
+    const device float * camLayer,
+    const device float * camMax,
     const device float * weights,
     constant uint * pNbChannels,
     constant uint * pDimensions,
@@ -486,7 +476,7 @@ kernel void vqGrad2DForward(
     uint nbBatch;
     
     if (pNbChannels && pDimensions && pK && pMagnitudeCoeff && pNbBatch &&
-        weights && gradNorms && outsPrev && deltaPrev && outs && indices)
+        outsPrev && camLayer && camMax && weights && outs && indices)
     {
         width = pDimensions[0];
         height = pDimensions[1];
@@ -507,17 +497,10 @@ kernel void vqGrad2DForward(
         return ;
     }
     
-    float norm = 0.0;
-    for (uint depth=0; depth<nbChannels; depth++)
-    {
-        uint offsetStart = (depth + nbChannels * elem) * height;
-        uint offset = j + (offsetStart + i) * width;
-        
-        norm += pow(deltaPrev[offset], 2.0);
-    }
-    norm = sqrt(norm);
+    float cam = camLayer[j + (elem * height + i) * width];
+    float camMaxTmp = camMax[elem];
     
-    if (norm >= gradNorms[elem] / magnitudeCoeff)
+    if (cam / camMaxTmp >= camMaxTmp / magnitudeCoeff)
     {
         int minIndex = -1;
         float minValue = 0.0;

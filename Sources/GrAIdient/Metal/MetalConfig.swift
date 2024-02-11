@@ -263,7 +263,7 @@ let CONFIG_KERNELS =
         "vq2DDerWeights",
         "vq2DReduceWeights",
         "vq2DLoss",
-        "vqGrad2DMax",
+        "vqLayerCAMMax2D",
         "vqGrad2DForward"
     ],
     "VQSeq": [
@@ -272,7 +272,7 @@ let CONFIG_KERNELS =
         "vqSeqBatchDerWeights",
         "vqSeqDerWeights",
         "vqSeqLoss",
-        "vqGradSeqMax",
+        "vqLayerCAMMaxSeq",
         "vqGradSeqForward"
     ]
 ]

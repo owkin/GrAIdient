@@ -938,11 +938,14 @@ public class VQGrad2D: VQ2D
     /// Number of threads per thread group in the GPU execution context.
     private let _threadsPerThreadgroup = 64
     
+    /// Layer computing a map of maximal activations with respect to the loss.
+    let _layerCAM: LayerCAM2D
+    
     ///
-    /// Indices of maximal elements.
-    /// Shape ~ (batch, height, width).
+    /// Maximal CAM elements.
+    /// Shape ~ (batch, nbThreadgroups).
     ///
-    private var _gradNorm: MetalPrivateBuffer<Float>! = nil
+    private var _camMax: MetalPrivateBuffer<Float>! = nil
     
     /// Number of thread groups in the GPU execution context.
     var nbThreadgroups: Int
@@ -957,6 +960,7 @@ public class VQGrad2D: VQ2D
     private enum Keys: String, CodingKey
     {
         case magnitudeCoeff
+        case layerCAM
     }
     
     ///
@@ -971,6 +975,11 @@ public class VQGrad2D: VQ2D
                          K: Int,
                          params: GrAI.Model.Params)
     {
+        var paramsHidden = GrAI.Model.Params(params: params)
+        paramsHidden.hidden = true
+        
+        _layerCAM = try! LayerCAM2D(layerPrev: layerPrev, params: paramsHidden)
+        
         super.init(layerPrev: layerPrev, K: K, params: params)
     }
     
@@ -989,6 +998,7 @@ public class VQGrad2D: VQ2D
             Float.self, forKey: .magnitudeCoeff
         )
         self.magnitudeCoeff = Double(magnitudeCoeff)
+        _layerCAM = try container.decode(LayerCAM2D.self, forKey: .layerCAM)
         try super.init(from: decoder)
     }
     
@@ -1007,6 +1017,7 @@ public class VQGrad2D: VQ2D
     {
         var container = encoder.container(keyedBy: Keys.self)
         try container.encode(Float(magnitudeCoeff), forKey: .magnitudeCoeff)
+        try container.encode(_layerCAM, forKey: .layerCAM)
         try super.encode(to: encoder)
     }
     
@@ -1059,6 +1070,17 @@ public class VQGrad2D: VQ2D
     }
     
     ///
+    /// Find the `layerPrev` associated to the layer's `idPrev`.
+    ///
+    /// - Parameter layers: The potential layers where to find the layer's `idPrev`.
+    ///
+    public override func initLinks(_ layers: [Layer])
+    {
+        super.initLinks(layers)
+        _layerCAM.initLinks(layers)
+    }
+    
+    ///
     /// Clean state resources in the GPU execution context.
     ///
     /// We first clean the neurons' state (forward and backward).
@@ -1068,7 +1090,8 @@ public class VQGrad2D: VQ2D
     public override func resetKernelGPU()
     {
         super.resetKernelGPU()
-        _gradNorm = nil
+        _layerCAM.resetKernelGPU()
+        _camMax = nil
     }
     
     ///
@@ -1081,9 +1104,9 @@ public class VQGrad2D: VQ2D
     {
         try super.checkStateForwardGPU(batchSize: batchSize)
         
-        if _gradNorm == nil
+        if _camMax == nil
         {
-            _gradNorm = MetalPrivateBuffer<Float>(
+            _camMax = MetalPrivateBuffer<Float>(
                 batchSize * nbThreadgroups,
                 deviceID: deviceID
             )
@@ -1103,6 +1126,10 @@ public class VQGrad2D: VQ2D
             {
                 throw UpdateError.Dirty
             }
+            
+            try _layerCAM.forwardCPU()
+            let neuronsCAM = _layerCAM.neurons
+            
             try checkStateCPU(batchSize: batchSize)
             
             let neuronsPrev = layerPrev.neurons
@@ -1110,34 +1137,19 @@ public class VQGrad2D: VQ2D
             
             for elem in 0..<batchSize
             {
-                var gradNormMax: Double = 0.0
+                var camMax: Double = 0.0
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    var gradNorm: Double = 0.0
-                    for depth in 0..<nbChannels
-                    {
-                        let deltaPrev =
-                            neuronsPrev[depth].get(i, j)!.v[elem].delta
-                        gradNorm += pow(deltaPrev, 2.0)
-                    }
-                    gradNorm = sqrt(gradNorm)
-                    gradNormMax = max(gradNorm, gradNormMax)
+                    let cam: Double = neuronsCAM[0].get(i, j)!.v[elem].out
+                    camMax = max(cam, camMax)
                 }}
                 
                 for i in 0..<height {
                 for j in 0..<width
                 {
-                    var gradNorm: Double = 0.0
-                    for depth in 0..<nbChannels
-                    {
-                        let deltaPrev =
-                            neuronsPrev[depth].get(i, j)!.v[elem].delta
-                        gradNorm += pow(deltaPrev, 2.0)
-                    }
-                    gradNorm = sqrt(gradNorm)
-                    
-                    if gradNorm >= gradNormMax / magnitudeCoeff
+                    let cam: Double = neuronsCAM[0].get(i, j)!.v[elem].out
+                    if cam / camMax >= camMax / magnitudeCoeff
                     {
                         var minIndex = -1
                         var minValue: Double? = nil
@@ -1187,7 +1199,7 @@ public class VQGrad2D: VQ2D
     ///
     /// Throw an error if batch size is greater than the first batch size.
     ///
-    private func _computeGradNormMaxGPU() throws
+    private func _computeLayerCAMMaxGPU() throws
     {
         if let layerPrev = self.layerPrev as? Layer2D
         {
@@ -1208,14 +1220,14 @@ public class VQGrad2D: VQ2D
             let pNbThreadgroups: [UInt32] = [UInt32(nbThreadgroups)]
             
             let command = MetalKernel.get.createCommand(
-                "vqGrad2DMax", deviceID: deviceID
+                "vqLayerCAMMax2D", deviceID: deviceID
             )
             command.setBuffer(layerPrev.delta.metal, atIndex: 0)
             command.setBytes(pNbChannels, atIndex: 1)
             command.setBytes(pDimensions, atIndex: 2)
             command.setBytes(pNbThreadgroups, atIndex: 3)
             command.setBytes(pNbBatch, atIndex: 4)
-            command.setBuffer(_gradNorm.metal, atIndex: 5)
+            command.setBuffer(_camMax.metal, atIndex: 5)
             
             let threadsPerThreadgroup = MTLSizeMake(
                 _threadsPerThreadgroup, 1, 1
@@ -1233,8 +1245,8 @@ public class VQGrad2D: VQ2D
             
             // Continue the reduction in a more generic way.
             reduceMax(
-                inBuffer: _gradNorm.metal,
-                outBuffer: _gradNorm.metal,
+                inBuffer: _camMax.metal,
+                outBuffer: _camMax.metal,
                 dim1: nbThreadgroups, dim2: batchSize,
                 deviceID: deviceID
             )
@@ -1248,15 +1260,16 @@ public class VQGrad2D: VQ2D
     ///
     public override func forwardGPU() throws
     {
-        // Reduce the gradient norm max in a dedicated function for performance.
-        try _computeGradNormMaxGPU()
-        
         if let layerPrev = self.layerPrev as? Layer2D
         {
             if layerPrev.dirty
             {
                 throw UpdateError.Dirty
             }
+            
+            try _layerCAM.forwardGPU()
+            try _computeLayerCAMMaxGPU()
+            
             try checkStateForwardGPU(batchSize: batchSize)
             
             let pNbChannels: [UInt32] = [UInt32(nbChannels)]
@@ -1269,8 +1282,8 @@ public class VQGrad2D: VQ2D
                 "vqGrad2DForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 1)
-            command.setBuffer(_gradNorm.metal, atIndex: 2)
+            command.setBuffer(_layerCAM.outs.metal, atIndex: 1)
+            command.setBuffer(_camMax.metal, atIndex: 2)
             command.setBuffer(_wBuffers.w.metal, atIndex: 3)
             command.setBytes(pNbChannels, atIndex: 4)
             command.setBytes(pDimensions, atIndex: 5)

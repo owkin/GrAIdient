@@ -875,6 +875,42 @@ public class VQGradSeq: VQSeq
         }
     }
     
+    /// GPU device on which model is executed.
+    public override var deviceID: Int
+    {
+        get {
+            return super.deviceID
+        }
+        set {
+            super.batchSize = newValue
+            _layerCAM.batchSize = newValue
+        }
+    }
+    
+    /// Batch size of data.
+    public override var batchSize: Int
+    {
+        get {
+            return super.batchSize
+        }
+        set {
+            super.batchSize = newValue
+            _layerCAM.batchSize = newValue
+        }
+    }
+    
+    /// Running phase of a model: Training or Inference.
+    public override var phase: Phase?
+    {
+        get {
+            return super.phase
+        }
+        set {
+            super.phase = newValue
+            _layerCAM.phase = newValue
+        }
+    }
+    
     private enum Keys: String, CodingKey
     {
         case magnitudeCoeff

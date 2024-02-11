@@ -1173,7 +1173,7 @@ public class VQGradSeq: VQSeq
             let command = MetalKernel.get.createCommand(
                 "vqLayerCAMMaxSeq", deviceID: deviceID
             )
-            command.setBuffer(layerPrev.delta.metal, atIndex: 0)
+            command.setBuffer(_layerCAM.outs.metal, atIndex: 0)
             command.setBytes(pNbNeurons, atIndex: 1)
             command.setBytes(pNbThreadgroups, atIndex: 2)
             command.setBytes(pNbBatch, atIndex: 3)

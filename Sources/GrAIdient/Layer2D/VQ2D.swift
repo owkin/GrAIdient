@@ -1258,7 +1258,7 @@ public class VQGrad2D: VQ2D
             let command = MetalKernel.get.createCommand(
                 "vqLayerCAMMax2D", deviceID: deviceID
             )
-            command.setBuffer(layerPrev.delta.metal, atIndex: 0)
+            command.setBuffer(_layerCAM.outs.metal, atIndex: 0)
             command.setBytes(pNbChannels, atIndex: 1)
             command.setBytes(pDimensions, atIndex: 2)
             command.setBytes(pNbThreadgroups, atIndex: 3)

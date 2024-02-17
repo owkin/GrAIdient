@@ -851,16 +851,19 @@ public class VQSeq: LayerSeq, LayerWeightInit
 public class VQGradSeq: VQSeq
 {
     /// Scale coefficient for taking into account pixels with high magnitude of gradient norm.
-    public var magnitudeCoeff: Double = 2.0
+    public var magnitudeCoeff: Double = 1.0
     
     /// Number of threads per thread group in the GPU execution context.
     private let _threadsPerThreadgroup = 64
     
+    /// Layer computing a map of maximal activations with respect to the loss.
+    let _layerCAM: LayerCAMSeq
+    
     ///
-    /// Indices of maximal elements.
-    /// Shape ~ (batch, seq).
+    /// Maximal CAM elements.
+    /// Shape ~ (batch, nbThreadgroups).
     ///
-    private var _gradNorm: MetalPrivateBuffer<Float>! = nil
+    private var _camMax: MetalPrivateBuffer<Float>! = nil
     
     /// Number of thread groups in the GPU execution context.
     var nbThreadgroups: Int
@@ -872,9 +875,57 @@ public class VQGradSeq: VQSeq
         }
     }
     
+    /// Whether to take positive or negative part of gradients.
+    public var keepPositive: Bool
+    {
+        get {
+            return _layerCAM.keepPositive
+        }
+        set {
+            _layerCAM.keepPositive = newValue
+        }
+    }
+    
+    /// GPU device on which model is executed.
+    public override var deviceID: Int
+    {
+        get {
+            return super.deviceID
+        }
+        set {
+            super.batchSize = newValue
+            _layerCAM.batchSize = newValue
+        }
+    }
+    
+    /// Batch size of data.
+    public override var batchSize: Int
+    {
+        get {
+            return super.batchSize
+        }
+        set {
+            super.batchSize = newValue
+            _layerCAM.batchSize = newValue
+        }
+    }
+    
+    /// Running phase of a model: Training or Inference.
+    public override var phase: Phase?
+    {
+        get {
+            return super.phase
+        }
+        set {
+            super.phase = newValue
+            _layerCAM.phase = newValue
+        }
+    }
+    
     private enum Keys: String, CodingKey
     {
         case magnitudeCoeff
+        case layerCAM
     }
     
     ///
@@ -889,6 +940,11 @@ public class VQGradSeq: VQSeq
                          K: Int,
                          params: GrAI.Model.Params)
     {
+        var paramsHidden = GrAI.Model.Params(params: params)
+        paramsHidden.hidden = true
+        
+        _layerCAM = try! LayerCAMSeq(layerPrev: layerPrev, params: paramsHidden)
+        
         super.init(layerPrev: layerPrev, K: K, params: params)
     }
     
@@ -907,6 +963,7 @@ public class VQGradSeq: VQSeq
             Float.self, forKey: .magnitudeCoeff
         )
         self.magnitudeCoeff = Double(magnitudeCoeff)
+        _layerCAM = try container.decode(LayerCAMSeq.self, forKey: .layerCAM)
         try super.init(from: decoder)
     }
     
@@ -925,6 +982,7 @@ public class VQGradSeq: VQSeq
     {
         var container = encoder.container(keyedBy: Keys.self)
         try container.encode(Float(magnitudeCoeff), forKey: .magnitudeCoeff)
+        try container.encode(_layerCAM, forKey: .layerCAM)
         try super.encode(to: encoder)
     }
     
@@ -977,6 +1035,17 @@ public class VQGradSeq: VQSeq
     }
     
     ///
+    /// Find the `layerPrev` associated to the layer's `idPrev`.
+    ///
+    /// - Parameter layers: The potential layers where to find the layer's `idPrev`.
+    ///
+    public override func initLinks(_ layers: [Layer])
+    {
+        super.initLinks(layers)
+        _layerCAM.initLinks(layers)
+    }
+    
+    ///
     /// Clean state resources in the GPU execution context.
     ///
     /// We first clean the neurons' state (forward and backward).
@@ -986,7 +1055,19 @@ public class VQGradSeq: VQSeq
     public override func resetKernelGPU()
     {
         super.resetKernelGPU()
-        _gradNorm = nil
+        _layerCAM.resetKernelGPU()
+        _camMax = nil
+    }
+    
+    ///
+    /// Initialize state resources in the CPU execution context.
+    ///
+    /// We initialize the neurons' state (forward and backward).
+    ///
+    public override func checkStateCPU(batchSize: Int) throws
+    {
+        try super.checkStateCPU(batchSize: batchSize)
+        try _layerCAM.checkStateCPU(batchSize: batchSize)
     }
     
     ///
@@ -998,14 +1079,26 @@ public class VQGradSeq: VQSeq
     public override func checkStateForwardGPU(batchSize: Int) throws
     {
         try super.checkStateForwardGPU(batchSize: batchSize)
+        try _layerCAM.checkStateForwardGPU(batchSize: batchSize)
         
-        if _gradNorm == nil
+        if _camMax == nil
         {
-            _gradNorm = MetalPrivateBuffer<Float>(
+            _camMax = MetalPrivateBuffer<Float>(
                 batchSize * nbThreadgroups,
                 deviceID: deviceID
             )
         }
+    }
+    
+    ///
+    /// Initialize state resources in the GPU execution context.
+    ///
+    /// We initialize the neurons' backward state.
+    ///
+    public override func checkStateBackwardGPU(batchSize: Int) throws
+    {
+        try super.checkStateBackwardGPU(batchSize: batchSize)
+        try _layerCAM.checkStateBackwardGPU(batchSize: batchSize)
     }
     
     ///
@@ -1021,6 +1114,10 @@ public class VQGradSeq: VQSeq
             {
                 throw UpdateError.Dirty
             }
+            
+            try _layerCAM.forwardCPU()
+            let neuronsCAM = _layerCAM.neurons!
+            
             try checkStateCPU(batchSize: batchSize)
             
             let neuronsPrev = layerPrev.neurons!
@@ -1028,32 +1125,17 @@ public class VQGradSeq: VQSeq
             
             for elem in 0..<batchSize
             {
-                var gradNormMax: Double = 0.0
+                var camMax: Double = 0.0
                 for seq in 0..<sequence
                 {
-                    var gradNorm: Double = 0.0
-                    for depth in 0..<nbNeurons
-                    {
-                        let deltaPrev =
-                            neuronsPrev.get(seq, depth)!.v[elem].delta
-                        gradNorm += pow(deltaPrev, 2.0)
-                    }
-                    gradNorm = sqrt(gradNorm)
-                    gradNormMax = max(gradNorm, gradNormMax)
+                    let cam: Double = neuronsCAM.get(seq, 0)!.v[elem].out
+                    camMax = max(cam, camMax)
                 }
                 
                 for seq in 0..<sequence
                 {
-                    var gradNorm: Double = 0.0
-                    for depth in 0..<nbNeurons
-                    {
-                        let deltaPrev =
-                            neuronsPrev.get(seq, depth)!.v[elem].delta
-                        gradNorm += pow(deltaPrev, 2.0)
-                    }
-                    gradNorm = sqrt(gradNorm)
-                    
-                    if gradNorm >= gradNormMax / magnitudeCoeff
+                    let cam: Double = neuronsCAM.get(seq, 0)!.v[elem].out
+                    if cam / camMax >= magnitudeCoeff
                     {
                         var minIndex = -1
                         var minValue: Double? = nil
@@ -1102,7 +1184,7 @@ public class VQGradSeq: VQSeq
     ///
     /// Throw an error if batch size is greater than the first batch size.
     ///
-    private func _computeGradNormMaxGPU() throws
+    private func _computeLayerCAMMaxGPU() throws
     {
         if let layerPrev = self.layerPrev as? LayerSeq
         {
@@ -1123,14 +1205,14 @@ public class VQGradSeq: VQSeq
             let pNbThreadgroups: [UInt32] = [UInt32(nbThreadgroups)]
             
             let command = MetalKernel.get.createCommand(
-                "vqGradSeqMax", deviceID: deviceID
+                "vqLayerCAMMaxSeq", deviceID: deviceID
             )
-            command.setBuffer(layerPrev.delta.metal, atIndex: 0)
+            command.setBuffer(_layerCAM.outs.metal, atIndex: 0)
             command.setBytes(pNbNeurons, atIndex: 1)
             command.setBytes(pNbThreadgroups, atIndex: 2)
             command.setBytes(pNbBatch, atIndex: 3)
             command.setBytes(pSequence, atIndex: 4)
-            command.setBuffer(_gradNorm.metal, atIndex: 5)
+            command.setBuffer(_camMax.metal, atIndex: 5)
             
             let threadsPerThreadgroup = MTLSizeMake(
                 _threadsPerThreadgroup, 1, 1
@@ -1148,8 +1230,8 @@ public class VQGradSeq: VQSeq
             
             // Continue the reduction in a more generic way.
             reduceMax(
-                inBuffer: _gradNorm.metal,
-                outBuffer: _gradNorm.metal,
+                inBuffer: _camMax.metal,
+                outBuffer: _camMax.metal,
                 dim1: nbThreadgroups, dim2: batchSize,
                 deviceID: deviceID
             )
@@ -1163,15 +1245,16 @@ public class VQGradSeq: VQSeq
     ///
     public override func forwardGPU() throws
     {
-        // Reduce the gradient norm max in a dedicated function for performance.
-        try _computeGradNormMaxGPU()
-        
         if let layerPrev = self.layerPrev as? LayerSeq
         {
             if layerPrev.dirty
             {
                 throw UpdateError.Dirty
             }
+            
+            try _layerCAM.forwardGPU()
+            try _computeLayerCAMMaxGPU()
+            
             try checkStateForwardGPU(batchSize: batchSize)
             
             let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
@@ -1184,8 +1267,8 @@ public class VQGradSeq: VQSeq
                 "vqGradSeqForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 1)
-            command.setBuffer(_gradNorm.metal, atIndex: 2)
+            command.setBuffer(_layerCAM.outs.metal, atIndex: 1)
+            command.setBuffer(_camMax.metal, atIndex: 2)
             command.setBuffer(_wBuffers.w.metal, atIndex: 3)
             command.setBytes(pNbNeurons, atIndex: 4)
             command.setBytes(pK, atIndex: 5)

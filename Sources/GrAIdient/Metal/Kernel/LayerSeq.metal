@@ -2686,3 +2686,60 @@ kernel void valueSelfScoreSeq4Backward(
         score[offsetScore] += tmp[0] + tmp[1] + tmp[2] + tmp[3];
     }
 }
+
+kernel void layerCAMSeqForward(
+    const device float * outsPrev,
+    const device float * deltaPrev,
+    constant uint * pNbNeuronsPrev,
+    constant uint * pKeepPositive,
+    constant uint * pNbBatch,
+    constant uint * pSequence,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint nbBatch;
+    uint sequence;
+    uint nbNeuronsPrev;
+    uint keepPositive;
+    
+    if (pNbNeuronsPrev && pKeepPositive && pNbBatch && pSequence &&
+        outsPrev && outs)
+    {
+        nbNeuronsPrev = *pNbNeuronsPrev;
+        keepPositive = *pKeepPositive;
+        nbBatch = *pNbBatch;
+        sequence = *pSequence;
+    }
+    else
+        return ;
+    
+    uint seq = id[0];
+    uint elem = id[1];
+    
+    if (seq >= sequence || elem >= nbBatch)
+    {
+        return ;
+    }
+        
+    float sum = 0.0;
+    for (uint depthPrev=0; depthPrev<nbNeuronsPrev; depthPrev++)
+    {
+        uint offsetPrev = depthPrev + nbNeuronsPrev * seq +
+            sequence * nbNeuronsPrev * elem;
+        
+        float deltaPrevTmp = deltaPrev[offsetPrev];
+        if (!keepPositive)
+        {
+            deltaPrevTmp = -deltaPrevTmp;
+        }
+        if (deltaPrevTmp < 0)
+        {
+            deltaPrevTmp = 0.0;
+        }
+        
+        sum += deltaPrevTmp * outsPrev[offsetPrev];
+    }
+    
+    uint offset = seq + sequence * elem;
+    outs[offset] = sum;
+}

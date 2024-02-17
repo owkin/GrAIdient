@@ -3509,3 +3509,62 @@ kernel void BCESigmoid2DLossDerivative(
             float(nbBatch * nbChannels * height * width);
     }
 }
+
+kernel void layerCAM2DForward(
+    const device float * outsPrev,
+    const device float * deltaPrev,
+    constant uint * pNbChannelsPrev,
+    constant uint * pDimensions,
+    constant uint * pKeepPositive,
+    constant uint * pNbBatch,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint height, width;
+    uint nbBatch;
+    uint nbChannelsPrev;
+    uint keepPositive;
+    
+    if (pNbChannelsPrev && pDimensions && pKeepPositive && pNbBatch &&
+        outsPrev && outs)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        nbChannelsPrev = *pNbChannelsPrev;
+        keepPositive = *pKeepPositive;
+        nbBatch = *pNbBatch;
+    }
+    else
+        return ;
+    
+    uint elem = id[1];
+    uint i = id[0] / width;
+    uint j = id[0] % width;
+    
+    if (i * j >= height * width || elem >= nbBatch)
+    {
+        return ;
+    }
+        
+    float sum = 0.0;
+    for (uint depthPrev=0; depthPrev<nbChannelsPrev; depthPrev++)
+    {
+        uint offsetStartPrev = (depthPrev + nbChannelsPrev * elem) * height;
+        uint offsetPrev = j + (offsetStartPrev + i) * width;
+        
+        float deltaPrevTmp = deltaPrev[offsetPrev];
+        if (!keepPositive)
+        {
+            deltaPrevTmp = -deltaPrevTmp;
+        }
+        if (deltaPrevTmp < 0)
+        {
+            deltaPrevTmp = 0.0;
+        }
+        
+        sum += deltaPrevTmp * outsPrev[offsetPrev];
+    }
+    
+    uint offset = j + (elem * height + i) * width;
+    outs[offset] = sum;
+}

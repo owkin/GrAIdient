@@ -165,6 +165,7 @@ let CONFIG_KERNELS =
         "BCE2DLossDerivative",
         "BCESigmoid2DLoss",
         "BCESigmoid2DLossDerivative",
+        "layerCAM2DForward",
     ],
     "LayerMerge": [
         "sum1",
@@ -233,6 +234,7 @@ let CONFIG_KERNELS =
         "valueSelfScoreSeq4Backward",
         "selectSeqForward",
         "selectSeqBackward",
+        "layerCAMSeqForward",
     ],
     "Optimizer": [
         "clipGradients",
@@ -261,7 +263,7 @@ let CONFIG_KERNELS =
         "vq2DDerWeights",
         "vq2DReduceWeights",
         "vq2DLoss",
-        "vqGrad2DMax",
+        "vqLayerCAMMax2D",
         "vqGrad2DForward"
     ],
     "VQSeq": [
@@ -270,7 +272,7 @@ let CONFIG_KERNELS =
         "vqSeqBatchDerWeights",
         "vqSeqDerWeights",
         "vqSeqLoss",
-        "vqGradSeqMax",
+        "vqLayerCAMMaxSeq",
         "vqGradSeqForward"
     ]
 ]

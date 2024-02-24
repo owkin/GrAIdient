@@ -104,6 +104,108 @@ kernel void convForward(
     outs[offset] = tmp;
 }
 
+kernel void conv16Forward(
+    const device float * outsPrev,
+    const device float * weights,
+    const device float * biases,
+    constant int * pStart,
+    constant uint * pStride,
+    constant uint * pNbChannels,
+    constant uint * pNbChannelsPrev,
+    constant uint * pDimensions,
+    constant uint * pDimensionsPrev,
+    constant uint * pDimWeights,
+    constant uint * pNbBatch,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint height, width;
+    uint heightPrev, widthPrev;
+    uint weightHeight, weightWidth;
+    uint nbChannels;
+    uint nbChannelsPrev;
+    int startI, startJ;
+    int endI, endJ;
+    int offI, offJ;
+    uint stride;
+    uint nbBatch;
+    
+    if (pStart && pStride && pNbChannels && pNbChannelsPrev &&
+        pDimensions && pDimensionsPrev && pDimWeights && pNbBatch &&
+        outsPrev && weights && biases && outs)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        widthPrev = pDimensionsPrev[0];
+        heightPrev = pDimensionsPrev[1];
+        weightWidth = pDimWeights[0];
+        weightHeight = pDimWeights[1];
+        nbChannels = *pNbChannels;
+        nbChannelsPrev = *pNbChannelsPrev;
+        nbBatch = *pNbBatch;
+        startI = pStart[0];
+        endI = pStart[1];
+        startJ = pStart[2];
+        endJ = pStart[3];
+        offI = pStart[4];
+        offJ = pStart[5];
+        stride = pStride[0];
+    }
+    else
+        return ;
+    
+    uint coeff = 16;
+    uint depth = id[0] / width;
+    uint elem = id[1] / height;
+    uint i = id[1] % height;
+    uint j = id[0] % width;
+    
+    if (i * elem >= height * nbBatch ||
+        j * depth * coeff >= width * nbChannels)
+    {
+        return ;
+    }
+    
+    float tmp[16] = {0};
+    for (uint depthPrev=0; depthPrev<nbChannelsPrev; depthPrev++)
+    {
+        uint offsetStartPrev =
+            (depthPrev + nbChannelsPrev*elem) * heightPrev;
+        
+        for (int k=startI; k<=endI; k++){
+        for (int l=startJ; l<=endJ; l++)
+        {
+            if ((int)(stride*j)+l-offJ >= 0 &&
+                (int)(stride*j)+l-offJ < (int)widthPrev &&
+                (int)(stride*i)+k-offI >= 0 &&
+                (int)(stride*i)+k-offI < (int)heightPrev)
+            {
+                uint offsetPrev = (int)(stride*j)+l-offJ +
+                    (offsetStartPrev + (int)(stride*i)+k-offI)*widthPrev;
+                float outPrev = outsPrev[offsetPrev];
+                
+                for (uint c=0; c<coeff; c++)
+                {
+                    uint offsetStartWeights = weightHeight *
+                        (depthPrev + nbChannelsPrev * (depth*coeff+c));
+                    uint offsetWeights = l-startJ +
+                        (offsetStartWeights + k-startI) * weightWidth;
+                    float w = weights[offsetWeights];
+                    
+                    tmp[c] += outPrev * w;
+                }
+            }
+        }}
+    }
+    
+    for (uint c=0; c<coeff; c++)
+    {
+        uint offsetStart = ((depth*coeff+c) + nbChannels * elem) * height;
+        uint offset = j + (offsetStart + i) * width;
+        outs[offset] = tmp[c] + biases[depth*coeff+c];
+    }
+}
+
 kernel void convBackward(
     const device float * delta,
     const device float * weights,

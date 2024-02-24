@@ -1373,8 +1373,21 @@ public class Convolution2D: BN2D, LayerWeightInit
                                          UInt32(weightHeight)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             
+            let kernel: String
+            let coeff: Int
+            if forwardKernel == "convForward" && nbChannels % 16 == 0
+            {
+                kernel = "conv16Forward"
+                coeff = 16
+            }
+            else
+            {
+                kernel = forwardKernel
+                coeff = 1
+            }
+            
             let command = MetalKernel.get.createCommand(
-                forwardKernel, deviceID: deviceID
+                kernel, deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBuffer(_wBuffers.w.metal, atIndex: 1)
@@ -1390,7 +1403,7 @@ public class Convolution2D: BN2D, LayerWeightInit
             command.setBuffer(outs.metal, atIndex: 11)
             
             command.dispatchThreads(
-                width: nbChannels * width,
+                width: (nbChannels / coeff) * width,
                 height: batchSize * height
             )
             command.enqueue()

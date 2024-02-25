@@ -60,7 +60,7 @@ final class VGGBenchmark: XCTestCase
     /// - Parameter bn: Whether to use batch normalization or not.
     /// - Returns: The model built.
     ///
-    func _buildModel() -> Model
+    func _buildModel(bn: Bool) -> Model
     {
         // Create the context to build a graph of layers where
         // there is no previous model dependency: layer id starts at 0.
@@ -77,13 +77,13 @@ final class VGGBenchmark: XCTestCase
         layer = Convolution2D(
             layerPrev: layer,
             size: 3, nbChannels: 64, stride: 1,
-            activation: ReLU.str, biases: true, bn: true,
+            activation: ReLU.str, biases: true, bn: bn,
             params: params
         )
         layer = Convolution2D(
             layerPrev: layer,
             size: 3, nbChannels: 64, stride: 1,
-            activation: ReLU.str, biases: true, bn: true,
+            activation: ReLU.str, biases: true, bn: bn,
             params: params
         )
         
@@ -94,13 +94,13 @@ final class VGGBenchmark: XCTestCase
         layer = Convolution2D(
             layerPrev: layer,
             size: 3, nbChannels: 128, stride: 1,
-            activation: ReLU.str, biases: true, bn: true,
+            activation: ReLU.str, biases: true, bn: bn,
             params: params
         )
         layer = Convolution2D(
             layerPrev: layer,
             size: 3, nbChannels: 128, stride: 1,
-            activation: ReLU.str, biases: true, bn: true,
+            activation: ReLU.str, biases: true, bn: bn,
             params: params
         )
         
@@ -111,19 +111,19 @@ final class VGGBenchmark: XCTestCase
         layer = Convolution2D(
             layerPrev: layer,
             size: 3, nbChannels: 256, stride: 1,
-            activation: ReLU.str, biases: true, bn: true,
+            activation: ReLU.str, biases: true, bn: bn,
             params: params
         )
         layer = Convolution2D(
             layerPrev: layer,
             size: 3, nbChannels: 256, stride: 1,
-            activation: ReLU.str, biases: true, bn: true,
+            activation: ReLU.str, biases: true, bn: bn,
             params: params
         )
         layer = Convolution2D(
             layerPrev: layer,
             size: 3, nbChannels: 256, stride: 1,
-            activation: ReLU.str, biases: true, bn: true,
+            activation: ReLU.str, biases: true, bn: bn,
             params: params
         )
         
@@ -134,19 +134,19 @@ final class VGGBenchmark: XCTestCase
         layer = Convolution2D(
             layerPrev: layer,
             size: 3, nbChannels: 512, stride: 1,
-            activation: ReLU.str, biases: true, bn: true,
+            activation: ReLU.str, biases: true, bn: bn,
             params: params
         )
         layer = Convolution2D(
             layerPrev: layer,
             size: 3, nbChannels: 512, stride: 1,
-            activation: ReLU.str, biases: true, bn: true,
+            activation: ReLU.str, biases: true, bn: bn,
             params: params
         )
         layer = Convolution2D(
             layerPrev: layer,
             size: 3, nbChannels: 512, stride: 1,
-            activation: ReLU.str, biases: true, bn: true,
+            activation: ReLU.str, biases: true, bn: bn,
             params: params
         )
         
@@ -157,19 +157,19 @@ final class VGGBenchmark: XCTestCase
         layer = Convolution2D(
             layerPrev: layer,
             size: 3, nbChannels: 512, stride: 1,
-            activation: ReLU.str, biases: true, bn: true,
+            activation: ReLU.str, biases: true, bn: bn,
             params: params
         )
         layer = Convolution2D(
             layerPrev: layer,
             size: 3, nbChannels: 512, stride: 1,
-            activation: ReLU.str, biases: true, bn: true,
+            activation: ReLU.str, biases: true, bn: bn,
             params: params
         )
         layer = Convolution2D(
             layerPrev: layer,
             size: 3, nbChannels: 512, stride: 1,
-            activation: ReLU.str, biases: true, bn: true,
+            activation: ReLU.str, biases: true, bn: bn,
             params: params
         )
         
@@ -216,7 +216,7 @@ final class VGGBenchmark: XCTestCase
         let params = _getOptimizerParams(nbLoops: _batchSize)
         
         // Build a model with randomly initialized weights.
-        let vgg = _buildModel()
+        let vgg = _buildModel(bn: false)
         
         // Initialize for training.
         vgg.initialize(params: params, phase: .Training)
@@ -307,6 +307,84 @@ final class VGGBenchmark: XCTestCase
                 let timeSpent = end2.timeIntervalSince(start2)
                 print("Step \(step + 1)/\(nbSteps): " +
                       "\(sqrt(loss)) in \(timeSpent)s.")
+            }
+            
+            let end1 = Date()
+            let timeSpent = end1.timeIntervalSince(start1)
+            print("Epoch \(epoch + 1), time spent: \(timeSpent)s.")
+        }
+    }
+    
+    /// Test: evaluate a VGG model.
+    func _test_EvalTransformer()
+    {
+        // Build a model with randomly initialized weights.
+        let vgg = _buildModel(bn: true)
+        
+        // Initialize for inference.
+        vgg.initKernel(phase: .Inference)
+        
+        let firstLayer: Input2D = vgg.layers.first as! Input2D
+        let lastLayer: MSE1D = vgg.layers.last as! MSE1D
+        
+        // Initialize the ground truth once and for all.
+        let groundTruth = MetalSharedBuffer<Float>(_batchSize, deviceID: 0)
+        let gtBuffer = groundTruth.buffer
+        for elem in 0..<_batchSize / 2
+        {
+            gtBuffer[elem] = 0.0
+        }
+        for elem in _batchSize / 2..<_batchSize
+        {
+            gtBuffer[elem] = 1.0
+        }
+        groundTruth.upload()
+        
+        // Initialize data once and for all.
+        let data = MetalPrivateBuffer<Float>(
+            _batchSize * 3 * _size * _size, deviceID: 0
+        )
+        let dataBuffer = data.shared.buffer
+        for i in 0..<_batchSize * 3 * _size * _size
+        {
+            dataBuffer[i] = Float.random(in: -1..<1)
+        }
+        data.upload()
+        
+        let nbEpochs = 2
+        let nbSteps = 20
+        for epoch in 0..<nbEpochs
+        {
+            print("EPOCH \(epoch + 1)/\(nbEpochs).")
+            
+            let start1 = Date()
+            for step in 0..<nbSteps
+            {
+                let start2 = Date()
+                
+                // Reset gradient validity for backward pass
+                // and update the batch size (although here it stays the same).
+                vgg.updateKernel(batchSize: _batchSize)
+                
+                // Set data.
+                try! firstLayer.setDataGPU(
+                    data,
+                    batchSize: _batchSize,
+                    nbChannels: 3,
+                    height: _size,
+                    width: _size
+                )
+                
+                // Forward.
+                try! vgg.forward()
+                
+                // Get predictions.
+                var preds = [Float](lastLayer.outs.download()[0..<_batchSize])
+                preds = preds.map { 1.0 / (1.0 + exp(-$0)) } // Sigmoid.
+                
+                let end2 = Date()
+                let timeSpent = end2.timeIntervalSince(start2)
+                print("Step \(step + 1)/\(nbSteps): in \(timeSpent)s.")
             }
             
             let end1 = Date()

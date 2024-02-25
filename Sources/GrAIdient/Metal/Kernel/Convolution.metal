@@ -313,6 +313,121 @@ kernel void convBackward(
     }
 }
 
+kernel void conv16Backward(
+    const device float * delta,
+    const device float * weights,
+    constant int * pStart,
+    constant uint * pStride,
+    constant uint * pNbChannels,
+    constant uint * pNbChannelsPrev,
+    constant uint * pDimensions,
+    constant uint * pDimensionsPrev,
+    constant uint * pDimWeights,
+    constant uint * pNbBatch,
+    constant uint * pDirty,
+    device float * deltaPrev,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint height, width;
+    uint heightPrev, widthPrev;
+    uint weightHeight, weightWidth;
+    uint nbChannels;
+    uint nbChannelsPrev;
+    int startI, startJ;
+    int endI, endJ;
+    int offI, offJ;
+    uint stride;
+    uint nbBatch;
+    uint dirty;
+    
+    if (pStart && pStride && pNbChannels && pNbChannelsPrev &&
+        pDimensions && pDimensionsPrev && pDimWeights && pNbBatch && pDirty &&
+        delta && weights && deltaPrev)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        widthPrev = pDimensionsPrev[0];
+        heightPrev = pDimensionsPrev[1];
+        weightWidth = pDimWeights[0];
+        weightHeight = pDimWeights[1];
+        nbChannels = *pNbChannels;
+        nbChannelsPrev = *pNbChannelsPrev;
+        nbBatch = *pNbBatch;
+        startI = pStart[0];
+        endI = pStart[1];
+        startJ = pStart[2];
+        endJ = pStart[3];
+        offI = pStart[4];
+        offJ = pStart[5];
+        stride = pStride[0];
+        dirty = *pDirty;
+    }
+    else
+        return ;
+    
+    uint coeff = 16;
+    uint depthPrev = id[0] / widthPrev;
+    uint elem = id[1] / heightPrev;
+    uint i = id[1] % heightPrev;
+    uint j = id[0] % widthPrev;
+    
+    if (i * elem >= heightPrev * nbBatch ||
+        j * depthPrev * coeff >= widthPrev * nbChannelsPrev)
+    {
+        return ;
+    }
+    
+    float tmp[16] = {0};
+    for (uint depth=0; depth<nbChannels; depth++)
+    {
+        uint offsetStart = (depth + nbChannels * elem) * height;
+        
+        for (int k=startI; k<=endI; k++){
+        for (int l=startJ; l<=endJ; l++)
+        {
+            if ((i-k+offI) % stride == 0 && (j-l+offJ) % stride == 0)
+            {
+                int i1 = (i-k+offI) / stride;
+                int j1 = (j-l+offJ) / stride;
+                
+                if (j1 >= 0 && j1 < (int)width &&
+                    i1 >= 0 && i1 < (int)height)
+                {
+                    uint offset = j1 + (offsetStart + i1) * width;
+                    float deltaCur = delta[offset];
+                    
+                    for (uint c=0; c<coeff; c++)
+                    {
+                        uint offsetStartWeights = weightHeight *
+                            ((depthPrev*coeff+c) + nbChannelsPrev * depth);
+                        uint offsetWeights = l-startJ +
+                            (offsetStartWeights + k-startI) * weightWidth;
+                        float w = weights[offsetWeights];
+                        
+                        tmp[c] += deltaCur * w;
+                    }
+                }
+            }
+        }}
+    }
+    
+    for (uint c=0; c<coeff; c++)
+    {
+        uint offsetStartPrev = heightPrev *
+            ((depthPrev*coeff+c) + nbChannelsPrev * elem);
+        uint offsetPrev = j + (offsetStartPrev + i) * widthPrev;
+        
+        if (dirty)
+        {
+            deltaPrev[offsetPrev] = tmp[c];
+        }
+        else
+        {
+            deltaPrev[offsetPrev] += tmp[c];
+        }
+    }
+}
+
 kernel void convBatchDerWeights(
     const device float * outsPrev,
     const device float * delta,

@@ -1635,27 +1635,53 @@ public class Convolution2D: BN2D, LayerWeightInit
             var command: MetalCommand
             if GrAI.Gradient.batch
             {
-                command = MetalKernel.get.createCommand(
-                    batchDerWeightsKernel, deviceID: deviceID
-                )
-                command.setBuffer(layerPrev.outs.metal, atIndex: 0)
-                command.setBuffer(delta.metal, atIndex: 1)
-                command.setBytes(pStart, atIndex: 2)
-                command.setBytes(pStride, atIndex: 3)
-                command.setBytes(pNbChannels, atIndex: 4)
-                command.setBytes(pNbChannelsPrev, atIndex: 5)
-                command.setBytes(pDimensions, atIndex: 6)
-                command.setBytes(pDimensionsPrev, atIndex: 7)
-                command.setBytes(pDimWeights, atIndex: 8)
-                command.setBytes(pNbBatch, atIndex: 9)
-                command.setBytes(pAccumulate, atIndex: 10)
-                command.setBuffer(_wBuffers.g.metal, atIndex: 11)
-                
-                command.dispatchThreads(
-                    width: nbChannels * weightWidth,
-                    height: nbChannelsPrev * weightHeight
-                )
-                command.enqueue()
+                if batchDerWeightsKernel == "convBatchDerWeights" &&
+                   _stride == 1 && weightWidth == 3 && weightHeight == 3 &&
+                   height % 2 == 0 && width % 4 == 0
+                {
+                    command = MetalKernel.get.createCommand(
+                        "conv34BatchDerWeights", deviceID: deviceID
+                    )
+                    command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+                    command.setBuffer(delta.metal, atIndex: 1)
+                    command.setBytes(pNbChannels, atIndex: 2)
+                    command.setBytes(pNbChannelsPrev, atIndex: 3)
+                    command.setBytes(pDimensions, atIndex: 4)
+                    command.setBytes(pDimensionsPrev, atIndex: 5)
+                    command.setBytes(pNbBatch, atIndex: 6)
+                    command.setBytes(pAccumulate, atIndex: 7)
+                    command.setBuffer(_wBuffers.g.metal, atIndex: 8)
+                    
+                    command.dispatchThreads(
+                        width: nbChannels,
+                        height: nbChannelsPrev
+                    )
+                    command.enqueue()
+                }
+                else
+                {
+                    command = MetalKernel.get.createCommand(
+                        batchDerWeightsKernel, deviceID: deviceID
+                    )
+                    command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+                    command.setBuffer(delta.metal, atIndex: 1)
+                    command.setBytes(pStart, atIndex: 2)
+                    command.setBytes(pStride, atIndex: 3)
+                    command.setBytes(pNbChannels, atIndex: 4)
+                    command.setBytes(pNbChannelsPrev, atIndex: 5)
+                    command.setBytes(pDimensions, atIndex: 6)
+                    command.setBytes(pDimensionsPrev, atIndex: 7)
+                    command.setBytes(pDimWeights, atIndex: 8)
+                    command.setBytes(pNbBatch, atIndex: 9)
+                    command.setBytes(pAccumulate, atIndex: 10)
+                    command.setBuffer(_wBuffers.g.metal, atIndex: 11)
+                    
+                    command.dispatchThreads(
+                        width: nbChannels * weightWidth,
+                        height: nbChannelsPrev * weightHeight
+                    )
+                    command.enqueue()
+                }
                 
                 if _updateBiases
                 {

@@ -541,13 +541,10 @@ kernel void convBatchDerWeights(
 kernel void conv34BatchDerWeights(
     const device float4 * outsPrev,
     const device float4 * delta,
-    constant int * pStart,
-    constant uint * pStride,
     constant uint * pNbChannels,
     constant uint * pNbChannelsPrev,
     constant uint * pDimensions,
     constant uint * pDimensionsPrev,
-    constant uint * pDimWeights,
     constant uint * pNbBatch,
     constant uint * pAccumulate,
     device float * grads,
@@ -555,36 +552,22 @@ kernel void conv34BatchDerWeights(
 {
     uint height, width;
     uint heightPrev, widthPrev;
-    uint weightHeight, weightWidth;
     uint nbChannels;
     uint nbChannelsPrev;
-    int startI, startJ;
-    int endI, endJ;
-    int offI, offJ;
-    uint stride;
     uint nbBatch;
     uint accumulate;
     
-    if (pStart && pStride && pNbChannels && pNbChannelsPrev && pDimensions &&
-        pDimensionsPrev && pDimWeights && pNbBatch && pAccumulate &&
+    if (pNbChannels && pNbChannelsPrev && pDimensions &&
+        pDimensionsPrev && pNbBatch && pAccumulate &&
         outsPrev && delta && grads)
     {
         width = pDimensions[0];
         height = pDimensions[1];
         widthPrev = pDimensionsPrev[0];
         heightPrev = pDimensionsPrev[1];
-        weightWidth = pDimWeights[0];
-        weightHeight = pDimWeights[1];
         nbChannels = *pNbChannels;
         nbChannelsPrev = *pNbChannelsPrev;
         nbBatch = *pNbBatch;
-        startI = pStart[0];
-        endI = pStart[1];
-        startJ = pStart[2];
-        endJ = pStart[3];
-        offI = pStart[4];
-        offJ = pStart[5];
-        stride = pStride[0];
         accumulate = *pAccumulate;
     }
     else
@@ -599,7 +582,7 @@ kernel void conv34BatchDerWeights(
         return ;
     }
     
-    float tmp[8] = 0.0;
+    float tmp[9] = {0.0};
     for (uint elem=0; elem<nbBatch; elem++)
     {
         uint offsetStart =
@@ -696,7 +679,7 @@ kernel void conv34BatchDerWeights(
             
             tmp[5] += outPrev4[1] * delta4[0];
             tmp[5] += outPrev4[2] * delta4[1];
-            tmp[5] += outPrev4[3] * detta4[2];
+            tmp[5] += outPrev4[3] * delta4[2];
             tmp[5] += outPrev7[1] * delta7[0];
             tmp[5] += outPrev7[2] * delta7[1];
             tmp[5] += outPrev7[3] * delta7[2];
@@ -758,31 +741,21 @@ kernel void conv34BatchDerWeights(
                     ((l+1)*4 + (offsetStartPrev + (k+1)*2) * widthPrev) / 4;
                 float outPrev11 = outsPrev[offsetPrev11][0];
                 
-                tmp[9] += outPrev11 * delta7[3];
+                tmp[8] += outPrev11 * delta7[3];
             }
         }}
     }
     
-    uint offsetStartWeights =
-        (depthPrev + nbChannelsPrev * depth) * weightHeight;
-    uint offsetWeights0 = 0 +
-        (offsetStartWeights + 0) * weightWidth;
-    uint offsetWeights1 = 1 +
-        (offsetStartWeights + 0) * weightWidth;
-    uint offsetWeights2 = 2 +
-        (offsetStartWeights + 0) * weightWidth;
-    uint offsetWeights3 = 0 +
-        (offsetStartWeights + 1) * weightWidth;
-    uint offsetWeights4 = 1 +
-        (offsetStartWeights + 1) * weightWidth;
-    uint offsetWeights5 = 2 +
-        (offsetStartWeights + 1) * weightWidth;
-    uint offsetWeights6 = 0 +
-        (offsetStartWeights + 2) * weightWidth;
-    uint offsetWeights7 = 1 +
-        (offsetStartWeights + 2) * weightWidth;
-    uint offsetWeights8 = 2 +
-        (offsetStartWeights + 2) * weightWidth;
+    uint offsetStartWeights = (depthPrev + nbChannelsPrev * depth) * 3;
+    uint offsetWeights0 = 0 + (offsetStartWeights + 0) * 3;
+    uint offsetWeights1 = 1 + (offsetStartWeights + 0) * 3;
+    uint offsetWeights2 = 2 + (offsetStartWeights + 0) * 3;
+    uint offsetWeights3 = 0 + (offsetStartWeights + 1) * 3;
+    uint offsetWeights4 = 1 + (offsetStartWeights + 1) * 3;
+    uint offsetWeights5 = 2 + (offsetStartWeights + 1) * 3;
+    uint offsetWeights6 = 0 + (offsetStartWeights + 2) * 3;
+    uint offsetWeights7 = 1 + (offsetStartWeights + 2) * 3;
+    uint offsetWeights8 = 2 + (offsetStartWeights + 2) * 3;
     
     if (accumulate)
     {

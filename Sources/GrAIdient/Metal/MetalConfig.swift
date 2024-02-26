@@ -39,6 +39,7 @@ let CONFIG_KERNELS =
         "convBackward",
         "conv16Backward",
         "convBatchDerWeights",
+        "conv34BatchDerWeights",
         "convBatchDerBiases",
         "convDerWeights",
         "convDerBiases",

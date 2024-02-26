@@ -538,6 +538,278 @@ kernel void convBatchDerWeights(
     }
 }
 
+kernel void conv34BatchDerWeights(
+    const device float4 * outsPrev,
+    const device float4 * delta,
+    constant int * pStart,
+    constant uint * pStride,
+    constant uint * pNbChannels,
+    constant uint * pNbChannelsPrev,
+    constant uint * pDimensions,
+    constant uint * pDimensionsPrev,
+    constant uint * pDimWeights,
+    constant uint * pNbBatch,
+    constant uint * pAccumulate,
+    device float * grads,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint height, width;
+    uint heightPrev, widthPrev;
+    uint weightHeight, weightWidth;
+    uint nbChannels;
+    uint nbChannelsPrev;
+    int startI, startJ;
+    int endI, endJ;
+    int offI, offJ;
+    uint stride;
+    uint nbBatch;
+    uint accumulate;
+    
+    if (pStart && pStride && pNbChannels && pNbChannelsPrev && pDimensions &&
+        pDimensionsPrev && pDimWeights && pNbBatch && pAccumulate &&
+        outsPrev && delta && grads)
+    {
+        width = pDimensions[0];
+        height = pDimensions[1];
+        widthPrev = pDimensionsPrev[0];
+        heightPrev = pDimensionsPrev[1];
+        weightWidth = pDimWeights[0];
+        weightHeight = pDimWeights[1];
+        nbChannels = *pNbChannels;
+        nbChannelsPrev = *pNbChannelsPrev;
+        nbBatch = *pNbBatch;
+        startI = pStart[0];
+        endI = pStart[1];
+        startJ = pStart[2];
+        endJ = pStart[3];
+        offI = pStart[4];
+        offJ = pStart[5];
+        stride = pStride[0];
+        accumulate = *pAccumulate;
+    }
+    else
+        return ;
+    
+    uint depth = id[0];
+    uint depthPrev = id[1];
+    
+    if (id[0] >= nbChannels ||
+        id[1] >= nbChannelsPrev)
+    {
+        return ;
+    }
+    
+    float tmp[8] = 0.0;
+    for (uint elem=0; elem<nbBatch; elem++)
+    {
+        uint offsetStart =
+            (depth + nbChannels * elem) * height;
+        uint offsetStartPrev =
+            (depthPrev + nbChannelsPrev * elem) * heightPrev;
+        
+        for (uint k=0; k<height/2; k++){
+        for (uint l=0; l<width/4; l++)
+        {
+            uint offset4 = (l*4 + (offsetStart + k*2) * width) / 4;
+            uint offset7 = (l*4 + (offsetStart + k*2+1) * width) / 4;
+            float4 delta4 = delta[offset4];
+            float4 delta7 = delta[offset7];
+            
+            if (k > 0 && l > 0)
+            {
+                uint offsetPrev0 =
+                    ((l-1)*4 + (offsetStartPrev + (k-1)*2) * widthPrev) / 4;
+                float outPrev0 = outsPrev[offsetPrev0][3];
+                
+                tmp[0] += outPrev0 * delta4[0];
+            }
+            if (k > 0)
+            {
+                uint offsetPrev1 =
+                    (l*4 + (offsetStartPrev + (k-1)*2) * widthPrev) / 4;
+                float4 outPrev1 = outsPrev[offsetPrev1];
+                
+                tmp[0] += outPrev1[0] * delta4[1];
+                tmp[0] += outPrev1[1] * delta4[2];
+                tmp[0] += outPrev1[2] * delta4[3];
+                
+                float4 sum = outPrev1 * delta4;
+                tmp[1] += sum[0] + sum[1] + sum[2] + sum[3];
+                
+                tmp[2] += outPrev1[1] * delta4[0];
+                tmp[2] += outPrev1[2] * delta4[1];
+                tmp[2] += outPrev1[3] * delta4[2];
+            }
+            if (k > 0 && l < width/4 - 1)
+            {
+                uint offsetPrev2 =
+                    ((l+1)*4 + (offsetStartPrev + (k-1)*2) * widthPrev) / 4;
+                float outPrev2 = outsPrev[offsetPrev2][0];
+                
+                tmp[2] += outPrev2 * delta4[3];
+            }
+            
+            if (l > 0)
+            {
+                uint offsetPrev3 =
+                    ((l-1)*4 + (offsetStartPrev + k*2) * widthPrev) / 4;
+                uint offsetPrev6 =
+                    ((l-1)*4 + (offsetStartPrev + k*2+1) * widthPrev) / 4;
+                float outPrev3 = outsPrev[offsetPrev3][3];
+                float outPrev6 = outsPrev[offsetPrev6][3];
+                
+                tmp[0] += outPrev3 * delta7[0];
+                tmp[3] += outPrev3 * delta4[0];
+                tmp[3] += outPrev6 * delta7[0];
+                tmp[6] += outPrev6 * delta4[0];
+            }
+            
+            uint offsetPrev4 =
+                (l*4 + (offsetStartPrev + k*2) * widthPrev) / 4;
+            uint offsetPrev7 =
+                (l*4 + (offsetStartPrev + k*2+1) * widthPrev) / 4;
+            float4 outPrev4 = outsPrev[offsetPrev4];
+            float4 outPrev7 = outsPrev[offsetPrev7];
+            
+            tmp[0] += outPrev4[0] * delta7[1];
+            tmp[0] += outPrev4[1] * delta7[2];
+            tmp[0] += outPrev4[2] * delta7[3];
+            
+            float4 sum = outPrev4 * delta7;
+            tmp[1] += sum[0] + sum[1] + sum[2] + sum[3];
+            
+            tmp[2] += outPrev4[1] * delta7[0];
+            tmp[2] += outPrev4[2] * delta7[1];
+            tmp[2] += outPrev4[3] * delta7[2];
+            
+            tmp[3] += outPrev4[0] * delta4[1];
+            tmp[3] += outPrev4[1] * delta4[2];
+            tmp[3] += outPrev4[2] * delta4[3];
+            tmp[3] += outPrev7[0] * delta7[1];
+            tmp[3] += outPrev7[1] * delta7[2];
+            tmp[3] += outPrev7[2] * delta7[3];
+            
+            sum = outPrev4 * delta4;
+            tmp[4] += sum[0] + sum[1] + sum[2] + sum[3];
+            sum = outPrev7 * delta7;
+            tmp[4] += sum[0] + sum[1] + sum[2] + sum[3];
+            
+            tmp[5] += outPrev4[1] * delta4[0];
+            tmp[5] += outPrev4[2] * delta4[1];
+            tmp[5] += outPrev4[3] * detta4[2];
+            tmp[5] += outPrev7[1] * delta7[0];
+            tmp[5] += outPrev7[2] * delta7[1];
+            tmp[5] += outPrev7[3] * delta7[2];
+            
+            tmp[6] += outPrev7[0] * delta4[1];
+            tmp[6] += outPrev7[1] * delta4[2];
+            tmp[6] += outPrev7[2] * delta4[3];
+            
+            sum = outPrev7 * delta4;
+            tmp[7] += sum[0] + sum[1] + sum[2] + sum[3];
+            
+            tmp[8] += outPrev7[1] * delta4[0];
+            tmp[8] += outPrev7[2] * delta4[1];
+            tmp[8] += outPrev7[3] * delta4[2];
+            
+            if (l < width/4 - 1)
+            {
+                uint offsetPrev5 =
+                    ((l+1)*4 + (offsetStartPrev + k*2) * widthPrev) / 4;
+                uint offsetPrev8 =
+                    ((l+1)*4 + (offsetStartPrev + k*2+1) * widthPrev) / 4;
+                float outPrev5 = outsPrev[offsetPrev5][0];
+                float outPrev8 = outsPrev[offsetPrev8][0];
+                
+                tmp[2] += outPrev5 * delta7[3];
+                tmp[5] += outPrev5 * delta4[3];
+                tmp[5] += outPrev8 * delta7[3];
+                tmp[8] += outPrev8 * delta4[3];
+            }
+            
+            if (k < height/2 - 1 && l > 0)
+            {
+                uint offsetPrev9 =
+                    ((l-1)*4 + (offsetStartPrev + (k+1)*2) * widthPrev) / 4;
+                float outPrev9 = outsPrev[offsetPrev9][3];
+                
+                tmp[6] += outPrev9 * delta7[0];
+            }
+            if (k < height/2 - 1)
+            {
+                uint offsetPrev10 =
+                    (l*4 + (offsetStartPrev + (k+1)*2) * widthPrev) / 4;
+                float4 outPrev10 = outsPrev[offsetPrev10];
+                
+                tmp[6] += outPrev10[0] * delta7[1];
+                tmp[6] += outPrev10[1] * delta7[2];
+                tmp[6] += outPrev10[2] * delta7[3];
+                
+                float4 sum = outPrev10 * delta7;
+                tmp[7] += sum[0] + sum[1] + sum[2] + sum[3];
+                
+                tmp[8] += outPrev10[1] * delta7[0];
+                tmp[8] += outPrev10[2] * delta7[1];
+                tmp[8] += outPrev10[3] * delta7[2];
+            }
+            if (k < height/2 - 1 && l < width/4 - 1)
+            {
+                uint offsetPrev11 =
+                    ((l+1)*4 + (offsetStartPrev + (k+1)*2) * widthPrev) / 4;
+                float outPrev11 = outsPrev[offsetPrev11][0];
+                
+                tmp[9] += outPrev11 * delta7[3];
+            }
+        }}
+    }
+    
+    uint offsetStartWeights =
+        (depthPrev + nbChannelsPrev * depth) * weightHeight;
+    uint offsetWeights0 = 0 +
+        (offsetStartWeights + 0) * weightWidth;
+    uint offsetWeights1 = 1 +
+        (offsetStartWeights + 0) * weightWidth;
+    uint offsetWeights2 = 2 +
+        (offsetStartWeights + 0) * weightWidth;
+    uint offsetWeights3 = 0 +
+        (offsetStartWeights + 1) * weightWidth;
+    uint offsetWeights4 = 1 +
+        (offsetStartWeights + 1) * weightWidth;
+    uint offsetWeights5 = 2 +
+        (offsetStartWeights + 1) * weightWidth;
+    uint offsetWeights6 = 0 +
+        (offsetStartWeights + 2) * weightWidth;
+    uint offsetWeights7 = 1 +
+        (offsetStartWeights + 2) * weightWidth;
+    uint offsetWeights8 = 2 +
+        (offsetStartWeights + 2) * weightWidth;
+    
+    if (accumulate)
+    {
+        grads[offsetWeights0] += tmp[0];
+        grads[offsetWeights1] += tmp[1];
+        grads[offsetWeights2] += tmp[2];
+        grads[offsetWeights3] += tmp[3];
+        grads[offsetWeights4] += tmp[4];
+        grads[offsetWeights5] += tmp[5];
+        grads[offsetWeights6] += tmp[6];
+        grads[offsetWeights7] += tmp[7];
+        grads[offsetWeights8] += tmp[8];
+    }
+    else
+    {
+        grads[offsetWeights0] = tmp[0];
+        grads[offsetWeights1] = tmp[1];
+        grads[offsetWeights2] = tmp[2];
+        grads[offsetWeights3] = tmp[3];
+        grads[offsetWeights4] = tmp[4];
+        grads[offsetWeights5] = tmp[5];
+        grads[offsetWeights6] = tmp[6];
+        grads[offsetWeights7] = tmp[7];
+        grads[offsetWeights8] = tmp[8];
+    }
+}
+
 kernel void convBatchDerBiases(
     const device float * delta,
     constant uint * pNbChannels,

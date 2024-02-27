@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🚀 **perf:** Convolution2D ([118](https://github.com/owkin/GrAIdient/pull/118))\
 🪜 **feat:** LayerCAM2D -> VQGrad2D, LayerCAMSeq -> VQGradSeq ([#117](https://github.com/owkin/GrAIdient/pull/117))\
 ⚙️ **core:** GELU vs GELUApprox ([113](https://github.com/owkin/GrAIdient/pull/113))\
 🚀 **perf:** QuerySelf & ValueSelf ([112](https://github.com/owkin/GrAIdient/pull/112))\

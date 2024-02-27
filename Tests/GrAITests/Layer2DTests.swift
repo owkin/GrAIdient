@@ -1945,9 +1945,15 @@ class Layer2D16FlowTests: Input2DMSE1DCase
                 activation: LeakyReLU.str, biases: !bn, bn: bn, params: params
             )
             
-        case "ConvolutionStride":
+        case "ConvolutionStride1":
             layer = Convolution2D(
-                layerPrev: layer, size: 3, nbChannels: 16, stride: 2,
+                layerPrev: layer, size: 3, nbChannels: 32, stride: 2,
+                activation: LeakyReLU.str, biases: !bn, bn: bn, params: params
+            )
+            
+        case "ConvolutionStride2":
+            layer = Convolution2D(
+                layerPrev: layer, size: 2, nbChannels: 32, stride: 2,
                 activation: LeakyReLU.str, biases: !bn, bn: bn, params: params
             )
             
@@ -1986,9 +1992,15 @@ class Layer2D16FlowTests: Input2DMSE1DCase
         run(trainer)
     }
     
-    func testConvolutionStride() throws
+    func testConvolutionStride1() throws
     {
-        let trainer = _buildTrainer(model: "ConvolutionStride", bn: false)
+        let trainer = _buildTrainer(model: "ConvolutionStride1", bn: false)
+        run(trainer)
+    }
+    
+    func testConvolutionStride2() throws
+    {
+        let trainer = _buildTrainer(model: "ConvolutionStride2", bn: false)
         run(trainer)
     }
     

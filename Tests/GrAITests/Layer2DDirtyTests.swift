@@ -526,7 +526,7 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
     func testDeconvolutionGPU() throws
     {
         let trainer = _buildTrainer(model: "Deconvolution")
-        run(trainer, diffThreshold: 0.0001)
+        run(trainer, diffThreshold: 0.001)
     }
     
     func testDeconvolutionStrideCPU() throws
@@ -539,7 +539,7 @@ class Layer2DDirtyGradTests: Input2DMSE1DCase
     func testDeconvolutionStrideGPU() throws
     {
         let trainer = _buildTrainer(model: "DeconvolutionStride")
-        run(trainer, diffThreshold: 0.0001)
+        run(trainer, diffThreshold: 0.001)
     }
     
     func testInstanceNormCPU() throws

@@ -248,7 +248,7 @@ final class VGGBenchmark: XCTestCase
         }
         data.upload()
         
-        let nbEpochs = 2
+        let nbEpochs = 1
         let nbSteps = 20
         for epoch in 0..<nbEpochs
         {

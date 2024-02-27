@@ -1578,7 +1578,7 @@ public class Convolution2D: BN2D, LayerWeightInit
             }
             else
             {
-                kernel = forwardKernel
+                kernel = backwardKernel
                 coeff = 1
             }
             
@@ -1636,7 +1636,10 @@ public class Convolution2D: BN2D, LayerWeightInit
             if GrAI.Gradient.batch
             {
                 if batchDerWeightsKernel == "convBatchDerWeights" &&
-                   _stride == 1 && weightWidth == 3 && weightHeight == 3 &&
+                   _stride == 1 &&
+                   layerPrev.width == width &&
+                   layerPrev.height == height &&
+                   weightWidth == 3 && weightHeight == 3 &&
                    height % 2 == 0 && width % 4 == 0
                 {
                     command = MetalKernel.get.createCommand(

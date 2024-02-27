@@ -601,7 +601,7 @@ kernel void conv34BatchDerWeights(
             if (k > 0 && l > 0)
             {
                 uint offsetPrev0 =
-                    ((l-1)*4 + (offsetStartPrev + (k-1)*2) * widthPrev) / 4;
+                    ((l-1)*4 + (offsetStartPrev + k*2-1) * widthPrev) / 4;
                 float outPrev0 = outsPrev[offsetPrev0][3];
                 
                 tmp[0] += outPrev0 * delta4[0];
@@ -609,7 +609,7 @@ kernel void conv34BatchDerWeights(
             if (k > 0)
             {
                 uint offsetPrev1 =
-                    (l*4 + (offsetStartPrev + (k-1)*2) * widthPrev) / 4;
+                    (l*4 + (offsetStartPrev + k*2-1) * widthPrev) / 4;
                 float4 outPrev1 = outsPrev[offsetPrev1];
                 
                 tmp[0] += outPrev1[0] * delta4[1];
@@ -623,10 +623,10 @@ kernel void conv34BatchDerWeights(
                 tmp[2] += outPrev1[2] * delta4[1];
                 tmp[2] += outPrev1[3] * delta4[2];
             }
-            if (k > 0 && l < width/4 - 1)
+            if (k > 0 && (l+1)*4 < width)
             {
                 uint offsetPrev2 =
-                    ((l+1)*4 + (offsetStartPrev + (k-1)*2) * widthPrev) / 4;
+                    ((l+1)*4 + (offsetStartPrev + k*2-1) * widthPrev) / 4;
                 float outPrev2 = outsPrev[offsetPrev2][0];
                 
                 tmp[2] += outPrev2 * delta4[3];
@@ -695,7 +695,7 @@ kernel void conv34BatchDerWeights(
             tmp[8] += outPrev7[2] * delta4[1];
             tmp[8] += outPrev7[3] * delta4[2];
             
-            if (l < width/4 - 1)
+            if ((l+1)*4 < width)
             {
                 uint offsetPrev5 =
                     ((l+1)*4 + (offsetStartPrev + k*2) * widthPrev) / 4;
@@ -710,7 +710,7 @@ kernel void conv34BatchDerWeights(
                 tmp[8] += outPrev8 * delta4[3];
             }
             
-            if (k < height/2 - 1 && l > 0)
+            if ((k+1)*2 < height && l > 0)
             {
                 uint offsetPrev9 =
                     ((l-1)*4 + (offsetStartPrev + (k+1)*2) * widthPrev) / 4;
@@ -718,7 +718,7 @@ kernel void conv34BatchDerWeights(
                 
                 tmp[6] += outPrev9 * delta7[0];
             }
-            if (k < height/2 - 1)
+            if ((k+1)*2 < height)
             {
                 uint offsetPrev10 =
                     (l*4 + (offsetStartPrev + (k+1)*2) * widthPrev) / 4;
@@ -735,7 +735,7 @@ kernel void conv34BatchDerWeights(
                 tmp[8] += outPrev10[2] * delta7[1];
                 tmp[8] += outPrev10[3] * delta7[2];
             }
-            if (k < height/2 - 1 && l < width/4 - 1)
+            if ((k+1)*2 < height && (l+1)*4 < width)
             {
                 uint offsetPrev11 =
                     ((l+1)*4 + (offsetStartPrev + (k+1)*2) * widthPrev) / 4;

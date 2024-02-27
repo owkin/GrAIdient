@@ -1887,6 +1887,122 @@ class Layer2DFlowTests: Input2DMSE1DCase
 // Compare GPU gradients with CPU ones through time.
 // We expect to see errors ~ 1e-7 and less.
 // -----------------------------------------------------------------------------
+class Layer2D16FlowTests: Input2DMSE1DCase
+{
+    /// Systematic call before test begins.
+    override func setUp()
+    {
+        height = 8
+        width = 8
+        batchSize = 5
+        
+        _ = MetalKernel.get
+        GrAI.Opti.GPU = true
+        
+        setOptimizerParams(params: &optimizerParams)
+        optimizerParams.nbLoops = 3
+    }
+    
+    private func _buildTrainer(model: String, bn: Bool) -> FlowTrainer
+    {
+        let trainer = FlowTrainer(
+            name: "Layer2D",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(model: model, bn: bn, context: context)
+        }
+        return trainer
+    }
+    
+    func buildModel(model: String, bn: Bool, context: ModelContext)
+    {
+        let params = GrAI.Model.Params(context: context)
+        
+        var layer: Layer2D = Input2D(
+            nbChannels: 1, width: width, height: height, params: params
+        )
+        var head: Layer1D? = nil
+        
+        layer = Convolution2D(
+            layerPrev: layer, size: 1, nbChannels: 32, stride: 1,
+            activation: LeakyReLU.str, biases: true, bn: false, params: params
+        )
+        
+        switch model
+        {
+        case "Convolution1":
+            layer = Convolution2D(
+                layerPrev: layer, size: 3, nbChannels: 32, stride: 1,
+                activation: LeakyReLU.str, biases: !bn, bn: bn, params: params
+            )
+            
+        case "Convolution2":
+            layer = Convolution2D(
+                layerPrev: layer, size: 2, nbChannels: 32, stride: 1,
+                activation: LeakyReLU.str, biases: !bn, bn: bn, params: params
+            )
+            
+        case "ConvolutionStride":
+            layer = Convolution2D(
+                layerPrev: layer, size: 3, nbChannels: 16, stride: 2,
+                activation: LeakyReLU.str, biases: !bn, bn: bn, params: params
+            )
+            
+        case "Deconvolution":
+            layer = Deconvolution2D(
+                layerPrev: layer, size: 3, nbChannels: 16, stride: 1,
+                activation: LeakyReLU.str, biases: !bn, bn: bn, params: params
+            )
+            
+        default:
+            fatalError("Unreachable.")
+        }
+        
+        if head == nil
+        {
+            head = AvgPool2D(layerPrev: layer, params: params)
+        }
+        
+        head = try! FullyConnected(
+            layerPrev: head!, nbNeurons: 1,
+            activation: LeakyReLU.str, biases: true, params: params
+        )
+        
+        head = MSE1D(layerPrev: head!, params: params)
+    }
+    
+    func testConvolution1() throws
+    {
+        let trainer = _buildTrainer(model: "Convolution1", bn: false)
+        run(trainer)
+    }
+    
+    func testConvolution2() throws
+    {
+        let trainer = _buildTrainer(model: "Convolution2", bn: false)
+        run(trainer)
+    }
+    
+    func testConvolutionStride() throws
+    {
+        let trainer = _buildTrainer(model: "ConvolutionStride", bn: false)
+        run(trainer)
+    }
+    
+    func testDeconvolution() throws
+    {
+        let trainer = _buildTrainer(model: "Deconvolution", bn: false)
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU gradients with CPU ones through time.
+// We expect to see errors ~ 1e-7 and less.
+// -----------------------------------------------------------------------------
 class Layer2DFlowResetTests: Layer2DFlowTests
 {
     override func setUp()

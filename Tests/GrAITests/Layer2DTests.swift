@@ -1794,13 +1794,13 @@ class Layer2DFlowTests: Input2DMSE1DCase
     func testInstanceNorm() throws
     {
         let trainer = _buildTrainer(model: "InstanceNorm", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     func testAdaIN() throws
     {
         let trainer = _buildTrainer(model: "AdaIN", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     func testConstant() throws
@@ -2310,7 +2310,7 @@ class Layer2DFlowResetTests: Layer2DFlowTests
     override func testInstanceNorm() throws
     {
         let trainer = _buildTrainer(model: "InstanceNorm", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     override func testAdaIN() throws
@@ -2716,7 +2716,7 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
     override func testAdaIN() throws
     {
         let trainer = _buildTrainer(model: "AdaIN", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     override func testConstant() throws
@@ -3063,7 +3063,7 @@ class Layer2DFlowAccumulateTests: Input2DMSE1DCase
     func testInstanceNorm() throws
     {
         let trainer = _buildTrainer(model: "InstanceNorm", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     func testConstant() throws

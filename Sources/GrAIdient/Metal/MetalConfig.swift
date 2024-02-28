@@ -35,8 +35,11 @@ let CONFIG_KERNELS =
     ],
     "Convolution": [
         "convForward",
+        "conv16Forward",
         "convBackward",
+        "conv16Backward",
         "convBatchDerWeights",
+        "conv34BatchDerWeights",
         "convBatchDerBiases",
         "convDerWeights",
         "convDerBiases",

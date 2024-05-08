@@ -299,20 +299,24 @@ public class VQSeq: LayerSeq, LayerWeightInit
     ///
     public func initWeightsGPU()
     {
-        if _weightsList.count == 0
-        {
-            _weightsList = generateWeightsList()
-        }
-        
         _wBuffers = WeightBuffers(
             nbElems: K * nbNeurons,
             deviceID: deviceID
         )
         
         let weightsPtr = _wBuffers.w_p!.shared.buffer
-        for elem in 0..<K * nbNeurons
+        if _weightsList.count == 0
         {
-            weightsPtr[elem] = _weightsList[elem]
+            generateWeightsList(buffer: weightsPtr)
+        }
+        else
+        {
+            copyFloatArrayToBuffer(
+                array: &_weightsList,
+                buffer: weightsPtr,
+                start: 0,
+                nbElems: K * nbNeurons
+            )
         }
         _weightsList = []
         

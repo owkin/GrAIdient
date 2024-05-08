@@ -458,12 +458,6 @@ public class FullyConnectedPatch: ActivationSeq,
     ///
     public func initWeightsGPU()
     {
-        if _weightsList.count == 0
-        {
-            _weightsList = generateWeightsList()
-            _weightsList += [Float](repeating: 0.0, count: weightHeight)
-        }
-        
         _wBuffers = WeightBuffers(
             nbElems: weightHeight * weightWidth,
             deviceID: deviceID
@@ -475,26 +469,27 @@ public class FullyConnectedPatch: ActivationSeq,
         
         let weightsPtr = _wBuffers.w_p!.shared.buffer
         let biasesPtr = _bBuffers.w_p!.shared.buffer
-    
-        for elem in 0..<weightHeight * weightWidth
-        {
-            weightsPtr[elem] = _weightsList[elem]
-        }
         
-        // In both cases, biases may have been set by caller or by ourselves.
-        if _updateBiases
+        if _weightsList.count == 0
         {
-            let offset = weightHeight * weightWidth
-            for depth in 0..<weightHeight
-            {
-                biasesPtr[depth] = _weightsList[offset + depth]
-            }
+            generateWeightsList(buffer: weightsPtr)
         }
         else
         {
-            for depth in 0..<weightHeight
+            copyFloatArrayToBuffer(
+                array: &_weightsList,
+                buffer: weightsPtr,
+                start: 0,
+                nbElems: weightHeight * weightWidth
+            )
+            if _updateBiases
             {
-                biasesPtr[depth] = 0.0
+                copyFloatArrayToBuffer(
+                    array: &_weightsList,
+                    buffer: biasesPtr,
+                    start: weightHeight * weightWidth,
+                    nbElems: weightHeight
+                )
             }
         }
         _weightsList = []

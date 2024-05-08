@@ -771,12 +771,6 @@ public class Convolution2D: BN2D, LayerWeightInit
     ///
     public override func initWeightsGPU()
     {
-        if _weightsList.count == 0
-        {
-            _weightsList = generateWeightsList()
-            _weightsList += [Float](repeating: 0.0, count: nbChannels)
-        }
-        
         super.initWeightsGPU()
         
         _wBuffers = WeightBuffers(
@@ -790,32 +784,27 @@ public class Convolution2D: BN2D, LayerWeightInit
         
         let weightsPtr = _wBuffers.w_p!.shared.buffer
         let biasesPtr = _bBuffers.w_p!.shared.buffer
-    
-        /*let data = Data(
-            bytes: _weightsList,
-            count: nbWeights*weightHeight*weightWidth*MemoryLayout<Float>.size
-        )
-        _ = data.copyBytes(to: weightsPtr)*/
         
-        for elem in 0..<nbWeights * weightHeight * weightWidth
+        if _weightsList.count == 0
         {
-            weightsPtr[elem] = _weightsList[elem]
-        }
-        
-        // In both cases, biases may have been set by caller or by ourselves.
-        if _updateBiases
-        {
-            let offset = nbWeights * weightHeight * weightWidth
-            for depth in 0..<nbChannels
-            {
-                biasesPtr[depth] = _weightsList[offset + depth]
-            }
+            generateWeightsList(buffer: weightsPtr)
         }
         else
         {
-            for depth in 0..<nbChannels
+            copyFloatArrayToBuffer(
+                array: &_weightsList,
+                buffer: weightsPtr,
+                start: 0,
+                nbElems: nbWeights * weightHeight * weightWidth
+            )
+            if _updateBiases
             {
-                biasesPtr[depth] = 0.0
+                copyFloatArrayToBuffer(
+                    array: &_weightsList,
+                    buffer: biasesPtr,
+                    start: nbWeights * weightHeight * weightWidth,
+                    nbElems: nbChannels
+                )
             }
         }
         _weightsList = []

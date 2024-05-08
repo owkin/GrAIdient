@@ -451,26 +451,20 @@ public class FullyConnectedSeq: ActivationSeq,
         }
         else
         {
-            for elem in 0..<weightHeight * weightWidth
-            {
-                weightsPtr[elem] = _weightsList[elem]
-            }
-            
-            // In both cases, biases may have been set by caller or by ourselves.
+            copyFloatArrayToBuffer(
+                array: &_weightsList,
+                buffer: weightsPtr,
+                start: 0, 
+                nbElems: weightHeight * weightWidth
+            )
             if _updateBiases
             {
-                let offset = weightHeight * weightWidth
-                for depth in 0..<weightHeight
-                {
-                    biasesPtr[depth] = _weightsList[offset + depth]
-                }
-            }
-            else
-            {
-                for depth in 0..<weightHeight
-                {
-                    biasesPtr[depth] = 0.0
-                }
+                copyFloatArrayToBuffer(
+                    array: &_weightsList,
+                    buffer: biasesPtr,
+                    start: weightHeight * weightWidth,
+                    nbElems: weightHeight
+                )
             }
         }
         _weightsList = []

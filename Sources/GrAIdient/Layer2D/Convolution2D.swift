@@ -54,12 +54,12 @@ public class Convolution2D: BN2D, LayerWeightInit
     /// Buffer of gradients per sample for weights.
     /// Shape ~ (batch, nbWeights, kernel height, kernel width).
     ///
-    var _wDeltaWeights: MetalPrivateBuffer<Float>! = nil
+    var _wDeltaWeights: MetalPrivateBuffer<Float16>! = nil
     ///
     /// Buffer of gradients per sample for biases.
     /// Shape ~ (batch, nbChannels).
     ///
-    var _bDeltaWeights: MetalPrivateBuffer<Float>! = nil
+    var _bDeltaWeights: MetalPrivateBuffer<Float16>! = nil
     
     /// Number of weight kernels.
     public let nbWeights: Int
@@ -142,10 +142,10 @@ public class Convolution2D: BN2D, LayerWeightInit
     var _updateBiases: Bool = true
     
     /// Cache for weights before calling `initKernel` API.
-    var _weightsList = [Float]()
+    var _weightsList = [Float16]()
     
     /// Weights (without weights of batch normalization) in the CPU execution context.
-    var weightsListCPU: [Float]
+    var weightsListCPU: [Float16]
     {
         get {
             if _wArrays.count == 0
@@ -153,20 +153,20 @@ public class Convolution2D: BN2D, LayerWeightInit
                 return _weightsList
             }
             
-            var weightsTmp = [Float]()
+            var weightsTmp = [Float16]()
             for elem in 0..<nbWeights
             {
                 for i in 0..<weightHeight {
                 for j in 0..<weightWidth
                 {
-                    weightsTmp.append(Float(_wArrays[elem].w(i, j)))
+                    weightsTmp.append(Float16(_wArrays[elem].w(i, j)))
                 }}
             }
             
             if _updateBiases {
             for depth in 0..<nbChannels
             {
-                weightsTmp.append(Float(_bArrays.w[depth]))
+                weightsTmp.append(Float16(_bArrays.w[depth]))
             }}
             return weightsTmp
         }
@@ -176,7 +176,7 @@ public class Convolution2D: BN2D, LayerWeightInit
     }
     
     /// Weights (without weights of batch normalization) in the GPU execution context.
-    var weightsListGPU: [Float]
+    var weightsListGPU: [Float16]
     {
         get {
             if _wBuffers == nil
@@ -184,7 +184,7 @@ public class Convolution2D: BN2D, LayerWeightInit
                 return _weightsList
             }
             
-            var weightsTmp = [Float]()
+            var weightsTmp = [Float16]()
             MetalKernel.get.download([_wBuffers.w_p!])
             weightsTmp += _wBuffers.w_p!.shared.array
             
@@ -201,7 +201,7 @@ public class Convolution2D: BN2D, LayerWeightInit
     }
     
     /// Weights in the CPU execution context.
-    public override var weightsCPU: [Float]
+    public override var weightsCPU: [Float16]
     {
         get {
             var weightsTmp = weightsListCPU
@@ -226,15 +226,15 @@ public class Convolution2D: BN2D, LayerWeightInit
             {
                 nbConvWeights = nbWeights * weightHeight * weightWidth
             }
-            weightsListCPU = [Float](newValue[0..<nbConvWeights])
+            weightsListCPU = [Float16](newValue[0..<nbConvWeights])
             
             let bnWeights = newValue[nbConvWeights..<newValue.count]
-            super.weightsCPU = [Float](bnWeights)
+            super.weightsCPU = [Float16](bnWeights)
         }
     }
     
     /// Weights in the GPU execution context.
-    public override var weightsGPU: [Float]
+    public override var weightsGPU: [Float16]
     {
         get {
             var weightsTmp = weightsListGPU
@@ -259,10 +259,10 @@ public class Convolution2D: BN2D, LayerWeightInit
             {
                 nbConvWeights = nbWeights * weightHeight * weightWidth
             }
-            weightsListGPU = [Float](newValue[0..<nbConvWeights])
+            weightsListGPU = [Float16](newValue[0..<nbConvWeights])
             
             let bnWeights = newValue[nbConvWeights..<newValue.count]
-            super.weightsGPU = [Float](bnWeights)
+            super.weightsGPU = [Float16](bnWeights)
         }
     }
     
@@ -487,7 +487,7 @@ public class Convolution2D: BN2D, LayerWeightInit
         
         try super.init(from: decoder)
         
-        let weightsList = try values.decode([Float].self, forKey: .weights)
+        let weightsList = try values.decode([Float16].self, forKey: .weights)
         self.weightsListCPU = weightsList
     }
     
@@ -512,7 +512,7 @@ public class Convolution2D: BN2D, LayerWeightInit
         try container.encode(weightWidth, forKey: .weightWidth)
         try container.encode(weightHeight, forKey: .weightHeight)
         
-        var weightsList = [Float]()
+        var weightsList = [Float16]()
         if GrAI.Opti.GPU
         {
             weightsList = self.weightsListGPU
@@ -719,7 +719,7 @@ public class Convolution2D: BN2D, LayerWeightInit
         if _weightsList.count == 0
         {
             _weightsList = generateWeightsList()
-            _weightsList += [Float](repeating: 0.0, count: nbChannels)
+            _weightsList += [Float16](repeating: 0.0, count: nbChannels)
         }
         
         super.initWeightsCPU()
@@ -782,24 +782,22 @@ public class Convolution2D: BN2D, LayerWeightInit
             deviceID: deviceID
         )
         
-        let weightsPtr = _wBuffers.w_p!.shared.buffer
         let biasesPtr = _bBuffers.w_p!.shared.buffer
-        
         if _weightsList.count == 0
         {
-            generateWeightsList(buffer: weightsPtr)
+            generateWeightsList(out: _wBuffers.w_p!, deviceID: deviceID)
         }
         else
         {
-            copyFloatArrayToBuffer(
+            copyFloat16ArrayToBuffer(
                 array: &_weightsList,
-                buffer: weightsPtr,
+                buffer: _wBuffers.w_p!.shared.buffer,
                 start: 0,
                 nbElems: nbWeights * weightHeight * weightWidth
             )
             if _updateBiases
             {
-                copyFloatArrayToBuffer(
+                copyFloat16ArrayToBuffer(
                     array: &_weightsList,
                     buffer: biasesPtr,
                     start: nbWeights * weightHeight * weightWidth,
@@ -828,14 +826,14 @@ public class Convolution2D: BN2D, LayerWeightInit
         if computeDeltaWeights &&
            GrAI.Gradient.sample && _wDeltaWeights == nil
         {
-            _wDeltaWeights = MetalPrivateBuffer<Float>(
+            _wDeltaWeights = MetalPrivateBuffer<Float16>(
                 batchSize * nbWeights * weightWidth * weightHeight,
                 deviceID: deviceID
             )
             
             if _updateBiases
             {
-                _bDeltaWeights = MetalPrivateBuffer<Float>(
+                _bDeltaWeights = MetalPrivateBuffer<Float16>(
                     batchSize * nbChannels, deviceID: deviceID
                 )
             }

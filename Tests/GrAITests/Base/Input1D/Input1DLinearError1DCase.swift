@@ -115,12 +115,12 @@ class Input1DLinearError1DCase: XCTestCase, IOCase
     /// - Returns: (The data, the batch size).
     ///
     func setData(
-        _ inputs: [[Float]]?,
+        _ inputs: [[Float16]]?,
         _ model: Model
-    ) -> ([[Float]], Int)
+    ) -> ([[Float16]], Int)
     {
         let firstLayer = model.layers.first as! Input1D
-        let ins: [[Float]]
+        let ins: [[Float16]]
         if let insTmp = inputs
         {
             ins = insTmp

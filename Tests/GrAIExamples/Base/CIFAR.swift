@@ -135,12 +135,12 @@ class CIFAR: DataSamplerImpl<UInt8>
     ///
     /// - Parameter iterator: The Python iterator.
     ///
-    static func getSamples(_ iterator: PythonObject) -> ([Float], Int)
+    static func getSamples(_ iterator: PythonObject) -> ([Float16], Int)
     {
         let pythonLib = Python.import("python_lib")
         let data = pythonLib.next_data_CIFAR(iterator)
         
-        let samples = [Float](data.tuple2.0)!
+        let samples = [Float16](data.tuple2.0)
         let batchSize = Int(data.tuple2.1)!
         
         return (samples, batchSize)

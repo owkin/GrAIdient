@@ -15,12 +15,12 @@ open class Layer2D: Layer
     /// Output buffer (result of the forward pass) used in the GPU execution context.
     /// Shape ~ (batch, nbChannels, height, width).
     ///
-    public var outs: MetalPrivateBuffer<Float>! = nil
+    public var outs: MetalPrivateBuffer<Float16>! = nil
     ///
     /// Gradient buffer (result of the backward pass) used in the GPU execution context.
     /// Shape ~ (batch, nbChannels, height, width).
     ///
-    public var delta: MetalPrivateBuffer<Float>! = nil
+    public var delta: MetalPrivateBuffer<Float16>! = nil
     
     /// Number of channels.
     public let nbChannels: Int
@@ -192,7 +192,7 @@ open class Layer2D: Layer
     {
         if outs == nil
         {
-            outs = MetalPrivateBuffer<Float>(
+            outs = MetalPrivateBuffer<Float16>(
                 batchSize * nbChannels * width * height, deviceID: deviceID
             )
         }
@@ -214,7 +214,7 @@ open class Layer2D: Layer
         {
             if delta == nil
             {
-                delta = MetalPrivateBuffer<Float>(
+                delta = MetalPrivateBuffer<Float16>(
                     batchSize * nbChannels * width * height, deviceID: deviceID
                 )
             }

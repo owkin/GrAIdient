@@ -16,7 +16,7 @@ public class Activation2D: Layer2D
     /// used in the GPU execution context.
     /// Shape ~ (batch, nbChannels, height, width).
     ///
-    var _tmp: MetalPrivateBuffer<Float>! = nil
+    var _tmp: MetalPrivateBuffer<Float16>! = nil
     
     /// Get coefficient (depending on activation function) to apply during the weights initialization.
     public var coeffInitWeights: Float

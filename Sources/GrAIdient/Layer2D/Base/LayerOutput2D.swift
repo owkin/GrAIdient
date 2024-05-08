@@ -15,13 +15,13 @@ open class LayerOutput2D: Layer2D
     /// Ground truth buffer in the GPU execution context.
     /// Shape ~ (batch, nbChannels, height, width).
     ///
-    public internal(set) var groundTruth: MetalSharedBuffer<Float>! = nil
+    public internal(set) var groundTruth: MetalSharedBuffer<Float16>! = nil
     
     ///
     /// Loss buffer in the GPU execution context.
     /// Shape ~ (batch,).
     ///
-    public internal(set) var loss: MetalSharedBuffer<Float>! = nil
+    public internal(set) var loss: MetalSharedBuffer<Float16>! = nil
     
     private enum Keys: String, CodingKey
     {
@@ -157,7 +157,7 @@ open class LayerOutput2D: Layer2D
         
         if self.groundTruth == nil
         {
-            self.groundTruth = MetalSharedBuffer<Float>(
+            self.groundTruth = MetalSharedBuffer<Float16>(
                 batchSize * nbChannels * height * width,
                 deviceID: deviceID
             )
@@ -184,7 +184,7 @@ open class LayerOutput2D: Layer2D
                     let offsetSet = j + (offsetStart + i) * width
                     
                     let gt = groundTruth[nbChannels * offsetGet + depth]
-                    bufferPtr[offsetSet] = Float(gt)
+                    bufferPtr[offsetSet] = Float16(gt)
                 }}
             }}
         case .Neuron:
@@ -199,7 +199,7 @@ open class LayerOutput2D: Layer2D
                     let offset = j + (offsetStart + i) * width
                     
                     let gt = groundTruth[offset]
-                    bufferPtr[offset] = Float(gt)
+                    bufferPtr[offset] = Float16(gt)
                 }}
             }}
         }
@@ -219,7 +219,7 @@ open class LayerOutput2D: Layer2D
     ///     - width: Width of each channel.
     ///
     public func checkGroundTruthGPU(
-        _ groundTruth: MetalBuffer<Float>,
+        _ groundTruth: MetalBuffer<Float16>,
         batchSize: Int,
         nbChannels: Int, height: Int, width: Int) throws
     {
@@ -248,7 +248,7 @@ open class LayerOutput2D: Layer2D
     {
         if loss == nil
         {
-            loss = MetalSharedBuffer<Float>(batchSize, deviceID: deviceID)
+            loss = MetalSharedBuffer<Float16>(batchSize, deviceID: deviceID)
         }
         else if batchSize <= 0 || batchSize > loss.nbElems
         {

@@ -65,7 +65,7 @@ final class GrAITorchTests: XCTestCase
         firstLayer.computeDeltaWeights = true
         
         // Set data.
-        let data: [Float] = getInputData(size)
+        let data: [Float16] = getInputData(size)
         try! firstLayer.setDataGPU(
             data,
             batchSize: 1,
@@ -136,7 +136,7 @@ final class GrAITorchTests: XCTestCase
         firstLayer.computeDeltaWeights = true
         
         // Set data.
-        let data: [Float] = getInputData(size)
+        let data: [Float16] = getInputData(size)
         try! firstLayer.setDataGPU(
             data,
             batchSize: 1,
@@ -224,7 +224,7 @@ final class GrAITorchTests: XCTestCase
         firstLayer.computeDeltaWeights = true
         
         // Set data.
-        let data: [Float] = getBatchData(size: size, batchSize: batchSize)
+        let data: [Float16] = getBatchData(size: size, batchSize: batchSize)
         try! firstLayer.setDataGPU(
             data,
             batchSize: batchSize,
@@ -334,7 +334,7 @@ final class GrAITorchTests: XCTestCase
         firstLayer.computeDeltaWeights = true
         
         // Set data.
-        let data: [Float] = getComplexData(_size)
+        let data: [Float16] = getComplexData(_size)
         try! firstLayer.setDataGPU(
             data,
             batchSize: 1,

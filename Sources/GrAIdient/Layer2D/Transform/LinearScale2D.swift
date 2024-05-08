@@ -200,7 +200,7 @@ public class LinearScale2D: Layer2D
             let pNbChannels: [UInt32] = [UInt32(nbChannels)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
-            let weights: [Float] = _weights.map { Float($0) }
+            let weights: [Float16] = _weights.map { Float16($0) }
             
             let command = MetalKernel.get.createCommand(
                 "linearScale2DForward", deviceID: deviceID
@@ -265,7 +265,7 @@ public class LinearScale2D: Layer2D
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
-            let weights: [Float] = _weights.map { Float($0) }
+            let weights: [Float16] = _weights.map { Float16($0) }
             
             let command = MetalKernel.get.createCommand(
                 "linearScale2DBackward", deviceID: deviceID

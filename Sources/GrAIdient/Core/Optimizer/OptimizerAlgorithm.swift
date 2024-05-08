@@ -152,13 +152,13 @@ public class OptimizerAlgorithm
     ///     - layers: The list of layers that potentially contain weights to update.
     ///     - gradientNorm: A norm to scale the weights' gradients.
     ///
-    func udpateGPU(layers: [Layer], gradientNorm: Float?) throws
+    func udpateGPU(layers: [Layer], gradientNorm: Float16?) throws
     {
         incT()
         
         if _optimizer.params.gradientClipping
         {
-            var gNorm: Float = 0.0
+            var gNorm: Float16 = 0.0
             if let gNormTmp = gradientNorm
             {
                 gNorm = gNormTmp
@@ -170,7 +170,7 @@ public class OptimizerAlgorithm
             try clipGradientGPU(
                 layers: layers,
                 gradientNorm: gNorm,
-                normThreshold: _optimizer.params.normThreshold
+                normThreshold: Float16(_optimizer.params.normThreshold)
             )
         }
     
@@ -233,7 +233,7 @@ public class OptimizerAlgorithm
                     let nbElems = buffers.g.nbElems
                     
                     let pNbElems: [UInt32] = [UInt32(nbElems)]
-                    let pFactor: [Float] = [Float(factor)]
+                    let pFactor: [Float16] = [Float16(factor)]
                     
                     let command = MetalKernel.get.createCommand(
                         "multiplyGradients", deviceID: layer.deviceID
@@ -288,9 +288,9 @@ public class OptimizerAlgorithm
     /// - Parameter layers: The list of layers to consider.
     /// - Returns: The gradient norm.
     ///
-    func getGradientNormGPU(_ layers: [Layer]) throws -> Float
+    func getGradientNormGPU(_ layers: [Layer]) throws -> Float16
     {
-        var partialGradSum: Float = 0.0
+        var partialGradSum: Float16 = 0.0
         for layer in layers
         {
             if let layerUpdate = layer as? LayerUpdate,
@@ -303,7 +303,7 @@ public class OptimizerAlgorithm
                 
                 for buffers in layerUpdate.collectWeightsGPU()
                 {
-                    let buffer: UnsafeMutableBufferPointer<Float>
+                    let buffer: UnsafeMutableBufferPointer<Float16>
                     if let g_p = buffers.g_p
                     {
                         MetalKernel.get.download([g_p])
@@ -369,9 +369,9 @@ public class OptimizerAlgorithm
     /// - Parameter layers: The list of layers to consider.
     /// - Returns: The list of weights' gradients.
     ///
-    func getGradientsGPU(_ layers: [Layer]) throws -> [Float]
+    func getGradientsGPU(_ layers: [Layer]) throws -> [Float16]
     {
-        var gradients = [Float]()
+        var gradients = [Float16]()
         for layer in layers
         {
             if let layerUpdate = layer as? LayerUpdate,
@@ -384,7 +384,7 @@ public class OptimizerAlgorithm
                 
                 for buffers in layerUpdate.collectWeightsGPU()
                 {
-                    let buffer: UnsafeMutableBufferPointer<Float>
+                    let buffer: UnsafeMutableBufferPointer<Float16>
                     if let g_p = buffers.g_p
                     {
                         MetalKernel.get.download([g_p])
@@ -467,10 +467,10 @@ public class OptimizerAlgorithm
     ///     - normThreshold: The threshold above which we must clip the weights' gradients.
     ///
     func clipGradientGPU(layers: [Layer],
-                         gradientNorm: Float,
-                         normThreshold: Double) throws
+                         gradientNorm: Float16,
+                         normThreshold: Float16) throws
     {
-        if gradientNorm > Float(normThreshold) {
+        if gradientNorm > normThreshold {
         for layer in layers
         {
             if let layerUpdate = layer as? LayerUpdate,
@@ -486,8 +486,8 @@ public class OptimizerAlgorithm
                     let nbElems = buffers.g.nbElems
                     
                     let pNbElems: [UInt32] = [UInt32(nbElems)]
-                    let pGradientNorm: [Float] = [Float(gradientNorm)]
-                    let pNormThreshold: [Float] = [Float(normThreshold)]
+                    let pGradientNorm: [Float16] = [Float16(gradientNorm)]
+                    let pNormThreshold: [Float16] = [Float16(normThreshold)]
                     
                     let command = MetalKernel.get.createCommand(
                         "clipGradients", deviceID: layer.deviceID

@@ -62,7 +62,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
     /// Buffer of gradients per sample for biases.
     /// Shape ~ (batch, K, nbChannels).
     ///
-    var _wDeltaWeights: MetalPrivateBuffer<Float>! = nil
+    var _wDeltaWeights: MetalPrivateBuffer<Float16>! = nil
     
     /// Whether to compute weights' gradients or not.
     public var computeDeltaWeights: Bool = true
@@ -71,10 +71,10 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
     public var accumulateDeltaWeights: Bool = false
     
     /// Cache for weights before calling `initKernel` API.
-    var _weightsList = [Float]()
+    var _weightsList = [Float16]()
     
     /// Weights in the CPU execution context.
-    public var weightsCPU: [Float]
+    public var weightsCPU: [Float16]
     {
         get {
             if _wArrays == nil
@@ -82,11 +82,11 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
                 return _weightsList
             }
             
-            var weightsTmp = [Float]()
+            var weightsTmp = [Float16]()
             for k in 0..<K {
             for depth in 0..<nbChannels
             {
-                weightsTmp.append(Float(_wArrays.w(k, depth)))
+                weightsTmp.append(Float16(_wArrays.w(k, depth)))
             }}
             return weightsTmp
         }
@@ -96,7 +96,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
     }
     
     /// Weights in the GPU execution context.
-    public var weightsGPU: [Float]
+    public var weightsGPU: [Float16]
     {
         get {
             if _wBuffers == nil
@@ -104,7 +104,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
                 return _weightsList
             }
             
-            var weightsTmp = [Float]()
+            var weightsTmp = [Float16]()
             MetalKernel.get.download([_wBuffers.w_p!])
             weightsTmp += _wBuffers.w_p!.shared.array
         
@@ -166,7 +166,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
         
         try super.init(from: decoder)
         
-        let weightsList = try values.decode([Float].self, forKey: .weights)
+        let weightsList = try values.decode([Float16].self, forKey: .weights)
         self.weightsCPU = weightsList
     }
     
@@ -188,7 +188,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
         try container.encode(K, forKey: .K)
         try container.encode(Float(beta), forKey: .beta)
         
-        let weightsList: [Float]
+        let weightsList: [Float16]
         if GrAI.Opti.GPU
         {
             weightsList = self.weightsGPU
@@ -314,16 +314,15 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
             deviceID: deviceID
         )
         
-        let weightsPtr = _wBuffers.w_p!.shared.buffer
         if _weightsList.count == 0
         {
-            generateWeightsList(buffer: weightsPtr)
+            generateWeightsList(out: _wBuffers.w_p!, deviceID: deviceID)
         }
         else
         {
-            copyFloatArrayToBuffer(
+            copyFloat16ArrayToBuffer(
                 array: &_weightsList,
-                buffer: weightsPtr,
+                buffer: _wBuffers.w_p!.shared.buffer,
                 start: 0,
                 nbElems: K * nbChannels
             )
@@ -365,7 +364,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
         if computeDeltaWeights &&
            GrAI.Gradient.sample && _wDeltaWeights == nil
         {
-            _wDeltaWeights = MetalPrivateBuffer<Float>(
+            _wDeltaWeights = MetalPrivateBuffer<Float16>(
                 batchSize * K * nbChannels, deviceID: deviceID
             )
         }
@@ -434,7 +433,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
     ///     - width: Width of each channel.
     ///
     public override func checkGroundTruthGPU(
-        _ groundTruth: MetalBuffer<Float>,
+        _ groundTruth: MetalBuffer<Float16>,
         batchSize: Int,
         nbChannels: Int, height: Int, width: Int) throws
     {
@@ -662,7 +661,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pK: [UInt32] = [UInt32(K)]
-            let pBeta: [Float] = [Float(beta)]
+            let pBeta: [Float16] = [Float16(beta)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
             let command = MetalKernel.get.createCommand(
@@ -698,7 +697,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pK: [UInt32] = [UInt32(K)]
-            let pCoeff: [Float] = [Float(coeff)]
+            let pCoeff: [Float16] = [Float16(coeff)]
             let pAccumulate: [UInt32] = accumulateDeltaWeights ? [1] : [0]
             
             var command: MetalCommand
@@ -860,7 +859,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
         command.enqueue()
         
         MetalKernel.get.download([loss])
-        var loss: Float = 0.0
+        var loss: Float16 = 0.0
         let lossPtr = self.loss.buffer
         for i in 0..<batchSize
         {
@@ -949,7 +948,7 @@ public class VQGrad2D: VQ2D
     /// Maximal CAM elements.
     /// Shape ~ (batch, nbThreadgroups).
     ///
-    private var _camMax: MetalPrivateBuffer<Float>! = nil
+    private var _camMax: MetalPrivateBuffer<Float16>! = nil
     
     /// Number of thread groups in the GPU execution context.
     var nbThreadgroups: Int
@@ -1169,7 +1168,7 @@ public class VQGrad2D: VQ2D
         
         if _camMax == nil
         {
-            _camMax = MetalPrivateBuffer<Float>(
+            _camMax = MetalPrivateBuffer<Float16>(
                 batchSize * nbThreadgroups,
                 deviceID: deviceID
             )
@@ -1350,7 +1349,7 @@ public class VQGrad2D: VQ2D
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pK: [UInt32] = [UInt32(K)]
-            let pMagnitudeCoeff: [Float] = [Float(magnitudeCoeff)]
+            let pMagnitudeCoeff: [Float16] = [Float16(magnitudeCoeff)]
             
             let command = MetalKernel.get.createCommand(
                 "vqGrad2DForward", deviceID: deviceID

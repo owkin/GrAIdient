@@ -396,7 +396,7 @@ final class VGGExample: XCTestCase
         let lastLayer: MSE1D = vgg.layers.last as! MSE1D
         
         // Initialize the ground truth once and for all.
-        let groundTruth = MetalSharedBuffer<Float>(_batchSize, deviceID: 0)
+        let groundTruth = MetalSharedBuffer<Float16>(_batchSize, deviceID: 0)
         let buffer = groundTruth.buffer
         for elem in 0..<_batchSize / 2
         {

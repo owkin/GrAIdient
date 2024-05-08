@@ -26,11 +26,11 @@ func setPythonLib()
 /// - Parameter size: The size of the image.
 /// - Returns: The data image.
 ///
-func getInputData(_ size: Int) -> [Float]
+func getInputData(_ size: Int) -> [Float16]
 {
     let pythonLib = Python.import("python_lib")
     let data = pythonLib.get_input_data(size)
-    return [Float](data)!
+    return [Float16](data)!
 }
 
 ///
@@ -41,11 +41,11 @@ func getInputData(_ size: Int) -> [Float]
 ///     - batchSize: The number of elements in the batch.
 /// - Returns: The data image.
 ///
-func getBatchData(size: Int, batchSize: Int) -> [Float]
+func getBatchData(size: Int, batchSize: Int) -> [Float16]
 {
     let pythonLib = Python.import("python_lib")
     let data = pythonLib.get_batch_data(size, batchSize)
-    return [Float](data)!
+    return [Float16](data)!
 }
 
 ///
@@ -54,11 +54,11 @@ func getBatchData(size: Int, batchSize: Int) -> [Float]
 /// - Parameter size: The size of the image.
 /// - Returns: The data image.
 ///
-func getComplexData(_ size: Int) -> [Float]
+func getComplexData(_ size: Int) -> [Float16]
 {
     let pythonLib = Python.import("python_lib")
     let data = pythonLib.get_complex_data(size)
-    return [Float](data)!
+    return [Float16](data)!
 }
 
 ///

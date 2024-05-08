@@ -158,7 +158,7 @@ open class LayerInput2D: Layer2D
                         let offsetSet = j + (offsetStartSet + i) * width
                         
                         outsPtr[offsetSet] =
-                            Float(data[nbChannels * offsetGet + depth])
+                            Float16(data[nbChannels * offsetGet + depth])
                     }
                 }}
             }
@@ -173,7 +173,7 @@ open class LayerInput2D: Layer2D
                         let offsetStart = (depth + nbChannels * elem) * height
                         let offset = j + (offsetStart + i) * width
                         
-                        outsPtr[offset] = Float(data[offset])
+                        outsPtr[offset] = Float16(data[offset])
                     }
                 }}
             }
@@ -195,7 +195,7 @@ open class LayerInput2D: Layer2D
     ///     - format: The data format.
     ///
     public func checkInputGPU(
-        _ data: MetalPrivateBuffer<Float>,
+        _ data: MetalPrivateBuffer<Float16>,
         batchSize: Int,
         nbChannels: Int, height: Int, width: Int) throws
     {

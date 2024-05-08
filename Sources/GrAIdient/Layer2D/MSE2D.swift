@@ -268,9 +268,9 @@ public class MSE2D: LayerOutput2D
     /// - Returns: The loss value.
     ///
     public func getLossGPU(
-        _ groundTruth: MetalBuffer<Float>,
+        _ groundTruth: MetalBuffer<Float16>,
         batchSize: Int,
-        nbChannels: Int, height: Int, width: Int) throws -> Float
+        nbChannels: Int, height: Int, width: Int) throws -> Float16
     {
         try checkGroundTruthGPU(
             groundTruth,
@@ -297,14 +297,14 @@ public class MSE2D: LayerOutput2D
         command.enqueue()
         
         MetalKernel.get.download([loss])
-        var loss: Float = 0.0
+        var loss: Float16 = 0.0
         let lossPtr = self.loss.buffer
         for i in 0..<batchSize
         {
             loss += lossPtr[i]
         }
-        return Float(coeff) * loss /
-               Float(batchSize * nbChannels * height * width)
+        return Float16(coeff) * loss /
+               Float16(batchSize * nbChannels * height * width)
     }
     
     ///
@@ -461,7 +461,7 @@ public class MSE2D: LayerOutput2D
     ///     - width: Width of each channel.
     ///
     public func lossDerivativeGPU(
-        _ groundTruth: MetalBuffer<Float>,
+        _ groundTruth: MetalBuffer<Float16>,
         batchSize: Int,
         nbChannels: Int, height: Int, width: Int) throws
     {
@@ -477,7 +477,7 @@ public class MSE2D: LayerOutput2D
             
             let pNbChannels: [UInt32] = [UInt32(nbChannels)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
-            let pCoeff: [Float] = [Float(coeff)]
+            let pCoeff: [Float16] = [Float16(coeff)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             

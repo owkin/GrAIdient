@@ -9,43 +9,70 @@ import Foundation
 import Accelerate
 
 ///
+/// Convert Float32 buffer into a Float16 buffer.
+///
+/// - Parameters:
+///     - inBuffer: input buffer.
+///     - outBuffer: output buffer.
+///     - nbElems: number of elements.
+///     - deviceID: GPU device.
+///
+public func convertFloat2Half(
+    inBuffer: MetalBuffer<Float>,
+    outBuffer: MetalBuffer<Float16>,
+    nbElems: Int,
+    deviceID: Int)
+{
+    let pNbElems: [UInt32] = [UInt32(nbElems)]
+    
+    let command = MetalKernel.get.createCommand(
+        "convertFloat2Half", deviceID: deviceID
+    )
+    command.setBuffer(inBuffer.metal, atIndex: 0)
+    command.setBytes(pNbElems, atIndex: 1)
+    command.setBuffer(outBuffer.metal, atIndex: 2)
+    
+    command.dispatchThreads(nbElems)
+    command.enqueue()
+}
+
+///
 /// Copy array to buffer.
 ///
 /// - Parameters:
-///     - array: input array
-///     - buffer: output buffer
-///     - start: start index in `array`
+///     - array: input array.
+///     - buffer: output buffer.
+///     - start: start index in `array`.
 ///     - nbElems: Number of elements to copy.
 ///
-func copyFloatArrayToBuffer(
-    array: inout [Float],
-    buffer: UnsafeMutableBufferPointer<Float>,
+func copyFloat16ArrayToBuffer(
+    array: inout [Float16],
+    buffer: UnsafeMutableBufferPointer<Float16>,
     start: Int,
     nbElems: Int)
 {
-    if #available(macOS 13.0, *)
+    let elemSize = MemoryLayout<Float16>.stride
+
+    array.withUnsafeBytes 
     {
-        copyArrayToBuffer(
-            array: &array,
-            buffer: buffer,
-            start: start, 
-            nbElems: nbElems
-        )
-    }
-    else
-    {
-        fatalError()
+        (srcBuffer: UnsafeRawBufferPointer) in
+
+        let destPtr = UnsafeMutableRawPointer(buffer.baseAddress)
+
+        let srcBase = srcBuffer.baseAddress
+        let srcPtr = srcBase?.advanced(by: start)
+        
+        memmove(destPtr, srcPtr, elemSize * nbElems)
     }
 }
 
-@available(macOS 13.0, *)
 ///
 /// Copy array to buffer.
 ///
 /// - Parameters:
-///     - array: input array
-///     - buffer: output buffer
-///     - start: start index in `array`
+///     - array: input array.
+///     - buffer: output buffer.
+///     - start: start index in `array`.
 ///     - nbElems: Number of elements to copy.
 ///
 func copyArrayToBuffer<T: BNNSScalar>(

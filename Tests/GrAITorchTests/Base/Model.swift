@@ -78,10 +78,10 @@ class ModelTestConv1
         let data = pythonLib.load_conv1_weights()
         
         let weightsNumpy = [PythonObject](data.tuple2.0)!
-        var weights = [[Float]]()
+        var weights = [[Float16]]()
         for weightsNP in weightsNumpy
         {
-            if let weightsTmp = Array<Float>(numpy: weightsNP)
+            if let weightsTmp = Array<Float16>(numpy: weightsNP)
             {
                 weights.append(weightsTmp)
             }
@@ -94,9 +94,9 @@ class ModelTestConv1
             // Load weights and biases.
             if let convLayer = model.layers[num_layer] as? Convolution2D
             {
-                let weightsTmp: [Float] = weights[cur]
+                let weightsTmp: [Float16] = weights[cur]
                 cur += 1
-                let biases: [Float] = weights[cur]
+                let biases: [Float16] = weights[cur]
                 cur += 1
                 
                 convLayer.weightsCPU = weightsTmp + biases
@@ -104,9 +104,9 @@ class ModelTestConv1
             // Load weights and biases.
             else if let flLayer = model.layers[num_layer] as? FullyConnected
             {
-                let weightsTmp: [Float] = weights[cur]
+                let weightsTmp: [Float16] = weights[cur]
                 cur += 1
-                let biases: [Float] = weights[cur]
+                let biases: [Float16] = weights[cur]
                 cur += 1
                 
                 flLayer.weightsCPU = weightsTmp + biases
@@ -192,10 +192,10 @@ class ModelTestConv2
         let data = pythonLib.load_conv2_weights()
         
         let weightsNumpy = [PythonObject](data.tuple2.0)!
-        var weights = [[Float]]()
+        var weights = [[Float16]]()
         for weightsNP in weightsNumpy
         {
-            if let weightsTmp = Array<Float>(numpy: weightsNP)
+            if let weightsTmp = Array<Float16>(numpy: weightsNP)
             {
                 weights.append(weightsTmp)
             }
@@ -209,15 +209,15 @@ class ModelTestConv2
             // and the batch normalization's running average and deviation.
             if let convLayer = model.layers[num_layer] as? Convolution2D
             {
-                let weightsTmp: [Float] = weights[cur]
+                let weightsTmp: [Float16] = weights[cur]
                 cur += 1
-                let Ɣ: [Float] = weights[cur]
+                let Ɣ: [Float16] = weights[cur]
                 cur += 1
-                let β: [Float] = weights[cur]
+                let β: [Float16] = weights[cur]
                 cur += 1
-                let Eμ: [Float] = weights[cur]
+                let Eμ: [Float16] = weights[cur]
                 cur += 1
-                let Eσ2: [Float] = weights[cur]
+                let Eσ2: [Float16] = weights[cur]
                 cur += 1
                 
                 convLayer.weightsCPU = weightsTmp + Ɣ + β
@@ -226,9 +226,9 @@ class ModelTestConv2
             // Load weights and biases.
             else if let flLayer = model.layers[num_layer] as? FullyConnected
             {
-                let weightsTmp: [Float] = weights[cur]
+                let weightsTmp: [Float16] = weights[cur]
                 cur += 1
-                let biases: [Float] = weights[cur]
+                let biases: [Float16] = weights[cur]
                 cur += 1
                 
                 flLayer.weightsCPU = weightsTmp + biases
@@ -329,7 +329,7 @@ class ModelTestConv
     ///     - model: The model.
     ///     - weights: The weights.
     ///
-    static func initWeights(model: Model, weights: [[Float]])
+    static func initWeights(model: Model, weights: [[Float16]])
     {
         // Apply weights on the `GrAIdient` model's layers.
         var cur = 0
@@ -338,9 +338,9 @@ class ModelTestConv
             // Load weights and biases.
             if let convLayer = model.layers[num_layer] as? Convolution2D
             {
-                let weightsTmp: [Float] = weights[cur]
+                let weightsTmp: [Float16] = weights[cur]
                 cur += 1
-                let biases: [Float] = weights[cur]
+                let biases: [Float16] = weights[cur]
                 cur += 1
                 
                 convLayer.weightsCPU = weightsTmp + biases
@@ -348,9 +348,9 @@ class ModelTestConv
             // Load weights and biases.
             else if let flLayer = model.layers[num_layer] as? FullyConnected
             {
-                let weightsTmp: [Float] = weights[cur]
+                let weightsTmp: [Float16] = weights[cur]
                 cur += 1
-                let biases: [Float] = weights[cur]
+                let biases: [Float16] = weights[cur]
                 cur += 1
                 
                 flLayer.weightsCPU = weightsTmp + biases
@@ -413,10 +413,10 @@ class ModelTestConvSK: ModelTestConv
         let data = pythonLib.load_conv_sk_weights(stride, kernel)
         
         let weightsNumpy = [PythonObject](data.tuple2.0)!
-        var weights = [[Float]]()
+        var weights = [[Float16]]()
         for weightsNP in weightsNumpy
         {
-            if let weightsTmp = Array<Float>(numpy: weightsNP)
+            if let weightsTmp = Array<Float16>(numpy: weightsNP)
             {
                 weights.append(weightsTmp)
             }
@@ -482,10 +482,10 @@ class ModelTestDeConvSK: ModelTestConv
         let data = pythonLib.load_deconv_sk_weights(stride, kernel)
         
         let weightsNumpy = [PythonObject](data.tuple2.0)!
-        var weights = [[Float]]()
+        var weights = [[Float16]]()
         for weightsNP in weightsNumpy
         {
-            if let weightsTmp = Array<Float>(numpy: weightsNP)
+            if let weightsTmp = Array<Float16>(numpy: weightsNP)
             {
                 weights.append(weightsTmp)
             }
@@ -558,10 +558,10 @@ class ModelTestCat
         let data = pythonLib.load_cat_weights()
         
         let weightsNumpy = [PythonObject](data.tuple2.0)!
-        var weights = [[Float]]()
+        var weights = [[Float16]]()
         for weightsNP in weightsNumpy
         {
-            if let weightsTmp = Array<Float>(numpy: weightsNP)
+            if let weightsTmp = Array<Float16>(numpy: weightsNP)
             {
                 weights.append(weightsTmp)
             }
@@ -574,9 +574,9 @@ class ModelTestCat
             // Load weights and biases.
             if let convLayer = model.layers[num_layer] as? Convolution2D
             {
-                let weightsTmp: [Float] = weights[cur]
+                let weightsTmp: [Float16] = weights[cur]
                 cur += 1
-                let biases: [Float] = weights[cur]
+                let biases: [Float16] = weights[cur]
                 cur += 1
                 
                 convLayer.weightsCPU = weightsTmp + biases
@@ -584,9 +584,9 @@ class ModelTestCat
             // Load weights and biases.
             else if let flLayer = model.layers[num_layer] as? FullyConnected
             {
-                let weightsTmp: [Float] = weights[cur]
+                let weightsTmp: [Float16] = weights[cur]
                 cur += 1
-                let biases: [Float] = weights[cur]
+                let biases: [Float16] = weights[cur]
                 cur += 1
                 
                 flLayer.weightsCPU = weightsTmp + biases
@@ -607,7 +607,7 @@ class ModelTestResize
     ///     - model: The model.
     ///     - weights: The weights.
     ///
-    static func initWeights(model: Model, weights: [[Float]])
+    static func initWeights(model: Model, weights: [[Float16]])
     {
         // Apply weights on the `GrAIdient` model's layers.
         var cur = 0
@@ -616,9 +616,9 @@ class ModelTestResize
             // Load weights and biases.
             if let convLayer = model.layers[num_layer] as? Convolution2D
             {
-                let weightsTmp: [Float] = weights[cur]
+                let weightsTmp: [Float16] = weights[cur]
                 cur += 1
-                let biases: [Float] = weights[cur]
+                let biases: [Float16] = weights[cur]
                 cur += 1
                 
                 convLayer.weightsCPU = weightsTmp + biases
@@ -626,9 +626,9 @@ class ModelTestResize
             // Load weights and biases.
             else if let flLayer = model.layers[num_layer] as? FullyConnected
             {
-                let weightsTmp: [Float] = weights[cur]
+                let weightsTmp: [Float16] = weights[cur]
                 cur += 1
-                let biases: [Float] = weights[cur]
+                let biases: [Float16] = weights[cur]
                 cur += 1
                 
                 flLayer.weightsCPU = weightsTmp + biases
@@ -696,10 +696,10 @@ class ModelTestResizeBilinear: ModelTestResize
         let data = pythonLib.load_resize_weights(sizeOutput)
         
         let weightsNumpy = [PythonObject](data.tuple2.0)!
-        var weights = [[Float]]()
+        var weights = [[Float16]]()
         for weightsNP in weightsNumpy
         {
-            if let weightsTmp = Array<Float>(numpy: weightsNP)
+            if let weightsTmp = Array<Float16>(numpy: weightsNP)
             {
                 weights.append(weightsTmp)
             }
@@ -771,10 +771,10 @@ class ModelTestResizeBilinearPad: ModelTestResize
         let data = pythonLib.load_resize_weights(sizeOutput)
         
         let weightsNumpy = [PythonObject](data.tuple2.0)!
-        var weights = [[Float]]()
+        var weights = [[Float16]]()
         for weightsNP in weightsNumpy
         {
-            if let weightsTmp = Array<Float>(numpy: weightsNP)
+            if let weightsTmp = Array<Float16>(numpy: weightsNP)
             {
                 weights.append(weightsTmp)
             }
@@ -845,10 +845,10 @@ class ModelTestResizeBilinearCrop: ModelTestResize
         let data = pythonLib.load_resize_weights(sizeOutput)
         
         let weightsNumpy = [PythonObject](data.tuple2.0)!
-        var weights = [[Float]]()
+        var weights = [[Float16]]()
         for weightsNP in weightsNumpy
         {
-            if let weightsTmp = Array<Float>(numpy: weightsNP)
+            if let weightsTmp = Array<Float16>(numpy: weightsNP)
             {
                 weights.append(weightsTmp)
             }
@@ -911,10 +911,10 @@ class ModelTestPatchConv
         let data = pythonLib.load_patch_conv_weights(size, patch)
         
         let weightsNumpy = [PythonObject](data.tuple2.0)!
-        var weights = [[Float]]()
+        var weights = [[Float16]]()
         for weightsNP in weightsNumpy
         {
-            if let weightsTmp = Array<Float>(numpy: weightsNP)
+            if let weightsTmp = Array<Float16>(numpy: weightsNP)
             {
                 weights.append(weightsTmp)
             }
@@ -927,18 +927,18 @@ class ModelTestPatchConv
             // Load weights and biases.
             if let flLayer = model.layers[num_layer] as? FullyConnectedPatch
             {
-                let weightsTmp: [Float] = weights[cur]
+                let weightsTmp: [Float16] = weights[cur]
                 cur += 1
-                let biases: [Float] = weights[cur]
+                let biases: [Float16] = weights[cur]
                 cur += 1
                 
                 flLayer.weightsCPU = weightsTmp + biases
             }
             else if let flLayer = model.layers[num_layer] as? FullyConnected
             {
-                let weightsTmp: [Float] = weights[cur]
+                let weightsTmp: [Float16] = weights[cur]
                 cur += 1
-                let biases: [Float] = weights[cur]
+                let biases: [Float16] = weights[cur]
                 cur += 1
                 
                 flLayer.weightsCPU = weightsTmp + biases
@@ -1034,10 +1034,10 @@ class ModelTestAttention1
         let data = pythonLib.load_attention1_weights(size, patch)
         
         let weightsNumpy = [PythonObject](data.tuple2.0)!
-        var weights = [[Float]]()
+        var weights = [[Float16]]()
         for weightsNP in weightsNumpy
         {
-            if let weightsTmp = Array<Float>(numpy: weightsNP)
+            if let weightsTmp = Array<Float16>(numpy: weightsNP)
             {
                 weights.append(weightsTmp)
             }
@@ -1050,27 +1050,27 @@ class ModelTestAttention1
             // Load weights and biases.
             if let flLayer = model.layers[num_layer] as? FullyConnectedPatch
             {
-                let weightsTmp: [Float] = weights[cur]
+                let weightsTmp: [Float16] = weights[cur]
                 cur += 1
-                let biases: [Float] = weights[cur]
+                let biases: [Float16] = weights[cur]
                 cur += 1
                 
                 flLayer.weightsCPU = weightsTmp + biases
             }
             else if let flLayer = model.layers[num_layer] as? FullyConnectedSeq
             {
-                let weightsTmp: [Float] = weights[cur]
+                let weightsTmp: [Float16] = weights[cur]
                 cur += 1
-                let biases: [Float] = weights[cur]
+                let biases: [Float16] = weights[cur]
                 cur += 1
                 
                 flLayer.weightsCPU = weightsTmp + biases
             }
             else if let flLayer = model.layers[num_layer] as? FullyConnected
             {
-                let weightsTmp: [Float] = weights[cur]
+                let weightsTmp: [Float16] = weights[cur]
                 cur += 1
-                let biases: [Float] = weights[cur]
+                let biases: [Float16] = weights[cur]
                 cur += 1
                 
                 flLayer.weightsCPU = weightsTmp + biases
@@ -1161,10 +1161,10 @@ class ModelTestAttention1Bis
         let data = pythonLib.load_attention1_bis_weights(size, patch)
         
         let weightsNumpy = [PythonObject](data.tuple2.0)!
-        var weights = [[Float]]()
+        var weights = [[Float16]]()
         for weightsNP in weightsNumpy
         {
-            if let weightsTmp = Array<Float>(numpy: weightsNP)
+            if let weightsTmp = Array<Float16>(numpy: weightsNP)
             {
                 weights.append(weightsTmp)
             }
@@ -1177,27 +1177,27 @@ class ModelTestAttention1Bis
             // Load weights and biases.
             if let flLayer = model.layers[num_layer] as? FullyConnectedPatch
             {
-                let weightsTmp: [Float] = weights[cur]
+                let weightsTmp: [Float16] = weights[cur]
                 cur += 1
-                let biases: [Float] = weights[cur]
+                let biases: [Float16] = weights[cur]
                 cur += 1
                 
                 flLayer.weightsCPU = weightsTmp + biases
             }
             else if let flLayer = model.layers[num_layer] as? FullyConnectedSeq
             {
-                let weightsTmp: [Float] = weights[cur]
+                let weightsTmp: [Float16] = weights[cur]
                 cur += 1
-                let biases: [Float] = weights[cur]
+                let biases: [Float16] = weights[cur]
                 cur += 1
                 
                 flLayer.weightsCPU = weightsTmp + biases
             }
             else if let flLayer = model.layers[num_layer] as? FullyConnected
             {
-                let weightsTmp: [Float] = weights[cur]
+                let weightsTmp: [Float16] = weights[cur]
                 cur += 1
-                let biases: [Float] = weights[cur]
+                let biases: [Float16] = weights[cur]
                 cur += 1
                 
                 flLayer.weightsCPU = weightsTmp + biases
@@ -1298,10 +1298,10 @@ class ModelTestAttention2
         let data = pythonLib.load_attention2_weights(size, patch)
         
         let weightsNumpy = [PythonObject](data.tuple2.0)!
-        var weights = [[Float]]()
+        var weights = [[Float16]]()
         for weightsNP in weightsNumpy
         {
-            if let weightsTmp = Array<Float>(numpy: weightsNP)
+            if let weightsTmp = Array<Float16>(numpy: weightsNP)
             {
                 weights.append(weightsTmp)
             }
@@ -1314,27 +1314,27 @@ class ModelTestAttention2
             // Load weights and biases.
             if let flLayer = model.layers[num_layer] as? FullyConnectedPatch
             {
-                let weightsTmp: [Float] = weights[cur]
+                let weightsTmp: [Float16] = weights[cur]
                 cur += 1
-                let biases: [Float] = weights[cur]
+                let biases: [Float16] = weights[cur]
                 cur += 1
                 
                 flLayer.weightsCPU = weightsTmp + biases
             }
             else if let flLayer = model.layers[num_layer] as? FullyConnectedSeq
             {
-                let weightsTmp: [Float] = weights[cur]
+                let weightsTmp: [Float16] = weights[cur]
                 cur += 1
-                let biases: [Float] = weights[cur]
+                let biases: [Float16] = weights[cur]
                 cur += 1
                 
                 flLayer.weightsCPU = weightsTmp + biases
             }
             else if let flLayer = model.layers[num_layer] as? FullyConnected
             {
-                let weightsTmp: [Float] = weights[cur]
+                let weightsTmp: [Float16] = weights[cur]
                 cur += 1
-                let biases: [Float] = weights[cur]
+                let biases: [Float16] = weights[cur]
                 cur += 1
                 
                 flLayer.weightsCPU = weightsTmp + biases
@@ -1426,10 +1426,10 @@ class ModelTestAttention2Bis
         let data = pythonLib.load_attention2_bis_weights(size, patch)
         
         let weightsNumpy = [PythonObject](data.tuple2.0)!
-        var weights = [[Float]]()
+        var weights = [[Float16]]()
         for weightsNP in weightsNumpy
         {
-            if let weightsTmp = Array<Float>(numpy: weightsNP)
+            if let weightsTmp = Array<Float16>(numpy: weightsNP)
             {
                 weights.append(weightsTmp)
             }
@@ -1442,27 +1442,27 @@ class ModelTestAttention2Bis
             // Load weights and biases.
             if let flLayer = model.layers[num_layer] as? FullyConnectedPatch
             {
-                let weightsTmp: [Float] = weights[cur]
+                let weightsTmp: [Float16] = weights[cur]
                 cur += 1
-                let biases: [Float] = weights[cur]
+                let biases: [Float16] = weights[cur]
                 cur += 1
                 
                 flLayer.weightsCPU = weightsTmp + biases
             }
             else if let flLayer = model.layers[num_layer] as? FullyConnectedSeq
             {
-                let weightsTmp: [Float] = weights[cur]
+                let weightsTmp: [Float16] = weights[cur]
                 cur += 1
-                let biases: [Float] = weights[cur]
+                let biases: [Float16] = weights[cur]
                 cur += 1
                 
                 flLayer.weightsCPU = weightsTmp + biases
             }
             else if let flLayer = model.layers[num_layer] as? FullyConnected
             {
-                let weightsTmp: [Float] = weights[cur]
+                let weightsTmp: [Float16] = weights[cur]
                 cur += 1
-                let biases: [Float] = weights[cur]
+                let biases: [Float16] = weights[cur]
                 cur += 1
                 
                 flLayer.weightsCPU = weightsTmp + biases
@@ -1527,10 +1527,10 @@ class ModelTestLayerNorm
         let data = pythonLib.load_layer_norm_weights(size, patch)
         
         let weightsNumpy = [PythonObject](data.tuple2.0)!
-        var weights = [[Float]]()
+        var weights = [[Float16]]()
         for weightsNP in weightsNumpy
         {
-            if let weightsTmp = Array<Float>(numpy: weightsNP)
+            if let weightsTmp = Array<Float16>(numpy: weightsNP)
             {
                 weights.append(weightsTmp)
             }
@@ -1543,27 +1543,27 @@ class ModelTestLayerNorm
             // Load weights and biases.
             if let flLayer = model.layers[num_layer] as? FullyConnectedPatch
             {
-                let weightsTmp: [Float] = weights[cur]
+                let weightsTmp: [Float16] = weights[cur]
                 cur += 1
-                let biases: [Float] = weights[cur]
+                let biases: [Float16] = weights[cur]
                 cur += 1
                 
                 flLayer.weightsCPU = weightsTmp + biases
             }
             else if let layer = model.layers[num_layer] as? LayerNormSeq
             {
-                let weightsTmp: [Float] = weights[cur]
+                let weightsTmp: [Float16] = weights[cur]
                 cur += 1
-                let biases: [Float] = weights[cur]
+                let biases: [Float16] = weights[cur]
                 cur += 1
                 
                 layer.weightsCPU = weightsTmp + biases
             }
             else if let flLayer = model.layers[num_layer] as? FullyConnected
             {
-                let weightsTmp: [Float] = weights[cur]
+                let weightsTmp: [Float16] = weights[cur]
                 cur += 1
-                let biases: [Float] = weights[cur]
+                let biases: [Float16] = weights[cur]
                 cur += 1
                 
                 flLayer.weightsCPU = weightsTmp + biases
@@ -1584,7 +1584,7 @@ class ModelTestAutoEncoder
     ///     - model: The model.
     ///     - weights: The weights.
     ///
-    static func initWeights(model: Model, weights: [[Float]])
+    static func initWeights(model: Model, weights: [[Float16]])
     {
         // Apply weights on the `GrAIdient` model's layers.
         var cur = 0
@@ -1593,9 +1593,9 @@ class ModelTestAutoEncoder
             // Load weights and biases.
             if let convLayer = model.layers[num_layer] as? Convolution2D
             {
-                let weightsTmp: [Float] = weights[cur]
+                let weightsTmp: [Float16] = weights[cur]
                 cur += 1
-                let biases: [Float] = weights[cur]
+                let biases: [Float16] = weights[cur]
                 cur += 1
                 
                 convLayer.weightsCPU = weightsTmp + biases
@@ -1603,9 +1603,9 @@ class ModelTestAutoEncoder
             // Load weights and biases.
             else if let flLayer = model.layers[num_layer] as? FullyConnected
             {
-                let weightsTmp: [Float] = weights[cur]
+                let weightsTmp: [Float16] = weights[cur]
                 cur += 1
-                let biases: [Float] = weights[cur]
+                let biases: [Float16] = weights[cur]
                 cur += 1
                 
                 flLayer.weightsCPU = weightsTmp + biases
@@ -1662,10 +1662,10 @@ class ModelTestAutoEncoder1: ModelTestAutoEncoder
         let data = pythonLib.load_auto_encoder1_weights()
         
         let weightsNumpy = [PythonObject](data.tuple2.0)!
-        var weights = [[Float]]()
+        var weights = [[Float16]]()
         for weightsNP in weightsNumpy
         {
-            if let weightsTmp = Array<Float>(numpy: weightsNP)
+            if let weightsTmp = Array<Float16>(numpy: weightsNP)
             {
                 weights.append(weightsTmp)
             }
@@ -1730,10 +1730,10 @@ class ModelTestGram
         let data = pythonLib.load_gram_weights()
         
         let weightsNumpy = [PythonObject](data.tuple2.0)!
-        var weights = [[Float]]()
+        var weights = [[Float16]]()
         for weightsNP in weightsNumpy
         {
-            if let weightsTmp = Array<Float>(numpy: weightsNP)
+            if let weightsTmp = Array<Float16>(numpy: weightsNP)
             {
                 weights.append(weightsTmp)
             }
@@ -1746,9 +1746,9 @@ class ModelTestGram
             // Load weights and biases.
             if let convLayer = model.layers[num_layer] as? Convolution2D
             {
-                let weightsTmp: [Float] = weights[cur]
+                let weightsTmp: [Float16] = weights[cur]
                 cur += 1
-                let biases: [Float] = weights[cur]
+                let biases: [Float16] = weights[cur]
                 cur += 1
                 
                 convLayer.weightsCPU = weightsTmp + biases
@@ -1756,9 +1756,9 @@ class ModelTestGram
             // Load weights and biases.
             else if let flLayer = model.layers[num_layer] as? FullyConnected
             {
-                let weightsTmp: [Float] = weights[cur]
+                let weightsTmp: [Float16] = weights[cur]
                 cur += 1
-                let biases: [Float] = weights[cur]
+                let biases: [Float16] = weights[cur]
                 cur += 1
                 
                 flLayer.weightsCPU = weightsTmp + biases

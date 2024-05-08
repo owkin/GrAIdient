@@ -15,13 +15,13 @@ open class LayerOutput1D: Layer1D
     /// Ground truth buffer in the GPU execution context.
     /// Shape ~ (batch, nbNeurons).
     ///
-    public internal(set) var groundTruth: MetalSharedBuffer<Float>! = nil
+    public internal(set) var groundTruth: MetalSharedBuffer<Float16>! = nil
     
     ///
     /// Loss buffer in the GPU execution context.
     /// Shape ~ (batch,).
     ///
-    public internal(set) var loss: MetalSharedBuffer<Float>! = nil
+    public internal(set) var loss: MetalSharedBuffer<Float16>! = nil
     
     private enum Keys: String, CodingKey
     {
@@ -147,7 +147,7 @@ open class LayerOutput1D: Layer1D
         
         if self.groundTruth == nil
         {
-            self.groundTruth = MetalSharedBuffer<Float>(
+            self.groundTruth = MetalSharedBuffer<Float16>(
                 batchSize * nbNeurons,
                 deviceID: deviceID
             )
@@ -167,7 +167,7 @@ open class LayerOutput1D: Layer1D
             }
             for (j, dataIJ) in dataI.enumerated()
             {
-                bufferPtr[j + i * nbNeurons] = Float(dataIJ)
+                bufferPtr[j + i * nbNeurons] = Float16(dataIJ)
             }
         }
         MetalKernel.get.upload([self.groundTruth])
@@ -184,7 +184,7 @@ open class LayerOutput1D: Layer1D
     ///     - nbNeurons: Number of neurons.
     ///
     public func checkGroundTruthGPU(
-        _ groundTruth: MetalBuffer<Float>,
+        _ groundTruth: MetalBuffer<Float16>,
         batchSize: Int,
         nbNeurons: Int) throws
     {
@@ -211,7 +211,7 @@ open class LayerOutput1D: Layer1D
     {
         if loss == nil
         {
-            loss = MetalSharedBuffer<Float>(batchSize, deviceID: deviceID)
+            loss = MetalSharedBuffer<Float16>(batchSize, deviceID: deviceID)
         }
         else if batchSize > loss.nbElems
         {

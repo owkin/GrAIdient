@@ -307,8 +307,8 @@ open class ActivationFunction: Codable
     ///     - deviceID: GPU device where to execute the operation.
     ///
     private func _forwardGPU(
-        tmp: MetalBuffer<Float>,
-        outs: MetalBuffer<Float>,
+        tmp: MetalBuffer<Float16>,
+        outs: MetalBuffer<Float16>,
         deviceID: Int)
     {
         let nbElems = outs.nbElems
@@ -335,7 +335,7 @@ open class ActivationFunction: Codable
         let nbElems = layer.outs.nbElems
         if layer._tmp == nil
         {
-            layer._tmp = MetalPrivateBuffer<Float>(
+            layer._tmp = MetalPrivateBuffer<Float16>(
                 nbElems, deviceID: layer.deviceID)
         }
         _forwardGPU(
@@ -355,7 +355,7 @@ open class ActivationFunction: Codable
         let nbElems = layer.outs.nbElems
         if layer._tmp == nil
         {
-            layer._tmp = MetalPrivateBuffer<Float>(
+            layer._tmp = MetalPrivateBuffer<Float16>(
                 nbElems, deviceID: layer.deviceID)
         }
         _forwardGPU(
@@ -375,7 +375,7 @@ open class ActivationFunction: Codable
         let nbElems = layer.outs.nbElems
         if layer._tmp == nil
         {
-            layer._tmp = MetalPrivateBuffer<Float>(
+            layer._tmp = MetalPrivateBuffer<Float16>(
                 nbElems, deviceID: layer.deviceID)
         }
         _forwardGPU(
@@ -394,8 +394,8 @@ open class ActivationFunction: Codable
     ///     - deviceID: GPU device where to execute the operation.
     ///
     private func _backwardGPU(
-        tmp: MetalBuffer<Float>,
-        delta: MetalBuffer<Float>,
+        tmp: MetalBuffer<Float16>,
+        delta: MetalBuffer<Float16>,
         deviceID: Int)
     {
         let nbElems = delta.nbElems

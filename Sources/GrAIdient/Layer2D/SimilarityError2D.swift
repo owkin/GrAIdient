@@ -20,7 +20,7 @@ public class SimilarityError2D: LayerMerge2D
     /// Loss buffer in the GPU execution context.
     /// Shape ~ (batch, batch).
     ///
-    public internal(set) var loss: MetalSharedBuffer<Float>! = nil
+    public internal(set) var loss: MetalSharedBuffer<Float16>! = nil
     
     /// Batch size sum in the previous layers.
     public var mergedBatchSize: Int
@@ -151,7 +151,7 @@ public class SimilarityError2D: LayerMerge2D
     {
         if loss == nil
         {
-            loss = MetalSharedBuffer<Float>(
+            loss = MetalSharedBuffer<Float16>(
                 batchSize * batchSize,
                 deviceID: deviceID
             )
@@ -600,7 +600,7 @@ public class SimilarityError2D: LayerMerge2D
     ///
     /// - Returns: The loss value.
     ///
-    public func getLossGPU() throws -> Float
+    public func getLossGPU() throws -> Float16
     {
         try checkLossGPU(batchSize: mergedBatchSize)
         
@@ -624,7 +624,7 @@ public class SimilarityError2D: LayerMerge2D
         command.enqueue()
         
         MetalKernel.get.download([loss])
-        var loss: Float = 0.0
+        var loss: Float16 = 0.0
         let lossPtr = self.loss.buffer
         for elem1 in 0..<mergedBatchSize {
         for elem2 in 0..<mergedBatchSize
@@ -635,7 +635,7 @@ public class SimilarityError2D: LayerMerge2D
             }
             loss += lossPtr[elem2 + mergedBatchSize * elem1]
         }}
-        return Float(coeff) * loss / Float(mergedBatchSize)
+        return Float16(coeff) * loss / Float16(mergedBatchSize)
     }
     
     ///
@@ -711,7 +711,7 @@ public class SimilarityError2D: LayerMerge2D
         
         let pNbChannels: [UInt32] = [UInt32(nbChannels)]
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
-        let pCoeff: [Float] = [Float(coeff)]
+        let pCoeff: [Float16] = [Float16(coeff)]
         let pNbBatch: [UInt32] = [UInt32(mergedBatchSize)]
         
         let metalKernel = MetalKernel.get

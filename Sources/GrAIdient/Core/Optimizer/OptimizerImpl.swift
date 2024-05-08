@@ -176,8 +176,8 @@ class SGDOptimizer: OptimizerImpl
         let nbElems = weights.nbElems
         
         let pNbElems: [UInt32] = [UInt32(nbElems)]
-        let pAlpha: [Float] = [Float(alpha)]
-        let pLambda: [Float] = [lambda != nil ? Float(lambda!) : 0.0]
+        let pAlpha: [Float16] = [Float16(alpha)]
+        let pLambda: [Float16] = [lambda != nil ? Float16(lambda!) : 0.0]
         
         let command = MetalKernel.get.createCommand(
             "weightsSGD", deviceID: weights.deviceID
@@ -230,8 +230,8 @@ class SGDMomentumOptimizer: OptimizerImpl
         let nbElems = weights.nbElems
         
         let pNbElems: [UInt32] = [UInt32(nbElems)]
-        let pAlpha: [Float] = [Float(alpha)]
-        let pLambda: [Float] = [lambda != nil ? Float(lambda!) : 0.0]
+        let pAlpha: [Float16] = [Float16(alpha)]
+        let pLambda: [Float16] = [lambda != nil ? Float16(lambda!) : 0.0]
         
         let command = MetalKernel.get.createCommand(
             "weightsMomentum", deviceID: weights.deviceID
@@ -297,9 +297,9 @@ class AdamOptimizer: OptimizerImpl
         let t = Double(_kernel.params.t)
         
         let pNbElems: [UInt32] = [UInt32(nbElems)]
-        let pAlpha: [Float] = [Float(alpha)]
-        let pLambda: [Float] = [lambda != nil ? Float(lambda!) : 0.0]
-        let pT: [Float] = [Float(t)]
+        let pAlpha: [Float16] = [Float16(alpha)]
+        let pLambda: [Float16] = [lambda != nil ? Float16(lambda!) : 0.0]
+        let pT: [Float16] = [Float16(t)]
         
         let command = MetalKernel.get.createCommand(
             "weightsAdam", deviceID: weights.deviceID
@@ -369,9 +369,9 @@ class AMSGradOptimizer: OptimizerImpl
         let t = Double(_kernel.params.t)
         
         let pNbElems: [UInt32] = [UInt32(nbElems)]
-        let pAlpha: [Float] = [Float(alpha)]
-        let pLambda: [Float] = [lambda != nil ? Float(lambda!) : 0.0]
-        let pT: [Float] = [Float(t)]
+        let pAlpha: [Float16] = [Float16(alpha)]
+        let pLambda: [Float16] = [lambda != nil ? Float16(lambda!) : 0.0]
+        let pT: [Float16] = [Float16(t)]
         
         let command = MetalKernel.get.createCommand(
             "weightsAMSGrad", deviceID: weights.deviceID
@@ -452,9 +452,9 @@ class AdamRectifiedOptimizer: OptimizerImpl
         let t = Double(_kernel.params.t)
         
         let pNbElems: [UInt32] = [UInt32(nbElems)]
-        let pAlpha: [Float] = [Float(alpha)]
-        let pLambda: [Float] = [lambda != nil ? Float(lambda!) : 0.0]
-        let pT: [Float] = [Float(t)]
+        let pAlpha: [Float16] = [Float16(alpha)]
+        let pLambda: [Float16] = [lambda != nil ? Float16(lambda!) : 0.0]
+        let pT: [Float16] = [Float16(t)]
         
         let command = MetalKernel.get.createCommand(
             "weightsAdamRectified", deviceID: weights.deviceID
@@ -586,11 +586,11 @@ class AdaBoundOptimizer: BoundOptimizer
         let t = Double(_kernel.params.t)
         
         let pNbElems: [UInt32] = [UInt32(nbElems)]
-        let pAlpha: [Float] = [Float(alpha)]
-        let pLambda: [Float] = [lambda != nil ? Float(lambda!) : 0.0]
-        let pT: [Float] = [Float(t)]
-        let pLowerBound: [Float] = [Float(lowerBound!)]
-        let pUpperBound: [Float] = [Float(upperBound!)]
+        let pAlpha: [Float16] = [Float16(alpha)]
+        let pLambda: [Float16] = [lambda != nil ? Float16(lambda!) : 0.0]
+        let pT: [Float16] = [Float16(t)]
+        let pLowerBound: [Float16] = [Float16(lowerBound!)]
+        let pUpperBound: [Float16] = [Float16(upperBound!)]
         
         let command = MetalKernel.get.createCommand(
             "weightsAdaBound", deviceID: weights.deviceID
@@ -670,11 +670,11 @@ class AMSBoundOptimizer: BoundOptimizer
         let t = Double(_kernel.params.t)
         
         let pNbElems: [UInt32] = [UInt32(nbElems)]
-        let pAlpha: [Float] = [Float(alpha)]
-        let pLambda: [Float] = [lambda != nil ? Float(lambda!) : 0.0]
-        let pT: [Float] = [Float(t)]
-        let pLowerBound: [Float] = [Float(lowerBound!)]
-        let pUpperBound: [Float] = [Float(upperBound!)]
+        let pAlpha: [Float16] = [Float16(alpha)]
+        let pLambda: [Float16] = [lambda != nil ? Float16(lambda!) : 0.0]
+        let pT: [Float16] = [Float16(t)]
+        let pLowerBound: [Float16] = [Float16(lowerBound!)]
+        let pUpperBound: [Float16] = [Float16(upperBound!)]
         
         let command = MetalKernel.get.createCommand(
             "weightsAMSBound", deviceID: weights.deviceID

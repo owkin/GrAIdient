@@ -2774,7 +2774,7 @@ class LayerCAMSeqTests: XCTestCase
             try! mainCPU.update()
             
             try! secondCPU.forward()
-            let valuesCPU: [Float] = gradLayerCPU.getOutsCPU()
+            let valuesCPU: [Float16] = gradLayerCPU.getOutsCPU()
             
             GrAI.Opti.GPU = true
             
@@ -2792,7 +2792,7 @@ class LayerCAMSeqTests: XCTestCase
             try! mainGPU.update()
             
             try! secondGPU.forward()
-            let valuesGPU: [Float] = gradLayerGPU.getOutsGPU()
+            let valuesGPU: [Float16] = gradLayerGPU.getOutsGPU()
             
             for (elem1, elem2) in zip(valuesCPU, valuesGPU)
             {

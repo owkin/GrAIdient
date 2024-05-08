@@ -229,7 +229,7 @@ public class Pad2D: Layer2D
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pPadDimension: [UInt32] = [UInt32(_padDimension)]
-            let pPadValue: [Float] = [Float(_padValue)]
+            let pPadValue: [Float16] = [Float16(_padValue)]
             
             let command = MetalKernel.get.createCommand(
                 "pad2DForward", deviceID: deviceID

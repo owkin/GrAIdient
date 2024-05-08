@@ -15,12 +15,12 @@ open class LayerSeq: Layer
     /// Output buffer (result of the forward pass) used in the GPU execution context.
     /// Shape ~ (batch, seq, nbNeurons).
     ///
-    public var outs: MetalPrivateBuffer<Float>! = nil
+    public var outs: MetalPrivateBuffer<Float16>! = nil
     ///
     /// Gradient buffer (result of the backward pass) used in the GPU execution context.
     /// Shape ~ (batch, seq, nbNeurons).
     ///
-    public var delta: MetalPrivateBuffer<Float>! = nil
+    public var delta: MetalPrivateBuffer<Float16>! = nil
     
     /// Length of the sequence.
     public let sequence: Int
@@ -148,7 +148,7 @@ open class LayerSeq: Layer
     {
         if outs == nil
         {
-            outs = MetalPrivateBuffer<Float>(
+            outs = MetalPrivateBuffer<Float16>(
                 batchSize * sequence * nbNeurons, deviceID: deviceID
             )
         }
@@ -169,7 +169,7 @@ open class LayerSeq: Layer
         {
             if delta == nil
             {
-                delta = MetalPrivateBuffer<Float>(
+                delta = MetalPrivateBuffer<Float16>(
                     batchSize * sequence * nbNeurons, deviceID: deviceID
                 )
             }

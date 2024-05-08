@@ -17,7 +17,7 @@ public class Multiply2D: LayerMerge2D
     /// List of output buffers.
     /// Shape ~ (batch, nbChannels, height, width).
     ///
-    var _otherOuts: [MetalBuffer<Float>] = []
+    var _otherOuts: [MetalBuffer<Float16>] = []
     
     ///
     /// Create a layer with a 2D shape neural structure.
@@ -124,7 +124,7 @@ public class Multiply2D: LayerMerge2D
         {
             for _ in 0..<_layersPrev.count
             {
-                let buffer = MetalSharedBuffer<Float>(
+                let buffer = MetalSharedBuffer<Float16>(
                     batchSize * nbChannels * height * width,
                     deviceID: deviceID
                 )
@@ -146,7 +146,7 @@ public class Multiply2D: LayerMerge2D
         {
             for _ in 0..<_layersPrev.count
             {
-                let buffer = MetalPrivateBuffer<Float>(
+                let buffer = MetalPrivateBuffer<Float16>(
                     batchSize * nbChannels * height * width,
                     deviceID: deviceID
                 )
@@ -374,7 +374,7 @@ public class Multiply2D: LayerMerge2D
                         mult *= neuronsPrev[depth].get(i, j)!.v[elem].out
                     }}
                     
-                    buffer[offset] = Float(mult)
+                    buffer[offset] = Float16(mult)
                 }
             }}
         }}

@@ -29,3 +29,26 @@ kernel void reset(
     
     outs[id] = 0.0;
 }
+
+kernel void convertFloat2Half(
+    constant float * ins,
+    constant uint * pNbElems,
+    device half * outs,
+    uint id [[ thread_position_in_grid ]])
+{
+    uint nbElems;
+    
+    if (pNbElems && outs)
+    {
+        nbElems = pNbElems[0];
+    }
+    else
+        return ;
+    
+    if (id >= nbElems)
+    {
+        return ;
+    }
+    
+    outs[id] = ins[id];
+}

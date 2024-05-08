@@ -115,7 +115,7 @@ open class LayerInput1D: Layer1D
             for depth in 0..<nbNeurons
             {
                 let offset = depth + nbNeurons * elem
-                outsPtr[offset] = Float(data[elem][depth])
+                outsPtr[offset] = Float16(data[elem][depth])
             }
         }
         MetalKernel.get.upload([outs])
@@ -132,7 +132,7 @@ open class LayerInput1D: Layer1D
     ///     - nbNeurons: Number of neurons.
     ///
     public func checkInputGPU(
-        _ data: MetalPrivateBuffer<Float>,
+        _ data: MetalPrivateBuffer<Float16>,
         batchSize: Int,
         nbNeurons: Int) throws
     {

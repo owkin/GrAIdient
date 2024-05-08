@@ -503,7 +503,7 @@ public class ResizeBilinearPad: Layer2D
                 UInt32(padStartI), UInt32(padEndI),
                 UInt32(padStartJ), UInt32(padEndJ)
             ]
-            let pPadValue: [Float] = [Float(_padValue)]
+            let pPadValue: [Float16] = [Float16(_padValue)]
             
             let command = MetalKernel.get.createCommand(
                 "resizeBilinearPadForward", deviceID: deviceID

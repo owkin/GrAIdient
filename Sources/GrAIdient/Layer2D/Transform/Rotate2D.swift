@@ -369,8 +369,8 @@ public class Rotate2D: Layer2D
             let pNbChannels: [UInt32] = [UInt32(nbChannels)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
-            let pAngle: [Float] = [Float(_angle)]
-            let pPadValue: [Float] = [Float(_padValue)]
+            let pAngle: [Float16] = [Float16(_angle)]
+            let pPadValue: [Float16] = [Float16(_padValue)]
             
             let command = MetalKernel.get.createCommand(
                 "rotate2DForward", deviceID: deviceID
@@ -470,7 +470,7 @@ public class Rotate2D: Layer2D
             let pNbChannels: [UInt32] = [UInt32(nbChannels)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
-            let pAngle: [Float] = [Float(_angle)]
+            let pAngle: [Float16] = [Float16(_angle)]
             
             command = MetalKernel.get.createCommand(
                 "rotate2DBackward", deviceID: deviceID

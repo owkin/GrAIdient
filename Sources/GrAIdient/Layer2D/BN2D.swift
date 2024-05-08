@@ -20,10 +20,10 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
     public var accumulateDeltaWeights: Bool = false
     
     /// Weights in the CPU execution context.
-    public var weightsCPU: [Float]
+    public var weightsCPU: [Float16]
     {
         get {
-            var weightsTmp = [Float]()
+            var weightsTmp = [Float16]()
             if let norm = _norm
             {
                 weightsTmp += norm.weights
@@ -39,10 +39,10 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
     }
     
     /// Weights in the GPU execution context.
-    public var weightsGPU: [Float]
+    public var weightsGPU: [Float16]
     {
         get {
-            var weightsTmp = [Float]()
+            var weightsTmp = [Float16]()
             if let norm = _normGPU
             {
                 weightsTmp += norm.weights
@@ -66,10 +66,10 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
     }
     
     /// Stats in the CPU execution context.
-    public var statsCPU: [Float]
+    public var statsCPU: [Float16]
     {
         get {
-            var statsTmp = [Float]()
+            var statsTmp = [Float16]()
             if let norm = _norm
             {
                 statsTmp += norm.stats
@@ -85,10 +85,10 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
     }
     
     /// Stats in the GPU execution context.
-    public var statsGPU: [Float]
+    public var statsGPU: [Float16]
     {
         get {
-            var statsTmp = [Float]()
+            var statsTmp = [Float16]()
             if let norm = _normGPU
             {
                 statsTmp += norm.stats

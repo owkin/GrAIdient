@@ -7,7 +7,7 @@ from python_lib.model import SimpleAutoEncoder
 
 def _flatten_weights(
         weights: np.ndarray
-) -> Tuple[List[float], List[int]]:
+) -> Tuple[np.ndarray, List[int]]:
     """
     Flatten weights and biases.
 
@@ -18,10 +18,10 @@ def _flatten_weights(
 
     Returns
     -------
-    (_, _): List[float], List[int]
+    (_, _): np.ndarray, List[int]
         The flattened weights, their shape.
     """
-    weights_list = weights.flatten().tolist()
+    weights_list = weights.flatten()
     dims_list = list(weights.shape)
 
     return weights_list, dims_list
@@ -29,7 +29,7 @@ def _flatten_weights(
 
 def _extract_and_transpose_weights(
         modules: [torch.nn.Module]
-) -> Tuple[List[List[float]], List[List[int]]]:
+) -> Tuple[List[np.ndarray], List[List[int]]]:
     """
     Get weights and biases.
     Transpose weights when they come from a
@@ -42,10 +42,10 @@ def _extract_and_transpose_weights(
 
     Returns
     -------
-    (_, _): List[List[float]], List[List[int]]
+    (_, _): List[np.ndarray], List[List[int]]
         The flattened weights, their shape.
     """
-    layers_weights: List[List[float]] = []
+    layers_weights: List[np.ndarray] = []
     layers_dims: List[List[int]] = []
     for module in modules:
         submodules = list(module.children())
@@ -82,13 +82,13 @@ def _extract_and_transpose_weights(
 
 
 def load_simple_auto_encoder_weights(
-) -> Tuple[List[List[float]], List[List[int]]]:
+) -> Tuple[List[np.ndarray], List[List[int]]]:
     """
     Get weights and biases for simple auto encoder model.
 
     Returns
     -------
-    (_, _): List[List[float]], List[List[int]]
+    (_, _): List[np.ndarray], List[List[int]]
         The flattened weights, their shape.
     """
     torch.manual_seed(42)

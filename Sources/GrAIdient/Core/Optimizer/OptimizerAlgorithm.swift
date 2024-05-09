@@ -303,16 +303,14 @@ public class OptimizerAlgorithm
                 
                 for buffers in layerUpdate.collectWeightsGPU()
                 {
-                    let buffer: UnsafeMutableBufferPointer<UInt16>
+                    let buffer: UnsafeMutableBufferPointer<Float>
                     if let g_p = buffers.g_p
                     {
-                        MetalKernel.get.download([g_p])
-                        buffer = g_p.shared.buffer
+                        buffer = getHalfBuffer(g_p).buffer
                     }
                     else if let g_s = buffers.g_s
                     {
-                        MetalKernel.get.download([g_s])
-                        buffer = g_s.buffer
+                        buffer = getHalfBuffer(g_s).buffer
                     }
                     else
                     {
@@ -384,16 +382,14 @@ public class OptimizerAlgorithm
                 
                 for buffers in layerUpdate.collectWeightsGPU()
                 {
-                    let buffer: UnsafeMutableBufferPointer<UInt16>
+                    let buffer: UnsafeMutableBufferPointer<Float>
                     if let g_p = buffers.g_p
                     {
-                        MetalKernel.get.download([g_p])
-                        buffer = g_p.shared.buffer
+                        buffer = getHalfBuffer(g_p).buffer
                     }
                     else if let g_s = buffers.g_s
                     {
-                        MetalKernel.get.download([g_s])
-                        buffer = g_s.buffer
+                        buffer = getHalfBuffer(g_s).buffer
                     }
                     else
                     {

@@ -109,16 +109,23 @@ open class LayerInput1D: Layer1D
         // FullyConnected.backwardWeightsGPU accesses layerPrev.outs.
         MetalKernel.get.download([outs])
         
-        let outsPtr = outs.shared.buffer
+        var buffer = [Float](repeating: 0.0, count: batchSize * nbNeurons)
         for elem in 0..<batchSize
         {
             for depth in 0..<nbNeurons
             {
                 let offset = depth + nbNeurons * elem
-                outsPtr[offset] = Float16(data[elem][depth])
+                buffer[offset] = Float(data[elem][depth])
             }
         }
-        MetalKernel.get.upload([outs])
+        
+        setupHalfBuffer(
+            array: &buffer,
+            out: self.outs,
+            start: 0,
+            nbElems: batchSize * nbNeurons,
+            deviceID: deviceID
+        )
     }
     
     ///

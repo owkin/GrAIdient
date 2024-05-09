@@ -44,10 +44,10 @@ public class Image
     /// the output buffer in the .Neuron format.
     ///
     /// - Parameters:
-    ///     - metalBuffer: Buffer of images.
+    ///     - imagesURL: Images on the disk.
+    ///     - imagesBuffer: Buffer of images.
     ///     - width: Width of the images.
     ///     - height: Height of the images.
-    /// - Returns: The list of images as list of pixels.
     ///
     public static func loadImages(
         imagesURL: [URL],
@@ -61,7 +61,12 @@ public class Image
             throw ImageError.MissingSpace
         }
         
-        let bufferPtr = imagesBuffer.download()
+        _ = imagesBuffer.download()
+        var buffer = [Float](
+            repeating: 0.0,
+            count: batchSize * 3 * height * width
+        )
+        
         for (elem, imageURL) in imagesURL.enumerated()
         {
             let image = NSImage(contentsOfFile: imageURL.path)!
@@ -79,12 +84,19 @@ public class Image
                     let offsetStart = (depth + 3 * elem) * height
                     let offsetSet = j + (offsetStart + i) * width
                     
-                    bufferPtr[offsetSet] =
-                        Float16(pixels[3 * offsetGet + depth]) / 255.0
+                    buffer[offsetSet] =
+                        Float(pixels[3 * offsetGet + depth]) / 255.0
                 }
             }}
         }
-        imagesBuffer.upload()
+        
+        setupHalfBuffer(
+            array: &buffer,
+            out: imagesBuffer,
+            start: 0,
+            nbElems: batchSize * 3 * height * width,
+            deviceID: imagesBuffer.deviceID
+        )
     }
     
     ///
@@ -104,14 +116,14 @@ public class Image
         width: Int,
         height: Int) -> [[UInt8]]
     {
-        let bufferPtr = metalBuffer.download()
+        let buffer = getHalfBuffer(metalBuffer).array
         let nbImages = metalBuffer.nbElems / (width * height * 3)
         
         var images = [[Float]]()
         for i in 0..<nbImages
         {
             images.append([Float](
-                bufferPtr[i * 3 * height * width..<(i+1) * 3 * height * width]
+                buffer[i * 3 * height * width..<(i+1) * 3 * height * width]
             ))
         }
         return toRGB(toPixel(images), width: width, height: height)

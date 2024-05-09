@@ -623,9 +623,8 @@ public class SimilarityError2D: LayerMerge2D
         )
         command.enqueue()
         
-        MetalKernel.get.download([loss])
         var loss: Float = 0.0
-        let lossPtr = self.loss.buffer
+        let lossPtr = getHalfBuffer(self.loss).array
         for elem1 in 0..<mergedBatchSize {
         for elem2 in 0..<mergedBatchSize
         {
@@ -635,7 +634,7 @@ public class SimilarityError2D: LayerMerge2D
             }
             loss += lossPtr[elem2 + mergedBatchSize * elem1]
         }}
-        return Float16(coeff) * loss / Float16(mergedBatchSize)
+        return Float(coeff) * loss / Float(mergedBatchSize)
     }
     
     ///
@@ -711,7 +710,7 @@ public class SimilarityError2D: LayerMerge2D
         
         let pNbChannels: [UInt32] = [UInt32(nbChannels)]
         let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
-        let pCoeff: [Float] = [Float16(coeff)]
+        let pCoeff: [Float] = [Float(coeff)]
         let pNbBatch: [UInt32] = [UInt32(mergedBatchSize)]
         
         let metalKernel = MetalKernel.get

@@ -256,14 +256,13 @@ public class BCESigmoid1D: LayerOutput1D
         command.dispatchThreads(batchSize)
         command.enqueue()
         
-        MetalKernel.get.download([loss])
         var loss: Float = 0.0
-        let lossPtr = self.loss.buffer
+        let lossPtr = getHalfBuffer(self.loss).array
         for i in 0..<batchSize
         {
             loss += lossPtr[i]
         }
-        return Float16(coeff) * loss / Float16(nbNeurons * batchSize)
+        return Float(coeff) * loss / Float(nbNeurons * batchSize)
     }
     
     ///
@@ -401,7 +400,7 @@ public class BCESigmoid1D: LayerOutput1D
             try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
             
             let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
-            let pCoeff: [Float] = [Float16(coeff)]
+            let pCoeff: [Float] = [Float(coeff)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             

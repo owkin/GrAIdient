@@ -853,9 +853,8 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
         command.dispatchThreads(batchSize)
         command.enqueue()
         
-        MetalKernel.get.download([loss])
         var loss: Float = 0.0
-        let lossPtr = self.loss.buffer
+        let lossPtr = getHalfBuffer(self.loss).array
         for i in 0..<batchSize
         {
             loss += lossPtr[i]
@@ -1344,7 +1343,7 @@ public class VQGrad2D: VQ2D
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pK: [UInt32] = [UInt32(K)]
-            let pMagnitudeCoeff: [Float] = [Float16(magnitudeCoeff)]
+            let pMagnitudeCoeff: [Float] = [Float(magnitudeCoeff)]
             
             let command = MetalKernel.get.createCommand(
                 "vqGrad2DForward", deviceID: deviceID

@@ -14,10 +14,15 @@
 public class Multiply2D: LayerMerge2D
 {
     ///
-    /// List of output buffers.
+    /// List of output buffers for CPU usage.
     /// Shape ~ (batch, nbChannels, height, width).
     ///
-    var _otherOuts: [MetalBuffer<UInt16>] = []
+    var _otherOuts1: [[Double]] = []
+    ///
+    /// List of output buffers for GPU usage.
+    /// Shape ~ (batch, nbChannels, height, width).
+    ///
+    var _otherOuts2: [MetalBuffer<UInt16>] = []
     
     ///
     /// Create a layer with a 2D shape neural structure.
@@ -97,7 +102,7 @@ public class Multiply2D: LayerMerge2D
     public override func resetKernelCPU()
     {
         super.resetKernelCPU()
-        _otherOuts = []
+        _otherOuts1 = []
     }
     
     ///
@@ -108,7 +113,7 @@ public class Multiply2D: LayerMerge2D
     public override func resetKernelGPU()
     {
         super.resetKernelGPU()
-        _otherOuts = []
+        _otherOuts2 = []
     }
     
     ///
@@ -120,15 +125,14 @@ public class Multiply2D: LayerMerge2D
     {
         try super.checkStateCPU(batchSize: batchSize)
         
-        if _otherOuts.count == 0
+        if _otherOuts1.count == 0
         {
             for _ in 0..<_layersPrev.count
             {
-                let buffer = MetalSharedBuffer<UInt16>(
-                    batchSize * nbChannels * height * width,
-                    deviceID: deviceID
-                )
-                _otherOuts.append(buffer)
+                _otherOuts1.append([Double](
+                    repeating: 0.0,
+                    count: batchSize * nbChannels * height * width
+                ))
             }
         }
     }
@@ -142,7 +146,7 @@ public class Multiply2D: LayerMerge2D
     {
         try super.checkStateForwardGPU(batchSize: batchSize)
         
-        if _otherOuts.count == 0
+        if _otherOuts2.count == 0
         {
             for _ in 0..<_layersPrev.count
             {
@@ -150,7 +154,7 @@ public class Multiply2D: LayerMerge2D
                     batchSize * nbChannels * height * width,
                     deviceID: deviceID
                 )
-                _otherOuts.append(buffer)
+                _otherOuts2.append(buffer)
             }
         }
     }
@@ -363,8 +367,6 @@ public class Multiply2D: LayerMerge2D
                 
                 for num1 in 0..<_layersPrev.count
                 {
-                    let buffer = (_otherOuts[num1] as! MetalSharedBuffer).buffer
-                    
                     mult = 1.0
                     for num2 in 0..<_layersPrev.count {
                     if num2 != num1
@@ -373,8 +375,7 @@ public class Multiply2D: LayerMerge2D
                             (_layersPrev[num2] as! Layer2D).neurons
                         mult *= neuronsPrev[depth].get(i, j)!.v[elem].out
                     }}
-                    
-                    buffer[offset] = Float16(mult)
+                    _otherOuts1[num1][offset] = mult
                 }
             }}
         }}
@@ -441,7 +442,7 @@ public class Multiply2D: LayerMerge2D
                     (_layersPrev[num2] as! Layer2D).outs.metal, atIndex: 0
                 )
                 command.setBytes(pNbElems, atIndex: 1)
-                command.setBuffer(_otherOuts[num1].metal, atIndex: 2)
+                command.setBuffer(_otherOuts2[num1].metal, atIndex: 2)
                 
                 command.dispatchThreads(nbElems)
                 command.enqueue()
@@ -465,7 +466,7 @@ public class Multiply2D: LayerMerge2D
             }
             
             let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
-            let buffer = (_otherOuts[num] as! MetalSharedBuffer).buffer
+            let buffer = _otherOuts1[num]
             
             for elem in 0..<batchSize {
             for depth in 0..<nbChannels
@@ -525,7 +526,7 @@ public class Multiply2D: LayerMerge2D
             let command = MetalKernel.get.createCommand(
                 "multiplyBackward", deviceID: deviceID
             )
-            command.setBuffer(_otherOuts[num].metal, atIndex: 0)
+            command.setBuffer(_otherOuts2[num].metal, atIndex: 0)
             command.setBuffer(delta.metal, atIndex: 1)
             command.setBytes(pNbElems, atIndex: 2)
             command.setBytes(pDirty, atIndex: 3)

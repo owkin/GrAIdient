@@ -772,9 +772,8 @@ public class VQSeq: LayerSeq, LayerWeightInit
         command.dispatchThreads(batchSize)
         command.enqueue()
         
-        MetalKernel.get.download([loss])
         var loss: Float = 0.0
-        let lossPtr = self.loss.buffer
+        let lossPtr = getHalfBuffer(self.loss).array
         for i in 0..<batchSize
         {
             loss += lossPtr[i]
@@ -1259,7 +1258,7 @@ public class VQGradSeq: VQSeq
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pSequence: [UInt32] = [UInt32(sequence)]
             let pK: [UInt32] = [UInt32(K)]
-            let pMagnitudeCoeff: [Float] = [Float16(magnitudeCoeff)]
+            let pMagnitudeCoeff: [Float] = [Float(magnitudeCoeff)]
             
             let command = MetalKernel.get.createCommand(
                 "vqGradSeqForward", deviceID: deviceID

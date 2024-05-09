@@ -296,15 +296,14 @@ public class MSE2D: LayerOutput2D
         command.dispatchThreads(batchSize)
         command.enqueue()
         
-        MetalKernel.get.download([loss])
         var loss: Float = 0.0
-        let lossPtr = self.loss.buffer
+        let lossPtr = getHalfBuffer(self.loss).array
         for i in 0..<batchSize
         {
             loss += lossPtr[i]
         }
-        return Float16(coeff) * loss /
-               Float16(batchSize * nbChannels * height * width)
+        return Float(coeff) * loss /
+               Float(batchSize * nbChannels * height * width)
     }
     
     ///
@@ -477,7 +476,7 @@ public class MSE2D: LayerOutput2D
             
             let pNbChannels: [UInt32] = [UInt32(nbChannels)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
-            let pCoeff: [Float] = [Float16(coeff)]
+            let pCoeff: [Float] = [Float(coeff)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             

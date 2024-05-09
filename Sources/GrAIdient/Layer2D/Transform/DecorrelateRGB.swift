@@ -293,7 +293,7 @@ public class DecorrelateRGB: Layer2D
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
-            let correlation: [Float] = _correlation.map { Float16($0) }
+            let correlation: [Float] = _correlation.map { Float($0) }
             
             let command = MetalKernel.get.createCommand(
                 "decorrelateRGBBackward", deviceID: deviceID

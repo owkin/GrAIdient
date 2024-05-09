@@ -168,7 +168,10 @@ open class LayerOutput2D: Layer2D
             throw LayerError.BatchSize
         }
         
-        let bufferPtr = self.groundTruth.buffer
+        var buffer = [Float](
+            repeating: 0.0, count: batchSize * nbChannels * height * width
+        )
+        
         switch format
         {
         case .RGB:
@@ -184,7 +187,7 @@ open class LayerOutput2D: Layer2D
                     let offsetSet = j + (offsetStart + i) * width
                     
                     let gt = groundTruth[nbChannels * offsetGet + depth]
-                    bufferPtr[offsetSet] = Float16(gt)
+                    buffer[offsetSet] = Float(gt)
                 }}
             }}
         case .Neuron:
@@ -199,11 +202,18 @@ open class LayerOutput2D: Layer2D
                     let offset = j + (offsetStart + i) * width
                     
                     let gt = groundTruth[offset]
-                    bufferPtr[offset] = Float16(gt)
+                    buffer[offset] = Float(gt)
                 }}
             }}
         }
-        MetalKernel.get.upload([self.groundTruth])
+        
+        setupHalfBuffer(
+            array: &buffer,
+            out: self.groundTruth,
+            start: 0,
+            nbElems: batchSize * nbChannels * height * width,
+            deviceID: deviceID
+        )
     }
     
     ///

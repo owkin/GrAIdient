@@ -259,9 +259,8 @@ public class SimilarityBatchError2D: LayerOutput2D
         command.dispatchThreads(width: batchSize, height: batchSize)
         command.enqueue()
         
-        MetalKernel.get.download([loss])
         var loss: Float = 0.0
-        let lossPtr = self.loss.buffer
+        let lossPtr = getHalfBuffer(self.loss).array
         for elem1 in 0..<batchSize {
         for elem2 in 0..<batchSize
         {
@@ -271,7 +270,7 @@ public class SimilarityBatchError2D: LayerOutput2D
             }
             loss += lossPtr[elem2 + batchSize * elem1]
         }}
-        return Float16(coeff) * loss / Float16(batchSize)
+        return Float(coeff) * loss / Float(batchSize)
     }
     
     ///
@@ -330,7 +329,7 @@ public class SimilarityBatchError2D: LayerOutput2D
             
             let pNbChannels: [UInt32] = [UInt32(nbChannels)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
-            let pCoeff: [Float] = [Float16(coeff)]
+            let pCoeff: [Float] = [Float(coeff)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             

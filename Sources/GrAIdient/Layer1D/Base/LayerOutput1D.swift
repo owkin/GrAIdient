@@ -158,7 +158,7 @@ open class LayerOutput1D: Layer1D
             throw LayerError.BatchSize
         }
         
-        let bufferPtr = self.groundTruth.buffer
+        var buffer = [Float](repeating: 0.0, count: batchSize * nbNeurons)
         for (i, dataI) in groundTruth.enumerated()
         {
             if dataI.count != nbNeurons
@@ -167,10 +167,17 @@ open class LayerOutput1D: Layer1D
             }
             for (j, dataIJ) in dataI.enumerated()
             {
-                bufferPtr[j + i * nbNeurons] = Float16(dataIJ)
+                buffer[j + i * nbNeurons] = Float(dataIJ)
             }
         }
-        MetalKernel.get.upload([self.groundTruth])
+        
+        setupHalfBuffer(
+            array: &buffer,
+            out: self.groundTruth,
+            start: 0,
+            nbElems: batchSize * nbNeurons,
+            deviceID: deviceID
+        )
     }
     
     ///

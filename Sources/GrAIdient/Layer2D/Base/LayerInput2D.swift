@@ -141,7 +141,10 @@ open class LayerInput2D: Layer2D
         // Convolution.backwardWeightsGPU accesses layerPrev.outs.
         MetalKernel.get.download([outs])
         
-        let outsPtr = outs.shared.buffer
+        var buffer = [Float](
+            repeating: 0.0, count: batchSize * nbChannels * height * width
+        )
+        
         switch format
         {
         case .RGB:
@@ -157,8 +160,8 @@ open class LayerInput2D: Layer2D
                             (depth + nbChannels * elem) * height
                         let offsetSet = j + (offsetStartSet + i) * width
                         
-                        outsPtr[offsetSet] =
-                            Float16(data[nbChannels * offsetGet + depth])
+                        buffer[offsetSet] =
+                            Float(data[nbChannels * offsetGet + depth])
                     }
                 }}
             }
@@ -173,12 +176,19 @@ open class LayerInput2D: Layer2D
                         let offsetStart = (depth + nbChannels * elem) * height
                         let offset = j + (offsetStart + i) * width
                         
-                        outsPtr[offset] = Float16(data[offset])
+                        buffer[offset] = Float(data[offset])
                     }
                 }}
             }
         }
-        MetalKernel.get.upload([outs])
+        
+        setupHalfBuffer(
+            array: &buffer,
+            out: self.outs,
+            start: 0,
+            nbElems: batchSize * nbChannels * height * width,
+            deviceID: deviceID
+        )
     }
     
     ///

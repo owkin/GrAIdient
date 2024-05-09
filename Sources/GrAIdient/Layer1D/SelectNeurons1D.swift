@@ -26,7 +26,7 @@ public class SelectNeurons1D: Layer1D
     /// Coefficients of selected neurons.
     /// Shape ~ (nbNeurons,).
     ///
-    var _coeffsBuffer: MetalPrivateBuffer<UInt16>! = nil
+    var _coeffsBuffer: MetalPrivateBuffer<Float>! = nil
     
     private enum Keys: String, CodingKey
     {
@@ -147,7 +147,7 @@ public class SelectNeurons1D: Layer1D
             _neuronsBuffer = MetalPrivateBuffer<UInt32>(
                 nbNeurons, deviceID: deviceID
             )
-            _coeffsBuffer = MetalPrivateBuffer<UInt16>(
+            _coeffsBuffer = MetalPrivateBuffer<Float>(
                 nbNeurons, deviceID: deviceID
             )
             

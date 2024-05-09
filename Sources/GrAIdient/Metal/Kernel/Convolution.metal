@@ -9,9 +9,9 @@
 using namespace metal;
 
 kernel void convForward(
-    const device float * outsPrev,
-    const device float * weights,
-    const device float * biases,
+    const device half * outsPrev,
+    const device half * weights,
+    const device half * biases,
     constant int * pStart,
     constant uint * pStride,
     constant uint * pNbChannels,
@@ -20,7 +20,7 @@ kernel void convForward(
     constant uint * pDimensionsPrev,
     constant uint * pDimWeights,
     constant uint * pNbBatch,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -105,9 +105,9 @@ kernel void convForward(
 }
 
 kernel void conv16Forward(
-    const device float * outsPrev,
-    const device float * weights,
-    const device float * biases,
+    const device half * outsPrev,
+    const device half * weights,
+    const device half * biases,
     constant int * pStart,
     constant uint * pStride,
     constant uint * pNbChannels,
@@ -116,7 +116,7 @@ kernel void conv16Forward(
     constant uint * pDimensionsPrev,
     constant uint * pDimWeights,
     constant uint * pNbBatch,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -207,8 +207,8 @@ kernel void conv16Forward(
 }
 
 kernel void convBackward(
-    const device float * delta,
-    const device float * weights,
+    const device half * delta,
+    const device half * weights,
     constant int * pStart,
     constant uint * pStride,
     constant uint * pNbChannels,
@@ -218,7 +218,7 @@ kernel void convBackward(
     constant uint * pDimWeights,
     constant uint * pNbBatch,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -314,8 +314,8 @@ kernel void convBackward(
 }
 
 kernel void conv16Backward(
-    const device float * delta,
-    const device float * weights,
+    const device half * delta,
+    const device half * weights,
     constant int * pStart,
     constant uint * pStride,
     constant uint * pNbChannels,
@@ -325,7 +325,7 @@ kernel void conv16Backward(
     constant uint * pDimWeights,
     constant uint * pNbBatch,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -429,8 +429,8 @@ kernel void conv16Backward(
 }
 
 kernel void convBatchDerWeights(
-    const device float * outsPrev,
-    const device float * delta,
+    const device half * outsPrev,
+    const device half * delta,
     constant int * pStart,
     constant uint * pStride,
     constant uint * pNbChannels,
@@ -440,7 +440,7 @@ kernel void convBatchDerWeights(
     constant uint * pDimWeights,
     constant uint * pNbBatch,
     constant uint * pAccumulate,
-    device float * grads,
+    device half * grads,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -539,15 +539,15 @@ kernel void convBatchDerWeights(
 }
 
 kernel void conv34BatchDerWeights(
-    const device float4 * outsPrev,
-    const device float4 * delta,
+    const device half4 * outsPrev,
+    const device half4 * delta,
     constant uint * pNbChannels,
     constant uint * pNbChannelsPrev,
     constant uint * pDimensions,
     constant uint * pDimensionsPrev,
     constant uint * pNbBatch,
     constant uint * pAccumulate,
-    device float * grads,
+    device half * grads,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -784,12 +784,12 @@ kernel void conv34BatchDerWeights(
 }
 
 kernel void convBatchDerBiases(
-    const device float * delta,
+    const device half * delta,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pNbBatch,
     constant uint * pAccumulate,
-    device float * grads,
+    device half * grads,
     uint id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -839,8 +839,8 @@ kernel void convBatchDerBiases(
 }
 
 kernel void convDerWeights(
-    const device float * outsPrev,
-    const device float * delta,
+    const device half * outsPrev,
+    const device half * delta,
     constant int * pStart,
     constant uint * pStride,
     constant uint * pNbChannels,
@@ -849,7 +849,7 @@ kernel void convDerWeights(
     constant uint * pDimensionsPrev,
     constant uint * pDimWeights,
     constant uint * pNbBatch,
-    device float * deltaWeights,
+    device half * deltaWeights,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -939,11 +939,11 @@ kernel void convDerWeights(
 }
 
 kernel void convDerBiases(
-    const device float * delta,
+    const device half * delta,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pNbBatch,
-    device float * deltaWeights,
+    device half * deltaWeights,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -983,13 +983,13 @@ kernel void convDerBiases(
 }
 
 kernel void convReduceWeights(
-    const device float * deltaWeights,
+    const device half * deltaWeights,
     constant uint * pNbChannels,
     constant uint * pNbChannelsPrev,
     constant uint * pDimWeights,
     constant uint * pNbBatch,
     constant uint * pAccumulate,
-    device float * grads,
+    device half * grads,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbChannels;

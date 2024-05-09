@@ -78,7 +78,7 @@ class SimpleAutoEncoder
         var weights = [[Float]]()
         for weightsNP in weightsNumpy
         {
-            if let weightsTmp = Array<UInt16>(numpy: weightsNP)
+            if let weightsTmp = Array<Float>(numpy: weightsNP)
             {
                 weights.append(weightsTmp)
             }

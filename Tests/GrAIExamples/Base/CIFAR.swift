@@ -140,7 +140,7 @@ class CIFAR: DataSamplerImpl<UInt8>
         let pythonLib = Python.import("python_lib")
         let data = pythonLib.next_data_CIFAR(iterator)
         
-        let samples = [Float](data.tuple2.0)
+        let samples = [Float](data.tuple2.0)!
         let batchSize = Int(data.tuple2.1)!
         
         return (samples, batchSize)

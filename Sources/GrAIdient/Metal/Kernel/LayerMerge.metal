@@ -9,9 +9,9 @@
 using namespace metal;
 
 kernel void sum1(
-    const device float * ins,
+    const device half * ins,
     constant uint * pNbElems,
-    device float * outs,
+    device half * outs,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
@@ -32,9 +32,9 @@ kernel void sum1(
 }
 
 kernel void sum14(
-    const device float4 * ins,
+    const device half4 * ins,
     constant uint * pNbElems,
-    device float4 * outs,
+    device half4 * outs,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
@@ -55,9 +55,9 @@ kernel void sum14(
 }
 
 kernel void sum2(
-    const device float * ins,
+    const device half * ins,
     constant uint * pNbElems,
-    device float * outs,
+    device half * outs,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
@@ -78,9 +78,9 @@ kernel void sum2(
 }
 
 kernel void sum24(
-    const device float4 * ins,
+    const device half4 * ins,
     constant uint * pNbElems,
-    device float4 * outs,
+    device half4 * outs,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
@@ -101,9 +101,9 @@ kernel void sum24(
 }
 
 kernel void multiplyForward(
-    const device float * outsPrev,
+    const device half * outsPrev,
     constant uint * pNbElems,
-    device float * outs,
+    device half * outs,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
@@ -124,11 +124,11 @@ kernel void multiplyForward(
 }
 
 kernel void multiplyBackward(
-    const device float * outs,
-    const device float * delta,
+    const device half * outs,
+    const device half * delta,
     constant uint * pNbElems,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;

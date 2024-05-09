@@ -81,7 +81,7 @@ class ModelTestConv1
         var weights = [[Float]]()
         for weightsNP in weightsNumpy
         {
-            if let weightsTmp = Array<UInt16>(numpy: weightsNP)
+            if let weightsTmp = Array<Float>(numpy: weightsNP)
             {
                 weights.append(weightsTmp)
             }
@@ -195,7 +195,7 @@ class ModelTestConv2
         var weights = [[Float]]()
         for weightsNP in weightsNumpy
         {
-            if let weightsTmp = Array<UInt16>(numpy: weightsNP)
+            if let weightsTmp = Array<Float>(numpy: weightsNP)
             {
                 weights.append(weightsTmp)
             }
@@ -416,7 +416,7 @@ class ModelTestConvSK: ModelTestConv
         var weights = [[Float]]()
         for weightsNP in weightsNumpy
         {
-            if let weightsTmp = Array<UInt16>(numpy: weightsNP)
+            if let weightsTmp = Array<Float>(numpy: weightsNP)
             {
                 weights.append(weightsTmp)
             }
@@ -485,7 +485,7 @@ class ModelTestDeConvSK: ModelTestConv
         var weights = [[Float]]()
         for weightsNP in weightsNumpy
         {
-            if let weightsTmp = Array<UInt16>(numpy: weightsNP)
+            if let weightsTmp = Array<Float>(numpy: weightsNP)
             {
                 weights.append(weightsTmp)
             }
@@ -561,7 +561,7 @@ class ModelTestCat
         var weights = [[Float]]()
         for weightsNP in weightsNumpy
         {
-            if let weightsTmp = Array<UInt16>(numpy: weightsNP)
+            if let weightsTmp = Array<Float>(numpy: weightsNP)
             {
                 weights.append(weightsTmp)
             }
@@ -699,7 +699,7 @@ class ModelTestResizeBilinear: ModelTestResize
         var weights = [[Float]]()
         for weightsNP in weightsNumpy
         {
-            if let weightsTmp = Array<UInt16>(numpy: weightsNP)
+            if let weightsTmp = Array<Float>(numpy: weightsNP)
             {
                 weights.append(weightsTmp)
             }
@@ -774,7 +774,7 @@ class ModelTestResizeBilinearPad: ModelTestResize
         var weights = [[Float]]()
         for weightsNP in weightsNumpy
         {
-            if let weightsTmp = Array<UInt16>(numpy: weightsNP)
+            if let weightsTmp = Array<Float>(numpy: weightsNP)
             {
                 weights.append(weightsTmp)
             }
@@ -848,7 +848,7 @@ class ModelTestResizeBilinearCrop: ModelTestResize
         var weights = [[Float]]()
         for weightsNP in weightsNumpy
         {
-            if let weightsTmp = Array<UInt16>(numpy: weightsNP)
+            if let weightsTmp = Array<Float>(numpy: weightsNP)
             {
                 weights.append(weightsTmp)
             }
@@ -914,7 +914,7 @@ class ModelTestPatchConv
         var weights = [[Float]]()
         for weightsNP in weightsNumpy
         {
-            if let weightsTmp = Array<UInt16>(numpy: weightsNP)
+            if let weightsTmp = Array<Float>(numpy: weightsNP)
             {
                 weights.append(weightsTmp)
             }
@@ -1037,7 +1037,7 @@ class ModelTestAttention1
         var weights = [[Float]]()
         for weightsNP in weightsNumpy
         {
-            if let weightsTmp = Array<UInt16>(numpy: weightsNP)
+            if let weightsTmp = Array<Float>(numpy: weightsNP)
             {
                 weights.append(weightsTmp)
             }
@@ -1164,7 +1164,7 @@ class ModelTestAttention1Bis
         var weights = [[Float]]()
         for weightsNP in weightsNumpy
         {
-            if let weightsTmp = Array<UInt16>(numpy: weightsNP)
+            if let weightsTmp = Array<Float>(numpy: weightsNP)
             {
                 weights.append(weightsTmp)
             }
@@ -1301,7 +1301,7 @@ class ModelTestAttention2
         var weights = [[Float]]()
         for weightsNP in weightsNumpy
         {
-            if let weightsTmp = Array<UInt16>(numpy: weightsNP)
+            if let weightsTmp = Array<Float>(numpy: weightsNP)
             {
                 weights.append(weightsTmp)
             }
@@ -1429,7 +1429,7 @@ class ModelTestAttention2Bis
         var weights = [[Float]]()
         for weightsNP in weightsNumpy
         {
-            if let weightsTmp = Array<UInt16>(numpy: weightsNP)
+            if let weightsTmp = Array<Float>(numpy: weightsNP)
             {
                 weights.append(weightsTmp)
             }
@@ -1530,7 +1530,7 @@ class ModelTestLayerNorm
         var weights = [[Float]]()
         for weightsNP in weightsNumpy
         {
-            if let weightsTmp = Array<UInt16>(numpy: weightsNP)
+            if let weightsTmp = Array<Float>(numpy: weightsNP)
             {
                 weights.append(weightsTmp)
             }
@@ -1665,7 +1665,7 @@ class ModelTestAutoEncoder1: ModelTestAutoEncoder
         var weights = [[Float]]()
         for weightsNP in weightsNumpy
         {
-            if let weightsTmp = Array<UInt16>(numpy: weightsNP)
+            if let weightsTmp = Array<Float>(numpy: weightsNP)
             {
                 weights.append(weightsTmp)
             }
@@ -1733,7 +1733,7 @@ class ModelTestGram
         var weights = [[Float]]()
         for weightsNP in weightsNumpy
         {
-            if let weightsTmp = Array<UInt16>(numpy: weightsNP)
+            if let weightsTmp = Array<Float>(numpy: weightsNP)
             {
                 weights.append(weightsTmp)
             }

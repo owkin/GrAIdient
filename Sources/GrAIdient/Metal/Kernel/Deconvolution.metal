@@ -9,9 +9,9 @@
 using namespace metal;
 
 kernel void deconvForward(
-    const device float * outsPrev,
-    const device float * weights,
-    const device float * biases,
+    const device half * outsPrev,
+    const device half * weights,
+    const device half * biases,
     constant int * pStart,
     constant uint * pStride,
     constant uint * pNbChannels,
@@ -20,7 +20,7 @@ kernel void deconvForward(
     constant uint * pDimensionsPrev,
     constant uint * pDimWeights,
     constant uint * pNbBatch,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -106,8 +106,8 @@ kernel void deconvForward(
 }
 
 kernel void deconvBackward(
-    const device float * delta,
-    const device float * weights,
+    const device half * delta,
+    const device half * weights,
     constant int * pStart,
     constant uint * pStride,
     constant uint * pNbChannels,
@@ -117,7 +117,7 @@ kernel void deconvBackward(
     constant uint * pDimWeights,
     constant uint * pNbBatch,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -207,8 +207,8 @@ kernel void deconvBackward(
 }
 
 kernel void deconvBatchDerWeights(
-    const device float * outsPrev,
-    const device float * delta,
+    const device half * outsPrev,
+    const device half * delta,
     constant int * pStart,
     constant uint * pStride,
     constant uint * pNbChannels,
@@ -218,7 +218,7 @@ kernel void deconvBatchDerWeights(
     constant uint * pDimWeights,
     constant uint * pNbBatch,
     constant uint * pAccumulate,
-    device float * grads,
+    device half * grads,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -318,8 +318,8 @@ kernel void deconvBatchDerWeights(
 }
 
 kernel void deconvDerWeights(
-    const device float * outsPrev,
-    const device float * delta,
+    const device half * outsPrev,
+    const device half * delta,
     constant int * pStart,
     constant uint * pStride,
     constant uint * pNbChannels,
@@ -328,7 +328,7 @@ kernel void deconvDerWeights(
     constant uint * pDimensionsPrev,
     constant uint * pDimWeights,
     constant uint * pNbBatch,
-    device float * deltaWeights,
+    device half * deltaWeights,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;

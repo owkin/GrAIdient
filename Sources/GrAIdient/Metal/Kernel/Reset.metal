@@ -10,7 +10,7 @@ using namespace metal;
 
 kernel void reset(
     constant uint * pNbElems,
-    device float * outs,
+    device half * outs,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
@@ -56,7 +56,7 @@ kernel void convertFloat2Half(
 kernel void convertHalf2Float(
     constant half * ins,
     constant uint * pNbElems,
-    device float * outs,
+    device half * outs,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;

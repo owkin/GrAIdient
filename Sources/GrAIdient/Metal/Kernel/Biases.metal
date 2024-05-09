@@ -9,11 +9,11 @@
 using namespace metal;
 
 kernel void reduceBiases(
-    const device float * deltaWeights,
+    const device half * deltaWeights,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pAccumulate,
-    device float * grads,
+    device half * grads,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;

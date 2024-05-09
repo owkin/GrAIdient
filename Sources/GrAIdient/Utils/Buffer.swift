@@ -18,7 +18,7 @@ import Accelerate
 ///     - nbElems: Number of elements to copy.
 ///     - deviceID: GPU device.
 ///
-func setupHalfBuffer(
+public func setupHalfBuffer(
     array: inout [Float],
     out: MetalBuffer<UInt16>,
     start: Int,
@@ -49,7 +49,7 @@ func setupHalfBuffer(
 ///
 /// - Returns: Float buffer.
 ///
-func getHalfBuffer(
+public func getHalfBuffer(
     _ buffer: MetalBuffer<UInt16>
 ) -> MetalSharedBuffer<Float>
 {
@@ -133,7 +133,7 @@ public func convertHalf2Float(
 ///     - start: Start index in `array`.
 ///     - nbElems: Number of elements to copy.
 ///
-func copyArrayToBuffer<T: BNNSScalar>(
+public func copyArrayToBuffer<T: BNNSScalar>(
     array: inout [T],
     buffer: UnsafeMutableBufferPointer<T>,
     start: Int,

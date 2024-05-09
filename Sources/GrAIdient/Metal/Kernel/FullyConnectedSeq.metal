@@ -9,14 +9,14 @@
 using namespace metal;
 
 kernel void flSeqForward(
-    const device float * outsPrev,
-    const device float * weights,
-    const device float * biases,
+    const device half * outsPrev,
+    const device half * weights,
+    const device half * biases,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -62,14 +62,14 @@ kernel void flSeqForward(
 }
 
 kernel void flSeq48Forward(
-    const device float4 * outsPrev,
-    const device float4 * weights,
-    const device float * biases,
+    const device half4 * outsPrev,
+    const device half4 * weights,
+    const device half * biases,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -124,14 +124,14 @@ kernel void flSeq48Forward(
 }
 
 kernel void flSeq4Forward(
-    const device float4 * outsPrev,
-    const device float4 * weights,
-    const device float * biases,
+    const device half4 * outsPrev,
+    const device half4 * weights,
+    const device half * biases,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -177,14 +177,14 @@ kernel void flSeq4Forward(
 }
 
 kernel void flSeqBackward(
-    const device float * delta,
-    const device float * weights,
+    const device half * delta,
+    const device half * weights,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -240,14 +240,14 @@ kernel void flSeqBackward(
 }
 
 kernel void flSeq48Backward(
-    const device float * delta,
-    const device float4 * weights,
+    const device half * delta,
+    const device half4 * weights,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pDirty,
-    device float4 * deltaPrev,
+    device half4 * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -316,14 +316,14 @@ kernel void flSeq48Backward(
 }
 
 kernel void flSeq4Backward(
-    const device float * delta,
-    const device float4 * weights,
+    const device half * delta,
+    const device half4 * weights,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pDirty,
-    device float4 * deltaPrev,
+    device half4 * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -379,14 +379,14 @@ kernel void flSeq4Backward(
 }
 
 kernel void flSeqBatchDerWeights(
-    const device float * outsPrev,
-    const device float * delta,
+    const device half * outsPrev,
+    const device half * delta,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pAccumulate,
-    device float * grads,
+    device half * grads,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -441,14 +441,14 @@ kernel void flSeqBatchDerWeights(
 }
 
 kernel void flSeqBatch4DerWeights(
-    const device float4 * outsPrev,
-    const device float * delta,
+    const device half4 * outsPrev,
+    const device half * delta,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pAccumulate,
-    device float4 * grads,
+    device half4 * grads,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -503,13 +503,13 @@ kernel void flSeqBatch4DerWeights(
 }
 
 kernel void flSeqDerWeights(
-    const device float * outsPrev,
-    const device float * delta,
+    const device half * outsPrev,
+    const device half * delta,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * deltaWeights,
+    device half * deltaWeights,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -557,12 +557,12 @@ kernel void flSeqDerWeights(
 }
 
 kernel void flSeqReduceWeights(
-    const device float * deltaWeights,
+    const device half * deltaWeights,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pAccumulate,
-    device float * grads,
+    device half * grads,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;

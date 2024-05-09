@@ -239,7 +239,7 @@ final class TransformerBenchmark: XCTestCase
         
         // Initialize the ground truth once and for all.
         let groundTruth = MetalSharedBuffer<UInt16>(_batchSize, deviceID: 0)
-        let gtBuffer = groundTruth.buffer
+        var gtBuffer = [Float](repeating: 0.0, count: _batchSize)
         for elem in 0..<_batchSize / 2
         {
             gtBuffer[elem] = 0.0
@@ -248,18 +248,32 @@ final class TransformerBenchmark: XCTestCase
         {
             gtBuffer[elem] = 1.0
         }
-        groundTruth.upload()
+        setupHalfBuffer(
+            array: &gtBuffer,
+            out: groundTruth,
+            start: 0,
+            nbElems: _batchSize,
+            deviceID: 0
+        )
         
         // Initialize data once and for all.
         let data = MetalPrivateBuffer<UInt16>(
             _batchSize * 3 * _size * _size, deviceID: 0
         )
-        let dataBuffer = data.shared.buffer
+        var dataBuffer = [Float](
+            repeating: 0.0, count: _batchSize * 3 * _size * _size
+        )
         for i in 0..<_batchSize * 3 * _size * _size
         {
             dataBuffer[i] = Float.random(in: -1..<1)
         }
-        data.upload()
+        setupHalfBuffer(
+            array: &dataBuffer,
+            out: data,
+            start: 0,
+            nbElems: _batchSize * 3 * _size * _size,
+            deviceID: 0
+        )
         
         let nbEpochs = 2
         let nbSteps = 20
@@ -350,7 +364,7 @@ final class TransformerBenchmark: XCTestCase
         
         // Initialize the ground truth once and for all.
         let groundTruth = MetalSharedBuffer<UInt16>(_batchSize, deviceID: 0)
-        let gtBuffer = groundTruth.buffer
+        var gtBuffer = [Float](repeating: 0.0, count: _batchSize)
         for elem in 0..<_batchSize / 2
         {
             gtBuffer[elem] = 0.0
@@ -359,18 +373,32 @@ final class TransformerBenchmark: XCTestCase
         {
             gtBuffer[elem] = 1.0
         }
-        groundTruth.upload()
+        setupHalfBuffer(
+            array: &gtBuffer,
+            out: groundTruth,
+            start: 0,
+            nbElems: _batchSize,
+            deviceID: 0
+        )
         
         // Initialize data once and for all.
         let data = MetalPrivateBuffer<UInt16>(
             _batchSize * 3 * _size * _size, deviceID: 0
         )
-        let dataBuffer = data.shared.buffer
+        var dataBuffer = [Float](
+            repeating: 0.0, count: _batchSize * 3 * _size * _size
+        )
         for i in 0..<_batchSize * 3 * _size * _size
         {
             dataBuffer[i] = Float.random(in: -1..<1)
         }
-        data.upload()
+        setupHalfBuffer(
+            array: &dataBuffer,
+            out: data,
+            start: 0,
+            nbElems: _batchSize * 3 * _size * _size,
+            deviceID: 0
+        )
         
         let nbEpochs = 2
         let nbSteps = 20
@@ -400,7 +428,9 @@ final class TransformerBenchmark: XCTestCase
                 try! transformer.forward()
                 
                 // Get predictions.
-                var preds = [Float](lastLayer.outs.download()[0..<_batchSize])
+                var preds = [Float](
+                    getHalfBuffer(lastLayer.outs).array[0..<_batchSize]
+                )
                 preds = preds.map { 1.0 / (1.0 + exp(-$0)) } // Sigmoid.
                 
                 let end2 = Date()

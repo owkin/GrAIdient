@@ -9,11 +9,11 @@
 using namespace metal;
 
 kernel void avgPoolSeqForward(
-    const device float * outsPrev,
+    const device half * outsPrev,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -51,12 +51,12 @@ kernel void avgPoolSeqForward(
 }
 
 kernel void avgPoolSeqBackward(
-    const device float * delta,
+    const device half * delta,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -99,12 +99,12 @@ kernel void avgPoolSeqBackward(
 }
 
 kernel void selectSeqForward(
-    const device float * outsPrev,
+    const device half * outsPrev,
     constant uint * pNbNeurons,
     constant uint * pTargetSeq,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint targetSeq;
@@ -138,12 +138,12 @@ kernel void selectSeqForward(
 }
 
 kernel void selectSeqBackward(
-    const device float * delta,
+    const device half * delta,
     constant uint * pNbNeurons,
     constant uint * pTargetSeq,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -177,13 +177,13 @@ kernel void selectSeqBackward(
 }
 
 kernel void concat1SeqForward(
-    const device float * outsPrev,
+    const device half * outsPrev,
     constant uint * pGlobalOffset,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pSequencePrev,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -222,13 +222,13 @@ kernel void concat1SeqForward(
 }
 
 kernel void concat1Seq4Forward(
-    const device float4 * outsPrev,
+    const device half4 * outsPrev,
     constant uint * pGlobalOffset,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pSequencePrev,
-    device float4 * outs,
+    device half4 * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -267,14 +267,14 @@ kernel void concat1Seq4Forward(
 }
 
 kernel void concat1SeqBackward(
-    const device float * delta,
+    const device half * delta,
     constant uint * pGlobalOffset,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pSequencePrev,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -322,14 +322,14 @@ kernel void concat1SeqBackward(
 }
 
 kernel void concat1Seq4Backward(
-    const device float4 * delta,
+    const device half4 * delta,
     constant uint * pGlobalOffset,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pSequencePrev,
     constant uint * pDirty,
-    device float4 * deltaPrev,
+    device half4 * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -377,13 +377,13 @@ kernel void concat1Seq4Backward(
 }
 
 kernel void concat2SeqForward(
-    const device float * outsPrev,
+    const device half * outsPrev,
     constant uint * pGlobalOffset,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -422,14 +422,14 @@ kernel void concat2SeqForward(
 }
 
 kernel void concat2SeqBackward(
-    const device float * delta,
+    const device half * delta,
     constant uint * pGlobalOffset,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -477,11 +477,11 @@ kernel void concat2SeqBackward(
 }
 
 kernel void constant12SeqForward(
-    const device float * weights,
+    const device half * weights,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -511,11 +511,11 @@ kernel void constant12SeqForward(
 }
 
 kernel void constant12Seq4Forward(
-    const device float4 * weights,
+    const device half4 * weights,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float4 * outs,
+    device half4 * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -546,12 +546,12 @@ kernel void constant12Seq4Forward(
 }
 
 kernel void constant12SeqBackward(
-    const device float * delta,
+    const device half * delta,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pAccumulate,
-    device float * grads,
+    device half * grads,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -594,12 +594,12 @@ kernel void constant12SeqBackward(
 }
 
 kernel void constant12Seq4Backward(
-    const device float4 * delta,
+    const device half4 * delta,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pAccumulate,
-    device float4 * grads,
+    device half4 * grads,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -643,11 +643,11 @@ kernel void constant12Seq4Backward(
 }
 
 kernel void constant2SeqForward(
-    const device float * weights,
+    const device half * weights,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -677,11 +677,11 @@ kernel void constant2SeqForward(
 }
 
 kernel void constant2Seq4Forward(
-    const device float4 * weights,
+    const device half4 * weights,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float4 * outs,
+    device half4 * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -712,14 +712,14 @@ kernel void constant2Seq4Forward(
 }
 
 kernel void querySeqForward(
-    const device float * query,
-    const device float * key,
+    const device half * query,
+    const device half * key,
     constant uint * pNbHeads,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbHeads;
@@ -773,14 +773,14 @@ kernel void querySeqForward(
 }
 
 kernel void querySeq4Forward(
-    const device float4 * query,
-    const device float4 * key,
+    const device half4 * query,
+    const device half4 * key,
     constant uint * pNbHeads,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbHeads;
@@ -834,15 +834,15 @@ kernel void querySeq4Forward(
 }
 
 kernel void queryQuerySeqBackward(
-    const device float * delta,
-    const device float * key,
+    const device half * delta,
+    const device half * key,
     constant uint * pNbHeads,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pDirty,
-    device float * query,
+    device half * query,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbHeads;
@@ -906,15 +906,15 @@ kernel void queryQuerySeqBackward(
 }
 
 kernel void queryQuerySeq4Backward(
-    const device float * delta,
-    const device float4 * key,
+    const device half * delta,
+    const device half4 * key,
     constant uint * pNbHeads,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pDirty,
-    device float4 * query,
+    device half4 * query,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbHeads;
@@ -978,15 +978,15 @@ kernel void queryQuerySeq4Backward(
 }
 
 kernel void queryKeySeqBackward(
-    const device float * delta,
-    const device float * query,
+    const device half * delta,
+    const device half * query,
     constant uint * pNbHeads,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pDirty,
-    device float * key,
+    device half * key,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbHeads;
@@ -1050,15 +1050,15 @@ kernel void queryKeySeqBackward(
 }
 
 kernel void queryKeySeq4Backward(
-    const device float * delta,
-    const device float4 * query,
+    const device half * delta,
+    const device half4 * query,
     constant uint * pNbHeads,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pDirty,
-    device float4 * key,
+    device half4 * key,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbHeads;
@@ -1122,7 +1122,7 @@ kernel void queryKeySeq4Backward(
 }
 
 kernel void querySelfSeqForward(
-    const device float * outsPrev,
+    const device half * outsPrev,
     constant uint * pNbHeads,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
@@ -1130,7 +1130,7 @@ kernel void querySelfSeqForward(
     constant uint * pGlobalOffset,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbHeads;
@@ -1192,7 +1192,7 @@ kernel void querySelfSeqForward(
 }
 
 kernel void querySelfSeq4Forward(
-    const device float4 * outsPrev,
+    const device half4 * outsPrev,
     constant uint * pNbHeads,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
@@ -1200,7 +1200,7 @@ kernel void querySelfSeq4Forward(
     constant uint * pGlobalOffset,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbHeads;
@@ -1262,8 +1262,8 @@ kernel void querySelfSeq4Forward(
 }
 
 kernel void querySelfQuerySeqBackward(
-    const device float * outsPrev,
-    const device float * delta,
+    const device half * outsPrev,
+    const device half * delta,
     constant uint * pNbHeads,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
@@ -1272,7 +1272,7 @@ kernel void querySelfQuerySeqBackward(
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbHeads;
@@ -1343,8 +1343,8 @@ kernel void querySelfQuerySeqBackward(
 }
 
 kernel void querySelfQuerySeq4Backward(
-    const device float4 * outsPrev,
-    const device float * delta,
+    const device half4 * outsPrev,
+    const device half * delta,
     constant uint * pNbHeads,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
@@ -1353,7 +1353,7 @@ kernel void querySelfQuerySeq4Backward(
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pDirty,
-    device float4 * deltaPrev,
+    device half4 * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbHeads;
@@ -1424,8 +1424,8 @@ kernel void querySelfQuerySeq4Backward(
 }
 
 kernel void querySelfKeySeqBackward(
-    const device float * outsPrev,
-    const device float * delta,
+    const device half * outsPrev,
+    const device half * delta,
     constant uint * pNbHeads,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
@@ -1434,7 +1434,7 @@ kernel void querySelfKeySeqBackward(
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbHeads;
@@ -1505,8 +1505,8 @@ kernel void querySelfKeySeqBackward(
 }
 
 kernel void querySelfKeySeq4Backward(
-    const device float4 * outsPrev,
-    const device float * delta,
+    const device half4 * outsPrev,
+    const device half * delta,
     constant uint * pNbHeads,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
@@ -1515,7 +1515,7 @@ kernel void querySelfKeySeq4Backward(
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pDirty,
-    device float4 * deltaPrev,
+    device half4 * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbHeads;
@@ -1586,12 +1586,12 @@ kernel void querySelfKeySeq4Backward(
 }
 
 kernel void softmaxSeqForward(
-    const device float * outsPrev,
+    const device half * outsPrev,
     constant uint * pNbHeads,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbHeads;
@@ -1652,12 +1652,12 @@ kernel void softmaxSeqForward(
 }
 
 kernel void softmaxSeq4Forward(
-    const device float4 * outsPrev,
+    const device half4 * outsPrev,
     constant uint * pNbHeads,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float4 * outs,
+    device half4 * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbHeads;
@@ -1724,14 +1724,14 @@ kernel void softmaxSeq4Forward(
 }
 
 kernel void softmaxSeqBackward(
-    const device float * outs,
-    const device float * delta,
+    const device half * outs,
+    const device half * delta,
     constant uint * pNbHeads,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbHeads;
@@ -1790,14 +1790,14 @@ kernel void softmaxSeqBackward(
 }
 
 kernel void softmaxSeq4Backward(
-    const device float4 * outs,
-    const device float4 * delta,
+    const device half4 * outs,
+    const device half4 * delta,
     constant uint * pNbHeads,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pDirty,
-    device float4 * deltaPrev,
+    device half4 * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbHeads;
@@ -1858,14 +1858,14 @@ kernel void softmaxSeq4Backward(
 }
 
 kernel void valueSeqForward(
-    const device float * value,
-    const device float * score,
+    const device half * value,
+    const device half * score,
     constant uint * pNbHeads,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbHeads;
@@ -1916,14 +1916,14 @@ kernel void valueSeqForward(
 }
 
 kernel void valueSeq4Forward(
-    const device float4 * value,
-    const device float * score,
+    const device half4 * value,
+    const device half * score,
     constant uint * pNbHeads,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float4 * outs,
+    device half4 * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbHeads;
@@ -1974,15 +1974,15 @@ kernel void valueSeq4Forward(
 }
 
 kernel void valueValueSeqBackward(
-    const device float * delta,
-    const device float * score,
+    const device half * delta,
+    const device half * score,
     constant uint * pNbHeads,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pDirty,
-    device float * value,
+    device half * value,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbHeads;
@@ -2043,15 +2043,15 @@ kernel void valueValueSeqBackward(
 }
 
 kernel void valueValueSeq4Backward(
-    const device float4 * delta,
-    const device float * score,
+    const device half4 * delta,
+    const device half * score,
     constant uint * pNbHeads,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pDirty,
-    device float4 * value,
+    device half4 * value,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbHeads;
@@ -2114,15 +2114,15 @@ kernel void valueValueSeq4Backward(
 }
 
 kernel void valueScoreSeqBackward(
-    const device float * delta,
-    const device float * value,
+    const device half * delta,
+    const device half * value,
     constant uint * pNbHeads,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pDirty,
-    device float * score,
+    device half * score,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbHeads;
@@ -2185,15 +2185,15 @@ kernel void valueScoreSeqBackward(
 }
 
 kernel void valueScoreSeq4Backward(
-    const device float4 * delta,
-    const device float4 * value,
+    const device half4 * delta,
+    const device half4 * value,
     constant uint * pNbHeads,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pDirty,
-    device float * score,
+    device half * score,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbHeads;
@@ -2257,8 +2257,8 @@ kernel void valueScoreSeq4Backward(
 }
 
 kernel void valueSelfSeqForward(
-    const device float * value,
-    const device float * score,
+    const device half * value,
+    const device half * score,
     constant uint * pNbHeads,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
@@ -2266,7 +2266,7 @@ kernel void valueSelfSeqForward(
     constant uint * pGlobalOffset,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbHeads;
@@ -2324,8 +2324,8 @@ kernel void valueSelfSeqForward(
 }
 
 kernel void valueSelfSeq4Forward(
-    const device float4 * value,
-    const device float * score,
+    const device half4 * value,
+    const device half * score,
     constant uint * pNbHeads,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
@@ -2333,7 +2333,7 @@ kernel void valueSelfSeq4Forward(
     constant uint * pGlobalOffset,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float4 * outs,
+    device half4 * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbHeads;
@@ -2392,8 +2392,8 @@ kernel void valueSelfSeq4Forward(
 }
 
 kernel void valueSelfValueSeqBackward(
-    const device float * delta,
-    const device float * score,
+    const device half * delta,
+    const device half * score,
     constant uint * pNbHeads,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
@@ -2401,7 +2401,7 @@ kernel void valueSelfValueSeqBackward(
     constant uint * pGlobalOffset,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * value,
+    device half * value,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbHeads;
@@ -2460,8 +2460,8 @@ kernel void valueSelfValueSeqBackward(
 }
 
 kernel void valueSelfValueSeq4Backward(
-    const device float4 * delta,
-    const device float * score,
+    const device half4 * delta,
+    const device half * score,
     constant uint * pNbHeads,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
@@ -2469,7 +2469,7 @@ kernel void valueSelfValueSeq4Backward(
     constant uint * pGlobalOffset,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float4 * value,
+    device half4 * value,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbHeads;
@@ -2529,8 +2529,8 @@ kernel void valueSelfValueSeq4Backward(
 }
 
 kernel void valueSelfScoreSeqBackward(
-    const device float * delta,
-    const device float * value,
+    const device half * delta,
+    const device half * value,
     constant uint * pNbHeads,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
@@ -2539,7 +2539,7 @@ kernel void valueSelfScoreSeqBackward(
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pDirty,
-    device float * score,
+    device half * score,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbHeads;
@@ -2608,8 +2608,8 @@ kernel void valueSelfScoreSeqBackward(
 }
 
 kernel void valueSelfScoreSeq4Backward(
-    const device float4 * delta,
-    const device float4 * value,
+    const device half4 * delta,
+    const device half4 * value,
     constant uint * pNbHeads,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
@@ -2618,7 +2618,7 @@ kernel void valueSelfScoreSeq4Backward(
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pDirty,
-    device float * score,
+    device half * score,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbHeads;
@@ -2688,13 +2688,13 @@ kernel void valueSelfScoreSeq4Backward(
 }
 
 kernel void layerCAMSeqForward(
-    const device float * outsPrev,
-    const device float * deltaPrev,
+    const device half * outsPrev,
+    const device half * deltaPrev,
     constant uint * pNbNeuronsPrev,
     constant uint * pKeepPositive,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbBatch;

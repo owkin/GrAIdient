@@ -9,11 +9,11 @@
 using namespace metal;
 
 kernel void computeInstanceNormConvμ(
-    const device float * tmps,
+    const device half * tmps,
     constant uint * pNbChannels,
     constant uint * pNbBatch,
     constant uint * pDimensions,
-    device float * μ,
+    device half * μ,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbChannels;
@@ -54,12 +54,12 @@ kernel void computeInstanceNormConvμ(
 }
 
 kernel void computeInstanceNormConvσ2(
-    const device float * tmps,
-    const device float * μ,
+    const device half * tmps,
+    const device half * μ,
     constant uint * pNbChannels,
     constant uint * pNbBatch,
     constant uint * pDimensions,
-    device float * σ2,
+    device half * σ2,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbChannels;
@@ -101,15 +101,15 @@ kernel void computeInstanceNormConvσ2(
 }
 
 kernel void forwardInstanceNormConv(
-    const device float * β,
-    const device float * Ɣ,
-    const device float * μ,
-    const device float * σ2,
+    const device half * β,
+    const device half * Ɣ,
+    const device half * μ,
+    const device half * σ2,
     constant uint * pNbChannels,
     constant uint * pNbBatch,
     constant uint * pDimensions,
-    device float * tmps,
-    device float * xHat,
+    device half * tmps,
+    device half * xHat,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbChannels;
@@ -151,15 +151,15 @@ kernel void forwardInstanceNormConv(
 }
 
 kernel void forwardAdaIN(
-    const device float * outsPrev,
-    const device float * styles,
-    const device float * μ,
-    const device float * σ2,
+    const device half * outsPrev,
+    const device half * styles,
+    const device half * μ,
+    const device half * σ2,
     constant uint * pNbChannels,
     constant uint * pNbBatch,
     constant uint * pDimensions,
-    device float * outs,
-    device float * xHat,
+    device half * outs,
+    device half * xHat,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbChannels;
@@ -201,17 +201,17 @@ kernel void forwardAdaIN(
 }
 
 kernel void backwardWeightsInstanceNormConv(
-    const device float * delta,
-    const device float * xHat,
-    const device float * Ɣ,
+    const device half * delta,
+    const device half * xHat,
+    const device half * Ɣ,
     constant uint * pNbChannels,
     constant uint * pNbBatch,
     constant uint * pDimensions,
     constant uint * pAccumulate,
-    device float * sum1,
-    device float * sum2,
-    device float * dƔ,
-    device float * dβ,
+    device half * sum1,
+    device half * sum2,
+    device half * dƔ,
+    device half * dβ,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbChannels;
@@ -275,16 +275,16 @@ kernel void backwardWeightsInstanceNormConv(
 }
 
 kernel void backward2AdaIN(
-    const device float * delta,
-    const device float * xHat,
-    const device float * outStyles,
+    const device half * delta,
+    const device half * xHat,
+    const device half * outStyles,
     constant uint * pNbChannels,
     constant uint * pNbBatch,
     constant uint * pDimensions,
     constant uint * pDirty,
-    device float * sum1,
-    device float * sum2,
-    device float * deltaStyles,
+    device half * sum1,
+    device half * sum2,
+    device half * deltaStyles,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbChannels;
@@ -348,15 +348,15 @@ kernel void backward2AdaIN(
 }
 
 kernel void backwardInstanceNormConv(
-    const device float * σ2,
-    const device float * xHat,
-    const device float * Ɣ,
-    const device float * sum1,
-    const device float * sum2,
+    const device half * σ2,
+    const device half * xHat,
+    const device half * Ɣ,
+    const device half * sum1,
+    const device half * sum2,
     constant uint * pNbChannels,
     constant uint * pNbBatch,
     constant uint * pDimensions,
-    device float * delta,
+    device half * delta,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbChannels;
@@ -402,17 +402,17 @@ kernel void backwardInstanceNormConv(
 }
 
 kernel void backward1AdaIN(
-    const device float * delta,
-    const device float * σ2,
-    const device float * xHat,
-    const device float * styles,
-    const device float * sum1,
-    const device float * sum2,
+    const device half * delta,
+    const device half * σ2,
+    const device half * xHat,
+    const device half * styles,
+    const device half * sum1,
+    const device half * sum2,
     constant uint * pNbChannels,
     constant uint * pNbBatch,
     constant uint * pDimensions,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbChannels;

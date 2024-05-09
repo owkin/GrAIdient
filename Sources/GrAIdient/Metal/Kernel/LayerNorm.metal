@@ -9,11 +9,11 @@
 using namespace metal;
 
 kernel void computeLayerNormSeqμ(
-    const device float * tmps,
+    const device half * tmps,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * μ,
+    device half * μ,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -49,11 +49,11 @@ kernel void computeLayerNormSeqμ(
 }
 
 kernel void computeLayerNormSeqμ4(
-    const device float4 * tmps,
+    const device half4 * tmps,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * μ,
+    device half * μ,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -90,12 +90,12 @@ kernel void computeLayerNormSeqμ4(
 }
 
 kernel void computeLayerNormSeqσ2(
-    const device float * tmps,
-    const device float * μ,
+    const device half * tmps,
+    const device half * μ,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * σ2,
+    device half * σ2,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -133,12 +133,12 @@ kernel void computeLayerNormSeqσ2(
 }
 
 kernel void computeLayerNormSeqσ24(
-    const device float4 * tmps,
-    const device float * μ,
+    const device half4 * tmps,
+    const device half * μ,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * σ2,
+    device half * σ2,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -177,15 +177,15 @@ kernel void computeLayerNormSeqσ24(
 }
 
 kernel void forwardLayerNormSeq(
-    const device float * β,
-    const device float * Ɣ,
-    const device float * μ,
-    const device float * σ2,
+    const device half * β,
+    const device half * Ɣ,
+    const device half * μ,
+    const device half * σ2,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * tmps,
-    device float * xHat,
+    device half * tmps,
+    device half * xHat,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -222,15 +222,15 @@ kernel void forwardLayerNormSeq(
 }
 
 kernel void forwardLayerNormSeq4(
-    const device float4 * β,
-    const device float4 * Ɣ,
-    const device float * μ,
-    const device float * σ2,
+    const device half4 * β,
+    const device half4 * Ɣ,
+    const device half * μ,
+    const device half * σ2,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float4 * tmps,
-    device float4 * xHat,
+    device half4 * tmps,
+    device half4 * xHat,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -268,14 +268,14 @@ kernel void forwardLayerNormSeq4(
 }
 
 kernel void backwardWeights1LayerNormSeq(
-    const device float * delta,
-    const device float * xHat,
-    const device float * Ɣ,
+    const device half * delta,
+    const device half * xHat,
+    const device half * Ɣ,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * sum1,
-    device float * sum2,
+    device half * sum1,
+    device half * sum2,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -317,14 +317,14 @@ kernel void backwardWeights1LayerNormSeq(
 }
 
 kernel void backwardWeights1LayerNormSeq4(
-    const device float4 * delta,
-    const device float4 * xHat,
-    const device float4 * Ɣ,
+    const device half4 * delta,
+    const device half4 * xHat,
+    const device half4 * Ɣ,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * sum1,
-    device float * sum2,
+    device half * sum1,
+    device half * sum2,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -366,14 +366,14 @@ kernel void backwardWeights1LayerNormSeq4(
 }
 
 kernel void backwardWeights2LayerNormSeq(
-    const device float * delta,
-    const device float * xHat,
+    const device half * delta,
+    const device half * xHat,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pAccumulate,
-    device float * dƔ,
-    device float * dβ,
+    device half * dƔ,
+    device half * dβ,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -425,14 +425,14 @@ kernel void backwardWeights2LayerNormSeq(
 }
 
 kernel void backwardWeights2LayerNormSeq4(
-    const device float4 * delta,
-    const device float4 * xHat,
+    const device half4 * delta,
+    const device half4 * xHat,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pAccumulate,
-    device float4 * dƔ,
-    device float4 * dβ,
+    device half4 * dƔ,
+    device half4 * dβ,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -484,15 +484,15 @@ kernel void backwardWeights2LayerNormSeq4(
 }
 
 kernel void backwardLayerNormSeq(
-    const device float * σ2,
-    const device float * xHat,
-    const device float * Ɣ,
-    const device float * sum1,
-    const device float * sum2,
+    const device half * σ2,
+    const device half * xHat,
+    const device half * Ɣ,
+    const device half * sum1,
+    const device half * sum2,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * delta,
+    device half * delta,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -533,15 +533,15 @@ kernel void backwardLayerNormSeq(
 }
 
 kernel void backwardLayerNormSeq4(
-    const device float * σ2,
-    const device float4 * xHat,
-    const device float4 * Ɣ,
-    const device float * sum1,
-    const device float * sum2,
+    const device half * σ2,
+    const device half4 * xHat,
+    const device half4 * Ɣ,
+    const device half * sum1,
+    const device half * sum2,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float4 * delta,
+    device half4 * delta,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;

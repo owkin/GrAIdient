@@ -10,8 +10,8 @@ using namespace metal;
 
 kernel void forwardReLU(
     constant uint * pNbElems,
-    device float * tmps,
-    device float * outs,
+    device half * tmps,
+    device half * outs,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
@@ -40,9 +40,9 @@ kernel void forwardReLU(
 }
 
 kernel void backwardReLU(
-    const device float * tmps,
+    const device half * tmps,
     constant uint * pNbElems,
-    device float * delta,
+    device half * delta,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
@@ -67,8 +67,8 @@ kernel void backwardReLU(
 
 kernel void forwardLeakyReLU(
     constant uint * pNbElems,
-    device float * tmps,
-    device float * outs,
+    device half * tmps,
+    device half * outs,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
@@ -98,9 +98,9 @@ kernel void forwardLeakyReLU(
 }
 
 kernel void backwardLeakyReLU(
-    const device float * tmps,
+    const device half * tmps,
     constant uint * pNbElems,
-    device float * delta,
+    device half * delta,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
@@ -126,8 +126,8 @@ kernel void backwardLeakyReLU(
 
 kernel void forwardSoftReLU(
     constant uint * pNbElems,
-    device float * tmps,
-    device float * outs,
+    device half * tmps,
+    device half * outs,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
@@ -150,9 +150,9 @@ kernel void forwardSoftReLU(
 }
 
 kernel void backwardSoftReLU(
-    const device float * tmps,
+    const device half * tmps,
     constant uint * pNbElems,
-    device float * delta,
+    device half * delta,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
@@ -176,8 +176,8 @@ kernel void backwardSoftReLU(
 
 kernel void forwardSigmoid(
    constant uint * pNbElems,
-   device float * tmps,
-   device float * outs,
+   device half * tmps,
+   device half * outs,
    uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
@@ -206,9 +206,9 @@ kernel void forwardSigmoid(
 }
 
 kernel void backwardSigmoid(
-    const device float * tmps,
+    const device half * tmps,
     constant uint * pNbElems,
-    device float * delta,
+    device half * delta,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
@@ -241,8 +241,8 @@ kernel void backwardSigmoid(
 
 kernel void forwardGELUApprox(
    constant uint * pNbElems,
-   device float * tmps,
-   device float * outs,
+   device half * tmps,
+   device half * outs,
    uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
@@ -276,9 +276,9 @@ kernel void forwardGELUApprox(
 }
 
 kernel void backwardGELUApprox(
-    const device float * tmps,
+    const device half * tmps,
     constant uint * pNbElems,
-    device float * delta,
+    device half * delta,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
@@ -352,8 +352,8 @@ float erf(float a)
 
 kernel void forwardGELU(
    constant uint * pNbElems,
-   device float * tmps,
-   device float * outs,
+   device half * tmps,
+   device half * outs,
    uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
@@ -376,9 +376,9 @@ kernel void forwardGELU(
 }
 
 kernel void backwardGELU(
-    const device float * tmps,
+    const device half * tmps,
     constant uint * pNbElems,
-    device float * delta,
+    device half * delta,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;

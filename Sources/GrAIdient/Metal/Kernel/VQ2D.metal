@@ -9,13 +9,13 @@
 using namespace metal;
 
 kernel void vq2DForward(
-    const device float * outsPrev,
-    const device float * weights,
+    const device half * outsPrev,
+    const device half * weights,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pK,
     constant uint * pNbBatch,
-    device float * outs,
+    device half * outs,
     device int * indices,
     uint2 id [[ thread_position_in_grid ]])
 {
@@ -84,9 +84,9 @@ kernel void vq2DForward(
 }
 
 kernel void vq2DBackward(
-    const device float * outsPrev,
-    const device float * delta,
-    const device float * weights,
+    const device half * outsPrev,
+    const device half * delta,
+    const device half * weights,
     const device int * indices,
     constant uint * pNbChannels,
     constant uint * pDimensions,
@@ -94,7 +94,7 @@ kernel void vq2DBackward(
     constant float * pBeta,
     constant uint * pNbBatch,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -161,15 +161,15 @@ kernel void vq2DBackward(
 }
 
 kernel void vq2DBatchDerWeights(
-    const device float * outsPrev,
-    const device float * weights,
+    const device half * outsPrev,
+    const device half * weights,
     const device int * indices,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pK,
     constant float * pCoeff,
     constant uint * pNbBatch,
-    device float * grads,
+    device half * grads,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -224,15 +224,15 @@ kernel void vq2DBatchDerWeights(
 }
 
 kernel void vq2DDerWeights(
-    const device float * outsPrev,
-    const device float * weights,
+    const device half * outsPrev,
+    const device half * weights,
     const device int * indices,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pK,
     constant float * pCoeff,
     constant uint * pNbBatch,
-    device float * deltaWeights,
+    device half * deltaWeights,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -287,12 +287,12 @@ kernel void vq2DDerWeights(
 }
 
 kernel void vq2DReduceWeights(
-    const device float * deltaWeights,
+    const device half * deltaWeights,
     constant uint * pNbChannels,
     constant uint * pK,
     constant uint * pNbBatch,
     constant uint * pAccumulate,
-    device float * grads,
+    device half * grads,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbChannels;
@@ -337,13 +337,13 @@ kernel void vq2DReduceWeights(
 }
 
 kernel void vq2DLoss(
-    const device float * outsPrev,
-    const device float * outs,
+    const device half * outsPrev,
+    const device half * outs,
     const device int * indices,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pNbBatch,
-    device float * losses,
+    device half * losses,
     uint id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -392,12 +392,12 @@ kernel void vq2DLoss(
 }
 
 kernel void vqLayerCAMMax2D(
-     const device float * camLayer,
+     const device half * camLayer,
      constant uint * pNbChannels,
      constant uint * pDimensions,
      constant uint * pNbThreadgroups,
      constant uint * pNbBatch,
-     device float * camMax,
+     device half * camMax,
      uint2 groupId [[ threadgroup_position_in_grid ]],
      uint2 threadId [[ thread_position_in_threadgroup ]],
      uint2 id [[ thread_position_in_grid ]])
@@ -456,16 +456,16 @@ kernel void vqLayerCAMMax2D(
 }
 
 kernel void vqGrad2DForward(
-    const device float * outsPrev,
-    const device float * camLayer,
-    const device float * camMax,
-    const device float * weights,
+    const device half * outsPrev,
+    const device half * camLayer,
+    const device half * camMax,
+    const device half * weights,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pK,
     constant float * pMagnitudeCoeff,
     constant uint * pNbBatch,
-    device float * outs,
+    device half * outs,
     device int * indices,
     uint2 id [[ thread_position_in_grid ]])
 {

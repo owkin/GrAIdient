@@ -9,11 +9,11 @@
 using namespace metal;
 
 kernel void MSE1DLoss(
-    const device float * outs,
-    const device float * groundTruth,
+    const device half * outs,
+    const device half * groundTruth,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
-    device float * losses,
+    device half * losses,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -49,13 +49,13 @@ kernel void MSE1DLoss(
 }
 
 kernel void MSE1DLossDerivative(
-    const device float * outs,
-    const device float * groundTruth,
+    const device half * outs,
+    const device half * groundTruth,
     constant uint * pNbNeurons,
     constant float * pCoeff,
     constant uint * pNbBatch,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -99,11 +99,11 @@ kernel void MSE1DLossDerivative(
 }
 
 kernel void linearErrorLoss(
-    const device float * outs,
-    const device float * groundTruth,
+    const device half * outs,
+    const device half * groundTruth,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
-    device float * losses,
+    device half * losses,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -139,12 +139,12 @@ kernel void linearErrorLoss(
 }
 
 kernel void linearErrorLossDerivative(
-    const device float * outs,
+    const device half * outs,
     constant uint * pNbNeurons,
     constant float * pCoeff,
     constant uint * pNbBatch,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -183,13 +183,13 @@ kernel void linearErrorLossDerivative(
 }
 
 kernel void selectNeurons1DForward(
-    const device float * outsPrev,
+    const device half * outsPrev,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNeurons,
     constant float * pCoeffs,
     constant uint * pNbBatch,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -220,13 +220,13 @@ kernel void selectNeurons1DForward(
 }
 
 kernel void selectNeurons1DBackward(
-    const device float * delta,
+    const device half * delta,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNeurons,
     constant float * pCoeffs,
     constant uint * pNbBatch,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -257,12 +257,12 @@ kernel void selectNeurons1DBackward(
 }
 
 kernel void concat1DForward(
-    const device float * outsPrev,
+    const device half * outsPrev,
     constant uint * pGlobalOffset,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -296,13 +296,13 @@ kernel void concat1DForward(
 }
 
 kernel void concat1DBackward(
-    const device float * delta,
+    const device half * delta,
     constant uint * pGlobalOffset,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -345,11 +345,11 @@ kernel void concat1DBackward(
 }
 
 kernel void softmax1DForward(
-    const device float * outsPrev,
+    const device half * outsPrev,
     constant uint * pNbHeads,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbHeads;
@@ -402,13 +402,13 @@ kernel void softmax1DForward(
 }
 
 kernel void softmax1DBackward(
-    const device float * outs,
-    const device float * delta,
+    const device half * outs,
+    const device half * delta,
     constant uint * pNbHeads,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbHeads;
@@ -462,13 +462,13 @@ kernel void softmax1DBackward(
 }
 
 kernel void dotProduct1DForward(
-    const device float * outsPrev1,
-    const device float * outsPrev2,
+    const device half * outsPrev1,
+    const device half * outsPrev2,
     constant int * pSize,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint size;
@@ -509,14 +509,14 @@ kernel void dotProduct1DForward(
 }
 
 kernel void dotProduct1DBackward(
-    const device float * outsPrev,
-    const device float * delta,
+    const device half * outsPrev,
+    const device half * delta,
     constant int * pSize,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint size;
@@ -564,10 +564,10 @@ kernel void dotProduct1DBackward(
 }
 
 kernel void constant1DForward(
-    const device float * weights,
+    const device half * weights,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -594,11 +594,11 @@ kernel void constant1DForward(
 }
 
 kernel void BCE1DLoss(
-    const device float * outs,
-    const device float * groundTruth,
+    const device half * outs,
+    const device half * groundTruth,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
-    device float * losses,
+    device half * losses,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -635,13 +635,13 @@ kernel void BCE1DLoss(
 }
 
 kernel void BCE1DLossDerivative(
-    const device float * outs,
-    const device float * groundTruth,
+    const device half * outs,
+    const device half * groundTruth,
     constant uint * pNbNeurons,
     constant float * pCoeff,
     constant uint * pNbBatch,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -694,11 +694,11 @@ kernel void BCE1DLossDerivative(
 }
 
 kernel void BCESigmoid1DLoss(
-    const device float * outs,
-    const device float * groundTruth,
+    const device half * outs,
+    const device half * groundTruth,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
-    device float * losses,
+    device half * losses,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -745,13 +745,13 @@ kernel void BCESigmoid1DLoss(
 }
 
 kernel void BCESigmoid1DLossDerivative(
-    const device float * outs,
-    const device float * groundTruth,
+    const device half * outs,
+    const device half * groundTruth,
     constant uint * pNbNeurons,
     constant float * pCoeff,
     constant uint * pNbBatch,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -804,13 +804,13 @@ kernel void BCESigmoid1DLossDerivative(
 }
 
 kernel void dropout1DForward(
-    const device float * outsPrev,
+    const device half * outsPrev,
     const device bool * dropout,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant bool * pApplyDropout,
     constant float * pCoeff,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -853,14 +853,14 @@ kernel void dropout1DForward(
 }
 
 kernel void dropout1DBackward(
-    const device float * delta,
+    const device half * delta,
     const device bool * dropout,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant bool * pApplyDropout,
     constant float * pCoeff,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;

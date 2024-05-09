@@ -9,13 +9,13 @@
 using namespace metal;
 
 kernel void computeBNConvμ(
-    const device float * tmps,
+    const device half * tmps,
     constant uint * pNbChannels,
     constant uint * pNbBatch,
     constant uint * pDimensions,
     constant uint * pFirstCall,
-    device float * μ,
-    device float * Eμ,
+    device half * μ,
+    device half * Eμ,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbChannels;
@@ -68,14 +68,14 @@ kernel void computeBNConvμ(
 }
 
 kernel void computeBNConvσ2(
-    const device float * tmps,
-    const device float * μ,
+    const device half * tmps,
+    const device half * μ,
     constant uint * pNbChannels,
     constant uint * pNbBatch,
     constant uint * pDimensions,
     constant uint * pFirstCall,
-    device float * σ2,
-    device float * Eσ2,
+    device half * σ2,
+    device half * Eσ2,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbChannels;
@@ -129,15 +129,15 @@ kernel void computeBNConvσ2(
 }
 
 kernel void forwardBNConvTraining(
-    const device float * β,
-    const device float * Ɣ,
-    const device float * μ,
-    const device float * σ2,
+    const device half * β,
+    const device half * Ɣ,
+    const device half * μ,
+    const device half * σ2,
     constant uint * pNbChannels,
     constant uint * pNbBatch,
     constant uint * pDimensions,
-    device float * tmps,
-    device float * xHat,
+    device half * tmps,
+    device half * xHat,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbChannels;
@@ -179,15 +179,15 @@ kernel void forwardBNConvTraining(
 }
 
 kernel void forwardBNConvInference(
-    const device float * β,
-    const device float * Ɣ,
-    const device float * Eμ,
-    const device float * Eσ2,
+    const device half * β,
+    const device half * Ɣ,
+    const device half * Eμ,
+    const device half * Eσ2,
     constant uint * pNbChannels,
     constant uint * pNbBatch,
     constant uint * pM,
     constant uint * pDimensions,
-    device float * tmps,
+    device half * tmps,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbChannels;
@@ -235,17 +235,17 @@ kernel void forwardBNConvInference(
 }
 
 kernel void backwardWeightsBNConv(
-    const device float * delta,
-    const device float * xHat,
-    const device float * Ɣ,
+    const device half * delta,
+    const device half * xHat,
+    const device half * Ɣ,
     constant uint * pNbChannels,
     constant uint * pNbBatch,
     constant uint * pDimensions,
     constant uint * pAccumulate,
-    device float * sum1,
-    device float * sum2,
-    device float * dƔ,
-    device float * dβ,
+    device half * sum1,
+    device half * sum2,
+    device half * dƔ,
+    device half * dβ,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbChannels;
@@ -309,15 +309,15 @@ kernel void backwardWeightsBNConv(
 }
 
 kernel void backwardBNConvTraining(
-    const device float * σ2,
-    const device float * xHat,
-    const device float * Ɣ,
-    const device float * sum1,
-    const device float * sum2,
+    const device half * σ2,
+    const device half * xHat,
+    const device half * Ɣ,
+    const device half * sum1,
+    const device half * sum2,
     constant uint * pNbChannels,
     constant uint * pNbBatch,
     constant uint * pDimensions,
-    device float * delta,
+    device half * delta,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbChannels;
@@ -362,13 +362,13 @@ kernel void backwardBNConvTraining(
 }
 
 kernel void backwardBNConvInference(
-    const device float * Ɣ,
-    const device float * Eσ2,
+    const device half * Ɣ,
+    const device half * Eσ2,
     constant uint * pNbChannels,
     constant uint * pNbBatch,
     constant uint * pM,
     constant uint * pDimensions,
-    device float * delta,
+    device half * delta,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbChannels;

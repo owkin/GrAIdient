@@ -23,7 +23,6 @@ class ReduceSumTests: XCTestCase
     {
         _array = [Float](repeating: 0.0, count: dim1 * dim2)
         _buffer = MetalSharedBuffer(dim1 * dim2, deviceID: 0)
-        let buffer = _buffer.buffer
         
         for elem1 in 0..<dim1 {
         for elem2 in 0..<dim2
@@ -31,10 +30,15 @@ class ReduceSumTests: XCTestCase
             let offset = elem2 * dim1 + elem1
             let value = Float.random(in: 0..<1)
             _array[offset] = value
-            buffer[offset] = value
         }}
         
-        MetalKernel.get.upload([_buffer])
+        setupHalfBuffer(
+            array: &_array,
+            out: _buffer,
+            start: 0,
+            nbElems: dim1 * dim2,
+            deviceID: 0
+        )
         
         var resultsCPU = [Float]()
         for elem2 in 0..<dim2
@@ -55,8 +59,8 @@ class ReduceSumTests: XCTestCase
             deviceID: 0
         )
         
-        MetalKernel.get.download([_buffer])
-        let resultsGPU = [Float](_buffer.buffer)
+        _ = _buffer.download()
+        let resultsGPU = getHalfBuffer(_buffer).array
         
         for (resultCPU, resultGPU) in zip(resultsCPU, resultsGPU)
         {
@@ -110,7 +114,6 @@ class ReduceMaxTests: XCTestCase
     {
         _array = [Float](repeating: 0.0, count: dim1 * dim2)
         _buffer = MetalSharedBuffer(dim1 * dim2, deviceID: 0)
-        let buffer = _buffer.buffer
         
         for elem1 in 0..<dim1 {
         for elem2 in 0..<dim2
@@ -118,10 +121,15 @@ class ReduceMaxTests: XCTestCase
             let offset = elem2 * dim1 + elem1
             let value = Float.random(in: 0..<1)
             _array[offset] = value
-            buffer[offset] = value
         }}
         
-        MetalKernel.get.upload([_buffer])
+        setupHalfBuffer(
+            array: &_array,
+            out: _buffer,
+            start: 0,
+            nbElems: dim1 * dim2,
+            deviceID: 0
+        )
         
         var resultsCPU = [Float]()
         for elem2 in 0..<dim2
@@ -142,8 +150,8 @@ class ReduceMaxTests: XCTestCase
             deviceID: 0
         )
         
-        MetalKernel.get.download([_buffer])
-        let resultsGPU = [Float](_buffer.buffer)
+        _ = _buffer.download()
+        let resultsGPU = getHalfBuffer(_buffer).array
         
         for (resultCPU, resultGPU) in zip(resultsCPU, resultsGPU)
         {

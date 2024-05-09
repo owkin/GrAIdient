@@ -12,7 +12,7 @@ kernel void clipGradients(
     constant uint * pNbElems,
     constant float * pGradientNorm,
     constant float * pNormThreshold,
-    device float * grads,
+    device half * grads,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
@@ -39,7 +39,7 @@ kernel void clipGradients(
 kernel void multiplyGradients(
     constant uint * pNbElems,
     constant float * pFactor,
-    device float * grads,
+    device half * grads,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
@@ -62,11 +62,11 @@ kernel void multiplyGradients(
 }
 
 kernel void weightsSGD(
-    const device float * grads,
+    const device half * grads,
     constant uint * pNbElems,
     constant float * pAlpha,
     constant float * pLambda,
-    device float * weights,
+    device half * weights,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
@@ -95,12 +95,12 @@ kernel void weightsSGD(
 }
 
 kernel void weightsMomentum(
-    const device float * grads,
+    const device half * grads,
     constant uint * pNbElems,
     constant float * pAlpha,
     constant float * pLambda,
-    device float * weights,
-    device float * mPtr,
+    device half * weights,
+    device half * mPtr,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
@@ -134,14 +134,14 @@ kernel void weightsMomentum(
 }
 
 kernel void weightsAdam(
-    const device float * grads,
+    const device half * grads,
     constant uint * pNbElems,
     constant float * pAlpha,
     constant float * pLambda,
     constant float * pT,
-    device float * weights,
-    device float * mPtr,
-    device float * vPtr,
+    device half * weights,
+    device half * mPtr,
+    device half * vPtr,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
@@ -185,15 +185,15 @@ kernel void weightsAdam(
 }
 
 kernel void weightsAMSGrad(
-    const device float * grads,
+    const device half * grads,
     constant uint * pNbElems,
     constant float * pAlpha,
     constant float * pLambda,
     constant float * pT,
-    device float * weights,
-    device float * mPtr,
-    device float * vPtr,
-    device float * vHatPtr,
+    device half * weights,
+    device half * mPtr,
+    device half * vPtr,
+    device half * vHatPtr,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
@@ -240,14 +240,14 @@ kernel void weightsAMSGrad(
 }
 
 kernel void weightsAdamRectified(
-    const device float * grads,
+    const device half * grads,
     constant uint * pNbElems,
     constant float * pAlpha,
     constant float * pLambda,
     constant float * pT,
-    device float * weights,
-    device float * mPtr,
-    device float * vPtr,
+    device half * weights,
+    device half * mPtr,
+    device half * vPtr,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
@@ -303,16 +303,16 @@ kernel void weightsAdamRectified(
 }
 
 kernel void weightsAdaBound(
-    const device float * grads,
+    const device half * grads,
     constant uint * pNbElems,
     constant float * pAlpha,
     constant float * pLambda,
     constant float * pT,
     constant float * pLowerBound,
     constant float * pUpperBound,
-    device float * weights,
-    device float * mPtr,
-    device float * vPtr,
+    device half * weights,
+    device half * mPtr,
+    device half * vPtr,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
@@ -369,17 +369,17 @@ kernel void weightsAdaBound(
 }
 
 kernel void weightsAMSBound(
-    const device float * grads,
+    const device half * grads,
     constant uint * pNbElems,
     constant float * pAlpha,
     constant float * pLambda,
     constant float * pT,
     constant float * pLowerBound,
     constant float * pUpperBound,
-    device float * weights,
-    device float * mPtr,
-    device float * vPtr,
-    device float * vHatPtr,
+    device half * weights,
+    device half * mPtr,
+    device half * vPtr,
+    device half * vHatPtr,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;

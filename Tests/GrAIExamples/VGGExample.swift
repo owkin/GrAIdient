@@ -397,7 +397,7 @@ final class VGGExample: XCTestCase
         
         // Initialize the ground truth once and for all.
         let groundTruth = MetalSharedBuffer<UInt16>(_batchSize, deviceID: 0)
-        let buffer = groundTruth.buffer
+        var buffer = [Float](repeating: 0.0, count: _batchSize)
         for elem in 0..<_batchSize / 2
         {
             buffer[elem] = 0.0
@@ -406,7 +406,13 @@ final class VGGExample: XCTestCase
         {
             buffer[elem] = 1.0
         }
-        MetalKernel.get.upload([groundTruth])
+        setupHalfBuffer(
+            array: &buffer,
+            out: groundTruth,
+            start: 0,
+            nbElems: _batchSize,
+            deviceID: 0
+        )
         
         let nbEpochs = 5
         for epoch in 0..<nbEpochs

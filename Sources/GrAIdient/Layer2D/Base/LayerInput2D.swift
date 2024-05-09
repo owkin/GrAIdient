@@ -195,7 +195,7 @@ open class LayerInput2D: Layer2D
     ///     - format: The data format.
     ///
     public func checkInputGPU(
-        _ data: MetalPrivateBuffer<Float16>,
+        _ data: MetalPrivateBuffer<UInt16>,
         batchSize: Int,
         nbChannels: Int, height: Int, width: Int) throws
     {

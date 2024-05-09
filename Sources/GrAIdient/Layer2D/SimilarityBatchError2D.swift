@@ -126,7 +126,7 @@ public class SimilarityBatchError2D: LayerOutput2D
     ///     - width: Width of each channel.
     ///
     public override func checkGroundTruthGPU(
-        _ groundTruth: MetalBuffer<Float16>,
+        _ groundTruth: MetalBuffer<UInt16>,
         batchSize: Int,
         nbChannels: Int, height: Int, width: Int) throws
     {
@@ -144,7 +144,7 @@ public class SimilarityBatchError2D: LayerOutput2D
     {
         if loss == nil
         {
-            loss = MetalSharedBuffer<Float16>(
+            loss = MetalSharedBuffer<UInt16>(
                 batchSize * batchSize,
                 deviceID: deviceID
             )
@@ -239,7 +239,7 @@ public class SimilarityBatchError2D: LayerOutput2D
     ///
     /// - Returns: The loss value.
     ///
-    public func getLossGPU() throws -> Float16
+    public func getLossGPU() throws -> Float
     {
         try checkLossGPU(batchSize: batchSize)
         
@@ -260,7 +260,7 @@ public class SimilarityBatchError2D: LayerOutput2D
         command.enqueue()
         
         MetalKernel.get.download([loss])
-        var loss: Float16 = 0.0
+        var loss: Float = 0.0
         let lossPtr = self.loss.buffer
         for elem1 in 0..<batchSize {
         for elem2 in 0..<batchSize
@@ -330,7 +330,7 @@ public class SimilarityBatchError2D: LayerOutput2D
             
             let pNbChannels: [UInt32] = [UInt32(nbChannels)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
-            let pCoeff: [Float16] = [Float16(coeff)]
+            let pCoeff: [Float] = [Float16(coeff)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             

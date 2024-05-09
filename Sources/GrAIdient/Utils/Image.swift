@@ -51,7 +51,7 @@ public class Image
     ///
     public static func loadImages(
         imagesURL: [URL],
-        imagesBuffer: MetalBuffer<Float16>,
+        imagesBuffer: MetalBuffer<UInt16>,
         width: Int,
         height: Int) throws
     {
@@ -100,17 +100,17 @@ public class Image
     /// - Returns: The list of images as list of pixels.
     ///
     public static func extractPixels(
-        _ metalBuffer: MetalBuffer<Float16>,
+        _ metalBuffer: MetalBuffer<UInt16>,
         width: Int,
         height: Int) -> [[UInt8]]
     {
         let bufferPtr = metalBuffer.download()
         let nbImages = metalBuffer.nbElems / (width * height * 3)
         
-        var images = [[Float16]]()
+        var images = [[Float]]()
         for i in 0..<nbImages
         {
-            images.append([Float16](
+            images.append([Float](
                 bufferPtr[i * 3 * height * width..<(i+1) * 3 * height * width]
             ))
         }

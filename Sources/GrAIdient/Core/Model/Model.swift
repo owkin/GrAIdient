@@ -323,10 +323,10 @@ public class Model: BaseModel
     }
     
     /// Get/Set the weights of the different layers.
-    public var weights: [[Float16]]
+    public var weights: [[Float]]
     {
         get {
-            var weightsList = [[Float16]]()
+            var weightsList = [[Float]]()
             if GrAI.Opti.GPU
             {
                 for layer in layers
@@ -947,8 +947,8 @@ public class Model: BaseModel
         let myLayers = layers.count > 0 ? layers : self.layers
         if GrAI.Opti.GPU
         {
-            let gNorm: Float16? = gradientNorm != nil ?
-                Float16(gradientNorm!) : nil
+            let gNorm: Float? = gradientNorm != nil ?
+                Float(gradientNorm!) : nil
             try _kernel.algo.udpateGPU(layers: myLayers,
                                        gradientNorm: gNorm)
         }
@@ -1048,14 +1048,14 @@ public class Model: BaseModel
     ///     the different GPU do not have same capability).
     ///
     public static func synchronizeWeights(_ models: [Model],
-                                          _ modelCoeffs: [Float16])
+                                          _ modelCoeffs: [Float])
     {
         for indexLayer in 0..<models[0].layers.count
         {
-            var listWeights = [[Float16]]()
+            var listWeights = [[Float]]()
             for (model, modelCoeff) in zip(models, modelCoeffs)
             {
-                var weights = [Float16]()
+                var weights = [Float]()
                 if let layerUpdate = model.layers[indexLayer]
                    as? LayerUpdate
                 {

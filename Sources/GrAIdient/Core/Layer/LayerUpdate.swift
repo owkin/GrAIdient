@@ -37,9 +37,9 @@ public enum Phase
 public protocol LayerUpdate: Layer
 {
     /// Weights in the CPU execution context.
-    var weightsCPU: [Float16] { get set }
+    var weightsCPU: [Float] { get set }
     /// Weights in the GPU execution context.
-    var weightsGPU: [Float16] { get set }
+    var weightsGPU: [Float] { get set }
     
     /// Whether to compute weights' gradients or not.
     var computeDeltaWeights: Bool { get set }
@@ -74,15 +74,15 @@ public protocol IWeightBuffers
     var nbElems: Int { get }
     
     /// Weights buffer: the buffer to be update.
-    var w: MetalBuffer<Float16> { get }
+    var w: MetalBuffer<UInt16> { get }
     /// Gradients buffer.
-    var g: MetalBuffer<Float16> { get }
+    var g: MetalBuffer<UInt16> { get }
     /// Momentum buffer.
-    var m: MetalBuffer<Float16> { get }
+    var m: MetalBuffer<UInt16> { get }
     /// Velocity buffer.
-    var v: MetalBuffer<Float16> { get }
+    var v: MetalBuffer<UInt16> { get }
     /// Velocity normalized buffer.
-    var vHat: MetalBuffer<Float16> { get }
+    var vHat: MetalBuffer<UInt16> { get }
     
     /// Clean the momentum..., preserving the weights.
     func reset()
@@ -91,32 +91,32 @@ public protocol IWeightBuffers
 extension IWeightBuffers
 {
     /// Get the weights as a private buffer.
-    var w_p: MetalPrivateBuffer<Float16>?
+    var w_p: MetalPrivateBuffer<UInt16>?
     {
         get {
-            return w as? MetalPrivateBuffer<Float16>
+            return w as? MetalPrivateBuffer<UInt16>
         }
     }
     /// Get the weights as a shared buffer.
-    var w_s: MetalSharedBuffer<Float16>?
+    var w_s: MetalSharedBuffer<UInt16>?
     {
         get {
-            return w as? MetalSharedBuffer<Float16>
+            return w as? MetalSharedBuffer<UInt16>
         }
     }
     
     /// Get the gradient buffer as a private buffer.
-    var g_p: MetalPrivateBuffer<Float16>?
+    var g_p: MetalPrivateBuffer<UInt16>?
     {
         get {
-            return g as? MetalPrivateBuffer<Float16>
+            return g as? MetalPrivateBuffer<UInt16>
         }
     }
     /// Get the gradient buffer as a shared buffer.
-    var g_s: MetalSharedBuffer<Float16>?
+    var g_s: MetalSharedBuffer<UInt16>?
     {
         get {
-            return g as? MetalSharedBuffer<Float16>
+            return g as? MetalSharedBuffer<UInt16>
         }
     }
 }
@@ -129,11 +129,11 @@ class WeightBuffers: IWeightBuffers
     /// GPU device where the buffers are sent.
     let deviceID: Int
     
-    var _w: MetalBuffer<Float16>! = nil
-    var _g: MetalBuffer<Float16>! = nil
-    var _m: MetalBuffer<Float16>! = nil
-    var _v: MetalBuffer<Float16>! = nil
-    var _vHat: MetalBuffer<Float16>! = nil
+    var _w: MetalBuffer<UInt16>! = nil
+    var _g: MetalBuffer<UInt16>! = nil
+    var _m: MetalBuffer<UInt16>! = nil
+    var _v: MetalBuffer<UInt16>! = nil
+    var _vHat: MetalBuffer<UInt16>! = nil
     
     ///
     /// Create a container of buffers.
@@ -149,60 +149,60 @@ class WeightBuffers: IWeightBuffers
     }
     
     /// Weights buffer: the buffer to be update.
-    var w: MetalBuffer<Float16>
+    var w: MetalBuffer<UInt16>
     {
         get {
             if _w == nil
             {
-                _w = MetalPrivateBuffer<Float16>(nbElems, deviceID: deviceID)
+                _w = MetalPrivateBuffer<UInt16>(nbElems, deviceID: deviceID)
             }
             return _w
         }
     }
     
     /// Gradients buffer.
-    var g: MetalBuffer<Float16>
+    var g: MetalBuffer<UInt16>
     {
         get {
             if _g == nil
             {
-                _g = MetalPrivateBuffer<Float16>(nbElems, deviceID: deviceID)
+                _g = MetalPrivateBuffer<UInt16>(nbElems, deviceID: deviceID)
             }
             return _g
         }
     }
     
     /// Momentum buffer.
-    var m: MetalBuffer<Float16>
+    var m: MetalBuffer<UInt16>
     {
         get {
             if _m == nil
             {
-                _m = MetalPrivateBuffer<Float16>(nbElems, deviceID: deviceID)
+                _m = MetalPrivateBuffer<UInt16>(nbElems, deviceID: deviceID)
             }
             return _m
         }
     }
     
     /// Velocity buffer.
-    var v: MetalBuffer<Float16>
+    var v: MetalBuffer<UInt16>
     {
         get {
             if _v == nil
             {
-                _v = MetalPrivateBuffer<Float16>(nbElems, deviceID: deviceID)
+                _v = MetalPrivateBuffer<UInt16>(nbElems, deviceID: deviceID)
             }
             return _v
         }
     }
     
     /// Velocity normalized buffer.
-    var vHat: MetalBuffer<Float16>
+    var vHat: MetalBuffer<UInt16>
     {
         get {
             if _vHat == nil
             {
-                _vHat = MetalPrivateBuffer<Float16>(nbElems, deviceID: deviceID)
+                _vHat = MetalPrivateBuffer<UInt16>(nbElems, deviceID: deviceID)
             }
             return _vHat
         }
@@ -262,10 +262,10 @@ extension LayerWeightInit
     ///
     /// - Returns: The generated list of values.
     ///
-    public func generateWeightsList() -> [Float16]
+    public func generateWeightsList() -> [Float]
     {
         let nbElems = weightListSize
-        let weightsList: [Float16]
+        let weightsList: [Float]
         switch weightInitClass {
         case .XavierUniform:
             weightsList = Self.XavierUniform(
@@ -301,7 +301,7 @@ extension LayerWeightInit
     ///     - deviceID: GPU device.
     ///
     public func generateWeightsList(
-        out: MetalBuffer<Float16>,
+        out: MetalBuffer<UInt16>,
         deviceID: Int)
     {
         let nbElems = weightListSize
@@ -349,13 +349,13 @@ extension LayerWeightInit
     ///
     static func XavierUniform(
         nbElems: Int,
-        connectivityIO: (Int, Int)) -> [Float16]
+        connectivityIO: (Int, Int)) -> [Float]
     {
-        var values = [Float16]()
+        var values = [Float]()
         let bound = sqrt(6) / sqrt(Float(connectivityIO.0 + connectivityIO.1))
         for _ in 0..<nbElems
         {
-            values.append(Float16(Float.random(in: -bound..<bound)))
+            values.append(Float.random(in: -bound..<bound))
         }
         return values
     }
@@ -372,7 +372,7 @@ extension LayerWeightInit
     static func XavierUniform(
         nbElems: Int,
         connectivityIO: (Int, Int),
-        out: MetalBuffer<Float16>,
+        out: MetalBuffer<UInt16>,
         deviceID: Int)
     {
         let temp = MetalSharedBuffer<Float>(nbElems, deviceID: deviceID)
@@ -416,15 +416,13 @@ extension LayerWeightInit
     ///
     static func XavierNormal(
         nbElems: Int,
-        connectivityIO: (Int, Int)) -> [Float16]
+        connectivityIO: (Int, Int)) -> [Float]
     {
-        var values = [Float16]()
+        var values = [Float]()
         let std = sqrt(2) / sqrt(Float(connectivityIO.0 + connectivityIO.1))
         for _ in 0..<nbElems
         {
-            values.append(
-                Float16(randomNormal(mean: 0.0, standardDeviation: std))
-            )
+            values.append(randomNormal(mean: 0.0, standardDeviation: std))
         }
         return values
     }
@@ -441,7 +439,7 @@ extension LayerWeightInit
     static func XavierNormal(
         nbElems: Int,
         connectivityIO: (Int, Int),
-        out: MetalBuffer<Float16>,
+        out: MetalBuffer<UInt16>,
         deviceID: Int)
     {
         let temp = MetalSharedBuffer<Float>(nbElems, deviceID: deviceID)
@@ -487,13 +485,13 @@ extension LayerWeightInit
     static func KaimingUniform(
         nbElems: Int,
         coeff: Float,
-        connectivityIO: (Int, Int)) -> [Float16]
+        connectivityIO: (Int, Int)) -> [Float]
     {
-        var values = [Float16]()
+        var values = [Float]()
         let bound = sqrt(3) * coeff / sqrt(Float(connectivityIO.0))
         for _ in 0..<nbElems
         {
-            values.append(Float16(Float.random(in: -bound..<bound)))
+            values.append(Float.random(in: -bound..<bound))
         }
         return values
     }
@@ -512,7 +510,7 @@ extension LayerWeightInit
         nbElems: Int,
         coeff: Float,
         connectivityIO: (Int, Int),
-        out: MetalBuffer<Float16>,
+        out: MetalBuffer<UInt16>,
         deviceID: Int)
     {
         let temp = MetalSharedBuffer<Float>(nbElems, deviceID: deviceID)
@@ -558,15 +556,13 @@ extension LayerWeightInit
     static func KaimingNormal(
         nbElems: Int,
         coeff: Float,
-        connectivityIO: (Int, Int)) -> [Float16]
+        connectivityIO: (Int, Int)) -> [Float]
     {
-        var values = [Float16]()
+        var values = [Float]()
         let std = coeff / sqrt(Float(connectivityIO.0))
         for _ in 0..<nbElems
         {
-            values.append(
-                Float16(randomNormal(mean: 0.0, standardDeviation: std))
-            )
+            values.append(randomNormal(mean: 0.0, standardDeviation: std))
         }
         return values
     }
@@ -585,7 +581,7 @@ extension LayerWeightInit
         nbElems: Int,
         coeff: Float,
         connectivityIO: (Int, Int),
-        out: MetalBuffer<Float16>,
+        out: MetalBuffer<UInt16>,
         deviceID: Int)
     {
         let temp = MetalSharedBuffer<Float>(nbElems, deviceID: deviceID)

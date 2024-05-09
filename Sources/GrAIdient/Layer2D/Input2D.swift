@@ -82,7 +82,7 @@ class InputArrays2D: InputArrays<Layer2D>, IWeightArrays
 class InputBuffers2D: InputBuffers<Layer2D>, IWeightBuffers
 {
     /// Inputs buffer: the buffer to be update.
-    var w: MetalBuffer<Float16>
+    var w: MetalBuffer<UInt16>
     {
         get {
             return _layer.outs
@@ -90,7 +90,7 @@ class InputBuffers2D: InputBuffers<Layer2D>, IWeightBuffers
     }
     
     /// Gradients buffer.
-    var g: MetalBuffer<Float16>
+    var g: MetalBuffer<UInt16>
     {
         get {
             return _layer.delta
@@ -113,13 +113,13 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
     public var accumulateDeltaWeights: Bool = false
     
     /// Weights in the CPU execution context.
-    public var weightsCPU: [Float16]
+    public var weightsCPU: [Float]
     {
         get { [] }
         set {}
     }
     /// Weights in the GPU execution context.
-    public var weightsGPU: [Float16]
+    public var weightsGPU: [Float]
     {
         get { [] }
         set {}
@@ -397,7 +397,7 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
     ///     - width: Width of each channel.
     ///
     public func setDataGPU(
-        _ data: MetalPrivateBuffer<Float16>,
+        _ data: MetalPrivateBuffer<UInt16>,
         batchSize: Int,
         nbChannels: Int, height: Int, width: Int) throws
     {

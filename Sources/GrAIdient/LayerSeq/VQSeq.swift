@@ -23,7 +23,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
     /// Loss buffer in the GPU execution context.
     /// Shape ~ (batch,).
     ///
-    public internal(set) var loss: MetalSharedBuffer<Float16>! = nil
+    public internal(set) var loss: MetalSharedBuffer<UInt16>! = nil
     ///
     /// Indices of maximal elements.
     /// Shape ~ (batch, seq).
@@ -46,7 +46,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
     /// Buffer of gradients per sample for biases.
     /// Shape ~ (batch, K, nbNeurons).
     ///
-    var _wDeltaWeights: MetalPrivateBuffer<Float16>! = nil
+    var _wDeltaWeights: MetalPrivateBuffer<UInt16>! = nil
     
     /// Whether to compute weights' gradients or not.
     public var computeDeltaWeights: Bool = true
@@ -55,10 +55,10 @@ public class VQSeq: LayerSeq, LayerWeightInit
     public var accumulateDeltaWeights: Bool = false
     
     /// Cache for weights before calling `initKernel` API.
-    var _weightsList = [Float16]()
+    var _weightsList = [Float]()
     
     /// Weights in the CPU execution context.
-    public var weightsCPU: [Float16]
+    public var weightsCPU: [Float]
     {
         get {
             if _wArrays == nil
@@ -66,11 +66,11 @@ public class VQSeq: LayerSeq, LayerWeightInit
                 return _weightsList
             }
             
-            var weightsTmp = [Float16]()
+            var weightsTmp = [Float]()
             for k in 0..<K {
             for depth in 0..<nbNeurons
             {
-                weightsTmp.append(Float16(_wArrays.w(k, depth)))
+                weightsTmp.append(Float(_wArrays.w(k, depth)))
             }}
             return weightsTmp
         }
@@ -80,7 +80,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
     }
     
     /// Weights in the GPU execution context.
-    public var weightsGPU: [Float16]
+    public var weightsGPU: [Float]
     {
         get {
             if _wBuffers == nil
@@ -88,7 +88,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
                 return _weightsList
             }
             
-            var weightsTmp = [Float16]()
+            var weightsTmp = [Float]()
             MetalKernel.get.download([_wBuffers.w_p!])
             weightsTmp += _wBuffers.w_p!.shared.array
         
@@ -155,7 +155,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
         
         try super.init(from: decoder)
         
-        let weightsList = try values.decode([Float16].self, forKey: .weights)
+        let weightsList = try values.decode([Float].self, forKey: .weights)
         self.weightsCPU = weightsList
     }
     
@@ -178,7 +178,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
         try container.encode(Float(coeff), forKey: .coeff)
         try container.encode(Float(beta), forKey: .beta)
         
-        let weightsList: [Float16]
+        let weightsList: [Float]
         if GrAI.Opti.GPU
         {
             weightsList = self.weightsGPU
@@ -354,7 +354,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
         if computeDeltaWeights &&
            GrAI.Gradient.sample && _wDeltaWeights == nil
         {
-            _wDeltaWeights = MetalPrivateBuffer<Float16>(
+            _wDeltaWeights = MetalPrivateBuffer<UInt16>(
                 batchSize * K * nbNeurons, deviceID: deviceID
             )
         }
@@ -379,7 +379,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
     {
         if loss == nil
         {
-            loss = MetalSharedBuffer<Float16>(batchSize, deviceID: deviceID)
+            loss = MetalSharedBuffer<UInt16>(batchSize, deviceID: deviceID)
         }
         else if batchSize <= 0 || batchSize > loss.nbElems
         {
@@ -582,7 +582,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pSequence: [UInt32] = [UInt32(sequence)]
             let pK: [UInt32] = [UInt32(K)]
-            let pBeta: [Float16] = [Float16(beta)]
+            let pBeta: [Float] = [Float16(beta)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
             let command = MetalKernel.get.createCommand(
@@ -618,7 +618,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pSequence: [UInt32] = [UInt32(sequence)]
             let pK: [UInt32] = [UInt32(K)]
-            let pCoeff: [Float16] = [Float16(coeff)]
+            let pCoeff: [Float] = [Float16(coeff)]
             let pAccumulate: [UInt32] = accumulateDeltaWeights ? [1] : [0]
             
             var command: MetalCommand
@@ -778,7 +778,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
         command.enqueue()
         
         MetalKernel.get.download([loss])
-        var loss: Float16 = 0.0
+        var loss: Float = 0.0
         let lossPtr = self.loss.buffer
         for i in 0..<batchSize
         {
@@ -866,7 +866,7 @@ public class VQGradSeq: VQSeq
     /// Maximal CAM elements.
     /// Shape ~ (batch, nbThreadgroups).
     ///
-    private var _camMax: MetalPrivateBuffer<Float16>! = nil
+    private var _camMax: MetalPrivateBuffer<UInt16>! = nil
     
     /// Number of thread groups in the GPU execution context.
     var nbThreadgroups: Int
@@ -1086,7 +1086,7 @@ public class VQGradSeq: VQSeq
         
         if _camMax == nil
         {
-            _camMax = MetalPrivateBuffer<Float16>(
+            _camMax = MetalPrivateBuffer<UInt16>(
                 batchSize * nbThreadgroups,
                 deviceID: deviceID
             )
@@ -1264,7 +1264,7 @@ public class VQGradSeq: VQSeq
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pSequence: [UInt32] = [UInt32(sequence)]
             let pK: [UInt32] = [UInt32(K)]
-            let pMagnitudeCoeff: [Float16] = [Float16(magnitudeCoeff)]
+            let pMagnitudeCoeff: [Float] = [Float16(magnitudeCoeff)]
             
             let command = MetalKernel.get.createCommand(
                 "vqGradSeqForward", deviceID: deviceID

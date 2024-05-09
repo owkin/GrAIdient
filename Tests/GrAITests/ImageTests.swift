@@ -123,7 +123,7 @@ class ImageTests: XCTestCase
     {
         for (elem, name) in _imageNames.enumerated()
         {
-            let pixelsOut: [Float16] = lastLayer.getOutsCPU(elem: elem)
+            let pixelsOut: [Float] = lastLayer.getOutsCPU(elem: elem)
             var pixels = Image.toPixel([pixelsOut])
             pixels = Image.toRGB(pixels, width: _size, height: _size)
             
@@ -360,7 +360,7 @@ class ImageTests: XCTestCase
         )
         
         let batchSize = imagesURL.count
-        let buffer = MetalPrivateBuffer<Float16>(
+        let buffer = MetalPrivateBuffer<UInt16>(
             batchSize * 3 * _size * _size, deviceID: 0
         )
         

@@ -26,7 +26,7 @@ public class SelectNeurons1D: Layer1D
     /// Coefficients of selected neurons.
     /// Shape ~ (nbNeurons,).
     ///
-    var _coeffsBuffer: MetalPrivateBuffer<Float16>! = nil
+    var _coeffsBuffer: MetalPrivateBuffer<UInt16>! = nil
     
     private enum Keys: String, CodingKey
     {
@@ -147,7 +147,7 @@ public class SelectNeurons1D: Layer1D
             _neuronsBuffer = MetalPrivateBuffer<UInt32>(
                 nbNeurons, deviceID: deviceID
             )
-            _coeffsBuffer = MetalPrivateBuffer<Float16>(
+            _coeffsBuffer = MetalPrivateBuffer<UInt16>(
                 nbNeurons, deviceID: deviceID
             )
             
@@ -157,7 +157,7 @@ public class SelectNeurons1D: Layer1D
             for (num, neuron) in _neurons.enumerated()
             {
                 neuronsPtr[num] = UInt32(neuron)
-                coeffsPtr[num] = Float16(_coeffs[num])
+                coeffsPtr[num] = Float(_coeffs[num])
             }
             
             MetalKernel.get.upload([_neuronsBuffer])

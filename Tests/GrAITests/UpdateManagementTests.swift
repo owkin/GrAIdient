@@ -58,8 +58,8 @@ class UpdateManagementTests: XCTestCase
         
         let groundTruth: [[Double]] = [[0.0]]
         
-        let inputData1: [[Float16]] = [[0.0]]
-        let inputData2: [[Float16]] = [[1.0]]
+        let inputData1: [[Float]] = [[0.0]]
+        let inputData2: [[Float]] = [[1.0]]
         
         // Test that by default, layer1 does not forward to layer2.
         
@@ -221,14 +221,14 @@ class UpdateManagementTests: XCTestCase
             deviceID: DEVICE_ID
         )
         
-        let groundTruth = MetalSharedBuffer<Float16>(
+        let groundTruth = MetalSharedBuffer<UInt16>(
             1, deviceID: DEVICE_ID
         )
         groundTruth.buffer[0] = 0
         MetalKernel.get.upload([groundTruth])
         
-        let inputData1: [[Float16]] = [[0.0]]
-        let inputData2: [[Float16]] = [[1.0]]
+        let inputData1: [[Float]] = [[0.0]]
+        let inputData2: [[Float]] = [[1.0]]
         
         // Test that by default, layer1 does not forward to layer2.
         
@@ -395,8 +395,8 @@ class UpdateManagementTests: XCTestCase
         
         let groundTruth: [[Double]] = [[0.0]]
         
-        let inputData1: [Float16] = [0.0]
-        let inputData2: [Float16] = [1.0]
+        let inputData1: [Float] = [0.0]
+        let inputData2: [Float] = [1.0]
         
         // Test that by default, layer1 does not forward to layer2.
         
@@ -610,14 +610,14 @@ class UpdateManagementTests: XCTestCase
             deviceID: DEVICE_ID
         )
         
-        let groundTruth = MetalSharedBuffer<Float16>(
+        let groundTruth = MetalSharedBuffer<UInt16>(
             1, deviceID: DEVICE_ID
         )
         groundTruth.buffer[0] = 0
         MetalKernel.get.upload([groundTruth])
         
-        let inputData1: [Float16] = [0.0]
-        let inputData2: [Float16] = [1.0]
+        let inputData1: [Float] = [0.0]
+        let inputData2: [Float] = [1.0]
         
         // Test that by default, layer1 does not forward to layer2.
         

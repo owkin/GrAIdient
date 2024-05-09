@@ -132,7 +132,7 @@ open class LayerInput1D: Layer1D
     ///     - nbNeurons: Number of neurons.
     ///
     public func checkInputGPU(
-        _ data: MetalPrivateBuffer<Float16>,
+        _ data: MetalPrivateBuffer<UInt16>,
         batchSize: Int,
         nbNeurons: Int) throws
     {

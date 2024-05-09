@@ -114,12 +114,12 @@ class Input2DSimilarityError2DCase: XCTestCase, Input2DCase, IOCase
     /// - Returns: (The data, the batch size).
     ///
     func setData(
-        _ inputs: [[Float16]]?,
+        _ inputs: [[Float]]?,
         _ model: Model
-    ) -> ([[Float16]], Int)
+    ) -> ([[Float]], Int)
     {
         let firstLayer = model.layers.first as! Input2D
-        let ins: [[Float16]]
+        let ins: [[Float]]
         if let insTmp = inputs
         {
             ins = insTmp

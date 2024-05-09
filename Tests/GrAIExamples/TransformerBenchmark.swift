@@ -238,7 +238,7 @@ final class TransformerBenchmark: XCTestCase
         let lastLayer: MSE1D = transformer.layers.last as! MSE1D
         
         // Initialize the ground truth once and for all.
-        let groundTruth = MetalSharedBuffer<Float16>(_batchSize, deviceID: 0)
+        let groundTruth = MetalSharedBuffer<UInt16>(_batchSize, deviceID: 0)
         let gtBuffer = groundTruth.buffer
         for elem in 0..<_batchSize / 2
         {
@@ -251,7 +251,7 @@ final class TransformerBenchmark: XCTestCase
         groundTruth.upload()
         
         // Initialize data once and for all.
-        let data = MetalPrivateBuffer<Float16>(
+        let data = MetalPrivateBuffer<UInt16>(
             _batchSize * 3 * _size * _size, deviceID: 0
         )
         let dataBuffer = data.shared.buffer
@@ -349,7 +349,7 @@ final class TransformerBenchmark: XCTestCase
         let lastLayer: MSE1D = transformer.layers.last as! MSE1D
         
         // Initialize the ground truth once and for all.
-        let groundTruth = MetalSharedBuffer<Float16>(_batchSize, deviceID: 0)
+        let groundTruth = MetalSharedBuffer<UInt16>(_batchSize, deviceID: 0)
         let gtBuffer = groundTruth.buffer
         for elem in 0..<_batchSize / 2
         {
@@ -362,7 +362,7 @@ final class TransformerBenchmark: XCTestCase
         groundTruth.upload()
         
         // Initialize data once and for all.
-        let data = MetalPrivateBuffer<Float16>(
+        let data = MetalPrivateBuffer<UInt16>(
             _batchSize * 3 * _size * _size, deviceID: 0
         )
         let dataBuffer = data.shared.buffer
@@ -400,7 +400,7 @@ final class TransformerBenchmark: XCTestCase
                 try! transformer.forward()
                 
                 // Get predictions.
-                var preds = [Float16](lastLayer.outs.download()[0..<_batchSize])
+                var preds = [Float](lastLayer.outs.download()[0..<_batchSize])
                 preds = preds.map { 1.0 / (1.0 + exp(-$0)) } // Sigmoid.
                 
                 let end2 = Date()

@@ -110,9 +110,9 @@ class InputBuffers<T: Layer>
     /// GPU device where the buffers are sent.
     let deviceID: Int
     
-    var _m: MetalBuffer<Float16>! = nil
-    var _v: MetalBuffer<Float16>! = nil
-    var _vHat: MetalBuffer<Float16>! = nil
+    var _m: MetalBuffer<UInt16>! = nil
+    var _v: MetalBuffer<UInt16>! = nil
+    var _vHat: MetalBuffer<UInt16>! = nil
     
     ///
     /// Create a container of buffers.
@@ -132,36 +132,36 @@ class InputBuffers<T: Layer>
     }
     
     /// Momentum buffer.
-    var m: MetalBuffer<Float16>
+    var m: MetalBuffer<UInt16>
     {
         get {
             if _m == nil
             {
-                _m = MetalPrivateBuffer<Float16>(nbElems, deviceID: deviceID)
+                _m = MetalPrivateBuffer<UInt16>(nbElems, deviceID: deviceID)
             }
             return _m
         }
     }
     
     /// Velocity buffer.
-    var v: MetalBuffer<Float16>
+    var v: MetalBuffer<UInt16>
     {
         get {
             if _v == nil
             {
-                _v = MetalPrivateBuffer<Float16>(nbElems, deviceID: deviceID)
+                _v = MetalPrivateBuffer<UInt16>(nbElems, deviceID: deviceID)
             }
             return _v
         }
     }
     
     /// Velocity normalized buffer.
-    var vHat: MetalBuffer<Float16>
+    var vHat: MetalBuffer<UInt16>
     {
         get {
             if _vHat == nil
             {
-                _vHat = MetalPrivateBuffer<Float16>(nbElems, deviceID: deviceID)
+                _vHat = MetalPrivateBuffer<UInt16>(nbElems, deviceID: deviceID)
             }
             return _vHat
         }

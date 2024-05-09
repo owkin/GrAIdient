@@ -31,10 +31,10 @@ public class Constant12Seq: LayerSeq, LayerUpdate
     public var accumulateDeltaWeights: Bool = false
     
     /// Cache for weights before calling `initKernel` API.
-    var _weightsList = [Float16]()
+    var _weightsList = [Float]()
     
     /// Weights in the CPU execution context.
-    public var weightsCPU: [Float16]
+    public var weightsCPU: [Float]
     {
         get {
             if _wArrays == nil
@@ -42,11 +42,11 @@ public class Constant12Seq: LayerSeq, LayerUpdate
                 return _weightsList
             }
             
-            var weightsTmp = [Float16]()
+            var weightsTmp = [Float]()
             for seq in 0..<sequence {
             for depth in 0..<nbNeurons
             {
-                weightsTmp.append(Float16(_wArrays.w(seq, depth)))
+                weightsTmp.append(Float(_wArrays.w(seq, depth)))
             }}
             return weightsTmp
         }
@@ -56,7 +56,7 @@ public class Constant12Seq: LayerSeq, LayerUpdate
     }
     
     /// Weights in the GPU execution context.
-    public var weightsGPU: [Float16]
+    public var weightsGPU: [Float]
     {
         get {
             if _wBuffers == nil
@@ -64,7 +64,7 @@ public class Constant12Seq: LayerSeq, LayerUpdate
                 return _weightsList
             }
             
-            var weightsTmp = [Float16]()
+            var weightsTmp = [Float]()
             MetalKernel.get.download([_wBuffers.w_p!])
             weightsTmp += _wBuffers.w_p!.shared.array
         
@@ -117,7 +117,7 @@ public class Constant12Seq: LayerSeq, LayerUpdate
         let values = try decoder.container(keyedBy: Keys.self)
         try super.init(from: decoder)
         
-        let weightsList = try values.decode([Float16].self, forKey: .weights)
+        let weightsList = try values.decode([Float].self, forKey: .weights)
         self.weightsCPU = weightsList
     }
     
@@ -136,7 +136,7 @@ public class Constant12Seq: LayerSeq, LayerUpdate
     {
         var container = encoder.container(keyedBy: Keys.self)
         
-        let weightsList: [Float16]
+        let weightsList: [Float]
         if GrAI.Opti.GPU
         {
             weightsList = self.weightsGPU
@@ -517,7 +517,7 @@ public class Constant2Seq: LayerSeq, LayerUpdate
     /// Buffer of gradients per sample for biases.
     /// Shape ~ (batch, sequence, nbNeurons).
     ///
-    var _wDeltaWeights: MetalPrivateBuffer<Float16>! = nil
+    var _wDeltaWeights: MetalPrivateBuffer<UInt16>! = nil
     
     /// Whether to compute weights' gradients or not.
     public var computeDeltaWeights: Bool = true
@@ -526,10 +526,10 @@ public class Constant2Seq: LayerSeq, LayerUpdate
     public var accumulateDeltaWeights: Bool = false
     
     /// Cache for weights before calling `initKernel` API.
-    var _weightsList = [Float16]()
+    var _weightsList = [Float]()
     
     /// Weights in the CPU execution context.
-    public var weightsCPU: [Float16]
+    public var weightsCPU: [Float]
     {
         get {
             if _wArrays == nil
@@ -537,10 +537,10 @@ public class Constant2Seq: LayerSeq, LayerUpdate
                 return _weightsList
             }
             
-            var weightsTmp = [Float16]()
+            var weightsTmp = [Float]()
             for depth in 0..<nbNeurons
             {
-                weightsTmp.append(Float16(_wArrays.w[depth]))
+                weightsTmp.append(Float(_wArrays.w[depth]))
             }
             return weightsTmp
         }
@@ -550,7 +550,7 @@ public class Constant2Seq: LayerSeq, LayerUpdate
     }
     
     /// Weights in the GPU execution context.
-    public var weightsGPU: [Float16]
+    public var weightsGPU: [Float]
     {
         get {
             if _wBuffers == nil
@@ -558,7 +558,7 @@ public class Constant2Seq: LayerSeq, LayerUpdate
                 return _weightsList
             }
             
-            var weightsTmp = [Float16]()
+            var weightsTmp = [Float]()
             MetalKernel.get.download([_wBuffers.w_p!])
             weightsTmp += _wBuffers.w_p!.shared.array
         
@@ -611,7 +611,7 @@ public class Constant2Seq: LayerSeq, LayerUpdate
         let values = try decoder.container(keyedBy: Keys.self)
         try super.init(from: decoder)
         
-        let weightsList = try values.decode([Float16].self, forKey: .weights)
+        let weightsList = try values.decode([Float].self, forKey: .weights)
         self.weightsCPU = weightsList
     }
     
@@ -630,7 +630,7 @@ public class Constant2Seq: LayerSeq, LayerUpdate
     {
         var container = encoder.container(keyedBy: Keys.self)
         
-        let weightsList: [Float16]
+        let weightsList: [Float]
         if GrAI.Opti.GPU
         {
             weightsList = self.weightsGPU
@@ -782,7 +782,7 @@ public class Constant2Seq: LayerSeq, LayerUpdate
         if computeDeltaWeights &&
            GrAI.Gradient.sample && _wDeltaWeights == nil
         {
-            _wDeltaWeights = MetalPrivateBuffer<Float16>(
+            _wDeltaWeights = MetalPrivateBuffer<UInt16>(
                 batchSize * sequence * nbNeurons, deviceID: deviceID
             )
         }

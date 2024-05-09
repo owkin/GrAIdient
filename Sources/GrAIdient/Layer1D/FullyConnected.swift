@@ -41,12 +41,12 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerWeightInit
     /// Buffer of gradients per sample for weights.
     /// Shape ~ (batch, nbNeurons, nbNeuronsPrev).
     ///
-    var _wDeltaWeights: MetalPrivateBuffer<Float16>! = nil
+    var _wDeltaWeights: MetalPrivateBuffer<UInt16>! = nil
     ///
     /// Buffer of gradients per sample for biases.
     /// Shape ~ (batch, nbNeurons).
     /// 
-    var _bDeltaWeights: MetalPrivateBuffer<Float16>! = nil
+    var _bDeltaWeights: MetalPrivateBuffer<UInt16>! = nil
     
     /// Whether to compute weights' gradients or not.
     public var computeDeltaWeights: Bool = true
@@ -105,7 +105,7 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerWeightInit
     }
     
     /// Output buffer of previous layer.
-    var outsPrev: MetalPrivateBuffer<Float16>
+    var outsPrev: MetalPrivateBuffer<UInt16>
     {
         get {
             if let layerPrev = self.layerPrev as? Layer1D
@@ -124,7 +124,7 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerWeightInit
     }
     
     /// Gradient buffer of previous layer.
-    var deltaPrev: MetalPrivateBuffer<Float16>?
+    var deltaPrev: MetalPrivateBuffer<UInt16>?
     {
         get {
             if let layerPrev = self.layerPrev as? Layer1D
@@ -160,10 +160,10 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerWeightInit
     var _updateBiases: Bool = true
     
     /// Cache for weights before calling `initKernel` API.
-    var _weightsList = [Float16]()
+    var _weightsList = [Float]()
     
     /// Weights in the CPU execution context.
-    public var weightsCPU: [Float16]
+    public var weightsCPU: [Float]
     {
         get {
             if _wArrays == nil
@@ -171,17 +171,17 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerWeightInit
                 return _weightsList
             }
             
-            var weightsTmp = [Float16]()
+            var weightsTmp = [Float]()
             for i in 0..<weightHeight {
             for j in 0..<weightWidth
             {
-                weightsTmp.append(Float16(_wArrays.w(i, j)))
+                weightsTmp.append(Float(_wArrays.w(i, j)))
             }}
             
             if _updateBiases {
             for depth in 0..<weightHeight
             {
-                weightsTmp.append(Float16(_bArrays.w[depth]))
+                weightsTmp.append(Float(_bArrays.w[depth]))
             }}
             return weightsTmp
         }
@@ -191,7 +191,7 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerWeightInit
     }
     
     /// Weights in the GPU execution context.
-    public var weightsGPU: [Float16]
+    public var weightsGPU: [Float]
     {
         get {
             if _wBuffers == nil
@@ -199,7 +199,7 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerWeightInit
                 return _weightsList
             }
             
-            var weightsTmp = [Float16]()
+            var weightsTmp = [Float]()
             MetalKernel.get.download([_wBuffers.w_p!])
             weightsTmp += _wBuffers.w_p!.shared.array
             
@@ -306,7 +306,7 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerWeightInit
         
         try super.init(from: decoder)
         
-        let weightsList = try values.decode([Float16].self, forKey: .weights)
+        let weightsList = try values.decode([Float].self, forKey: .weights)
         self.weightsCPU = weightsList
     }
     
@@ -329,7 +329,7 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerWeightInit
         try container.encode(weightWidth, forKey: .weightWidth)
         try container.encode(weightHeight, forKey: .weightHeight)
         
-        let weightsList: [Float16]
+        let weightsList: [Float]
         if GrAI.Opti.GPU
         {
             weightsList = self.weightsGPU
@@ -528,7 +528,7 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerWeightInit
         if _weightsList.count == 0
         {
             _weightsList = generateWeightsList()
-            _weightsList += [Float16](repeating: 0.0, count: weightHeight)
+            _weightsList += [Float](repeating: 0.0, count: weightHeight)
         }
         
         _wArrays = WeightGrids(width: weightWidth, height: weightHeight)
@@ -620,13 +620,13 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerWeightInit
         if computeDeltaWeights &&
            GrAI.Gradient.sample && _wDeltaWeights == nil
         {
-            _wDeltaWeights = MetalPrivateBuffer<Float16>(
+            _wDeltaWeights = MetalPrivateBuffer<UInt16>(
                 batchSize * nbNeurons * weightWidth, deviceID: deviceID
             )
             
             if _updateBiases
             {
-                _bDeltaWeights = MetalPrivateBuffer<Float16>(
+                _bDeltaWeights = MetalPrivateBuffer<UInt16>(
                     batchSize * nbNeurons, deviceID: deviceID
                 )
             }

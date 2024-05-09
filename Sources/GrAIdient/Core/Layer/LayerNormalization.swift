@@ -21,10 +21,10 @@ public class LayerWeightsNormalization: Codable, Cloneable
     var _nbElems = 0
     
     /// Cache for weights before calling `initKernel` API.
-    var _weightsList = [Float16]()
+    var _weightsList = [Float]()
     
     /// Weights in the CPU execution context.
-    var weights: [Float16]
+    var weights: [Float]
     {
         get {
             return _weightsList
@@ -106,7 +106,7 @@ public class LayerWeightsNormalization: Codable, Cloneable
         _nbNeurons = try container.decode(Int.self, forKey: .nbNeurons)
         _nbElems = try container.decode(Int.self, forKey: .nbElems)
         
-        _weightsList = try container.decode([Float16].self, forKey: .weights)
+        _weightsList = try container.decode([Float].self, forKey: .weights)
     }
     
     ///
@@ -156,10 +156,10 @@ public class LayerWeightsNormalization: Codable, Cloneable
 public class LayerWeightsStatsNormalization: LayerWeightsNormalization
 {
     /// Cache for stats before calling `initKernel` API.
-    var _statsList = [Float16]()
+    var _statsList = [Float]()
     
     /// Stats in the CPU execution context.
-    var stats: [Float16]
+    var stats: [Float]
     {
         get {
             return _statsList
@@ -205,7 +205,7 @@ public class LayerWeightsStatsNormalization: LayerWeightsNormalization
     public required init(from decoder: Decoder) throws
     {
         let container = try decoder.container(keyedBy: Keys.self)
-        _statsList = try container.decode([Float16].self, forKey: .stats)
+        _statsList = try container.decode([Float].self, forKey: .stats)
         try super.init(from: decoder)
     }
     
@@ -291,7 +291,7 @@ public class BatchNormalization: LayerWeightsStatsNormalization
     var _xHat = [[Double]]()
     
     /// Weights in the CPU execution context.
-    override var weights: [Float16]
+    override var weights: [Float]
     {
         get {
             if _Ɣ == nil
@@ -299,14 +299,14 @@ public class BatchNormalization: LayerWeightsStatsNormalization
                 return super.weights
             }
             
-            var weightsTmp = [Float16]()
+            var weightsTmp = [Float]()
             for Ɣ in _Ɣ.w
             {
-                weightsTmp.append(Float16(Ɣ))
+                weightsTmp.append(Float(Ɣ))
             }
             for β in _β.w
             {
-                weightsTmp.append(Float16(β))
+                weightsTmp.append(Float(β))
             }
             return weightsTmp
         }
@@ -322,7 +322,7 @@ public class BatchNormalization: LayerWeightsStatsNormalization
     }
     
     /// Stats in the CPU execution context.
-    override var stats: [Float16]
+    override var stats: [Float]
     {
         get {
             if _Eμ.count == 0
@@ -330,14 +330,14 @@ public class BatchNormalization: LayerWeightsStatsNormalization
                 return super.stats
             }
             
-            var statsTmp = [Float16]()
+            var statsTmp = [Float]()
             for depth in 0..<_nbNeurons
             {
-                statsTmp.append(Float16(_Eμ[depth]))
+                statsTmp.append(Float(_Eμ[depth]))
             }
             for depth in 0..<_nbNeurons
             {
-                statsTmp.append(Float16(_Eσ2[depth]))
+                statsTmp.append(Float(_Eσ2[depth]))
             }
             return statsTmp
         }
@@ -644,45 +644,45 @@ class BatchNormalizationGPU: LayerWeightsStatsNormalization
     /// Buffer of averages of data for the different independent batch normalization units.
     /// Shape ~ (nbNeurons,).
     ///
-    var _μ: MetalBuffer<Float16>! = nil
+    var _μ: MetalBuffer<UInt16>! = nil
     ///
     /// Buffer of global averages of data for the different independent batch normalization units.
     /// Shape ~ (nbNeurons,).
     ///
-    var _Eμ: MetalPrivateBuffer<Float16>! = nil
+    var _Eμ: MetalPrivateBuffer<UInt16>! = nil
     ///
     /// Buffer of deviations of data for the different independent batch normalization units.
     /// Shape ~ (nbNeurons,).
     ///
-    var _σ2: MetalBuffer<Float16>! = nil
+    var _σ2: MetalBuffer<UInt16>! = nil
     ///
     /// Buffer of global deviations of data for the different independent batch normalization units.
     /// Shape ~ (nbNeurons,).
     ///
-    var _Eσ2: MetalPrivateBuffer<Float16>! = nil
+    var _Eσ2: MetalPrivateBuffer<UInt16>! = nil
     
     ///
     /// Buffer of data normalized without taking into account the biases and the weights.
     /// Shape ~ (batch, nbNeurons, height, width).
     ///
-    var _xHat: MetalBuffer<Float16>! = nil
+    var _xHat: MetalBuffer<UInt16>! = nil
     
     ///
     /// Buffer used to compute backward pass.
     /// Shape ~ (nbNeurons,).
     ///
-    var _sum1: MetalBuffer<Float16>! = nil
+    var _sum1: MetalBuffer<UInt16>! = nil
     ///
     /// Buffer used to compute backward pass.
     /// Shape ~ (nbNeurons,).
     ///
-    var _sum2: MetalBuffer<Float16>! = nil
+    var _sum2: MetalBuffer<UInt16>! = nil
    
     /// GPU device on which model is executed.
     var _deviceID = 0
     
     /// Weights in the GPU execution context.
-    override var weights: [Float16]
+    override var weights: [Float]
     {
         get {
             if _Ɣ == nil
@@ -692,7 +692,7 @@ class BatchNormalizationGPU: LayerWeightsStatsNormalization
             
             MetalKernel.get.download([_β.w_p!, _Ɣ.w_p!])
             
-            var weightsTmp = [Float16]()
+            var weightsTmp = [Float]()
             weightsTmp += _Ɣ.w_p!.shared.array
             weightsTmp += _β.w_p!.shared.array
             return weightsTmp
@@ -709,7 +709,7 @@ class BatchNormalizationGPU: LayerWeightsStatsNormalization
     }
     
     /// Stats in the GPU execution context.
-    override var stats: [Float16]
+    override var stats: [Float]
     {
         get {
             if _Eμ == nil
@@ -719,7 +719,7 @@ class BatchNormalizationGPU: LayerWeightsStatsNormalization
             
             MetalKernel.get.download([_Eμ, _Eσ2])
             
-            var statsTmp = [Float16]()
+            var statsTmp = [Float]()
             statsTmp += _Eμ.shared.array
             statsTmp += _Eσ2.shared.array
             return statsTmp
@@ -808,8 +808,8 @@ class BatchNormalizationGPU: LayerWeightsStatsNormalization
     /// Initialize stats in the GPU execution context.
     func initStats()
     {
-        _Eμ = MetalPrivateBuffer<Float16>(_nbNeurons, deviceID: _deviceID)
-        _Eσ2 = MetalPrivateBuffer<Float16>(_nbNeurons, deviceID: _deviceID)
+        _Eμ = MetalPrivateBuffer<UInt16>(_nbNeurons, deviceID: _deviceID)
+        _Eσ2 = MetalPrivateBuffer<UInt16>(_nbNeurons, deviceID: _deviceID)
         
         let EμPtr = _Eμ.shared.buffer
         let Eσ2Ptr = _Eσ2.shared.buffer
@@ -880,7 +880,7 @@ class BatchNormalizationGPU: LayerWeightsStatsNormalization
         
         if _μ == nil
         {
-            _μ = MetalPrivateBuffer<Float16>(_nbNeurons, deviceID: _deviceID)
+            _μ = MetalPrivateBuffer<UInt16>(_nbNeurons, deviceID: _deviceID)
         }
         
         let command = MetalKernel.get.createCommand(
@@ -913,7 +913,7 @@ class BatchNormalizationGPU: LayerWeightsStatsNormalization
         
         if _σ2 == nil
         {
-            _σ2 = MetalPrivateBuffer<Float16>(_nbNeurons, deviceID: _deviceID)
+            _σ2 = MetalPrivateBuffer<UInt16>(_nbNeurons, deviceID: _deviceID)
         }
         
         let command = MetalKernel.get.createCommand(
@@ -948,7 +948,7 @@ class BatchNormalizationGPU: LayerWeightsStatsNormalization
         
         if _xHat == nil
         {
-            _xHat = MetalPrivateBuffer<Float16>(
+            _xHat = MetalPrivateBuffer<UInt16>(
                 batchSize * _nbNeurons * width * height,
                 deviceID: _deviceID
             )
@@ -1039,8 +1039,8 @@ class BatchNormalizationGPU: LayerWeightsStatsNormalization
         
         if _sum1 == nil
         {
-            _sum1 = MetalPrivateBuffer<Float16>(_nbNeurons, deviceID: _deviceID)
-            _sum2 = MetalPrivateBuffer<Float16>(_nbNeurons, deviceID: _deviceID)
+            _sum1 = MetalPrivateBuffer<UInt16>(_nbNeurons, deviceID: _deviceID)
+            _sum2 = MetalPrivateBuffer<UInt16>(_nbNeurons, deviceID: _deviceID)
         }
         
         let command = MetalKernel.get.createCommand(
@@ -1162,7 +1162,7 @@ public class InstanceNormalization: LayerWeightsNormalization
     var _xHat = [[Double]]()
     
     /// Weights in the CPU execution context.
-    override var weights: [Float16]
+    override var weights: [Float]
     {
         get {
             if _Ɣ == nil
@@ -1170,14 +1170,14 @@ public class InstanceNormalization: LayerWeightsNormalization
                 return super.weights
             }
             
-            var weightsTmp = [Float16]()
+            var weightsTmp = [Float]()
             for Ɣ in _Ɣ.w
             {
-                weightsTmp.append(Float16(Ɣ))
+                weightsTmp.append(Float(Ɣ))
             }
             for β in _β.w
             {
-                weightsTmp.append(Float16(β))
+                weightsTmp.append(Float(β))
             }
             return weightsTmp
         }
@@ -1499,35 +1499,35 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
     /// Buffer of averages of data for the different independent batch normalization units.
     /// Shape ~ (batch, nbNeurons).
     ///
-    var _μ: MetalBuffer<Float16>! = nil
+    var _μ: MetalBuffer<UInt16>! = nil
     ///
     /// Buffer of deviations of data for the different independent batch normalization units.
     /// Shape ~ (batch, nbNeurons).
     ///
-    var _σ2: MetalBuffer<Float16>! = nil
+    var _σ2: MetalBuffer<UInt16>! = nil
     
     ///
     /// Buffer of data normalized without taking into account the biases and the weights.
     /// Shape ~ (batch, nbNeurons, height, width).
     ///
-    var _xHat: MetalBuffer<Float16>! = nil
+    var _xHat: MetalBuffer<UInt16>! = nil
     
     ///
     /// Buffer used to compute backward pass.
     /// Shape ~ (nbNeurons,).
     ///
-    var _sum1: MetalBuffer<Float16>! = nil
+    var _sum1: MetalBuffer<UInt16>! = nil
     ///
     /// Buffer used to compute backward pass.
     /// Shape ~ (nbNeurons,).
     ///
-    var _sum2: MetalBuffer<Float16>! = nil
+    var _sum2: MetalBuffer<UInt16>! = nil
    
     /// GPU device on which model is executed.
     var _deviceID = 0
     
     /// Weights in the GPU execution context.
-    override var weights: [Float16]
+    override var weights: [Float]
     {
         get {
             if _Ɣ == nil
@@ -1537,7 +1537,7 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
             
             MetalKernel.get.download([_β.w_p!, _Ɣ.w_p!])
             
-            var weightsTmp = [Float16]()
+            var weightsTmp = [Float]()
             weightsTmp += _Ɣ.w_p!.shared.array
             weightsTmp += _β.w_p!.shared.array
             return weightsTmp
@@ -1654,7 +1654,7 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         
         if _xHat == nil
         {
-            _xHat = MetalPrivateBuffer<Float16>(
+            _xHat = MetalPrivateBuffer<UInt16>(
                 batchSize * _nbNeurons * width * height,
                 deviceID: _deviceID
             )
@@ -1698,7 +1698,7 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         
         if _xHat == nil
         {
-            _xHat = MetalPrivateBuffer<Float16>(
+            _xHat = MetalPrivateBuffer<UInt16>(
                 batchSize * _nbNeurons * width * height,
                 deviceID: _deviceID
             )
@@ -1738,7 +1738,7 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         
         if _μ == nil
         {
-            _μ = MetalPrivateBuffer<Float16>(
+            _μ = MetalPrivateBuffer<UInt16>(
                 batchSize * _nbNeurons, deviceID: _deviceID
             )
         }
@@ -1771,7 +1771,7 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         
         if _μ == nil
         {
-            _μ = MetalPrivateBuffer<Float16>(
+            _μ = MetalPrivateBuffer<UInt16>(
                 batchSize * _nbNeurons, deviceID: _deviceID
             )
         }
@@ -1803,7 +1803,7 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         
         if _σ2 == nil
         {
-            _σ2 = MetalPrivateBuffer<Float16>(
+            _σ2 = MetalPrivateBuffer<UInt16>(
                 batchSize * _nbNeurons, deviceID: _deviceID
             )
         }
@@ -1837,7 +1837,7 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         
         if _σ2 == nil
         {
-            _σ2 = MetalPrivateBuffer<Float16>(
+            _σ2 = MetalPrivateBuffer<UInt16>(
                 batchSize * _nbNeurons, deviceID: _deviceID
             )
         }
@@ -1941,10 +1941,10 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         
         if _sum1 == nil
         {
-            _sum1 = MetalPrivateBuffer<Float16>(
+            _sum1 = MetalPrivateBuffer<UInt16>(
                 batchSize * _nbNeurons, deviceID: _deviceID
             )
-            _sum2 = MetalPrivateBuffer<Float16>(
+            _sum2 = MetalPrivateBuffer<UInt16>(
                 batchSize * _nbNeurons, deviceID: _deviceID
             )
         }
@@ -1983,10 +1983,10 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         
         if _sum1 == nil
         {
-            _sum1 = MetalPrivateBuffer<Float16>(
+            _sum1 = MetalPrivateBuffer<UInt16>(
                 batchSize * _nbNeurons, deviceID: _deviceID
             )
-            _sum2 = MetalPrivateBuffer<Float16>(
+            _sum2 = MetalPrivateBuffer<UInt16>(
                 batchSize * _nbNeurons, deviceID: _deviceID
             )
         }
@@ -2046,7 +2046,7 @@ public class LayerNormalization: LayerWeightsNormalization
     var _xHat = [[Double]]()
     
     /// Weights in the CPU execution context.
-    override var weights: [Float16]
+    override var weights: [Float]
     {
         get {
             if _Ɣ == nil
@@ -2054,14 +2054,14 @@ public class LayerNormalization: LayerWeightsNormalization
                 return super.weights
             }
             
-            var weightsTmp = [Float16]()
+            var weightsTmp = [Float]()
             for Ɣ in _Ɣ.w
             {
-                weightsTmp.append(Float16(Ɣ))
+                weightsTmp.append(Float(Ɣ))
             }
             for β in _β.w
             {
-                weightsTmp.append(Float16(β))
+                weightsTmp.append(Float(β))
             }
             return weightsTmp
         }
@@ -2370,35 +2370,35 @@ class LayerNormalizationGPU: LayerWeightsNormalization
     /// Buffer of averages of data for the different independent batch normalization units.
     /// Shape ~ (batch, sequence).
     ///
-    var _μ: MetalBuffer<Float16>! = nil
+    var _μ: MetalBuffer<UInt16>! = nil
     ///
     /// Buffer of deviations of data for the different independent batch normalization units.
     /// Shape ~ (batch, sequence).
     ///
-    var _σ2: MetalBuffer<Float16>! = nil
+    var _σ2: MetalBuffer<UInt16>! = nil
     
     ///
     /// Buffer of data normalized without taking into account the biases and the weights.
     /// Shape ~ (batch, sequence, nbNeurons).
     ///
-    var _xHat: MetalBuffer<Float16>! = nil
+    var _xHat: MetalBuffer<UInt16>! = nil
     
     ///
     /// Buffer used to compute backward pass.
     /// Shape ~ (batch, sequence).
     ///
-    var _sum1: MetalBuffer<Float16>! = nil
+    var _sum1: MetalBuffer<UInt16>! = nil
     ///
     /// Buffer used to compute backward pass.
     /// Shape ~ (batch, sequence).
     ///
-    var _sum2: MetalBuffer<Float16>! = nil
+    var _sum2: MetalBuffer<UInt16>! = nil
    
     /// GPU device on which model is executed.
     var _deviceID = 0
     
     /// Weights in the GPU execution context.
-    override var weights: [Float16]
+    override var weights: [Float]
     {
         get {
             if _Ɣ == nil
@@ -2408,7 +2408,7 @@ class LayerNormalizationGPU: LayerWeightsNormalization
             
             MetalKernel.get.download([_β.w_p!, _Ɣ.w_p!])
             
-            var weightsTmp = [Float16]()
+            var weightsTmp = [Float]()
             weightsTmp += _Ɣ.w_p!.shared.array
             weightsTmp += _β.w_p!.shared.array
             return weightsTmp
@@ -2524,7 +2524,7 @@ class LayerNormalizationGPU: LayerWeightsNormalization
         
         if _xHat == nil
         {
-            _xHat = MetalPrivateBuffer<Float16>(
+            _xHat = MetalPrivateBuffer<UInt16>(
                 batchSize * sequence * _nbNeurons,
                 deviceID: _deviceID
             )
@@ -2565,7 +2565,7 @@ class LayerNormalizationGPU: LayerWeightsNormalization
         
         if _μ == nil
         {
-            _μ = MetalPrivateBuffer<Float16>(
+            _μ = MetalPrivateBuffer<UInt16>(
                 batchSize * sequence, deviceID: _deviceID
             )
         }
@@ -2597,7 +2597,7 @@ class LayerNormalizationGPU: LayerWeightsNormalization
         
         if _σ2 == nil
         {
-            _σ2 = MetalPrivateBuffer<Float16>(
+            _σ2 = MetalPrivateBuffer<UInt16>(
                 batchSize * sequence, deviceID: _deviceID
             )
         }
@@ -2666,10 +2666,10 @@ class LayerNormalizationGPU: LayerWeightsNormalization
         
         if _sum1 == nil
         {
-            _sum1 = MetalPrivateBuffer<Float16>(
+            _sum1 = MetalPrivateBuffer<UInt16>(
                 batchSize * sequence, deviceID: _deviceID
             )
-            _sum2 = MetalPrivateBuffer<Float16>(
+            _sum2 = MetalPrivateBuffer<UInt16>(
                 batchSize * sequence, deviceID: _deviceID
             )
         }

@@ -19,7 +19,7 @@ import Accelerate
 ///
 public func convertFloat2Half(
     inBuffer: MetalBuffer<Float>,
-    outBuffer: MetalBuffer<Float16>,
+    outBuffer: MetalBuffer<UInt16>,
     nbElems: Int,
     deviceID: Int)
 {
@@ -46,12 +46,12 @@ public func convertFloat2Half(
 ///     - nbElems: Number of elements to copy.
 ///
 func copyFloat16ArrayToBuffer(
-    array: inout [Float16],
-    buffer: UnsafeMutableBufferPointer<Float16>,
+    array: inout [Float],
+    buffer: UnsafeMutableBufferPointer<UInt16>,
     start: Int,
     nbElems: Int)
 {
-    let elemSize = MemoryLayout<Float16>.stride
+    let elemSize = MemoryLayout<UInt16>.stride
 
     array.withUnsafeBytes 
     {

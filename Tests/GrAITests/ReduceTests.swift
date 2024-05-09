@@ -11,8 +11,8 @@ import GrAIdient
 /// Test reduce sum kernel.
 class ReduceSumTests: XCTestCase
 {
-    var _buffer: MetalSharedBuffer<Float16>! = nil
-    var _array = [Float16]()
+    var _buffer: MetalSharedBuffer<UInt16>! = nil
+    var _array = [Float]()
     
     override func setUp()
     {
@@ -21,7 +21,7 @@ class ReduceSumTests: XCTestCase
     
     private func _testBuffer(dim1: Int, dim2: Int)
     {
-        _array = [Float16](repeating: 0.0, count: dim1 * dim2)
+        _array = [Float](repeating: 0.0, count: dim1 * dim2)
         _buffer = MetalSharedBuffer(dim1 * dim2, deviceID: 0)
         let buffer = _buffer.buffer
         
@@ -36,7 +36,7 @@ class ReduceSumTests: XCTestCase
         
         MetalKernel.get.upload([_buffer])
         
-        var resultsCPU = [Float16]()
+        var resultsCPU = [Float]()
         for elem2 in 0..<dim2
         {
             var sum: Float = 0.0
@@ -56,7 +56,7 @@ class ReduceSumTests: XCTestCase
         )
         
         MetalKernel.get.download([_buffer])
-        let resultsGPU = [Float16](_buffer.buffer)
+        let resultsGPU = [Float](_buffer.buffer)
         
         for (resultCPU, resultGPU) in zip(resultsCPU, resultsGPU)
         {
@@ -98,8 +98,8 @@ class ReduceSumTests: XCTestCase
 /// Test reduce max kernel.
 class ReduceMaxTests: XCTestCase
 {
-    var _buffer: MetalSharedBuffer<Float16>! = nil
-    var _array = [Float16]()
+    var _buffer: MetalSharedBuffer<UInt16>! = nil
+    var _array = [Float]()
     
     override func setUp()
     {
@@ -108,7 +108,7 @@ class ReduceMaxTests: XCTestCase
     
     private func _testBuffer(dim1: Int, dim2: Int)
     {
-        _array = [Float16](repeating: 0.0, count: dim1 * dim2)
+        _array = [Float](repeating: 0.0, count: dim1 * dim2)
         _buffer = MetalSharedBuffer(dim1 * dim2, deviceID: 0)
         let buffer = _buffer.buffer
         
@@ -123,7 +123,7 @@ class ReduceMaxTests: XCTestCase
         
         MetalKernel.get.upload([_buffer])
         
-        var resultsCPU = [Float16]()
+        var resultsCPU = [Float]()
         for elem2 in 0..<dim2
         {
             var val: Float = _array[elem2 * dim1]
@@ -143,7 +143,7 @@ class ReduceMaxTests: XCTestCase
         )
         
         MetalKernel.get.download([_buffer])
-        let resultsGPU = [Float16](_buffer.buffer)
+        let resultsGPU = [Float](_buffer.buffer)
         
         for (resultCPU, resultGPU) in zip(resultsCPU, resultsGPU)
         {

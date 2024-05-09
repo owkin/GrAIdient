@@ -147,7 +147,7 @@ final class CIFARTests: XCTestCase
         var nbLoops = 0
         var lastLoop = false
         var batchSize = 0
-        var samples2 = [Float16]()
+        var samples2 = [Float]()
         
         while let samples1 = cifar.getSamples()
         {
@@ -165,7 +165,7 @@ final class CIFARTests: XCTestCase
             }
             
             // Pre processing.
-            let data: [Float16] = preprocess(
+            let data: [Float] = preprocess(
                 samples1,
                 height: _size,
                 width: _size,

@@ -333,7 +333,7 @@ public class Dropout1D: Layer1D
             let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pApplyDropout: [Bool] = [applyDropout]
-            let pCoeff: [Float16] = [Float16(coeff)]
+            let pCoeff: [Float] = [Float(coeff)]
             
             let command = MetalKernel.get.createCommand(
                 "dropout1DForward", deviceID: deviceID
@@ -412,7 +412,7 @@ public class Dropout1D: Layer1D
             let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pApplyDropout: [Bool] = [applyDropout]
-            let pCoeff: [Float16] = [Float16(coeff)]
+            let pCoeff: [Float] = [Float(coeff)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
             let command = MetalKernel.get.createCommand(

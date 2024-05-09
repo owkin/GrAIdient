@@ -20,10 +20,10 @@ public class LayerNormSeq: ActivationSeq, LayerUpdate, LayerWithActivation
     public var accumulateDeltaWeights: Bool = false
     
     /// Weights in the CPU execution context.
-    public var weightsCPU: [Float16]
+    public var weightsCPU: [Float]
     {
         get {
-            var weightsTmp = [Float16]()
+            var weightsTmp = [Float]()
             if let norm = _norm
             {
                 weightsTmp += norm.weights
@@ -39,10 +39,10 @@ public class LayerNormSeq: ActivationSeq, LayerUpdate, LayerWithActivation
     }
     
     /// Weights in the GPU execution context.
-    public var weightsGPU: [Float16]
+    public var weightsGPU: [Float]
     {
         get {
-            var weightsTmp = [Float16]()
+            var weightsTmp = [Float]()
             if let norm = _normGPU
             {
                 weightsTmp += norm.weights

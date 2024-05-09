@@ -129,11 +129,11 @@ class Input1DBCE1DCase: XCTestCase, Input1DCase, IOCase
     /// - Returns: (The data, the batch size).
     ///
     public func setData(
-        _ inputs: [[Float16]]?,
-        _ model: Model) -> ([[Float16]], Int)
+        _ inputs: [[Float]]?,
+        _ model: Model) -> ([[Float]], Int)
     {
         let firstLayer = model.layers.first as! Input1D
-        let ins: [[Float16]]
+        let ins: [[Float]]
         if let insTmp = inputs
         {
             ins = insTmp

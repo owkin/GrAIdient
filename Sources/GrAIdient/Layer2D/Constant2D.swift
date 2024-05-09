@@ -24,7 +24,7 @@ public class Constant2D: Layer2D, LayerResize, LayerUpdate
     /// Buffer of gradients per sample for biases.
     /// Shape ~ (batch, nbChannels).
     ///
-    var _wDeltaWeights: MetalPrivateBuffer<Float16>! = nil
+    var _wDeltaWeights: MetalPrivateBuffer<UInt16>! = nil
     
     /// Whether to compute weights' gradients or not.
     public var computeDeltaWeights: Bool = true
@@ -33,10 +33,10 @@ public class Constant2D: Layer2D, LayerResize, LayerUpdate
     public var accumulateDeltaWeights: Bool = false
     
     /// Cache for weights before calling `initKernel` API.
-    var _weightsList = [Float16]()
+    var _weightsList = [Float]()
     
     /// Weights in the CPU execution context.
-    public var weightsCPU: [Float16]
+    public var weightsCPU: [Float]
     {
         get {
             if _wArrays == nil
@@ -44,10 +44,10 @@ public class Constant2D: Layer2D, LayerResize, LayerUpdate
                 return _weightsList
             }
             
-            var weightsTmp = [Float16]()
+            var weightsTmp = [Float]()
             for depth in 0..<nbChannels
             {
-                weightsTmp.append(Float16(_wArrays.w[depth]))
+                weightsTmp.append(Float(_wArrays.w[depth]))
             }
             return weightsTmp
         }
@@ -57,7 +57,7 @@ public class Constant2D: Layer2D, LayerResize, LayerUpdate
     }
     
     /// Weights in the GPU execution context.
-    public var weightsGPU: [Float16]
+    public var weightsGPU: [Float]
     {
         get {
             if _wBuffers == nil
@@ -65,7 +65,7 @@ public class Constant2D: Layer2D, LayerResize, LayerUpdate
                 return _weightsList
             }
             
-            var weightsTmp = [Float16]()
+            var weightsTmp = [Float]()
             MetalKernel.get.download([_wBuffers.w_p!])
             weightsTmp += _wBuffers.w_p!.shared.array
         
@@ -123,7 +123,7 @@ public class Constant2D: Layer2D, LayerResize, LayerUpdate
         let values = try decoder.container(keyedBy: Keys.self)
         try super.init(from: decoder)
         
-        let weightsList = try values.decode([Float16].self, forKey: .weights)
+        let weightsList = try values.decode([Float].self, forKey: .weights)
         self.weightsCPU = weightsList
     }
     
@@ -142,7 +142,7 @@ public class Constant2D: Layer2D, LayerResize, LayerUpdate
     {
         var container = encoder.container(keyedBy: Keys.self)
         
-        let weightsList: [Float16]
+        let weightsList: [Float]
         if GrAI.Opti.GPU
         {
             weightsList = self.weightsGPU
@@ -343,7 +343,7 @@ public class Constant2D: Layer2D, LayerResize, LayerUpdate
         if computeDeltaWeights &&
            GrAI.Gradient.sample && _wDeltaWeights == nil
         {
-            _wDeltaWeights = MetalPrivateBuffer<Float16>(
+            _wDeltaWeights = MetalPrivateBuffer<UInt16>(
                 batchSize * nbChannels, deviceID: deviceID
             )
         }

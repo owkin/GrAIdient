@@ -320,12 +320,12 @@ public class Normalize122D: Layer2D
     /// Squared norm buffer used in the GPU execution context.
     /// Shape ~ (batch, nbThreadgroups).
     ///
-    private var _squaredNorm: MetalPrivateBuffer<Float16>! = nil
+    private var _squaredNorm: MetalPrivateBuffer<UInt16>! = nil
     ///
     /// Temporary delta buffer used in the GPU execution context.
     /// Shape ~ (batch, nbThreadgroups).
     ///
-    private var _deltaTmp: MetalPrivateBuffer<Float16>! = nil
+    private var _deltaTmp: MetalPrivateBuffer<UInt16>! = nil
     
     /// Number of thread groups in the GPU execution context.
     var nbThreadgroups: Int
@@ -404,7 +404,7 @@ public class Normalize122D: Layer2D
     {
         if _squaredNorm == nil
         {
-            _squaredNorm = MetalPrivateBuffer<Float16>(
+            _squaredNorm = MetalPrivateBuffer<UInt16>(
                 batchSize * nbThreadgroups, deviceID: deviceID
             )
         }
@@ -422,7 +422,7 @@ public class Normalize122D: Layer2D
         {
             if _deltaTmp == nil
             {
-                _deltaTmp = MetalPrivateBuffer<Float16>(
+                _deltaTmp = MetalPrivateBuffer<UInt16>(
                     batchSize * nbThreadgroups, deviceID: deviceID
                 )
             }

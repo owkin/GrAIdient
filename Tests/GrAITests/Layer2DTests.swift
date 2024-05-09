@@ -6253,7 +6253,7 @@ class LayerCAM2DTests: XCTestCase
             try! mainCPU.update()
             
             try! secondCPU.forward()
-            var valuesCPU = [Float16]()
+            var valuesCPU = [Float]()
             for elem in 0..<batchSize
             {
                 valuesCPU += gradLayerCPU.getOutsCPU(elem: elem)
@@ -6275,7 +6275,7 @@ class LayerCAM2DTests: XCTestCase
             try! mainGPU.update()
             
             try! secondGPU.forward()
-            var valuesGPU = [Float16]()
+            var valuesGPU = [Float]()
             for elem in 0..<batchSize
             {
                 valuesGPU += gradLayerGPU.getOutsGPU(elem: elem)
@@ -6369,7 +6369,7 @@ class LayerCAM2DTests: XCTestCase
             try! mainBranch.update()
             
             try! secondBranch.forward()
-            var values = [Float16]()
+            var values = [Float]()
             for elem in 0..<batchSize
             {
                 values += gradLayer.getOutsGPU(elem: elem)
@@ -6430,7 +6430,7 @@ class LayerCAM2DTests: XCTestCase
             try! mainBranch.update()
             
             try! secondBranch.forward()
-            var values = [Float16]()
+            var values = [Float]()
             for elem in 0..<batchSize
             {
                 values += gradLayer.getOutsGPU(elem: elem)

@@ -311,7 +311,7 @@ public class ColorJitterHSV: Layer2D
             
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pDimensions: [UInt32] = [UInt32(width), UInt32(height)]
-            let pNoise: [Float16] = [Float16(noiseH), Float16(noiseS), Float16(noiseV)]
+            let pNoise: [Float] = [Float(noiseH), Float(noiseS), Float(noiseV)]
             
             let command = MetalKernel.get.createCommand(
                 "colorJitterHSVForward", deviceID: deviceID

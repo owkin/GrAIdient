@@ -75,10 +75,10 @@ class SimpleAutoEncoder
         let data = pythonLib.load_simple_auto_encoder_weights()
         
         let weightsNumpy = [PythonObject](data.tuple2.0)!
-        var weights = [[Float16]]()
+        var weights = [[Float]]()
         for weightsNP in weightsNumpy
         {
-            if let weightsTmp = Array<Float16>(numpy: weightsNP)
+            if let weightsTmp = Array<UInt16>(numpy: weightsNP)
             {
                 weights.append(weightsTmp)
             }
@@ -91,9 +91,9 @@ class SimpleAutoEncoder
             // Load weights and biases.
             if let convLayer = model.layers[num_layer] as? Convolution2D
             {
-                let weightsTmp: [Float16] = weights[cur]
+                let weightsTmp: [Float] = weights[cur]
                 cur += 1
-                let biases: [Float16] = weights[cur]
+                let biases: [Float] = weights[cur]
                 cur += 1
                 
                 convLayer.weightsCPU = weightsTmp + biases

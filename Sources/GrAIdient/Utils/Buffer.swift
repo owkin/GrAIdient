@@ -9,12 +9,70 @@ import Foundation
 import Accelerate
 
 ///
-/// Convert Float32 buffer into a Float16 buffer.
+/// Copy, convert and upload Float array to Half buffer.
 ///
 /// - Parameters:
-///     - inBuffer: input buffer.
-///     - outBuffer: output buffer.
-///     - nbElems: number of elements.
+///     - array: Input array.
+///     - out: Output buffer.
+///     - start: Start index in `array`.
+///     - nbElems: Number of elements to copy.
+///     - deviceID: GPU device.
+///
+func setupHalfBuffer(
+    array: inout [Float],
+    out: MetalBuffer<UInt16>,
+    start: Int,
+    nbElems: Int,
+    deviceID: Int)
+{
+    let temp = MetalSharedBuffer<Float>(nbElems, deviceID: deviceID)
+    copyArrayToBuffer(
+        array: &array,
+        buffer: temp.buffer,
+        start: start,
+        nbElems: nbElems
+    )
+    temp.upload()
+    convertFloat2Half(
+        inBuffer: temp,
+        outBuffer: out,
+        nbElems: nbElems,
+        deviceID: deviceID
+    )
+}
+
+///
+/// Convert Half buffer to Float buffer.
+///
+/// - Parameters:
+///     - buffer: Input buffer.
+///     - nbElems: Number of elements to copy.
+///     - deviceID: GPU device.
+///
+/// - Returns: Float buffer.
+///
+func getHalfBuffer(
+    buffer: MetalBuffer<UInt16>,
+    nbElems: Int,
+    deviceID: Int) -> MetalSharedBuffer<Float>
+{
+    let temp = MetalSharedBuffer<Float>(nbElems, deviceID: deviceID)
+    convertHalf2Float(
+        inBuffer: buffer,
+        outBuffer: temp,
+        nbElems: nbElems,
+        deviceID: deviceID
+    )
+    return temp
+}
+
+///
+/// Convert a Float32 buffer into a Float16 buffer.
+///
+/// - Parameters:
+///     - inBuffer: Input buffer.
+///     - outBuffer: Output buffer.
+///     - nbElems: Number of elements.
 ///     - deviceID: GPU device.
 ///
 public func convertFloat2Half(
@@ -37,42 +95,40 @@ public func convertFloat2Half(
 }
 
 ///
-/// Copy array to buffer.
+/// Convert a Float16 into a Float32 buffer.
 ///
 /// - Parameters:
-///     - array: input array.
-///     - buffer: output buffer.
-///     - start: start index in `array`.
-///     - nbElems: Number of elements to copy.
+///     - inBuffer: Input buffer.
+///     - outBuffer: Output buffer.
+///     - nbElems: Number of elements.
+///     - deviceID: GPU device.
 ///
-func copyFloat16ArrayToBuffer(
-    array: inout [Float],
-    buffer: UnsafeMutableBufferPointer<UInt16>,
-    start: Int,
-    nbElems: Int)
+public func convertHalf2Float(
+    inBuffer: MetalBuffer<UInt16>,
+    outBuffer: MetalBuffer<Float>,
+    nbElems: Int,
+    deviceID: Int)
 {
-    let elemSize = MemoryLayout<UInt16>.stride
-
-    array.withUnsafeBytes 
-    {
-        (srcBuffer: UnsafeRawBufferPointer) in
-
-        let destPtr = UnsafeMutableRawPointer(buffer.baseAddress)
-
-        let srcBase = srcBuffer.baseAddress
-        let srcPtr = srcBase?.advanced(by: start)
-        
-        memmove(destPtr, srcPtr, elemSize * nbElems)
-    }
+    let pNbElems: [UInt32] = [UInt32(nbElems)]
+    
+    let command = MetalKernel.get.createCommand(
+        "convertHalf2Float", deviceID: deviceID
+    )
+    command.setBuffer(inBuffer.metal, atIndex: 0)
+    command.setBytes(pNbElems, atIndex: 1)
+    command.setBuffer(outBuffer.metal, atIndex: 2)
+    
+    command.dispatchThreads(nbElems)
+    command.enqueue()
 }
 
 ///
 /// Copy array to buffer.
 ///
 /// - Parameters:
-///     - array: input array.
-///     - buffer: output buffer.
-///     - start: start index in `array`.
+///     - array: Input array.
+///     - buffer: Output buffer.
+///     - start: Start index in `array`.
 ///     - nbElems: Number of elements to copy.
 ///
 func copyArrayToBuffer<T: BNNSScalar>(

@@ -52,3 +52,26 @@ kernel void convertFloat2Half(
     
     outs[id] = ins[id];
 }
+
+kernel void convertHalf2Float(
+    constant half * ins,
+    constant uint * pNbElems,
+    device float * outs,
+    uint id [[ thread_position_in_grid ]])
+{
+    uint nbElems;
+    
+    if (pNbElems && outs)
+    {
+        nbElems = pNbElems[0];
+    }
+    else
+        return ;
+    
+    if (id >= nbElems)
+    {
+        return ;
+    }
+    
+    outs[id] = ins[id];
+}

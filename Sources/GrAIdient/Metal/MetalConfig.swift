@@ -259,6 +259,7 @@ let CONFIG_KERNELS =
     "Reset": [
         "reset",
         "convertFloat2Half",
+        "convertHalf2Float",
     ],
     "VQ2D": [
         "vq2DForward",

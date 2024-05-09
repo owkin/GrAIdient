@@ -782,32 +782,34 @@ public class Convolution2D: BN2D, LayerWeightInit
             deviceID: deviceID
         )
         
-        let biasesPtr = _bBuffers.w_p!.shared.buffer
+        _ = _bBuffers.w_p!.shared
         if _weightsList.count == 0
         {
             generateWeightsList(out: _wBuffers.w_p!, deviceID: deviceID)
         }
         else
         {
-            copyFloat16ArrayToBuffer(
+            setupHalfBuffer(
                 array: &_weightsList,
-                buffer: _wBuffers.w_p!.shared.buffer,
+                out: _wBuffers.w_p!,
                 start: 0,
-                nbElems: nbWeights * weightHeight * weightWidth
+                nbElems: nbWeights * weightHeight * weightWidth,
+                deviceID: deviceID
             )
             if _updateBiases
             {
-                copyFloat16ArrayToBuffer(
+                setupHalfBuffer(
                     array: &_weightsList,
-                    buffer: biasesPtr,
+                    out: _bBuffers.w_p!,
                     start: nbWeights * weightHeight * weightWidth,
-                    nbElems: nbChannels
+                    nbElems: nbChannels,
+                    deviceID: deviceID
                 )
             }
         }
-        _weightsList = []
         
-        MetalKernel.get.upload([_wBuffers.w_p!, _bBuffers.w_p!])
+        _bBuffers.w_p!.upload()
+        _weightsList = []
         
         _wDeltaWeights = nil
         _bDeltaWeights = nil

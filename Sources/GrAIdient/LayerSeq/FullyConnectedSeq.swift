@@ -442,32 +442,34 @@ public class FullyConnectedSeq: ActivationSeq,
             deviceID: deviceID
         )
         
-        let biasesPtr = _bBuffers.w_p!.shared.buffer
+        _ = _bBuffers.w_p!.shared
         if _weightsList.count == 0
         {
             generateWeightsList(out: _wBuffers.w_p!, deviceID: deviceID)
         }
         else
         {
-            copyFloat16ArrayToBuffer(
+            setupHalfBuffer(
                 array: &_weightsList,
-                buffer: _wBuffers.w_p!.shared.buffer,
+                out: _wBuffers.w_p!,
                 start: 0,
-                nbElems: weightHeight * weightWidth
+                nbElems: weightHeight * weightWidth,
+                deviceID: deviceID
             )
             if _updateBiases
             {
-                copyFloat16ArrayToBuffer(
+                setupHalfBuffer(
                     array: &_weightsList,
-                    buffer: biasesPtr,
+                    out: _bBuffers.w_p!,
                     start: weightHeight * weightWidth,
-                    nbElems: weightHeight
+                    nbElems: weightHeight,
+                    deviceID: deviceID
                 )
             }
         }
-        _weightsList = []
         
-        MetalKernel.get.upload([_wBuffers.w_p!, _bBuffers.w_p!])
+        _bBuffers.w_p!.upload()
+        _weightsList = []
         
         _wDeltaWeights = nil
         _bDeltaWeights = nil

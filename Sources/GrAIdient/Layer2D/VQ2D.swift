@@ -320,16 +320,16 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
         }
         else
         {
-            copyFloat16ArrayToBuffer(
+            setupHalfBuffer(
                 array: &_weightsList,
-                buffer: _wBuffers.w_p!.shared.buffer,
+                out: _wBuffers.w_p!,
                 start: 0,
-                nbElems: K * nbChannels
+                nbElems: K * nbChannels,
+                deviceID: deviceID
             )
         }
-        _weightsList = []
         
-        MetalKernel.get.upload([_wBuffers.w_p!])
+        _weightsList = []
         _wDeltaWeights = nil
     }
     

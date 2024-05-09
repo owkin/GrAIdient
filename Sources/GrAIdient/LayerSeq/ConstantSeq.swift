@@ -263,16 +263,20 @@ public class Constant12Seq: LayerSeq, LayerUpdate
         
         if _weightsList.count != 0
         {
-            copyFloat16ArrayToBuffer(
+            setupHalfBuffer(
                 array: &_weightsList,
-                buffer: _wBuffers.w_p!.shared.buffer,
+                out: _wBuffers.w_p!,
                 start: 0,
-                nbElems: sequence * nbNeurons
+                nbElems: sequence * nbNeurons,
+                deviceID: deviceID
             )
         }
+        else
+        {
+            _ = _wBuffers.w_p!.shared
+            _wBuffers.w_p!.upload()
+        }
         _weightsList = []
-        
-        MetalKernel.get.upload([_wBuffers.w_p!])
     }
     
     ///
@@ -756,16 +760,21 @@ public class Constant2Seq: LayerSeq, LayerUpdate
         
         if _weightsList.count != 0
         {
-            copyFloat16ArrayToBuffer(
+            setupHalfBuffer(
                 array: &_weightsList,
-                buffer: _wBuffers.w_p!.shared.buffer,
+                out: _wBuffers.w_p!,
                 start: 0,
-                nbElems: nbNeurons
+                nbElems: nbNeurons,
+                deviceID: deviceID
             )
         }
-        _weightsList = []
+        else
+        {
+            _ = _wBuffers.w_p!.shared
+            _wBuffers.w_p!.upload()
+        }
         
-        MetalKernel.get.upload([_wBuffers.w_p!])
+        _weightsList = []
         _wDeltaWeights = nil
     }
     

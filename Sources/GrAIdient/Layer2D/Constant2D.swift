@@ -317,16 +317,21 @@ public class Constant2D: Layer2D, LayerResize, LayerUpdate
         
         if _weightsList.count != 0
         {
-            copyFloat16ArrayToBuffer(
+            setupHalfBuffer(
                 array: &_weightsList,
-                buffer: _wBuffers.w_p!.shared.buffer,
+                out: _wBuffers.w_p!,
                 start: 0,
-                nbElems: nbChannels
+                nbElems: nbChannels,
+                deviceID: deviceID
             )
         }
-        _weightsList = []
+        else
+        {
+            _ = _wBuffers.w_p!.shared
+            _wBuffers.w_p!.upload()
+        }
         
-        MetalKernel.get.upload([_wBuffers.w_p!])
+        _weightsList = []
         _wDeltaWeights = nil
     }
     

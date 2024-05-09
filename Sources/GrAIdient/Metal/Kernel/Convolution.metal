@@ -595,8 +595,8 @@ kernel void conv34BatchDerWeights(
         {
             uint offset4 = (l*4 + (offsetStart + k*2) * width) / 4;
             uint offset7 = (l*4 + (offsetStart + k*2+1) * width) / 4;
-            float4 delta4 = delta[offset4];
-            float4 delta7 = delta[offset7];
+            half4 delta4 = delta[offset4];
+            half4 delta7 = delta[offset7];
             
             if (k > 0 && l > 0)
             {
@@ -610,13 +610,13 @@ kernel void conv34BatchDerWeights(
             {
                 uint offsetPrev1 =
                     (l*4 + (offsetStartPrev + k*2-1) * widthPrev) / 4;
-                float4 outPrev1 = outsPrev[offsetPrev1];
+                half4 outPrev1 = outsPrev[offsetPrev1];
                 
                 tmp[0] += outPrev1[0] * delta4[1];
                 tmp[0] += outPrev1[1] * delta4[2];
                 tmp[0] += outPrev1[2] * delta4[3];
                 
-                float4 sum = outPrev1 * delta4;
+                half4 sum = outPrev1 * delta4;
                 tmp[1] += sum[0] + sum[1] + sum[2] + sum[3];
                 
                 tmp[2] += outPrev1[1] * delta4[0];
@@ -651,14 +651,14 @@ kernel void conv34BatchDerWeights(
                 (l*4 + (offsetStartPrev + k*2) * widthPrev) / 4;
             uint offsetPrev7 =
                 (l*4 + (offsetStartPrev + k*2+1) * widthPrev) / 4;
-            float4 outPrev4 = outsPrev[offsetPrev4];
-            float4 outPrev7 = outsPrev[offsetPrev7];
+            half4 outPrev4 = outsPrev[offsetPrev4];
+            half4 outPrev7 = outsPrev[offsetPrev7];
             
             tmp[0] += outPrev4[0] * delta7[1];
             tmp[0] += outPrev4[1] * delta7[2];
             tmp[0] += outPrev4[2] * delta7[3];
             
-            float4 sum = outPrev4 * delta7;
+            half4 sum = outPrev4 * delta7;
             tmp[1] += sum[0] + sum[1] + sum[2] + sum[3];
             
             tmp[2] += outPrev4[1] * delta7[0];
@@ -722,13 +722,13 @@ kernel void conv34BatchDerWeights(
             {
                 uint offsetPrev10 =
                     (l*4 + (offsetStartPrev + (k+1)*2) * widthPrev) / 4;
-                float4 outPrev10 = outsPrev[offsetPrev10];
+                half4 outPrev10 = outsPrev[offsetPrev10];
                 
                 tmp[6] += outPrev10[0] * delta7[1];
                 tmp[6] += outPrev10[1] * delta7[2];
                 tmp[6] += outPrev10[2] * delta7[3];
                 
-                float4 sum = outPrev10 * delta7;
+                half4 sum = outPrev10 * delta7;
                 tmp[7] += sum[0] + sum[1] + sum[2] + sum[3];
                 
                 tmp[8] += outPrev10[1] * delta7[0];

@@ -174,7 +174,7 @@ kernel void reduceMax(
         return ;
     }
     
-    float val = ins[elem2 * dim1];
+    half val = ins[elem2 * dim1];
     for (uint elem1=0; elem1<dim1; elem1++)
     {
         uint offset = elem2 * dim1 + elem1;

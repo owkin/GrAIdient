@@ -334,7 +334,7 @@ kernel void flPatchBatch4DerBiases(
         return ;
     }
     
-    float4 tmp = 0.0;
+    half4 tmp = 0.0;
     for (uint elem=0; elem<nbBatch; elem++) {
     for (uint seq=0; seq<sequence; seq++)
     {

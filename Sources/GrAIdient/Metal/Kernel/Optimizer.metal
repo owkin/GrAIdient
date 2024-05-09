@@ -225,9 +225,9 @@ kernel void weightsAMSGrad(
         g += lambda * weights[id];
     }
     
-    float m = β1 * mPtr[id] + (1 - β1) * g;
-    float v = β2 * vPtr[id] + (1 - β2) * g * g;
-    float vHat = max(v, vHatPtr[id]);
+    half m = β1 * mPtr[id] + (1 - β1) * g;
+    half v = β2 * vPtr[id] + (1 - β2) * g * g;
+    half vHat = max(v, vHatPtr[id]);
     
     mPtr[id] = m;
     vPtr[id] = v;
@@ -415,9 +415,9 @@ kernel void weightsAMSBound(
         g += lambda * weights[id];
     }
     
-    float m = β1 * mPtr[id] + (1 - β1) * g;
-    float v = β2 * vPtr[id] + (1 - β2) * g * g;
-    float vHat = max(v, vHatPtr[id]);
+    half m = β1 * mPtr[id] + (1 - β1) * g;
+    half v = β2 * vPtr[id] + (1 - β2) * g * g;
+    half vHat = max(v, vHatPtr[id]);
     
     mPtr[id] = m;
     vPtr[id] = v;

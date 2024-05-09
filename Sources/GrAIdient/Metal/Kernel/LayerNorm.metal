@@ -77,7 +77,7 @@ kernel void computeLayerNormSeqμ4(
     }
     
     uint nbElems = nbNeurons;
-    float4 sum = 0.0;
+    half4 sum = 0.0;
     
     for (uint depth=0; depth<nbNeurons/4; depth++)
     {
@@ -162,14 +162,14 @@ kernel void computeLayerNormSeqσ24(
     }
     
     uint nbElems = nbNeurons;
-    float4 sum = 0.0;
+    half4 sum = 0.0;
     
     for (uint depth=0; depth<nbNeurons/4; depth++)
     {
         uint offset =
             (depth * 4 + nbNeurons * seq + sequence * nbNeurons * elem) / 4;
         
-        float4 tmp = tmps[offset] - μ[seq + sequence * elem];
+        half4 tmp = tmps[offset] - μ[seq + sequence * elem];
         sum += tmp * tmp;
     }
     
@@ -260,9 +260,9 @@ kernel void forwardLayerNormSeq4(
     uint offset =
         (depth * 4 + nbNeurons * seq + sequence * nbNeurons * elem) / 4;
     
-    float4 tmp1 = tmps[offset] - μ[seq + sequence * elem];
+    half4 tmp1 = tmps[offset] - μ[seq + sequence * elem];
     float tmp2 = sqrt(σ2[seq + sequence * elem] + Ɛ);
-    float4 xhat = tmp1 / tmp2;
+    half4 xhat = tmp1 / tmp2;
     xHat[offset] = xhat;
     tmps[offset] = Ɣ[depth] * xhat + β[depth];
 }
@@ -348,15 +348,15 @@ kernel void backwardWeights1LayerNormSeq4(
         return ;
     }
     
-    float4 tmp1 = 0.0, tmp2 = 0.0;
+    half4 tmp1 = 0.0, tmp2 = 0.0;
     for (uint depth=0; depth<nbNeurons/4; depth++)
     {
         uint offset = (depth * 4 +
             nbNeurons * seq + sequence * nbNeurons * elem) / 4;
         
-        float4 deltaTmp = delta[offset];
-        float4 xHatTmp = xHat[offset];
-        float4 dxHat = Ɣ[depth] * deltaTmp;
+        half4 deltaTmp = delta[offset];
+        half4 xHatTmp = xHat[offset];
+        half4 dxHat = Ɣ[depth] * deltaTmp;
         tmp1 += dxHat;
         tmp2 += dxHat * xHatTmp;
     }
@@ -457,15 +457,15 @@ kernel void backwardWeights2LayerNormSeq4(
         return ;
     }
     
-    float4 tmp1 = 0.0, tmp2 = 0.0;
+    half4 tmp1 = 0.0, tmp2 = 0.0;
     for (uint elem=0; elem<nbBatch; elem++) {
     for (uint seq=0; seq<sequence; seq++)
     {
         uint offset = (depth * 4 +
             nbNeurons * seq + sequence * nbNeurons * elem) / 4;
         
-        float4 deltaTmp = delta[offset];
-        float4 xHatTmp = xHat[offset];
+        half4 deltaTmp = delta[offset];
+        half4 xHatTmp = xHat[offset];
         
         tmp1 += deltaTmp * xHatTmp;
         tmp2 += deltaTmp;
@@ -574,10 +574,10 @@ kernel void backwardLayerNormSeq4(
     
     float mult =
         1.0 / ((float)nbElems * sqrt(σ2[seq + sequence * elem] + Ɛ));
-    float4 dxHat = Ɣ[depth] * delta[offset];
-    float4 tmp1 = nbElems * dxHat;
+    half4 dxHat = Ɣ[depth] * delta[offset];
+    half4 tmp1 = nbElems * dxHat;
     float tmp2 = sum1[seq + sequence * elem];
-    float4 tmp3 = xHat[offset] * sum2[seq + sequence * elem];
+    half4 tmp3 = xHat[offset] * sum2[seq + sequence * elem];
     
     delta[offset] = mult * (tmp1 - tmp2 - tmp3);
 }

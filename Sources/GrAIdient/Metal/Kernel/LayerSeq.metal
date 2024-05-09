@@ -624,7 +624,7 @@ kernel void constant12Seq4Backward(
         return ;
     }
     
-    float4 tmp = 0.0;
+    half4 tmp = 0.0;
     for (uint elem=0; elem<nbBatch; elem++)
     {
         uint offset =
@@ -814,7 +814,7 @@ kernel void querySeq4Forward(
         return ;
     }
     
-    float4 tmp = 0.0;
+    half4 tmp = 0.0;
     for (uint j=0; j<size/4; j++)
     {
         uint depthPrev = j * 4 + head * size;
@@ -952,7 +952,7 @@ kernel void queryQuerySeq4Backward(
         return ;
     }
     
-    float4 tmp = 0.0;
+    half4 tmp = 0.0;
     for (uint seqK=0; seqK<sequence; seqK++)
     {
         uint offset = seqK + head * sequence +
@@ -1096,7 +1096,7 @@ kernel void queryKeySeq4Backward(
         return ;
     }
     
-    float4 tmp = 0.0;
+    half4 tmp = 0.0;
     for (uint seqQ=0; seqQ<sequence; seqQ++)
     {
         uint offset = seqK + head * sequence +
@@ -1242,7 +1242,7 @@ kernel void querySelfSeq4Forward(
         return ;
     }
     
-    float4 tmp = 0.0;
+    half4 tmp = 0.0;
     for (uint j=0; j<size/4; j++)
     {
         uint depthPrev = j * 4 + head * size;
@@ -1398,7 +1398,7 @@ kernel void querySelfQuerySeq4Backward(
         return ;
     }
     
-    float4 tmp = 0.0;
+    half4 tmp = 0.0;
     for (uint seqK=0; seqK<sequence; seqK++)
     {
         uint offset = seqK + head * sequence +
@@ -1560,7 +1560,7 @@ kernel void querySelfKeySeq4Backward(
         return ;
     }
     
-    float4 tmp = 0.0;
+    half4 tmp = 0.0;
     for (uint seqQ=0; seqQ<sequence; seqQ++)
     {
         uint offset = seqK + head * sequence +
@@ -1695,7 +1695,7 @@ kernel void softmaxSeq4Forward(
         uint offset1 = (j*4+head*size +
             nbNeurons * seq + sequence * nbNeurons * elem) / 4;
         
-        float4 outPrev = outsPrev[offset1];
+        half4 outPrev = outsPrev[offset1];
         float max1 = max(outPrev[0], outPrev[1]);
         float max2 = max(outPrev[2], outPrev[3]);
         float max3 = max(max1, max2);
@@ -1705,13 +1705,13 @@ kernel void softmaxSeq4Forward(
         }
     }
     
-    float4 sum1 = 0.0;
+    half4 sum1 = 0.0;
     for (uint j=0; j<size/4; j++)
     {
         uint offset1 = (j*4+head*size +
             nbNeurons * seq + sequence * nbNeurons * elem) / 4;
         
-        float4 outPrev = outsPrev[offset1];
+        half4 outPrev = outsPrev[offset1];
         sum1 += exp(outPrev - cMax);
     }
     
@@ -1719,7 +1719,7 @@ kernel void softmaxSeq4Forward(
     
     uint offset =
         (depth * 4 + nbNeurons * seq + sequence * nbNeurons * elem) / 4;
-    float4 outPrev = outsPrev[offset];
+    half4 outPrev = outsPrev[offset];
     outs[offset] = exp(outPrev - cMax) / sum2;
 }
 
@@ -1832,17 +1832,17 @@ kernel void softmaxSeq4Backward(
     
     uint offset =
         (depth * 4 + nbNeurons * seq + sequence * nbNeurons * elem) / 4;
-    float4 outCur = outs[offset];
-    float4 deltaCur = delta[offset];
+    half4 outCur = outs[offset];
+    half4 deltaCur = delta[offset];
     
-    float4 sum1 = 0.0;
+    half4 sum1 = 0.0;
     for (uint j=0; j<size/4; j++)
     {
         uint offset1 = (j*4+head*size +
             nbNeurons * seq + sequence * nbNeurons * elem) / 4;
         
-        float4 outCur1 = outs[offset1];
-        float4 deltaCur1 = delta[offset1];
+        half4 outCur1 = outs[offset1];
+        half4 deltaCur1 = delta[offset1];
         sum1 += outCur1 * deltaCur1;
     }
     
@@ -1958,7 +1958,7 @@ kernel void valueSeq4Forward(
         return ;
     }
     
-    float4 tmp = 0.0;
+    half4 tmp = 0.0;
     for (uint seqK=0; seqK<sequence; seqK++)
     {
         uint offsetValue = (depth +
@@ -2089,7 +2089,7 @@ kernel void valueValueSeq4Backward(
         return ;
     }
     
-    float4 tmp = 0.0;
+    half4 tmp = 0.0;
     for (uint seqQ=0; seqQ<sequence; seqQ++)
     {
         uint offset =
@@ -2230,7 +2230,7 @@ kernel void valueScoreSeq4Backward(
         return ;
     }
     
-    float4 tmp = 0.0;
+    half4 tmp = 0.0;
     for (uint j=0; j<size/4; j++)
     {
         uint depth = j * 4 + head * size;
@@ -2375,7 +2375,7 @@ kernel void valueSelfSeq4Forward(
         return ;
     }
     
-    float4 tmp = 0.0;
+    half4 tmp = 0.0;
     for (uint seqK=0; seqK<sequence; seqK++)
     {
         uint offsetValue = (depth + valueOffset * nbNeurons2 +
@@ -2511,7 +2511,7 @@ kernel void valueSelfValueSeq4Backward(
         return ;
     }
     
-    float4 tmp = 0.0;
+    half4 tmp = 0.0;
     for (uint seqQ=0; seqQ<sequence; seqQ++)
     {
         uint offset =
@@ -2661,7 +2661,7 @@ kernel void valueSelfScoreSeq4Backward(
         return ;
     }
     
-    float4 tmp = 0.0;
+    half4 tmp = 0.0;
     for (uint j=0; j<size/4; j++)
     {
         uint depth = j * 4 + head * size;

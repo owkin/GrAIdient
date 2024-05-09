@@ -690,11 +690,8 @@ class BatchNormalizationGPU: LayerWeightsStatsNormalization
                 return super.weights
             }
             
-            MetalKernel.get.download([_β.w_p!, _Ɣ.w_p!])
-            
-            var weightsTmp = [Float]()
-            weightsTmp += _Ɣ.w_p!.shared.array
-            weightsTmp += _β.w_p!.shared.array
+            var weightsTmp = getHalfBuffer(_Ɣ.w_p!).array
+            weightsTmp += getHalfBuffer(_β.w_p!).array
             return weightsTmp
         }
         set {
@@ -719,9 +716,8 @@ class BatchNormalizationGPU: LayerWeightsStatsNormalization
             
             MetalKernel.get.download([_Eμ, _Eσ2])
             
-            var statsTmp = [Float]()
-            statsTmp += _Eμ.shared.array
-            statsTmp += _Eσ2.shared.array
+            var statsTmp = getHalfBuffer(_Eμ).array
+            statsTmp += getHalfBuffer(_Eσ2).array
             return statsTmp
         }
         set {
@@ -781,28 +777,30 @@ class BatchNormalizationGPU: LayerWeightsStatsNormalization
         _β = WeightBuffers(nbElems: _nbNeurons, deviceID: _deviceID)
         _Ɣ = WeightBuffers(nbElems: _nbNeurons, deviceID: _deviceID)
         
-        let βPtr = _β.w_p!.shared.buffer
-        let ƔPtr = _Ɣ.w_p!.shared.buffer
-        
         if _weightsList.count == 0
         {
+            _weightsList = [Float](repeating: 0.0, count: 2 * _nbNeurons)
             for depth in 0..<_nbNeurons
             {
-                ƔPtr[depth] = 1.0
-                βPtr[depth] = 0.0
+                _weightsList[depth] = 1.0
             }
-        }
-        else
-        {
-            for depth in 0..<_nbNeurons
-            {
-                ƔPtr[depth] = _weightsList[depth]
-                βPtr[depth] = _weightsList[_nbNeurons + depth]
-            }
-            _weightsList = []
         }
         
-        MetalKernel.get.upload([_β.w_p!, _Ɣ.w_p!])
+        setupHalfBuffer(
+            array: &_weightsList,
+            out: _Ɣ.w_p!,
+            start: 0,
+            nbElems: _nbNeurons,
+            deviceID: _deviceID
+        )
+        setupHalfBuffer(
+            array: &_weightsList,
+            out: _β.w_p!,
+            start: _nbNeurons,
+            nbElems: _nbNeurons,
+            deviceID: _deviceID
+        )
+        _weightsList = []
     }
     
     /// Initialize stats in the GPU execution context.
@@ -811,28 +809,31 @@ class BatchNormalizationGPU: LayerWeightsStatsNormalization
         _Eμ = MetalPrivateBuffer<UInt16>(_nbNeurons, deviceID: _deviceID)
         _Eσ2 = MetalPrivateBuffer<UInt16>(_nbNeurons, deviceID: _deviceID)
         
-        let EμPtr = _Eμ.shared.buffer
-        let Eσ2Ptr = _Eσ2.shared.buffer
-        
-        if _statsList.count == 0
+        if _statsList.count != 0
         {
-            for depth in 0..<_nbNeurons
-            {
-                EμPtr[depth] = 0.0
-                Eσ2Ptr[depth] = 0.0
-            }
+            setupHalfBuffer(
+                array: &_statsList,
+                out: _Eμ,
+                start: 0,
+                nbElems: _nbNeurons,
+                deviceID: _deviceID
+            )
+            setupHalfBuffer(
+                array: &_statsList,
+                out: _Eσ2,
+                start: _nbNeurons,
+                nbElems: _nbNeurons,
+                deviceID: _deviceID
+            )
         }
         else
         {
-            for depth in 0..<_nbNeurons
-            {
-                EμPtr[depth] = _statsList[depth]
-                Eσ2Ptr[depth] = _statsList[_nbNeurons + depth]
-            }
-            _statsList = []
+            _ = _Eμ.shared
+            _ = _Eσ2.shared
+            _Eμ.upload()
+            _Eσ2.upload()
         }
-        
-        MetalKernel.get.upload([_Eμ, _Eσ2])
+        _statsList = []
     }
     
     ///
@@ -1535,11 +1536,8 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
                 return super.weights
             }
             
-            MetalKernel.get.download([_β.w_p!, _Ɣ.w_p!])
-            
-            var weightsTmp = [Float]()
-            weightsTmp += _Ɣ.w_p!.shared.array
-            weightsTmp += _β.w_p!.shared.array
+            var weightsTmp = getHalfBuffer(_Ɣ.w_p!).array
+            weightsTmp += getHalfBuffer(_β.w_p!).array
             return weightsTmp
         }
         set {
@@ -1597,28 +1595,30 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         _β = WeightBuffers(nbElems: _nbNeurons, deviceID: _deviceID)
         _Ɣ = WeightBuffers(nbElems: _nbNeurons, deviceID: _deviceID)
         
-        let βPtr = _β.w_p!.shared.buffer
-        let ƔPtr = _Ɣ.w_p!.shared.buffer
-        
         if _weightsList.count == 0
         {
+            _weightsList = [Float](repeating: 0.0, count: 2 * _nbNeurons)
             for depth in 0..<_nbNeurons
             {
-                ƔPtr[depth] = 1.0
-                βPtr[depth] = 0.0
+                _weightsList[depth] = 1.0
             }
-        }
-        else
-        {
-            for depth in 0..<_nbNeurons
-            {
-                ƔPtr[depth] = _weightsList[depth]
-                βPtr[depth] = _weightsList[_nbNeurons + depth]
-            }
-            _weightsList = []
         }
         
-        MetalKernel.get.upload([_β.w_p!, _Ɣ.w_p!])
+        setupHalfBuffer(
+            array: &_weightsList,
+            out: _Ɣ.w_p!,
+            start: 0,
+            nbElems: _nbNeurons,
+            deviceID: _deviceID
+        )
+        setupHalfBuffer(
+            array: &_weightsList,
+            out: _β.w_p!,
+            start: _nbNeurons,
+            nbElems: _nbNeurons,
+            deviceID: _deviceID
+        )
+        _weightsList = []
     }
     
     ///
@@ -2406,11 +2406,8 @@ class LayerNormalizationGPU: LayerWeightsNormalization
                 return super.weights
             }
             
-            MetalKernel.get.download([_β.w_p!, _Ɣ.w_p!])
-            
-            var weightsTmp = [Float]()
-            weightsTmp += _Ɣ.w_p!.shared.array
-            weightsTmp += _β.w_p!.shared.array
+            var weightsTmp = getHalfBuffer(_Ɣ.w_p!).array
+            weightsTmp += getHalfBuffer(_β.w_p!).array
             return weightsTmp
         }
         set {
@@ -2468,28 +2465,30 @@ class LayerNormalizationGPU: LayerWeightsNormalization
         _β = WeightBuffers(nbElems: _nbNeurons, deviceID: _deviceID)
         _Ɣ = WeightBuffers(nbElems: _nbNeurons, deviceID: _deviceID)
         
-        let βPtr = _β.w_p!.shared.buffer
-        let ƔPtr = _Ɣ.w_p!.shared.buffer
-        
         if _weightsList.count == 0
         {
+            _weightsList = [Float](repeating: 0.0, count: 2 * _nbNeurons)
             for depth in 0..<_nbNeurons
             {
-                ƔPtr[depth] = 1.0
-                βPtr[depth] = 0.0
+                _weightsList[depth] = 1.0
             }
-        }
-        else
-        {
-            for depth in 0..<_nbNeurons
-            {
-                ƔPtr[depth] = _weightsList[depth]
-                βPtr[depth] = _weightsList[_nbNeurons + depth]
-            }
-            _weightsList = []
         }
         
-        MetalKernel.get.upload([_β.w_p!, _Ɣ.w_p!])
+        setupHalfBuffer(
+            array: &_weightsList,
+            out: _Ɣ.w_p!,
+            start: 0,
+            nbElems: _nbNeurons,
+            deviceID: _deviceID
+        )
+        setupHalfBuffer(
+            array: &_weightsList,
+            out: _β.w_p!,
+            start: _nbNeurons,
+            nbElems: _nbNeurons,
+            deviceID: _deviceID
+        )
+        _weightsList = []
     }
     
     ///

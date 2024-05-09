@@ -64,12 +64,7 @@ public class Constant2D: Layer2D, LayerResize, LayerUpdate
             {
                 return _weightsList
             }
-            
-            var weightsTmp = [Float]()
-            MetalKernel.get.download([_wBuffers.w_p!])
-            weightsTmp += _wBuffers.w_p!.shared.array
-        
-            return weightsTmp
+            return getHalfBuffer(_wBuffers.w_p!).array
         }
         set {
             _weightsList = newValue

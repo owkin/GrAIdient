@@ -199,14 +199,10 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerWeightInit
                 return _weightsList
             }
             
-            var weightsTmp = [Float]()
-            MetalKernel.get.download([_wBuffers.w_p!])
-            weightsTmp += _wBuffers.w_p!.shared.array
-            
+            var weightsTmp = getHalfBuffer(_wBuffers.w_p!).array
             if _updateBiases
             {
-                MetalKernel.get.download([_bBuffers.w_p!])
-                weightsTmp += _bBuffers.w_p!.shared.array
+                weightsTmp += getHalfBuffer(_bBuffers.w_p!).array
             }
             return weightsTmp
         }

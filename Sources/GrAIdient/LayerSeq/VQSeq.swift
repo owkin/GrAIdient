@@ -87,12 +87,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
             {
                 return _weightsList
             }
-            
-            var weightsTmp = [Float]()
-            MetalKernel.get.download([_wBuffers.w_p!])
-            weightsTmp += _wBuffers.w_p!.shared.array
-        
-            return weightsTmp
+            return getHalfBuffer(_wBuffers.w_p!).array
         }
         set {
             _weightsList = newValue
@@ -582,7 +577,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pSequence: [UInt32] = [UInt32(sequence)]
             let pK: [UInt32] = [UInt32(K)]
-            let pBeta: [Float] = [Float16(beta)]
+            let pBeta: [Float] = [Float(beta)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
             let command = MetalKernel.get.createCommand(
@@ -618,7 +613,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pSequence: [UInt32] = [UInt32(sequence)]
             let pK: [UInt32] = [UInt32(K)]
-            let pCoeff: [Float] = [Float16(coeff)]
+            let pCoeff: [Float] = [Float(coeff)]
             let pAccumulate: [UInt32] = accumulateDeltaWeights ? [1] : [0]
             
             var command: MetalCommand

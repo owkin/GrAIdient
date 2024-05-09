@@ -32,6 +32,7 @@ func setupHalfBuffer(
         start: start,
         nbElems: nbElems
     )
+    
     temp.upload()
     convertFloat2Half(
         inBuffer: temp,
@@ -42,27 +43,28 @@ func setupHalfBuffer(
 }
 
 ///
-/// Convert Half buffer to Float buffer.
+/// Convert Half buffer to Float buffer and download content.
 ///
-/// - Parameters:
-///     - buffer: Input buffer.
-///     - nbElems: Number of elements to copy.
-///     - deviceID: GPU device.
+/// - Parameter buffer: Input buffer.
 ///
 /// - Returns: Float buffer.
 ///
 func getHalfBuffer(
-    buffer: MetalBuffer<UInt16>,
-    nbElems: Int,
-    deviceID: Int) -> MetalSharedBuffer<Float>
+    _ buffer: MetalBuffer<UInt16>
+) -> MetalSharedBuffer<Float>
 {
-    let temp = MetalSharedBuffer<Float>(nbElems, deviceID: deviceID)
+    let temp = MetalSharedBuffer<Float>(
+        buffer.nbElems,
+        deviceID: buffer.deviceID
+    )
     convertHalf2Float(
         inBuffer: buffer,
         outBuffer: temp,
-        nbElems: nbElems,
-        deviceID: deviceID
+        nbElems: buffer.nbElems,
+        deviceID: buffer.deviceID
     )
+    
+    _ = temp.download()
     return temp
 }
 

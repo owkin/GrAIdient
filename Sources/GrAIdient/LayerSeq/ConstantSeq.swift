@@ -63,12 +63,7 @@ public class Constant12Seq: LayerSeq, LayerUpdate
             {
                 return _weightsList
             }
-            
-            var weightsTmp = [Float]()
-            MetalKernel.get.download([_wBuffers.w_p!])
-            weightsTmp += _wBuffers.w_p!.shared.array
-        
-            return weightsTmp
+            return getHalfBuffer(_wBuffers.w_p!).array
         }
         set {
             _weightsList = newValue
@@ -561,12 +556,7 @@ public class Constant2Seq: LayerSeq, LayerUpdate
             {
                 return _weightsList
             }
-            
-            var weightsTmp = [Float]()
-            MetalKernel.get.download([_wBuffers.w_p!])
-            weightsTmp += _wBuffers.w_p!.shared.array
-        
-            return weightsTmp
+            return getHalfBuffer(_wBuffers.w_p!).array
         }
         set {
             _weightsList = newValue

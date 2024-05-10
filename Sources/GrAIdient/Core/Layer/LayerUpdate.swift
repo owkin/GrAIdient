@@ -404,6 +404,9 @@ extension LayerWeightInit
             nbElems: nbElems,
             deviceID: deviceID
         )
+        
+        // Make sure operation has ended because returning.
+        _ = out.download()
     }
     
     ///
@@ -471,6 +474,9 @@ extension LayerWeightInit
             nbElems: nbElems,
             deviceID: deviceID
         )
+        
+        // Make sure operation has ended because returning.
+        _ = out.download()
     }
     
     ///
@@ -542,6 +548,9 @@ extension LayerWeightInit
             nbElems: nbElems,
             deviceID: deviceID
         )
+        
+        // Make sure operation has ended because returning.
+        _ = out.download()
     }
     
     ///
@@ -613,6 +622,9 @@ extension LayerWeightInit
             nbElems: nbElems,
             deviceID: deviceID
         )
+        
+        // Make sure operation has ended because returning.
+        _ = out.download()
     }
 }
 

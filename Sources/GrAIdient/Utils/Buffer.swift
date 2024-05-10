@@ -46,6 +46,45 @@ public func setupHalfBuffer(
 }
 
 ///
+/// Copy, convert and upload Float array to Half buffer.
+///
+/// - Parameters:
+///     - array: Input array.
+///     - out: Output buffer.
+///     - start: Start index in `array`.
+///     - nbElems: Number of elements to copy.
+///     - deviceID: GPU device.
+///
+public func setupFloatBuffer(
+    array: inout [Float],
+    out: MetalBuffer<Float>,
+    start: Int,
+    nbElems: Int,
+    deviceID: Int)
+{
+    if let out_s = out as? MetalSharedBuffer<Float>
+    {
+        copyArrayToBuffer(
+            array: &array,
+            buffer: out_s.buffer,
+            start: start,
+            nbElems: nbElems
+        )
+    }
+    else
+    {
+        let out_p = out as! MetalPrivateBuffer<Float>
+        copyArrayToBuffer(
+            array: &array,
+            buffer: out_p.shared.buffer,
+            start: start,
+            nbElems: nbElems
+        )
+    }
+    out.upload()
+}
+
+///
 /// Convert Half buffer to Float buffer and download content.
 ///
 /// - Parameter buffer: Input buffer.

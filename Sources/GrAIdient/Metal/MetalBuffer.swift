@@ -7,6 +7,173 @@
 
 import Metal
 
+/// Wrapper of Metal float buffer.
+public class FloatBuffer
+{
+    /// Number of elements in the buffer.
+    let nbElems: Int
+    /// GPU device where the buffer is sent.
+    let deviceID: Int
+    
+    /// Float buffer.
+    var _float: MetalBuffer<Float>? = nil
+    /// Float16 buffer.
+    var _float16: MetalBuffer<UInt16>? = nil
+    
+    ///
+    /// Create a wrapper of Metal buffer.
+    ///
+    /// - Parameters:
+    ///     - nbElems: The number of elements in the array.
+    ///     - deviceID: GPU ID where the array will be sent.
+    ///
+    public init(nbElems: Int, deviceID: Int)
+    {
+        self.deviceID = deviceID
+        self.nbElems = nbElems
+    }
+    
+    ///
+    /// Initialize Metal buffer.
+    ///
+    /// - Parameters:
+    ///     - array: Input array.
+    ///     - start: Start offset.
+    ///     - shared: Whether to create a shared buffer or a private one.
+    ///
+    func initialize(
+        array: inout [Float],
+        start: Int = 0,
+        shared: Bool = false)
+    {
+        if GrAI.Precision.float16
+        {
+            if _float16 == nil
+            {
+                if shared
+                {
+                    _float16 = MetalSharedBuffer<UInt16>(
+                        nbElems, deviceID: deviceID
+                    )
+                }
+                else
+                {
+                    _float16 =  MetalPrivateBuffer<UInt16>(
+                        nbElems, deviceID: deviceID
+                    )
+                }
+            }
+            setupHalfBuffer(
+                array: &array,
+                out: _float16!,
+                start: start,
+                nbElems: nbElems,
+                deviceID: deviceID
+            )
+        }
+        else
+        {
+            let ret: UnsafeMutableBufferPointer<Float>
+            if _float == nil
+            {
+                if shared
+                {
+                    _float = MetalSharedBuffer<Float>(
+                        nbElems, deviceID: deviceID
+                    )
+                }
+                else
+                {
+                    _float =  MetalPrivateBuffer<Float>(
+                        nbElems, deviceID: deviceID
+                    )
+                }
+            }
+            setupFloatBuffer(
+                array: &array,
+                out: _float!,
+                start: start,
+                nbElems: nbElems,
+                deviceID: deviceID
+            )
+        }
+    }
+    
+    ///
+    /// Get Metal buffer.
+    ///
+    /// - Parameter shared: Whether to create a shared buffer or a private one.
+    ///
+    func metal(_ shared: Bool = false) -> MTLBuffer
+    {
+        if GrAI.Precision.float16
+        {
+            if _float16 == nil
+            {
+                if shared
+                {
+                    _float16 = MetalSharedBuffer<UInt16>(
+                        nbElems, deviceID: deviceID
+                    )
+                }
+                else
+                {
+                    _float16 =  MetalPrivateBuffer<UInt16>(
+                        nbElems, deviceID: deviceID
+                    )
+                }
+            }
+            return _float16!.metal
+        }
+        else
+        {
+            if _float == nil
+            {
+                if shared
+                {
+                    _float = MetalSharedBuffer<Float>(
+                        nbElems, deviceID: deviceID
+                    )
+                }
+                else
+                {
+                    _float = MetalPrivateBuffer<Float>(
+                        nbElems, deviceID: deviceID
+                    )
+                }
+            }
+            return _float!.metal
+        }
+    }
+    
+    ///
+    /// Retrieve Metal buffer content.
+    ///
+    /// - Parameter start: Offset.
+    ///
+    func download(_ shared: Bool = false) -> [Float]
+    {
+        let ret: UnsafeMutableBufferPointer<Float>
+        if GrAI.Precision.float16
+        {
+            if _float16 == nil
+            {
+                fatalError("Use upload API to initialize buffer.")
+            }
+            return getHalfBuffer(_float16!).array
+        }
+        else
+        {
+            let ret: UnsafeMutableBufferPointer<Float>
+            if _float == nil
+            {
+                fatalError("Use upload API to initialize buffer.")
+            }
+            return [Float](_float!.download())
+        }
+    }
+}
+
 /// Abstract array of elements that can be sent to the GPU.
 public class MetalBuffer<T>
 {

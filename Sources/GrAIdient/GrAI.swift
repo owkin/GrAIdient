@@ -70,6 +70,68 @@ public class GrAI
         }
     }
     
+    /// Namespace for precision settings.
+    public class Precision
+    {
+        /// Get/Set precision.
+        public static var double: Bool
+        {
+            get {
+                return getCtx.precision == GrAIContext.PrecisionMode.Double
+            }
+            set {
+                if newValue && GrAI.Opti.CPU
+                {
+                    getCtx.precision = GrAIContext.PrecisionMode.Double
+                }
+                else if newValue
+                {
+                    fatalError(
+                        "Cannot set double precision with GPU optimization."
+                    )
+                }
+            }
+        }
+        /// Get/Set precision.
+        public static var float: Bool
+        {
+            get {
+                return getCtx.precision == GrAIContext.PrecisionMode.Float
+            }
+            set {
+                if newValue && GrAI.Opti.GPU
+                {
+                    getCtx.precision = GrAIContext.PrecisionMode.Float
+                }
+                else if newValue
+                {
+                    fatalError(
+                        "Cannot set float precision with CPU optimization."
+                    )
+                }
+            }
+        }
+        /// Get/Set precision.
+        public static var float16: Bool
+        {
+            get {
+                return getCtx.precision == GrAIContext.PrecisionMode.Float16
+            }
+            set {
+                if newValue && GrAI.Opti.GPU
+                {
+                    getCtx.precision = GrAIContext.PrecisionMode.Float16
+                }
+                else if newValue
+                {
+                    fatalError(
+                        "Cannot set float precision with CPU optimization."
+                    )
+                }
+            }
+        }
+    }
+    
     /// Namespace for gradient settings.
     public class Gradient
     {
@@ -368,6 +430,18 @@ fileprivate class GrAIContext
     {
         case CPU
         case GPU
+    }
+    
+    //--------------------------------------------------------------------------
+    // PRECISION
+    //--------------------------------------------------------------------------
+    /// Precision variable.
+    var precision = PrecisionMode.Float
+    enum PrecisionMode
+    {
+        case Double
+        case Float
+        case Float16
     }
     
     /// Used to select GPU device.

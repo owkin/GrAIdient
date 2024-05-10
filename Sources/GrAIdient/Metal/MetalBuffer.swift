@@ -33,6 +33,64 @@ public class FloatBuffer
         self.nbElems = nbElems
     }
     
+    /// Clean the buffers.
+    func reset()
+    {
+        _float = nil
+        _float16 = nil
+    }
+    
+    ///
+    /// Initialize Metal buffer.
+    ///
+    /// - Parameter shared: Whether to create a shared buffer or a private one.
+    ///
+    public func initialize(_ shared: Bool = false)
+    {
+        if GrAI.Precision.float16
+        {
+            if _float16 == nil
+            {
+                if shared
+                {
+                    _float16 = MetalSharedBuffer<UInt16>(
+                        nbElems, deviceID: deviceID
+                    )
+                }
+                else
+                {
+                    let buffer = MetalPrivateBuffer<UInt16>(
+                        nbElems, deviceID: deviceID
+                    )
+                    _float16 = buffer
+                    _ = buffer.shared
+                }
+            }
+            _float16!.upload()
+        }
+        else
+        {
+            if _float == nil
+            {
+                if shared
+                {
+                    _float = MetalSharedBuffer<Float>(
+                        nbElems, deviceID: deviceID
+                    )
+                }
+                else
+                {
+                    let buffer = MetalPrivateBuffer<Float>(
+                        nbElems, deviceID: deviceID
+                    )
+                    _float = buffer
+                    _ = buffer.shared
+                }
+            }
+            _float!.upload()
+        }
+    }
+    
     ///
     /// Initialize Metal buffer.
     ///
@@ -41,7 +99,7 @@ public class FloatBuffer
     ///     - start: Start offset.
     ///     - shared: Whether to create a shared buffer or a private one.
     ///
-    func initialize(
+    public func initialize(
         array: inout [Float],
         start: Int = 0,
         shared: Bool = false)
@@ -58,7 +116,7 @@ public class FloatBuffer
                 }
                 else
                 {
-                    _float16 =  MetalPrivateBuffer<UInt16>(
+                    _float16 = MetalPrivateBuffer<UInt16>(
                         nbElems, deviceID: deviceID
                     )
                 }
@@ -73,7 +131,6 @@ public class FloatBuffer
         }
         else
         {
-            let ret: UnsafeMutableBufferPointer<Float>
             if _float == nil
             {
                 if shared
@@ -104,7 +161,7 @@ public class FloatBuffer
     ///
     /// - Parameter shared: Whether to create a shared buffer or a private one.
     ///
-    func metal(_ shared: Bool = false) -> MTLBuffer
+    public func metal(_ shared: Bool = false) -> MTLBuffer
     {
         if GrAI.Precision.float16
         {
@@ -118,7 +175,7 @@ public class FloatBuffer
                 }
                 else
                 {
-                    _float16 =  MetalPrivateBuffer<UInt16>(
+                    _float16 = MetalPrivateBuffer<UInt16>(
                         nbElems, deviceID: deviceID
                     )
                 }
@@ -151,9 +208,8 @@ public class FloatBuffer
     ///
     /// - Parameter start: Offset.
     ///
-    func download(_ shared: Bool = false) -> [Float]
+    public func download() -> [Float]
     {
-        let ret: UnsafeMutableBufferPointer<Float>
         if GrAI.Precision.float16
         {
             if _float16 == nil
@@ -164,7 +220,6 @@ public class FloatBuffer
         }
         else
         {
-            let ret: UnsafeMutableBufferPointer<Float>
             if _float == nil
             {
                 fatalError("Use upload API to initialize buffer.")

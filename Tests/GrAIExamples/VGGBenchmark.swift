@@ -244,7 +244,7 @@ final class VGGBenchmark: XCTestCase
         )
         
         // Initialize data once and for all.
-        let data = MetalPrivateBuffer<UInt16>(
+        let data = FloatBuffer(nbElems: 
             _batchSize * 3 * _size * _size, deviceID: 0
         )
         var dataBuffer = [Float](
@@ -361,7 +361,7 @@ final class VGGBenchmark: XCTestCase
         )
         
         // Initialize data once and for all.
-        let data = MetalPrivateBuffer<UInt16>(
+        let data = FloatBuffer(nbElems: 
             _batchSize * 3 * _size * _size, deviceID: 0
         )
         var dataBuffer = [Float](

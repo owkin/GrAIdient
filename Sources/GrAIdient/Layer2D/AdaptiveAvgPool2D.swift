@@ -568,12 +568,12 @@ public class AdaptiveAvgPool2D: Layer2D
                 command = metalKernel.createCommand(
                     "adaptiveAvgPoolForward1", deviceID: deviceID
                 )
-                command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+                command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
                 command.setBytes(pNbChannels, atIndex: 1)
                 command.setBytes(pDimensions, atIndex: 2)
                 command.setBytes(pDimensionsPrev, atIndex: 3)
                 command.setBytes(pNbBatch, atIndex: 4)
-                command.setBuffer(outs.metal, atIndex: 5)
+                command.setBuffer(outs.metal(), atIndex: 5)
                 
                 command.dispatchThreads(
                     width: width * nbChannels,
@@ -589,7 +589,7 @@ public class AdaptiveAvgPool2D: Layer2D
                 command = metalKernel.createCommand("reset", deviceID: deviceID)
                 
                 command.setBytes(pNbElems, atIndex: 0)
-                command.setBuffer(_nbElems.metal, atIndex: 1)
+                command.setBuffer(_nbElems.metal(), atIndex: 1)
                 
                 command.dispatchThreads(nbElems)
                 command.enqueue()
@@ -600,7 +600,7 @@ public class AdaptiveAvgPool2D: Layer2D
                 command = metalKernel.createCommand("reset", deviceID: deviceID)
                 
                 command.setBytes(pNbElems, atIndex: 0)
-                command.setBuffer(outs.metal, atIndex: 1)
+                command.setBuffer(outs.metal(), atIndex: 1)
                 
                 command.dispatchThreads(nbElems)
                 command.enqueue()
@@ -608,13 +608,13 @@ public class AdaptiveAvgPool2D: Layer2D
                 command = metalKernel.createCommand(
                     "adaptiveAvgPoolForward2", deviceID: deviceID
                 )
-                command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+                command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
                 command.setBytes(pNbChannels, atIndex: 1)
                 command.setBytes(pDimensions, atIndex: 2)
                 command.setBytes(pDimensionsPrev, atIndex: 3)
                 command.setBytes(pNbBatch, atIndex: 4)
-                command.setBuffer(_nbElems.metal, atIndex: 5)
-                command.setBuffer(outs.metal, atIndex: 6)
+                command.setBuffer(_nbElems.metal(), atIndex: 5)
+                command.setBuffer(outs.metal(), atIndex: 6)
                 
                 command.dispatchThreads(
                     width: nbChannels,
@@ -767,7 +767,7 @@ public class AdaptiveAvgPool2D: Layer2D
                 command = metalKernel.createCommand("reset", deviceID: deviceID)
                 
                 command.setBytes(pNbElems, atIndex: 0)
-                command.setBuffer(layerPrev.delta.metal, atIndex: 1)
+                command.setBuffer(layerPrev.delta.metal(), atIndex: 1)
                 
                 command.dispatchThreads(nbElems)
                 command.enqueue()
@@ -778,12 +778,12 @@ public class AdaptiveAvgPool2D: Layer2D
                 command = metalKernel.createCommand(
                     "adaptiveAvgPoolBackward1", deviceID: deviceID
                 )
-                command.setBuffer(delta.metal, atIndex: 0)
+                command.setBuffer(delta.metal(), atIndex: 0)
                 command.setBytes(pNbChannels, atIndex: 1)
                 command.setBytes(pDimensions, atIndex: 2)
                 command.setBytes(pDimensionsPrev, atIndex: 3)
                 command.setBytes(pNbBatch, atIndex: 4)
-                command.setBuffer(layerPrev.delta.metal, atIndex: 5)
+                command.setBuffer(layerPrev.delta.metal(), atIndex: 5)
                 
                 command.dispatchThreads(
                     width: nbChannels,
@@ -796,13 +796,13 @@ public class AdaptiveAvgPool2D: Layer2D
                 command = metalKernel.createCommand(
                     "adaptiveAvgPoolBackward2", deviceID: deviceID
                 )
-                command.setBuffer(delta.metal, atIndex: 0)
-                command.setBuffer(_nbElems.metal, atIndex: 1)
+                command.setBuffer(delta.metal(), atIndex: 0)
+                command.setBuffer(_nbElems.metal(), atIndex: 1)
                 command.setBytes(pNbChannels, atIndex: 2)
                 command.setBytes(pDimensions, atIndex: 3)
                 command.setBytes(pDimensionsPrev, atIndex: 4)
                 command.setBytes(pNbBatch, atIndex: 5)
-                command.setBuffer(layerPrev.delta.metal, atIndex: 6)
+                command.setBuffer(layerPrev.delta.metal(), atIndex: 6)
                 
                 command.dispatchThreads(
                     width: nbChannels,

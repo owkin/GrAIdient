@@ -270,12 +270,12 @@ public class SelectNeurons2D: Layer1D, LayerResize
             let command = MetalKernel.get.createCommand(
                 "selectNeurons2DForward", deviceID: deviceID
             )
-            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+            command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
             command.setBytes(pTarget, atIndex: 1)
             command.setBytes(pNbNeurons, atIndex: 2)
             command.setBytes(pDimensionsPrev, atIndex: 3)
             command.setBytes(pNbBatch, atIndex: 4)
-            command.setBuffer(outs.metal, atIndex: 5)
+            command.setBuffer(outs.metal(), atIndex: 5)
             
             command.dispatchThreads(
                 width: nbNeurons,
@@ -345,13 +345,13 @@ public class SelectNeurons2D: Layer1D, LayerResize
             let command = MetalKernel.get.createCommand(
                 "selectNeurons2DBackward", deviceID: deviceID
             )
-            command.setBuffer(delta.metal, atIndex: 0)
+            command.setBuffer(delta.metal(), atIndex: 0)
             command.setBytes(pTarget, atIndex: 1)
             command.setBytes(pNbNeurons, atIndex: 2)
             command.setBytes(pDimensionsPrev, atIndex: 3)
             command.setBytes(pNbBatch, atIndex: 4)
             command.setBytes(pDirty, atIndex: 5)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 6)
+            command.setBuffer(layerPrev.delta.metal(), atIndex: 6)
             
             command.dispatchThreads(
                 width: widthPrev * nbNeurons,

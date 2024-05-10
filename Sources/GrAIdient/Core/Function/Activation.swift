@@ -307,8 +307,8 @@ open class ActivationFunction: Codable
     ///     - deviceID: GPU device where to execute the operation.
     ///
     private func _forwardGPU(
-        tmp: MetalBuffer<UInt16>,
-        outs: MetalBuffer<UInt16>,
+        tmp: FloatBuffer,
+        outs: FloatBuffer,
         deviceID: Int)
     {
         let nbElems = outs.nbElems
@@ -318,8 +318,8 @@ open class ActivationFunction: Codable
             forwardKernel, deviceID: deviceID
         )
         command.setBytes(pNbElems, atIndex: 0)
-        command.setBuffer(tmp.metal, atIndex: 1)
-        command.setBuffer(outs.metal, atIndex: 2)
+        command.setBuffer(tmp.metal(), atIndex: 1)
+        command.setBuffer(outs.metal(), atIndex: 2)
         
         command.dispatchThreads(nbElems)
         command.enqueue()
@@ -335,8 +335,9 @@ open class ActivationFunction: Codable
         let nbElems = layer.outs.nbElems
         if layer._tmp == nil
         {
-            layer._tmp = MetalPrivateBuffer<UInt16>(
-                nbElems, deviceID: layer.deviceID)
+            layer._tmp = FloatBuffer(
+                nbElems: nbElems, deviceID: layer.deviceID
+            )
         }
         _forwardGPU(
             tmp: layer._tmp,
@@ -355,7 +356,7 @@ open class ActivationFunction: Codable
         let nbElems = layer.outs.nbElems
         if layer._tmp == nil
         {
-            layer._tmp = MetalPrivateBuffer<UInt16>(
+            layer._tmp = FloatBuffer(nbElems: 
                 nbElems, deviceID: layer.deviceID)
         }
         _forwardGPU(
@@ -375,8 +376,9 @@ open class ActivationFunction: Codable
         let nbElems = layer.outs.nbElems
         if layer._tmp == nil
         {
-            layer._tmp = MetalPrivateBuffer<UInt16>(
-                nbElems, deviceID: layer.deviceID)
+            layer._tmp = FloatBuffer(
+                nbElems: nbElems, deviceID: layer.deviceID
+            )
         }
         _forwardGPU(
             tmp: layer._tmp,
@@ -394,8 +396,8 @@ open class ActivationFunction: Codable
     ///     - deviceID: GPU device where to execute the operation.
     ///
     private func _backwardGPU(
-        tmp: MetalBuffer<UInt16>,
-        delta: MetalBuffer<UInt16>,
+        tmp: FloatBuffer,
+        delta: FloatBuffer,
         deviceID: Int)
     {
         let nbElems = delta.nbElems
@@ -404,9 +406,9 @@ open class ActivationFunction: Codable
         let command = MetalKernel.get.createCommand(
             backwardKernel, deviceID: deviceID
         )
-        command.setBuffer(tmp.metal, atIndex: 0)
+        command.setBuffer(tmp.metal(), atIndex: 0)
         command.setBytes(pNbElems, atIndex: 1)
-        command.setBuffer(delta.metal, atIndex: 2)
+        command.setBuffer(delta.metal(), atIndex: 2)
         
         command.dispatchThreads(nbElems)
         command.enqueue()

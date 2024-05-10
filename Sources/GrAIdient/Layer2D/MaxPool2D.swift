@@ -373,15 +373,15 @@ public class MaxPool2D: Layer2D
             let command = MetalKernel.get.createCommand(
                 "maxPoolForward", deviceID: deviceID
             )
-            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+            command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
             command.setBytes(pStart, atIndex: 1)
             command.setBytes(pStride, atIndex: 2)
             command.setBytes(pNbChannels, atIndex: 3)
             command.setBytes(pDimensions, atIndex: 4)
             command.setBytes(pDimensionsPrev, atIndex: 5)
             command.setBytes(pNbBatch, atIndex: 6)
-            command.setBuffer(outs.metal, atIndex: 7)
-            command.setBuffer(_indicesMax.metal, atIndex: 8)
+            command.setBuffer(outs.metal(), atIndex: 7)
+            command.setBuffer(_indicesMax.metal(), atIndex: 8)
             
             command.dispatchThreads(
                 width: width * nbChannels,
@@ -464,8 +464,8 @@ public class MaxPool2D: Layer2D
             let command = MetalKernel.get.createCommand(
                 "maxPoolBackward", deviceID: deviceID
             )
-            command.setBuffer(delta.metal, atIndex: 0)
-            command.setBuffer(_indicesMax.metal, atIndex: 1)
+            command.setBuffer(delta.metal(), atIndex: 0)
+            command.setBuffer(_indicesMax.metal(), atIndex: 1)
             command.setBytes(pStart, atIndex: 2)
             command.setBytes(pStride, atIndex: 3)
             command.setBytes(pNbChannels, atIndex: 4)
@@ -473,7 +473,7 @@ public class MaxPool2D: Layer2D
             command.setBytes(pDimensionsPrev, atIndex: 6)
             command.setBytes(pNbBatch, atIndex: 7)
             command.setBytes(pDirty, atIndex: 8)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 9)
+            command.setBuffer(layerPrev.delta.metal(), atIndex: 9)
             
             command.dispatchThreads(
                 width: widthPrev * nbChannels,

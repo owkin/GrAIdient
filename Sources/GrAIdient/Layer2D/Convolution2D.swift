@@ -54,12 +54,12 @@ public class Convolution2D: BN2D, LayerWeightInit
     /// Buffer of gradients per sample for weights.
     /// Shape ~ (batch, nbWeights, kernel height, kernel width).
     ///
-    var _wDeltaWeights: MetalPrivateBuffer<UInt16>! = nil
+    var _wDeltaWeights: FloatBuffer! = nil
     ///
     /// Buffer of gradients per sample for biases.
     /// Shape ~ (batch, nbChannels).
     ///
-    var _bDeltaWeights: MetalPrivateBuffer<UInt16>! = nil
+    var _bDeltaWeights: FloatBuffer! = nil
     
     /// Number of weight kernels.
     public let nbWeights: Int
@@ -184,10 +184,10 @@ public class Convolution2D: BN2D, LayerWeightInit
                 return _weightsList
             }
             
-            var weightsTmp = getHalfBuffer(_wBuffers.w_p!).array
+            var weightsTmp = _wBuffers.w.download()
             if _updateBiases
             {
-                weightsTmp += getHalfBuffer(_bBuffers.w_p!).array
+                weightsTmp += _bBuffers.w.download()
             }
             return weightsTmp
         }
@@ -778,35 +778,24 @@ public class Convolution2D: BN2D, LayerWeightInit
             deviceID: deviceID
         )
         
-        _ = _bBuffers.w_p!.shared
+        _bBuffers.w.initialize()
         if _weightsList.count == 0
         {
-            generateWeightsList(out: _wBuffers.w_p!, deviceID: deviceID)
+            generateWeightsList(out: _wBuffers.w, deviceID: deviceID)
         }
         else
         {
-            setupHalfBuffer(
-                array: &_weightsList,
-                out: _wBuffers.w_p!,
-                start: 0,
-                nbElems: nbWeights * weightHeight * weightWidth,
-                deviceID: deviceID
-            )
+            _wBuffers.w.initialize(array: &_weightsList)
             if _updateBiases
             {
-                setupHalfBuffer(
+                _bBuffers.w.initialize(
                     array: &_weightsList,
-                    out: _bBuffers.w_p!,
-                    start: nbWeights * weightHeight * weightWidth,
-                    nbElems: nbChannels,
-                    deviceID: deviceID
+                    start: nbWeights * weightHeight * weightWidth
                 )
             }
         }
         
-        _bBuffers.w_p!.upload()
         _weightsList = []
-        
         _wDeltaWeights = nil
         _bDeltaWeights = nil
     }
@@ -824,14 +813,14 @@ public class Convolution2D: BN2D, LayerWeightInit
         if computeDeltaWeights &&
            GrAI.Gradient.sample && _wDeltaWeights == nil
         {
-            _wDeltaWeights = MetalPrivateBuffer<UInt16>(
+            _wDeltaWeights = FloatBuffer(nbElems: 
                 batchSize * nbWeights * weightWidth * weightHeight,
                 deviceID: deviceID
             )
             
             if _updateBiases
             {
-                _bDeltaWeights = MetalPrivateBuffer<UInt16>(
+                _bDeltaWeights = FloatBuffer(nbElems: 
                     batchSize * nbChannels, deviceID: deviceID
                 )
             }
@@ -1374,9 +1363,9 @@ public class Convolution2D: BN2D, LayerWeightInit
             let command = MetalKernel.get.createCommand(
                 kernel, deviceID: deviceID
             )
-            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
-            command.setBuffer(_wBuffers.w.metal, atIndex: 1)
-            command.setBuffer(_bBuffers.w.metal, atIndex: 2)
+            command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
+            command.setBuffer(_wBuffers.w.metal(), atIndex: 1)
+            command.setBuffer(_bBuffers.w.metal(), atIndex: 2)
             command.setBytes(pStart, atIndex: 3)
             command.setBytes(pStride, atIndex: 4)
             command.setBytes(pNbChannels, atIndex: 5)
@@ -1385,7 +1374,7 @@ public class Convolution2D: BN2D, LayerWeightInit
             command.setBytes(pDimensionsPrev, atIndex: 8)
             command.setBytes(pDimWeights, atIndex: 9)
             command.setBytes(pNbBatch, atIndex: 10)
-            command.setBuffer(outs.metal, atIndex: 11)
+            command.setBuffer(outs.metal(), atIndex: 11)
             
             command.dispatchThreads(
                 width: (nbChannels / coeff) * width,
@@ -1570,8 +1559,8 @@ public class Convolution2D: BN2D, LayerWeightInit
             let command = MetalKernel.get.createCommand(
                 kernel, deviceID: deviceID
             )
-            command.setBuffer(delta.metal, atIndex: 0)
-            command.setBuffer(_wBuffers.w.metal, atIndex: 1)
+            command.setBuffer(delta.metal(), atIndex: 0)
+            command.setBuffer(_wBuffers.w.metal(), atIndex: 1)
             command.setBytes(pStart, atIndex: 2)
             command.setBytes(pStride, atIndex: 3)
             command.setBytes(pNbChannels, atIndex: 4)
@@ -1581,7 +1570,7 @@ public class Convolution2D: BN2D, LayerWeightInit
             command.setBytes(pDimWeights, atIndex: 8)
             command.setBytes(pNbBatch, atIndex: 9)
             command.setBytes(pDirty, atIndex: 10)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 11)
+            command.setBuffer(layerPrev.delta.metal(), atIndex: 11)
             
             command.dispatchThreads(
                 width: (nbChannelsPrev / coeff) * layerPrev.width,
@@ -1630,15 +1619,15 @@ public class Convolution2D: BN2D, LayerWeightInit
                     command = MetalKernel.get.createCommand(
                         "conv34BatchDerWeights", deviceID: deviceID
                     )
-                    command.setBuffer(layerPrev.outs.metal, atIndex: 0)
-                    command.setBuffer(delta.metal, atIndex: 1)
+                    command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
+                    command.setBuffer(delta.metal(), atIndex: 1)
                     command.setBytes(pNbChannels, atIndex: 2)
                     command.setBytes(pNbChannelsPrev, atIndex: 3)
                     command.setBytes(pDimensions, atIndex: 4)
                     command.setBytes(pDimensionsPrev, atIndex: 5)
                     command.setBytes(pNbBatch, atIndex: 6)
                     command.setBytes(pAccumulate, atIndex: 7)
-                    command.setBuffer(_wBuffers.g.metal, atIndex: 8)
+                    command.setBuffer(_wBuffers.g.metal(), atIndex: 8)
                     
                     command.dispatchThreads(
                         width: nbChannels,
@@ -1651,8 +1640,8 @@ public class Convolution2D: BN2D, LayerWeightInit
                     command = MetalKernel.get.createCommand(
                         batchDerWeightsKernel, deviceID: deviceID
                     )
-                    command.setBuffer(layerPrev.outs.metal, atIndex: 0)
-                    command.setBuffer(delta.metal, atIndex: 1)
+                    command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
+                    command.setBuffer(delta.metal(), atIndex: 1)
                     command.setBytes(pStart, atIndex: 2)
                     command.setBytes(pStride, atIndex: 3)
                     command.setBytes(pNbChannels, atIndex: 4)
@@ -1662,7 +1651,7 @@ public class Convolution2D: BN2D, LayerWeightInit
                     command.setBytes(pDimWeights, atIndex: 8)
                     command.setBytes(pNbBatch, atIndex: 9)
                     command.setBytes(pAccumulate, atIndex: 10)
-                    command.setBuffer(_wBuffers.g.metal, atIndex: 11)
+                    command.setBuffer(_wBuffers.g.metal(), atIndex: 11)
                     
                     command.dispatchThreads(
                         width: nbChannels * weightWidth,
@@ -1676,12 +1665,12 @@ public class Convolution2D: BN2D, LayerWeightInit
                     command = MetalKernel.get.createCommand(
                         batchDerBiasesKernel, deviceID: deviceID
                     )
-                    command.setBuffer(delta.metal, atIndex: 0)
+                    command.setBuffer(delta.metal(), atIndex: 0)
                     command.setBytes(pNbChannels, atIndex: 1)
                     command.setBytes(pDimensions, atIndex: 2)
                     command.setBytes(pNbBatch, atIndex: 3)
                     command.setBytes(pAccumulate, atIndex: 4)
-                    command.setBuffer(_bBuffers.g.metal, atIndex: 5)
+                    command.setBuffer(_bBuffers.g.metal(), atIndex: 5)
                     
                     command.dispatchThreads(nbChannels)
                     command.enqueue()
@@ -1695,8 +1684,8 @@ public class Convolution2D: BN2D, LayerWeightInit
                 command = MetalKernel.get.createCommand(
                     derWeightsKernel, deviceID: deviceID
                 )
-                command.setBuffer(layerPrev.outs.metal, atIndex: 0)
-                command.setBuffer(delta.metal, atIndex: 1)
+                command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
+                command.setBuffer(delta.metal(), atIndex: 1)
                 command.setBytes(pStart, atIndex: 2)
                 command.setBytes(pStride, atIndex: 3)
                 command.setBytes(pNbChannels, atIndex: 4)
@@ -1705,7 +1694,7 @@ public class Convolution2D: BN2D, LayerWeightInit
                 command.setBytes(pDimensionsPrev, atIndex: 7)
                 command.setBytes(pDimWeights, atIndex: 8)
                 command.setBytes(pNbBatch, atIndex: 9)
-                command.setBuffer(_wDeltaWeights.metal, atIndex: 10)
+                command.setBuffer(_wDeltaWeights.metal(), atIndex: 10)
                 
                 command.dispatchThreads(
                     width: batchSize * nbChannels * weightWidth,
@@ -1718,11 +1707,11 @@ public class Convolution2D: BN2D, LayerWeightInit
                     command = MetalKernel.get.createCommand(
                         derBiasesKernel, deviceID: deviceID
                     )
-                    command.setBuffer(delta.metal, atIndex: 0)
+                    command.setBuffer(delta.metal(), atIndex: 0)
                     command.setBytes(pNbChannels, atIndex: 1)
                     command.setBytes(pDimensions, atIndex: 2)
                     command.setBytes(pNbBatch, atIndex: 3)
-                    command.setBuffer(_bDeltaWeights.metal, atIndex: 4)
+                    command.setBuffer(_bDeltaWeights.metal(), atIndex: 4)
                     
                     command.dispatchThreads(
                         width: nbChannels,
@@ -1737,13 +1726,13 @@ public class Convolution2D: BN2D, LayerWeightInit
                 command = MetalKernel.get.createCommand(
                     reduceWeightsKernel, deviceID: deviceID
                 )
-                command.setBuffer(_wDeltaWeights.metal, atIndex: 0)
+                command.setBuffer(_wDeltaWeights.metal(), atIndex: 0)
                 command.setBytes(pNbChannels, atIndex: 1)
                 command.setBytes(pNbChannelsPrev, atIndex: 2)
                 command.setBytes(pDimWeights, atIndex: 3)
                 command.setBytes(pNbBatch, atIndex: 4)
                 command.setBytes(pAccumulate, atIndex: 5)
-                command.setBuffer(_wBuffers.g.metal, atIndex: 6)
+                command.setBuffer(_wBuffers.g.metal(), atIndex: 6)
                 
                 command.dispatchThreads(
                     width: nbChannels * weightWidth,
@@ -1756,11 +1745,11 @@ public class Convolution2D: BN2D, LayerWeightInit
                     command = MetalKernel.get.createCommand(
                         reduceBiasesKernel, deviceID: deviceID
                     )
-                    command.setBuffer(_bDeltaWeights.metal, atIndex: 0)
+                    command.setBuffer(_bDeltaWeights.metal(), atIndex: 0)
                     command.setBytes(pNbChannels, atIndex: 1)
                     command.setBytes(pNbBatch, atIndex: 2)
                     command.setBytes(pAccumulate, atIndex: 3)
-                    command.setBuffer(_bBuffers.g.metal, atIndex: 4)
+                    command.setBuffer(_bBuffers.g.metal(), atIndex: 4)
                     
                     command.dispatchThreads(nbChannels)
                     command.enqueue()
@@ -1770,9 +1759,9 @@ public class Convolution2D: BN2D, LayerWeightInit
     }
     
     /// Get the weights in the CPU execution context.
-    public override func collectWeightsCPU() -> [IWeightArrays]
+    public override func collectWeightsCPU() -> [WeightArrays]
     {
-        var weights = [IWeightArrays]()
+        var weights = [WeightArrays]()
         weights += _wArrays
         if _updateBiases
         {

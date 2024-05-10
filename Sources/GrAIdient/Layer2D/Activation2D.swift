@@ -16,7 +16,7 @@ public class Activation2D: Layer2D
     /// used in the GPU execution context.
     /// Shape ~ (batch, nbChannels, height, width).
     ///
-    var _tmp: MetalPrivateBuffer<UInt16>! = nil
+    var _tmp: FloatBuffer! = nil
     
     /// Get coefficient (depending on activation function) to apply during the weights initialization.
     public var coeffInitWeights: Float
@@ -266,9 +266,9 @@ public class Activation2D: Layer2D
             let command = MetalKernel.get.createCommand(
                 kernel, deviceID: deviceID
             )
-            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+            command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
             command.setBytes(pNbElems, atIndex: 1)
-            command.setBuffer(outs.metal, atIndex: 2)
+            command.setBuffer(outs.metal(), atIndex: 2)
             
             command.dispatchThreads(nbElems / coeff)
             command.enqueue()
@@ -337,9 +337,9 @@ public class Activation2D: Layer2D
                 kernel, deviceID: deviceID
             )
             
-            command.setBuffer(delta.metal, atIndex: 0)
+            command.setBuffer(delta.metal(), atIndex: 0)
             command.setBytes(pNbElems, atIndex: 1)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 2)
+            command.setBuffer(layerPrev.delta.metal(), atIndex: 2)
             
             command.dispatchThreads(nbElems / coeff)
             command.enqueue()

@@ -182,11 +182,11 @@ class SGDOptimizer: OptimizerImpl
         let command = MetalKernel.get.createCommand(
             "weightsSGD", deviceID: weights.deviceID
         )
-        command.setBuffer(weights.g.metal, atIndex: 0)
+        command.setBuffer(weights.g.metal(), atIndex: 0)
         command.setBytes(pNbElems, atIndex: 1)
         command.setBytes(pAlpha, atIndex: 2)
         command.setBytes(pLambda, atIndex: 3)
-        command.setBuffer(weights.w.metal, atIndex: 4)
+        command.setBuffer(weights.w.metal(), atIndex: 4)
         
         command.dispatchThreads(nbElems)
         command.enqueue()
@@ -236,12 +236,12 @@ class SGDMomentumOptimizer: OptimizerImpl
         let command = MetalKernel.get.createCommand(
             "weightsMomentum", deviceID: weights.deviceID
         )
-        command.setBuffer(weights.g.metal, atIndex: 0)
+        command.setBuffer(weights.g.metal(), atIndex: 0)
         command.setBytes(pNbElems, atIndex: 1)
         command.setBytes(pAlpha, atIndex: 2)
         command.setBytes(pLambda, atIndex: 3)
-        command.setBuffer(weights.w.metal, atIndex: 4)
-        command.setBuffer(weights.m.metal, atIndex: 5)
+        command.setBuffer(weights.w.metal(), atIndex: 4)
+        command.setBuffer(weights.m.metal(), atIndex: 5)
         
         command.dispatchThreads(nbElems)
         command.enqueue()
@@ -304,14 +304,14 @@ class AdamOptimizer: OptimizerImpl
         let command = MetalKernel.get.createCommand(
             "weightsAdam", deviceID: weights.deviceID
         )
-        command.setBuffer(weights.g.metal, atIndex: 0)
+        command.setBuffer(weights.g.metal(), atIndex: 0)
         command.setBytes(pNbElems, atIndex: 1)
         command.setBytes(pAlpha, atIndex: 2)
         command.setBytes(pLambda, atIndex: 3)
         command.setBytes(pT, atIndex: 4)
-        command.setBuffer(weights.w.metal, atIndex: 5)
-        command.setBuffer(weights.m.metal, atIndex: 6)
-        command.setBuffer(weights.v.metal, atIndex: 7)
+        command.setBuffer(weights.w.metal(), atIndex: 5)
+        command.setBuffer(weights.m.metal(), atIndex: 6)
+        command.setBuffer(weights.v.metal(), atIndex: 7)
         
         command.dispatchThreads(nbElems)
         command.enqueue()
@@ -376,15 +376,15 @@ class AMSGradOptimizer: OptimizerImpl
         let command = MetalKernel.get.createCommand(
             "weightsAMSGrad", deviceID: weights.deviceID
         )
-        command.setBuffer(weights.g.metal, atIndex: 0)
+        command.setBuffer(weights.g.metal(), atIndex: 0)
         command.setBytes(pNbElems, atIndex: 1)
         command.setBytes(pAlpha, atIndex: 2)
         command.setBytes(pLambda, atIndex: 3)
         command.setBytes(pT, atIndex: 4)
-        command.setBuffer(weights.w.metal, atIndex: 5)
-        command.setBuffer(weights.m.metal, atIndex: 6)
-        command.setBuffer(weights.v.metal, atIndex: 7)
-        command.setBuffer(weights.vHat.metal, atIndex: 8)
+        command.setBuffer(weights.w.metal(), atIndex: 5)
+        command.setBuffer(weights.m.metal(), atIndex: 6)
+        command.setBuffer(weights.v.metal(), atIndex: 7)
+        command.setBuffer(weights.vHat.metal(), atIndex: 8)
         
         command.dispatchThreads(nbElems)
         command.enqueue()
@@ -459,14 +459,14 @@ class AdamRectifiedOptimizer: OptimizerImpl
         let command = MetalKernel.get.createCommand(
             "weightsAdamRectified", deviceID: weights.deviceID
         )
-        command.setBuffer(weights.g.metal, atIndex: 0)
+        command.setBuffer(weights.g.metal(), atIndex: 0)
         command.setBytes(pNbElems, atIndex: 1)
         command.setBytes(pAlpha, atIndex: 2)
         command.setBytes(pLambda, atIndex: 3)
         command.setBytes(pT, atIndex: 4)
-        command.setBuffer(weights.w.metal, atIndex: 5)
-        command.setBuffer(weights.m.metal, atIndex: 6)
-        command.setBuffer(weights.v.metal, atIndex: 7)
+        command.setBuffer(weights.w.metal(), atIndex: 5)
+        command.setBuffer(weights.m.metal(), atIndex: 6)
+        command.setBuffer(weights.v.metal(), atIndex: 7)
         
         command.dispatchThreads(nbElems)
         command.enqueue()
@@ -595,16 +595,16 @@ class AdaBoundOptimizer: BoundOptimizer
         let command = MetalKernel.get.createCommand(
             "weightsAdaBound", deviceID: weights.deviceID
         )
-        command.setBuffer(weights.g.metal, atIndex: 0)
+        command.setBuffer(weights.g.metal(), atIndex: 0)
         command.setBytes(pNbElems, atIndex: 1)
         command.setBytes(pAlpha, atIndex: 2)
         command.setBytes(pLambda, atIndex: 3)
         command.setBytes(pT, atIndex: 4)
         command.setBytes(pLowerBound, atIndex: 5)
         command.setBytes(pUpperBound, atIndex: 6)
-        command.setBuffer(weights.w.metal, atIndex: 7)
-        command.setBuffer(weights.m.metal, atIndex: 8)
-        command.setBuffer(weights.v.metal, atIndex: 9)
+        command.setBuffer(weights.w.metal(), atIndex: 7)
+        command.setBuffer(weights.m.metal(), atIndex: 8)
+        command.setBuffer(weights.v.metal(), atIndex: 9)
         
         command.dispatchThreads(nbElems)
         command.enqueue()
@@ -679,17 +679,17 @@ class AMSBoundOptimizer: BoundOptimizer
         let command = MetalKernel.get.createCommand(
             "weightsAMSBound", deviceID: weights.deviceID
         )
-        command.setBuffer(weights.g.metal, atIndex: 0)
+        command.setBuffer(weights.g.metal(), atIndex: 0)
         command.setBytes(pNbElems, atIndex: 1)
         command.setBytes(pAlpha, atIndex: 2)
         command.setBytes(pLambda, atIndex: 3)
         command.setBytes(pT, atIndex: 4)
         command.setBytes(pLowerBound, atIndex: 5)
         command.setBytes(pUpperBound, atIndex: 6)
-        command.setBuffer(weights.w.metal, atIndex: 7)
-        command.setBuffer(weights.m.metal, atIndex: 8)
-        command.setBuffer(weights.v.metal, atIndex: 9)
-        command.setBuffer(weights.vHat.metal, atIndex: 10)
+        command.setBuffer(weights.w.metal(), atIndex: 7)
+        command.setBuffer(weights.m.metal(), atIndex: 8)
+        command.setBuffer(weights.v.metal(), atIndex: 9)
+        command.setBuffer(weights.vHat.metal(), atIndex: 10)
         
         command.dispatchThreads(nbElems)
         command.enqueue()

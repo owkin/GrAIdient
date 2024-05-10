@@ -274,13 +274,13 @@ public class Concat1D: LayerMerge1D
                 "concat1DForward", deviceID: deviceID
             )
             command.setBuffer(
-                (_layersPrev[num] as! Layer1D).outs.metal, atIndex: 0
+                (_layersPrev[num] as! Layer1D).outs.metal(), atIndex: 0
             )
             command.setBytes(pGlobalOffset, atIndex: 1)
             command.setBytes(pNbNeurons, atIndex: 2)
             command.setBytes(pNbNeuronsPrev, atIndex: 3)
             command.setBytes(pNbBatch, atIndex: 4)
-            command.setBuffer(outs.metal, atIndex: 5)
+            command.setBuffer(outs.metal(), atIndex: 5)
             
             command.dispatchThreads(
                 width: nbNeuronsPrev,
@@ -374,13 +374,13 @@ public class Concat1D: LayerMerge1D
             command = metalKernel.createCommand(
                 "concat1DBackward", deviceID: deviceID
             )
-            command.setBuffer(delta.metal, atIndex: 0)
+            command.setBuffer(delta.metal(), atIndex: 0)
             command.setBytes(pGlobalOffset, atIndex: 1)
             command.setBytes(pNbNeurons, atIndex: 2)
             command.setBytes(pNbNeuronsPrev, atIndex: 3)
             command.setBytes(pNbBatch, atIndex: 4)
             command.setBytes(pDirty, atIndex: 5)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 6)
+            command.setBuffer(layerPrev.delta.metal(), atIndex: 6)
             
             command.dispatchThreads(
                 width: nbNeuronsPrev,

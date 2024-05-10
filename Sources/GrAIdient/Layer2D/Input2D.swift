@@ -82,7 +82,7 @@ class InputArrays2D: InputArrays<Layer2D>, IWeightArrays
 class InputBuffers2D: InputBuffers<Layer2D>, IWeightBuffers
 {
     /// Inputs buffer: the buffer to be update.
-    var w: MetalBuffer<UInt16>
+    var w: FloatBuffer
     {
         get {
             return _layer.outs
@@ -90,7 +90,7 @@ class InputBuffers2D: InputBuffers<Layer2D>, IWeightBuffers
     }
     
     /// Gradients buffer.
-    var g: MetalBuffer<UInt16>
+    var g: FloatBuffer
     {
         get {
             return _layer.delta
@@ -454,9 +454,9 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
             let command = MetalKernel.get.createCommand(
                 kernel, deviceID: deviceID
             )
-            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+            command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
             command.setBytes(pNbElems, atIndex: 1)
-            command.setBuffer(outs.metal, atIndex: 2)
+            command.setBuffer(outs.metal(), atIndex: 2)
             
             command.dispatchThreads(nbElems / coeff)
             command.enqueue()
@@ -520,9 +520,9 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
                 kernel, deviceID: deviceID
             )
             
-            command.setBuffer(delta.metal, atIndex: 0)
+            command.setBuffer(delta.metal(), atIndex: 0)
             command.setBytes(pNbElems, atIndex: 1)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 2)
+            command.setBuffer(layerPrev.delta.metal(), atIndex: 2)
             
             command.dispatchThreads(nbElems / coeff)
             command.enqueue()

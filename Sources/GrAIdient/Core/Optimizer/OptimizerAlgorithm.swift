@@ -240,7 +240,7 @@ public class OptimizerAlgorithm
                     )
                     command.setBytes(pNbElems, atIndex: 0)
                     command.setBytes(pFactor, atIndex: 1)
-                    command.setBuffer(buffers.g.metal, atIndex: 2)
+                    command.setBuffer(buffers.g.metal(), atIndex: 2)
                     
                     command.dispatchThreads(nbElems)
                     command.enqueue()
@@ -303,20 +303,7 @@ public class OptimizerAlgorithm
                 
                 for buffers in layerUpdate.collectWeightsGPU()
                 {
-                    let buffer: UnsafeMutableBufferPointer<Float>
-                    if let g_p = buffers.g_p
-                    {
-                        buffer = getHalfBuffer(g_p).buffer
-                    }
-                    else if let g_s = buffers.g_s
-                    {
-                        buffer = getHalfBuffer(g_s).buffer
-                    }
-                    else
-                    {
-                        fatalError("Unreachable.")
-                    }
-                    
+                    let buffer = buffers.g.download()
                     for i in 0..<buffers.g.nbElems
                     {
                         let partialGrad = buffer[i]
@@ -382,20 +369,7 @@ public class OptimizerAlgorithm
                 
                 for buffers in layerUpdate.collectWeightsGPU()
                 {
-                    let buffer: UnsafeMutableBufferPointer<Float>
-                    if let g_p = buffers.g_p
-                    {
-                        buffer = getHalfBuffer(g_p).buffer
-                    }
-                    else if let g_s = buffers.g_s
-                    {
-                        buffer = getHalfBuffer(g_s).buffer
-                    }
-                    else
-                    {
-                        fatalError("Unreachable.")
-                    }
-                    
+                    let buffer = buffers.g.download()
                     for i in 0..<buffers.g.nbElems
                     {
                         gradients.append(buffer[i])
@@ -491,7 +465,7 @@ public class OptimizerAlgorithm
                     command.setBytes(pNbElems, atIndex: 0)
                     command.setBytes(pGradientNorm, atIndex: 1)
                     command.setBytes(pNormThreshold, atIndex: 2)
-                    command.setBuffer(buffers.g.metal, atIndex: 3)
+                    command.setBuffer(buffers.g.metal(), atIndex: 3)
                     
                     command.dispatchThreads(nbElems)
                     command.enqueue()

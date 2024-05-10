@@ -202,11 +202,11 @@ public class IRDFT2RGB: Layer2D
             let command = MetalKernel.get.createCommand(
                 "IRDFT2RGBForward", deviceID: deviceID
             )
-            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+            command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
             command.setBytes(pNbChannels, atIndex: 1)
             command.setBytes(pDimensions, atIndex: 2)
             command.setBytes(pNbBatch, atIndex: 3)
-            command.setBuffer(outs.metal, atIndex: 4)
+            command.setBuffer(outs.metal(), atIndex: 4)
             
             command.dispatchThreads(
                 width: width * nbChannels,
@@ -284,12 +284,12 @@ public class IRDFT2RGB: Layer2D
             let command = MetalKernel.get.createCommand(
                 "IRDFT2RGBBackward", deviceID: deviceID
             )
-            command.setBuffer(delta.metal, atIndex: 0)
+            command.setBuffer(delta.metal(), atIndex: 0)
             command.setBytes(pNbChannels, atIndex: 1)
             command.setBytes(pDimensions, atIndex: 2)
             command.setBytes(pNbBatch, atIndex: 3)
             command.setBytes(pDirty, atIndex: 4)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 5)
+            command.setBuffer(layerPrev.delta.metal(), atIndex: 5)
             
             command.dispatchThreads(
                 width: width * nbChannels,

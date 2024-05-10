@@ -53,8 +53,8 @@ class ReduceSumTests: XCTestCase
         }
         
         reduceSum(
-            inBuffer: _buffer.metal,
-            outBuffer: _buffer.metal,
+            inBuffer: _buffer.metal(),
+            outBuffer: _buffer.metal(),
             dim1: dim1, dim2: dim2,
             deviceID: 0
         )
@@ -142,8 +142,8 @@ class ReduceMaxTests: XCTestCase
         }
         
         reduceMax(
-            inBuffer: _buffer.metal,
-            outBuffer: _buffer.metal,
+            inBuffer: _buffer.metal(),
+            outBuffer: _buffer.metal(),
             dim1: dim1, dim2: dim2,
             deviceID: 0
         )

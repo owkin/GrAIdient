@@ -150,7 +150,7 @@ public class Multiply2D: LayerMerge2D
         {
             for _ in 0..<_layersPrev.count
             {
-                let buffer = MetalPrivateBuffer<UInt16>(
+                let buffer = FloatBuffer(nbElems: 
                     batchSize * nbChannels * height * width,
                     deviceID: deviceID
                 )
@@ -412,10 +412,10 @@ public class Multiply2D: LayerMerge2D
             }
             
             command.setBuffer(
-                (_layersPrev[num1] as! Layer2D).outs.metal, atIndex: 0
+                (_layersPrev[num1] as! Layer2D).outs.metal(), atIndex: 0
             )
             command.setBytes(pNbElems, atIndex: 1)
-            command.setBuffer(outs.metal, atIndex: 2)
+            command.setBuffer(outs.metal(), atIndex: 2)
             
             command.dispatchThreads(nbElems)
             command.enqueue()
@@ -439,10 +439,10 @@ public class Multiply2D: LayerMerge2D
                 }
                 
                 command.setBuffer(
-                    (_layersPrev[num2] as! Layer2D).outs.metal, atIndex: 0
+                    (_layersPrev[num2] as! Layer2D).outs.metal(), atIndex: 0
                 )
                 command.setBytes(pNbElems, atIndex: 1)
-                command.setBuffer(_otherOuts2[num1].metal, atIndex: 2)
+                command.setBuffer(_otherOuts2[num1].metal(), atIndex: 2)
                 
                 command.dispatchThreads(nbElems)
                 command.enqueue()
@@ -526,11 +526,11 @@ public class Multiply2D: LayerMerge2D
             let command = MetalKernel.get.createCommand(
                 "multiplyBackward", deviceID: deviceID
             )
-            command.setBuffer(_otherOuts2[num].metal, atIndex: 0)
-            command.setBuffer(delta.metal, atIndex: 1)
+            command.setBuffer(_otherOuts2[num].metal(), atIndex: 0)
+            command.setBuffer(delta.metal(), atIndex: 1)
             command.setBytes(pNbElems, atIndex: 2)
             command.setBytes(pDirty, atIndex: 3)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 4)
+            command.setBuffer(layerPrev.delta.metal(), atIndex: 4)
             
             command.dispatchThreads(nbElems)
             command.enqueue()

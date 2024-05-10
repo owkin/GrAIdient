@@ -382,14 +382,14 @@ public class ValueSeq: LayerMergeSeq
         let command = MetalKernel.get.createCommand(
             kernel, deviceID: deviceID
         )
-        command.setBuffer(value.outs.metal, atIndex: 0)
-        command.setBuffer(score.outs.metal, atIndex: 1)
+        command.setBuffer(value.outs.metal(), atIndex: 0)
+        command.setBuffer(score.outs.metal(), atIndex: 1)
         command.setBytes(pNbHeads, atIndex: 2)
         command.setBytes(pNbNeurons, atIndex: 3)
         command.setBytes(pNbNeuronsPrev, atIndex: 4)
         command.setBytes(pNbBatch, atIndex: 5)
         command.setBytes(pSequence, atIndex: 6)
-        command.setBuffer(outs.metal, atIndex: 7)
+        command.setBuffer(outs.metal(), atIndex: 7)
         
         command.dispatchThreads(
             width: nbNeurons / coeff,
@@ -509,15 +509,15 @@ public class ValueSeq: LayerMergeSeq
             command = metalKernel.createCommand(
                 kernel, deviceID: deviceID
             )
-            command.setBuffer(delta.metal, atIndex: 0)
-            command.setBuffer(score.outs.metal, atIndex: 1)
+            command.setBuffer(delta.metal(), atIndex: 0)
+            command.setBuffer(score.outs.metal(), atIndex: 1)
             command.setBytes(pNbHeads, atIndex: 2)
             command.setBytes(pNbNeurons, atIndex: 3)
             command.setBytes(pNbNeuronsPrev, atIndex: 4)
             command.setBytes(pNbBatch, atIndex: 5)
             command.setBytes(pSequence, atIndex: 6)
             command.setBytes(pDirty, atIndex: 7)
-            command.setBuffer(value.delta.metal, atIndex: 8)
+            command.setBuffer(value.delta.metal(), atIndex: 8)
             
             command.dispatchThreads(
                 width: nbNeurons / coeff,
@@ -536,15 +536,15 @@ public class ValueSeq: LayerMergeSeq
             command = metalKernel.createCommand(
                 kernel, deviceID: deviceID
             )
-            command.setBuffer(delta.metal, atIndex: 0)
-            command.setBuffer(value.outs.metal, atIndex: 1)
+            command.setBuffer(delta.metal(), atIndex: 0)
+            command.setBuffer(value.outs.metal(), atIndex: 1)
             command.setBytes(pNbHeads, atIndex: 2)
             command.setBytes(pNbNeurons, atIndex: 3)
             command.setBytes(pNbNeuronsPrev, atIndex: 4)
             command.setBytes(pNbBatch, atIndex: 5)
             command.setBytes(pSequence, atIndex: 6)
             command.setBytes(pDirty, atIndex: 7)
-            command.setBuffer(score.delta.metal, atIndex: 8)
+            command.setBuffer(score.delta.metal(), atIndex: 8)
             
             command.dispatchThreads(
                 width: nbNeuronsPrev,
@@ -966,8 +966,8 @@ public class ValueSelfSeq: LayerMergeSeq
         let command = MetalKernel.get.createCommand(
             kernel, deviceID: deviceID
         )
-        command.setBuffer(value.outs.metal, atIndex: 0)
-        command.setBuffer(score.outs.metal, atIndex: 1)
+        command.setBuffer(value.outs.metal(), atIndex: 0)
+        command.setBuffer(score.outs.metal(), atIndex: 1)
         command.setBytes(pNbHeads, atIndex: 2)
         command.setBytes(pNbNeurons, atIndex: 3)
         command.setBytes(pNbNeuronsPrev, atIndex: 4)
@@ -975,7 +975,7 @@ public class ValueSelfSeq: LayerMergeSeq
         command.setBytes(pGlobalOffset, atIndex: 6)
         command.setBytes(pNbBatch, atIndex: 7)
         command.setBytes(pSequence, atIndex: 8)
-        command.setBuffer(outs.metal, atIndex: 9)
+        command.setBuffer(outs.metal(), atIndex: 9)
         
         command.dispatchThreads(
             width: nbNeurons / coeff,
@@ -1105,7 +1105,7 @@ public class ValueSelfSeq: LayerMergeSeq
                     "reset", deviceID: deviceID
                 )
                 command.setBytes(pNbElems, atIndex: 0)
-                command.setBuffer(value.delta.metal, atIndex: 1)
+                command.setBuffer(value.delta.metal(), atIndex: 1)
                 
                 command.dispatchThreads(nbElems)
                 command.enqueue()
@@ -1117,8 +1117,8 @@ public class ValueSelfSeq: LayerMergeSeq
             command = metalKernel.createCommand(
                 kernel, deviceID: deviceID
             )
-            command.setBuffer(delta.metal, atIndex: 0)
-            command.setBuffer(score.outs.metal, atIndex: 1)
+            command.setBuffer(delta.metal(), atIndex: 0)
+            command.setBuffer(score.outs.metal(), atIndex: 1)
             command.setBytes(pNbHeads, atIndex: 2)
             command.setBytes(pNbNeurons, atIndex: 3)
             command.setBytes(pNbNeuronsPrev, atIndex: 4)
@@ -1126,7 +1126,7 @@ public class ValueSelfSeq: LayerMergeSeq
             command.setBytes(pGlobalOffset, atIndex: 6)
             command.setBytes(pNbBatch, atIndex: 7)
             command.setBytes(pSequence, atIndex: 8)
-            command.setBuffer(value.delta.metal, atIndex: 9)
+            command.setBuffer(value.delta.metal(), atIndex: 9)
             
             command.dispatchThreads(
                 width: nbNeurons / coeff,
@@ -1145,8 +1145,8 @@ public class ValueSelfSeq: LayerMergeSeq
             command = metalKernel.createCommand(
                 kernel, deviceID: deviceID
             )
-            command.setBuffer(delta.metal, atIndex: 0)
-            command.setBuffer(value.outs.metal, atIndex: 1)
+            command.setBuffer(delta.metal(), atIndex: 0)
+            command.setBuffer(value.outs.metal(), atIndex: 1)
             command.setBytes(pNbHeads, atIndex: 2)
             command.setBytes(pNbNeurons, atIndex: 3)
             command.setBytes(pNbNeuronsPrev, atIndex: 4)
@@ -1155,7 +1155,7 @@ public class ValueSelfSeq: LayerMergeSeq
             command.setBytes(pNbBatch, atIndex: 7)
             command.setBytes(pSequence, atIndex: 8)
             command.setBytes(pDirty, atIndex: 9)
-            command.setBuffer(score.delta.metal, atIndex: 10)
+            command.setBuffer(score.delta.metal(), atIndex: 10)
             
             command.dispatchThreads(
                 width: nbNeuronsPrev,

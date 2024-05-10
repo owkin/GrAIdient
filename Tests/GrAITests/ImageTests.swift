@@ -360,7 +360,7 @@ class ImageTests: XCTestCase
         )
         
         let batchSize = imagesURL.count
-        let buffer = MetalPrivateBuffer<UInt16>(
+        let buffer = FloatBuffer(nbElems: 
             batchSize * 3 * _size * _size, deviceID: 0
         )
         

@@ -508,7 +508,7 @@ public class ResizeBilinearPad: Layer2D
             let command = MetalKernel.get.createCommand(
                 "resizeBilinearPadForward", deviceID: deviceID
             )
-            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+            command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
             command.setBytes(pNbChannels, atIndex: 1)
             command.setBytes(pDimensions, atIndex: 2)
             command.setBytes(pDimensionsPrev, atIndex: 3)
@@ -516,7 +516,7 @@ public class ResizeBilinearPad: Layer2D
             command.setBytes(pPadDimensions, atIndex: 5)
             command.setBytes(pPadValue, atIndex: 6)
             command.setBytes(pNbBatch, atIndex: 7)
-            command.setBuffer(outs.metal, atIndex: 8)
+            command.setBuffer(outs.metal(), atIndex: 8)
             
             command.dispatchThreads(
                 width: width * nbChannels,
@@ -608,7 +608,7 @@ public class ResizeBilinearPad: Layer2D
                     "reset", deviceID: deviceID
                 )
                 command.setBytes(pNbElems, atIndex: 0)
-                command.setBuffer(layerPrev.delta.metal, atIndex: 1)
+                command.setBuffer(layerPrev.delta.metal(), atIndex: 1)
                 
                 command.dispatchThreads(nbElems)
                 command.enqueue()
@@ -639,14 +639,14 @@ public class ResizeBilinearPad: Layer2D
             command = MetalKernel.get.createCommand(
                 "resizeBilinearPadBackward", deviceID: deviceID
             )
-            command.setBuffer(delta.metal, atIndex: 0)
+            command.setBuffer(delta.metal(), atIndex: 0)
             command.setBytes(pNbChannels, atIndex: 1)
             command.setBytes(pDimensions, atIndex: 2)
             command.setBytes(pDimensionsPrev, atIndex: 3)
             command.setBytes(pDimensionsResize, atIndex: 4)
             command.setBytes(pPadDimensions, atIndex: 5)
             command.setBytes(pNbBatch, atIndex: 6)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 7)
+            command.setBuffer(layerPrev.delta.metal(), atIndex: 7)
             
             command.dispatchThreads(
                 width: widthPrev * nbChannels,

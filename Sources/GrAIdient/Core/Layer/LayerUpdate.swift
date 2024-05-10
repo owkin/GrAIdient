@@ -74,15 +74,15 @@ public protocol IWeightBuffers
     var nbElems: Int { get }
     
     /// Weights buffer: the buffer to be update.
-    var w: MetalBuffer<UInt16> { get }
+    var w: FloatBuffer { get }
     /// Gradients buffer.
-    var g: MetalBuffer<UInt16> { get }
+    var g: FloatBuffer { get }
     /// Momentum buffer.
-    var m: MetalBuffer<UInt16> { get }
+    var m: FloatBuffer { get }
     /// Velocity buffer.
-    var v: MetalBuffer<UInt16> { get }
+    var v: FloatBuffer { get }
     /// Velocity normalized buffer.
-    var vHat: MetalBuffer<UInt16> { get }
+    var vHat: FloatBuffer { get }
     
     /// Clean the momentum..., preserving the weights.
     func reset()
@@ -90,50 +90,35 @@ public protocol IWeightBuffers
 
 extension IWeightBuffers
 {
-    /// Get the weights as a private buffer.
-    var w_p: MetalPrivateBuffer<UInt16>?
+    /// GPU device where the buffers are sent.
+    public var deviceID: Int
     {
         get {
-            return w as? MetalPrivateBuffer<UInt16>
+            return w.deviceID
         }
     }
-    /// Get the weights as a shared buffer.
-    var w_s: MetalSharedBuffer<UInt16>?
+    /// Number of elements in the different buffers.
+    public var nbElems: Int
     {
         get {
-            return w as? MetalSharedBuffer<UInt16>
-        }
-    }
-    
-    /// Get the gradient buffer as a private buffer.
-    var g_p: MetalPrivateBuffer<UInt16>?
-    {
-        get {
-            return g as? MetalPrivateBuffer<UInt16>
-        }
-    }
-    /// Get the gradient buffer as a shared buffer.
-    var g_s: MetalSharedBuffer<UInt16>?
-    {
-        get {
-            return g as? MetalSharedBuffer<UInt16>
+            return w.nbElems
         }
     }
 }
 
 /// GPU buffers needed to update the weights.
-class WeightBuffers: IWeightBuffers
+public class WeightBuffers: IWeightBuffers
 {
-    /// Number of elements in the different buffers.
-    let nbElems: Int
-    /// GPU device where the buffers are sent.
-    let deviceID: Int
-    
-    var _w: MetalBuffer<UInt16>! = nil
-    var _g: MetalBuffer<UInt16>! = nil
-    var _m: MetalBuffer<UInt16>! = nil
-    var _v: MetalBuffer<UInt16>! = nil
-    var _vHat: MetalBuffer<UInt16>! = nil
+    /// Weights buffer: the buffer to be update.
+    public let w: FloatBuffer
+    /// Gradients buffer.
+    public let g: FloatBuffer
+    /// Momentum buffer.
+    public let m: FloatBuffer
+    /// Velocity buffer.
+    public let v: FloatBuffer
+    /// Velocity normalized buffer.
+    public let vHat: FloatBuffer
     
     ///
     /// Create a container of buffers.
@@ -144,78 +129,21 @@ class WeightBuffers: IWeightBuffers
     ///
     init(nbElems: Int, deviceID: Int)
     {
-        self.nbElems = nbElems
-        self.deviceID = deviceID
+        w = FloatBuffer(nbElems: nbElems, deviceID: deviceID)
+        g = FloatBuffer(nbElems: nbElems, deviceID: deviceID)
+        m = FloatBuffer(nbElems: nbElems, deviceID: deviceID)
+        v = FloatBuffer(nbElems: nbElems, deviceID: deviceID)
+        vHat = FloatBuffer(nbElems: nbElems, deviceID: deviceID)
     }
     
-    /// Weights buffer: the buffer to be update.
-    var w: MetalBuffer<UInt16>
+    /// Clean the buffers.
+    public func reset()
     {
-        get {
-            if _w == nil
-            {
-                _w = MetalPrivateBuffer<UInt16>(nbElems, deviceID: deviceID)
-            }
-            return _w
-        }
-    }
-    
-    /// Gradients buffer.
-    var g: MetalBuffer<UInt16>
-    {
-        get {
-            if _g == nil
-            {
-                _g = MetalPrivateBuffer<UInt16>(nbElems, deviceID: deviceID)
-            }
-            return _g
-        }
-    }
-    
-    /// Momentum buffer.
-    var m: MetalBuffer<UInt16>
-    {
-        get {
-            if _m == nil
-            {
-                _m = MetalPrivateBuffer<UInt16>(nbElems, deviceID: deviceID)
-            }
-            return _m
-        }
-    }
-    
-    /// Velocity buffer.
-    var v: MetalBuffer<UInt16>
-    {
-        get {
-            if _v == nil
-            {
-                _v = MetalPrivateBuffer<UInt16>(nbElems, deviceID: deviceID)
-            }
-            return _v
-        }
-    }
-    
-    /// Velocity normalized buffer.
-    var vHat: MetalBuffer<UInt16>
-    {
-        get {
-            if _vHat == nil
-            {
-                _vHat = MetalPrivateBuffer<UInt16>(nbElems, deviceID: deviceID)
-            }
-            return _vHat
-        }
-    }
-    
-    /// Clean the momentum..., preserving the weights.
-    func reset()
-    {
-        // do not touch _w
-        _g = nil
-        _m = nil
-        _v = nil
-        _vHat = nil
+        // do not touch w
+        g.reset()
+        m.reset()
+        v.reset()
+        vHat.reset()
     }
 }
 
@@ -301,7 +229,7 @@ extension LayerWeightInit
     ///     - deviceID: GPU device.
     ///
     public func generateWeightsList(
-        out: MetalBuffer<UInt16>,
+        out: FloatBuffer,
         deviceID: Int)
     {
         let nbElems = weightListSize
@@ -372,41 +300,36 @@ extension LayerWeightInit
     static func XavierUniform(
         nbElems: Int,
         connectivityIO: (Int, Int),
-        out: MetalBuffer<UInt16>,
+        out: FloatBuffer,
         deviceID: Int)
     {
-        let temp = MetalSharedBuffer<Float>(nbElems, deviceID: deviceID)
-        
-        let bound = sqrt(6) / sqrt(Float(connectivityIO.0 + connectivityIO.1))
-        guard var arrayDescriptor = BNNSNDArrayDescriptor(
-            data: temp.buffer,
-            shape: .vector(nbElems)),
-        let randomNumberGenerator = BNNSCreateRandomGenerator(
-            BNNSRandomGeneratorMethodAES_CTR,
-            nil) else
+        var array = [Float](repeating: 0.0, count: nbElems)
+        array.withUnsafeMutableBufferPointer
         {
-            fatalError()
+            ptr in
+            
+            let bound = 
+                sqrt(6) / sqrt(Float(connectivityIO.0 + connectivityIO.1))
+            guard var arrayDescriptor = BNNSNDArrayDescriptor(
+                data: ptr,
+                shape: .vector(nbElems)),
+            let randomNumberGenerator = BNNSCreateRandomGenerator(
+                BNNSRandomGeneratorMethodAES_CTR,
+                nil) else
+            {
+                fatalError()
+            }
+            
+            BNNSRandomFillUniformFloat(
+                randomNumberGenerator,
+                &arrayDescriptor,
+                -bound,
+                bound
+            )
+            
+            BNNSDestroyRandomGenerator(randomNumberGenerator)
         }
-        
-        BNNSRandomFillUniformFloat(
-            randomNumberGenerator,
-            &arrayDescriptor,
-            -bound,
-            bound
-        )
-        
-        BNNSDestroyRandomGenerator(randomNumberGenerator)
-        
-        temp.upload()
-        convertFloat2Half(
-            inBuffer: temp, 
-            outBuffer: out, 
-            nbElems: nbElems,
-            deviceID: deviceID
-        )
-        
-        // Make sure operation has ended because returning.
-        _ = out.download()
+        out.initialize(array: &array)
     }
     
     ///
@@ -442,41 +365,35 @@ extension LayerWeightInit
     static func XavierNormal(
         nbElems: Int,
         connectivityIO: (Int, Int),
-        out: MetalBuffer<UInt16>,
+        out: FloatBuffer,
         deviceID: Int)
     {
-        let temp = MetalSharedBuffer<Float>(nbElems, deviceID: deviceID)
-        
-        let std = sqrt(2) / sqrt(Float(connectivityIO.0 + connectivityIO.1))
-        guard var arrayDescriptor = BNNSNDArrayDescriptor(
-            data: temp.buffer,
-            shape: .vector(nbElems)),
-        let randomNumberGenerator = BNNSCreateRandomGenerator(
-            BNNSRandomGeneratorMethodAES_CTR,
-            nil) else
+        var array = [Float](repeating: 0.0, count: nbElems)
+        array.withUnsafeMutableBufferPointer
         {
-            fatalError()
+            ptr in
+            
+            let std = sqrt(2) / sqrt(Float(connectivityIO.0 + connectivityIO.1))
+            guard var arrayDescriptor = BNNSNDArrayDescriptor(
+                data: ptr,
+                shape: .vector(nbElems)),
+            let randomNumberGenerator = BNNSCreateRandomGenerator(
+                BNNSRandomGeneratorMethodAES_CTR,
+                nil) else
+            {
+                fatalError()
+            }
+            
+            BNNSRandomFillNormalFloat(
+                randomNumberGenerator,
+                &arrayDescriptor,
+                0.0,
+                std
+            )
+            
+            BNNSDestroyRandomGenerator(randomNumberGenerator)
         }
-        
-        BNNSRandomFillNormalFloat(
-            randomNumberGenerator,
-            &arrayDescriptor,
-            0.0,
-            std
-        )
-        
-        BNNSDestroyRandomGenerator(randomNumberGenerator)
-        
-        temp.upload()
-        convertFloat2Half(
-            inBuffer: temp,
-            outBuffer: out,
-            nbElems: nbElems,
-            deviceID: deviceID
-        )
-        
-        // Make sure operation has ended because returning.
-        _ = out.download()
+        out.initialize(array: &array)
     }
     
     ///
@@ -516,41 +433,35 @@ extension LayerWeightInit
         nbElems: Int,
         coeff: Float,
         connectivityIO: (Int, Int),
-        out: MetalBuffer<UInt16>,
+        out: FloatBuffer,
         deviceID: Int)
     {
-        let temp = MetalSharedBuffer<Float>(nbElems, deviceID: deviceID)
-        
-        let bound = sqrt(3) * coeff / sqrt(Float(connectivityIO.0))
-        guard var arrayDescriptor = BNNSNDArrayDescriptor(
-            data: temp.buffer,
-            shape: .vector(nbElems)),
-        let randomNumberGenerator = BNNSCreateRandomGenerator(
-            BNNSRandomGeneratorMethodAES_CTR,
-            nil) else
+        var array = [Float](repeating: 0.0, count: nbElems)
+        array.withUnsafeMutableBufferPointer
         {
-            fatalError()
+            ptr in
+            
+            let bound = sqrt(3) * coeff / sqrt(Float(connectivityIO.0))
+            guard var arrayDescriptor = BNNSNDArrayDescriptor(
+                data: ptr,
+                shape: .vector(nbElems)),
+            let randomNumberGenerator = BNNSCreateRandomGenerator(
+                BNNSRandomGeneratorMethodAES_CTR,
+                nil) else
+            {
+                fatalError()
+            }
+            
+            BNNSRandomFillUniformFloat(
+                randomNumberGenerator,
+                &arrayDescriptor,
+                -bound,
+                bound
+            )
+            
+            BNNSDestroyRandomGenerator(randomNumberGenerator)
         }
-        
-        BNNSRandomFillUniformFloat(
-            randomNumberGenerator,
-            &arrayDescriptor,
-            -bound,
-            bound
-        )
-        
-        BNNSDestroyRandomGenerator(randomNumberGenerator)
-        
-        temp.upload()
-        convertFloat2Half(
-            inBuffer: temp,
-            outBuffer: out,
-            nbElems: nbElems,
-            deviceID: deviceID
-        )
-        
-        // Make sure operation has ended because returning.
-        _ = out.download()
+        out.initialize(array: &array)
     }
     
     ///
@@ -590,41 +501,35 @@ extension LayerWeightInit
         nbElems: Int,
         coeff: Float,
         connectivityIO: (Int, Int),
-        out: MetalBuffer<UInt16>,
+        out: FloatBuffer,
         deviceID: Int)
     {
-        let temp = MetalSharedBuffer<Float>(nbElems, deviceID: deviceID)
-        
-        let std = coeff / sqrt(Float(connectivityIO.0))
-        guard var arrayDescriptor = BNNSNDArrayDescriptor(
-            data: temp.buffer,
-            shape: .vector(nbElems)),
-        let randomNumberGenerator = BNNSCreateRandomGenerator(
-            BNNSRandomGeneratorMethodAES_CTR,
-            nil) else
+        var array = [Float](repeating: 0.0, count: nbElems)
+        array.withUnsafeMutableBufferPointer
         {
-            fatalError()
+            ptr in
+            
+            let std = coeff / sqrt(Float(connectivityIO.0))
+            guard var arrayDescriptor = BNNSNDArrayDescriptor(
+                data: ptr,
+                shape: .vector(nbElems)),
+            let randomNumberGenerator = BNNSCreateRandomGenerator(
+                BNNSRandomGeneratorMethodAES_CTR,
+                nil) else
+            {
+                fatalError()
+            }
+            
+            BNNSRandomFillNormalFloat(
+                randomNumberGenerator,
+                &arrayDescriptor,
+                0.0,
+                std
+            )
+            
+            BNNSDestroyRandomGenerator(randomNumberGenerator)
         }
-        
-        BNNSRandomFillNormalFloat(
-            randomNumberGenerator,
-            &arrayDescriptor,
-            0.0,
-            std
-        )
-        
-        BNNSDestroyRandomGenerator(randomNumberGenerator)
-        
-        temp.upload()
-        convertFloat2Half(
-            inBuffer: temp,
-            outBuffer: out,
-            nbElems: nbElems,
-            deviceID: deviceID
-        )
-        
-        // Make sure operation has ended because returning.
-        _ = out.download()
+        out.initialize(array: &array)
     }
 }
 

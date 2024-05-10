@@ -24,7 +24,7 @@ public class Constant2D: Layer2D, LayerResize, LayerUpdate
     /// Buffer of gradients per sample for biases.
     /// Shape ~ (batch, nbChannels).
     ///
-    var _wDeltaWeights: MetalPrivateBuffer<UInt16>! = nil
+    var _wDeltaWeights: FloatBuffer! = nil
     
     /// Whether to compute weights' gradients or not.
     public var computeDeltaWeights: Bool = true
@@ -64,7 +64,7 @@ public class Constant2D: Layer2D, LayerResize, LayerUpdate
             {
                 return _weightsList
             }
-            return getHalfBuffer(_wBuffers.w_p!).array
+            return _wBuffers.w.download()
         }
         set {
             _weightsList = newValue
@@ -312,18 +312,11 @@ public class Constant2D: Layer2D, LayerResize, LayerUpdate
         
         if _weightsList.count != 0
         {
-            setupHalfBuffer(
-                array: &_weightsList,
-                out: _wBuffers.w_p!,
-                start: 0,
-                nbElems: nbChannels,
-                deviceID: deviceID
-            )
+            _wBuffers.w.initialize(array: &_weightsList)
         }
         else
         {
-            _ = _wBuffers.w_p!.shared
-            _wBuffers.w_p!.upload()
+            _wBuffers.w.initialize()
         }
         
         _weightsList = []
@@ -343,7 +336,7 @@ public class Constant2D: Layer2D, LayerResize, LayerUpdate
         if computeDeltaWeights &&
            GrAI.Gradient.sample && _wDeltaWeights == nil
         {
-            _wDeltaWeights = MetalPrivateBuffer<UInt16>(
+            _wDeltaWeights = FloatBuffer(nbElems: 
                 batchSize * nbChannels, deviceID: deviceID
             )
         }
@@ -474,11 +467,11 @@ public class Constant2D: Layer2D, LayerResize, LayerUpdate
         let command = MetalKernel.get.createCommand(
             "constant2DForward", deviceID: deviceID
         )
-        command.setBuffer(_wBuffers.w.metal, atIndex: 0)
+        command.setBuffer(_wBuffers.w.metal(), atIndex: 0)
         command.setBytes(pNbChannels, atIndex: 1)
         command.setBytes(pDimensions, atIndex: 2)
         command.setBytes(pNbBatch, atIndex: 3)
-        command.setBuffer(outs.metal, atIndex: 4)
+        command.setBuffer(outs.metal(), atIndex: 4)
         
         command.dispatchThreads(
             width: width * nbChannels,
@@ -538,12 +531,12 @@ public class Constant2D: Layer2D, LayerResize, LayerUpdate
                 command = MetalKernel.get.createCommand(
                     "convBatchDerBiases", deviceID: deviceID
                 )
-                command.setBuffer(delta.metal, atIndex: 0)
+                command.setBuffer(delta.metal(), atIndex: 0)
                 command.setBytes(pNbChannels, atIndex: 1)
                 command.setBytes(pDimensions, atIndex: 2)
                 command.setBytes(pNbBatch, atIndex: 3)
                 command.setBytes(pAccumulate, atIndex: 4)
-                command.setBuffer(_wBuffers.g.metal, atIndex: 5)
+                command.setBuffer(_wBuffers.g.metal(), atIndex: 5)
                 
                 command.dispatchThreads(nbChannels)
                 command.enqueue()
@@ -556,11 +549,11 @@ public class Constant2D: Layer2D, LayerResize, LayerUpdate
                 command = MetalKernel.get.createCommand(
                     "convDerBiases", deviceID: deviceID
                 )
-                command.setBuffer(delta.metal, atIndex: 0)
+                command.setBuffer(delta.metal(), atIndex: 0)
                 command.setBytes(pNbChannels, atIndex: 1)
                 command.setBytes(pDimensions, atIndex: 2)
                 command.setBytes(pNbBatch, atIndex: 3)
-                command.setBuffer(_wDeltaWeights.metal, atIndex: 4)
+                command.setBuffer(_wDeltaWeights.metal(), atIndex: 4)
                 
                 command.dispatchThreads(
                     width: nbChannels,
@@ -574,11 +567,11 @@ public class Constant2D: Layer2D, LayerResize, LayerUpdate
                 command = MetalKernel.get.createCommand(
                     "reduceBiases", deviceID: deviceID
                 )
-                command.setBuffer(_wDeltaWeights.metal, atIndex: 0)
+                command.setBuffer(_wDeltaWeights.metal(), atIndex: 0)
                 command.setBytes(pNbChannels, atIndex: 1)
                 command.setBytes(pNbBatch, atIndex: 2)
                 command.setBytes(pAccumulate, atIndex: 3)
-                command.setBuffer(_wBuffers.g.metal, atIndex: 4)
+                command.setBuffer(_wBuffers.g.metal(), atIndex: 4)
                 
                 command.dispatchThreads(nbChannels)
                 command.enqueue()

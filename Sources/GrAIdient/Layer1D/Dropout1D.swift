@@ -338,13 +338,13 @@ public class Dropout1D: Layer1D
             let command = MetalKernel.get.createCommand(
                 "dropout1DForward", deviceID: deviceID
             )
-            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+            command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
             command.setBuffer(_dropout.metal, atIndex: 1)
             command.setBytes(pNbNeurons, atIndex: 2)
             command.setBytes(pNbBatch, atIndex: 3)
             command.setBytes(pApplyDropout, atIndex: 4)
             command.setBytes(pCoeff, atIndex: 5)
-            command.setBuffer(outs.metal, atIndex: 6)
+            command.setBuffer(outs.metal(), atIndex: 6)
             
             command.dispatchThreads(
                 width: nbNeurons,
@@ -418,14 +418,14 @@ public class Dropout1D: Layer1D
             let command = MetalKernel.get.createCommand(
                 "dropout1DBackward", deviceID: deviceID
             )
-            command.setBuffer(delta.metal, atIndex: 0)
+            command.setBuffer(delta.metal(), atIndex: 0)
             command.setBuffer(_dropout.metal, atIndex: 1)
             command.setBytes(pNbNeurons, atIndex: 2)
             command.setBytes(pNbBatch, atIndex: 3)
             command.setBytes(pApplyDropout, atIndex: 4)
             command.setBytes(pCoeff, atIndex: 5)
             command.setBytes(pDirty, atIndex: 6)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 7)
+            command.setBuffer(layerPrev.delta.metal(), atIndex: 7)
             
             command.dispatchThreads(
                 width: nbNeurons,

@@ -30,23 +30,23 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerWeightInit
     /// Buffer of weights.
     /// Shape ~ (nbNeurons, nbNeuronsPrev).
     ///
-    var _wBuffers: IWeightBuffers! = nil
+    var _wBuffers: WeightBuffers! = nil
     ///
     /// Buffer of biases.
     /// Shape ~ (nbNeurons,).
     ///
-    var _bBuffers: IWeightBuffers! = nil
+    var _bBuffers: WeightBuffers! = nil
     
     ///
     /// Buffer of gradients per sample for weights.
     /// Shape ~ (batch, nbNeurons, nbNeuronsPrev).
     ///
-    var _wDeltaWeights: MetalPrivateBuffer<UInt16>! = nil
+    var _wDeltaWeights: FloatBuffer! = nil
     ///
     /// Buffer of gradients per sample for biases.
     /// Shape ~ (batch, nbNeurons).
     /// 
-    var _bDeltaWeights: MetalPrivateBuffer<UInt16>! = nil
+    var _bDeltaWeights: FloatBuffer! = nil
     
     /// Whether to compute weights' gradients or not.
     public var computeDeltaWeights: Bool = true
@@ -105,7 +105,7 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerWeightInit
     }
     
     /// Output buffer of previous layer.
-    var outsPrev: MetalPrivateBuffer<UInt16>
+    var outsPrev: FloatBuffer
     {
         get {
             if let layerPrev = self.layerPrev as? Layer1D
@@ -124,7 +124,7 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerWeightInit
     }
     
     /// Gradient buffer of previous layer.
-    var deltaPrev: MetalPrivateBuffer<UInt16>?
+    var deltaPrev: FloatBuffer?
     {
         get {
             if let layerPrev = self.layerPrev as? Layer1D
@@ -199,10 +199,10 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerWeightInit
                 return _weightsList
             }
             
-            var weightsTmp = getHalfBuffer(_wBuffers.w_p!).array
+            var weightsTmp = _wBuffers.w.download()
             if _updateBiases
             {
-                weightsTmp += getHalfBuffer(_bBuffers.w_p!).array
+                weightsTmp += _bBuffers.w.download()
             }
             return weightsTmp
         }
@@ -572,35 +572,24 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerWeightInit
             deviceID: deviceID
         )
         
-        _ = _bBuffers.w_p!.shared
+        _bBuffers.w.initialize()
         if _weightsList.count == 0
         {
-            generateWeightsList(out: _wBuffers.w_p!, deviceID: deviceID)
+            generateWeightsList(out: _wBuffers.w, deviceID: deviceID)
         }
         else
         {
-            setupHalfBuffer(
-                array: &_weightsList,
-                out: _wBuffers.w_p!,
-                start: 0,
-                nbElems: weightHeight * weightWidth,
-                deviceID: deviceID
-            )
+            _wBuffers.w.initialize(array: &_weightsList)
             if _updateBiases
             {
-                setupHalfBuffer(
+                _bBuffers.w.initialize(
                     array: &_weightsList,
-                    out: _bBuffers.w_p!,
-                    start: weightHeight * weightWidth,
-                    nbElems: weightHeight,
-                    deviceID: deviceID
+                    start: weightHeight * weightWidth
                 )
             }
         }
         
-        _bBuffers.w_p!.upload()
         _weightsList = []
-        
         _wDeltaWeights = nil
         _bDeltaWeights = nil
     }
@@ -618,13 +607,13 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerWeightInit
         if computeDeltaWeights &&
            GrAI.Gradient.sample && _wDeltaWeights == nil
         {
-            _wDeltaWeights = MetalPrivateBuffer<UInt16>(
+            _wDeltaWeights = FloatBuffer(nbElems: 
                 batchSize * nbNeurons * weightWidth, deviceID: deviceID
             )
             
             if _updateBiases
             {
-                _bDeltaWeights = MetalPrivateBuffer<UInt16>(
+                _bDeltaWeights = FloatBuffer(nbElems: 
                     batchSize * nbNeurons, deviceID: deviceID
                 )
             }
@@ -923,13 +912,13 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerWeightInit
         let command = MetalKernel.get.createCommand(
             "flForward", deviceID: deviceID
         )
-        command.setBuffer(outsPrev.metal, atIndex: 0)
-        command.setBuffer(_wBuffers.w.metal, atIndex: 1)
-        command.setBuffer(_bBuffers.w.metal, atIndex: 2)
+        command.setBuffer(outsPrev.metal(), atIndex: 0)
+        command.setBuffer(_wBuffers.w.metal(), atIndex: 1)
+        command.setBuffer(_bBuffers.w.metal(), atIndex: 2)
         command.setBytes(pNbNeurons, atIndex: 3)
         command.setBytes(pNbNeuronsPrev, atIndex: 4)
         command.setBytes(pNbBatch, atIndex: 5)
-        command.setBuffer(outs.metal, atIndex: 6)
+        command.setBuffer(outs.metal(), atIndex: 6)
         
         command.dispatchThreads(
             width: nbNeurons,
@@ -1059,13 +1048,13 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerWeightInit
             let command = MetalKernel.get.createCommand(
                 "flBackward", deviceID: deviceID
             )
-            command.setBuffer(delta.metal, atIndex: 0)
-            command.setBuffer(_wBuffers.w.metal, atIndex: 1)
+            command.setBuffer(delta.metal(), atIndex: 0)
+            command.setBuffer(_wBuffers.w.metal(), atIndex: 1)
             command.setBytes(pNbNeurons, atIndex: 2)
             command.setBytes(pNbNeuronsPrev, atIndex: 3)
             command.setBytes(pNbBatch, atIndex: 4)
             command.setBytes(pDirty, atIndex: 5)
-            command.setBuffer(deltaPrev!.metal, atIndex: 6)
+            command.setBuffer(deltaPrev!.metal(), atIndex: 6)
             
             command.dispatchThreads(
                 width: weightWidth,
@@ -1095,13 +1084,13 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerWeightInit
                 command = MetalKernel.get.createCommand(
                     "flBatchDerWeights", deviceID: deviceID
                 )
-                command.setBuffer(outsPrev.metal, atIndex: 0)
-                command.setBuffer(delta.metal, atIndex: 1)
+                command.setBuffer(outsPrev.metal(), atIndex: 0)
+                command.setBuffer(delta.metal(), atIndex: 1)
                 command.setBytes(pNbNeurons, atIndex: 2)
                 command.setBytes(pNbNeuronsPrev, atIndex: 3)
                 command.setBytes(pNbBatch, atIndex: 4)
                 command.setBytes(pAccumulate, atIndex: 5)
-                command.setBuffer(_wBuffers.g.metal, atIndex: 6)
+                command.setBuffer(_wBuffers.g.metal(), atIndex: 6)
                 
                 command.dispatchThreads(
                     width: nbNeurons,
@@ -1114,11 +1103,11 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerWeightInit
                     command = MetalKernel.get.createCommand(
                         "flBatchDerBiases", deviceID: deviceID
                     )
-                    command.setBuffer(delta.metal, atIndex: 0)
+                    command.setBuffer(delta.metal(), atIndex: 0)
                     command.setBytes(pNbNeurons, atIndex: 1)
                     command.setBytes(pNbBatch, atIndex: 2)
                     command.setBytes(pAccumulate, atIndex: 3)
-                    command.setBuffer(_bBuffers.g.metal, atIndex: 4)
+                    command.setBuffer(_bBuffers.g.metal(), atIndex: 4)
                     
                     command.dispatchThreads(nbNeurons)
                     command.enqueue()
@@ -1132,12 +1121,12 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerWeightInit
                 command = MetalKernel.get.createCommand(
                     "flDerWeights", deviceID: deviceID
                 )
-                command.setBuffer(outsPrev.metal, atIndex: 0)
-                command.setBuffer(delta.metal, atIndex: 1)
+                command.setBuffer(outsPrev.metal(), atIndex: 0)
+                command.setBuffer(delta.metal(), atIndex: 1)
                 command.setBytes(pNbNeurons, atIndex: 2)
                 command.setBytes(pNbNeuronsPrev, atIndex: 3)
                 command.setBytes(pNbBatch, atIndex: 4)
-                command.setBuffer(_wDeltaWeights.metal, atIndex: 5)
+                command.setBuffer(_wDeltaWeights.metal(), atIndex: 5)
                 
                 command.dispatchThreads(
                     width: nbNeurons * batchSize,
@@ -1150,10 +1139,10 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerWeightInit
                     command = MetalKernel.get.createCommand(
                         "flDerBiases", deviceID: deviceID
                     )
-                    command.setBuffer(delta.metal, atIndex: 0)
+                    command.setBuffer(delta.metal(), atIndex: 0)
                     command.setBytes(pNbNeurons, atIndex: 1)
                     command.setBytes(pNbBatch, atIndex: 2)
-                    command.setBuffer(_bDeltaWeights.metal, atIndex: 3)
+                    command.setBuffer(_bDeltaWeights.metal(), atIndex: 3)
                     
                     command.dispatchThreads(
                         width: nbNeurons,
@@ -1168,12 +1157,12 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerWeightInit
                 command = MetalKernel.get.createCommand(
                     "flReduceWeights", deviceID: deviceID
                 )
-                command.setBuffer(_wDeltaWeights.metal, atIndex: 0)
+                command.setBuffer(_wDeltaWeights.metal(), atIndex: 0)
                 command.setBytes(pNbNeurons, atIndex: 1)
                 command.setBytes(pNbNeuronsPrev, atIndex: 2)
                 command.setBytes(pNbBatch, atIndex: 3)
                 command.setBytes(pAccumulate, atIndex: 4)
-                command.setBuffer(_wBuffers.g.metal, atIndex: 5)
+                command.setBuffer(_wBuffers.g.metal(), atIndex: 5)
                 
                 command.dispatchThreads(
                     width: nbNeurons,
@@ -1186,11 +1175,11 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerWeightInit
                     command = MetalKernel.get.createCommand(
                         "reduceBiases", deviceID: deviceID
                     )
-                    command.setBuffer(_bDeltaWeights.metal, atIndex: 0)
+                    command.setBuffer(_bDeltaWeights.metal(), atIndex: 0)
                     command.setBytes(pNbNeurons, atIndex: 1)
                     command.setBytes(pNbBatch, atIndex: 2)
                     command.setBytes(pAccumulate, atIndex: 3)
-                    command.setBuffer(_bBuffers.g.metal, atIndex: 4)
+                    command.setBuffer(_bBuffers.g.metal(), atIndex: 4)
                     
                     command.dispatchThreads(nbNeurons)
                     command.enqueue()
@@ -1202,7 +1191,7 @@ public class FullyConnected: Activation1D, LayerWithActivation, LayerWeightInit
     /// Get the weights in the CPU execution context.
     public func collectWeightsCPU() -> [IWeightArrays]
     {
-        var weights = [IWeightArrays]()
+        var weights = [WeightArrays]()
         weights.append(_wArrays)
         if _updateBiases
         {

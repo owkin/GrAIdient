@@ -290,12 +290,12 @@ public class BCE2D: LayerOutput2D
         let command = MetalKernel.get.createCommand(
             "BCE2DLoss", deviceID: deviceID
         )
-        command.setBuffer(outs.metal, atIndex: 0)
-        command.setBuffer(groundTruth.metal, atIndex: 1)
+        command.setBuffer(outs.metal(), atIndex: 0)
+        command.setBuffer(groundTruth.metal(), atIndex: 1)
         command.setBytes(pNbChannels, atIndex: 2)
         command.setBytes(pDimensions, atIndex: 3)
         command.setBytes(pNbBatch, atIndex: 4)
-        command.setBuffer(loss.metal, atIndex: 5)
+        command.setBuffer(loss.metal(), atIndex: 5)
         
         command.dispatchThreads(batchSize)
         command.enqueue()
@@ -514,14 +514,14 @@ public class BCE2D: LayerOutput2D
             let command = MetalKernel.get.createCommand(
                 "BCE2DLossDerivative", deviceID: deviceID
             )
-            command.setBuffer(outs.metal, atIndex: 0)
-            command.setBuffer(groundTruth.metal, atIndex: 1)
+            command.setBuffer(outs.metal(), atIndex: 0)
+            command.setBuffer(groundTruth.metal(), atIndex: 1)
             command.setBytes(pNbChannels, atIndex: 2)
             command.setBytes(pDimensions, atIndex: 3)
             command.setBytes(pCoeff, atIndex: 4)
             command.setBytes(pNbBatch, atIndex: 5)
             command.setBytes(pDirty, atIndex: 6)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 7)
+            command.setBuffer(layerPrev.delta.metal(), atIndex: 7)
             
             command.dispatchThreads(
                 width: nbChannels * width,

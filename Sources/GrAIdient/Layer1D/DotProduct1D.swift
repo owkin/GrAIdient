@@ -329,13 +329,13 @@ public class DotProduct1D: LayerMerge1D
         let command = MetalKernel.get.createCommand(
             "dotProduct1DForward", deviceID: deviceID
         )
-        command.setBuffer((_layersPrev[0] as! Layer1D).outs.metal, atIndex: 0)
-        command.setBuffer((_layersPrev[1] as! Layer1D).outs.metal, atIndex: 1)
+        command.setBuffer((_layersPrev[0] as! Layer1D).outs.metal(), atIndex: 0)
+        command.setBuffer((_layersPrev[1] as! Layer1D).outs.metal(), atIndex: 1)
         command.setBytes(pSize, atIndex: 2)
         command.setBytes(pNbNeurons, atIndex: 3)
         command.setBytes(pNbneuronsPrev, atIndex: 4)
         command.setBytes(pNbBatch, atIndex: 5)
-        command.setBuffer(outs.metal, atIndex: 6)
+        command.setBuffer(outs.metal(), atIndex: 6)
         
         command.dispatchThreads(
             width: nbNeurons,
@@ -424,14 +424,14 @@ public class DotProduct1D: LayerMerge1D
             command = MetalKernel.get.createCommand(
                 "dotProduct1DBackward", deviceID: deviceID
             )
-            command.setBuffer(layerPrev2.outs.metal, atIndex: 0)
-            command.setBuffer(delta.metal, atIndex: 1)
+            command.setBuffer(layerPrev2.outs.metal(), atIndex: 0)
+            command.setBuffer(delta.metal(), atIndex: 1)
             command.setBytes(pSize, atIndex: 2)
             command.setBytes(pNbNeurons, atIndex: 3)
             command.setBytes(pNbneuronsPrev, atIndex: 4)
             command.setBytes(pNbBatch, atIndex: 5)
             command.setBytes(pDirty, atIndex: 6)
-            command.setBuffer(layerPrev1.delta.metal, atIndex: 7)
+            command.setBuffer(layerPrev1.delta.metal(), atIndex: 7)
             
             command.dispatchThreads(
                 width: nbNeurons,
@@ -451,14 +451,14 @@ public class DotProduct1D: LayerMerge1D
             command = MetalKernel.get.createCommand(
                 "dotProduct1DBackward", deviceID: deviceID
             )
-            command.setBuffer(layerPrev1.outs.metal, atIndex: 0)
-            command.setBuffer(delta.metal, atIndex: 1)
+            command.setBuffer(layerPrev1.outs.metal(), atIndex: 0)
+            command.setBuffer(delta.metal(), atIndex: 1)
             command.setBytes(pSize, atIndex: 2)
             command.setBytes(pNbNeurons, atIndex: 3)
             command.setBytes(pNbneuronsPrev, atIndex: 4)
             command.setBytes(pNbBatch, atIndex: 5)
             command.setBytes(pDirty, atIndex: 6)
-            command.setBuffer(layerPrev2.delta.metal, atIndex: 7)
+            command.setBuffer(layerPrev2.delta.metal(), atIndex: 7)
             
             command.dispatchThreads(
                 width: nbNeurons,

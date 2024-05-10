@@ -139,7 +139,7 @@ open class LayerInput2D: Layer2D
         // Wait for previous loop to end to avoid race condition with
         // didModifyRange in the following example:
         // Convolution.backwardWeightsGPU accesses layerPrev.outs.
-        MetalKernel.get.download([outs])
+        _ = outs.download()
         
         var buffer = [Float](
             repeating: 0.0, count: batchSize * nbChannels * height * width
@@ -181,14 +181,7 @@ open class LayerInput2D: Layer2D
                 }}
             }
         }
-        
-        setupHalfBuffer(
-            array: &buffer,
-            out: self.outs,
-            start: 0,
-            nbElems: batchSize * nbChannels * height * width,
-            deviceID: deviceID
-        )
+        outs.initialize(array: &buffer)
     }
     
     ///
@@ -205,7 +198,7 @@ open class LayerInput2D: Layer2D
     ///     - format: The data format.
     ///
     public func checkInputGPU(
-        _ data: MetalPrivateBuffer<UInt16>,
+        _ data: FloatBuffer,
         batchSize: Int,
         nbChannels: Int, height: Int, width: Int) throws
     {

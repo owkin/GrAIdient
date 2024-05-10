@@ -15,12 +15,12 @@ open class Layer2D: Layer
     /// Output buffer (result of the forward pass) used in the GPU execution context.
     /// Shape ~ (batch, nbChannels, height, width).
     ///
-    public var outs: MetalPrivateBuffer<UInt16>! = nil
+    public var outs: FloatBuffer! = nil
     ///
     /// Gradient buffer (result of the backward pass) used in the GPU execution context.
     /// Shape ~ (batch, nbChannels, height, width).
     ///
-    public var delta: MetalPrivateBuffer<UInt16>! = nil
+    public var delta: FloatBuffer! = nil
     
     /// Number of channels.
     public let nbChannels: Int
@@ -192,8 +192,9 @@ open class Layer2D: Layer
     {
         if outs == nil
         {
-            outs = MetalPrivateBuffer<UInt16>(
-                batchSize * nbChannels * width * height, deviceID: deviceID
+            outs = FloatBuffer(
+                nbElems: batchSize * nbChannels * width * height,
+                deviceID: deviceID
             )
         }
         else if batchSize <= 0 ||
@@ -214,8 +215,9 @@ open class Layer2D: Layer
         {
             if delta == nil
             {
-                delta = MetalPrivateBuffer<UInt16>(
-                    batchSize * nbChannels * width * height, deviceID: deviceID
+                delta = FloatBuffer(
+                    nbElems: batchSize * nbChannels * width * height,
+                    deviceID: deviceID
                 )
             }
             else if batchSize <= 0 ||
@@ -251,9 +253,8 @@ open class Layer2D: Layer
     public func getOutsGPU<T: BinaryFloatingPoint>(elem: Int) -> [T]
     {
         var outs = [T]()
-        MetalKernel.get.download([self.outs])
+        let outsPtr = self.outs.download()
         
-        let outsPtr = self.outs.shared.buffer
         for depth in 0..<nbChannels
         {
             let offsetStart = (depth + nbChannels * elem) * height
@@ -307,9 +308,8 @@ open class Layer2D: Layer
         }
         
         var delta = [T]()
-        MetalKernel.get.download([self.delta])
+        let deltaPtr = self.delta.download()
         
-        let deltaPtr = self.delta.shared.buffer
         for depth in 0..<nbChannels
         {
             let offsetStart = (depth + nbChannels * elem) * height

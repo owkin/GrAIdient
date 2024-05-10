@@ -313,14 +313,14 @@ public class Concat2D: LayerMerge2D
                 "concat12DForward", deviceID: deviceID
             )
             command.setBuffer(
-                (_layersPrev[num] as! Layer2D).outs.metal, atIndex: 0
+                (_layersPrev[num] as! Layer2D).outs.metal(), atIndex: 0
             )
             command.setBytes(pGlobalOffset, atIndex: 1)
             command.setBytes(pNbChannels, atIndex: 2)
             command.setBytes(pNbChannelsPrev, atIndex: 3)
             command.setBytes(pDimensions, atIndex: 4)
             command.setBytes(pNbBatch, atIndex: 5)
-            command.setBuffer(outs.metal, atIndex: 6)
+            command.setBuffer(outs.metal(), atIndex: 6)
             
             command.dispatchThreads(
                 width: width * nbChannelsPrev,
@@ -418,14 +418,14 @@ public class Concat2D: LayerMerge2D
             command = metalKernel.createCommand(
                 "concat12DBackward", deviceID: deviceID
             )
-            command.setBuffer(delta.metal, atIndex: 0)
+            command.setBuffer(delta.metal(), atIndex: 0)
             command.setBytes(pGlobalOffset, atIndex: 1)
             command.setBytes(pNbChannels, atIndex: 2)
             command.setBytes(pNbChannelsPrev, atIndex: 3)
             command.setBytes(pDimensions, atIndex: 4)
             command.setBytes(pNbBatch, atIndex: 5)
             command.setBytes(pDirty, atIndex: 6)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 7)
+            command.setBuffer(layerPrev.delta.metal(), atIndex: 7)
             
             command.dispatchThreads(
                 width: width * nbChannelsPrev,

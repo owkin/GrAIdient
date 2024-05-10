@@ -15,12 +15,12 @@ open class Layer1D: Layer
     /// Output buffer (result of the forward pass) used in the GPU execution context.
     /// Shape ~ (batch, nbNeurons).
     ///
-    public var outs: MetalPrivateBuffer<UInt16>! = nil
+    public var outs: FloatBuffer! = nil
     ///
     /// Gradient buffer (result of the backward pass) used in the GPU execution context.
     /// Shape ~ (batch, nbNeurons).
     ///
-    public var delta: MetalPrivateBuffer<UInt16>! = nil
+    public var delta: FloatBuffer! = nil
     
     /// Number of neurons.
     public let nbNeurons: Int
@@ -138,8 +138,8 @@ open class Layer1D: Layer
     {
         if outs == nil
         {
-            outs = MetalPrivateBuffer<UInt16>(
-                batchSize * nbNeurons, deviceID: deviceID
+            outs = FloatBuffer(
+                nbElems: batchSize * nbNeurons, deviceID: deviceID
             )
         }
         else if batchSize <= 0 || batchSize > outs.nbElems / nbNeurons
@@ -159,8 +159,8 @@ open class Layer1D: Layer
         {
             if delta == nil
             {
-                delta = MetalPrivateBuffer<UInt16>(
-                    batchSize * nbNeurons, deviceID: deviceID
+                delta = FloatBuffer(
+                    nbElems: batchSize * nbNeurons, deviceID: deviceID
                 )
             }
             else if batchSize <= 0 || batchSize > delta.nbElems / nbNeurons
@@ -194,9 +194,8 @@ open class Layer1D: Layer
     public func getOutsGPU<T: BinaryFloatingPoint>(elem: Int) -> [T]
     {
         var outs = [T]()
-        MetalKernel.get.download([self.outs])
+        let outsPtr = self.outs.download()
         
-        let outsPtr = self.outs.shared.buffer
         for depth in 0..<nbNeurons
         {
             let offset = depth + nbNeurons * elem
@@ -243,9 +242,8 @@ open class Layer1D: Layer
         }
         
         var delta = [T]()
-        MetalKernel.get.download([self.delta])
+        let deltaPtr = self.delta.download()
         
-        let deltaPtr = self.delta.shared.buffer
         for depth in 0..<nbNeurons
         {
             let offset = depth + nbNeurons * elem

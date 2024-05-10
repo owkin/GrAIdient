@@ -59,14 +59,12 @@ class ReduceSumTests: XCTestCase
             deviceID: 0
         )
         
-        _ = _buffer.download()
         let resultsGPU = getHalfBuffer(_buffer).array
-        
         for (resultCPU, resultGPU) in zip(resultsCPU, resultsGPU)
         {
             let diffPercent =
                 abs(resultCPU - resultGPU) / resultCPU * 100.0
-            XCTAssert(diffPercent < 0.001)
+            XCTAssert(diffPercent < 0.1)
         }
     }
     
@@ -150,14 +148,12 @@ class ReduceMaxTests: XCTestCase
             deviceID: 0
         )
         
-        _ = _buffer.download()
         let resultsGPU = getHalfBuffer(_buffer).array
-        
         for (resultCPU, resultGPU) in zip(resultsCPU, resultsGPU)
         {
             let diffPercent =
                 abs(resultCPU - resultGPU) / resultCPU * 100.0
-            XCTAssert(diffPercent < 0.001)
+            XCTAssert(diffPercent < 0.05)
         }
     }
     

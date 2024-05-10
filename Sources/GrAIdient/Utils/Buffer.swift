@@ -40,6 +40,10 @@ public func setupHalfBuffer(
         nbElems: nbElems,
         deviceID: deviceID
     )
+    
+    // Make sure operation has ended because temp is deleted
+    // after return.
+    _ = out.download()
 }
 
 ///

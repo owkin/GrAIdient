@@ -50,13 +50,13 @@ kernel void convertFloat2Half(
         return ;
     }
     
-    outs[id] = ins[id];
+    outs[id] = (half)ins[id];
 }
 
 kernel void convertHalf2Float(
     constant half * ins,
     constant uint * pNbElems,
-    device half * outs,
+    device float * outs,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
@@ -73,5 +73,5 @@ kernel void convertHalf2Float(
         return ;
     }
     
-    outs[id] = ins[id];
+    outs[id] = (float)ins[id];
 }

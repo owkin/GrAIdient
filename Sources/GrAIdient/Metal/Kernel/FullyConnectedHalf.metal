@@ -8,7 +8,7 @@
 #include <metal_stdlib>
 using namespace metal;
 
-kernel void flForward(
+kernel void flForwardHalf(
     const device half * outsPrev,
     const device half * weights,
     const device half * biases,
@@ -56,7 +56,7 @@ kernel void flForward(
     outs[offset] = tmp;
 }
 
-kernel void flBackward(
+kernel void flBackwardHalf(
     const device half * delta,
     const device half * weights,
     constant uint * pNbNeurons,
@@ -113,7 +113,7 @@ kernel void flBackward(
     }
 }
 
-kernel void flBatchDerWeights(
+kernel void flBatchDerWeightsHalf(
     const device half * outsPrev,
     const device half * delta,
     constant uint * pNbNeurons,
@@ -170,7 +170,7 @@ kernel void flBatchDerWeights(
     }
 }
 
-kernel void flBatchDerBiases(
+kernel void flBatchDerBiasesHalf(
     const device half * delta,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
@@ -214,7 +214,7 @@ kernel void flBatchDerBiases(
     }
 }
 
-kernel void flDerWeights(
+kernel void flDerWeightsHalf(
     const device half * outsPrev,
     const device half * delta,
     constant uint * pNbNeurons,
@@ -261,7 +261,7 @@ kernel void flDerWeights(
     deltaWeights[offsetWeights] = tmp;
 }
 
-kernel void flDerBiases(
+kernel void flDerBiasesHalf(
     const device half * delta,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
@@ -294,7 +294,7 @@ kernel void flDerBiases(
     deltaWeights[offsetWeights] = deltaCur;
 }
 
-kernel void flReduceWeights(
+kernel void flReduceWeightsHalf(
     const device half * deltaWeights,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,

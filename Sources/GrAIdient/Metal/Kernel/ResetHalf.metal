@@ -8,7 +8,7 @@
 #include <metal_stdlib>
 using namespace metal;
 
-kernel void reset(
+kernel void resetHalf(
     constant uint * pNbElems,
     device half * outs,
     uint id [[ thread_position_in_grid ]])
@@ -30,7 +30,7 @@ kernel void reset(
     outs[id] = 0.0;
 }
 
-kernel void convertFloat2Half(
+kernel void convertFloat2HalfHalf(
     constant float * ins,
     constant uint * pNbElems,
     device half * outs,
@@ -53,7 +53,7 @@ kernel void convertFloat2Half(
     outs[id] = (half)ins[id];
 }
 
-kernel void convertHalf2Float(
+kernel void convertHalf2FloatHalf(
     constant half * ins,
     constant uint * pNbElems,
     device float * outs,

@@ -8,7 +8,7 @@
 #include <metal_stdlib>
 using namespace metal;
 
-kernel void forwardReLU(
+kernel void forwardReLUFloat(
     constant uint * pNbElems,
     device float * tmps,
     device float * outs,
@@ -39,7 +39,7 @@ kernel void forwardReLU(
     }
 }
 
-kernel void backwardReLU(
+kernel void backwardReLUFloat(
     const device float * tmps,
     constant uint * pNbElems,
     device float * delta,
@@ -65,7 +65,7 @@ kernel void backwardReLU(
     }
 }
 
-kernel void forwardLeakyReLU(
+kernel void forwardLeakyReLUFloat(
     constant uint * pNbElems,
     device float * tmps,
     device float * outs,
@@ -97,7 +97,7 @@ kernel void forwardLeakyReLU(
     }
 }
 
-kernel void backwardLeakyReLU(
+kernel void backwardLeakyReLUFloat(
     const device float * tmps,
     constant uint * pNbElems,
     device float * delta,
@@ -124,7 +124,7 @@ kernel void backwardLeakyReLU(
     }
 }
 
-kernel void forwardSoftReLU(
+kernel void forwardSoftReLUFloat(
     constant uint * pNbElems,
     device float * tmps,
     device float * outs,
@@ -149,7 +149,7 @@ kernel void forwardSoftReLU(
     outs[id] = Ɛ * tmps[id] + (1 - Ɛ) * log(1 + exp(tmps[id]));
 }
 
-kernel void backwardSoftReLU(
+kernel void backwardSoftReLUFloat(
     const device float * tmps,
     constant uint * pNbElems,
     device float * delta,
@@ -205,7 +205,7 @@ kernel void forwardSigmoid(
     }
 }
 
-kernel void backwardSigmoid(
+kernel void backwardSigmoidFloat(
     const device float * tmps,
     constant uint * pNbElems,
     device float * delta,
@@ -275,7 +275,7 @@ kernel void forwardGELUApprox(
     outs[id] = 0.5 * x * (1 + tmp2);
 }
 
-kernel void backwardGELUApprox(
+kernel void backwardGELUApproxFloat(
     const device float * tmps,
     constant uint * pNbElems,
     device float * delta,
@@ -375,7 +375,7 @@ kernel void forwardGELU(
     outs[id] = 0.5 * x * (1 + erf(x / sqrt(2.0)));
 }
 
-kernel void backwardGELU(
+kernel void backwardGELUFloat(
     const device float * tmps,
     constant uint * pNbElems,
     device float * delta,

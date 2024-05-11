@@ -8,7 +8,7 @@
 #include <metal_stdlib>
 using namespace metal;
 
-kernel void reduceSum64(
+kernel void reduceSum64Float(
      const device float * ins,
      constant uint * pDimensions,
      constant uint * pNbThreadgroups,
@@ -62,7 +62,7 @@ kernel void reduceSum64(
     }
 }
 
-kernel void reduceSum(
+kernel void reduceSumFloat(
      const device float * ins,
      constant uint * pDimensions,
      device float * outs,
@@ -94,7 +94,7 @@ kernel void reduceSum(
     outs[elem2] = sum;
 }
 
-kernel void reduceMax64(
+kernel void reduceMax64Float(
      const device float * ins,
      constant uint * pDimensions,
      constant uint * pNbThreadgroups,
@@ -136,7 +136,7 @@ kernel void reduceMax64(
         uint index = threadId[0] + groupId[0] * threadsPerThreadgroup;
         if (threadId[0] < stride && (index + stride) < dim1)
         {
-            valShared[threadId[0]] = max(
+            valShared[threadId[0]] = maxFloat(
                  valShared[threadId[0] + stride],
                  valShared[threadId[0]]
              );
@@ -151,7 +151,7 @@ kernel void reduceMax64(
     }
 }
 
-kernel void reduceMax(
+kernel void reduceMaxFloat(
      const device float * ins,
      constant uint * pDimensions,
      device float * outs,

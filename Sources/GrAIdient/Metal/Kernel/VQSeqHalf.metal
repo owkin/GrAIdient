@@ -8,7 +8,7 @@
 #include <metal_stdlib>
 using namespace metal;
 
-kernel void vqSeqForward(
+kernel void vqSeqForwardHalf(
     const device half * outsPrev,
     const device half * weights,
     constant uint * pNbNeurons,
@@ -79,7 +79,7 @@ kernel void vqSeqForward(
     }
 }
 
-kernel void vqSeqBackward(
+kernel void vqSeqBackwardHalf(
     const device half * outsPrev,
     const device half * delta,
     const device half * weights,
@@ -153,7 +153,7 @@ kernel void vqSeqBackward(
     }
 }
 
-kernel void vqSeqBatchDerWeights(
+kernel void vqSeqBatchDerWeightsHalf(
     const device half * outsPrev,
     const device half * weights,
     const device int * indices,
@@ -213,7 +213,7 @@ kernel void vqSeqBatchDerWeights(
     grads[depth + nbNeurons * k] += sum;
 }
 
-kernel void vqSeqDerWeights(
+kernel void vqSeqDerWeightsHalf(
     const device half * outsPrev,
     const device half * weights,
     const device int * indices,
@@ -273,7 +273,7 @@ kernel void vqSeqDerWeights(
     deltaWeights[depth + nbNeurons * k + K * nbNeurons * elem] += sum;
 }
 
-kernel void vqSeqLoss(
+kernel void vqSeqLossHalf(
     const device half * outsPrev,
     const device half * outs,
     const device int * indices,
@@ -323,7 +323,7 @@ kernel void vqSeqLoss(
     losses[elem] = tmp;
 }
 
-kernel void vqLayerCAMMaxSeq(
+kernel void vqLayerCAMMaxSeqHalf(
      const device half * camLayer,
      constant uint * pNbNeurons,
      constant uint * pNbThreadgroups,
@@ -370,7 +370,7 @@ kernel void vqLayerCAMMaxSeq(
         if (threadId[0] < stride &&
             (index + stride) < sequence)
         {
-            camShared[threadId[0]] = max(
+            camShared[threadId[0]] = maxHalf(
                 camShared[threadId[0] + stride],
                 camShared[threadId[0]]
             );
@@ -385,7 +385,7 @@ kernel void vqLayerCAMMaxSeq(
     }
 }
 
-kernel void vqGradSeqForward(
+kernel void vqGradSeqForwardHalf(
     const device half * outsPrev,
     const device half * camLayer,
     const device half * camMax,

@@ -8,7 +8,7 @@
 #include <metal_stdlib>
 using namespace metal;
 
-kernel void deconvForward(
+kernel void deconvForwardFloat(
     const device float * outsPrev,
     const device float * weights,
     const device float * biases,
@@ -105,7 +105,7 @@ kernel void deconvForward(
     outs[offset] = tmp;
 }
 
-kernel void deconvBackward(
+kernel void deconvBackwardFloat(
     const device float * delta,
     const device float * weights,
     constant int * pStart,
@@ -206,7 +206,7 @@ kernel void deconvBackward(
     }
 }
 
-kernel void deconvBatchDerWeights(
+kernel void deconvBatchDerWeightsFloat(
     const device float * outsPrev,
     const device float * delta,
     constant int * pStart,
@@ -317,7 +317,7 @@ kernel void deconvBatchDerWeights(
     }
 }
 
-kernel void deconvDerWeights(
+kernel void deconvDerWeightsFloat(
     const device float * outsPrev,
     const device float * delta,
     constant int * pStart,

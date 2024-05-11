@@ -8,7 +8,7 @@
 #include <metal_stdlib>
 using namespace metal;
 
-kernel void clipGradients(
+kernel void clipGradientsFloat(
     constant uint * pNbElems,
     constant float * pGradientNorm,
     constant float * pNormThreshold,
@@ -36,7 +36,7 @@ kernel void clipGradients(
     grads[id] = grads[id] * normThreshold / gradientNorm;
 }
 
-kernel void multiplyGradients(
+kernel void multiplyGradientsFloat(
     constant uint * pNbElems,
     constant float * pFactor,
     device float * grads,
@@ -61,7 +61,7 @@ kernel void multiplyGradients(
     grads[id] = grads[id] * factor;
 }
 
-kernel void weightsSGD(
+kernel void weightsSGDFloat(
     const device float * grads,
     constant uint * pNbElems,
     constant float * pAlpha,
@@ -94,7 +94,7 @@ kernel void weightsSGD(
     weights[id] = weights[id] - alpha * g;
 }
 
-kernel void weightsMomentum(
+kernel void weightsMomentumFloat(
     const device float * grads,
     constant uint * pNbElems,
     constant float * pAlpha,
@@ -133,7 +133,7 @@ kernel void weightsMomentum(
     weights[id] = weights[id] - v;
 }
 
-kernel void weightsAdam(
+kernel void weightsAdamFloat(
     const device float * grads,
     constant uint * pNbElems,
     constant float * pAlpha,
@@ -184,7 +184,7 @@ kernel void weightsAdam(
     weights[id] = weights[id] - alpha * m / (sqrt(v) + Ɛ);
 }
 
-kernel void weightsAMSGrad(
+kernel void weightsAMSGradFloat(
     const device float * grads,
     constant uint * pNbElems,
     constant float * pAlpha,
@@ -239,7 +239,7 @@ kernel void weightsAMSGrad(
     weights[id] = weights[id] - alpha * m / (sqrt(vHat) + Ɛ);
 }
 
-kernel void weightsAdamRectified(
+kernel void weightsAdamRectifiedFloat(
     const device float * grads,
     constant uint * pNbElems,
     constant float * pAlpha,
@@ -302,7 +302,7 @@ kernel void weightsAdamRectified(
     }
 }
 
-kernel void weightsAdaBound(
+kernel void weightsAdaBoundFloat(
     const device float * grads,
     constant uint * pNbElems,
     constant float * pAlpha,
@@ -368,7 +368,7 @@ kernel void weightsAdaBound(
     weights[id] = weights[id] - alphaHat * m;
 }
 
-kernel void weightsAMSBound(
+kernel void weightsAMSBoundFloat(
     const device float * grads,
     constant uint * pNbElems,
     constant float * pAlpha,

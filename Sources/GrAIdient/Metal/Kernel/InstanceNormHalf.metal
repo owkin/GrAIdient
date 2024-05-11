@@ -8,7 +8,7 @@
 #include <metal_stdlib>
 using namespace metal;
 
-kernel void computeInstanceNormConvμ(
+kernel void computeInstanceNormConvμHalf(
     const device half * tmps,
     constant uint * pNbChannels,
     constant uint * pNbBatch,
@@ -53,7 +53,7 @@ kernel void computeInstanceNormConvμ(
     μ[depth + nbChannels * elem] = sum / nbElems;
 }
 
-kernel void computeInstanceNormConvσ2(
+kernel void computeInstanceNormConvσ2Half(
     const device half * tmps,
     const device half * μ,
     constant uint * pNbChannels,
@@ -100,7 +100,7 @@ kernel void computeInstanceNormConvσ2(
     σ2[depth + nbChannels * elem] = sum / nbElems;
 }
 
-kernel void forwardInstanceNormConv(
+kernel void forwardInstanceNormConvHalf(
     const device half * β,
     const device half * Ɣ,
     const device half * μ,
@@ -150,7 +150,7 @@ kernel void forwardInstanceNormConv(
     tmps[offset] = Ɣ[depth] * xhat + β[depth];
 }
 
-kernel void forwardAdaIN(
+kernel void forwardAdaINHalf(
     const device half * outsPrev,
     const device half * styles,
     const device half * μ,
@@ -200,7 +200,7 @@ kernel void forwardAdaIN(
     outs[offset] = styles[depth] * xhat + styles[depth + nbChannels];
 }
 
-kernel void backwardWeightsInstanceNormConv(
+kernel void backwardWeightsInstanceNormConvHalf(
     const device half * delta,
     const device half * xHat,
     const device half * Ɣ,
@@ -274,7 +274,7 @@ kernel void backwardWeightsInstanceNormConv(
     }
 }
 
-kernel void backward2AdaIN(
+kernel void backward2AdaINHalf(
     const device half * delta,
     const device half * xHat,
     const device half * outStyles,
@@ -347,7 +347,7 @@ kernel void backward2AdaIN(
     }
 }
 
-kernel void backwardInstanceNormConv(
+kernel void backwardInstanceNormConvHalf(
     const device half * σ2,
     const device half * xHat,
     const device half * Ɣ,
@@ -401,7 +401,7 @@ kernel void backwardInstanceNormConv(
     delta[offset] = mult * (tmp1 - tmp2 - tmp3);
 }
 
-kernel void backward1AdaIN(
+kernel void backward1AdaINHalf(
     const device half * delta,
     const device half * σ2,
     const device half * xHat,

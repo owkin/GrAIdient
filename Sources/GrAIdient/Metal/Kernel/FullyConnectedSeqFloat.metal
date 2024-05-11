@@ -8,7 +8,7 @@
 #include <metal_stdlib>
 using namespace metal;
 
-kernel void flSeqForward(
+kernel void flSeqForwardFloat(
     const device float * outsPrev,
     const device float * weights,
     const device float * biases,
@@ -61,7 +61,7 @@ kernel void flSeqForward(
     outs[offset] = tmp;
 }
 
-kernel void flSeq48Forward(
+kernel void flSeq48ForwardFloat(
     const device float4 * outsPrev,
     const device float4 * weights,
     const device float * biases,
@@ -123,7 +123,7 @@ kernel void flSeq48Forward(
     }
 }
 
-kernel void flSeq4Forward(
+kernel void flSeq4ForwardFloat(
     const device float4 * outsPrev,
     const device float4 * weights,
     const device float * biases,
@@ -176,7 +176,7 @@ kernel void flSeq4Forward(
     outs[offset] = tmp[0] + tmp[1] + tmp[2] + tmp[3] + biases[depth];
 }
 
-kernel void flSeqBackward(
+kernel void flSeqBackwardFloat(
     const device float * delta,
     const device float * weights,
     constant uint * pNbNeurons,
@@ -239,7 +239,7 @@ kernel void flSeqBackward(
     }
 }
 
-kernel void flSeq48Backward(
+kernel void flSeq48BackwardFloat(
     const device float * delta,
     const device float4 * weights,
     constant uint * pNbNeurons,
@@ -315,7 +315,7 @@ kernel void flSeq48Backward(
     }
 }
 
-kernel void flSeq4Backward(
+kernel void flSeq4BackwardFloat(
     const device float * delta,
     const device float4 * weights,
     constant uint * pNbNeurons,
@@ -378,7 +378,7 @@ kernel void flSeq4Backward(
     }
 }
 
-kernel void flSeqBatchDerWeights(
+kernel void flSeqBatchDerWeightsFloat(
     const device float * outsPrev,
     const device float * delta,
     constant uint * pNbNeurons,
@@ -440,7 +440,7 @@ kernel void flSeqBatchDerWeights(
     }
 }
 
-kernel void flSeqBatch4DerWeights(
+kernel void flSeqBatch4DerWeightsFloat(
     const device float4 * outsPrev,
     const device float * delta,
     constant uint * pNbNeurons,
@@ -502,7 +502,7 @@ kernel void flSeqBatch4DerWeights(
     }
 }
 
-kernel void flSeqDerWeights(
+kernel void flSeqDerWeightsFloat(
     const device float * outsPrev,
     const device float * delta,
     constant uint * pNbNeurons,
@@ -556,7 +556,7 @@ kernel void flSeqDerWeights(
     deltaWeights[offsetWeights] = tmp;
 }
 
-kernel void flSeqReduceWeights(
+kernel void flSeqReduceWeightsFloat(
     const device float * deltaWeights,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,

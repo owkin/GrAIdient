@@ -8,7 +8,7 @@
 #include <metal_stdlib>
 using namespace metal;
 
-kernel void computeBNConvμ(
+kernel void computeBNConvμFloat(
     const device float * tmps,
     constant uint * pNbChannels,
     constant uint * pNbBatch,
@@ -67,7 +67,7 @@ kernel void computeBNConvμ(
     }
 }
 
-kernel void computeBNConvσ2(
+kernel void computeBNConvσ2Float(
     const device float * tmps,
     const device float * μ,
     constant uint * pNbChannels,
@@ -128,7 +128,7 @@ kernel void computeBNConvσ2(
     }
 }
 
-kernel void forwardBNConvTraining(
+kernel void forwardBNConvTrainingFloat(
     const device float * β,
     const device float * Ɣ,
     const device float * μ,
@@ -178,7 +178,7 @@ kernel void forwardBNConvTraining(
     tmps[offset] = Ɣ[depth] * xhat + β[depth];
 }
 
-kernel void forwardBNConvInference(
+kernel void forwardBNConvInferenceFloat(
     const device float * β,
     const device float * Ɣ,
     const device float * Eμ,
@@ -234,7 +234,7 @@ kernel void forwardBNConvInference(
     tmps[offset] = Ɣ[depth] * xhat + β[depth];
 }
 
-kernel void backwardWeightsBNConv(
+kernel void backwardWeightsBNConvFloat(
     const device float * delta,
     const device float * xHat,
     const device float * Ɣ,
@@ -308,7 +308,7 @@ kernel void backwardWeightsBNConv(
     }
 }
 
-kernel void backwardBNConvTraining(
+kernel void backwardBNConvTrainingFloat(
     const device float * σ2,
     const device float * xHat,
     const device float * Ɣ,
@@ -361,7 +361,7 @@ kernel void backwardBNConvTraining(
     delta[offset] = mult * (tmp1 - tmp2 - tmp3);
 }
 
-kernel void backwardBNConvInference(
+kernel void backwardBNConvInferenceFloat(
     const device float * Ɣ,
     const device float * Eσ2,
     constant uint * pNbChannels,

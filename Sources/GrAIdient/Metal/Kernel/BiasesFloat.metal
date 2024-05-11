@@ -8,7 +8,7 @@
 #include <metal_stdlib>
 using namespace metal;
 
-kernel void reduceBiases(
+kernel void reduceBiasesFloat(
     const device float * deltaWeights,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,

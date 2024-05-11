@@ -8,7 +8,7 @@
 #include <metal_stdlib>
 using namespace metal;
 
-kernel void avgPoolForward(
+kernel void avgPoolForwardHalf(
     const device half * outsPrev,
     constant uint * pNbNeurons,
     constant uint * pDimensionsPrev,
@@ -54,7 +54,7 @@ kernel void avgPoolForward(
     outs[offset] = tmp;
 }
 
-kernel void avgPoolBackward(
+kernel void avgPoolBackwardHalf(
     const device half * delta,
     constant uint * pNbNeurons,
     constant uint * pDimensionsPrev,
@@ -107,7 +107,7 @@ kernel void avgPoolBackward(
     }
 }
 
-kernel void maxPoolForward(
+kernel void maxPoolForwardHalf(
     const device half * outsPrev,
     constant int * pStart,
     constant uint * pStride,
@@ -184,7 +184,7 @@ kernel void maxPoolForward(
     indicesMax[offset] = indexMax;
 }
 
-kernel void maxPoolBackward(
+kernel void maxPoolBackwardHalf(
     const device half * delta,
     const device int * indicesMax,
     constant int * pStart,
@@ -291,7 +291,7 @@ uint _endIndex(uint index, uint smallSize, uint bigSize)
     return (uint)(ceil(float((index + 1) * bigSize) / smallSize));
 }
 
-kernel void adaptiveAvgPoolForward1(
+kernel void adaptiveAvgPoolForward1Half(
     const device half * outsPrev,
     constant uint * pNbChannels,
     constant uint * pDimensions,
@@ -353,7 +353,7 @@ kernel void adaptiveAvgPoolForward1(
     outs[offset] = tmp / (float)nbElems;
 }
 
-kernel void adaptiveAvgPoolForward2(
+kernel void adaptiveAvgPoolForward2Half(
     const device half * outsPrev,
     constant uint * pNbChannels,
     constant uint * pDimensions,
@@ -424,7 +424,7 @@ kernel void adaptiveAvgPoolForward2(
     }}
 }
 
-kernel void adaptiveAvgPoolBackward1(
+kernel void adaptiveAvgPoolBackward1Half(
     const device half * delta,
     constant uint * pNbChannels,
     constant uint * pDimensions,
@@ -487,7 +487,7 @@ kernel void adaptiveAvgPoolBackward1(
     }}
 }
 
-kernel void adaptiveAvgPoolBackward2(
+kernel void adaptiveAvgPoolBackward2Half(
     const device half * delta,
     const device int * nbElems,
     constant uint * pNbChannels,
@@ -548,7 +548,7 @@ kernel void adaptiveAvgPoolBackward2(
     }}
 }
 
-kernel void selectNeurons2DForward(
+kernel void selectNeurons2DForwardHalf(
     const device half * outsPrev,
     constant uint * pTarget,
     constant uint * pNbNeurons,
@@ -591,7 +591,7 @@ kernel void selectNeurons2DForward(
     outs[offset] = outsPrev[offsetPrev];
 }
 
-kernel void selectNeurons2DBackward(
+kernel void selectNeurons2DBackwardHalf(
     const device half * delta,
     constant uint * pTarget,
     constant uint * pNbNeurons,
@@ -652,7 +652,7 @@ kernel void selectNeurons2DBackward(
     }
 }
 
-kernel void IRDFT2RGBForward(
+kernel void IRDFT2RGBForwardHalf(
     const device half * outsPrev,
     constant uint * pNbChannels,
     constant uint * pDimensions,
@@ -707,7 +707,7 @@ kernel void IRDFT2RGBForward(
     outs[offset] = sum;
 }
 
-kernel void IRDFT2RGBBackward(
+kernel void IRDFT2RGBBackwardHalf(
     const device half * delta,
     constant uint * pNbChannels,
     constant uint * pDimensions,
@@ -779,7 +779,7 @@ kernel void IRDFT2RGBBackward(
     }
 }
 
-kernel void decorrelateRGBForward(
+kernel void decorrelateRGBForwardHalf(
     const device half * outsPrev,
     constant float * correlation,
     constant uint * pNbChannels,
@@ -831,7 +831,7 @@ kernel void decorrelateRGBForward(
     outs[offset] = sum;
 }
 
-kernel void decorrelateRGBBackward(
+kernel void decorrelateRGBBackwardHalf(
     const device half * delta,
     constant float * correlation,
     constant uint * pNbChannels,
@@ -894,7 +894,7 @@ kernel void decorrelateRGBBackward(
     }
 }
 
-kernel void linearScale2DForward(
+kernel void linearScale2DForwardHalf(
     const device half * outsPrev,
     constant float * weights,
     constant uint * pNbChannels,
@@ -935,7 +935,7 @@ kernel void linearScale2DForward(
     outs[offset] = weights[0] * outsPrev[offset] + weights[1];
 }
 
-kernel void linearScale2DBackward(
+kernel void linearScale2DBackwardHalf(
     const device half * delta,
     constant float * weights,
     constant uint * pNbChannels,
@@ -986,7 +986,7 @@ kernel void linearScale2DBackward(
     }
 }
 
-float _getScaleValue(
+float _getScaleValueHalf(
     const uint i,
     const uint j,
     const uint dimension)
@@ -996,7 +996,7 @@ float _getScaleValue(
     return (1.0 / freq) * float(dimension);
 }
 
-kernel void setDataFTFrequences2D(
+kernel void setDataFTFrequences2DHalf(
     constant uint * pNbChannels,
     constant uint * pDimension,
     constant uint * pNbBatch,
@@ -1063,7 +1063,7 @@ kernel void setDataFTFrequences2D(
     outs[offset] = _getScaleValue(iTmp, jTmp, dimension);
 }
 
-kernel void pad2DForward(
+kernel void pad2DForwardHalf(
     const device half * outsPrev,
     constant uint * pNbChannels,
     constant uint * pDimensions,
@@ -1124,7 +1124,7 @@ kernel void pad2DForward(
     }
 }
 
-kernel void pad2DBackward(
+kernel void pad2DBackwardHalf(
     const device half * delta,
     constant uint * pNbChannels,
     constant uint * pDimensions,
@@ -1184,7 +1184,7 @@ kernel void pad2DBackward(
     }
 }
 
-kernel void crop2DForward(
+kernel void crop2DForwardHalf(
     const device half * outsPrev,
     constant uint * pNbChannels,
     constant uint * pDimensions,
@@ -1238,7 +1238,7 @@ kernel void crop2DForward(
     outs[offset] = outsPrev[offsetPrev];
 }
 
-kernel void crop2DBackward(
+kernel void crop2DBackwardHalf(
     const device half * delta,
     constant uint * pNbChannels,
     constant uint * pDimensions,
@@ -1312,7 +1312,7 @@ kernel void crop2DBackward(
     }
 }
 
-kernel void resizeBilinearPadForward(
+kernel void resizeBilinearPadForwardHalf(
     const device half * outsPrev,
     constant uint * pNbChannels,
     constant uint * pDimensions,
@@ -1406,7 +1406,7 @@ kernel void resizeBilinearPadForward(
     }
 }
 
-kernel void resizeBilinearPadBackward(
+kernel void resizeBilinearPadBackwardHalf(
     const device half * delta,
     constant uint * pNbChannels,
     constant uint * pDimensions,
@@ -1526,7 +1526,7 @@ kernel void resizeBilinearPadBackward(
     }}
 }
 
-kernel void rotate2DForward(
+kernel void rotate2DForwardHalf(
     const device half * outsPrev,
     constant uint * pNbChannels,
     constant uint * pDimensions,
@@ -1590,7 +1590,7 @@ kernel void rotate2DForward(
     }
 }
 
-kernel void rotate2DBackward(
+kernel void rotate2DBackwardHalf(
     const device half * delta,
     constant uint * pNbChannels,
     constant uint * pDimensions,
@@ -1659,7 +1659,7 @@ kernel void rotate2DBackward(
     }}
 }
 
-kernel void resizeBilinearCropForward(
+kernel void resizeBilinearCropForwardHalf(
     const device half * outsPrev,
     constant uint * pNbChannels,
     constant uint * pDimensions,
@@ -1740,7 +1740,7 @@ kernel void resizeBilinearCropForward(
     outs[offset] = out;
 }
 
-kernel void resizeBilinearCropBackward(
+kernel void resizeBilinearCropBackwardHalf(
     const device half * delta,
     constant uint * pNbChannels,
     constant uint * pDimensions,
@@ -1861,7 +1861,7 @@ kernel void resizeBilinearCropBackward(
     }}
 }
 
-kernel void concat02DForward(
+kernel void concat02DForwardHalf(
     const device half * outsPrev,
     constant uint * pGlobalOffset,
     constant uint * pNbChannels,
@@ -1907,7 +1907,7 @@ kernel void concat02DForward(
     outs[offset] = outsPrev[offsetPrev];
 }
 
-kernel void concat02DBackward(
+kernel void concat02DBackwardHalf(
     const device half * delta,
     constant uint * pGlobalOffset,
     constant uint * pNbChannels,
@@ -1963,7 +1963,7 @@ kernel void concat02DBackward(
     }
 }
 
-kernel void concat12DForward(
+kernel void concat12DForwardHalf(
     const device half * outsPrev,
     constant uint * pGlobalOffset,
     constant uint * pNbChannels,
@@ -2012,7 +2012,7 @@ kernel void concat12DForward(
     outs[offset] = outsPrev[offsetPrev];
 }
 
-kernel void concat12DBackward(
+kernel void concat12DBackwardHalf(
     const device half * delta,
     constant uint * pGlobalOffset,
     constant uint * pNbChannels,
@@ -2071,7 +2071,7 @@ kernel void concat12DBackward(
     }
 }
 
-kernel void constant2DForward(
+kernel void constant2DForwardHalf(
     const device half * weights,
     constant uint * pNbChannels,
     constant uint * pDimensions,
@@ -2110,7 +2110,7 @@ kernel void constant2DForward(
     outs[offset] = weights[depth];
 }
 
-kernel void MSE2DLoss(
+kernel void MSE2DLossHalf(
     const device half * outs,
     const device half * groundTruth,
     constant uint * pNbChannels,
@@ -2160,7 +2160,7 @@ kernel void MSE2DLoss(
     losses[elem] = tmp;
 }
 
-kernel void MSE2DLossDerivative(
+kernel void MSE2DLossDerivativeHalf(
     const device half * outs,
     const device half * groundTruth,
     constant uint * pNbChannels,
@@ -2220,7 +2220,7 @@ kernel void MSE2DLossDerivative(
     }
 }
 
-kernel void selfCorrelate2DForward(
+kernel void selfCorrelate2DForwardHalf(
     const device half * outsPrev,
     constant uint * pNbChannelsPrev,
     constant uint * pDimensionsPrev,
@@ -2271,7 +2271,7 @@ kernel void selfCorrelate2DForward(
     outs[offset] = correlation;
 }
 
-kernel void selfCorrelate2DBackward(
+kernel void selfCorrelate2DBackwardHalf(
     const device half * delta,
     const device half * outsPrev,
     constant uint * pNbChannelsPrev,
@@ -2342,7 +2342,7 @@ kernel void selfCorrelate2DBackward(
     }
 }
 
-kernel void normalize12DForward(
+kernel void normalize12DForwardHalf(
     const device half * outsPrev,
     constant uint * pNbChannels,
     constant uint * pDimensions,
@@ -2394,7 +2394,7 @@ kernel void normalize12DForward(
     outs[offset] = outPrev / max(norm, 1e-12);
 }
 
-kernel void normalize12DBackward(
+kernel void normalize12DBackwardHalf(
     const device half * delta,
     const device half * outsPrev,
     constant uint * pNbChannels,
@@ -2480,7 +2480,7 @@ kernel void normalize12DBackward(
     }
 }
 
-kernel void computeSquaredNorm122D(
+kernel void computeSquaredNorm122DHalf(
      const device half * outsPrev,
      constant uint * pNbChannels,
      constant uint * pDimensions,
@@ -2549,7 +2549,7 @@ kernel void computeSquaredNorm122D(
     }
 }
 
-kernel void normalize122DForward(
+kernel void normalize122DForwardHalf(
     const device half * outsPrev,
     const device half * squaredNorms,
     constant uint * pNbChannels,
@@ -2596,7 +2596,7 @@ kernel void normalize122DForward(
     outs[offset] = outPrev / max(norm, 1e-12);
 }
 
-kernel void computeDeltaTmp122D(
+kernel void computeDeltaTmp122DHalf(
      const device half * delta,
      const device half * outsPrev,
      const device half * squaredNorms,
@@ -2673,7 +2673,7 @@ kernel void computeDeltaTmp122D(
     }
 }
 
-kernel void normalize122DBackward(
+kernel void normalize122DBackwardHalf(
     const device half * delta,
     const device half * outsPrev,
     const device half * squaredNorms,
@@ -2746,7 +2746,7 @@ kernel void normalize122DBackward(
     }
 }
 
-kernel void similarBatchError2DLoss(
+kernel void similarBatchError2DLossHalf(
     const device half * outs,
     constant uint * pNbChannels,
     constant uint * pDimensions,
@@ -2795,7 +2795,7 @@ kernel void similarBatchError2DLoss(
     }
 }
 
-kernel void similarBatchError2DLossDerivative(
+kernel void similarBatchError2DLossDerivativeHalf(
     const device half * outs,
     constant uint * pNbChannels,
     constant uint * pDimensions,
@@ -2856,7 +2856,7 @@ kernel void similarBatchError2DLossDerivative(
     }
 }
 
-kernel void similarError2DLossDerivative(
+kernel void similarError2DLossDerivativeHalf(
     const device half * outs,
     constant uint * pGlobalOffset,
     constant uint * pNbChannels,
@@ -2923,7 +2923,7 @@ kernel void similarError2DLossDerivative(
     }
 }
 
-kernel void flipHorizontal2DForward(
+kernel void flipHorizontal2DForwardHalf(
     const device half * outsPrev,
     constant uint * pDoFlip,
     constant uint * pNbChannels,
@@ -2971,7 +2971,7 @@ kernel void flipHorizontal2DForward(
     outs[offset1] = outsPrev[offset2];
 }
 
-kernel void flipHorizontal2DBackward(
+kernel void flipHorizontal2DBackwardHalf(
     const device half * delta,
     constant uint * pDoFlip,
     constant uint * pNbChannels,
@@ -3029,7 +3029,7 @@ kernel void flipHorizontal2DBackward(
     }
 }
 
-kernel void flipVertical2DForward(
+kernel void flipVertical2DForwardHalf(
     const device half * outsPrev,
     constant uint * pDoFlip,
     constant uint * pNbChannels,
@@ -3077,7 +3077,7 @@ kernel void flipVertical2DForward(
     outs[offset1] = outsPrev[offset2];
 }
 
-kernel void flipVertical2DBackward(
+kernel void flipVertical2DBackwardHalf(
     const device half * delta,
     constant uint * pDoFlip,
     constant uint * pNbChannels,
@@ -3135,7 +3135,7 @@ kernel void flipVertical2DBackward(
     }
 }
 
-kernel void colorJitterHSVForward(
+kernel void colorJitterHSVForwardHalf(
     const device half * outsPrev,
     constant float * pNoise,
     constant uint * pDimensions,
@@ -3260,7 +3260,7 @@ kernel void colorJitterHSVForward(
     outs[offsetB] = b;
 }
 
-kernel void BCE2DLoss(
+kernel void BCE2DLossHalf(
     const device half * outs,
     const device half * groundTruth,
     constant uint * pNbChannels,
@@ -3311,7 +3311,7 @@ kernel void BCE2DLoss(
     losses[elem] = tmp;
 }
 
-kernel void BCE2DLossDerivative(
+kernel void BCE2DLossDerivativeHalf(
     const device half * outs,
     const device half * groundTruth,
     constant uint * pNbChannels,
@@ -3380,7 +3380,7 @@ kernel void BCE2DLossDerivative(
     }
 }
 
-kernel void BCESigmoid2DLoss(
+kernel void BCESigmoid2DLossHalf(
     const device half * outs,
     const device half * groundTruth,
     constant uint * pNbChannels,
@@ -3441,7 +3441,7 @@ kernel void BCESigmoid2DLoss(
     losses[elem] = tmp;
 }
 
-kernel void BCESigmoid2DLossDerivative(
+kernel void BCESigmoid2DLossDerivativeHalf(
     const device half * outs,
     const device half * groundTruth,
     constant uint * pNbChannels,
@@ -3510,7 +3510,7 @@ kernel void BCESigmoid2DLossDerivative(
     }
 }
 
-kernel void layerCAM2DForward(
+kernel void layerCAM2DForwardHalf(
     const device half * outsPrev,
     const device half * deltaPrev,
     constant uint * pNbChannelsPrev,

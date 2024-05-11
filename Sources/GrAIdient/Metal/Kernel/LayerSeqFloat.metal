@@ -8,7 +8,7 @@
 #include <metal_stdlib>
 using namespace metal;
 
-kernel void avgPoolSeqForward(
+kernel void avgPoolSeqForwardFloat(
     const device float * outsPrev,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
@@ -50,7 +50,7 @@ kernel void avgPoolSeqForward(
     outs[offset] = tmp;
 }
 
-kernel void avgPoolSeqBackward(
+kernel void avgPoolSeqBackwardFloat(
     const device float * delta,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
@@ -98,7 +98,7 @@ kernel void avgPoolSeqBackward(
     }
 }
 
-kernel void selectSeqForward(
+kernel void selectSeqForwardFloat(
     const device float * outsPrev,
     constant uint * pNbNeurons,
     constant uint * pTargetSeq,
@@ -137,7 +137,7 @@ kernel void selectSeqForward(
     outs[offset] = outsPrev[offsetPrev];
 }
 
-kernel void selectSeqBackward(
+kernel void selectSeqBackwardFloat(
     const device float * delta,
     constant uint * pNbNeurons,
     constant uint * pTargetSeq,
@@ -176,7 +176,7 @@ kernel void selectSeqBackward(
     deltaPrev[offsetPrev] += delta[offset];
 }
 
-kernel void concat1SeqForward(
+kernel void concat1SeqForwardFloat(
     const device float * outsPrev,
     constant uint * pGlobalOffset,
     constant uint * pNbNeurons,
@@ -221,7 +221,7 @@ kernel void concat1SeqForward(
     outs[offset] = outsPrev[offsetPrev];
 }
 
-kernel void concat1Seq4Forward(
+kernel void concat1Seq4ForwardFloat(
     const device float4 * outsPrev,
     constant uint * pGlobalOffset,
     constant uint * pNbNeurons,
@@ -266,7 +266,7 @@ kernel void concat1Seq4Forward(
     outs[offset] = outsPrev[offsetPrev];
 }
 
-kernel void concat1SeqBackward(
+kernel void concat1SeqBackwardFloat(
     const device float * delta,
     constant uint * pGlobalOffset,
     constant uint * pNbNeurons,
@@ -321,7 +321,7 @@ kernel void concat1SeqBackward(
     }
 }
 
-kernel void concat1Seq4Backward(
+kernel void concat1Seq4BackwardFloat(
     const device float4 * delta,
     constant uint * pGlobalOffset,
     constant uint * pNbNeurons,
@@ -376,7 +376,7 @@ kernel void concat1Seq4Backward(
     }
 }
 
-kernel void concat2SeqForward(
+kernel void concat2SeqForwardFloat(
     const device float * outsPrev,
     constant uint * pGlobalOffset,
     constant uint * pNbNeurons,
@@ -421,7 +421,7 @@ kernel void concat2SeqForward(
     outs[offset] = outsPrev[offsetPrev];
 }
 
-kernel void concat2SeqBackward(
+kernel void concat2SeqBackwardFloat(
     const device float * delta,
     constant uint * pGlobalOffset,
     constant uint * pNbNeurons,
@@ -476,7 +476,7 @@ kernel void concat2SeqBackward(
     }
 }
 
-kernel void constant12SeqForward(
+kernel void constant12SeqForwardFloat(
     const device float * weights,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
@@ -510,7 +510,7 @@ kernel void constant12SeqForward(
     outs[offset] = weights[depth + nbNeurons * seq];
 }
 
-kernel void constant12Seq4Forward(
+kernel void constant12Seq4ForwardFloat(
     const device float4 * weights,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
@@ -545,7 +545,7 @@ kernel void constant12Seq4Forward(
     outs[offset] = weights[(depth * 4 + nbNeurons * seq) / 4];
 }
 
-kernel void constant12SeqBackward(
+kernel void constant12SeqBackwardFloat(
     const device float * delta,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
@@ -593,7 +593,7 @@ kernel void constant12SeqBackward(
     }
 }
 
-kernel void constant12Seq4Backward(
+kernel void constant12Seq4BackwardFloat(
     const device float4 * delta,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
@@ -642,7 +642,7 @@ kernel void constant12Seq4Backward(
     }
 }
 
-kernel void constant2SeqForward(
+kernel void constant2SeqForwardFloat(
     const device float * weights,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
@@ -676,7 +676,7 @@ kernel void constant2SeqForward(
     outs[offset] = weights[depth];
 }
 
-kernel void constant2Seq4Forward(
+kernel void constant2Seq4ForwardFloat(
     const device float4 * weights,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
@@ -711,7 +711,7 @@ kernel void constant2Seq4Forward(
     outs[offset] = weights[depth];
 }
 
-kernel void querySeqForward(
+kernel void querySeqForwardFloat(
     const device float * query,
     const device float * key,
     constant uint * pNbHeads,
@@ -772,7 +772,7 @@ kernel void querySeqForward(
     outs[offset] = tmp;
 }
 
-kernel void querySeq4Forward(
+kernel void querySeq4ForwardFloat(
     const device float4 * query,
     const device float4 * key,
     constant uint * pNbHeads,
@@ -833,7 +833,7 @@ kernel void querySeq4Forward(
     outs[offset] = tmp[0] + tmp[1] + tmp[2] + tmp[3];
 }
 
-kernel void queryQuerySeqBackward(
+kernel void queryQuerySeqBackwardFloat(
     const device float * delta,
     const device float * key,
     constant uint * pNbHeads,
@@ -905,7 +905,7 @@ kernel void queryQuerySeqBackward(
     }
 }
 
-kernel void queryQuerySeq4Backward(
+kernel void queryQuerySeq4BackwardFloat(
     const device float * delta,
     const device float4 * key,
     constant uint * pNbHeads,
@@ -977,7 +977,7 @@ kernel void queryQuerySeq4Backward(
     }
 }
 
-kernel void queryKeySeqBackward(
+kernel void queryKeySeqBackwardFloat(
     const device float * delta,
     const device float * query,
     constant uint * pNbHeads,
@@ -1049,7 +1049,7 @@ kernel void queryKeySeqBackward(
     }
 }
 
-kernel void queryKeySeq4Backward(
+kernel void queryKeySeq4BackwardFloat(
     const device float * delta,
     const device float4 * query,
     constant uint * pNbHeads,
@@ -1121,7 +1121,7 @@ kernel void queryKeySeq4Backward(
     }
 }
 
-kernel void querySelfSeqForward(
+kernel void querySelfSeqForwardFloat(
     const device float * outsPrev,
     constant uint * pNbHeads,
     constant uint * pNbNeurons,
@@ -1191,7 +1191,7 @@ kernel void querySelfSeqForward(
     outs[offset] = tmp;
 }
 
-kernel void querySelfSeq4Forward(
+kernel void querySelfSeq4ForwardFloat(
     const device float4 * outsPrev,
     constant uint * pNbHeads,
     constant uint * pNbNeurons,
@@ -1261,7 +1261,7 @@ kernel void querySelfSeq4Forward(
     outs[offset] = tmp[0] + tmp[1] + tmp[2] + tmp[3];
 }
 
-kernel void querySelfQuerySeqBackward(
+kernel void querySelfQuerySeqBackwardFloat(
     const device float * outsPrev,
     const device float * delta,
     constant uint * pNbHeads,
@@ -1342,7 +1342,7 @@ kernel void querySelfQuerySeqBackward(
     }
 }
 
-kernel void querySelfQuerySeq4Backward(
+kernel void querySelfQuerySeq4BackwardFloat(
     const device float4 * outsPrev,
     const device float * delta,
     constant uint * pNbHeads,
@@ -1423,7 +1423,7 @@ kernel void querySelfQuerySeq4Backward(
     }
 }
 
-kernel void querySelfKeySeqBackward(
+kernel void querySelfKeySeqBackwardFloat(
     const device float * outsPrev,
     const device float * delta,
     constant uint * pNbHeads,
@@ -1504,7 +1504,7 @@ kernel void querySelfKeySeqBackward(
     }
 }
 
-kernel void querySelfKeySeq4Backward(
+kernel void querySelfKeySeq4BackwardFloat(
     const device float4 * outsPrev,
     const device float * delta,
     constant uint * pNbHeads,
@@ -1585,7 +1585,7 @@ kernel void querySelfKeySeq4Backward(
     }
 }
 
-kernel void softmaxSeqForward(
+kernel void softmaxSeqForwardFloat(
     const device float * outsPrev,
     constant uint * pNbHeads,
     constant uint * pNbNeurons,
@@ -1651,7 +1651,7 @@ kernel void softmaxSeqForward(
     outs[offset] = exp(outPrev - cMax) / sum1;
 }
 
-kernel void softmaxSeq4Forward(
+kernel void softmaxSeq4ForwardFloat(
     const device float4 * outsPrev,
     constant uint * pNbHeads,
     constant uint * pNbNeurons,
@@ -1723,7 +1723,7 @@ kernel void softmaxSeq4Forward(
     outs[offset] = exp(outPrev - cMax) / sum2;
 }
 
-kernel void softmaxSeqBackward(
+kernel void softmaxSeqBackwardFloat(
     const device float * outs,
     const device float * delta,
     constant uint * pNbHeads,
@@ -1789,7 +1789,7 @@ kernel void softmaxSeqBackward(
     }
 }
 
-kernel void softmaxSeq4Backward(
+kernel void softmaxSeq4BackwardFloat(
     const device float4 * outs,
     const device float4 * delta,
     constant uint * pNbHeads,
@@ -1857,7 +1857,7 @@ kernel void softmaxSeq4Backward(
     }
 }
 
-kernel void valueSeqForward(
+kernel void valueSeqForwardFloat(
     const device float * value,
     const device float * score,
     constant uint * pNbHeads,
@@ -1915,7 +1915,7 @@ kernel void valueSeqForward(
     outs[offset] = tmp;
 }
 
-kernel void valueSeq4Forward(
+kernel void valueSeq4ForwardFloat(
     const device float4 * value,
     const device float * score,
     constant uint * pNbHeads,
@@ -1973,7 +1973,7 @@ kernel void valueSeq4Forward(
     outs[offset] = tmp;
 }
 
-kernel void valueValueSeqBackward(
+kernel void valueValueSeqBackwardFloat(
     const device float * delta,
     const device float * score,
     constant uint * pNbHeads,
@@ -2042,7 +2042,7 @@ kernel void valueValueSeqBackward(
     }
 }
 
-kernel void valueValueSeq4Backward(
+kernel void valueValueSeq4BackwardFloat(
     const device float4 * delta,
     const device float * score,
     constant uint * pNbHeads,
@@ -2113,7 +2113,7 @@ kernel void valueValueSeq4Backward(
     }
 }
 
-kernel void valueScoreSeqBackward(
+kernel void valueScoreSeqBackwardFloat(
     const device float * delta,
     const device float * value,
     constant uint * pNbHeads,
@@ -2184,7 +2184,7 @@ kernel void valueScoreSeqBackward(
     }
 }
 
-kernel void valueScoreSeq4Backward(
+kernel void valueScoreSeq4BackwardFloat(
     const device float4 * delta,
     const device float4 * value,
     constant uint * pNbHeads,
@@ -2256,7 +2256,7 @@ kernel void valueScoreSeq4Backward(
     }
 }
 
-kernel void valueSelfSeqForward(
+kernel void valueSelfSeqForwardFloat(
     const device float * value,
     const device float * score,
     constant uint * pNbHeads,
@@ -2323,7 +2323,7 @@ kernel void valueSelfSeqForward(
     outs[offset] = tmp;
 }
 
-kernel void valueSelfSeq4Forward(
+kernel void valueSelfSeq4ForwardFloat(
     const device float4 * value,
     const device float * score,
     constant uint * pNbHeads,
@@ -2391,7 +2391,7 @@ kernel void valueSelfSeq4Forward(
     outs[offset] = tmp;
 }
 
-kernel void valueSelfValueSeqBackward(
+kernel void valueSelfValueSeqBackwardFloat(
     const device float * delta,
     const device float * score,
     constant uint * pNbHeads,
@@ -2459,7 +2459,7 @@ kernel void valueSelfValueSeqBackward(
     value[offsetValue] += tmp;
 }
 
-kernel void valueSelfValueSeq4Backward(
+kernel void valueSelfValueSeq4BackwardFloat(
     const device float4 * delta,
     const device float * score,
     constant uint * pNbHeads,
@@ -2528,7 +2528,7 @@ kernel void valueSelfValueSeq4Backward(
     value[offsetValue] += tmp;
 }
 
-kernel void valueSelfScoreSeqBackward(
+kernel void valueSelfScoreSeqBackwardFloat(
     const device float * delta,
     const device float * value,
     constant uint * pNbHeads,
@@ -2607,7 +2607,7 @@ kernel void valueSelfScoreSeqBackward(
     }
 }
 
-kernel void valueSelfScoreSeq4Backward(
+kernel void valueSelfScoreSeq4BackwardFloat(
     const device float4 * delta,
     const device float4 * value,
     constant uint * pNbHeads,
@@ -2687,7 +2687,7 @@ kernel void valueSelfScoreSeq4Backward(
     }
 }
 
-kernel void layerCAMSeqForward(
+kernel void layerCAMSeqForwardFloat(
     const device float * outsPrev,
     const device float * deltaPrev,
     constant uint * pNbNeuronsPrev,

@@ -8,7 +8,7 @@
 #include <metal_stdlib>
 using namespace metal;
 
-kernel void flForward(
+kernel void flForwardFloat(
     const device float * outsPrev,
     const device float * weights,
     const device float * biases,
@@ -56,7 +56,7 @@ kernel void flForward(
     outs[offset] = tmp;
 }
 
-kernel void flBackward(
+kernel void flBackwardFloat(
     const device float * delta,
     const device float * weights,
     constant uint * pNbNeurons,
@@ -113,7 +113,7 @@ kernel void flBackward(
     }
 }
 
-kernel void flBatchDerWeights(
+kernel void flBatchDerWeightsFloat(
     const device float * outsPrev,
     const device float * delta,
     constant uint * pNbNeurons,
@@ -170,7 +170,7 @@ kernel void flBatchDerWeights(
     }
 }
 
-kernel void flBatchDerBiases(
+kernel void flBatchDerBiasesFloat(
     const device float * delta,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
@@ -214,7 +214,7 @@ kernel void flBatchDerBiases(
     }
 }
 
-kernel void flDerWeights(
+kernel void flDerWeightsFloat(
     const device float * outsPrev,
     const device float * delta,
     constant uint * pNbNeurons,
@@ -261,7 +261,7 @@ kernel void flDerWeights(
     deltaWeights[offsetWeights] = tmp;
 }
 
-kernel void flDerBiases(
+kernel void flDerBiasesFloat(
     const device float * delta,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
@@ -294,7 +294,7 @@ kernel void flDerBiases(
     deltaWeights[offsetWeights] = deltaCur;
 }
 
-kernel void flReduceWeights(
+kernel void flReduceWeightsFloat(
     const device float * deltaWeights,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,

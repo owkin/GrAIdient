@@ -8,7 +8,7 @@
 #include <metal_stdlib>
 using namespace metal;
 
-kernel void computeInstanceNormConvμ(
+kernel void computeInstanceNormConvμFloat(
     const device float * tmps,
     constant uint * pNbChannels,
     constant uint * pNbBatch,
@@ -53,7 +53,7 @@ kernel void computeInstanceNormConvμ(
     μ[depth + nbChannels * elem] = sum / nbElems;
 }
 
-kernel void computeInstanceNormConvσ2(
+kernel void computeInstanceNormConvσ2Float(
     const device float * tmps,
     const device float * μ,
     constant uint * pNbChannels,
@@ -100,7 +100,7 @@ kernel void computeInstanceNormConvσ2(
     σ2[depth + nbChannels * elem] = sum / nbElems;
 }
 
-kernel void forwardInstanceNormConv(
+kernel void forwardInstanceNormConvFloat(
     const device float * β,
     const device float * Ɣ,
     const device float * μ,
@@ -150,7 +150,7 @@ kernel void forwardInstanceNormConv(
     tmps[offset] = Ɣ[depth] * xhat + β[depth];
 }
 
-kernel void forwardAdaIN(
+kernel void forwardAdaINFloat(
     const device float * outsPrev,
     const device float * styles,
     const device float * μ,
@@ -200,7 +200,7 @@ kernel void forwardAdaIN(
     outs[offset] = styles[depth] * xhat + styles[depth + nbChannels];
 }
 
-kernel void backwardWeightsInstanceNormConv(
+kernel void backwardWeightsInstanceNormConvFloat(
     const device float * delta,
     const device float * xHat,
     const device float * Ɣ,
@@ -274,7 +274,7 @@ kernel void backwardWeightsInstanceNormConv(
     }
 }
 
-kernel void backward2AdaIN(
+kernel void backward2AdaINFloat(
     const device float * delta,
     const device float * xHat,
     const device float * outStyles,
@@ -347,7 +347,7 @@ kernel void backward2AdaIN(
     }
 }
 
-kernel void backwardInstanceNormConv(
+kernel void backwardInstanceNormConvFloat(
     const device float * σ2,
     const device float * xHat,
     const device float * Ɣ,
@@ -401,7 +401,7 @@ kernel void backwardInstanceNormConv(
     delta[offset] = mult * (tmp1 - tmp2 - tmp3);
 }
 
-kernel void backward1AdaIN(
+kernel void backward1AdaINFloat(
     const device float * delta,
     const device float * σ2,
     const device float * xHat,

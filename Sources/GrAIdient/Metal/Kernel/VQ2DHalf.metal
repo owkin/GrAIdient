@@ -8,7 +8,7 @@
 #include <metal_stdlib>
 using namespace metal;
 
-kernel void vq2DForward(
+kernel void vq2DForwardHalf(
     const device half * outsPrev,
     const device half * weights,
     constant uint * pNbChannels,
@@ -83,7 +83,7 @@ kernel void vq2DForward(
     }
 }
 
-kernel void vq2DBackward(
+kernel void vq2DBackwardHalf(
     const device half * outsPrev,
     const device half * delta,
     const device half * weights,
@@ -160,7 +160,7 @@ kernel void vq2DBackward(
     }
 }
 
-kernel void vq2DBatchDerWeights(
+kernel void vq2DBatchDerWeightsHalf(
     const device half * outsPrev,
     const device half * weights,
     const device int * indices,
@@ -223,7 +223,7 @@ kernel void vq2DBatchDerWeights(
     grads[depth + nbChannels * k] += sum;
 }
 
-kernel void vq2DDerWeights(
+kernel void vq2DDerWeightsHalf(
     const device half * outsPrev,
     const device half * weights,
     const device int * indices,
@@ -286,7 +286,7 @@ kernel void vq2DDerWeights(
     deltaWeights[depth + nbChannels * k + K * nbChannels * elem] += sum;
 }
 
-kernel void vq2DReduceWeights(
+kernel void vq2DReduceWeightsHalf(
     const device half * deltaWeights,
     constant uint * pNbChannels,
     constant uint * pK,
@@ -336,7 +336,7 @@ kernel void vq2DReduceWeights(
     }
 }
 
-kernel void vq2DLoss(
+kernel void vq2DLossHalf(
     const device half * outsPrev,
     const device half * outs,
     const device int * indices,
@@ -391,7 +391,7 @@ kernel void vq2DLoss(
     losses[elem] = tmp;
 }
 
-kernel void vqLayerCAMMax2D(
+kernel void vqLayerCAMMax2DHalf(
      const device half * camLayer,
      constant uint * pNbChannels,
      constant uint * pDimensions,
@@ -440,7 +440,7 @@ kernel void vqLayerCAMMax2D(
         if (threadId[0] < stride &&
             (index + stride) < height * width)
         {
-            camShared[threadId[0]] = max(
+            camShared[threadId[0]] = maxHalf(
                 camShared[threadId[0] + stride],
                 camShared[threadId[0]]
             );
@@ -455,7 +455,7 @@ kernel void vqLayerCAMMax2D(
     }
 }
 
-kernel void vqGrad2DForward(
+kernel void vqGrad2DForwardHalf(
     const device half * outsPrev,
     const device half * camLayer,
     const device half * camMax,

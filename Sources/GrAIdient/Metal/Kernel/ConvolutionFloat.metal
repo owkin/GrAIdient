@@ -8,7 +8,7 @@
 #include <metal_stdlib>
 using namespace metal;
 
-kernel void convForward(
+kernel void convForwardFloat(
     const device float * outsPrev,
     const device float * weights,
     const device float * biases,
@@ -104,7 +104,7 @@ kernel void convForward(
     outs[offset] = tmp;
 }
 
-kernel void conv16Forward(
+kernel void conv16ForwardFloat(
     const device float * outsPrev,
     const device float * weights,
     const device float * biases,
@@ -206,7 +206,7 @@ kernel void conv16Forward(
     }
 }
 
-kernel void convBackward(
+kernel void convBackwardFloat(
     const device float * delta,
     const device float * weights,
     constant int * pStart,
@@ -313,7 +313,7 @@ kernel void convBackward(
     }
 }
 
-kernel void conv16Backward(
+kernel void conv16BackwardFloat(
     const device float * delta,
     const device float * weights,
     constant int * pStart,
@@ -428,7 +428,7 @@ kernel void conv16Backward(
     }
 }
 
-kernel void convBatchDerWeights(
+kernel void convBatchDerWeightsFloat(
     const device float * outsPrev,
     const device float * delta,
     constant int * pStart,
@@ -538,7 +538,7 @@ kernel void convBatchDerWeights(
     }
 }
 
-kernel void conv34BatchDerWeights(
+kernel void conv34BatchDerWeightsFloat(
     const device float4 * outsPrev,
     const device float4 * delta,
     constant uint * pNbChannels,
@@ -783,7 +783,7 @@ kernel void conv34BatchDerWeights(
     }
 }
 
-kernel void convBatchDerBiases(
+kernel void convBatchDerBiasesFloat(
     const device float * delta,
     constant uint * pNbChannels,
     constant uint * pDimensions,
@@ -838,7 +838,7 @@ kernel void convBatchDerBiases(
     }
 }
 
-kernel void convDerWeights(
+kernel void convDerWeightsFloat(
     const device float * outsPrev,
     const device float * delta,
     constant int * pStart,
@@ -938,7 +938,7 @@ kernel void convDerWeights(
     deltaWeights[offsetWeights] = tmp;
 }
 
-kernel void convDerBiases(
+kernel void convDerBiasesFloat(
     const device float * delta,
     constant uint * pNbChannels,
     constant uint * pDimensions,
@@ -982,7 +982,7 @@ kernel void convDerBiases(
     deltaWeights[offsetWeights] = tmp;
 }
 
-kernel void convReduceWeights(
+kernel void convReduceWeightsFloat(
     const device float * deltaWeights,
     constant uint * pNbChannels,
     constant uint * pNbChannelsPrev,

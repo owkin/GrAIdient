@@ -8,7 +8,7 @@
 #include <metal_stdlib>
 using namespace metal;
 
-kernel void sum1(
+kernel void sum1Half(
     const device half * ins,
     constant uint * pNbElems,
     device half * outs,
@@ -31,7 +31,7 @@ kernel void sum1(
     outs[id] = ins[id];
 }
 
-kernel void sum14(
+kernel void sum14Half(
     const device half4 * ins,
     constant uint * pNbElems,
     device half4 * outs,
@@ -54,7 +54,7 @@ kernel void sum14(
     outs[id] = ins[id];
 }
 
-kernel void sum2(
+kernel void sum2Half(
     const device half * ins,
     constant uint * pNbElems,
     device half * outs,
@@ -77,7 +77,7 @@ kernel void sum2(
     outs[id] += ins[id];
 }
 
-kernel void sum24(
+kernel void sum24Half(
     const device half4 * ins,
     constant uint * pNbElems,
     device half4 * outs,
@@ -100,7 +100,7 @@ kernel void sum24(
     outs[id] += ins[id];
 }
 
-kernel void multiplyForward(
+kernel void multiplyForwardHalf(
     const device half * outsPrev,
     constant uint * pNbElems,
     device half * outs,
@@ -123,7 +123,7 @@ kernel void multiplyForward(
     outs[id] *= outsPrev[id];
 }
 
-kernel void multiplyBackward(
+kernel void multiplyBackwardHalf(
     const device half * outs,
     const device half * delta,
     constant uint * pNbElems,

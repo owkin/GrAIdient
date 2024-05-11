@@ -440,7 +440,7 @@ kernel void vqLayerCAMMax2DHalf(
         if (threadId[0] < stride &&
             (index + stride) < height * width)
         {
-            camShared[threadId[0]] = maxHalf(
+            camShared[threadId[0]] = max(
                 camShared[threadId[0] + stride],
                 camShared[threadId[0]]
             );

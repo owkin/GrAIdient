@@ -370,7 +370,7 @@ kernel void vqLayerCAMMaxSeqFloat(
         if (threadId[0] < stride &&
             (index + stride) < sequence)
         {
-            camShared[threadId[0]] = maxFloat(
+            camShared[threadId[0]] = max(
                 camShared[threadId[0] + stride],
                 camShared[threadId[0]]
             );

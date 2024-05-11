@@ -986,7 +986,7 @@ kernel void linearScale2DBackwardFloat(
     }
 }
 
-float _getScaleValueFloat(
+float _getScaleValue(
     const uint i,
     const uint j,
     const uint dimension)

@@ -986,7 +986,7 @@ kernel void linearScale2DBackwardHalf(
     }
 }
 
-float _getScaleValueHalf(
+float _getScaleValue(
     const uint i,
     const uint j,
     const uint dimension)

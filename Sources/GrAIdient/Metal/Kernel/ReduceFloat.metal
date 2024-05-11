@@ -136,7 +136,7 @@ kernel void reduceMax64Float(
         uint index = threadId[0] + groupId[0] * threadsPerThreadgroup;
         if (threadId[0] < stride && (index + stride) < dim1)
         {
-            valShared[threadId[0]] = maxFloat(
+            valShared[threadId[0]] = max(
                  valShared[threadId[0] + stride],
                  valShared[threadId[0]]
              );

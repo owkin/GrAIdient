@@ -174,7 +174,7 @@ kernel void backwardSoftReLUFloat(
     delta[id] = delta[id] * derivative;
 }
 
-kernel void forwardSigmoid(
+kernel void forwardSigmoidFloat(
    constant uint * pNbElems,
    device float * tmps,
    device float * outs,
@@ -239,7 +239,7 @@ kernel void backwardSigmoidFloat(
     delta[id] = delta[id] * derivative;
 }
 
-kernel void forwardGELUApprox(
+kernel void forwardGELUApproxFloat(
    constant uint * pNbElems,
    device float * tmps,
    device float * outs,
@@ -350,7 +350,7 @@ float erf(float a)
     return r;
 }
 
-kernel void forwardGELU(
+kernel void forwardGELUFloat(
    constant uint * pNbElems,
    device float * tmps,
    device float * outs,

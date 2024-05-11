@@ -161,9 +161,10 @@ public class SumSeq: LayerMergeSeq
     {
         try checkStateCPU(batchSize: batchSize)
         
+        var buffersPrev = [[Float]]()
         for num in 0..<_layersPrev.count
         {
-            MetalKernel.get.download([(_layersPrev[num] as! LayerSeq).outs])
+            buffersPrev.append((_layersPrev[num] as! LayerSeq).outs.download())
         }
         
         let (nbSameElems, layersIndex, nbElems) = getMergedGraph()
@@ -206,8 +207,7 @@ public class SumSeq: LayerMergeSeq
             var sum = 0.0
             for num in 0..<_layersPrev.count
             {
-                let outsPrevPtr =
-                    (_layersPrev[num] as! LayerSeq).outs.shared.buffer
+                let outsPrevPtr = buffersPrev[num]
                 let neuronsPrev =
                     (_layersPrev[num] as! LayerSeq).neurons!
                 

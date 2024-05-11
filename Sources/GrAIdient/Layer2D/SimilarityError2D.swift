@@ -20,7 +20,7 @@ public class SimilarityError2D: LayerMerge2D
     /// Loss buffer in the GPU execution context.
     /// Shape ~ (batch, batch).
     ///
-    public internal(set) var loss: MetalSharedBuffer<UInt16>! = nil
+    public internal(set) var loss: FloatBuffer! = nil
     
     /// Batch size sum in the previous layers.
     public var mergedBatchSize: Int
@@ -151,8 +151,8 @@ public class SimilarityError2D: LayerMerge2D
     {
         if loss == nil
         {
-            loss = MetalSharedBuffer<UInt16>(
-                batchSize * batchSize,
+            loss = FloatBuffer(
+                nbElems: batchSize * batchSize,
                 deviceID: deviceID
             )
         }
@@ -255,9 +255,10 @@ public class SimilarityError2D: LayerMerge2D
     {
         try checkStateCPU(batchSize: mergedBatchSize)
         
+        var buffersPrev = [[Float]]()
         for num in 0..<_layersPrev.count
         {
-            MetalKernel.get.download([(_layersPrev[num] as! Layer2D).outs])
+            buffersPrev.append((_layersPrev[num] as! Layer2D).outs.download())
         }
         
         let (nbSameElems, layersIndex, nbElems) = getMergedGraph()
@@ -300,7 +301,7 @@ public class SimilarityError2D: LayerMerge2D
         for num in 0..<_layersPrev.count
         {
             let batchSize = _layersPrev[num].batchSize
-            let outsPrevPtr = (_layersPrev[num] as! Layer2D).outs.shared.buffer
+            let outsPrevPtr = buffersPrev[num]
             let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
             
             for batch in 0..<batchSize {

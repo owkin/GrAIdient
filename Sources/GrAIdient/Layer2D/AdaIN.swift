@@ -662,7 +662,7 @@ public class AdaIN: LayerMerge2D
     /// - Returns: The outputs.
     ///
     func getOutsPrev(
-        buffer: UnsafeMutableBufferPointer<UInt16>,
+        buffer: [Float],
         depth: Int,
         batch: Int) -> [Double]
     {
@@ -691,7 +691,7 @@ public class AdaIN: LayerMerge2D
     /// - Returns: The output.
     ///
     func getOutStyle(
-        buffer: UnsafeMutableBufferPointer<UInt16>,
+        buffer: [Float],
         depth: Int,
         batch: Int) -> Double
     {

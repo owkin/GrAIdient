@@ -164,9 +164,10 @@ public class Concat1Seq: LayerMergeSeq
     {
         try checkStateCPU(batchSize: batchSize)
         
+        var buffersPrev = [[Float]]()
         for num in 0..<_layersPrev.count
         {
-            MetalKernel.get.download([(_layersPrev[num] as! LayerSeq).outs])
+            buffersPrev.append((_layersPrev[num] as! LayerSeq).outs.download())
         }
         
         let (nbSameElems, layersIndex, nbElems) = getMergedGraph()
@@ -213,7 +214,7 @@ public class Concat1Seq: LayerMergeSeq
         for num in 0..<_layersPrev.count
         {
             let layerPrev = _layersPrev[num] as! LayerSeq
-            let outsPrevPtr = layerPrev.outs.shared.buffer
+            let outsPrevPtr = buffersPrev[num]
             let neuronsPrev = layerPrev.neurons!
             let sequence = layerPrev.sequence
             
@@ -595,9 +596,10 @@ public class Concat2Seq: LayerMergeSeq
     {
         try checkStateCPU(batchSize: batchSize)
         
+        var buffersPrev = [[Float]]()
         for num in 0..<_layersPrev.count
         {
-            MetalKernel.get.download([(_layersPrev[num] as! LayerSeq).outs])
+            buffersPrev.append((_layersPrev[num] as! LayerSeq).outs.download())
         }
         
         let (nbSameElems, layersIndex, nbElems) = getMergedGraph()
@@ -644,7 +646,7 @@ public class Concat2Seq: LayerMergeSeq
         for num in 0..<_layersPrev.count
         {
             let layerPrev = _layersPrev[num] as! LayerSeq
-            let outsPrevPtr = layerPrev.outs.shared.buffer
+            let outsPrevPtr = buffersPrev[num]
             let neuronsPrev = layerPrev.neurons!
             let nbNeurons = layerPrev.nbNeurons
             

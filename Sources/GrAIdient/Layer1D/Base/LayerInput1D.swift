@@ -105,9 +105,10 @@ open class LayerInput1D: Layer1D
         try checkStateForwardGPU(batchSize: batchSize)
         
         // Wait for previous loop to end to avoid race condition with
-        // didModifyRange in the following example:
+        // download in the following example:
         // FullyConnected.backwardWeightsGPU accesses layerPrev.outs.
-        _ = outs.download()
+        let shared = true
+        _ = outs.download(shared)
         
         var buffer = [Float](repeating: 0.0, count: batchSize * nbNeurons)
         for elem in 0..<batchSize
@@ -118,7 +119,7 @@ open class LayerInput1D: Layer1D
                 buffer[offset] = Float(data[elem][depth])
             }
         }
-        outs.initialize(array: &buffer)
+        outs.initialize(array: &buffer, shared: shared)
     }
     
     ///

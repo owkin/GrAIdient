@@ -206,15 +206,26 @@ public class FloatBuffer
     ///
     /// Retrieve Metal buffer content.
     ///
-    /// - Parameter start: Offset.
+    /// - Parameter shared: Whether to create a shared buffer or a private one.
     ///
-    public func download() -> [Float]
+    public func download(_ shared: Bool = false) -> [Float]
     {
         if GrAI.Precision.float16
         {
             if _float16 == nil
             {
-                fatalError("Use upload API to initialize buffer.")
+                if shared
+                {
+                    _float16 = MetalSharedBuffer<UInt16>(
+                        nbElems, deviceID: deviceID
+                    )
+                }
+                else
+                {
+                    _float16 = MetalPrivateBuffer<UInt16>(
+                        nbElems, deviceID: deviceID
+                    )
+                }
             }
             return getHalfBuffer(_float16!).array
         }
@@ -222,7 +233,18 @@ public class FloatBuffer
         {
             if _float == nil
             {
-                fatalError("Use upload API to initialize buffer.")
+                if shared
+                {
+                    _float = MetalSharedBuffer<Float>(
+                        nbElems, deviceID: deviceID
+                    )
+                }
+                else
+                {
+                    _float = MetalPrivateBuffer<Float>(
+                        nbElems, deviceID: deviceID
+                    )
+                }
             }
             return [Float](_float!.download())
         }

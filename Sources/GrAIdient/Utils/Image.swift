@@ -61,8 +61,8 @@ public class Image
             throw ImageError.MissingSpace
         }
         
-        imagesBuffer.initialize(true)
-        _ = imagesBuffer.download()
+        let shared = true
+        _ = imagesBuffer.download(shared)
         
         var buffer = [Float](
             repeating: 0.0,
@@ -91,7 +91,7 @@ public class Image
                 }
             }}
         }
-        imagesBuffer.initialize(array: &buffer, shared: true)
+        imagesBuffer.initialize(array: &buffer, shared: shared)
     }
     
     ///

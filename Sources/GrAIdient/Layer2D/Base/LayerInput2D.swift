@@ -137,9 +137,10 @@ open class LayerInput2D: Layer2D
         try checkStateForwardGPU(batchSize: batchSize)
         
         // Wait for previous loop to end to avoid race condition with
-        // didModifyRange in the following example:
+        // download in the following example:
         // Convolution.backwardWeightsGPU accesses layerPrev.outs.
-        _ = outs.download()
+        let shared = true
+        _ = outs.download(shared)
         
         var buffer = [Float](
             repeating: 0.0, count: batchSize * nbChannels * height * width
@@ -181,7 +182,7 @@ open class LayerInput2D: Layer2D
                 }}
             }
         }
-        outs.initialize(array: &buffer)
+        outs.initialize(array: &buffer, shared: shared)
     }
     
     ///

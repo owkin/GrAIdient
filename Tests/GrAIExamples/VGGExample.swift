@@ -396,23 +396,17 @@ final class VGGExample: XCTestCase
         let lastLayer: MSE1D = vgg.layers.last as! MSE1D
         
         // Initialize the ground truth once and for all.
-        let groundTruth = MetalSharedBuffer<UInt16>(_batchSize, deviceID: 0)
-        var buffer = [Float](repeating: 0.0, count: _batchSize)
+        let groundTruth = FloatBuffer(nbElems: _batchSize, deviceID: 0)
+        var gtBuffer = [Float](repeating: 0.0, count: _batchSize)
         for elem in 0..<_batchSize / 2
         {
-            buffer[elem] = 0.0
+            gtBuffer[elem] = 0.0
         }
         for elem in _batchSize / 2..<_batchSize
         {
-            buffer[elem] = 1.0
+            gtBuffer[elem] = 1.0
         }
-        setupHalfBuffer(
-            array: &buffer,
-            out: groundTruth,
-            start: 0,
-            nbElems: _batchSize,
-            deviceID: 0
-        )
+        groundTruth.initialize(array: &gtBuffer)
         
         let nbEpochs = 5
         for epoch in 0..<nbEpochs

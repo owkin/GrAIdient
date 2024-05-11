@@ -225,7 +225,7 @@ final class VGGBenchmark: XCTestCase
         let lastLayer: MSE1D = vgg.layers.last as! MSE1D
         
         // Initialize the ground truth once and for all.
-        let groundTruth = MetalSharedBuffer<UInt16>(_batchSize, deviceID: 0)
+        let groundTruth = FloatBuffer(nbElems: _batchSize, deviceID: 0)
         var gtBuffer = [Float](repeating: 0.0, count: _batchSize)
         for elem in 0..<_batchSize / 2
         {
@@ -235,17 +235,11 @@ final class VGGBenchmark: XCTestCase
         {
             gtBuffer[elem] = 1.0
         }
-        setupHalfBuffer(
-            array: &gtBuffer,
-            out: groundTruth,
-            start: 0,
-            nbElems: _batchSize,
-            deviceID: 0
-        )
+        groundTruth.initialize(array: &gtBuffer)
         
         // Initialize data once and for all.
-        let data = FloatBuffer(nbElems: 
-            _batchSize * 3 * _size * _size, deviceID: 0
+        let data = FloatBuffer(
+            nbElems: _batchSize * 3 * _size * _size, deviceID: 0
         )
         var dataBuffer = [Float](
             repeating: 0.0, count: _batchSize * 3 * _size * _size
@@ -254,13 +248,7 @@ final class VGGBenchmark: XCTestCase
         {
             dataBuffer[i] = Float.random(in: -1..<1)
         }
-        setupHalfBuffer(
-            array: &dataBuffer,
-            out: data,
-            start: 0,
-            nbElems: _batchSize * 3 * _size * _size,
-            deviceID: 0
-        )
+        data.initialize(array: &dataBuffer)
         
         let nbEpochs = 1
         let nbSteps = 20
@@ -342,7 +330,7 @@ final class VGGBenchmark: XCTestCase
         let lastLayer: MSE1D = vgg.layers.last as! MSE1D
         
         // Initialize the ground truth once and for all.
-        let groundTruth = MetalSharedBuffer<UInt16>(_batchSize, deviceID: 0)
+        let groundTruth = FloatBuffer(nbElems: _batchSize, deviceID: 0)
         var gtBuffer = [Float](repeating: 0.0, count: _batchSize)
         for elem in 0..<_batchSize / 2
         {
@@ -352,17 +340,11 @@ final class VGGBenchmark: XCTestCase
         {
             gtBuffer[elem] = 1.0
         }
-        setupHalfBuffer(
-            array: &gtBuffer,
-            out: groundTruth,
-            start: 0,
-            nbElems: _batchSize,
-            deviceID: 0
-        )
+        groundTruth.initialize(array: &gtBuffer)
         
         // Initialize data once and for all.
-        let data = FloatBuffer(nbElems: 
-            _batchSize * 3 * _size * _size, deviceID: 0
+        let data = FloatBuffer(
+            nbElems: _batchSize * 3 * _size * _size, deviceID: 0
         )
         var dataBuffer = [Float](
             repeating: 0.0, count: _batchSize * 3 * _size * _size
@@ -371,13 +353,7 @@ final class VGGBenchmark: XCTestCase
         {
             dataBuffer[i] = Float.random(in: -1..<1)
         }
-        setupHalfBuffer(
-            array: &dataBuffer,
-            out: data,
-            start: 0,
-            nbElems: _batchSize * 3 * _size * _size,
-            deviceID: 0
-        )
+        data.initialize(array: &dataBuffer)
         
         let nbEpochs = 2
         let nbSteps = 20
@@ -407,9 +383,7 @@ final class VGGBenchmark: XCTestCase
                 try! vgg.forward()
                 
                 // Get predictions.
-                var preds = [Float](
-                    getHalfBuffer(lastLayer.outs).array[0..<_batchSize]
-                )
+                var preds = [Float](lastLayer.outs.download()[0..<_batchSize])
                 preds = preds.map { 1.0 / (1.0 + exp(-$0)) } // Sigmoid.
                 
                 let end2 = Date()

@@ -51,7 +51,7 @@ public class Image
     ///
     public static func loadImages(
         imagesURL: [URL],
-        imagesBuffer: MetalBuffer<UInt16>,
+        imagesBuffer: FloatBuffer,
         width: Int,
         height: Int) throws
     {
@@ -61,7 +61,9 @@ public class Image
             throw ImageError.MissingSpace
         }
         
+        imagesBuffer.initialize(true)
         _ = imagesBuffer.download()
+        
         var buffer = [Float](
             repeating: 0.0,
             count: batchSize * 3 * height * width
@@ -89,14 +91,7 @@ public class Image
                 }
             }}
         }
-        
-        setupHalfBuffer(
-            array: &buffer,
-            out: imagesBuffer,
-            start: 0,
-            nbElems: batchSize * 3 * height * width,
-            deviceID: imagesBuffer.deviceID
-        )
+        imagesBuffer.initialize(array: &buffer, shared: true)
     }
     
     ///
@@ -112,11 +107,11 @@ public class Image
     /// - Returns: The list of images as list of pixels.
     ///
     public static func extractPixels(
-        _ metalBuffer: MetalBuffer<UInt16>,
+        _ metalBuffer: FloatBuffer,
         width: Int,
         height: Int) -> [[UInt8]]
     {
-        let buffer = getHalfBuffer(metalBuffer).array
+        let buffer = metalBuffer.download()
         let nbImages = metalBuffer.nbElems / (width * height * 3)
         
         var images = [[Float]]()

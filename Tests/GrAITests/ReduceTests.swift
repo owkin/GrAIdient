@@ -11,7 +11,7 @@ import GrAIdient
 /// Test reduce sum kernel.
 class ReduceSumTests: XCTestCase
 {
-    var _buffer: MetalSharedBuffer<UInt16>! = nil
+    var _buffer: FloatBuffer! = nil
     var _array = [Float]()
     
     override func setUp()
@@ -22,7 +22,7 @@ class ReduceSumTests: XCTestCase
     private func _testBuffer(dim1: Int, dim2: Int)
     {
         _array = [Float](repeating: 0.0, count: dim1 * dim2)
-        _buffer = MetalSharedBuffer(dim1 * dim2, deviceID: 0)
+        _buffer = FloatBuffer(nbElems: dim1 * dim2, deviceID: 0)
         
         for elem1 in 0..<dim1 {
         for elem2 in 0..<dim2
@@ -31,14 +31,7 @@ class ReduceSumTests: XCTestCase
             let value = Float.random(in: 0..<1)
             _array[offset] = value
         }}
-        
-        setupHalfBuffer(
-            array: &_array,
-            out: _buffer,
-            start: 0,
-            nbElems: dim1 * dim2,
-            deviceID: 0
-        )
+        _buffer.initialize(array: &_array)
         
         var resultsCPU = [Float]()
         for elem2 in 0..<dim2
@@ -59,7 +52,7 @@ class ReduceSumTests: XCTestCase
             deviceID: 0
         )
         
-        let resultsGPU = getHalfBuffer(_buffer).array
+        let resultsGPU = _buffer.download()
         for (resultCPU, resultGPU) in zip(resultsCPU, resultsGPU)
         {
             let diffPercent =
@@ -100,7 +93,7 @@ class ReduceSumTests: XCTestCase
 /// Test reduce max kernel.
 class ReduceMaxTests: XCTestCase
 {
-    var _buffer: MetalSharedBuffer<UInt16>! = nil
+    var _buffer: FloatBuffer! = nil
     var _array = [Float]()
     
     override func setUp()
@@ -111,7 +104,7 @@ class ReduceMaxTests: XCTestCase
     private func _testBuffer(dim1: Int, dim2: Int)
     {
         _array = [Float](repeating: 0.0, count: dim1 * dim2)
-        _buffer = MetalSharedBuffer(dim1 * dim2, deviceID: 0)
+        _buffer = FloatBuffer(nbElems: dim1 * dim2, deviceID: 0)
         
         for elem1 in 0..<dim1 {
         for elem2 in 0..<dim2
@@ -120,14 +113,7 @@ class ReduceMaxTests: XCTestCase
             let value = Float.random(in: 0..<1)
             _array[offset] = value
         }}
-        
-        setupHalfBuffer(
-            array: &_array,
-            out: _buffer,
-            start: 0,
-            nbElems: dim1 * dim2,
-            deviceID: 0
-        )
+        _buffer.initialize(array: &_array)
         
         var resultsCPU = [Float]()
         for elem2 in 0..<dim2
@@ -148,7 +134,7 @@ class ReduceMaxTests: XCTestCase
             deviceID: 0
         )
         
-        let resultsGPU = getHalfBuffer(_buffer).array
+        let resultsGPU = _buffer.download()
         for (resultCPU, resultGPU) in zip(resultsCPU, resultsGPU)
         {
             let diffPercent =

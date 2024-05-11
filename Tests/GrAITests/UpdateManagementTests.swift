@@ -221,11 +221,11 @@ class UpdateManagementTests: XCTestCase
             deviceID: DEVICE_ID
         )
         
-        let groundTruth = MetalSharedBuffer<UInt16>(
-            1, deviceID: DEVICE_ID
+        let groundTruth = FloatBuffer(
+            nbElems: 1, deviceID: DEVICE_ID
         )
-        groundTruth.buffer[0] = 0
-        MetalKernel.get.upload([groundTruth])
+        var buffer: [Float] = [0.0]
+        groundTruth.initialize(array: &buffer)
         
         let inputData1: [[Float]] = [[0.0]]
         let inputData2: [[Float]] = [[1.0]]
@@ -610,11 +610,11 @@ class UpdateManagementTests: XCTestCase
             deviceID: DEVICE_ID
         )
         
-        let groundTruth = MetalSharedBuffer<UInt16>(
-            1, deviceID: DEVICE_ID
+        let groundTruth = FloatBuffer(
+            nbElems: 1, deviceID: DEVICE_ID
         )
-        groundTruth.buffer[0] = 0
-        MetalKernel.get.upload([groundTruth])
+        var buffer: [Float] = [0.0]
+        groundTruth.initialize(array: &buffer)
         
         let inputData1: [Float] = [0.0]
         let inputData2: [Float] = [1.0]

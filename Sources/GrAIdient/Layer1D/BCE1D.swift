@@ -207,7 +207,7 @@ public class BCE1D: LayerOutput1D
     /// - Returns: The loss value.
     ///
     public func getLossGPU(
-        _ groundTruth: MetalBuffer<UInt16>,
+        _ groundTruth: FloatBuffer,
         batchSize: Int,
         nbNeurons: Int) throws -> Float
     {
@@ -234,7 +234,7 @@ public class BCE1D: LayerOutput1D
         command.enqueue()
         
         var loss: Float = 0.0
-        let lossPtr = getHalfBuffer(self.loss).array
+        let lossPtr = self.loss.download()
         for i in 0..<batchSize
         {
             loss += lossPtr[i]
@@ -366,7 +366,7 @@ public class BCE1D: LayerOutput1D
     ///     - nbNeurons: Number of neurons.
     ///
     public func lossDerivativeGPU(
-        _ groundTruth: MetalBuffer<UInt16>,
+        _ groundTruth: FloatBuffer,
         batchSize: Int,
         nbNeurons: Int) throws
     {

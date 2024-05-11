@@ -589,7 +589,7 @@ public class AdaptiveAvgPool2D: Layer2D
                 command = metalKernel.createCommand("reset", deviceID: deviceID)
                 
                 command.setBytes(pNbElems, atIndex: 0)
-                command.setBuffer(_nbElems.metal(), atIndex: 1)
+                command.setBuffer(_nbElems.metal, atIndex: 1)
                 
                 command.dispatchThreads(nbElems)
                 command.enqueue()
@@ -613,7 +613,7 @@ public class AdaptiveAvgPool2D: Layer2D
                 command.setBytes(pDimensions, atIndex: 2)
                 command.setBytes(pDimensionsPrev, atIndex: 3)
                 command.setBytes(pNbBatch, atIndex: 4)
-                command.setBuffer(_nbElems.metal(), atIndex: 5)
+                command.setBuffer(_nbElems.metal, atIndex: 5)
                 command.setBuffer(outs.metal(), atIndex: 6)
                 
                 command.dispatchThreads(
@@ -797,7 +797,7 @@ public class AdaptiveAvgPool2D: Layer2D
                     "adaptiveAvgPoolBackward2", deviceID: deviceID
                 )
                 command.setBuffer(delta.metal(), atIndex: 0)
-                command.setBuffer(_nbElems.metal(), atIndex: 1)
+                command.setBuffer(_nbElems.metal, atIndex: 1)
                 command.setBytes(pNbChannels, atIndex: 2)
                 command.setBytes(pDimensions, atIndex: 3)
                 command.setBytes(pDimensionsPrev, atIndex: 4)

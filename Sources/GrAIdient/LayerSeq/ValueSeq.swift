@@ -223,11 +223,6 @@ public class ValueSeq: LayerMergeSeq
     {
         try checkStateCPU(batchSize: batchSize)
         
-        for num in 0..<_layersPrev.count
-        {
-            MetalKernel.get.download([(_layersPrev[num] as! LayerSeq).outs])
-        }
-        
         let (nbSameElems, layersIndex, nbElems) = getMergedGraph()
         
         var nbGC = nbSameElems
@@ -268,10 +263,8 @@ public class ValueSeq: LayerMergeSeq
             neurons.get(seqQ, depth)!.gc[batch][elem].out = sum
         }}}}}
         
-        let valueBuffer =
-            (_layersPrev[0] as! LayerSeq).outs.shared.buffer
-        let scoreBuffer =
-            (_layersPrev[1] as! LayerSeq).outs.shared.buffer
+        let valueBuffer = (_layersPrev[0] as! LayerSeq).outs.download()
+        let scoreBuffer = (_layersPrev[1] as! LayerSeq).outs.download()
         
         for batch in 0..<batchSize {
         for head in 0..<_nbHeads {
@@ -797,11 +790,6 @@ public class ValueSelfSeq: LayerMergeSeq
     {
         try checkStateCPU(batchSize: batchSize)
         
-        for num in 0..<_layersPrev.count
-        {
-            MetalKernel.get.download([(_layersPrev[num] as! LayerSeq).outs])
-        }
-        
         let (nbSameElems, layersIndex, nbElems) = getMergedGraph()
         
         var nbGC = nbSameElems
@@ -847,10 +835,8 @@ public class ValueSelfSeq: LayerMergeSeq
             neurons.get(seqQ, depth)!.gc[batch][elem].out = sum
         }}}}}
         
-        let valueBuffer =
-            (_layersPrev[0] as! LayerSeq).outs.shared.buffer
-        let scoreBuffer =
-            (_layersPrev[1] as! LayerSeq).outs.shared.buffer
+        let valueBuffer = (_layersPrev[0] as! LayerSeq).outs.download()
+        let scoreBuffer = (_layersPrev[1] as! LayerSeq).outs.download()
         
         for batch in 0..<batchSize {
         for head in 0..<_nbHeads {

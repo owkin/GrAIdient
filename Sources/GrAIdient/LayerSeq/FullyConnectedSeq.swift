@@ -641,11 +641,8 @@ public class FullyConnectedSeq: ActivationSeq,
                 )
             }}
             
-            MetalKernel.get.download([_wBuffers.w_p!, _bBuffers.w_p!])
-            MetalKernel.get.download([layerPrev.outs])
-            
-            let weightsPtr = _wBuffers.w_p!.shared.buffer
-            let biasesPtr = _bBuffers.w_p!.shared.buffer
+            let weightsPtr = _wBuffers.w.download()
+            let biasesPtr = _bBuffers.w.download()
             
             let neuronsPrev = layerPrev.neurons!
             let nbNeuronsPrev = layerPrev.nbNeurons
@@ -670,7 +667,7 @@ public class FullyConnectedSeq: ActivationSeq,
                 }
             }}}
             
-            let outsPrevPtr = layerPrev.outs.shared.buffer
+            let outsPrevPtr = layerPrev.outs.download()
             
             for batch in 0..<batchSize {
             for seq in 0..<sequence
@@ -1195,8 +1192,7 @@ public class FullyConnectedSeq: ActivationSeq,
         }
         
         var deltaWeights = [T]()
-        MetalKernel.get.download([_wDeltaWeights])
-        var deltaWeightsPtr = _wDeltaWeights.shared.buffer
+        var deltaWeightsPtr = _wDeltaWeights.download()
         
         let offsetStart = elem * nbNeurons * weightWidth
         for depth in 0..<nbNeurons {
@@ -1211,8 +1207,7 @@ public class FullyConnectedSeq: ActivationSeq,
         
         if _updateBiases
         {
-            MetalKernel.get.download([_bDeltaWeights])
-            deltaWeightsPtr = _bDeltaWeights.shared.buffer
+            deltaWeightsPtr = _bDeltaWeights.download()
             
             for depth in 0..<nbNeurons
             {
@@ -1267,8 +1262,7 @@ public class FullyConnectedSeq: ActivationSeq,
         }
         
         var deltaWeights = [T]()
-        MetalKernel.get.download([_wBuffers.g_p!])
-        var deltaWeightsPtr = _wBuffers.g_p!.shared.buffer
+        var deltaWeightsPtr = _wBuffers.g.download()
         
         for i in 0..<_wBuffers.nbElems
         {
@@ -1276,8 +1270,7 @@ public class FullyConnectedSeq: ActivationSeq,
         }
         if _updateBiases
         {
-            MetalKernel.get.download([_bBuffers.g_p!])
-            deltaWeightsPtr = _bBuffers.g_p!.shared.buffer
+            deltaWeightsPtr = _bBuffers.g.download()
             
             for i in 0..<_bBuffers.nbElems
             {

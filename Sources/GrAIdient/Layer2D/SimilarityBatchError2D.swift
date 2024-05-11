@@ -126,7 +126,7 @@ public class SimilarityBatchError2D: LayerOutput2D
     ///     - width: Width of each channel.
     ///
     public override func checkGroundTruthGPU(
-        _ groundTruth: MetalBuffer<UInt16>,
+        _ groundTruth: FloatBuffer,
         batchSize: Int,
         nbChannels: Int, height: Int, width: Int) throws
     {
@@ -144,8 +144,8 @@ public class SimilarityBatchError2D: LayerOutput2D
     {
         if loss == nil
         {
-            loss = MetalSharedBuffer<UInt16>(
-                batchSize * batchSize,
+            loss = FloatBuffer(
+                nbElems: batchSize * batchSize,
                 deviceID: deviceID
             )
         }
@@ -260,7 +260,7 @@ public class SimilarityBatchError2D: LayerOutput2D
         command.enqueue()
         
         var loss: Float = 0.0
-        let lossPtr = getHalfBuffer(self.loss).array
+        let lossPtr = self.loss.download()
         for elem1 in 0..<batchSize {
         for elem2 in 0..<batchSize
         {

@@ -22,7 +22,7 @@ public class Multiply2D: LayerMerge2D
     /// List of output buffers for GPU usage.
     /// Shape ~ (batch, nbChannels, height, width).
     ///
-    var _otherOuts2: [MetalBuffer<UInt16>] = []
+    var _otherOuts2: [FloatBuffer] = []
     
     ///
     /// Create a layer with a 2D shape neural structure.

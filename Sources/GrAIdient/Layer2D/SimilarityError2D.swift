@@ -624,7 +624,7 @@ public class SimilarityError2D: LayerMerge2D
         command.enqueue()
         
         var loss: Float = 0.0
-        let lossPtr = getHalfBuffer(self.loss).array
+        let lossPtr = self.loss.download()
         for elem1 in 0..<mergedBatchSize {
         for elem2 in 0..<mergedBatchSize
         {

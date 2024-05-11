@@ -422,7 +422,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
     ///     - width: Width of each channel.
     ///
     public override func checkGroundTruthGPU(
-        _ groundTruth: MetalBuffer<UInt16>,
+        _ groundTruth: FloatBuffer,
         batchSize: Int,
         nbChannels: Int, height: Int, width: Int) throws
     {
@@ -528,7 +528,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
             command.setBytes(pK, atIndex: 4)
             command.setBytes(pNbBatch, atIndex: 5)
             command.setBuffer(outs.metal(), atIndex: 6)
-            command.setBuffer(indices.metal(), atIndex: 7)
+            command.setBuffer(indices.metal, atIndex: 7)
             
             command.dispatchThreads(
                 width: height * width,
@@ -659,7 +659,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
             command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
             command.setBuffer(delta.metal(), atIndex: 1)
             command.setBuffer(_wBuffers.w.metal(), atIndex: 2)
-            command.setBuffer(indices.metal(), atIndex: 3)
+            command.setBuffer(indices.metal, atIndex: 3)
             command.setBytes(pNbChannels, atIndex: 4)
             command.setBytes(pDimensions, atIndex: 5)
             command.setBytes(pK, atIndex: 6)
@@ -715,7 +715,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
                 )
                 command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
                 command.setBuffer(_wBuffers.w.metal(), atIndex: 1)
-                command.setBuffer(indices.metal(), atIndex: 2)
+                command.setBuffer(indices.metal, atIndex: 2)
                 command.setBytes(pNbChannels, atIndex: 3)
                 command.setBytes(pDimensions, atIndex: 4)
                 command.setBytes(pK, atIndex: 5)
@@ -748,7 +748,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
                 )
                 command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
                 command.setBuffer(_wBuffers.w.metal(), atIndex: 1)
-                command.setBuffer(indices.metal(), atIndex: 2)
+                command.setBuffer(indices.metal, atIndex: 2)
                 command.setBytes(pNbChannels, atIndex: 3)
                 command.setBytes(pDimensions, atIndex: 4)
                 command.setBytes(pK, atIndex: 5)
@@ -838,7 +838,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
         )
         command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
         command.setBuffer(outs.metal(), atIndex: 1)
-        command.setBuffer(indices.metal(), atIndex: 2)
+        command.setBuffer(indices.metal, atIndex: 2)
         command.setBytes(pNbChannels, atIndex: 3)
         command.setBytes(pDimensions, atIndex: 4)
         command.setBytes(pNbBatch, atIndex: 5)
@@ -848,7 +848,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
         command.enqueue()
         
         var loss: Float = 0.0
-        let lossPtr = getHalfBuffer(self.loss).array
+        let lossPtr = self.loss.download()
         for i in 0..<batchSize
         {
             loss += lossPtr[i]
@@ -1352,7 +1352,7 @@ public class VQGrad2D: VQ2D
             command.setBytes(pMagnitudeCoeff, atIndex: 7)
             command.setBytes(pNbBatch, atIndex: 8)
             command.setBuffer(outs.metal(), atIndex: 9)
-            command.setBuffer(indices.metal(), atIndex: 10)
+            command.setBuffer(indices.metal, atIndex: 10)
             
             command.dispatchThreads(
                 width: height * width,

@@ -23,7 +23,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
     /// Loss buffer in the GPU execution context.
     /// Shape ~ (batch,).
     ///
-    public internal(set) var loss: MetalSharedBuffer<UInt16>! = nil
+    public internal(set) var loss: FloatBuffer! = nil
     ///
     /// Indices of maximal elements.
     /// Shape ~ (batch, seq).
@@ -368,7 +368,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
     {
         if loss == nil
         {
-            loss = MetalSharedBuffer<UInt16>(batchSize, deviceID: deviceID)
+            loss = FloatBuffer(nbElems: batchSize, deviceID: deviceID)
         }
         else if batchSize <= 0 || batchSize > loss.nbElems
         {
@@ -454,7 +454,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
             command.setBytes(pNbBatch, atIndex: 4)
             command.setBytes(pSequence, atIndex: 5)
             command.setBuffer(outs.metal(), atIndex: 6)
-            command.setBuffer(indices.metal(), atIndex: 7)
+            command.setBuffer(indices.metal, atIndex: 7)
             
             command.dispatchThreads(
                 width: sequence,
@@ -580,7 +580,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
             command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
             command.setBuffer(delta.metal(), atIndex: 1)
             command.setBuffer(_wBuffers.w.metal(), atIndex: 2)
-            command.setBuffer(indices.metal(), atIndex: 3)
+            command.setBuffer(indices.metal, atIndex: 3)
             command.setBytes(pNbNeurons, atIndex: 4)
             command.setBytes(pK, atIndex: 5)
             command.setBytes(pBeta, atIndex: 6)
@@ -636,7 +636,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
                 )
                 command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
                 command.setBuffer(_wBuffers.w.metal(), atIndex: 1)
-                command.setBuffer(indices.metal(), atIndex: 2)
+                command.setBuffer(indices.metal, atIndex: 2)
                 command.setBytes(pNbNeurons, atIndex: 3)
                 command.setBytes(pK, atIndex: 4)
                 command.setBytes(pCoeff, atIndex: 5)
@@ -669,7 +669,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
                 )
                 command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
                 command.setBuffer(_wBuffers.w.metal(), atIndex: 1)
-                command.setBuffer(indices.metal(), atIndex: 2)
+                command.setBuffer(indices.metal, atIndex: 2)
                 command.setBytes(pNbNeurons, atIndex: 3)
                 command.setBytes(pK, atIndex: 4)
                 command.setBytes(pCoeff, atIndex: 5)
@@ -757,7 +757,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
         )
         command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
         command.setBuffer(outs.metal(), atIndex: 1)
-        command.setBuffer(indices.metal(), atIndex: 2)
+        command.setBuffer(indices.metal, atIndex: 2)
         command.setBytes(pNbNeurons, atIndex: 3)
         command.setBytes(pNbBatch, atIndex: 4)
         command.setBytes(pSequence, atIndex: 5)
@@ -767,7 +767,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
         command.enqueue()
         
         var loss: Float = 0.0
-        let lossPtr = getHalfBuffer(self.loss).array
+        let lossPtr = self.loss.download()
         for i in 0..<batchSize
         {
             loss += lossPtr[i]
@@ -1267,7 +1267,7 @@ public class VQGradSeq: VQSeq
             command.setBytes(pNbBatch, atIndex: 7)
             command.setBytes(pSequence, atIndex: 8)
             command.setBuffer(outs.metal(), atIndex: 9)
-            command.setBuffer(indices.metal(), atIndex: 10)
+            command.setBuffer(indices.metal, atIndex: 10)
             
             command.dispatchThreads(
                 width: sequence,

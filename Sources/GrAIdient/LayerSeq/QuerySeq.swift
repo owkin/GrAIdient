@@ -220,11 +220,6 @@ public class QuerySeq: LayerMergeSeq
     {
         try checkStateCPU(batchSize: batchSize)
         
-        for num in 0..<_layersPrev.count
-        {
-            MetalKernel.get.download([(_layersPrev[num] as! LayerSeq).outs])
-        }
-        
         let (nbSameElems, layersIndex, nbElems) = getMergedGraph()
         
         var nbGC = nbSameElems
@@ -265,10 +260,8 @@ public class QuerySeq: LayerMergeSeq
                 sum / sqrt(Double(size))
         }}}}}
         
-        let queryBuffer =
-            (_layersPrev[0] as! LayerSeq).outs.shared.buffer
-        let keyBuffer =
-            (_layersPrev[1] as! LayerSeq).outs.shared.buffer
+        let queryBuffer = (_layersPrev[0] as! LayerSeq).outs.download()
+        let keyBuffer = (_layersPrev[1] as! LayerSeq).outs.download()
         
         for batch in 0..<batchSize {
         for head in 0..<_nbHeads {

@@ -381,7 +381,7 @@ public class MaxPool2D: Layer2D
             command.setBytes(pDimensionsPrev, atIndex: 5)
             command.setBytes(pNbBatch, atIndex: 6)
             command.setBuffer(outs.metal(), atIndex: 7)
-            command.setBuffer(_indicesMax.metal(), atIndex: 8)
+            command.setBuffer(_indicesMax.metal, atIndex: 8)
             
             command.dispatchThreads(
                 width: width * nbChannels,
@@ -465,7 +465,7 @@ public class MaxPool2D: Layer2D
                 "maxPoolBackward", deviceID: deviceID
             )
             command.setBuffer(delta.metal(), atIndex: 0)
-            command.setBuffer(_indicesMax.metal(), atIndex: 1)
+            command.setBuffer(_indicesMax.metal, atIndex: 1)
             command.setBytes(pStart, atIndex: 2)
             command.setBytes(pStride, atIndex: 3)
             command.setBytes(pNbChannels, atIndex: 4)

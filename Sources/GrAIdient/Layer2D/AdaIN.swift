@@ -362,10 +362,9 @@ public class AdaIN: LayerMerge2D
         
         let layerFirst = _layersPrev.first as! Layer2D
         let layerLast = _layersPrev.last as! Layer1D
-        MetalKernel.get.download([layerFirst.outs, layerLast.outs])
         
-        let bufferOuts = layerFirst.outs.shared.buffer
-        let bufferStyles = layerLast.outs.shared.buffer
+        let bufferOuts = layerFirst.outs.download()
+        let bufferStyles = layerLast.outs.download()
         
         let (nbSameElems, layersIndex, nbElems) = getMergedGraph()
         

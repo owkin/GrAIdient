@@ -397,7 +397,7 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
     ///     - width: Width of each channel.
     ///
     public func setDataGPU(
-        _ data: MetalPrivateBuffer<UInt16>,
+        _ data: FloatBuffer,
         batchSize: Int,
         nbChannels: Int, height: Int, width: Int) throws
     {

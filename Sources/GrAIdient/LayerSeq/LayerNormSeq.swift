@@ -459,8 +459,7 @@ public class LayerNormSeq: ActivationSeq, LayerUpdate, LayerWithActivation
                 }
             }}}
             
-            MetalKernel.get.download([layerPrev.outs])
-            let outsPrevPtr = layerPrev.outs.shared.buffer
+            let outsPrevPtr = layerPrev.outs.download()
             
             // Prepare GC for norm weights: Ɣ and β.
             for batch in 0..<batchSize {

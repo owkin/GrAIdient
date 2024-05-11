@@ -201,7 +201,7 @@ public class LinearError1D: LayerOutput1D
     /// - Returns: The loss value.
     ///
     public func getLossGPU(
-        _ groundTruth: MetalBuffer<UInt16>,
+        _ groundTruth: FloatBuffer,
         batchSize: Int) throws -> Float
     {
         try checkLossGPU(batchSize: batchSize)
@@ -226,7 +226,7 @@ public class LinearError1D: LayerOutput1D
         command.enqueue()
         
         var loss: Float = 0.0
-        let lossPtr = getHalfBuffer(self.loss).array
+        let lossPtr = self.loss.download()
         for i in 0..<batchSize
         {
             loss += lossPtr[i]

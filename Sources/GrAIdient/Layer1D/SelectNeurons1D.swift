@@ -251,8 +251,8 @@ public class SelectNeurons1D: Layer1D
             command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
             command.setBytes(pNbNeurons, atIndex: 1)
             command.setBytes(pNbNeuronsPrev, atIndex: 2)
-            command.setBuffer(_neuronsBuffer.metal(), atIndex: 3)
-            command.setBuffer(_coeffsBuffer.metal(), atIndex: 4)
+            command.setBuffer(_neuronsBuffer.metal, atIndex: 3)
+            command.setBuffer(_coeffsBuffer.metal, atIndex: 4)
             command.setBytes(pNbBatch, atIndex: 5)
             command.setBuffer(outs.metal(), atIndex: 6)
             
@@ -328,8 +328,8 @@ public class SelectNeurons1D: Layer1D
             command.setBuffer(delta.metal(), atIndex: 0)
             command.setBytes(pNbNeurons, atIndex: 1)
             command.setBytes(pNbNeuronsPrev, atIndex: 2)
-            command.setBuffer(_neuronsBuffer.metal(), atIndex: 3)
-            command.setBuffer(_coeffsBuffer.metal(), atIndex: 4)
+            command.setBuffer(_neuronsBuffer.metal, atIndex: 3)
+            command.setBuffer(_coeffsBuffer.metal, atIndex: 4)
             command.setBytes(pNbBatch, atIndex: 5)
             command.setBuffer(layerPrev.delta.metal(), atIndex: 6)
             

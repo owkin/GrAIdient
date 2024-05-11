@@ -403,8 +403,7 @@ public class Constant2D: Layer2D, LayerResize, LayerUpdate
             neurons[depth].get(i, j)!.initGC(batchSize: batchSize, nbGC: newGC)
         }}}
         
-        MetalKernel.get.download([_wBuffers.w_p!])
-        let weightsPtr = _wBuffers.w_p!.shared.buffer
+        let weightsPtr = _wBuffers.w.download()
     
         for batch in 0..<batchSize {
         for DEPTH in 0..<nbChannels {
@@ -612,8 +611,7 @@ public class Constant2D: Layer2D, LayerResize, LayerUpdate
         }
         
         var deltaWeights = [T]()
-        MetalKernel.get.download([_wDeltaWeights])
-        let deltaWeightsPtr = _wDeltaWeights.shared.buffer
+        let deltaWeightsPtr = _wDeltaWeights.download()
         
         for depth in 0..<nbChannels
         {
@@ -659,8 +657,7 @@ public class Constant2D: Layer2D, LayerResize, LayerUpdate
         }
         
         var deltaWeights = [T]()
-        MetalKernel.get.download([_wBuffers.g_p!])
-        let deltaWeightsPtr = _wBuffers.g_p!.shared.buffer
+        let deltaWeightsPtr = _wBuffers.g.download()
         
         for i in 0..<_wBuffers.nbElems
         {

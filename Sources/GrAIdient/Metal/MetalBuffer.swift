@@ -164,11 +164,14 @@ public class FloatBuffer
                     )
                 }
             }
+            // array.count < nbElems when batchSize of one batch is shorter.
+            // array.count > nbElems when using same array to allocate
+            // weights and biases.
             setupHalfBuffer(
                 array: &array,
                 out: _float16!,
                 start: start,
-                nbElems: nbElems,
+                nbElems: min(nbElems, array.count),
                 deviceID: deviceID
             )
         }
@@ -189,11 +192,14 @@ public class FloatBuffer
                     )
                 }
             }
+            // array.count < nbElems when batchSize of one batch is shorter.
+            // array.count > nbElems when using same array to allocate
+            // weights and biases.
             setupFloatBuffer(
                 array: &array,
                 out: _float!,
                 start: start,
-                nbElems: nbElems,
+                nbElems: min(nbElems, array.count),
                 deviceID: deviceID
             )
         }

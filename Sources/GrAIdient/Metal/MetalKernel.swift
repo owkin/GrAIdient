@@ -718,7 +718,17 @@ private class MetalDevice
         {
             return MetalCommand(queue: _queue, pipeline: pipelineTmp)
         }
-        fatalError("Could not find pipeline: \(pipeline).")
+        else if let pipelineTmp = _pipelines[pipeline]
+        {
+            return MetalCommand(queue: _queue, pipeline: pipelineTmp)
+        }
+        else
+        {
+            fatalError(
+                "Could not find pipeline: " +
+                "\(pipelineFullName), nor \(pipeline)."
+            )
+        }
     }
     
     ///

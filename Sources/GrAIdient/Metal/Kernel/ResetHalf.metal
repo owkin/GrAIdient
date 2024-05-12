@@ -30,7 +30,7 @@ kernel void resetHalf(
     outs[id] = 0.0;
 }
 
-kernel void convertFloat2HalfHalf(
+kernel void convertFloat2Half(
     constant float * ins,
     constant uint * pNbElems,
     device half * outs,
@@ -53,7 +53,7 @@ kernel void convertFloat2HalfHalf(
     outs[id] = (half)ins[id];
 }
 
-kernel void convertHalf2FloatHalf(
+kernel void convertHalf2Float(
     constant half * ins,
     constant uint * pNbElems,
     device float * outs,

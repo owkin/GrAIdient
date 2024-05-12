@@ -510,8 +510,8 @@ let CONFIG_KERNELS =
     ],
     "ResetHalf": [
         "resetHalf",
-        "convertFloat2HalfHalf",
-        "convertHalf2FloatHalf",
+        "convertFloat2Half",
+        "convertHalf2Float",
     ],
     "VQ2DFloat": [
         "vq2DForwardFloat",

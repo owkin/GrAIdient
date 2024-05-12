@@ -11,11 +11,11 @@ import Metal
 public class FloatBuffer
 {
     /// Number of elements in the buffer.
-    let nbElems: Int
+    public let nbElems: Int
     /// GPU device where the buffer is sent.
-    let deviceID: Int
+    public let deviceID: Int
     /// Whether to create a shared buffer or a private one.
-    let shared: Bool
+    public let shared: Bool
     
     /// Float buffer.
     var _float: MetalBuffer<Float>? = nil

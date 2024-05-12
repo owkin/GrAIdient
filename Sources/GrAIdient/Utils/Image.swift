@@ -53,8 +53,7 @@ public class Image
         imagesURL: [URL],
         imagesBuffer: FloatBuffer,
         width: Int,
-        height: Int,
-        shared: Bool = false) throws
+        height: Int) throws
     {
         let batchSize = imagesURL.count
         if imagesBuffer.nbElems < batchSize * 3 * height * width
@@ -109,8 +108,7 @@ public class Image
     public static func extractPixels(
         _ metalBuffer: FloatBuffer,
         width: Int,
-        height: Int,
-        shared: Bool = false) -> [[UInt8]]
+        height: Int) -> [[UInt8]]
     {
         let buffer = metalBuffer.download()
         let nbImages = metalBuffer.nbElems / (width * height * 3)

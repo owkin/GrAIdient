@@ -259,21 +259,16 @@ public class Constant1D: Layer1D, LayerUpdate
         )
         
         let weightsPtr = _wBuffers.w_p!.shared.buffer
-        if _weightsList.count == 0
+        if _weightsList.count != 0
         {
-            for depth in 0..<nbNeurons
-            {
-                weightsPtr[depth] = 0.0
-            }
+            copyFloatArrayToBuffer(
+                array: &_weightsList,
+                buffer: weightsPtr,
+                start: 0,
+                nbElems: nbNeurons
+            )
         }
-        else
-        {
-            for depth in 0..<nbNeurons
-            {
-                weightsPtr[depth] = _weightsList[depth]
-            }
-            _weightsList = []
-        }
+        _weightsList = []
         
         MetalKernel.get.upload([_wBuffers.w_p!])
         _wDeltaWeights = nil

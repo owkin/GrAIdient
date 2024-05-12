@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Accelerate
 
 /// Error occuring in an output layer.
 public enum LossError: Error
@@ -288,6 +289,40 @@ extension LayerWeightInit
         return weightsList
     }
     
+    public func generateWeightsList(
+        buffer: UnsafeMutableBufferPointer<Float>)
+    {
+        let nbElems = weightListSize
+        switch weightInitClass {
+        case .XavierUniform:
+            Self.XavierUniform(
+                nbElems: nbElems,
+                connectivityIO: connectivityIO,
+                buffer: buffer
+            )
+        case .XavierNormal:
+            Self.XavierNormal(
+                nbElems: nbElems,
+                connectivityIO: connectivityIO,
+                buffer: buffer
+            )
+        case .KaimingUniform:
+            Self.KaimingUniform(
+                nbElems: nbElems,
+                coeff: coeffInitWeights,
+                connectivityIO: connectivityIO,
+                buffer: buffer
+            )
+        case .KaimingNormal:
+            Self.KaimingNormal(
+                nbElems: nbElems,
+                coeff: coeffInitWeights,
+                connectivityIO: connectivityIO,
+                buffer: buffer
+            )
+        }
+    }
+    
     ///
     /// Xavier uniform initialization method.
     ///
@@ -307,6 +342,48 @@ extension LayerWeightInit
             values.append(Float.random(in: -bound..<bound))
         }
         return values
+    }
+    
+    ///
+    /// Xavier uniform initialization method.
+    ///
+    /// - Parameters:
+    ///     - nbElems: Number of weights to initialize.
+    ///     - connectivityIO: Number of input and output connections.
+    ///     - buffer: The buffer of values.
+    ///
+    static func XavierUniform(
+        nbElems: Int,
+        connectivityIO: (Int, Int),
+        buffer: UnsafeMutableBufferPointer<Float>)
+    {
+        let bound = sqrt(6) / sqrt(Float(connectivityIO.0 + connectivityIO.1))
+        if #available(macOS 13.0, *)
+        {
+            guard
+                var arrayDescriptor = BNNSNDArrayDescriptor(
+                    data: buffer,
+                    shape: .vector(nbElems)),
+                let randomNumberGenerator = BNNSCreateRandomGenerator(
+                    BNNSRandomGeneratorMethodAES_CTR,
+                    nil) else 
+            {
+                fatalError()
+            }
+            
+            BNNSRandomFillUniformFloat(
+                randomNumberGenerator,
+                &arrayDescriptor,
+                -bound,
+                bound
+            )
+            
+            BNNSDestroyRandomGenerator(randomNumberGenerator)
+        } 
+        else
+        {
+            fatalError()
+        }
     }
     
     ///
@@ -331,10 +408,53 @@ extension LayerWeightInit
     }
     
     ///
+    /// Xavier normal initialization method.
+    ///
+    /// - Parameters:
+    ///     - nbElems: Number of weights to initialize.
+    ///     - connectivityIO: Number of input and output connections.
+    ///     - buffer: The buffer of values.
+    ///
+    static func XavierNormal(
+        nbElems: Int,
+        connectivityIO: (Int, Int),
+        buffer: UnsafeMutableBufferPointer<Float>)
+    {
+        let std = sqrt(2) / sqrt(Float(connectivityIO.0 + connectivityIO.1))
+        if #available(macOS 13.0, *)
+        {
+            guard
+                var arrayDescriptor = BNNSNDArrayDescriptor(
+                    data: buffer,
+                    shape: .vector(nbElems)),
+                let randomNumberGenerator = BNNSCreateRandomGenerator(
+                    BNNSRandomGeneratorMethodAES_CTR,
+                    nil) else
+            {
+                fatalError()
+            }
+            
+            BNNSRandomFillNormalFloat(
+                randomNumberGenerator,
+                &arrayDescriptor,
+                0.0,
+                std
+            )
+            
+            BNNSDestroyRandomGenerator(randomNumberGenerator)
+        }
+        else
+        {
+            fatalError()
+        }
+    }
+    
+    ///
     /// Kaiming uniform initialization method.
     ///
     /// - Parameters:
     ///     - nbElems: Number of weights to initialize.
+    ///     - coeff: Multiplicative coefficient.
     ///     - connectivityIO: Number of input and output connections.
     /// - Returns: Weights values.
     ///
@@ -353,10 +473,55 @@ extension LayerWeightInit
     }
     
     ///
+    /// Kaiming uniform initialization method.
+    ///
+    /// - Parameters:
+    ///     - nbElems: Number of weights to initialize.
+    ///     - coeff: Multiplicative coefficient.
+    ///     - connectivityIO: Number of input and output connections.
+    ///     - buffer: The buffer of values.
+    ///
+    static func KaimingUniform(
+        nbElems: Int,
+        coeff: Float,
+        connectivityIO: (Int, Int),
+        buffer: UnsafeMutableBufferPointer<Float>)
+    {
+        let bound = sqrt(3) * coeff / sqrt(Float(connectivityIO.0))
+        if #available(macOS 13.0, *)
+        {
+            guard
+                var arrayDescriptor = BNNSNDArrayDescriptor(
+                    data: buffer,
+                    shape: .vector(nbElems)),
+                let randomNumberGenerator = BNNSCreateRandomGenerator(
+                    BNNSRandomGeneratorMethodAES_CTR,
+                    nil) else
+            {
+                fatalError()
+            }
+            
+            BNNSRandomFillUniformFloat(
+                randomNumberGenerator,
+                &arrayDescriptor,
+                -bound,
+                bound
+            )
+            
+            BNNSDestroyRandomGenerator(randomNumberGenerator)
+        }
+        else
+        {
+            fatalError()
+        }
+    }
+    
+    ///
     /// Xavier normal initialization method.
     ///
     /// - Parameters:
     ///     - nbElems: Number of weights to initialize.
+    ///     - coeff: Multiplicative coefficient.
     ///     - connectivityIO: Number of input and output connections.
     /// - Returns: Weights values.
     ///
@@ -372,6 +537,50 @@ extension LayerWeightInit
             values.append(randomNormal(mean: 0.0, standardDeviation: std))
         }
         return values
+    }
+    
+    ///
+    /// Kaiming normal initialization method.
+    ///
+    /// - Parameters:
+    ///     - nbElems: Number of weights to initialize.
+    ///     - coeff: Multiplicative coefficient.
+    ///     - connectivityIO: Number of input and output connections.
+    ///     - buffer: The buffer of values.
+    ///
+    static func KaimingNormal(
+        nbElems: Int,
+        coeff: Float,
+        connectivityIO: (Int, Int),
+        buffer: UnsafeMutableBufferPointer<Float>)
+    {
+        let std = coeff / sqrt(Float(connectivityIO.0))
+        if #available(macOS 13.0, *)
+        {
+            guard
+                var arrayDescriptor = BNNSNDArrayDescriptor(
+                    data: buffer,
+                    shape: .vector(nbElems)),
+                let randomNumberGenerator = BNNSCreateRandomGenerator(
+                    BNNSRandomGeneratorMethodAES_CTR,
+                    nil) else
+            {
+                fatalError()
+            }
+            
+            BNNSRandomFillNormalFloat(
+                randomNumberGenerator,
+                &arrayDescriptor,
+                0.0,
+                std
+            )
+            
+            BNNSDestroyRandomGenerator(randomNumberGenerator)
+        }
+        else
+        {
+            fatalError()
+        }
     }
 }
 

@@ -74,7 +74,15 @@ class SimpleAutoEncoder
         let pythonLib = Python.import("python_lib")
         let data = pythonLib.load_simple_auto_encoder_weights()
         
-        let weights = [[Float]](data.tuple2.0)!
+        let weightsNumpy = [PythonObject](data.tuple2.0)!
+        var weights = [[Float]]()
+        for weightsNP in weightsNumpy
+        {
+            if let weightsTmp = Array<Float>(numpy: weightsNP)
+            {
+                weights.append(weightsTmp)
+            }
+        }
         
         // Apply weights on the `GrAIdient` model's layers.
         var cur = 0

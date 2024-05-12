@@ -26,7 +26,9 @@ final class AutoEncoderTests: XCTestCase
     {
         setPythonLib()
         _ = MetalKernel.get
+        
         GrAI.Opti.GPU = true
+        GrAI.Precision.float = true
     }
     
     /// Compare loss in the training of a simple auto encoder model in GrAIdient and PyTorch.

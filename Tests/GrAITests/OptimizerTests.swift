@@ -18,7 +18,9 @@ class OptimizerTests: Input1DMSE1DCase
     {
         batchSize = 5
         _ = MetalKernel.get
+        
         GrAI.Opti.GPU = true
+        GrAI.Precision.float = true
         
         setOptimizerParams(params: &optimizerParams)
         optimizerParams.nbLoops = 10

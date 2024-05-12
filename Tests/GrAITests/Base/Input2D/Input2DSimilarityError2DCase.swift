@@ -30,7 +30,9 @@ class Input2DSimilarityError2DCase: XCTestCase, Input2DCase, IOCase
     {
         batchSize = 5
         _ = MetalKernel.get
+        
         GrAI.Opti.GPU = true
+        GrAI.Precision.float = true
         
         setOptimizerParams(params: &optimizerParams)
         optimizerParams.nbLoops = 2

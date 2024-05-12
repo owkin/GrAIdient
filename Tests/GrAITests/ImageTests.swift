@@ -55,7 +55,9 @@ class ImageTests: XCTestCase
     override func setUp()
     {
         _ = MetalKernel.get
+        
         GrAI.Opti.GPU = true
+        GrAI.Precision.float = true
     }
     
     private func _buildModel(

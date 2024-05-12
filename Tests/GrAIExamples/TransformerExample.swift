@@ -29,7 +29,9 @@ final class TransformerExample: XCTestCase
     {
         setPythonLib()
         _ = MetalKernel.get
+        
         GrAI.Opti.GPU = true
+        GrAI.Precision.float = true
     }
     
     ///

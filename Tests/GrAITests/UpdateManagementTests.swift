@@ -17,7 +17,9 @@ class UpdateManagementTests: XCTestCase
     override func setUp()
     {
         _ = MetalKernel.get
+        
         GrAI.Opti.GPU = true
+        GrAI.Precision.float = true
         
         setOptimizerParams(params: &optimizerParams)
         optimizerParams.nbLoops = 1

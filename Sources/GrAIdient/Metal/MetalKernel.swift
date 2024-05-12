@@ -704,11 +704,31 @@ private class MetalDevice
     ///
     func createCommand(_ pipeline: String) -> MetalCommand
     {
-        if let pipelineTmp = _pipelines[pipeline]
+        var pipelineFullName = pipeline
+        if GrAI.Precision.float16
+        {
+            pipelineFullName += "Half"
+        }
+        else
+        {
+            pipelineFullName += "Float"
+        }
+        
+        if let pipelineTmp = _pipelines[pipelineFullName]
         {
             return MetalCommand(queue: _queue, pipeline: pipelineTmp)
         }
-        fatalError("Could not find pipeline: \(pipeline).")
+        else if let pipelineTmp = _pipelines[pipeline]
+        {
+            return MetalCommand(queue: _queue, pipeline: pipelineTmp)
+        }
+        else
+        {
+            fatalError(
+                "Could not find pipeline: " +
+                "\(pipelineFullName), nor \(pipeline)."
+            )
+        }
     }
     
     ///

@@ -9,46 +9,173 @@ import Foundation
 import Accelerate
 
 ///
-/// Copy array to buffer.
+/// Copy, convert and upload Float array to Half buffer.
 ///
 /// - Parameters:
-///     - array: input array
-///     - buffer: output buffer
-///     - start: start index in `array`
+///     - array: Input array.
+///     - out: Output buffer.
+///     - start: Start index in `array`.
 ///     - nbElems: Number of elements to copy.
+///     - deviceID: GPU device.
 ///
-func copyFloatArrayToBuffer(
+public func setupHalfBuffer(
     array: inout [Float],
-    buffer: UnsafeMutableBufferPointer<Float>,
+    out: MetalBuffer<UInt16>,
     start: Int,
-    nbElems: Int)
+    nbElems: Int,
+    deviceID: Int)
 {
-    if #available(macOS 13.0, *)
+    let temp = MetalSharedBuffer<Float>(nbElems, deviceID: deviceID)
+    copyArrayToBuffer(
+        array: &array,
+        buffer: temp.buffer,
+        start: start,
+        nbElems: nbElems
+    )
+    
+    temp.upload()
+    convertFloat2Half(
+        inBuffer: temp,
+        outBuffer: out,
+        nbElems: nbElems,
+        deviceID: deviceID
+    )
+    
+    // Make sure operation has ended because returning.
+    _ = out.download()
+}
+
+///
+/// Copy, convert and upload Float array to Half buffer.
+///
+/// - Parameters:
+///     - array: Input array.
+///     - out: Output buffer.
+///     - start: Start index in `array`.
+///     - nbElems: Number of elements to copy.
+///     - deviceID: GPU device.
+///
+public func setupFloatBuffer(
+    array: inout [Float],
+    out: MetalBuffer<Float>,
+    start: Int,
+    nbElems: Int,
+    deviceID: Int)
+{
+    if let out_s = out as? MetalSharedBuffer<Float>
     {
         copyArrayToBuffer(
             array: &array,
-            buffer: buffer,
-            start: start, 
+            buffer: out_s.buffer,
+            start: start,
             nbElems: nbElems
         )
     }
     else
     {
-        fatalError()
+        let out_p = out as! MetalPrivateBuffer<Float>
+        copyArrayToBuffer(
+            array: &array,
+            buffer: out_p.shared.buffer,
+            start: start,
+            nbElems: nbElems
+        )
     }
+    out.upload()
 }
 
-@available(macOS 13.0, *)
+///
+/// Convert Half buffer to Float buffer and download content.
+///
+/// - Parameter buffer: Input buffer.
+///
+/// - Returns: Float buffer.
+///
+public func getHalfBuffer(
+    _ buffer: MetalBuffer<UInt16>
+) -> MetalSharedBuffer<Float>
+{
+    let temp = MetalSharedBuffer<Float>(
+        buffer.nbElems,
+        deviceID: buffer.deviceID
+    )
+    convertHalf2Float(
+        inBuffer: buffer,
+        outBuffer: temp,
+        nbElems: buffer.nbElems,
+        deviceID: buffer.deviceID
+    )
+    
+    _ = temp.download()
+    return temp
+}
+
+///
+/// Convert a Float32 buffer into a Float16 buffer.
+///
+/// - Parameters:
+///     - inBuffer: Input buffer.
+///     - outBuffer: Output buffer.
+///     - nbElems: Number of elements.
+///     - deviceID: GPU device.
+///
+public func convertFloat2Half(
+    inBuffer: MetalBuffer<Float>,
+    outBuffer: MetalBuffer<UInt16>,
+    nbElems: Int,
+    deviceID: Int)
+{
+    let pNbElems: [UInt32] = [UInt32(nbElems)]
+    
+    let command = MetalKernel.get.createCommand(
+        "convertFloat2Half", deviceID: deviceID
+    )
+    command.setBuffer(inBuffer.metal, atIndex: 0)
+    command.setBytes(pNbElems, atIndex: 1)
+    command.setBuffer(outBuffer.metal, atIndex: 2)
+    
+    command.dispatchThreads(nbElems)
+    command.enqueue()
+}
+
+///
+/// Convert a Float16 into a Float32 buffer.
+///
+/// - Parameters:
+///     - inBuffer: Input buffer.
+///     - outBuffer: Output buffer.
+///     - nbElems: Number of elements.
+///     - deviceID: GPU device.
+///
+public func convertHalf2Float(
+    inBuffer: MetalBuffer<UInt16>,
+    outBuffer: MetalBuffer<Float>,
+    nbElems: Int,
+    deviceID: Int)
+{
+    let pNbElems: [UInt32] = [UInt32(nbElems)]
+    
+    let command = MetalKernel.get.createCommand(
+        "convertHalf2Float", deviceID: deviceID
+    )
+    command.setBuffer(inBuffer.metal, atIndex: 0)
+    command.setBytes(pNbElems, atIndex: 1)
+    command.setBuffer(outBuffer.metal, atIndex: 2)
+    
+    command.dispatchThreads(nbElems)
+    command.enqueue()
+}
+
 ///
 /// Copy array to buffer.
 ///
 /// - Parameters:
-///     - array: input array
-///     - buffer: output buffer
-///     - start: start index in `array`
+///     - array: Input array.
+///     - buffer: Output buffer.
+///     - start: Start index in `array`.
 ///     - nbElems: Number of elements to copy.
 ///
-func copyArrayToBuffer<T: BNNSScalar>(
+public func copyArrayToBuffer<T: BNNSScalar>(
     array: inout [T],
     buffer: UnsafeMutableBufferPointer<T>,
     start: Int,

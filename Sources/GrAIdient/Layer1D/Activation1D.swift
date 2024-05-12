@@ -16,7 +16,7 @@ public class Activation1D: Layer1D
     /// used in the GPU execution context.
     /// Shape ~ (batch, nbNeurons).
     ///
-    var _tmp: MetalPrivateBuffer<Float>! = nil
+    var _tmp: FloatBuffer! = nil
     
     /// Get coefficient (depending on activation function) to apply during the weights initialization.
     public var coeffInitWeights: Float

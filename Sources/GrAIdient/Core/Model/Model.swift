@@ -948,7 +948,7 @@ public class Model: BaseModel
         if GrAI.Opti.GPU
         {
             let gNorm: Float? = gradientNorm != nil ?
-                                Float(gradientNorm!) : nil
+                Float(gradientNorm!) : nil
             try _kernel.algo.udpateGPU(layers: myLayers,
                                        gradientNorm: gNorm)
         }

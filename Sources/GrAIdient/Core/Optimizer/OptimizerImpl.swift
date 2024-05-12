@@ -294,12 +294,12 @@ class AdamOptimizer: OptimizerImpl
     override func stepGPU(_ weights: IWeightBuffers)
     {
         let nbElems = weights.nbElems
-        let t = Double(_kernel.params.t)
+        let t = Float(_kernel.params.t)
         
         let pNbElems: [UInt32] = [UInt32(nbElems)]
         let pAlpha: [Float] = [Float(alpha)]
         let pLambda: [Float] = [lambda != nil ? Float(lambda!) : 0.0]
-        let pT: [Float] = [Float(t)]
+        let pT: [Float] = [t]
         
         let command = MetalKernel.get.createCommand(
             "weightsAdam", deviceID: weights.deviceID
@@ -366,12 +366,12 @@ class AMSGradOptimizer: OptimizerImpl
     override func stepGPU(_ weights: IWeightBuffers)
     {
         let nbElems = weights.nbElems
-        let t = Double(_kernel.params.t)
+        let t = Float(_kernel.params.t)
         
         let pNbElems: [UInt32] = [UInt32(nbElems)]
         let pAlpha: [Float] = [Float(alpha)]
         let pLambda: [Float] = [lambda != nil ? Float(lambda!) : 0.0]
-        let pT: [Float] = [Float(t)]
+        let pT: [Float] = [t]
         
         let command = MetalKernel.get.createCommand(
             "weightsAMSGrad", deviceID: weights.deviceID
@@ -449,12 +449,12 @@ class AdamRectifiedOptimizer: OptimizerImpl
     override func stepGPU(_ weights: IWeightBuffers)
     {
         let nbElems = weights.nbElems
-        let t = Double(_kernel.params.t)
+        let t = Float(_kernel.params.t)
         
         let pNbElems: [UInt32] = [UInt32(nbElems)]
         let pAlpha: [Float] = [Float(alpha)]
         let pLambda: [Float] = [lambda != nil ? Float(lambda!) : 0.0]
-        let pT: [Float] = [Float(t)]
+        let pT: [Float] = [t]
         
         let command = MetalKernel.get.createCommand(
             "weightsAdamRectified", deviceID: weights.deviceID
@@ -583,12 +583,12 @@ class AdaBoundOptimizer: BoundOptimizer
     override func stepGPU(_ weights: IWeightBuffers)
     {
         let nbElems = weights.nbElems
-        let t = Double(_kernel.params.t)
+        let t = Float(_kernel.params.t)
         
         let pNbElems: [UInt32] = [UInt32(nbElems)]
         let pAlpha: [Float] = [Float(alpha)]
         let pLambda: [Float] = [lambda != nil ? Float(lambda!) : 0.0]
-        let pT: [Float] = [Float(t)]
+        let pT: [Float] = [t]
         let pLowerBound: [Float] = [Float(lowerBound!)]
         let pUpperBound: [Float] = [Float(upperBound!)]
         
@@ -667,12 +667,12 @@ class AMSBoundOptimizer: BoundOptimizer
     override func stepGPU(_ weights: IWeightBuffers)
     {
         let nbElems = weights.nbElems
-        let t = Double(_kernel.params.t)
+        let t = Float(_kernel.params.t)
         
         let pNbElems: [UInt32] = [UInt32(nbElems)]
         let pAlpha: [Float] = [Float(alpha)]
         let pLambda: [Float] = [lambda != nil ? Float(lambda!) : 0.0]
-        let pT: [Float] = [Float(t)]
+        let pT: [Float] = [t]
         let pLowerBound: [Float] = [Float(lowerBound!)]
         let pUpperBound: [Float] = [Float(upperBound!)]
         

@@ -8,12 +8,12 @@
 #include <metal_stdlib>
 using namespace metal;
 
-kernel void avgPoolForward(
-    const device float * outsPrev,
+kernel void avgPoolForwardHalf(
+    const device half * outsPrev,
     constant uint * pNbNeurons,
     constant uint * pDimensionsPrev,
     constant uint * pNbBatch,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint heightPrev, widthPrev;
@@ -54,13 +54,13 @@ kernel void avgPoolForward(
     outs[offset] = tmp;
 }
 
-kernel void avgPoolBackward(
-    const device float * delta,
+kernel void avgPoolBackwardHalf(
+    const device half * delta,
     constant uint * pNbNeurons,
     constant uint * pDimensionsPrev,
     constant uint * pNbBatch,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint heightPrev, widthPrev;
@@ -107,15 +107,15 @@ kernel void avgPoolBackward(
     }
 }
 
-kernel void maxPoolForward(
-    const device float * outsPrev,
+kernel void maxPoolForwardHalf(
+    const device half * outsPrev,
     constant int * pStart,
     constant uint * pStride,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pDimensionsPrev,
     constant uint * pNbBatch,
-    device float * outs,
+    device half * outs,
     device int * indicesMax,
     uint2 id [[ thread_position_in_grid ]])
 {
@@ -184,8 +184,8 @@ kernel void maxPoolForward(
     indicesMax[offset] = indexMax;
 }
 
-kernel void maxPoolBackward(
-    const device float * delta,
+kernel void maxPoolBackwardHalf(
+    const device half * delta,
     const device int * indicesMax,
     constant int * pStart,
     constant uint * pStride,
@@ -194,7 +194,7 @@ kernel void maxPoolBackward(
     constant uint * pDimensionsPrev,
     constant uint * pNbBatch,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     int start, end;
@@ -291,13 +291,13 @@ uint _endIndex(uint index, uint smallSize, uint bigSize)
     return (uint)(ceil(float((index + 1) * bigSize) / smallSize));
 }
 
-kernel void adaptiveAvgPoolForward1(
-    const device float * outsPrev,
+kernel void adaptiveAvgPoolForward1Half(
+    const device half * outsPrev,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pDimensionsPrev,
     constant uint * pNbBatch,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -353,14 +353,14 @@ kernel void adaptiveAvgPoolForward1(
     outs[offset] = tmp / (float)nbElems;
 }
 
-kernel void adaptiveAvgPoolForward2(
-    const device float * outsPrev,
+kernel void adaptiveAvgPoolForward2Half(
+    const device half * outsPrev,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pDimensionsPrev,
     constant uint * pNbBatch,
     device int * nbElems,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -424,13 +424,13 @@ kernel void adaptiveAvgPoolForward2(
     }}
 }
 
-kernel void adaptiveAvgPoolBackward1(
-    const device float * delta,
+kernel void adaptiveAvgPoolBackward1Half(
+    const device half * delta,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pDimensionsPrev,
     constant uint * pNbBatch,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -487,14 +487,14 @@ kernel void adaptiveAvgPoolBackward1(
     }}
 }
 
-kernel void adaptiveAvgPoolBackward2(
-    const device float * delta,
+kernel void adaptiveAvgPoolBackward2Half(
+    const device half * delta,
     const device int * nbElems,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pDimensionsPrev,
     constant uint * pNbBatch,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -548,13 +548,13 @@ kernel void adaptiveAvgPoolBackward2(
     }}
 }
 
-kernel void selectNeurons2DForward(
-    const device float * outsPrev,
+kernel void selectNeurons2DForwardHalf(
+    const device half * outsPrev,
     constant uint * pTarget,
     constant uint * pNbNeurons,
     constant uint * pDimensionsPrev,
     constant uint * pNbBatch,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint targetI, targetJ;
@@ -591,14 +591,14 @@ kernel void selectNeurons2DForward(
     outs[offset] = outsPrev[offsetPrev];
 }
 
-kernel void selectNeurons2DBackward(
-    const device float * delta,
+kernel void selectNeurons2DBackwardHalf(
+    const device half * delta,
     constant uint * pTarget,
     constant uint * pNbNeurons,
     constant uint * pDimensionsPrev,
     constant uint * pNbBatch,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint targetI, targetJ;
@@ -652,12 +652,12 @@ kernel void selectNeurons2DBackward(
     }
 }
 
-kernel void IRDFT2RGBForward(
-    const device float * outsPrev,
+kernel void IRDFT2RGBForwardHalf(
+    const device half * outsPrev,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pNbBatch,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -707,13 +707,13 @@ kernel void IRDFT2RGBForward(
     outs[offset] = sum;
 }
 
-kernel void IRDFT2RGBBackward(
-    const device float * delta,
+kernel void IRDFT2RGBBackwardHalf(
+    const device half * delta,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pNbBatch,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -779,13 +779,13 @@ kernel void IRDFT2RGBBackward(
     }
 }
 
-kernel void decorrelateRGBForward(
-    const device float * outsPrev,
+kernel void decorrelateRGBForwardHalf(
+    const device half * outsPrev,
     constant float * correlation,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pNbBatch,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -831,14 +831,14 @@ kernel void decorrelateRGBForward(
     outs[offset] = sum;
 }
 
-kernel void decorrelateRGBBackward(
-    const device float * delta,
+kernel void decorrelateRGBBackwardHalf(
+    const device half * delta,
     constant float * correlation,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pNbBatch,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -894,13 +894,13 @@ kernel void decorrelateRGBBackward(
     }
 }
 
-kernel void linearScale2DForward(
-    const device float * outsPrev,
+kernel void linearScale2DForwardHalf(
+    const device half * outsPrev,
     constant float * weights,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pNbBatch,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -935,14 +935,14 @@ kernel void linearScale2DForward(
     outs[offset] = weights[0] * outsPrev[offset] + weights[1];
 }
 
-kernel void linearScale2DBackward(
-    const device float * delta,
+kernel void linearScale2DBackwardHalf(
+    const device half * delta,
     constant float * weights,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pNbBatch,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -996,11 +996,11 @@ float _getScaleValue(
     return (1.0 / freq) * float(dimension);
 }
 
-kernel void setDataFTFrequences2D(
+kernel void setDataFTFrequences2DHalf(
     constant uint * pNbChannels,
     constant uint * pDimension,
     constant uint * pNbBatch,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint dimension;
@@ -1063,14 +1063,14 @@ kernel void setDataFTFrequences2D(
     outs[offset] = _getScaleValue(iTmp, jTmp, dimension);
 }
 
-kernel void pad2DForward(
-    const device float * outsPrev,
+kernel void pad2DForwardHalf(
+    const device half * outsPrev,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pPadDimension,
     constant float * pPadValue,
     constant uint * pNbBatch,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -1124,14 +1124,14 @@ kernel void pad2DForward(
     }
 }
 
-kernel void pad2DBackward(
-    const device float * delta,
+kernel void pad2DBackwardHalf(
+    const device half * delta,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pPadDimension,
     constant uint * pNbBatch,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -1184,14 +1184,14 @@ kernel void pad2DBackward(
     }
 }
 
-kernel void crop2DForward(
-    const device float * outsPrev,
+kernel void crop2DForwardHalf(
+    const device half * outsPrev,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pCropDimension,
     constant uint * pCropOffsets,
     constant uint * pNbBatch,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -1238,15 +1238,15 @@ kernel void crop2DForward(
     outs[offset] = outsPrev[offsetPrev];
 }
 
-kernel void crop2DBackward(
-    const device float * delta,
+kernel void crop2DBackwardHalf(
+    const device half * delta,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pCropDimension,
     constant uint * pCropOffsets,
     constant uint * pNbBatch,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -1312,8 +1312,8 @@ kernel void crop2DBackward(
     }
 }
 
-kernel void resizeBilinearPadForward(
-    const device float * outsPrev,
+kernel void resizeBilinearPadForwardHalf(
+    const device half * outsPrev,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pDimensionsPrev,
@@ -1321,7 +1321,7 @@ kernel void resizeBilinearPadForward(
     constant uint * pPadDimensions,
     constant float * pPadValue,
     constant uint * pNbBatch,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -1406,15 +1406,15 @@ kernel void resizeBilinearPadForward(
     }
 }
 
-kernel void resizeBilinearPadBackward(
-    const device float * delta,
+kernel void resizeBilinearPadBackwardHalf(
+    const device half * delta,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pDimensionsPrev,
     constant uint * pDimensionsResize,
     constant uint * pPadDimensions,
     constant uint * pNbBatch,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -1526,14 +1526,14 @@ kernel void resizeBilinearPadBackward(
     }}
 }
 
-kernel void rotate2DForward(
-    const device float * outsPrev,
+kernel void rotate2DForwardHalf(
+    const device half * outsPrev,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant float * pAngle,
     constant float * pPadValue,
     constant uint * pNbBatch,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -1590,13 +1590,13 @@ kernel void rotate2DForward(
     }
 }
 
-kernel void rotate2DBackward(
-    const device float * delta,
+kernel void rotate2DBackwardHalf(
+    const device half * delta,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant float * pAngle,
     constant uint * pNbBatch,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -1659,15 +1659,15 @@ kernel void rotate2DBackward(
     }}
 }
 
-kernel void resizeBilinearCropForward(
-    const device float * outsPrev,
+kernel void resizeBilinearCropForwardHalf(
+    const device half * outsPrev,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pDimensionsPrev,
     constant uint * pDimensions2Resize,
     constant uint * pCropOffsets,
     constant uint * pNbBatch,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -1740,15 +1740,15 @@ kernel void resizeBilinearCropForward(
     outs[offset] = out;
 }
 
-kernel void resizeBilinearCropBackward(
-    const device float * delta,
+kernel void resizeBilinearCropBackwardHalf(
+    const device half * delta,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pDimensionsPrev,
     constant uint * pDimensions2Resize,
     constant uint * pCropOffsets,
     constant uint * pNbBatch,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -1861,13 +1861,13 @@ kernel void resizeBilinearCropBackward(
     }}
 }
 
-kernel void concat02DForward(
-    const device float * outsPrev,
+kernel void concat02DForwardHalf(
+    const device half * outsPrev,
     constant uint * pGlobalOffset,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pNbBatch,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -1907,14 +1907,14 @@ kernel void concat02DForward(
     outs[offset] = outsPrev[offsetPrev];
 }
 
-kernel void concat02DBackward(
-    const device float * delta,
+kernel void concat02DBackwardHalf(
+    const device half * delta,
     constant uint * pGlobalOffset,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pNbBatch,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -1963,14 +1963,14 @@ kernel void concat02DBackward(
     }
 }
 
-kernel void concat12DForward(
-    const device float * outsPrev,
+kernel void concat12DForwardHalf(
+    const device half * outsPrev,
     constant uint * pGlobalOffset,
     constant uint * pNbChannels,
     constant uint * pNbChannelsPrev,
     constant uint * pDimensions,
     constant uint * pNbBatch,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -2012,15 +2012,15 @@ kernel void concat12DForward(
     outs[offset] = outsPrev[offsetPrev];
 }
 
-kernel void concat12DBackward(
-    const device float * delta,
+kernel void concat12DBackwardHalf(
+    const device half * delta,
     constant uint * pGlobalOffset,
     constant uint * pNbChannels,
     constant uint * pNbChannelsPrev,
     constant uint * pDimensions,
     constant uint * pNbBatch,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -2071,12 +2071,12 @@ kernel void concat12DBackward(
     }
 }
 
-kernel void constant2DForward(
-    const device float * weights,
+kernel void constant2DForwardHalf(
+    const device half * weights,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pNbBatch,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -2110,13 +2110,13 @@ kernel void constant2DForward(
     outs[offset] = weights[depth];
 }
 
-kernel void MSE2DLoss(
-    const device float * outs,
-    const device float * groundTruth,
+kernel void MSE2DLossHalf(
+    const device half * outs,
+    const device half * groundTruth,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pNbBatch,
-    device float * losses,
+    device half * losses,
     uint id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -2160,15 +2160,15 @@ kernel void MSE2DLoss(
     losses[elem] = tmp;
 }
 
-kernel void MSE2DLossDerivative(
-    const device float * outs,
-    const device float * groundTruth,
+kernel void MSE2DLossDerivativeHalf(
+    const device half * outs,
+    const device half * groundTruth,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant float * pCoeff,
     constant uint * pNbBatch,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -2220,12 +2220,12 @@ kernel void MSE2DLossDerivative(
     }
 }
 
-kernel void selfCorrelate2DForward(
-    const device float * outsPrev,
+kernel void selfCorrelate2DForwardHalf(
+    const device half * outsPrev,
     constant uint * pNbChannelsPrev,
     constant uint * pDimensionsPrev,
     constant uint * pNbBatch,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint heightPrev, widthPrev;
@@ -2271,14 +2271,14 @@ kernel void selfCorrelate2DForward(
     outs[offset] = correlation;
 }
 
-kernel void selfCorrelate2DBackward(
-    const device float * delta,
-    const device float * outsPrev,
+kernel void selfCorrelate2DBackwardHalf(
+    const device half * delta,
+    const device half * outsPrev,
     constant uint * pNbChannelsPrev,
     constant uint * pDimensionsPrev,
     constant uint * pNbBatch,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint heightPrev, widthPrev;
@@ -2342,12 +2342,12 @@ kernel void selfCorrelate2DBackward(
     }
 }
 
-kernel void normalize12DForward(
-    const device float * outsPrev,
+kernel void normalize12DForwardHalf(
+    const device half * outsPrev,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pNbBatch,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -2394,14 +2394,14 @@ kernel void normalize12DForward(
     outs[offset] = outPrev / max(norm, 1e-12);
 }
 
-kernel void normalize12DBackward(
-    const device float * delta,
-    const device float * outsPrev,
+kernel void normalize12DBackwardHalf(
+    const device half * delta,
+    const device half * outsPrev,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pNbBatch,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -2480,13 +2480,13 @@ kernel void normalize12DBackward(
     }
 }
 
-kernel void computeSquaredNorm122D(
-     const device float * outsPrev,
+kernel void computeSquaredNorm122DHalf(
+     const device half * outsPrev,
      constant uint * pNbChannels,
      constant uint * pDimensions,
      constant uint * pNbThreadgroups,
      constant uint * pNbBatch,
-     device float * squaredNorms,
+     device half * squaredNorms,
      uint2 groupId [[ threadgroup_position_in_grid ]],
      uint2 threadId [[ thread_position_in_threadgroup ]],
      uint2 id [[ thread_position_in_grid ]])
@@ -2549,14 +2549,14 @@ kernel void computeSquaredNorm122D(
     }
 }
 
-kernel void normalize122DForward(
-    const device float * outsPrev,
-    const device float * squaredNorms,
+kernel void normalize122DForwardHalf(
+    const device half * outsPrev,
+    const device half * squaredNorms,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pNbThreadgroups,
     constant uint * pNbBatch,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -2596,15 +2596,15 @@ kernel void normalize122DForward(
     outs[offset] = outPrev / max(norm, 1e-12);
 }
 
-kernel void computeDeltaTmp122D(
-     const device float * delta,
-     const device float * outsPrev,
-     const device float * squaredNorms,
+kernel void computeDeltaTmp122DHalf(
+     const device half * delta,
+     const device half * outsPrev,
+     const device half * squaredNorms,
      constant uint * pNbChannels,
      constant uint * pDimensions,
      constant uint * pNbThreadgroups,
      constant uint * pNbBatch,
-     device float * deltaTmp,
+     device half * deltaTmp,
      uint2 groupId [[ threadgroup_position_in_grid ]],
      uint2 threadId [[ thread_position_in_threadgroup ]],
      uint2 id [[ thread_position_in_grid ]])
@@ -2673,17 +2673,17 @@ kernel void computeDeltaTmp122D(
     }
 }
 
-kernel void normalize122DBackward(
-    const device float * delta,
-    const device float * outsPrev,
-    const device float * squaredNorms,
-    const device float * deltaTmp,
+kernel void normalize122DBackwardHalf(
+    const device half * delta,
+    const device half * outsPrev,
+    const device half * squaredNorms,
+    const device half * deltaTmp,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pNbThreadgroups,
     constant uint * pNbBatch,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -2746,12 +2746,12 @@ kernel void normalize122DBackward(
     }
 }
 
-kernel void similarBatchError2DLoss(
-    const device float * outs,
+kernel void similarBatchError2DLossHalf(
+    const device half * outs,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pNbBatch,
-    device float * losses,
+    device half * losses,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -2795,14 +2795,14 @@ kernel void similarBatchError2DLoss(
     }
 }
 
-kernel void similarBatchError2DLossDerivative(
-    const device float * outs,
+kernel void similarBatchError2DLossDerivativeHalf(
+    const device half * outs,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant float * pCoeff,
     constant uint * pNbBatch,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -2856,8 +2856,8 @@ kernel void similarBatchError2DLossDerivative(
     }
 }
 
-kernel void similarError2DLossDerivative(
-    const device float * outs,
+kernel void similarError2DLossDerivativeHalf(
+    const device half * outs,
     constant uint * pGlobalOffset,
     constant uint * pNbChannels,
     constant uint * pDimensions,
@@ -2865,7 +2865,7 @@ kernel void similarError2DLossDerivative(
     constant uint * pNbBatch,
     constant uint * pNbBatchPrev,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -2923,13 +2923,13 @@ kernel void similarError2DLossDerivative(
     }
 }
 
-kernel void flipHorizontal2DForward(
-    const device float * outsPrev,
+kernel void flipHorizontal2DForwardHalf(
+    const device half * outsPrev,
     constant uint * pDoFlip,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pNbBatch,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint doFlip;
@@ -2971,14 +2971,14 @@ kernel void flipHorizontal2DForward(
     outs[offset1] = outsPrev[offset2];
 }
 
-kernel void flipHorizontal2DBackward(
-    const device float * delta,
+kernel void flipHorizontal2DBackwardHalf(
+    const device half * delta,
     constant uint * pDoFlip,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pNbBatch,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint doFlip;
@@ -3029,13 +3029,13 @@ kernel void flipHorizontal2DBackward(
     }
 }
 
-kernel void flipVertical2DForward(
-    const device float * outsPrev,
+kernel void flipVertical2DForwardHalf(
+    const device half * outsPrev,
     constant uint * pDoFlip,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pNbBatch,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint doFlip;
@@ -3077,14 +3077,14 @@ kernel void flipVertical2DForward(
     outs[offset1] = outsPrev[offset2];
 }
 
-kernel void flipVertical2DBackward(
-    const device float * delta,
+kernel void flipVertical2DBackwardHalf(
+    const device half * delta,
     constant uint * pDoFlip,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pNbBatch,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint doFlip;
@@ -3135,12 +3135,12 @@ kernel void flipVertical2DBackward(
     }
 }
 
-kernel void colorJitterHSVForward(
-    const device float * outsPrev,
+kernel void colorJitterHSVForwardHalf(
+    const device half * outsPrev,
     constant float * pNoise,
     constant uint * pDimensions,
     constant uint * pNbBatch,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     float noiseH, noiseS, noiseV;
@@ -3260,13 +3260,13 @@ kernel void colorJitterHSVForward(
     outs[offsetB] = b;
 }
 
-kernel void BCE2DLoss(
-    const device float * outs,
-    const device float * groundTruth,
+kernel void BCE2DLossHalf(
+    const device half * outs,
+    const device half * groundTruth,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pNbBatch,
-    device float * losses,
+    device half * losses,
     uint id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -3311,15 +3311,15 @@ kernel void BCE2DLoss(
     losses[elem] = tmp;
 }
 
-kernel void BCE2DLossDerivative(
-    const device float * outs,
-    const device float * groundTruth,
+kernel void BCE2DLossDerivativeHalf(
+    const device half * outs,
+    const device half * groundTruth,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant float * pCoeff,
     constant uint * pNbBatch,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -3380,13 +3380,13 @@ kernel void BCE2DLossDerivative(
     }
 }
 
-kernel void BCESigmoid2DLoss(
-    const device float * outs,
-    const device float * groundTruth,
+kernel void BCESigmoid2DLossHalf(
+    const device half * outs,
+    const device half * groundTruth,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant uint * pNbBatch,
-    device float * losses,
+    device half * losses,
     uint id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -3441,15 +3441,15 @@ kernel void BCESigmoid2DLoss(
     losses[elem] = tmp;
 }
 
-kernel void BCESigmoid2DLossDerivative(
-    const device float * outs,
-    const device float * groundTruth,
+kernel void BCESigmoid2DLossDerivativeHalf(
+    const device half * outs,
+    const device half * groundTruth,
     constant uint * pNbChannels,
     constant uint * pDimensions,
     constant float * pCoeff,
     constant uint * pNbBatch,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;
@@ -3510,14 +3510,14 @@ kernel void BCESigmoid2DLossDerivative(
     }
 }
 
-kernel void layerCAM2DForward(
-    const device float * outsPrev,
-    const device float * deltaPrev,
+kernel void layerCAM2DForwardHalf(
+    const device half * outsPrev,
+    const device half * deltaPrev,
     constant uint * pNbChannelsPrev,
     constant uint * pDimensions,
     constant uint * pKeepPositive,
     constant uint * pNbBatch,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint height, width;

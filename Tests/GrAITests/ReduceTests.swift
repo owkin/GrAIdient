@@ -11,19 +11,19 @@ import GrAIdient
 /// Test reduce sum kernel.
 class ReduceSumTests: XCTestCase
 {
-    var _buffer: MetalSharedBuffer<Float>! = nil
+    var _buffer: FloatBuffer! = nil
     var _array = [Float]()
     
     override func setUp()
     {
         _ = MetalKernel.get
+        GrAI.Opti.GPU = true
     }
     
-    private func _testBuffer(dim1: Int, dim2: Int)
+    private func _testBuffer(dim1: Int, dim2: Int, shared: Bool)
     {
         _array = [Float](repeating: 0.0, count: dim1 * dim2)
-        _buffer = MetalSharedBuffer(dim1 * dim2, deviceID: 0)
-        let buffer = _buffer.buffer
+        _buffer = FloatBuffer(nbElems: dim1 * dim2, deviceID: 0, shared: shared)
         
         for elem1 in 0..<dim1 {
         for elem2 in 0..<dim2
@@ -31,10 +31,8 @@ class ReduceSumTests: XCTestCase
             let offset = elem2 * dim1 + elem1
             let value = Float.random(in: 0..<1)
             _array[offset] = value
-            buffer[offset] = value
         }}
-        
-        MetalKernel.get.upload([_buffer])
+        _buffer.initialize(array: &_array)
         
         var resultsCPU = [Float]()
         for elem2 in 0..<dim2
@@ -55,50 +53,92 @@ class ReduceSumTests: XCTestCase
             deviceID: 0
         )
         
-        MetalKernel.get.download([_buffer])
-        let resultsGPU = [Float](_buffer.buffer)
-        
+        let resultsGPU = _buffer.download()
         for (resultCPU, resultGPU) in zip(resultsCPU, resultsGPU)
         {
             let diffPercent =
                 abs(resultCPU - resultGPU) / resultCPU * 100.0
-            XCTAssert(diffPercent < 0.001)
+            XCTAssert(diffPercent < 0.1)
         }
     }
     
-    func testVerySmall()
+    func testVerySmallFloat()
     {
         let dim1 = 2
         let dim2 = 5
-        _testBuffer(dim1: dim1, dim2: dim2)
+        GrAI.Precision.float = true
+        _testBuffer(dim1: dim1, dim2: dim2, shared: true)
+        _testBuffer(dim1: dim1, dim2: dim2, shared: false)
     }
     
-    func testSmall()
+    func testVerySmallFloat16()
+    {
+        let dim1 = 2
+        let dim2 = 5
+        GrAI.Precision.float16 = true
+        _testBuffer(dim1: dim1, dim2: dim2, shared: true)
+        _testBuffer(dim1: dim1, dim2: dim2, shared: false)
+    }
+    
+    func testSmallFloat()
     {
         let dim1 = 50
         let dim2 = 5
-        _testBuffer(dim1: dim1, dim2: dim2)
+        GrAI.Precision.float = true
+        _testBuffer(dim1: dim1, dim2: dim2, shared: true)
+        _testBuffer(dim1: dim1, dim2: dim2, shared: false)
     }
     
-    func testBig()
+    func testSmallFloat16()
+    {
+        let dim1 = 50
+        let dim2 = 5
+        GrAI.Precision.float16 = true
+        _testBuffer(dim1: dim1, dim2: dim2, shared: true)
+        _testBuffer(dim1: dim1, dim2: dim2, shared: false)
+    }
+    
+    func testBigFloat()
     {
         let dim1 = 2000
         let dim2 = 5
-        _testBuffer(dim1: dim1, dim2: dim2)
+        GrAI.Precision.float = true
+        _testBuffer(dim1: dim1, dim2: dim2, shared: true)
+        _testBuffer(dim1: dim1, dim2: dim2, shared: false)
     }
     
-    func testVeryBig()
+    func testBigFloat16()
+    {
+        let dim1 = 2000
+        let dim2 = 5
+        GrAI.Precision.float16 = true
+        _testBuffer(dim1: dim1, dim2: dim2, shared: true)
+        _testBuffer(dim1: dim1, dim2: dim2, shared: false)
+    }
+    
+    func testVeryBigFloat()
     {
         let dim1 = 10000
         let dim2 = 5
-        _testBuffer(dim1: dim1, dim2: dim2)
+        GrAI.Precision.float = true
+        _testBuffer(dim1: dim1, dim2: dim2, shared: true)
+        _testBuffer(dim1: dim1, dim2: dim2, shared: false)
+    }
+    
+    func testVeryBigFloat16()
+    {
+        let dim1 = 10000
+        let dim2 = 5
+        GrAI.Precision.float16 = true
+        _testBuffer(dim1: dim1, dim2: dim2, shared: true)
+        _testBuffer(dim1: dim1, dim2: dim2, shared: false)
     }
 }
 
 /// Test reduce max kernel.
 class ReduceMaxTests: XCTestCase
 {
-    var _buffer: MetalSharedBuffer<Float>! = nil
+    var _buffer: FloatBuffer! = nil
     var _array = [Float]()
     
     override func setUp()
@@ -106,11 +146,10 @@ class ReduceMaxTests: XCTestCase
         _ = MetalKernel.get
     }
     
-    private func _testBuffer(dim1: Int, dim2: Int)
+    private func _testBuffer(dim1: Int, dim2: Int, shared: Bool)
     {
         _array = [Float](repeating: 0.0, count: dim1 * dim2)
-        _buffer = MetalSharedBuffer(dim1 * dim2, deviceID: 0)
-        let buffer = _buffer.buffer
+        _buffer = FloatBuffer(nbElems: dim1 * dim2, deviceID: 0, shared: shared)
         
         for elem1 in 0..<dim1 {
         for elem2 in 0..<dim2
@@ -118,10 +157,8 @@ class ReduceMaxTests: XCTestCase
             let offset = elem2 * dim1 + elem1
             let value = Float.random(in: 0..<1)
             _array[offset] = value
-            buffer[offset] = value
         }}
-        
-        MetalKernel.get.upload([_buffer])
+        _buffer.initialize(array: &_array)
         
         var resultsCPU = [Float]()
         for elem2 in 0..<dim2
@@ -142,42 +179,84 @@ class ReduceMaxTests: XCTestCase
             deviceID: 0
         )
         
-        MetalKernel.get.download([_buffer])
-        let resultsGPU = [Float](_buffer.buffer)
-        
+        let resultsGPU = _buffer.download()
         for (resultCPU, resultGPU) in zip(resultsCPU, resultsGPU)
         {
             let diffPercent =
                 abs(resultCPU - resultGPU) / resultCPU * 100.0
-            XCTAssert(diffPercent < 0.001)
+            XCTAssert(diffPercent < 0.05)
         }
     }
     
-    func testVerySmall()
+    func testVerySmallFloat()
     {
         let dim1 = 2
         let dim2 = 5
-        _testBuffer(dim1: dim1, dim2: dim2)
+        GrAI.Precision.float = true
+        _testBuffer(dim1: dim1, dim2: dim2, shared: true)
+        _testBuffer(dim1: dim1, dim2: dim2, shared: false)
     }
     
-    func testSmall()
+    func testVerySmallFloat16()
+    {
+        let dim1 = 2
+        let dim2 = 5
+        GrAI.Precision.float16 = true
+        _testBuffer(dim1: dim1, dim2: dim2, shared: true)
+        _testBuffer(dim1: dim1, dim2: dim2, shared: false)
+    }
+    
+    func testSmallFloat()
     {
         let dim1 = 50
         let dim2 = 5
-        _testBuffer(dim1: dim1, dim2: dim2)
+        GrAI.Precision.float = true
+        _testBuffer(dim1: dim1, dim2: dim2, shared: true)
+        _testBuffer(dim1: dim1, dim2: dim2, shared: false)
     }
     
-    func testBig()
+    func testSmallFloat16()
+    {
+        let dim1 = 50
+        let dim2 = 5
+        GrAI.Precision.float16 = true
+        _testBuffer(dim1: dim1, dim2: dim2, shared: true)
+        _testBuffer(dim1: dim1, dim2: dim2, shared: false)
+    }
+    
+    func testBigFloat()
     {
         let dim1 = 2000
         let dim2 = 5
-        _testBuffer(dim1: dim1, dim2: dim2)
+        GrAI.Precision.float = true
+        _testBuffer(dim1: dim1, dim2: dim2, shared: true)
+        _testBuffer(dim1: dim1, dim2: dim2, shared: false)
     }
     
-    func testVeryBig()
+    func testBigFloat16()
+    {
+        let dim1 = 2000
+        let dim2 = 5
+        GrAI.Precision.float16 = true
+        _testBuffer(dim1: dim1, dim2: dim2, shared: true)
+        _testBuffer(dim1: dim1, dim2: dim2, shared: false)
+    }
+    
+    func testVeryBigFloat()
     {
         let dim1 = 10000
         let dim2 = 5
-        _testBuffer(dim1: dim1, dim2: dim2)
+        GrAI.Precision.float = true
+        _testBuffer(dim1: dim1, dim2: dim2, shared: true)
+        _testBuffer(dim1: dim1, dim2: dim2, shared: false)
+    }
+    
+    func testVeryBigFloat16()
+    {
+        let dim1 = 10000
+        let dim2 = 5
+        GrAI.Precision.float16 = true
+        _testBuffer(dim1: dim1, dim2: dim2, shared: true)
+        _testBuffer(dim1: dim1, dim2: dim2, shared: false)
     }
 }

@@ -146,9 +146,10 @@ public class Concat1D: LayerMerge1D
     {
         try checkStateCPU(batchSize: batchSize)
         
+        var buffersPrev = [[Float]]()
         for num in 0..<_layersPrev.count
         {
-            MetalKernel.get.download([(_layersPrev[num] as! Layer1D).outs])
+            buffersPrev.append((_layersPrev[num] as! Layer1D).outs.download())
         }
         
         let (nbSameElems, layersIndex, nbElems) = getMergedGraph()
@@ -190,7 +191,7 @@ public class Concat1D: LayerMerge1D
         var curElem = 0
         for num in 0..<_layersPrev.count
         {
-            let outsPrevPtr = (_layersPrev[num] as! Layer1D).outs.shared.buffer
+            let outsPrevPtr = buffersPrev[num]
             let neuronsPrev = (_layersPrev[num] as! Layer1D).neurons
             let nbNeurons = neuronsPrev.nbElems
             

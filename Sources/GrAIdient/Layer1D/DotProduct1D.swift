@@ -201,11 +201,6 @@ public class DotProduct1D: LayerMerge1D
     {
         try checkStateCPU(batchSize: batchSize)
         
-        for num in 0..<_layersPrev.count
-        {
-            MetalKernel.get.download([(_layersPrev[num] as! Layer1D).outs])
-        }
-        
         let (nbSameElems, layersIndex, nbElems) = getMergedGraph()
         
         var nbGC = nbSameElems
@@ -240,8 +235,8 @@ public class DotProduct1D: LayerMerge1D
             }
         }}
         
-        let buffer1 = (_layersPrev[0] as! Layer1D).outs.shared.buffer
-        let buffer2 = (_layersPrev[1] as! Layer1D).outs.shared.buffer
+        let buffer1 = (_layersPrev[0] as! Layer1D).outs.download()
+        let buffer2 = (_layersPrev[1] as! Layer1D).outs.download()
         
         for batch in 0..<batchSize {
         var offset = nbSameElems

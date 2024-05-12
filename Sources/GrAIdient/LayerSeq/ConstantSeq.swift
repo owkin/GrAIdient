@@ -63,12 +63,7 @@ public class Constant12Seq: LayerSeq, LayerUpdate
             {
                 return _weightsList
             }
-            
-            var weightsTmp = [Float]()
-            MetalKernel.get.download([_wBuffers.w_p!])
-            weightsTmp += _wBuffers.w_p!.shared.array
-        
-            return weightsTmp
+            return _wBuffers.w.download()
         }
         set {
             _weightsList = newValue
@@ -261,19 +256,15 @@ public class Constant12Seq: LayerSeq, LayerUpdate
             deviceID: deviceID
         )
         
-        let weightsPtr = _wBuffers.w_p!.shared.buffer
         if _weightsList.count != 0
         {
-            copyFloatArrayToBuffer(
-                array: &_weightsList,
-                buffer: weightsPtr,
-                start: 0,
-                nbElems: sequence * nbNeurons
-            )
+            _wBuffers.w.initialize(array: &_weightsList)
+        }
+        else
+        {
+            _wBuffers.w.initialize()
         }
         _weightsList = []
-        
-        MetalKernel.get.upload([_wBuffers.w_p!])
     }
     
     ///
@@ -339,8 +330,7 @@ public class Constant12Seq: LayerSeq, LayerUpdate
             )
         }}
         
-        MetalKernel.get.download([_wBuffers.w_p!])
-        let weightsPtr = _wBuffers.w_p!.shared.buffer
+        let weightsPtr = _wBuffers.w.download()
     
         for batch in 0..<batchSize {
         for seq in 0..<sequence {
@@ -518,7 +508,7 @@ public class Constant2Seq: LayerSeq, LayerUpdate
     /// Buffer of gradients per sample for biases.
     /// Shape ~ (batch, sequence, nbNeurons).
     ///
-    var _wDeltaWeights: MetalPrivateBuffer<Float>! = nil
+    var _wDeltaWeights: FloatBuffer! = nil
     
     /// Whether to compute weights' gradients or not.
     public var computeDeltaWeights: Bool = true
@@ -558,12 +548,7 @@ public class Constant2Seq: LayerSeq, LayerUpdate
             {
                 return _weightsList
             }
-            
-            var weightsTmp = [Float]()
-            MetalKernel.get.download([_wBuffers.w_p!])
-            weightsTmp += _wBuffers.w_p!.shared.array
-        
-            return weightsTmp
+            return _wBuffers.w.download()
         }
         set {
             _weightsList = newValue
@@ -755,19 +740,16 @@ public class Constant2Seq: LayerSeq, LayerUpdate
             deviceID: deviceID
         )
         
-        let weightsPtr = _wBuffers.w_p!.shared.buffer
         if _weightsList.count != 0
         {
-            copyFloatArrayToBuffer(
-                array: &_weightsList,
-                buffer: weightsPtr,
-                start: 0,
-                nbElems: nbNeurons
-            )
+            _wBuffers.w.initialize(array: &_weightsList)
         }
-        _weightsList = []
+        else
+        {
+            _wBuffers.w.initialize()
+        }
         
-        MetalKernel.get.upload([_wBuffers.w_p!])
+        _weightsList = []
         _wDeltaWeights = nil
     }
     
@@ -784,7 +766,7 @@ public class Constant2Seq: LayerSeq, LayerUpdate
         if computeDeltaWeights &&
            GrAI.Gradient.sample && _wDeltaWeights == nil
         {
-            _wDeltaWeights = MetalPrivateBuffer<Float>(
+            _wDeltaWeights = FloatBuffer(nbElems: 
                 batchSize * sequence * nbNeurons, deviceID: deviceID
             )
         }
@@ -852,8 +834,7 @@ public class Constant2Seq: LayerSeq, LayerUpdate
             )
         }}
         
-        MetalKernel.get.download([_wBuffers.w_p!])
-        let weightsPtr = _wBuffers.w_p!.shared.buffer
+        let weightsPtr = _wBuffers.w.download()
     
         for batch in 0..<batchSize {
         for seq in 0..<sequence {
@@ -1066,8 +1047,7 @@ public class Constant2Seq: LayerSeq, LayerUpdate
         }
         
         var deltaWeights = [T]()
-        MetalKernel.get.download([_wDeltaWeights])
-        let deltaWeightsPtr = _wDeltaWeights.shared.buffer
+        let deltaWeightsPtr = _wDeltaWeights.download()
         
         for depth in 0..<nbNeurons
         {
@@ -1113,8 +1093,7 @@ public class Constant2Seq: LayerSeq, LayerUpdate
         }
         
         var deltaWeights = [T]()
-        MetalKernel.get.download([_wBuffers.g_p!])
-        let deltaWeightsPtr = _wBuffers.g_p!.shared.buffer
+        let deltaWeightsPtr = _wBuffers.g.download()
         
         for i in 0..<_wBuffers.nbElems
         {

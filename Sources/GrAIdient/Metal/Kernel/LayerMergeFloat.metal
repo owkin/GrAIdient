@@ -8,7 +8,7 @@
 #include <metal_stdlib>
 using namespace metal;
 
-kernel void sum1(
+kernel void sum1Float(
     const device float * ins,
     constant uint * pNbElems,
     device float * outs,
@@ -31,7 +31,7 @@ kernel void sum1(
     outs[id] = ins[id];
 }
 
-kernel void sum14(
+kernel void sum14Float(
     const device float4 * ins,
     constant uint * pNbElems,
     device float4 * outs,
@@ -54,7 +54,7 @@ kernel void sum14(
     outs[id] = ins[id];
 }
 
-kernel void sum2(
+kernel void sum2Float(
     const device float * ins,
     constant uint * pNbElems,
     device float * outs,
@@ -77,7 +77,7 @@ kernel void sum2(
     outs[id] += ins[id];
 }
 
-kernel void sum24(
+kernel void sum24Float(
     const device float4 * ins,
     constant uint * pNbElems,
     device float4 * outs,
@@ -100,7 +100,7 @@ kernel void sum24(
     outs[id] += ins[id];
 }
 
-kernel void multiplyForward(
+kernel void multiplyForwardFloat(
     const device float * outsPrev,
     constant uint * pNbElems,
     device float * outs,
@@ -123,7 +123,7 @@ kernel void multiplyForward(
     outs[id] *= outsPrev[id];
 }
 
-kernel void multiplyBackward(
+kernel void multiplyBackwardFloat(
     const device float * outs,
     const device float * delta,
     constant uint * pNbElems,

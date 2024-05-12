@@ -8,17 +8,17 @@
 #include <metal_stdlib>
 using namespace metal;
 
-kernel void flPatchForward(
-    const device float * outsPrev,
-    const device float * weights,
-    const device float * biases,
+kernel void flPatchForwardHalf(
+    const device half * outsPrev,
+    const device half * weights,
+    const device half * biases,
     constant uint * pNbNeurons,
     constant uint * pNbChannelsPrev,
     constant uint * pDimensionsPrev,
     constant uint * pPatch,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -85,9 +85,9 @@ kernel void flPatchForward(
     outs[offset] = tmp;
 }
 
-kernel void flPatchBackward(
-    const device float * delta,
-    const device float * weights,
+kernel void flPatchBackwardHalf(
+    const device half * delta,
+    const device half * weights,
     constant uint * pNbNeurons,
     constant uint * pNbChannelsPrev,
     constant uint * pDimensionsPrev,
@@ -95,7 +95,7 @@ kernel void flPatchBackward(
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -170,9 +170,9 @@ kernel void flPatchBackward(
     }
 }
 
-kernel void flPatchBatchDerWeights(
-    const device float * outsPrev,
-    const device float * delta,
+kernel void flPatchBatchDerWeightsHalf(
+    const device half * outsPrev,
+    const device half * delta,
     constant uint * pNbNeurons,
     constant uint * pNbChannelsPrev,
     constant uint * pDimensionsPrev,
@@ -180,7 +180,7 @@ kernel void flPatchBatchDerWeights(
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pAccumulate,
-    device float * grads,
+    device half * grads,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -256,13 +256,13 @@ kernel void flPatchBatchDerWeights(
     }
 }
 
-kernel void flPatchBatchDerBiases(
-    const device float * delta,
+kernel void flPatchBatchDerBiasesHalf(
+    const device half * delta,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pAccumulate,
-    device float * grads,
+    device half * grads,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -304,13 +304,13 @@ kernel void flPatchBatchDerBiases(
     }
 }
 
-kernel void flPatchBatch4DerBiases(
-    const device float4 * delta,
+kernel void flPatchBatch4DerBiasesHalf(
+    const device half4 * delta,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pAccumulate,
-    device float4 * grads,
+    device half4 * grads,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -334,7 +334,7 @@ kernel void flPatchBatch4DerBiases(
         return ;
     }
     
-    float4 tmp = 0.0;
+    half4 tmp = 0.0;
     for (uint elem=0; elem<nbBatch; elem++) {
     for (uint seq=0; seq<sequence; seq++)
     {
@@ -353,16 +353,16 @@ kernel void flPatchBatch4DerBiases(
     }
 }
 
-kernel void flPatchDerWeights(
-    const device float * outsPrev,
-    const device float * delta,
+kernel void flPatchDerWeightsHalf(
+    const device half * outsPrev,
+    const device half * delta,
     constant uint * pNbNeurons,
     constant uint * pNbChannelsPrev,
     constant uint * pDimensionsPrev,
     constant uint * pPatch,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * deltaWeights,
+    device half * deltaWeights,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -432,12 +432,12 @@ kernel void flPatchDerWeights(
     deltaWeights[offsetWeights] = tmp;
 }
 
-kernel void flPatchDerBiases(
-    const device float * delta,
+kernel void flPatchDerBiasesHalf(
+    const device half * delta,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * deltaWeights,
+    device half * deltaWeights,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -472,14 +472,14 @@ kernel void flPatchDerBiases(
     deltaWeights[offsetWeights] = tmp;
 }
 
-kernel void flPatchReduceWeights(
-    const device float * deltaWeights,
+kernel void flPatchReduceWeightsHalf(
+    const device half * deltaWeights,
     constant uint * pNbNeurons,
     constant uint * pNbChannelsPrev,
     constant uint * pPatch,
     constant uint * pNbBatch,
     constant uint * pAccumulate,
-    device float * grads,
+    device half * grads,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;

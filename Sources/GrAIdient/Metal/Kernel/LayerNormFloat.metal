@@ -8,7 +8,7 @@
 #include <metal_stdlib>
 using namespace metal;
 
-kernel void computeLayerNormSeqμ(
+kernel void computeLayerNormSeqμFloat(
     const device float * tmps,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
@@ -48,7 +48,7 @@ kernel void computeLayerNormSeqμ(
     μ[seq + sequence * elem] = sum / nbElems;
 }
 
-kernel void computeLayerNormSeqμ4(
+kernel void computeLayerNormSeqμ4Float(
     const device float4 * tmps,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
@@ -89,7 +89,7 @@ kernel void computeLayerNormSeqμ4(
     μ[seq + sequence * elem] = (sum[0] + sum[1] + sum[2] + sum[3]) / nbElems;
 }
 
-kernel void computeLayerNormSeqσ2(
+kernel void computeLayerNormSeqσ2Float(
     const device float * tmps,
     const device float * μ,
     constant uint * pNbNeurons,
@@ -132,7 +132,7 @@ kernel void computeLayerNormSeqσ2(
     σ2[seq + sequence * elem] = sum / nbElems;
 }
 
-kernel void computeLayerNormSeqσ24(
+kernel void computeLayerNormSeqσ24Float(
     const device float4 * tmps,
     const device float * μ,
     constant uint * pNbNeurons,
@@ -176,7 +176,7 @@ kernel void computeLayerNormSeqσ24(
     σ2[seq + sequence * elem] = (sum[0] + sum[1] + sum[2] + sum[3]) / nbElems;
 }
 
-kernel void forwardLayerNormSeq(
+kernel void forwardLayerNormSeqFloat(
     const device float * β,
     const device float * Ɣ,
     const device float * μ,
@@ -221,7 +221,7 @@ kernel void forwardLayerNormSeq(
     tmps[offset] = Ɣ[depth] * xhat + β[depth];
 }
 
-kernel void forwardLayerNormSeq4(
+kernel void forwardLayerNormSeq4Float(
     const device float4 * β,
     const device float4 * Ɣ,
     const device float * μ,
@@ -267,7 +267,7 @@ kernel void forwardLayerNormSeq4(
     tmps[offset] = Ɣ[depth] * xhat + β[depth];
 }
 
-kernel void backwardWeights1LayerNormSeq(
+kernel void backwardWeights1LayerNormSeqFloat(
     const device float * delta,
     const device float * xHat,
     const device float * Ɣ,
@@ -316,7 +316,7 @@ kernel void backwardWeights1LayerNormSeq(
     sum2[seq + sequence * elem] = tmp2;
 }
 
-kernel void backwardWeights1LayerNormSeq4(
+kernel void backwardWeights1LayerNormSeq4Float(
     const device float4 * delta,
     const device float4 * xHat,
     const device float4 * Ɣ,
@@ -365,7 +365,7 @@ kernel void backwardWeights1LayerNormSeq4(
     sum2[seq + sequence * elem] = tmp2[0] + tmp2[1] + tmp2[2] + tmp2[3];
 }
 
-kernel void backwardWeights2LayerNormSeq(
+kernel void backwardWeights2LayerNormSeqFloat(
     const device float * delta,
     const device float * xHat,
     constant uint * pNbNeurons,
@@ -424,7 +424,7 @@ kernel void backwardWeights2LayerNormSeq(
     }
 }
 
-kernel void backwardWeights2LayerNormSeq4(
+kernel void backwardWeights2LayerNormSeq4Float(
     const device float4 * delta,
     const device float4 * xHat,
     constant uint * pNbNeurons,
@@ -483,7 +483,7 @@ kernel void backwardWeights2LayerNormSeq4(
     }
 }
 
-kernel void backwardLayerNormSeq(
+kernel void backwardLayerNormSeqFloat(
     const device float * σ2,
     const device float * xHat,
     const device float * Ɣ,
@@ -532,7 +532,7 @@ kernel void backwardLayerNormSeq(
     delta[offset] = mult * (tmp1 - tmp2 - tmp3);
 }
 
-kernel void backwardLayerNormSeq4(
+kernel void backwardLayerNormSeq4Float(
     const device float * σ2,
     const device float4 * xHat,
     const device float4 * Ɣ,

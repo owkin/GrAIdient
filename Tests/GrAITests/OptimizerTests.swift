@@ -18,7 +18,9 @@ class OptimizerTests: Input1DMSE1DCase
     {
         batchSize = 5
         _ = MetalKernel.get
+        
         GrAI.Opti.GPU = true
+        GrAI.Precision.float = true
         
         setOptimizerParams(params: &optimizerParams)
         optimizerParams.nbLoops = 10
@@ -132,6 +134,7 @@ class OptimizerTests: Input1DMSE1DCase
     
     func testAdamRectified() throws
     {
+        optimizerParams.nbLoops = 5
         setOptimizerParams(params: &optimizerParams,
                            optimizerClass: .AdamRectified)
         let trainer = _buildTrainer()
@@ -140,6 +143,7 @@ class OptimizerTests: Input1DMSE1DCase
     
     func testAdamRectifiedDecay() throws
     {
+        optimizerParams.nbLoops = 5
         setOptimizerParams(params: &optimizerParams,
                            optimizerClass: .AdamRectified,
                            lambda: 1e-3)

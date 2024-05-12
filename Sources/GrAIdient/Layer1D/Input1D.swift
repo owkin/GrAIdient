@@ -61,9 +61,9 @@ class InputArrays1D: InputArrays<Layer1D>, IWeightArrays
 
 /// GPU buffers needed to update the inputs of a layer.
 class InputBuffers1D: InputBuffers<Layer1D>, IWeightBuffers
-{
+{    
     /// Inputs buffer: the buffer to be update.
-    var w: MetalBuffer<Float>
+    var w: FloatBuffer
     {
         get {
             return _layer.outs
@@ -71,7 +71,7 @@ class InputBuffers1D: InputBuffers<Layer1D>, IWeightBuffers
     }
     
     /// Gradients buffer.
-    var g: MetalBuffer<Float>
+    var g: FloatBuffer
     {
         get {
             return _layer.delta
@@ -304,7 +304,7 @@ public class Input1D: LayerInput1D, LayerUpdate
     ///     - nbNeurons: Number of neurons.
     ///
     public func setDataGPU(
-        _ data: MetalPrivateBuffer<Float>,
+        _ data: FloatBuffer,
         batchSize: Int,
         nbNeurons: Int) throws
     {

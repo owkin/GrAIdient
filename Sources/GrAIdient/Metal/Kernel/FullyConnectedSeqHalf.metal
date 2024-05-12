@@ -8,15 +8,15 @@
 #include <metal_stdlib>
 using namespace metal;
 
-kernel void flSeqForward(
-    const device float * outsPrev,
-    const device float * weights,
-    const device float * biases,
+kernel void flSeqForwardHalf(
+    const device half * outsPrev,
+    const device half * weights,
+    const device half * biases,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -61,15 +61,15 @@ kernel void flSeqForward(
     outs[offset] = tmp;
 }
 
-kernel void flSeq48Forward(
-    const device float4 * outsPrev,
-    const device float4 * weights,
-    const device float * biases,
+kernel void flSeq48ForwardHalf(
+    const device half4 * outsPrev,
+    const device half4 * weights,
+    const device half * biases,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -98,17 +98,17 @@ kernel void flSeq48Forward(
         return ;
     }
     
-    float4 tmp[8] = {0};
+    half4 tmp[8] = {0};
     for (uint depthPrev=0; depthPrev<nbNeuronsPrev/4; depthPrev++)
     {
         uint offsetWeights = (depthPrev * 4 + nbNeuronsPrev * depth) / 4;
-        float4 w = weights[offsetWeights];
+        half4 w = weights[offsetWeights];
         
         for (uint i=0; i<coeff; i++)
         {
             uint offsetPrev = (depthPrev * 4 + nbNeuronsPrev * seq +
                 sequence * nbNeuronsPrev * (elem*coeff+i)) / 4;
-            float4 outPrev = outsPrev[offsetPrev];
+            half4 outPrev = outsPrev[offsetPrev];
             
             tmp[i] += outPrev * w;
         }
@@ -123,15 +123,15 @@ kernel void flSeq48Forward(
     }
 }
 
-kernel void flSeq4Forward(
-    const device float4 * outsPrev,
-    const device float4 * weights,
-    const device float * biases,
+kernel void flSeq4ForwardHalf(
+    const device half4 * outsPrev,
+    const device half4 * weights,
+    const device half * biases,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * outs,
+    device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -159,15 +159,15 @@ kernel void flSeq4Forward(
         return ;
     }
     
-    float4 tmp = 0;
+    half4 tmp = 0;
     for (uint depthPrev=0; depthPrev<nbNeuronsPrev/4; depthPrev++)
     {
         uint offsetPrev = (depthPrev * 4 + nbNeuronsPrev * seq +
             sequence * nbNeuronsPrev * elem) / 4;
-        float4 outPrev = outsPrev[offsetPrev];
+        half4 outPrev = outsPrev[offsetPrev];
         
         uint offsetWeights = (depthPrev * 4 + nbNeuronsPrev * depth) / 4;
-        float4 w = weights[offsetWeights];
+        half4 w = weights[offsetWeights];
         
         tmp += outPrev * w;
     }
@@ -176,15 +176,15 @@ kernel void flSeq4Forward(
     outs[offset] = tmp[0] + tmp[1] + tmp[2] + tmp[3] + biases[depth];
 }
 
-kernel void flSeqBackward(
-    const device float * delta,
-    const device float * weights,
+kernel void flSeqBackwardHalf(
+    const device half * delta,
+    const device half * weights,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -239,15 +239,15 @@ kernel void flSeqBackward(
     }
 }
 
-kernel void flSeq48Backward(
-    const device float * delta,
-    const device float4 * weights,
+kernel void flSeq48BackwardHalf(
+    const device half * delta,
+    const device half4 * weights,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pDirty,
-    device float4 * deltaPrev,
+    device half4 * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -279,11 +279,11 @@ kernel void flSeq48Backward(
         return ;
     }
     
-    float4 tmp[8] = {0};
+    half4 tmp[8] = {0};
     for (uint depth=0; depth<nbNeurons; depth++)
     {
         uint offsetWeights = (depthPrev * 4 + nbNeuronsPrev * depth) / 4;
-        float4 w = weights[offsetWeights];
+        half4 w = weights[offsetWeights];
         
         for (uint i=0; i<coeff; i++)
         {
@@ -315,15 +315,15 @@ kernel void flSeq48Backward(
     }
 }
 
-kernel void flSeq4Backward(
-    const device float * delta,
-    const device float4 * weights,
+kernel void flSeq4BackwardHalf(
+    const device half * delta,
+    const device half4 * weights,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pDirty,
-    device float4 * deltaPrev,
+    device half4 * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -353,11 +353,11 @@ kernel void flSeq4Backward(
         return ;
     }
     
-    float4 tmp = 0.0;
+    half4 tmp = 0.0;
     for (uint depth=0; depth<nbNeurons; depth++)
     {
         uint offsetWeights = (depthPrev * 4 + nbNeuronsPrev * depth) / 4;
-        float4 w = weights[offsetWeights];
+        half4 w = weights[offsetWeights];
         
         uint offset = depth + nbNeurons * seq + sequence * nbNeurons * elem;
         float deltaCur = delta[offset];
@@ -378,15 +378,15 @@ kernel void flSeq4Backward(
     }
 }
 
-kernel void flSeqBatchDerWeights(
-    const device float * outsPrev,
-    const device float * delta,
+kernel void flSeqBatchDerWeightsHalf(
+    const device half * outsPrev,
+    const device half * delta,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pAccumulate,
-    device float * grads,
+    device half * grads,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -440,15 +440,15 @@ kernel void flSeqBatchDerWeights(
     }
 }
 
-kernel void flSeqBatch4DerWeights(
-    const device float4 * outsPrev,
-    const device float * delta,
+kernel void flSeqBatch4DerWeightsHalf(
+    const device half4 * outsPrev,
+    const device half * delta,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pAccumulate,
-    device float4 * grads,
+    device half4 * grads,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -477,7 +477,7 @@ kernel void flSeqBatch4DerWeights(
         return ;
     }
     
-    float4 tmp = 0.0;
+    half4 tmp = 0.0;
     for (uint elem=0; elem<nbBatch; elem++) {
     for (uint seq=0; seq<sequence; seq++)
     {
@@ -486,7 +486,7 @@ kernel void flSeqBatch4DerWeights(
         
         uint offsetPrev = (depthPrev * 4 + nbNeuronsPrev * seq +
             sequence * nbNeuronsPrev * elem) / 4;
-        float4 outPrev = outsPrev[offsetPrev];
+        half4 outPrev = outsPrev[offsetPrev];
         
         tmp += outPrev * deltaCur;
     }}
@@ -502,14 +502,14 @@ kernel void flSeqBatch4DerWeights(
     }
 }
 
-kernel void flSeqDerWeights(
-    const device float * outsPrev,
-    const device float * delta,
+kernel void flSeqDerWeightsHalf(
+    const device half * outsPrev,
+    const device half * delta,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * deltaWeights,
+    device half * deltaWeights,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -556,13 +556,13 @@ kernel void flSeqDerWeights(
     deltaWeights[offsetWeights] = tmp;
 }
 
-kernel void flSeqReduceWeights(
-    const device float * deltaWeights,
+kernel void flSeqReduceWeightsHalf(
+    const device half * deltaWeights,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
     constant uint * pNbBatch,
     constant uint * pAccumulate,
-    device float * grads,
+    device half * grads,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;

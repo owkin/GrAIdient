@@ -8,14 +8,14 @@
 #include <metal_stdlib>
 using namespace metal;
 
-kernel void vqSeqForward(
-    const device float * outsPrev,
-    const device float * weights,
+kernel void vqSeqForwardHalf(
+    const device half * outsPrev,
+    const device half * weights,
     constant uint * pNbNeurons,
     constant uint * pK,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * outs,
+    device half * outs,
     device int * indices,
     uint2 id [[ thread_position_in_grid ]])
 {
@@ -79,10 +79,10 @@ kernel void vqSeqForward(
     }
 }
 
-kernel void vqSeqBackward(
-    const device float * outsPrev,
-    const device float * delta,
-    const device float * weights,
+kernel void vqSeqBackwardHalf(
+    const device half * outsPrev,
+    const device half * delta,
+    const device half * weights,
     const device int * indices,
     constant uint * pNbNeurons,
     constant uint * pK,
@@ -90,7 +90,7 @@ kernel void vqSeqBackward(
     constant uint * pNbBatch,
     constant uint * pSequence,
     constant uint * pDirty,
-    device float * deltaPrev,
+    device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -153,16 +153,16 @@ kernel void vqSeqBackward(
     }
 }
 
-kernel void vqSeqBatchDerWeights(
-    const device float * outsPrev,
-    const device float * weights,
+kernel void vqSeqBatchDerWeightsHalf(
+    const device half * outsPrev,
+    const device half * weights,
     const device int * indices,
     constant uint * pNbNeurons,
     constant uint * pK,
     constant float * pCoeff,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * grads,
+    device half * grads,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -213,16 +213,16 @@ kernel void vqSeqBatchDerWeights(
     grads[depth + nbNeurons * k] += sum;
 }
 
-kernel void vqSeqDerWeights(
-    const device float * outsPrev,
-    const device float * weights,
+kernel void vqSeqDerWeightsHalf(
+    const device half * outsPrev,
+    const device half * weights,
     const device int * indices,
     constant uint * pNbNeurons,
     constant uint * pK,
     constant float * pCoeff,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * deltaWeights,
+    device half * deltaWeights,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -273,14 +273,14 @@ kernel void vqSeqDerWeights(
     deltaWeights[depth + nbNeurons * k + K * nbNeurons * elem] += sum;
 }
 
-kernel void vqSeqLoss(
-    const device float * outsPrev,
-    const device float * outs,
+kernel void vqSeqLossHalf(
+    const device half * outsPrev,
+    const device half * outs,
     const device int * indices,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * losses,
+    device half * losses,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
@@ -323,13 +323,13 @@ kernel void vqSeqLoss(
     losses[elem] = tmp;
 }
 
-kernel void vqLayerCAMMaxSeq(
-     const device float * camLayer,
+kernel void vqLayerCAMMaxSeqHalf(
+     const device half * camLayer,
      constant uint * pNbNeurons,
      constant uint * pNbThreadgroups,
      constant uint * pNbBatch,
      constant uint * pSequence,
-     device float * camMax,
+     device half * camMax,
      uint2 groupId [[ threadgroup_position_in_grid ]],
      uint2 threadId [[ thread_position_in_threadgroup ]],
      uint2 id [[ thread_position_in_grid ]])
@@ -385,17 +385,17 @@ kernel void vqLayerCAMMaxSeq(
     }
 }
 
-kernel void vqGradSeqForward(
-    const device float * outsPrev,
-    const device float * camLayer,
-    const device float * camMax,
-    const device float * weights,
+kernel void vqGradSeqForwardHalf(
+    const device half * outsPrev,
+    const device half * camLayer,
+    const device half * camMax,
+    const device half * weights,
     constant uint * pNbNeurons,
     constant uint * pK,
     constant float * pMagnitudeCoeff,
     constant uint * pNbBatch,
     constant uint * pSequence,
-    device float * outs,
+    device half * outs,
     device int * indices,
     uint2 id [[ thread_position_in_grid ]])
 {

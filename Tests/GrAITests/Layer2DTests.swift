@@ -1843,13 +1843,13 @@ class Layer2DFlowTests: Input2DMSE1DCase
     func testNormalize1() throws
     {
         let trainer = _buildTrainer(model: "Normalize1", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     func testNormalize12() throws
     {
         let trainer = _buildTrainer(model: "Normalize12", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     func testFlipHorizontal1() throws
@@ -2371,13 +2371,13 @@ class Layer2DFlowResetTests: Layer2DFlowTests
     override func testNormalize1() throws
     {
         let trainer = _buildTrainer(model: "Normalize1", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     override func testNormalize12() throws
     {
         let trainer = _buildTrainer(model: "Normalize12", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     override func testFlipHorizontal1() throws
@@ -2771,13 +2771,13 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
     override func testNormalize1() throws
     {
         let trainer = _buildTrainer(model: "Normalize1", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     override func testNormalize12() throws
     {
         let trainer = _buildTrainer(model: "Normalize12", bn: false)
-        run(trainer)
+        run(trainer, diffThreshold: 0.0001)
     }
     
     override func testFlipHorizontal1() throws

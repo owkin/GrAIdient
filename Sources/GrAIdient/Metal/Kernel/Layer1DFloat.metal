@@ -8,7 +8,7 @@
 #include <metal_stdlib>
 using namespace metal;
 
-kernel void MSE1DLoss(
+kernel void MSE1DLossFloat(
     const device float * outs,
     const device float * groundTruth,
     constant uint * pNbNeurons,
@@ -48,7 +48,7 @@ kernel void MSE1DLoss(
     losses[elem] = tmp;
 }
 
-kernel void MSE1DLossDerivative(
+kernel void MSE1DLossDerivativeFloat(
     const device float * outs,
     const device float * groundTruth,
     constant uint * pNbNeurons,
@@ -98,7 +98,7 @@ kernel void MSE1DLossDerivative(
     }
 }
 
-kernel void linearErrorLoss(
+kernel void linearErrorLossFloat(
     const device float * outs,
     const device float * groundTruth,
     constant uint * pNbNeurons,
@@ -138,7 +138,7 @@ kernel void linearErrorLoss(
     losses[elem] = tmp;
 }
 
-kernel void linearErrorLossDerivative(
+kernel void linearErrorLossDerivativeFloat(
     const device float * outs,
     constant uint * pNbNeurons,
     constant float * pCoeff,
@@ -182,7 +182,7 @@ kernel void linearErrorLossDerivative(
     }
 }
 
-kernel void selectNeurons1DForward(
+kernel void selectNeurons1DForwardFloat(
     const device float * outsPrev,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
@@ -219,7 +219,7 @@ kernel void selectNeurons1DForward(
     outs[offset] = pCoeffs[depth] * outsPrev[offsetPrev];
 }
 
-kernel void selectNeurons1DBackward(
+kernel void selectNeurons1DBackwardFloat(
     const device float * delta,
     constant uint * pNbNeurons,
     constant uint * pNbNeuronsPrev,
@@ -256,7 +256,7 @@ kernel void selectNeurons1DBackward(
     deltaPrev[offsetPrev] += pCoeffs[depth] * delta[offset];
 }
 
-kernel void concat1DForward(
+kernel void concat1DForwardFloat(
     const device float * outsPrev,
     constant uint * pGlobalOffset,
     constant uint * pNbNeurons,
@@ -295,7 +295,7 @@ kernel void concat1DForward(
     outs[offset] = outsPrev[offsetPrev];
 }
 
-kernel void concat1DBackward(
+kernel void concat1DBackwardFloat(
     const device float * delta,
     constant uint * pGlobalOffset,
     constant uint * pNbNeurons,
@@ -344,7 +344,7 @@ kernel void concat1DBackward(
     }
 }
 
-kernel void softmax1DForward(
+kernel void softmax1DForwardFloat(
     const device float * outsPrev,
     constant uint * pNbHeads,
     constant uint * pNbNeurons,
@@ -401,7 +401,7 @@ kernel void softmax1DForward(
     outs[offset] = exp(outPrev - cMax) / sum1;
 }
 
-kernel void softmax1DBackward(
+kernel void softmax1DBackwardFloat(
     const device float * outs,
     const device float * delta,
     constant uint * pNbHeads,
@@ -461,7 +461,7 @@ kernel void softmax1DBackward(
     }
 }
 
-kernel void dotProduct1DForward(
+kernel void dotProduct1DForwardFloat(
     const device float * outsPrev1,
     const device float * outsPrev2,
     constant int * pSize,
@@ -508,7 +508,7 @@ kernel void dotProduct1DForward(
     outs[offset] = sum;
 }
 
-kernel void dotProduct1DBackward(
+kernel void dotProduct1DBackwardFloat(
     const device float * outsPrev,
     const device float * delta,
     constant int * pSize,
@@ -563,7 +563,7 @@ kernel void dotProduct1DBackward(
     }
 }
 
-kernel void constant1DForward(
+kernel void constant1DForwardFloat(
     const device float * weights,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
@@ -593,7 +593,7 @@ kernel void constant1DForward(
     outs[offset] = weights[depth];
 }
 
-kernel void BCE1DLoss(
+kernel void BCE1DLossFloat(
     const device float * outs,
     const device float * groundTruth,
     constant uint * pNbNeurons,
@@ -634,7 +634,7 @@ kernel void BCE1DLoss(
     losses[elem] = tmp;
 }
 
-kernel void BCE1DLossDerivative(
+kernel void BCE1DLossDerivativeFloat(
     const device float * outs,
     const device float * groundTruth,
     constant uint * pNbNeurons,
@@ -693,7 +693,7 @@ kernel void BCE1DLossDerivative(
     }
 }
 
-kernel void BCESigmoid1DLoss(
+kernel void BCESigmoid1DLossFloat(
     const device float * outs,
     const device float * groundTruth,
     constant uint * pNbNeurons,
@@ -744,7 +744,7 @@ kernel void BCESigmoid1DLoss(
     losses[elem] = tmp;
 }
 
-kernel void BCESigmoid1DLossDerivative(
+kernel void BCESigmoid1DLossDerivativeFloat(
     const device float * outs,
     const device float * groundTruth,
     constant uint * pNbNeurons,
@@ -803,7 +803,7 @@ kernel void BCESigmoid1DLossDerivative(
     }
 }
 
-kernel void dropout1DForward(
+kernel void dropout1DForwardFloat(
     const device float * outsPrev,
     const device bool * dropout,
     constant uint * pNbNeurons,
@@ -852,7 +852,7 @@ kernel void dropout1DForward(
     }
 }
 
-kernel void dropout1DBackward(
+kernel void dropout1DBackwardFloat(
     const device float * delta,
     const device bool * dropout,
     constant uint * pNbNeurons,

@@ -8,12 +8,12 @@
 #include <metal_stdlib>
 using namespace metal;
 
-kernel void reduceBiases(
-    const device float * deltaWeights,
+kernel void reduceBiasesHalf(
+    const device half * deltaWeights,
     constant uint * pNbNeurons,
     constant uint * pNbBatch,
     constant uint * pAccumulate,
-    device float * grads,
+    device half * grads,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;

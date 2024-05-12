@@ -8,11 +8,11 @@
 #include <metal_stdlib>
 using namespace metal;
 
-kernel void reduceSum64(
-     const device float * ins,
+kernel void reduceSum64Half(
+     const device half * ins,
      constant uint * pDimensions,
      constant uint * pNbThreadgroups,
-     device float * outs,
+     device half * outs,
      uint2 groupId [[ threadgroup_position_in_grid ]],
      uint2 threadId [[ thread_position_in_threadgroup ]],
      uint2 id [[ thread_position_in_grid ]])
@@ -62,10 +62,10 @@ kernel void reduceSum64(
     }
 }
 
-kernel void reduceSum(
-     const device float * ins,
+kernel void reduceSumHalf(
+     const device half * ins,
      constant uint * pDimensions,
-     device float * outs,
+     device half * outs,
      uint id [[ thread_position_in_grid ]])
 {
     uint dim1;
@@ -94,11 +94,11 @@ kernel void reduceSum(
     outs[elem2] = sum;
 }
 
-kernel void reduceMax64(
-     const device float * ins,
+kernel void reduceMax64Half(
+     const device half * ins,
      constant uint * pDimensions,
      constant uint * pNbThreadgroups,
-     device float * outs,
+     device half * outs,
      uint2 groupId [[ threadgroup_position_in_grid ]],
      uint2 threadId [[ thread_position_in_threadgroup ]],
      uint2 id [[ thread_position_in_grid ]])
@@ -151,10 +151,10 @@ kernel void reduceMax64(
     }
 }
 
-kernel void reduceMax(
-     const device float * ins,
+kernel void reduceMaxHalf(
+     const device half * ins,
      constant uint * pDimensions,
-     device float * outs,
+     device half * outs,
      uint id [[ thread_position_in_grid ]])
 {
     uint dim1;
@@ -174,7 +174,7 @@ kernel void reduceMax(
         return ;
     }
     
-    float val = ins[elem2 * dim1];
+    half val = ins[elem2 * dim1];
     for (uint elem1=0; elem1<dim1; elem1++)
     {
         uint offset = elem2 * dim1 + elem1;

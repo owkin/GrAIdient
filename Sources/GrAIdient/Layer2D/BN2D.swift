@@ -533,8 +533,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
                 }}}
             }}
             
-            MetalKernel.get.download([layerPrev.outs])
-            let outsPrevPtr = layerPrev.outs.shared.buffer
+            let outsPrevPtr = layerPrev.outs.download()
             
             // Prepare GC for norm weights: Ɣ and β.
             for batch in 0..<batchSize {
@@ -693,7 +692,7 @@ public class BN2D: Activation2D, LayerUpdate, LayerWithActivation
     /// Get the weights in the CPU execution context.
     public func collectWeightsCPU() -> [IWeightArrays]
     {
-        var weights = [IWeightArrays]()
+        var weights = [WeightArrays]()
         if let norm = self.norm
         {
             weights += norm.collectWeights()

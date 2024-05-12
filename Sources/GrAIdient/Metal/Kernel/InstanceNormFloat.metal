@@ -1,134 +1,106 @@
 //
-// BatchNorm.metal
+// InstanceNorm.metal
 // GrAIdient
 //
-// Created by Jean-François Reboud on 14/10/2022.
+// Created by Jean-François Reboud on 17/02/2022.
 //
 
 #include <metal_stdlib>
 using namespace metal;
 
-kernel void computeBNConvμ(
+kernel void computeInstanceNormConvμFloat(
     const device float * tmps,
     constant uint * pNbChannels,
     constant uint * pNbBatch,
     constant uint * pDimensions,
-    constant uint * pFirstCall,
     device float * μ,
-    device float * Eμ,
-    uint id [[ thread_position_in_grid ]])
+    uint2 id [[ thread_position_in_grid ]])
 {
     uint nbChannels;
     uint nbBatch;
     uint width;
     uint height;
-    uint firstCall;
     
-    if (pNbChannels && pNbBatch && pDimensions && pFirstCall && tmps &&
-        μ && Eμ)
+    if (pNbChannels && pNbBatch && pDimensions && tmps && μ)
     {
         nbChannels = *pNbChannels;
         nbBatch = *pNbBatch;
         width = pDimensions[0];
         height = pDimensions[1];
-        firstCall = *pFirstCall;
     }
     else
         return ;
     
-    uint depth = id;
-    if (depth >= nbChannels)
+    uint depth = id[0];
+    uint elem = id[1];
+    if (depth >= nbChannels || elem >= nbBatch)
     {
         return ;
     }
     
-    uint nbElems = nbBatch * width * height;
+    uint nbElems = width * height;
     float sum = 0.0;
-    for (uint elem=0; elem<nbBatch; elem++)
-    {
-        for (uint x=0; x<width; x++){
-        for (uint y=0; y<height; y++)
-        {
-            uint offsetStart = (depth + nbChannels * elem) * height;
-            uint offset = y + (offsetStart + x) * width;
-                
-            sum += tmps[offset];
-        }}
-    }
-    μ[depth] = sum / nbElems;
     
-    if (pFirstCall)
+    for (uint x=0; x<width; x++){
+    for (uint y=0; y<height; y++)
     {
-        Eμ[depth] = μ[depth];
-    }
-    else
-    {
-        Eμ[depth] = 0.9 * Eμ[depth] + 0.1 * μ[depth];
-    }
+        uint offsetStart = (depth + nbChannels * elem) * height;
+        uint offset = y + (offsetStart + x) * width;
+            
+        sum += tmps[offset];
+    }}
+    
+    μ[depth + nbChannels * elem] = sum / nbElems;
 }
 
-kernel void computeBNConvσ2(
+kernel void computeInstanceNormConvσ2Float(
     const device float * tmps,
     const device float * μ,
     constant uint * pNbChannels,
     constant uint * pNbBatch,
     constant uint * pDimensions,
-    constant uint * pFirstCall,
     device float * σ2,
-    device float * Eσ2,
-    uint id [[ thread_position_in_grid ]])
+    uint2 id [[ thread_position_in_grid ]])
 {
     uint nbChannels;
     uint nbBatch;
     uint width;
     uint height;
-    uint firstCall;
     
-    if (pNbChannels && pNbBatch && pDimensions && pFirstCall &&
-        tmps && μ && σ2 && Eσ2)
+    if (pNbChannels && pNbBatch && pDimensions && tmps && μ && σ2)
     {
         nbChannels = *pNbChannels;
         nbBatch = *pNbBatch;
         width = pDimensions[0];
         height = pDimensions[1];
-        firstCall = *pFirstCall;
     }
     else
         return ;
     
-    uint depth = id;
-    if (depth >= nbChannels)
+    uint depth = id[0];
+    uint elem = id[1];
+    if (depth >= nbChannels || elem >= nbBatch)
     {
         return ;
     }
     
-    uint nbElems = nbBatch * width * height;
+    uint nbElems = width * height;
     float sum = 0.0;
-    for (uint elem=0; elem<nbBatch; elem++)
-    {
-        for (uint x=0; x<width; x++){
-        for (uint y=0; y<height; y++)
-        {
-            uint offsetStart = (depth + nbChannels * elem) * height;
-            uint offset = y + (offsetStart + x) * width;
-                
-            float tmp = tmps[offset] - μ[depth];
-            sum += tmp * tmp;
-        }}
-    }
-    σ2[depth] = sum / nbElems;
     
-    if (firstCall)
+    for (uint x=0; x<width; x++){
+    for (uint y=0; y<height; y++)
     {
-        Eσ2[depth] = σ2[depth];
-    }
-    else
-    {
-        Eσ2[depth] = 0.9 * Eσ2[depth] + 0.1 * σ2[depth];
-    }
+        uint offsetStart = (depth + nbChannels * elem) * height;
+        uint offset = y + (offsetStart + x) * width;
+            
+        float tmp = tmps[offset] - μ[depth + nbChannels * elem];
+        sum += tmp * tmp;
+    }}
+    
+    σ2[depth + nbChannels * elem] = sum / nbElems;
 }
 
-kernel void forwardBNConvTraining(
+kernel void forwardInstanceNormConvFloat(
     const device float * β,
     const device float * Ɣ,
     const device float * μ,
@@ -171,38 +143,36 @@ kernel void forwardBNConvTraining(
     uint offsetStart = (depth + nbChannels * elem) * height;
     uint offset = j + (offsetStart + i) * width;
     
-    float tmp1 = tmps[offset] - μ[depth];
-    float tmp2 = sqrt(σ2[depth] + Ɛ);
+    float tmp1 = tmps[offset] - μ[depth + nbChannels * elem];
+    float tmp2 = sqrt(σ2[depth + nbChannels * elem] + Ɛ);
     float xhat = tmp1 / tmp2;
     xHat[offset] = xhat;
     tmps[offset] = Ɣ[depth] * xhat + β[depth];
 }
 
-kernel void forwardBNConvInference(
-    const device float * β,
-    const device float * Ɣ,
-    const device float * Eμ,
-    const device float * Eσ2,
+kernel void forwardAdaINFloat(
+    const device float * outsPrev,
+    const device float * styles,
+    const device float * μ,
+    const device float * σ2,
     constant uint * pNbChannels,
     constant uint * pNbBatch,
-    constant uint * pM,
     constant uint * pDimensions,
-    device float * tmps,
+    device float * outs,
+    device float * xHat,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbChannels;
     uint nbBatch;
-    uint m;
     uint width;
     uint height;
     float Ɛ = 1e-5;
     
-    if (pNbChannels && pNbBatch && pM && pDimensions && β && Ɣ &&
-        tmps && Eμ && Eσ2)
+    if (pNbChannels && pNbBatch && pDimensions && outsPrev && styles &&
+        outs && xHat && μ && σ2)
     {
         nbChannels = *pNbChannels;
         nbBatch = *pNbBatch;
-        m = *pM;
         width = pDimensions[0];
         height = pDimensions[1];
     }
@@ -223,18 +193,14 @@ kernel void forwardBNConvInference(
     uint offsetStart = (depth + nbChannels * elem) * height;
     uint offset = j + (offsetStart + i) * width;
     
-    float Var = Eσ2[depth];
-    if (m > 1)
-    {
-        Var *= (float)m / ((float)m - 1);
-    }
-    float tmp1 = tmps[offset] - Eμ[depth];
-    float tmp2 = sqrt(Var + Ɛ);
+    float tmp1 = outsPrev[offset] - μ[depth + nbChannels * elem];
+    float tmp2 = sqrt(σ2[depth + nbChannels * elem] + Ɛ);
     float xhat = tmp1 / tmp2;
-    tmps[offset] = Ɣ[depth] * xhat + β[depth];
+    xHat[offset] = xhat;
+    outs[offset] = styles[depth] * xhat + styles[depth + nbChannels];
 }
 
-kernel void backwardWeightsBNConv(
+kernel void backwardWeightsInstanceNormConvFloat(
     const device float * delta,
     const device float * xHat,
     const device float * Ɣ,
@@ -273,28 +239,28 @@ kernel void backwardWeightsBNConv(
         return ;
     }
     
-    float tmp1 = 0.0, tmp2 = 0.0;
     float tmp3 = 0.0, tmp4 = 0.0;
     for (uint elem=0; elem<nbBatch; elem++)
     {
+        float tmp1 = 0.0, tmp2 = 0.0;
         for (uint x=0; x<width; x++){
         for (uint y=0; y<height; y++)
         {
             uint offsetStart = (depth + nbChannels * elem) * height;
             uint offset = y + (offsetStart + x) * width;
-                
+            
             float deltaTmp = delta[offset];
             float xHatTmp = xHat[offset];
             float dxHat = Ɣ[depth] * deltaTmp;
             tmp1 += dxHat;
             tmp2 += dxHat * xHatTmp;
-            
             tmp3 += deltaTmp * xHatTmp;
             tmp4 += deltaTmp;
         }}
+        
+        sum1[depth + nbChannels * elem] = tmp1;
+        sum2[depth + nbChannels * elem] = tmp2;
     }
-    sum1[depth] = tmp1;
-    sum2[depth] = tmp2;
     
     if (accumulate)
     {
@@ -308,7 +274,80 @@ kernel void backwardWeightsBNConv(
     }
 }
 
-kernel void backwardBNConvTraining(
+kernel void backward2AdaINFloat(
+    const device float * delta,
+    const device float * xHat,
+    const device float * outStyles,
+    constant uint * pNbChannels,
+    constant uint * pNbBatch,
+    constant uint * pDimensions,
+    constant uint * pDirty,
+    device float * sum1,
+    device float * sum2,
+    device float * deltaStyles,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint nbChannels;
+    uint nbBatch;
+    uint width;
+    uint height;
+    uint dirty;
+    
+    if (pNbChannels && pNbBatch && pDimensions && pDirty &&
+        delta && xHat && outStyles &&
+        sum1 && sum2 && deltaStyles)
+    {
+        nbChannels = *pNbChannels;
+        nbBatch = *pNbBatch;
+        width = pDimensions[0];
+        height = pDimensions[1];
+        dirty = *pDirty;
+    }
+    else
+        return ;
+    
+    uint depth = id[0];
+    uint elem = id[1];
+    if (depth >= nbChannels || elem >= nbBatch)
+    {
+        return ;
+    }
+    
+    float tmp1 = 0.0, tmp2 = 0.0;
+    float tmp3 = 0.0, tmp4 = 0.0;
+    
+    for (uint x=0; x<width; x++){
+    for (uint y=0; y<height; y++)
+    {
+        uint offsetStart = (depth + nbChannels * elem) * height;
+        uint offset = y + (offsetStart + x) * width;
+        
+        float deltaTmp = delta[offset];
+        float xHatTmp = xHat[offset];
+        float dxHat = outStyles[depth] * deltaTmp;
+        tmp1 += dxHat;
+        tmp2 += dxHat * xHatTmp;
+        tmp3 += deltaTmp * xHatTmp;
+        tmp4 += deltaTmp;
+    }}
+        
+    sum1[depth + nbChannels * elem] = tmp1;
+    sum2[depth + nbChannels * elem] = tmp2;
+    
+    uint offset = (2 * nbChannels) * elem;
+    if (dirty)
+    {
+        deltaStyles[depth + offset] = tmp3;
+        deltaStyles[depth + nbChannels + offset] = tmp4;
+    }
+    else
+    {
+        deltaStyles[depth + offset] += tmp3;
+        deltaStyles[depth + nbChannels + offset] += tmp4;
+    }
+}
+
+kernel void backwardInstanceNormConvFloat(
     const device float * σ2,
     const device float * xHat,
     const device float * Ɣ,
@@ -341,7 +380,7 @@ kernel void backwardBNConvTraining(
     uint elem = id[1] / height;
     uint i = id[1] % height;
     uint j = id[0] % width;
-    uint nbElems = nbBatch * width * height;
+    uint nbElems = width * height;
     
     if (i * elem >= height * nbBatch ||
         j * depth >= width * nbChannels)
@@ -352,39 +391,45 @@ kernel void backwardBNConvTraining(
     uint offsetStart = (depth + nbChannels * elem) * height;
     uint offset = j + (offsetStart + i) * width;
     
-    float mult = 1.0 / ((float)nbElems * sqrt(σ2[depth] + Ɛ));
+    float mult =
+        1.0 / ((float)nbElems * sqrt(σ2[depth + nbChannels * elem] + Ɛ));
     float dxHat = Ɣ[depth] * delta[offset];
     float tmp1 = nbElems * dxHat;
-    float tmp2 = sum1[depth];
-    float tmp3 = xHat[offset] * sum2[depth];
+    float tmp2 = sum1[depth + nbChannels * elem];
+    float tmp3 = xHat[offset] * sum2[depth + nbChannels * elem];
     
     delta[offset] = mult * (tmp1 - tmp2 - tmp3);
 }
 
-kernel void backwardBNConvInference(
-    const device float * Ɣ,
-    const device float * Eσ2,
+kernel void backward1AdaINFloat(
+    const device float * delta,
+    const device float * σ2,
+    const device float * xHat,
+    const device float * styles,
+    const device float * sum1,
+    const device float * sum2,
     constant uint * pNbChannels,
     constant uint * pNbBatch,
-    constant uint * pM,
     constant uint * pDimensions,
-    device float * delta,
+    constant uint * pDirty,
+    device float * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbChannels;
     uint nbBatch;
-    uint m;
     uint width;
     uint height;
+    uint dirty;
     float Ɛ = 1e-5;
     
-    if (pNbChannels && pNbBatch && pM && pDimensions && Ɣ && Eσ2 && delta)
+    if (pNbChannels && pNbBatch && pDimensions && pDirty &&
+        delta && σ2 && xHat && styles && sum1 && sum2 && deltaPrev)
     {
         nbChannels = *pNbChannels;
         nbBatch = *pNbBatch;
-        m = *pM;
         width = pDimensions[0];
         height = pDimensions[1];
+        dirty = *pDirty;
     }
     else
         return ;
@@ -393,6 +438,7 @@ kernel void backwardBNConvInference(
     uint elem = id[1] / height;
     uint i = id[1] % height;
     uint j = id[0] % width;
+    uint nbElems = width * height;
     
     if (i * elem >= height * nbBatch ||
         j * depth >= width * nbChannels)
@@ -403,13 +449,19 @@ kernel void backwardBNConvInference(
     uint offsetStart = (depth + nbChannels * elem) * height;
     uint offset = j + (offsetStart + i) * width;
     
-    float Var = Eσ2[depth];
-    if (m > 1)
+    float mult =
+        1.0 / ((float)nbElems * sqrt(σ2[depth + nbChannels * elem] + Ɛ));
+    float dxHat = styles[depth] * delta[offset];
+    float tmp1 = nbElems * dxHat;
+    float tmp2 = sum1[depth + nbChannels * elem];
+    float tmp3 = xHat[offset] * sum2[depth + nbChannels * elem];
+    
+    if (dirty)
     {
-        Var *= (float)m / ((float)m - 1);
+        deltaPrev[offset] = mult * (tmp1 - tmp2 - tmp3);
     }
-    float tmp1 = delta[offset];
-    float tmp2 = sqrt(Var + Ɛ);
-    float xhat = tmp1 / tmp2;
-    delta[offset] = Ɣ[depth] * xhat;
+    else
+    {
+        deltaPrev[offset] += mult * (tmp1 - tmp2 - tmp3);
+    }
 }

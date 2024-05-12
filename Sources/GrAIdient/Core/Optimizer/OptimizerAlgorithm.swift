@@ -170,7 +170,7 @@ public class OptimizerAlgorithm
             try clipGradientGPU(
                 layers: layers,
                 gradientNorm: gNorm,
-                normThreshold: _optimizer.params.normThreshold
+                normThreshold: Float(_optimizer.params.normThreshold)
             )
         }
     
@@ -233,7 +233,7 @@ public class OptimizerAlgorithm
                     let nbElems = buffers.g.nbElems
                     
                     let pNbElems: [UInt32] = [UInt32(nbElems)]
-                    let pFactor: [Float] = [Float(factor)]
+                    let pFactor: [Float] = [factor]
                     
                     let command = MetalKernel.get.createCommand(
                         "multiplyGradients", deviceID: layer.deviceID
@@ -303,22 +303,7 @@ public class OptimizerAlgorithm
                 
                 for buffers in layerUpdate.collectWeightsGPU()
                 {
-                    let buffer: UnsafeMutableBufferPointer<Float>
-                    if let g_p = buffers.g_p
-                    {
-                        MetalKernel.get.download([g_p])
-                        buffer = g_p.shared.buffer
-                    }
-                    else if let g_s = buffers.g_s
-                    {
-                        MetalKernel.get.download([g_s])
-                        buffer = g_s.buffer
-                    }
-                    else
-                    {
-                        fatalError("Unreachable.")
-                    }
-                    
+                    let buffer = buffers.g.download()
                     for i in 0..<buffers.g.nbElems
                     {
                         let partialGrad = buffer[i]
@@ -384,22 +369,7 @@ public class OptimizerAlgorithm
                 
                 for buffers in layerUpdate.collectWeightsGPU()
                 {
-                    let buffer: UnsafeMutableBufferPointer<Float>
-                    if let g_p = buffers.g_p
-                    {
-                        MetalKernel.get.download([g_p])
-                        buffer = g_p.shared.buffer
-                    }
-                    else if let g_s = buffers.g_s
-                    {
-                        MetalKernel.get.download([g_s])
-                        buffer = g_s.buffer
-                    }
-                    else
-                    {
-                        fatalError("Unreachable.")
-                    }
-                    
+                    let buffer = buffers.g.download()
                     for i in 0..<buffers.g.nbElems
                     {
                         gradients.append(buffer[i])
@@ -468,9 +438,9 @@ public class OptimizerAlgorithm
     ///
     func clipGradientGPU(layers: [Layer],
                          gradientNorm: Float,
-                         normThreshold: Double) throws
+                         normThreshold: Float) throws
     {
-        if gradientNorm > Float(normThreshold) {
+        if gradientNorm > normThreshold {
         for layer in layers
         {
             if let layerUpdate = layer as? LayerUpdate,
@@ -486,8 +456,8 @@ public class OptimizerAlgorithm
                     let nbElems = buffers.g.nbElems
                     
                     let pNbElems: [UInt32] = [UInt32(nbElems)]
-                    let pGradientNorm: [Float] = [Float(gradientNorm)]
-                    let pNormThreshold: [Float] = [Float(normThreshold)]
+                    let pGradientNorm: [Float] = [gradientNorm]
+                    let pNormThreshold: [Float] = [normThreshold]
                     
                     let command = MetalKernel.get.createCommand(
                         "clipGradients", deviceID: layer.deviceID

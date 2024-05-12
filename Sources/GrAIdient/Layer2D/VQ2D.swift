@@ -62,7 +62,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
     /// Buffer of gradients per sample for biases.
     /// Shape ~ (batch, K, nbChannels).
     ///
-    var _wDeltaWeights: MetalPrivateBuffer<Float>! = nil
+    var _wDeltaWeights: FloatBuffer! = nil
     
     /// Whether to compute weights' gradients or not.
     public var computeDeltaWeights: Bool = true
@@ -103,12 +103,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
             {
                 return _weightsList
             }
-            
-            var weightsTmp = [Float]()
-            MetalKernel.get.download([_wBuffers.w_p!])
-            weightsTmp += _wBuffers.w_p!.shared.array
-        
-            return weightsTmp
+            return _wBuffers.w.download()
         }
         set {
             _weightsList = newValue
@@ -314,23 +309,16 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
             deviceID: deviceID
         )
         
-        let weightsPtr = _wBuffers.w_p!.shared.buffer
         if _weightsList.count == 0
         {
-            generateWeightsList(buffer: weightsPtr)
+            generateWeightsList(out: _wBuffers.w, deviceID: deviceID)
         }
         else
         {
-            copyFloatArrayToBuffer(
-                array: &_weightsList,
-                buffer: weightsPtr,
-                start: 0,
-                nbElems: K * nbChannels
-            )
+            _wBuffers.w.initialize(array: &_weightsList)
         }
-        _weightsList = []
         
-        MetalKernel.get.upload([_wBuffers.w_p!])
+        _weightsList = []
         _wDeltaWeights = nil
     }
     
@@ -365,7 +353,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
         if computeDeltaWeights &&
            GrAI.Gradient.sample && _wDeltaWeights == nil
         {
-            _wDeltaWeights = MetalPrivateBuffer<Float>(
+            _wDeltaWeights = FloatBuffer(nbElems: 
                 batchSize * K * nbChannels, deviceID: deviceID
             )
         }
@@ -434,7 +422,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
     ///     - width: Width of each channel.
     ///
     public override func checkGroundTruthGPU(
-        _ groundTruth: MetalBuffer<Float>,
+        _ groundTruth: FloatBuffer,
         batchSize: Int,
         nbChannels: Int, height: Int, width: Int) throws
     {
@@ -859,9 +847,8 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
         command.dispatchThreads(batchSize)
         command.enqueue()
         
-        MetalKernel.get.download([loss])
         var loss: Float = 0.0
-        let lossPtr = self.loss.buffer
+        let lossPtr = self.loss.download()
         for i in 0..<batchSize
         {
             loss += lossPtr[i]
@@ -949,7 +936,7 @@ public class VQGrad2D: VQ2D
     /// Maximal CAM elements.
     /// Shape ~ (batch, nbThreadgroups).
     ///
-    private var _camMax: MetalPrivateBuffer<Float>! = nil
+    private var _camMax: FloatBuffer! = nil
     
     /// Number of thread groups in the GPU execution context.
     var nbThreadgroups: Int
@@ -1169,7 +1156,7 @@ public class VQGrad2D: VQ2D
         
         if _camMax == nil
         {
-            _camMax = MetalPrivateBuffer<Float>(
+            _camMax = FloatBuffer(nbElems: 
                 batchSize * nbThreadgroups,
                 deviceID: deviceID
             )

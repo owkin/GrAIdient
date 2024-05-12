@@ -362,10 +362,9 @@ public class AdaIN: LayerMerge2D
         
         let layerFirst = _layersPrev.first as! Layer2D
         let layerLast = _layersPrev.last as! Layer1D
-        MetalKernel.get.download([layerFirst.outs, layerLast.outs])
         
-        let bufferOuts = layerFirst.outs.shared.buffer
-        let bufferStyles = layerLast.outs.shared.buffer
+        let bufferOuts = layerFirst.outs.download()
+        let bufferStyles = layerLast.outs.download()
         
         let (nbSameElems, layersIndex, nbElems) = getMergedGraph()
         
@@ -663,7 +662,7 @@ public class AdaIN: LayerMerge2D
     /// - Returns: The outputs.
     ///
     func getOutsPrev(
-        buffer: UnsafeMutableBufferPointer<Float>,
+        buffer: [Float],
         depth: Int,
         batch: Int) -> [Double]
     {
@@ -692,7 +691,7 @@ public class AdaIN: LayerMerge2D
     /// - Returns: The output.
     ///
     func getOutStyle(
-        buffer: UnsafeMutableBufferPointer<Float>,
+        buffer: [Float],
         depth: Int,
         batch: Int) -> Double
     {

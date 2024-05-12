@@ -8,7 +8,7 @@
 #include <metal_stdlib>
 using namespace metal;
 
-kernel void reset(
+kernel void resetFloat(
     constant uint * pNbElems,
     device float * outs,
     uint id [[ thread_position_in_grid ]])

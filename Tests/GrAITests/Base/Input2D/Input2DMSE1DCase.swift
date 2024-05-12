@@ -28,7 +28,9 @@ class Input2DMSE1DCase: XCTestCase, IOCase
     {
         batchSize = 5
         _ = MetalKernel.get
+        
         GrAI.Opti.GPU = true
+        GrAI.Precision.float = true
         
         setOptimizerParams(params: &optimizerParams)
         optimizerParams.nbLoops = 3

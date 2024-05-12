@@ -15,13 +15,13 @@ open class LayerOutput1D: Layer1D
     /// Ground truth buffer in the GPU execution context.
     /// Shape ~ (batch, nbNeurons).
     ///
-    public internal(set) var groundTruth: MetalSharedBuffer<Float>! = nil
+    public internal(set) var groundTruth: FloatBuffer! = nil
     
     ///
     /// Loss buffer in the GPU execution context.
     /// Shape ~ (batch,).
     ///
-    public internal(set) var loss: MetalSharedBuffer<Float>! = nil
+    public internal(set) var loss: FloatBuffer! = nil
     
     private enum Keys: String, CodingKey
     {
@@ -147,9 +147,10 @@ open class LayerOutput1D: Layer1D
         
         if self.groundTruth == nil
         {
-            self.groundTruth = MetalSharedBuffer<Float>(
-                batchSize * nbNeurons,
-                deviceID: deviceID
+            self.groundTruth = FloatBuffer(
+                nbElems: batchSize * nbNeurons,
+                deviceID: deviceID,
+                shared: true
             )
         }
         else if batchSize <= 0 ||
@@ -158,7 +159,7 @@ open class LayerOutput1D: Layer1D
             throw LayerError.BatchSize
         }
         
-        let bufferPtr = self.groundTruth.buffer
+        var buffer = [Float](repeating: 0.0, count: batchSize * nbNeurons)
         for (i, dataI) in groundTruth.enumerated()
         {
             if dataI.count != nbNeurons
@@ -167,10 +168,10 @@ open class LayerOutput1D: Layer1D
             }
             for (j, dataIJ) in dataI.enumerated()
             {
-                bufferPtr[j + i * nbNeurons] = Float(dataIJ)
+                buffer[j + i * nbNeurons] = Float(dataIJ)
             }
         }
-        MetalKernel.get.upload([self.groundTruth])
+        self.groundTruth.initialize(array: &buffer)
     }
     
     ///
@@ -184,7 +185,7 @@ open class LayerOutput1D: Layer1D
     ///     - nbNeurons: Number of neurons.
     ///
     public func checkGroundTruthGPU(
-        _ groundTruth: MetalBuffer<Float>,
+        _ groundTruth: FloatBuffer,
         batchSize: Int,
         nbNeurons: Int) throws
     {
@@ -211,7 +212,9 @@ open class LayerOutput1D: Layer1D
     {
         if loss == nil
         {
-            loss = MetalSharedBuffer<Float>(batchSize, deviceID: deviceID)
+            loss = FloatBuffer(
+                nbElems: batchSize, deviceID: deviceID, shared: true
+            )
         }
         else if batchSize > loss.nbElems
         {

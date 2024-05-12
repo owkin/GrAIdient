@@ -10,7 +10,6 @@ import XCTest
 import GrAIdient
 
 /// Test operations on images.
-@available(macOS 13.0, *)
 class ImageTests: XCTestCase
 {
     /// Directory containing input images.

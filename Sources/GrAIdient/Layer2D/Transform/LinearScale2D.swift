@@ -205,12 +205,12 @@ public class LinearScale2D: Layer2D
             let command = MetalKernel.get.createCommand(
                 "linearScale2DForward", deviceID: deviceID
             )
-            command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
+            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(weights, atIndex: 1)
             command.setBytes(pNbChannels, atIndex: 2)
             command.setBytes(pDimensions, atIndex: 3)
             command.setBytes(pNbBatch, atIndex: 4)
-            command.setBuffer(outs.metal(), atIndex: 5)
+            command.setBuffer(outs.metal, atIndex: 5)
             
             command.dispatchThreads(
                 width: width * nbChannels,
@@ -270,13 +270,13 @@ public class LinearScale2D: Layer2D
             let command = MetalKernel.get.createCommand(
                 "linearScale2DBackward", deviceID: deviceID
             )
-            command.setBuffer(delta.metal(), atIndex: 0)
+            command.setBuffer(delta.metal, atIndex: 0)
             command.setBytes(weights, atIndex: 1)
             command.setBytes(pNbChannels, atIndex: 2)
             command.setBytes(pDimensions, atIndex: 3)
             command.setBytes(pNbBatch, atIndex: 4)
             command.setBytes(pDirty, atIndex: 5)
-            command.setBuffer(layerPrev.delta.metal(), atIndex: 6)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 6)
             
             command.dispatchThreads(
                 width: width * nbChannels,

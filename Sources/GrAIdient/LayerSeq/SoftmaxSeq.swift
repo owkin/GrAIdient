@@ -253,12 +253,12 @@ public class SoftmaxSeq: LayerSeq
             let command = MetalKernel.get.createCommand(
                 kernel, deviceID: deviceID
             )
-            command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
+            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(pNbHeads, atIndex: 1)
             command.setBytes(pNbNeurons, atIndex: 2)
             command.setBytes(pNbBatch, atIndex: 3)
             command.setBytes(pSequence, atIndex: 4)
-            command.setBuffer(outs.metal(), atIndex: 5)
+            command.setBuffer(outs.metal, atIndex: 5)
             
             command.dispatchThreads(
                 width: nbNeurons / coeff,
@@ -335,14 +335,14 @@ public class SoftmaxSeq: LayerSeq
             let command = MetalKernel.get.createCommand(
                 kernel, deviceID: deviceID
             )
-            command.setBuffer(outs.metal(), atIndex: 0)
-            command.setBuffer(delta.metal(), atIndex: 1)
+            command.setBuffer(outs.metal, atIndex: 0)
+            command.setBuffer(delta.metal, atIndex: 1)
             command.setBytes(pNbHeads, atIndex: 2)
             command.setBytes(pNbNeurons, atIndex: 3)
             command.setBytes(pNbBatch, atIndex: 4)
             command.setBytes(pSequence, atIndex: 5)
             command.setBytes(pDirty, atIndex: 6)
-            command.setBuffer(layerPrev.delta.metal(), atIndex: 7)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 7)
             
             command.dispatchThreads(
                 width: nbNeurons / coeff,

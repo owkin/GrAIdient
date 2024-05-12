@@ -146,7 +146,8 @@ public class SimilarityBatchError2D: LayerOutput2D
         {
             loss = FloatBuffer(
                 nbElems: batchSize * batchSize,
-                deviceID: deviceID
+                deviceID: deviceID,
+                shared: true
             )
         }
         else if batchSize <= 0 || batchSize * batchSize > loss.nbElems
@@ -250,11 +251,11 @@ public class SimilarityBatchError2D: LayerOutput2D
         let command = MetalKernel.get.createCommand(
             "similarBatchError2DLoss", deviceID: deviceID
         )
-        command.setBuffer(outs.metal(), atIndex: 0)
+        command.setBuffer(outs.metal, atIndex: 0)
         command.setBytes(pNbChannels, atIndex: 1)
         command.setBytes(pDimensions, atIndex: 2)
         command.setBytes(pNbBatch, atIndex: 3)
-        command.setBuffer(loss.metal(), atIndex: 4)
+        command.setBuffer(loss.metal, atIndex: 4)
         
         command.dispatchThreads(width: batchSize, height: batchSize)
         command.enqueue()
@@ -336,13 +337,13 @@ public class SimilarityBatchError2D: LayerOutput2D
             let command = MetalKernel.get.createCommand(
                 "similarBatchError2DLossDerivative", deviceID: deviceID
             )
-            command.setBuffer(outs.metal(), atIndex: 0)
+            command.setBuffer(outs.metal, atIndex: 0)
             command.setBytes(pNbChannels, atIndex: 1)
             command.setBytes(pDimensions, atIndex: 2)
             command.setBytes(pCoeff, atIndex: 3)
             command.setBytes(pNbBatch, atIndex: 4)
             command.setBytes(pDirty, atIndex: 5)
-            command.setBuffer(layerPrev.delta.metal(), atIndex: 6)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 6)
             
             command.dispatchThreads(
                 width: width * height,

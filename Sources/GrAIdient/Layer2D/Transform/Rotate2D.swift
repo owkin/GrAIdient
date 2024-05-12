@@ -375,13 +375,13 @@ public class Rotate2D: Layer2D
             let command = MetalKernel.get.createCommand(
                 "rotate2DForward", deviceID: deviceID
             )
-            command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
+            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(pNbChannels, atIndex: 1)
             command.setBytes(pDimensions, atIndex: 2)
             command.setBytes(pAngle, atIndex: 3)
             command.setBytes(pPadValue, atIndex: 4)
             command.setBytes(pNbBatch, atIndex: 5)
-            command.setBuffer(outs.metal(), atIndex: 6)
+            command.setBuffer(outs.metal, atIndex: 6)
             
             command.dispatchThreads(
                 width: width * nbChannels,
@@ -461,7 +461,7 @@ public class Rotate2D: Layer2D
                     "reset", deviceID: deviceID
                 )
                 command.setBytes(pNbElems, atIndex: 0)
-                command.setBuffer(layerPrev.delta.metal(), atIndex: 1)
+                command.setBuffer(layerPrev.delta.metal, atIndex: 1)
                 
                 command.dispatchThreads(nbElems)
                 command.enqueue()
@@ -475,12 +475,12 @@ public class Rotate2D: Layer2D
             command = MetalKernel.get.createCommand(
                 "rotate2DBackward", deviceID: deviceID
             )
-            command.setBuffer(delta.metal(), atIndex: 0)
+            command.setBuffer(delta.metal, atIndex: 0)
             command.setBytes(pNbChannels, atIndex: 1)
             command.setBytes(pDimensions, atIndex: 2)
             command.setBytes(pAngle, atIndex: 3)
             command.setBytes(pNbBatch, atIndex: 4)
-            command.setBuffer(layerPrev.delta.metal(), atIndex: 5)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 5)
             
             command.dispatchThreads(
                 width: width * nbChannels,

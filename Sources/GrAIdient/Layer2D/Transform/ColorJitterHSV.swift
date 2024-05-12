@@ -316,11 +316,11 @@ public class ColorJitterHSV: Layer2D
             let command = MetalKernel.get.createCommand(
                 "colorJitterHSVForward", deviceID: deviceID
             )
-            command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
+            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(pNoise, atIndex: 1)
             command.setBytes(pDimensions, atIndex: 2)
             command.setBytes(pNbBatch, atIndex: 3)
-            command.setBuffer(outs.metal(), atIndex: 4)
+            command.setBuffer(outs.metal, atIndex: 4)
             
             command.dispatchThreads(
                 width: height * width,

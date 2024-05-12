@@ -362,7 +362,7 @@ class ImageTests: XCTestCase
         
         let batchSize = imagesURL.count
         let buffer = FloatBuffer(nbElems: 
-            batchSize * 3 * _size * _size, deviceID: 0
+            batchSize * 3 * _size * _size, deviceID: 0, shared: true
         )
         
         try! Image.loadImages(

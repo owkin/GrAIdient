@@ -372,14 +372,14 @@ public class QuerySeq: LayerMergeSeq
         let command = MetalKernel.get.createCommand(
             kernel, deviceID: deviceID
         )
-        command.setBuffer(query.outs.metal(), atIndex: 0)
-        command.setBuffer(key.outs.metal(), atIndex: 1)
+        command.setBuffer(query.outs.metal, atIndex: 0)
+        command.setBuffer(key.outs.metal, atIndex: 1)
         command.setBytes(pNbHeads, atIndex: 2)
         command.setBytes(pNbNeurons, atIndex: 3)
         command.setBytes(pNbNeuronsPrev, atIndex: 4)
         command.setBytes(pNbBatch, atIndex: 5)
         command.setBytes(pSequence, atIndex: 6)
-        command.setBuffer(outs.metal(), atIndex: 7)
+        command.setBuffer(outs.metal, atIndex: 7)
         
         command.dispatchThreads(
             width: nbNeurons,
@@ -502,15 +502,15 @@ public class QuerySeq: LayerMergeSeq
             command = metalKernel.createCommand(
                 kernel, deviceID: deviceID
             )
-            command.setBuffer(delta.metal(), atIndex: 0)
-            command.setBuffer(key.outs.metal(), atIndex: 1)
+            command.setBuffer(delta.metal, atIndex: 0)
+            command.setBuffer(key.outs.metal, atIndex: 1)
             command.setBytes(pNbHeads, atIndex: 2)
             command.setBytes(pNbNeurons, atIndex: 3)
             command.setBytes(pNbNeuronsPrev, atIndex: 4)
             command.setBytes(pNbBatch, atIndex: 5)
             command.setBytes(pSequence, atIndex: 6)
             command.setBytes(pDirty, atIndex: 7)
-            command.setBuffer(query.delta.metal(), atIndex: 8)
+            command.setBuffer(query.delta.metal, atIndex: 8)
             
             command.dispatchThreads(
                 width: nbNeuronsPrev / coeff,
@@ -530,15 +530,15 @@ public class QuerySeq: LayerMergeSeq
             command = metalKernel.createCommand(
                 kernel, deviceID: deviceID
             )
-            command.setBuffer(delta.metal(), atIndex: 0)
-            command.setBuffer(query.outs.metal(), atIndex: 1)
+            command.setBuffer(delta.metal, atIndex: 0)
+            command.setBuffer(query.outs.metal, atIndex: 1)
             command.setBytes(pNbHeads, atIndex: 2)
             command.setBytes(pNbNeurons, atIndex: 3)
             command.setBytes(pNbNeuronsPrev, atIndex: 4)
             command.setBytes(pNbBatch, atIndex: 5)
             command.setBytes(pSequence, atIndex: 6)
             command.setBytes(pDirty, atIndex: 7)
-            command.setBuffer(key.delta.metal(), atIndex: 8)
+            command.setBuffer(key.delta.metal, atIndex: 8)
             
             command.dispatchThreads(
                 width: nbNeuronsPrev / coeff,
@@ -820,7 +820,7 @@ public class QuerySelfSeq: LayerSeq
             let command = MetalKernel.get.createCommand(
                 kernel, deviceID: deviceID
             )
-            command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
+            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(pNbHeads, atIndex: 1)
             command.setBytes(pNbNeurons, atIndex: 2)
             command.setBytes(pNbNeuronsPrev, atIndex: 3)
@@ -828,7 +828,7 @@ public class QuerySelfSeq: LayerSeq
             command.setBytes(pGlobalOffset, atIndex: 5)
             command.setBytes(pNbBatch, atIndex: 6)
             command.setBytes(pSequence, atIndex: 7)
-            command.setBuffer(outs.metal(), atIndex: 8)
+            command.setBuffer(outs.metal, atIndex: 8)
             
             command.dispatchThreads(
                 width: nbNeurons,
@@ -951,8 +951,8 @@ public class QuerySelfSeq: LayerSeq
             command = metalKernel.createCommand(
                 kernel, deviceID: deviceID
             )
-            command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
-            command.setBuffer(delta.metal(), atIndex: 1)
+            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+            command.setBuffer(delta.metal, atIndex: 1)
             command.setBytes(pNbHeads, atIndex: 2)
             command.setBytes(pNbNeurons, atIndex: 3)
             command.setBytes(pNbNeuronsPrev, atIndex: 4)
@@ -961,7 +961,7 @@ public class QuerySelfSeq: LayerSeq
             command.setBytes(pNbBatch, atIndex: 7)
             command.setBytes(pSequence, atIndex: 8)
             command.setBytes(pDirty, atIndex: 9)
-            command.setBuffer(layerPrev.delta.metal(), atIndex: 10)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 10)
             
             command.dispatchThreads(
                 width: nbNeuronsPrev2 / coeff,
@@ -974,8 +974,8 @@ public class QuerySelfSeq: LayerSeq
             command = metalKernel.createCommand(
                 kernel, deviceID: deviceID
             )
-            command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
-            command.setBuffer(delta.metal(), atIndex: 1)
+            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+            command.setBuffer(delta.metal, atIndex: 1)
             command.setBytes(pNbHeads, atIndex: 2)
             command.setBytes(pNbNeurons, atIndex: 3)
             command.setBytes(pNbNeuronsPrev, atIndex: 4)
@@ -984,7 +984,7 @@ public class QuerySelfSeq: LayerSeq
             command.setBytes(pNbBatch, atIndex: 7)
             command.setBytes(pSequence, atIndex: 8)
             command.setBytes(pDirty, atIndex: 9)
-            command.setBuffer(layerPrev.delta.metal(), atIndex: 10)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 10)
             
             command.dispatchThreads(
                 width: nbNeuronsPrev2 / coeff,

@@ -188,11 +188,11 @@ public class SelfCorrelate2D: Layer2D
             let command = MetalKernel.get.createCommand(
                 "selfCorrelate2DForward", deviceID: deviceID
             )
-            command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
+            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(pNbChannelsPrev, atIndex: 1)
             command.setBytes(pDimensionsPrev, atIndex: 2)
             command.setBytes(pNbBatch, atIndex: 3)
-            command.setBuffer(outs.metal(), atIndex: 4)
+            command.setBuffer(outs.metal, atIndex: 4)
             
             command.dispatchThreads(
                 width: nbChannelsPrev * nbChannelsPrev,
@@ -270,13 +270,13 @@ public class SelfCorrelate2D: Layer2D
             let command = MetalKernel.get.createCommand(
                 "selfCorrelate2DBackward", deviceID: deviceID
             )
-            command.setBuffer(delta.metal(), atIndex: 0)
-            command.setBuffer(layerPrev.outs.metal(), atIndex: 1)
+            command.setBuffer(delta.metal, atIndex: 0)
+            command.setBuffer(layerPrev.outs.metal, atIndex: 1)
             command.setBytes(pNbChannelsPrev, atIndex: 2)
             command.setBytes(pDimensionsPrev, atIndex: 3)
             command.setBytes(pNbBatch, atIndex: 4)
             command.setBytes(pDirty, atIndex: 5)
-            command.setBuffer(layerPrev.delta.metal(), atIndex: 6)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 6)
             
             command.dispatchThreads(
                 width: widthPrev * nbChannelsPrev,

@@ -183,13 +183,13 @@ public class LayerCAM2D: Layer2D
             let command = MetalKernel.get.createCommand(
                 "layerCAM2DForward", deviceID: deviceID
             )
-            command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
-            command.setBuffer(layerPrev.delta.metal(), atIndex: 1)
+            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 1)
             command.setBytes(pNbChannelsPrev, atIndex: 2)
             command.setBytes(pDimensions, atIndex: 3)
             command.setBytes(pKeepPositive, atIndex: 4)
             command.setBytes(pNbBatch, atIndex: 5)
-            command.setBuffer(outs.metal(), atIndex: 6)
+            command.setBuffer(outs.metal, atIndex: 6)
             
             command.dispatchThreads(
                 width: height * width,

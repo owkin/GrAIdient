@@ -400,10 +400,10 @@ public class Constant1D: Layer1D, LayerUpdate
         let command = MetalKernel.get.createCommand(
             "constant1DForward", deviceID: deviceID
         )
-        command.setBuffer(_wBuffers.w.metal(), atIndex: 0)
+        command.setBuffer(_wBuffers.w.metal, atIndex: 0)
         command.setBytes(pNbNeurons, atIndex: 1)
         command.setBytes(pNbBatch, atIndex: 2)
-        command.setBuffer(outs.metal(), atIndex: 3)
+        command.setBuffer(outs.metal, atIndex: 3)
         
         command.dispatchThreads(
             width: nbNeurons,
@@ -460,11 +460,11 @@ public class Constant1D: Layer1D, LayerUpdate
                 command = MetalKernel.get.createCommand(
                     "flBatchDerBiases", deviceID: deviceID
                 )
-                command.setBuffer(delta.metal(), atIndex: 0)
+                command.setBuffer(delta.metal, atIndex: 0)
                 command.setBytes(pNbNeurons, atIndex: 1)
                 command.setBytes(pNbBatch, atIndex: 2)
                 command.setBytes(pAccumulate, atIndex: 3)
-                command.setBuffer(_wBuffers.g.metal(), atIndex: 4)
+                command.setBuffer(_wBuffers.g.metal, atIndex: 4)
                 
                 command.dispatchThreads(nbNeurons)
                 command.enqueue()
@@ -477,10 +477,10 @@ public class Constant1D: Layer1D, LayerUpdate
                 command = MetalKernel.get.createCommand(
                     "flDerBiases", deviceID: deviceID
                 )
-                command.setBuffer(delta.metal(), atIndex: 0)
+                command.setBuffer(delta.metal, atIndex: 0)
                 command.setBytes(pNbNeurons, atIndex: 1)
                 command.setBytes(pNbBatch, atIndex: 2)
-                command.setBuffer(_wDeltaWeights.metal(), atIndex: 3)
+                command.setBuffer(_wDeltaWeights.metal, atIndex: 3)
                 
                 command.dispatchThreads(
                     width: nbNeurons,
@@ -494,11 +494,11 @@ public class Constant1D: Layer1D, LayerUpdate
                 command = MetalKernel.get.createCommand(
                     "reduceBiases", deviceID: deviceID
                 )
-                command.setBuffer(_wDeltaWeights.metal(), atIndex: 0)
+                command.setBuffer(_wDeltaWeights.metal, atIndex: 0)
                 command.setBytes(pNbNeurons, atIndex: 1)
                 command.setBytes(pNbBatch, atIndex: 2)
                 command.setBytes(pAccumulate, atIndex: 3)
-                command.setBuffer(_wBuffers.g.metal(), atIndex: 4)
+                command.setBuffer(_wBuffers.g.metal, atIndex: 4)
                 
                 command.dispatchThreads(nbNeurons)
                 command.enqueue()

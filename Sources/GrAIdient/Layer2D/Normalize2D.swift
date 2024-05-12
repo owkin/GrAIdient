@@ -189,11 +189,11 @@ public class Normalize12D: Layer2D
             let command = MetalKernel.get.createCommand(
                 "normalize12DForward", deviceID: deviceID
             )
-            command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
+            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(pNbChannels, atIndex: 1)
             command.setBytes(pDimensions, atIndex: 2)
             command.setBytes(pNbBatch, atIndex: 3)
-            command.setBuffer(outs.metal(), atIndex: 4)
+            command.setBuffer(outs.metal, atIndex: 4)
             
             command.dispatchThreads(
                 width: width * nbChannels,
@@ -287,13 +287,13 @@ public class Normalize12D: Layer2D
             let command = MetalKernel.get.createCommand(
                 "normalize12DBackward", deviceID: deviceID
             )
-            command.setBuffer(delta.metal(), atIndex: 0)
-            command.setBuffer(layerPrev.outs.metal(), atIndex: 1)
+            command.setBuffer(delta.metal, atIndex: 0)
+            command.setBuffer(layerPrev.outs.metal, atIndex: 1)
             command.setBytes(pNbChannels, atIndex: 2)
             command.setBytes(pDimensions, atIndex: 3)
             command.setBytes(pNbBatch, atIndex: 4)
             command.setBytes(pDirty, atIndex: 5)
-            command.setBuffer(layerPrev.delta.metal(), atIndex: 6)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 6)
             
             command.dispatchThreads(
                 width: width * nbChannels,
@@ -551,12 +551,12 @@ public class Normalize122D: Layer2D
             let command = MetalKernel.get.createCommand(
                 "computeSquaredNorm122D", deviceID: deviceID
             )
-            command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
+            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(pNbChannels, atIndex: 1)
             command.setBytes(pDimensions, atIndex: 2)
             command.setBytes(pNbThreadgroups, atIndex: 3)
             command.setBytes(pNbBatch, atIndex: 4)
-            command.setBuffer(_squaredNorm.metal(), atIndex: 5)
+            command.setBuffer(_squaredNorm.metal, atIndex: 5)
             
             let threadsPerThreadgroup = MTLSizeMake(
                 _threadsPerThreadgroup, 1, 1
@@ -574,8 +574,8 @@ public class Normalize122D: Layer2D
             
             // Continue the reduction in a more generic way.
             reduceSum(
-                inBuffer: _squaredNorm.metal(),
-                outBuffer: _squaredNorm.metal(),
+                inBuffer: _squaredNorm.metal,
+                outBuffer: _squaredNorm.metal,
                 dim1: nbThreadgroups, dim2: batchSize,
                 deviceID: deviceID
             )
@@ -604,13 +604,13 @@ public class Normalize122D: Layer2D
             let command = MetalKernel.get.createCommand(
                 "normalize122DForward", deviceID: deviceID
             )
-            command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
-            command.setBuffer(_squaredNorm.metal(), atIndex: 1)
+            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+            command.setBuffer(_squaredNorm.metal, atIndex: 1)
             command.setBytes(pNbChannels, atIndex: 2)
             command.setBytes(pDimensions, atIndex: 3)
             command.setBytes(pNbThreadgroups, atIndex: 4)
             command.setBytes(pNbBatch, atIndex: 5)
-            command.setBuffer(outs.metal(), atIndex: 6)
+            command.setBuffer(outs.metal, atIndex: 6)
             
             command.dispatchThreads(
                 width: width * nbChannels,
@@ -704,14 +704,14 @@ public class Normalize122D: Layer2D
             let command = MetalKernel.get.createCommand(
                 "computeDeltaTmp122D", deviceID: deviceID
             )
-            command.setBuffer(delta.metal(), atIndex: 0)
-            command.setBuffer(layerPrev.outs.metal(), atIndex: 1)
-            command.setBuffer(_squaredNorm.metal(), atIndex: 2)
+            command.setBuffer(delta.metal, atIndex: 0)
+            command.setBuffer(layerPrev.outs.metal, atIndex: 1)
+            command.setBuffer(_squaredNorm.metal, atIndex: 2)
             command.setBytes(pNbChannels, atIndex: 3)
             command.setBytes(pDimensions, atIndex: 4)
             command.setBytes(pNbThreadgroups, atIndex: 5)
             command.setBytes(pNbBatch, atIndex: 6)
-            command.setBuffer(_deltaTmp.metal(), atIndex: 7)
+            command.setBuffer(_deltaTmp.metal, atIndex: 7)
             
             let threadsPerThreadgroup = MTLSizeMake(
                 _threadsPerThreadgroup, 1, 1
@@ -729,8 +729,8 @@ public class Normalize122D: Layer2D
             
             // Continue the reduction in a more generic way.
             reduceSum(
-                inBuffer: _deltaTmp.metal(),
-                outBuffer: _deltaTmp.metal(),
+                inBuffer: _deltaTmp.metal,
+                outBuffer: _deltaTmp.metal,
                 dim1: nbThreadgroups, dim2: batchSize,
                 deviceID: deviceID
             )
@@ -760,16 +760,16 @@ public class Normalize122D: Layer2D
             let command = MetalKernel.get.createCommand(
                 "normalize122DBackward", deviceID: deviceID
             )
-            command.setBuffer(delta.metal(), atIndex: 0)
-            command.setBuffer(layerPrev.outs.metal(), atIndex: 1)
-            command.setBuffer(_squaredNorm.metal(), atIndex: 2)
-            command.setBuffer(_deltaTmp.metal(), atIndex: 3)
+            command.setBuffer(delta.metal, atIndex: 0)
+            command.setBuffer(layerPrev.outs.metal, atIndex: 1)
+            command.setBuffer(_squaredNorm.metal, atIndex: 2)
+            command.setBuffer(_deltaTmp.metal, atIndex: 3)
             command.setBytes(pNbChannels, atIndex: 4)
             command.setBytes(pDimensions, atIndex: 5)
             command.setBytes(pNbThreadgroups, atIndex: 6)
             command.setBytes(pNbBatch, atIndex: 7)
             command.setBytes(pDirty, atIndex: 8)
-            command.setBuffer(layerPrev.delta.metal(), atIndex: 9)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 9)
             
             command.dispatchThreads(
                 width: width * nbChannels,

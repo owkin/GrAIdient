@@ -240,7 +240,9 @@ final class TransformerBenchmark: XCTestCase
         let lastLayer: MSE1D = transformer.layers.last as! MSE1D
         
         // Initialize the ground truth once and for all.
-        let groundTruth = FloatBuffer(nbElems: _batchSize, deviceID: 0)
+        let groundTruth = FloatBuffer(
+            nbElems: _batchSize, deviceID: 0, shared: true
+        )
         var gtBuffer = [Float](repeating: 0.0, count: _batchSize)
         for elem in 0..<_batchSize / 2
         {
@@ -254,7 +256,7 @@ final class TransformerBenchmark: XCTestCase
         
         // Initialize data once and for all.
         let data = FloatBuffer(
-            nbElems: _batchSize * 3 * _size * _size, deviceID: 0
+            nbElems: _batchSize * 3 * _size * _size, deviceID: 0, shared: true
         )
         var dataBuffer = [Float](
             repeating: 0.0, count: _batchSize * 3 * _size * _size
@@ -353,7 +355,9 @@ final class TransformerBenchmark: XCTestCase
         let lastLayer: MSE1D = transformer.layers.last as! MSE1D
         
         // Initialize the ground truth once and for all.
-        let groundTruth = FloatBuffer(nbElems: _batchSize, deviceID: 0)
+        let groundTruth = FloatBuffer(
+            nbElems: _batchSize, deviceID: 0, shared: true
+        )
         var gtBuffer = [Float](repeating: 0.0, count: _batchSize)
         for elem in 0..<_batchSize / 2
         {
@@ -367,7 +371,7 @@ final class TransformerBenchmark: XCTestCase
         
         // Initialize data once and for all.
         let data = FloatBuffer(
-            nbElems: _batchSize * 3 * _size * _size, deviceID: 0
+            nbElems: _batchSize * 3 * _size * _size, deviceID: 0, shared: true
         )
         var dataBuffer = [Float](
             repeating: 0.0, count: _batchSize * 3 * _size * _size

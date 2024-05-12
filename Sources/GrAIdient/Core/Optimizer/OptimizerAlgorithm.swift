@@ -240,7 +240,7 @@ public class OptimizerAlgorithm
                     )
                     command.setBytes(pNbElems, atIndex: 0)
                     command.setBytes(pFactor, atIndex: 1)
-                    command.setBuffer(buffers.g.metal(), atIndex: 2)
+                    command.setBuffer(buffers.g.metal, atIndex: 2)
                     
                     command.dispatchThreads(nbElems)
                     command.enqueue()
@@ -465,7 +465,7 @@ public class OptimizerAlgorithm
                     command.setBytes(pNbElems, atIndex: 0)
                     command.setBytes(pGradientNorm, atIndex: 1)
                     command.setBytes(pNormThreshold, atIndex: 2)
-                    command.setBuffer(buffers.g.metal(), atIndex: 3)
+                    command.setBuffer(buffers.g.metal, atIndex: 3)
                     
                     command.dispatchThreads(nbElems)
                     command.enqueue()

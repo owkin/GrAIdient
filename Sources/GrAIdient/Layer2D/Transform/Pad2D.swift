@@ -234,13 +234,13 @@ public class Pad2D: Layer2D
             let command = MetalKernel.get.createCommand(
                 "pad2DForward", deviceID: deviceID
             )
-            command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
+            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(pNbChannels, atIndex: 1)
             command.setBytes(pDimensions, atIndex: 2)
             command.setBytes(pPadDimension, atIndex: 3)
             command.setBytes(pPadValue, atIndex: 4)
             command.setBytes(pNbBatch, atIndex: 5)
-            command.setBuffer(outs.metal(), atIndex: 6)
+            command.setBuffer(outs.metal, atIndex: 6)
             
             command.dispatchThreads(
                 width: width * nbChannels,
@@ -303,13 +303,13 @@ public class Pad2D: Layer2D
             let command = MetalKernel.get.createCommand(
                 "pad2DBackward", deviceID: deviceID
             )
-            command.setBuffer(delta.metal(), atIndex: 0)
+            command.setBuffer(delta.metal, atIndex: 0)
             command.setBytes(pNbChannels, atIndex: 1)
             command.setBytes(pDimensions, atIndex: 2)
             command.setBytes(pPadDimension, atIndex: 3)
             command.setBytes(pNbBatch, atIndex: 4)
             command.setBytes(pDirty, atIndex: 5)
-            command.setBuffer(layerPrev.delta.metal(), atIndex: 6)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 6)
             
             command.dispatchThreads(
                 width: layerPrev.width * nbChannels,

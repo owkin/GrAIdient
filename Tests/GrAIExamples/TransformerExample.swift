@@ -289,7 +289,9 @@ final class TransformerExample: XCTestCase
         let lastLayer: MSE1D = transformer.layers.last as! MSE1D
         
         // Initialize the ground truth once and for all.
-        let groundTruth = FloatBuffer(nbElems: _batchSize, deviceID: 0)
+        let groundTruth = FloatBuffer(
+            nbElems: _batchSize, deviceID: 0, shared: true
+        )
         var gtBuffer = [Float](repeating: 0.0, count: _batchSize)
         for elem in 0..<_batchSize / 2
         {

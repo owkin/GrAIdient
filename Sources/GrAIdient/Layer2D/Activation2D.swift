@@ -266,9 +266,9 @@ public class Activation2D: Layer2D
             let command = MetalKernel.get.createCommand(
                 kernel, deviceID: deviceID
             )
-            command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
+            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(pNbElems, atIndex: 1)
-            command.setBuffer(outs.metal(), atIndex: 2)
+            command.setBuffer(outs.metal, atIndex: 2)
             
             command.dispatchThreads(nbElems / coeff)
             command.enqueue()
@@ -337,9 +337,9 @@ public class Activation2D: Layer2D
                 kernel, deviceID: deviceID
             )
             
-            command.setBuffer(delta.metal(), atIndex: 0)
+            command.setBuffer(delta.metal, atIndex: 0)
             command.setBytes(pNbElems, atIndex: 1)
-            command.setBuffer(layerPrev.delta.metal(), atIndex: 2)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 2)
             
             command.dispatchThreads(nbElems / coeff)
             command.enqueue()

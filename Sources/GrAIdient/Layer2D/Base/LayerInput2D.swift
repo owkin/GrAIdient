@@ -139,8 +139,7 @@ open class LayerInput2D: Layer2D
         // Wait for previous loop to end to avoid race condition with
         // download in the following example:
         // Convolution.backwardWeightsGPU accesses layerPrev.outs.
-        let shared = true
-        _ = outs.download(shared)
+        _ = outs.download()
         
         var buffer = [Float](
             repeating: 0.0, count: batchSize * nbChannels * height * width
@@ -182,7 +181,7 @@ open class LayerInput2D: Layer2D
                 }}
             }
         }
-        outs.initialize(array: &buffer, shared: shared)
+        outs.initialize(array: &buffer)
     }
     
     ///

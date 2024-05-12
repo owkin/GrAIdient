@@ -318,8 +318,8 @@ open class ActivationFunction: Codable
             forwardKernel, deviceID: deviceID
         )
         command.setBytes(pNbElems, atIndex: 0)
-        command.setBuffer(tmp.metal(), atIndex: 1)
-        command.setBuffer(outs.metal(), atIndex: 2)
+        command.setBuffer(tmp.metal, atIndex: 1)
+        command.setBuffer(outs.metal, atIndex: 2)
         
         command.dispatchThreads(nbElems)
         command.enqueue()
@@ -406,9 +406,9 @@ open class ActivationFunction: Codable
         let command = MetalKernel.get.createCommand(
             backwardKernel, deviceID: deviceID
         )
-        command.setBuffer(tmp.metal(), atIndex: 0)
+        command.setBuffer(tmp.metal, atIndex: 0)
         command.setBytes(pNbElems, atIndex: 1)
-        command.setBuffer(delta.metal(), atIndex: 2)
+        command.setBuffer(delta.metal, atIndex: 2)
         
         command.dispatchThreads(nbElems)
         command.enqueue()

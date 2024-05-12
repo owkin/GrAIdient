@@ -224,11 +224,11 @@ public class BCE1D: LayerOutput1D
         let command = MetalKernel.get.createCommand(
             "BCE1DLoss", deviceID: deviceID
         )
-        command.setBuffer(outs.metal(), atIndex: 0)
-        command.setBuffer(groundTruth.metal(), atIndex: 1)
+        command.setBuffer(outs.metal, atIndex: 0)
+        command.setBuffer(groundTruth.metal, atIndex: 1)
         command.setBytes(pNbNeurons, atIndex: 2)
         command.setBytes(pNbBatch, atIndex: 3)
-        command.setBuffer(loss.metal(), atIndex: 4)
+        command.setBuffer(loss.metal, atIndex: 4)
         
         command.dispatchThreads(batchSize)
         command.enqueue()
@@ -388,13 +388,13 @@ public class BCE1D: LayerOutput1D
             let command = MetalKernel.get.createCommand(
                 "BCE1DLossDerivative", deviceID: deviceID
             )
-            command.setBuffer(outs.metal(), atIndex: 0)
-            command.setBuffer(groundTruth.metal(), atIndex: 1)
+            command.setBuffer(outs.metal, atIndex: 0)
+            command.setBuffer(groundTruth.metal, atIndex: 1)
             command.setBytes(pNbNeurons, atIndex: 2)
             command.setBytes(pCoeff, atIndex: 3)
             command.setBytes(pNbBatch, atIndex: 4)
             command.setBytes(pDirty, atIndex: 5)
-            command.setBuffer(layerPrev.delta.metal(), atIndex: 6)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 6)
             
             command.dispatchThreads(
                 width: nbNeurons,

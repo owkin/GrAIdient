@@ -48,7 +48,6 @@ public class Image
     ///     - imagesBuffer: Buffer of images.
     ///     - width: Width of the images.
     ///     - height: Height of the images.
-    ///     - shared:  Whether to create a shared buffer or a private one.
     ///
     public static func loadImages(
         imagesURL: [URL],
@@ -63,7 +62,7 @@ public class Image
             throw ImageError.MissingSpace
         }
         
-        _ = imagesBuffer.download(shared)
+        _ = imagesBuffer.download()
         
         var buffer = [Float](
             repeating: 0.0,
@@ -92,7 +91,7 @@ public class Image
                 }
             }}
         }
-        imagesBuffer.initialize(array: &buffer, shared: shared)
+        imagesBuffer.initialize(array: &buffer)
     }
     
     ///
@@ -105,7 +104,6 @@ public class Image
     ///     - metalBuffer: Buffer of images.
     ///     - width: Width of the images.
     ///     - height: Height of the images.
-    ///     - shared:  Whether to create a shared buffer or a private one.
     /// - Returns: The list of images as list of pixels.
     ///
     public static func extractPixels(
@@ -114,7 +112,7 @@ public class Image
         height: Int,
         shared: Bool = false) -> [[UInt8]]
     {
-        let buffer = metalBuffer.download(shared)
+        let buffer = metalBuffer.download()
         let nbImages = metalBuffer.nbElems / (width * height * 3)
         
         var images = [[Float]]()

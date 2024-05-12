@@ -521,13 +521,13 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
             let command = MetalKernel.get.createCommand(
                 "vq2DForward", deviceID: deviceID
             )
-            command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
-            command.setBuffer(_wBuffers.w.metal(), atIndex: 1)
+            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+            command.setBuffer(_wBuffers.w.metal, atIndex: 1)
             command.setBytes(pNbChannels, atIndex: 2)
             command.setBytes(pDimensions, atIndex: 3)
             command.setBytes(pK, atIndex: 4)
             command.setBytes(pNbBatch, atIndex: 5)
-            command.setBuffer(outs.metal(), atIndex: 6)
+            command.setBuffer(outs.metal, atIndex: 6)
             command.setBuffer(indices.metal, atIndex: 7)
             
             command.dispatchThreads(
@@ -656,9 +656,9 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
             let command = MetalKernel.get.createCommand(
                 "vq2DBackward", deviceID: deviceID
             )
-            command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
-            command.setBuffer(delta.metal(), atIndex: 1)
-            command.setBuffer(_wBuffers.w.metal(), atIndex: 2)
+            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+            command.setBuffer(delta.metal, atIndex: 1)
+            command.setBuffer(_wBuffers.w.metal, atIndex: 2)
             command.setBuffer(indices.metal, atIndex: 3)
             command.setBytes(pNbChannels, atIndex: 4)
             command.setBytes(pDimensions, atIndex: 5)
@@ -666,7 +666,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
             command.setBytes(pBeta, atIndex: 7)
             command.setBytes(pNbBatch, atIndex: 8)
             command.setBytes(pDirty, atIndex: 9)
-            command.setBuffer(layerPrev.delta.metal(), atIndex: 10)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 10)
             
             command.dispatchThreads(
                 width: nbChannels * width,
@@ -701,7 +701,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
                         "reset", deviceID: deviceID
                     )
                     command.setBytes(pNbElems, atIndex: 0)
-                    command.setBuffer(_wBuffers.g.metal(), atIndex: 1)
+                    command.setBuffer(_wBuffers.g.metal, atIndex: 1)
                     
                     command.dispatchThreads(nbElems)
                     command.enqueue()
@@ -713,15 +713,15 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
                 command = MetalKernel.get.createCommand(
                     "vq2DBatchDerWeights", deviceID: deviceID
                 )
-                command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
-                command.setBuffer(_wBuffers.w.metal(), atIndex: 1)
+                command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+                command.setBuffer(_wBuffers.w.metal, atIndex: 1)
                 command.setBuffer(indices.metal, atIndex: 2)
                 command.setBytes(pNbChannels, atIndex: 3)
                 command.setBytes(pDimensions, atIndex: 4)
                 command.setBytes(pK, atIndex: 5)
                 command.setBytes(pCoeff, atIndex: 6)
                 command.setBytes(pNbBatch, atIndex: 7)
-                command.setBuffer(_wBuffers.g.metal(), atIndex: 8)
+                command.setBuffer(_wBuffers.g.metal, atIndex: 8)
                 
                 command.dispatchThreads(width: nbChannels, height: K)
                 command.enqueue()
@@ -735,7 +735,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
                     "reset", deviceID: deviceID
                 )
                 command.setBytes(pNbElems, atIndex: 0)
-                command.setBuffer(_wDeltaWeights.metal(), atIndex: 1)
+                command.setBuffer(_wDeltaWeights.metal, atIndex: 1)
                 
                 command.dispatchThreads(nbElems)
                 command.enqueue()
@@ -746,15 +746,15 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
                 command = MetalKernel.get.createCommand(
                     "vq2DDerWeights", deviceID: deviceID
                 )
-                command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
-                command.setBuffer(_wBuffers.w.metal(), atIndex: 1)
+                command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+                command.setBuffer(_wBuffers.w.metal, atIndex: 1)
                 command.setBuffer(indices.metal, atIndex: 2)
                 command.setBytes(pNbChannels, atIndex: 3)
                 command.setBytes(pDimensions, atIndex: 4)
                 command.setBytes(pK, atIndex: 5)
                 command.setBytes(pCoeff, atIndex: 6)
                 command.setBytes(pNbBatch, atIndex: 7)
-                command.setBuffer(_wDeltaWeights.metal(), atIndex: 8)
+                command.setBuffer(_wDeltaWeights.metal, atIndex: 8)
                 
                 command.dispatchThreads(
                     width: nbChannels,
@@ -768,12 +768,12 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
                 command = MetalKernel.get.createCommand(
                     "vq2DReduceWeights", deviceID: deviceID
                 )
-                command.setBuffer(_wDeltaWeights.metal(), atIndex: 0)
+                command.setBuffer(_wDeltaWeights.metal, atIndex: 0)
                 command.setBytes(pNbChannels, atIndex: 1)
                 command.setBytes(pK, atIndex: 2)
                 command.setBytes(pNbBatch, atIndex: 3)
                 command.setBytes(pAccumulate, atIndex: 4)
-                command.setBuffer(_wBuffers.g.metal(), atIndex: 5)
+                command.setBuffer(_wBuffers.g.metal, atIndex: 5)
                 
                 command.dispatchThreads(width: nbChannels, height: K)
                 command.enqueue()
@@ -836,13 +836,13 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
         let command = MetalKernel.get.createCommand(
             "vq2DLoss", deviceID: deviceID
         )
-        command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
-        command.setBuffer(outs.metal(), atIndex: 1)
+        command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+        command.setBuffer(outs.metal, atIndex: 1)
         command.setBuffer(indices.metal, atIndex: 2)
         command.setBytes(pNbChannels, atIndex: 3)
         command.setBytes(pDimensions, atIndex: 4)
         command.setBytes(pNbBatch, atIndex: 5)
-        command.setBuffer(loss.metal(), atIndex: 6)
+        command.setBuffer(loss.metal, atIndex: 6)
         
         command.dispatchThreads(batchSize)
         command.enqueue()
@@ -893,7 +893,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
                 "reset", deviceID: deviceID
             )
             command.setBytes(pNbElems, atIndex: 0)
-            command.setBuffer(delta.metal(), atIndex: 1)
+            command.setBuffer(delta.metal, atIndex: 1)
             
             command.dispatchThreads(nbElems)
             command.enqueue()
@@ -1283,12 +1283,12 @@ public class VQGrad2D: VQ2D
             let command = MetalKernel.get.createCommand(
                 "vqLayerCAMMax2D", deviceID: deviceID
             )
-            command.setBuffer(_layerCAM.outs.metal(), atIndex: 0)
+            command.setBuffer(_layerCAM.outs.metal, atIndex: 0)
             command.setBytes(pNbChannels, atIndex: 1)
             command.setBytes(pDimensions, atIndex: 2)
             command.setBytes(pNbThreadgroups, atIndex: 3)
             command.setBytes(pNbBatch, atIndex: 4)
-            command.setBuffer(_camMax.metal(), atIndex: 5)
+            command.setBuffer(_camMax.metal, atIndex: 5)
             
             let threadsPerThreadgroup = MTLSizeMake(
                 _threadsPerThreadgroup, 1, 1
@@ -1306,8 +1306,8 @@ public class VQGrad2D: VQ2D
             
             // Continue the reduction in a more generic way.
             reduceMax(
-                inBuffer: _camMax.metal(),
-                outBuffer: _camMax.metal(),
+                inBuffer: _camMax.metal,
+                outBuffer: _camMax.metal,
                 dim1: nbThreadgroups, dim2: batchSize,
                 deviceID: deviceID
             )
@@ -1342,16 +1342,16 @@ public class VQGrad2D: VQ2D
             let command = MetalKernel.get.createCommand(
                 "vqGrad2DForward", deviceID: deviceID
             )
-            command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
-            command.setBuffer(_layerCAM.outs.metal(), atIndex: 1)
-            command.setBuffer(_camMax.metal(), atIndex: 2)
-            command.setBuffer(_wBuffers.w.metal(), atIndex: 3)
+            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+            command.setBuffer(_layerCAM.outs.metal, atIndex: 1)
+            command.setBuffer(_camMax.metal, atIndex: 2)
+            command.setBuffer(_wBuffers.w.metal, atIndex: 3)
             command.setBytes(pNbChannels, atIndex: 4)
             command.setBytes(pDimensions, atIndex: 5)
             command.setBytes(pK, atIndex: 6)
             command.setBytes(pMagnitudeCoeff, atIndex: 7)
             command.setBytes(pNbBatch, atIndex: 8)
-            command.setBuffer(outs.metal(), atIndex: 9)
+            command.setBuffer(outs.metal, atIndex: 9)
             command.setBuffer(indices.metal, atIndex: 10)
             
             command.dispatchThreads(

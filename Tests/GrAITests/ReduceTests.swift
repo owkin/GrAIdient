@@ -23,7 +23,7 @@ class ReduceSumTests: XCTestCase
     private func _testBuffer(dim1: Int, dim2: Int, shared: Bool)
     {
         _array = [Float](repeating: 0.0, count: dim1 * dim2)
-        _buffer = FloatBuffer(nbElems: dim1 * dim2, deviceID: 0)
+        _buffer = FloatBuffer(nbElems: dim1 * dim2, deviceID: 0, shared: shared)
         
         for elem1 in 0..<dim1 {
         for elem2 in 0..<dim2
@@ -32,7 +32,7 @@ class ReduceSumTests: XCTestCase
             let value = Float.random(in: 0..<1)
             _array[offset] = value
         }}
-        _buffer.initialize(array: &_array, shared: shared)
+        _buffer.initialize(array: &_array)
         
         var resultsCPU = [Float]()
         for elem2 in 0..<dim2
@@ -47,8 +47,8 @@ class ReduceSumTests: XCTestCase
         }
         
         reduceSum(
-            inBuffer: _buffer.metal(),
-            outBuffer: _buffer.metal(),
+            inBuffer: _buffer.metal,
+            outBuffer: _buffer.metal,
             dim1: dim1, dim2: dim2,
             deviceID: 0
         )
@@ -149,7 +149,7 @@ class ReduceMaxTests: XCTestCase
     private func _testBuffer(dim1: Int, dim2: Int, shared: Bool)
     {
         _array = [Float](repeating: 0.0, count: dim1 * dim2)
-        _buffer = FloatBuffer(nbElems: dim1 * dim2, deviceID: 0)
+        _buffer = FloatBuffer(nbElems: dim1 * dim2, deviceID: 0, shared: shared)
         
         for elem1 in 0..<dim1 {
         for elem2 in 0..<dim2
@@ -158,7 +158,7 @@ class ReduceMaxTests: XCTestCase
             let value = Float.random(in: 0..<1)
             _array[offset] = value
         }}
-        _buffer.initialize(array: &_array, shared: shared)
+        _buffer.initialize(array: &_array)
         
         var resultsCPU = [Float]()
         for elem2 in 0..<dim2
@@ -173,8 +173,8 @@ class ReduceMaxTests: XCTestCase
         }
         
         reduceMax(
-            inBuffer: _buffer.metal(),
-            outBuffer: _buffer.metal(),
+            inBuffer: _buffer.metal,
+            outBuffer: _buffer.metal,
             dim1: dim1, dim2: dim2,
             deviceID: 0
         )

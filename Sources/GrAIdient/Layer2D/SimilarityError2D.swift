@@ -153,7 +153,8 @@ public class SimilarityError2D: LayerMerge2D
         {
             loss = FloatBuffer(
                 nbElems: batchSize * batchSize,
-                deviceID: deviceID
+                deviceID: deviceID,
+                shared: true
             )
         }
         else if batchSize <= 0 || batchSize * batchSize > loss.nbElems
@@ -392,13 +393,13 @@ public class SimilarityError2D: LayerMerge2D
                 "concat02DForward", deviceID: deviceID
             )
             command.setBuffer(
-                (_layersPrev[num] as! Layer2D).outs.metal(), atIndex: 0
+                (_layersPrev[num] as! Layer2D).outs.metal, atIndex: 0
             )
             command.setBytes(pGlobalOffset, atIndex: 1)
             command.setBytes(pNbChannels, atIndex: 2)
             command.setBytes(pDimensions, atIndex: 3)
             command.setBytes(pNbBatch, atIndex: 4)
-            command.setBuffer(outs.metal(), atIndex: 5)
+            command.setBuffer(outs.metal, atIndex: 5)
             
             command.dispatchThreads(
                 width: width * nbChannels,
@@ -498,13 +499,13 @@ public class SimilarityError2D: LayerMerge2D
             command = metalKernel.createCommand(
                 "concat02DBackward", deviceID: deviceID
             )
-            command.setBuffer(delta.metal(), atIndex: 0)
+            command.setBuffer(delta.metal, atIndex: 0)
             command.setBytes(pGlobalOffset, atIndex: 1)
             command.setBytes(pNbChannels, atIndex: 2)
             command.setBytes(pDimensions, atIndex: 3)
             command.setBytes(pNbBatch, atIndex: 4)
             command.setBytes(pDirty, atIndex: 5)
-            command.setBuffer(layerPrev.delta.metal(), atIndex: 6)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 6)
             
             command.dispatchThreads(
                 width: width * nbChannels,
@@ -612,11 +613,11 @@ public class SimilarityError2D: LayerMerge2D
         let command = MetalKernel.get.createCommand(
             "similarBatchError2DLoss", deviceID: deviceID
         )
-        command.setBuffer(outs.metal(), atIndex: 0)
+        command.setBuffer(outs.metal, atIndex: 0)
         command.setBytes(pNbChannels, atIndex: 1)
         command.setBytes(pDimensions, atIndex: 2)
         command.setBytes(pNbBatch, atIndex: 3)
-        command.setBuffer(loss.metal(), atIndex: 4)
+        command.setBuffer(loss.metal, atIndex: 4)
         
         command.dispatchThreads(
             width: mergedBatchSize,
@@ -738,7 +739,7 @@ public class SimilarityError2D: LayerMerge2D
             command = metalKernel.createCommand(
                 "similarError2DLossDerivative", deviceID: deviceID
             )
-            command.setBuffer(outs.metal(), atIndex: 0)
+            command.setBuffer(outs.metal, atIndex: 0)
             command.setBytes(pGlobalOffset, atIndex: 1)
             command.setBytes(pNbChannels, atIndex: 2)
             command.setBytes(pDimensions, atIndex: 3)
@@ -746,7 +747,7 @@ public class SimilarityError2D: LayerMerge2D
             command.setBytes(pNbBatch, atIndex: 5)
             command.setBytes(pNbBatchPrev, atIndex: 6)
             command.setBytes(pDirty, atIndex: 7)
-            command.setBuffer(layerPrev.delta.metal(), atIndex: 8)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 8)
             
             command.dispatchThreads(
                 width: width * height,

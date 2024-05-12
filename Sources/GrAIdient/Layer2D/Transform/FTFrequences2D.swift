@@ -239,7 +239,7 @@ public class FTFrequences2D: LayerInput2D, LayerResize
         command.setBytes(pNbChannels, atIndex: 0)
         command.setBytes(pDimension, atIndex: 1)
         command.setBytes(pNbBatch, atIndex: 2)
-        command.setBuffer(outs.metal(), atIndex: 3)
+        command.setBuffer(outs.metal, atIndex: 3)
         
         command.dispatchThreads(
             width: width * nbChannels,

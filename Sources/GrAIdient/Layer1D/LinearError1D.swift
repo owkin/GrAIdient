@@ -216,11 +216,11 @@ public class LinearError1D: LayerOutput1D
         let command = MetalKernel.get.createCommand(
             "linearErrorLoss", deviceID: deviceID
         )
-        command.setBuffer(outs.metal(), atIndex: 0)
-        command.setBuffer(groundTruth.metal(), atIndex: 1)
+        command.setBuffer(outs.metal, atIndex: 0)
+        command.setBuffer(groundTruth.metal, atIndex: 1)
         command.setBytes(pNbNeurons, atIndex: 2)
         command.setBytes(pNbBatch, atIndex: 3)
-        command.setBuffer(loss.metal(), atIndex: 4)
+        command.setBuffer(loss.metal, atIndex: 4)
         
         command.dispatchThreads(batchSize)
         command.enqueue()
@@ -300,12 +300,12 @@ public class LinearError1D: LayerOutput1D
             let command = MetalKernel.get.createCommand(
                 "linearErrorLossDerivative", deviceID: deviceID
             )
-            command.setBuffer(outs.metal(), atIndex: 0)
+            command.setBuffer(outs.metal, atIndex: 0)
             command.setBytes(pNbNeurons, atIndex: 1)
             command.setBytes(pCoeff, atIndex: 2)
             command.setBytes(pNbBatch, atIndex: 3)
             command.setBytes(pDirty, atIndex: 4)
-            command.setBuffer(layerPrev.delta.metal(), atIndex: 5)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 5)
             
             command.dispatchThreads(
                 width: nbNeurons,

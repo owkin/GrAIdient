@@ -179,13 +179,13 @@ public class LayerCAMSeq: LayerSeq
             let command = MetalKernel.get.createCommand(
                 "layerCAMSeqForward", deviceID: deviceID
             )
-            command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
-            command.setBuffer(layerPrev.delta.metal(), atIndex: 1)
+            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 1)
             command.setBytes(pNbNeuronsPrev, atIndex: 2)
             command.setBytes(pKeepPositive, atIndex: 3)
             command.setBytes(pNbBatch, atIndex: 4)
             command.setBytes(pSequence, atIndex: 5)
-            command.setBuffer(outs.metal(), atIndex: 6)
+            command.setBuffer(outs.metal, atIndex: 6)
             
             command.dispatchThreads(
                 width: sequence,

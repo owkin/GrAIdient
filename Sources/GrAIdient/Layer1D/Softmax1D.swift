@@ -240,11 +240,11 @@ public class Softmax1D: Layer1D
             let command = MetalKernel.get.createCommand(
                 "softmax1DForward", deviceID: deviceID
             )
-            command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
+            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(pNbHeads, atIndex: 1)
             command.setBytes(pNbNeurons, atIndex: 2)
             command.setBytes(pNbBatch, atIndex: 3)
-            command.setBuffer(outs.metal(), atIndex: 4)
+            command.setBuffer(outs.metal, atIndex: 4)
             
             command.dispatchThreads(
                 width: nbNeurons,
@@ -314,13 +314,13 @@ public class Softmax1D: Layer1D
             let command = MetalKernel.get.createCommand(
                 "softmax1DBackward", deviceID: deviceID
             )
-            command.setBuffer(outs.metal(), atIndex: 0)
-            command.setBuffer(delta.metal(), atIndex: 1)
+            command.setBuffer(outs.metal, atIndex: 0)
+            command.setBuffer(delta.metal, atIndex: 1)
             command.setBytes(pNbHeads, atIndex: 2)
             command.setBytes(pNbNeurons, atIndex: 3)
             command.setBytes(pNbBatch, atIndex: 4)
             command.setBytes(pDirty, atIndex: 5)
-            command.setBuffer(layerPrev.delta.metal(), atIndex: 6)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 6)
             
             command.dispatchThreads(
                 width: nbNeurons,

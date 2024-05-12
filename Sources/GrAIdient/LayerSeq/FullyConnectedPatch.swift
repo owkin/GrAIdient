@@ -931,16 +931,16 @@ public class FullyConnectedPatch: ActivationSeq,
             let command = MetalKernel.get.createCommand(
                 "flPatchForward", deviceID: deviceID
             )
-            command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
-            command.setBuffer(_wBuffers.w.metal(), atIndex: 1)
-            command.setBuffer(_bBuffers.w.metal(), atIndex: 2)
+            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+            command.setBuffer(_wBuffers.w.metal, atIndex: 1)
+            command.setBuffer(_bBuffers.w.metal, atIndex: 2)
             command.setBytes(pNbNeurons, atIndex: 3)
             command.setBytes(pNbChannelsPrev, atIndex: 4)
             command.setBytes(pDimensionsPrev, atIndex: 5)
             command.setBytes(pPatch, atIndex: 6)
             command.setBytes(pNbBatch, atIndex: 7)
             command.setBytes(pSequence, atIndex: 8)
-            command.setBuffer(outs.metal(), atIndex: 9)
+            command.setBuffer(outs.metal, atIndex: 9)
             
             command.dispatchThreads(
                 width: nbNeurons,
@@ -1104,8 +1104,8 @@ public class FullyConnectedPatch: ActivationSeq,
             let command = MetalKernel.get.createCommand(
                 "flPatchBackward", deviceID: deviceID
             )
-            command.setBuffer(delta.metal(), atIndex: 0)
-            command.setBuffer(_wBuffers.w.metal(), atIndex: 1)
+            command.setBuffer(delta.metal, atIndex: 0)
+            command.setBuffer(_wBuffers.w.metal, atIndex: 1)
             command.setBytes(pNbNeurons, atIndex: 2)
             command.setBytes(pNbChannelsPrev, atIndex: 3)
             command.setBytes(pDimensionsPrev, atIndex: 4)
@@ -1113,7 +1113,7 @@ public class FullyConnectedPatch: ActivationSeq,
             command.setBytes(pNbBatch, atIndex: 6)
             command.setBytes(pSequence, atIndex: 7)
             command.setBytes(pDirty, atIndex: 8)
-            command.setBuffer(layerPrev.delta.metal(), atIndex: 9)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 9)
             
             command.dispatchThreads(
                 width: weightWidth,
@@ -1147,8 +1147,8 @@ public class FullyConnectedPatch: ActivationSeq,
                 command = MetalKernel.get.createCommand(
                     "flPatchBatchDerWeights", deviceID: deviceID
                 )
-                command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
-                command.setBuffer(delta.metal(), atIndex: 1)
+                command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+                command.setBuffer(delta.metal, atIndex: 1)
                 command.setBytes(pNbNeurons, atIndex: 2)
                 command.setBytes(pNbChannelsPrev, atIndex: 3)
                 command.setBytes(pDimensionsPrev, atIndex: 4)
@@ -1156,7 +1156,7 @@ public class FullyConnectedPatch: ActivationSeq,
                 command.setBytes(pNbBatch, atIndex: 6)
                 command.setBytes(pSequence, atIndex: 7)
                 command.setBytes(pAccumulate, atIndex: 8)
-                command.setBuffer(_wBuffers.g.metal(), atIndex: 9)
+                command.setBuffer(_wBuffers.g.metal, atIndex: 9)
                 
                 command.dispatchThreads(
                     width: nbNeurons,
@@ -1172,12 +1172,12 @@ public class FullyConnectedPatch: ActivationSeq,
                     command = MetalKernel.get.createCommand(
                         kernel, deviceID: deviceID
                     )
-                    command.setBuffer(delta.metal(), atIndex: 0)
+                    command.setBuffer(delta.metal, atIndex: 0)
                     command.setBytes(pNbNeurons, atIndex: 1)
                     command.setBytes(pNbBatch, atIndex: 2)
                     command.setBytes(pSequence, atIndex: 3)
                     command.setBytes(pAccumulate, atIndex: 4)
-                    command.setBuffer(_bBuffers.g.metal(), atIndex: 5)
+                    command.setBuffer(_bBuffers.g.metal, atIndex: 5)
                     
                     command.dispatchThreads(nbNeurons / coeff)
                     command.enqueue()
@@ -1191,15 +1191,15 @@ public class FullyConnectedPatch: ActivationSeq,
                 command = MetalKernel.get.createCommand(
                     "flPatchDerWeights", deviceID: deviceID
                 )
-                command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
-                command.setBuffer(delta.metal(), atIndex: 1)
+                command.setBuffer(layerPrev.outs.metal, atIndex: 0)
+                command.setBuffer(delta.metal, atIndex: 1)
                 command.setBytes(pNbNeurons, atIndex: 2)
                 command.setBytes(pNbChannelsPrev, atIndex: 3)
                 command.setBytes(pDimensionsPrev, atIndex: 4)
                 command.setBytes(pPatch, atIndex: 5)
                 command.setBytes(pNbBatch, atIndex: 6)
                 command.setBytes(pSequence, atIndex: 7)
-                command.setBuffer(_wDeltaWeights.metal(), atIndex: 8)
+                command.setBuffer(_wDeltaWeights.metal, atIndex: 8)
                 
                 command.dispatchThreads(
                     width: nbNeurons * batchSize,
@@ -1212,11 +1212,11 @@ public class FullyConnectedPatch: ActivationSeq,
                     command = MetalKernel.get.createCommand(
                         "flPatchDerBiases", deviceID: deviceID
                     )
-                    command.setBuffer(delta.metal(), atIndex: 0)
+                    command.setBuffer(delta.metal, atIndex: 0)
                     command.setBytes(pNbNeurons, atIndex: 1)
                     command.setBytes(pNbBatch, atIndex: 2)
                     command.setBytes(pSequence, atIndex: 3)
-                    command.setBuffer(_bDeltaWeights.metal(), atIndex: 4)
+                    command.setBuffer(_bDeltaWeights.metal, atIndex: 4)
                     
                     command.dispatchThreads(
                         width: nbNeurons,
@@ -1231,13 +1231,13 @@ public class FullyConnectedPatch: ActivationSeq,
                 command = MetalKernel.get.createCommand(
                     "flPatchReduceWeights", deviceID: deviceID
                 )
-                command.setBuffer(_wDeltaWeights.metal(), atIndex: 0)
+                command.setBuffer(_wDeltaWeights.metal, atIndex: 0)
                 command.setBytes(pNbNeurons, atIndex: 1)
                 command.setBytes(pNbChannelsPrev, atIndex: 2)
                 command.setBytes(pPatch, atIndex: 3)
                 command.setBytes(pNbBatch, atIndex: 4)
                 command.setBytes(pAccumulate, atIndex: 5)
-                command.setBuffer(_wBuffers.g.metal(), atIndex: 6)
+                command.setBuffer(_wBuffers.g.metal, atIndex: 6)
                 
                 command.dispatchThreads(
                     width: nbNeurons,
@@ -1250,11 +1250,11 @@ public class FullyConnectedPatch: ActivationSeq,
                     command = MetalKernel.get.createCommand(
                         "reduceBiases", deviceID: deviceID
                     )
-                    command.setBuffer(_bDeltaWeights.metal(), atIndex: 0)
+                    command.setBuffer(_bDeltaWeights.metal, atIndex: 0)
                     command.setBytes(pNbNeurons, atIndex: 1)
                     command.setBytes(pNbBatch, atIndex: 2)
                     command.setBytes(pAccumulate, atIndex: 3)
-                    command.setBuffer(_bBuffers.g.metal(), atIndex: 4)
+                    command.setBuffer(_bBuffers.g.metal, atIndex: 4)
                     
                     command.dispatchThreads(nbNeurons)
                     command.enqueue()

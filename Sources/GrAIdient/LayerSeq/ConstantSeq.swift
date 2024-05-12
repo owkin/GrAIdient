@@ -397,11 +397,11 @@ public class Constant12Seq: LayerSeq, LayerUpdate
         let command = MetalKernel.get.createCommand(
             kernel, deviceID: deviceID
         )
-        command.setBuffer(_wBuffers.w.metal(), atIndex: 0)
+        command.setBuffer(_wBuffers.w.metal, atIndex: 0)
         command.setBytes(pNbNeurons, atIndex: 1)
         command.setBytes(pNbBatch, atIndex: 2)
         command.setBytes(pSequence, atIndex: 3)
-        command.setBuffer(outs.metal(), atIndex: 4)
+        command.setBuffer(outs.metal, atIndex: 4)
         
         command.dispatchThreads(
             width: nbNeurons / coeff,
@@ -457,12 +457,12 @@ public class Constant12Seq: LayerSeq, LayerUpdate
             let command = MetalKernel.get.createCommand(
                 kernel, deviceID: deviceID
             )
-            command.setBuffer(delta.metal(), atIndex: 0)
+            command.setBuffer(delta.metal, atIndex: 0)
             command.setBytes(pNbNeurons, atIndex: 1)
             command.setBytes(pNbBatch, atIndex: 2)
             command.setBytes(pSequence, atIndex: 3)
             command.setBytes(pAccumulate, atIndex: 4)
-            command.setBuffer(_wBuffers.g.metal(), atIndex: 5)
+            command.setBuffer(_wBuffers.g.metal, atIndex: 5)
             
             command.dispatchThreads(
                 width: nbNeurons / coeff,
@@ -900,11 +900,11 @@ public class Constant2Seq: LayerSeq, LayerUpdate
         let command = MetalKernel.get.createCommand(
             kernel, deviceID: deviceID
         )
-        command.setBuffer(_wBuffers.w.metal(), atIndex: 0)
+        command.setBuffer(_wBuffers.w.metal, atIndex: 0)
         command.setBytes(pNbNeurons, atIndex: 1)
         command.setBytes(pNbBatch, atIndex: 2)
         command.setBytes(pSequence, atIndex: 3)
-        command.setBuffer(outs.metal(), atIndex: 4)
+        command.setBuffer(outs.metal, atIndex: 4)
         
         command.dispatchThreads(
             width: nbNeurons / coeff,
@@ -966,12 +966,12 @@ public class Constant2Seq: LayerSeq, LayerUpdate
                 command = MetalKernel.get.createCommand(
                     kernel, deviceID: deviceID
                 )
-                command.setBuffer(delta.metal(), atIndex: 0)
+                command.setBuffer(delta.metal, atIndex: 0)
                 command.setBytes(pNbNeurons, atIndex: 1)
                 command.setBytes(pNbBatch, atIndex: 2)
                 command.setBytes(pSequence, atIndex: 3)
                 command.setBytes(pAccumulate, atIndex: 4)
-                command.setBuffer(_wBuffers.g.metal(), atIndex: 5)
+                command.setBuffer(_wBuffers.g.metal, atIndex: 5)
                 
                 command.dispatchThreads(nbNeurons / coeff)
                 command.enqueue()
@@ -984,11 +984,11 @@ public class Constant2Seq: LayerSeq, LayerUpdate
                 command = MetalKernel.get.createCommand(
                     "flPatchDerBiases", deviceID: deviceID
                 )
-                command.setBuffer(delta.metal(), atIndex: 0)
+                command.setBuffer(delta.metal, atIndex: 0)
                 command.setBytes(pNbNeurons, atIndex: 1)
                 command.setBytes(pNbBatch, atIndex: 2)
                 command.setBytes(pSequence, atIndex: 3)
-                command.setBuffer(_wDeltaWeights.metal(), atIndex: 4)
+                command.setBuffer(_wDeltaWeights.metal, atIndex: 4)
                 
                 command.dispatchThreads(
                     width: nbNeurons,
@@ -1002,11 +1002,11 @@ public class Constant2Seq: LayerSeq, LayerUpdate
                 command = MetalKernel.get.createCommand(
                     "reduceBiases", deviceID: deviceID
                 )
-                command.setBuffer(_wDeltaWeights.metal(), atIndex: 0)
+                command.setBuffer(_wDeltaWeights.metal, atIndex: 0)
                 command.setBytes(pNbNeurons, atIndex: 1)
                 command.setBytes(pNbBatch, atIndex: 2)
                 command.setBytes(pAccumulate, atIndex: 3)
-                command.setBuffer(_wBuffers.g.metal(), atIndex: 4)
+                command.setBuffer(_wBuffers.g.metal, atIndex: 4)
                 
                 command.dispatchThreads(nbNeurons)
                 command.enqueue()

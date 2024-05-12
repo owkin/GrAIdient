@@ -162,11 +162,11 @@ public class AvgPoolSeq: Layer1D
             let command = MetalKernel.get.createCommand(
                 "avgPoolSeqForward", deviceID: deviceID
             )
-            command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
+            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(pNbNeurons, atIndex: 1)
             command.setBytes(pNbBatch, atIndex: 2)
             command.setBytes(pSequence, atIndex: 3)
-            command.setBuffer(outs.metal(), atIndex: 4)
+            command.setBuffer(outs.metal, atIndex: 4)
             
             command.dispatchThreads(
                 width: nbNeurons,
@@ -228,12 +228,12 @@ public class AvgPoolSeq: Layer1D
             let command = MetalKernel.get.createCommand(
                 "avgPoolSeqBackward", deviceID: deviceID
             )
-            command.setBuffer(delta.metal(), atIndex: 0)
+            command.setBuffer(delta.metal, atIndex: 0)
             command.setBytes(pNbNeurons, atIndex: 1)
             command.setBytes(pNbBatch, atIndex: 2)
             command.setBytes(pSequence, atIndex: 3)
             command.setBytes(pDirty, atIndex: 4)
-            command.setBuffer(layerPrev.delta.metal(), atIndex: 5)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 5)
             
             command.dispatchThreads(
                 width: nbNeurons,

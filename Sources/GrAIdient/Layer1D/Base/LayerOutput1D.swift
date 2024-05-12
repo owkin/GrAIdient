@@ -149,7 +149,8 @@ open class LayerOutput1D: Layer1D
         {
             self.groundTruth = FloatBuffer(
                 nbElems: batchSize * nbNeurons,
-                deviceID: deviceID
+                deviceID: deviceID,
+                shared: true
             )
         }
         else if batchSize <= 0 ||
@@ -211,7 +212,9 @@ open class LayerOutput1D: Layer1D
     {
         if loss == nil
         {
-            loss = FloatBuffer(nbElems: batchSize, deviceID: deviceID)
+            loss = FloatBuffer(
+                nbElems: batchSize, deviceID: deviceID, shared: true
+            )
         }
         else if batchSize > loss.nbElems
         {
@@ -296,9 +299,9 @@ open class LayerOutput1D: Layer1D
             let command = MetalKernel.get.createCommand(
                 kernel, deviceID: deviceID
             )
-            command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
+            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(pNbElems, atIndex: 1)
-            command.setBuffer(outs.metal(), atIndex: 2)
+            command.setBuffer(outs.metal, atIndex: 2)
             
             command.dispatchThreads(nbElems / coeff)
             command.enqueue()
@@ -362,9 +365,9 @@ open class LayerOutput1D: Layer1D
                 kernel, deviceID: deviceID
             )
             
-            command.setBuffer(delta.metal(), atIndex: 0)
+            command.setBuffer(delta.metal, atIndex: 0)
             command.setBytes(pNbElems, atIndex: 1)
-            command.setBuffer(layerPrev.delta.metal(), atIndex: 2)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 2)
             
             command.dispatchThreads(nbElems / coeff)
             command.enqueue()

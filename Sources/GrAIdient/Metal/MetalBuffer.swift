@@ -14,11 +14,58 @@ public class FloatBuffer
     let nbElems: Int
     /// GPU device where the buffer is sent.
     let deviceID: Int
+    /// Whether to create a shared buffer or a private one.
+    let shared: Bool
     
     /// Float buffer.
     var _float: MetalBuffer<Float>? = nil
     /// Float16 buffer.
     var _float16: MetalBuffer<UInt16>? = nil
+    
+    /// Get Metal buffer.
+    public var metal: MTLBuffer
+    {
+        get {
+            if GrAI.Precision.float16
+            {
+                if _float16 == nil
+                {
+                    if shared
+                    {
+                        _float16 = MetalSharedBuffer<UInt16>(
+                            nbElems, deviceID: deviceID
+                        )
+                    }
+                    else
+                    {
+                        _float16 = MetalPrivateBuffer<UInt16>(
+                            nbElems, deviceID: deviceID
+                        )
+                    }
+                }
+                return _float16!.metal
+            }
+            else
+            {
+                if _float == nil
+                {
+                    if shared
+                    {
+                        _float = MetalSharedBuffer<Float>(
+                            nbElems, deviceID: deviceID
+                        )
+                    }
+                    else
+                    {
+                        _float = MetalPrivateBuffer<Float>(
+                            nbElems, deviceID: deviceID
+                        )
+                    }
+                }
+                return _float!.metal
+            }
+        }
+    }
     
     ///
     /// Create a wrapper of Metal buffer.
@@ -26,11 +73,13 @@ public class FloatBuffer
     /// - Parameters:
     ///     - nbElems: The number of elements in the array.
     ///     - deviceID: GPU ID where the array will be sent.
+    ///     - shared: Whether to create a shared buffer or a private one.
     ///
-    public init(nbElems: Int, deviceID: Int)
+    public init(nbElems: Int, deviceID: Int, shared: Bool = false)
     {
         self.deviceID = deviceID
         self.nbElems = nbElems
+        self.shared = shared
     }
     
     /// Clean the buffers.
@@ -40,12 +89,8 @@ public class FloatBuffer
         _float16 = nil
     }
     
-    ///
     /// Initialize Metal buffer.
-    ///
-    /// - Parameter shared: Whether to create a shared buffer or a private one.
-    ///
-    public func initialize(_ shared: Bool = false)
+    public func initialize()
     {
         if GrAI.Precision.float16
         {
@@ -97,12 +142,10 @@ public class FloatBuffer
     /// - Parameters:
     ///     - array: Input array.
     ///     - start: Start offset.
-    ///     - shared: Whether to create a shared buffer or a private one.
     ///
     public func initialize(
         array: inout [Float],
-        start: Int = 0,
-        shared: Bool = false)
+        start: Int = 0)
     {
         if GrAI.Precision.float16
         {
@@ -156,59 +199,8 @@ public class FloatBuffer
         }
     }
     
-    ///
-    /// Get Metal buffer.
-    ///
-    /// - Parameter shared: Whether to create a shared buffer or a private one.
-    ///
-    public func metal(_ shared: Bool = false) -> MTLBuffer
-    {
-        if GrAI.Precision.float16
-        {
-            if _float16 == nil
-            {
-                if shared
-                {
-                    _float16 = MetalSharedBuffer<UInt16>(
-                        nbElems, deviceID: deviceID
-                    )
-                }
-                else
-                {
-                    _float16 = MetalPrivateBuffer<UInt16>(
-                        nbElems, deviceID: deviceID
-                    )
-                }
-            }
-            return _float16!.metal
-        }
-        else
-        {
-            if _float == nil
-            {
-                if shared
-                {
-                    _float = MetalSharedBuffer<Float>(
-                        nbElems, deviceID: deviceID
-                    )
-                }
-                else
-                {
-                    _float = MetalPrivateBuffer<Float>(
-                        nbElems, deviceID: deviceID
-                    )
-                }
-            }
-            return _float!.metal
-        }
-    }
-    
-    ///
     /// Retrieve Metal buffer content.
-    ///
-    /// - Parameter shared: Whether to create a shared buffer or a private one.
-    ///
-    public func download(_ shared: Bool = false) -> [Float]
+    public func download() -> [Float]
     {
         if GrAI.Precision.float16
         {

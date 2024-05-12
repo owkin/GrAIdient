@@ -184,12 +184,12 @@ public class SelectSeq: Layer1D
             let command = MetalKernel.get.createCommand(
                 "selectSeqForward", deviceID: deviceID
             )
-            command.setBuffer(layerPrev.outs.metal(), atIndex: 0)
+            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(pNbNeurons, atIndex: 1)
             command.setBytes(pTargetSeq, atIndex: 2)
             command.setBytes(pNbBatch, atIndex: 3)
             command.setBytes(pSequence, atIndex: 4)
-            command.setBuffer(outs.metal(), atIndex: 5)
+            command.setBuffer(outs.metal, atIndex: 5)
             
             command.dispatchThreads(
                 width: nbNeurons,
@@ -251,7 +251,7 @@ public class SelectSeq: Layer1D
                     "reset", deviceID: deviceID
                 )
                 command.setBytes(pNbElems, atIndex: 0)
-                command.setBuffer(layerPrev.delta.metal(), atIndex: 1)
+                command.setBuffer(layerPrev.delta.metal, atIndex: 1)
                 
                 command.dispatchThreads(nbElems)
                 command.enqueue()
@@ -265,12 +265,12 @@ public class SelectSeq: Layer1D
             command = MetalKernel.get.createCommand(
                 "selectSeqBackward", deviceID: deviceID
             )
-            command.setBuffer(delta.metal(), atIndex: 0)
+            command.setBuffer(delta.metal, atIndex: 0)
             command.setBytes(pNbNeurons, atIndex: 1)
             command.setBytes(pTargetSeq, atIndex: 2)
             command.setBytes(pNbBatch, atIndex: 3)
             command.setBytes(pSequence, atIndex: 4)
-            command.setBuffer(layerPrev.delta.metal(), atIndex: 5)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 5)
             
             command.dispatchThreads(
                 width: nbNeurons,

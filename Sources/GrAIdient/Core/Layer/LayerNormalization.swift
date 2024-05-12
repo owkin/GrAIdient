@@ -860,13 +860,13 @@ class BatchNormalizationGPU: LayerWeightsStatsNormalization
         let command = MetalKernel.get.createCommand(
             "computeBNConvμ", deviceID: _deviceID
         )
-        command.setBuffer(layer.outs.metal(), atIndex: 0)
+        command.setBuffer(layer.outs.metal, atIndex: 0)
         command.setBytes(pNbChannels, atIndex: 1)
         command.setBytes(pNbBatch, atIndex: 2)
         command.setBytes(pDimensions, atIndex: 3)
         command.setBytes(pFirstCall, atIndex: 4)
-        command.setBuffer(_μ.metal(), atIndex: 5)
-        command.setBuffer(_Eμ.metal(), atIndex: 6)
+        command.setBuffer(_μ.metal, atIndex: 5)
+        command.setBuffer(_Eμ.metal, atIndex: 6)
         
         command.dispatchThreads(_nbNeurons)
         command.enqueue()
@@ -893,14 +893,14 @@ class BatchNormalizationGPU: LayerWeightsStatsNormalization
         let command = MetalKernel.get.createCommand(
             "computeBNConvσ2", deviceID: _deviceID
         )
-        command.setBuffer(layer.outs.metal(), atIndex: 0)
-        command.setBuffer(_μ.metal(), atIndex: 1)
+        command.setBuffer(layer.outs.metal, atIndex: 0)
+        command.setBuffer(_μ.metal, atIndex: 1)
         command.setBytes(pNbChannels, atIndex: 2)
         command.setBytes(pNbBatch, atIndex: 3)
         command.setBytes(pDimensions, atIndex: 4)
         command.setBytes(pFirstCall, atIndex: 5)
-        command.setBuffer(_σ2.metal(), atIndex: 6)
-        command.setBuffer(_Eσ2.metal(), atIndex: 7)
+        command.setBuffer(_σ2.metal, atIndex: 6)
+        command.setBuffer(_Eσ2.metal, atIndex: 7)
         
         command.dispatchThreads(_nbNeurons)
         command.enqueue()
@@ -931,15 +931,15 @@ class BatchNormalizationGPU: LayerWeightsStatsNormalization
         let command = MetalKernel.get.createCommand(
             "forwardBNConvTraining", deviceID: _deviceID
         )
-        command.setBuffer(_β.w.metal(), atIndex: 0)
-        command.setBuffer(_Ɣ.w.metal(), atIndex: 1)
-        command.setBuffer(_μ.metal(), atIndex: 2)
-        command.setBuffer(_σ2.metal(), atIndex: 3)
+        command.setBuffer(_β.w.metal, atIndex: 0)
+        command.setBuffer(_Ɣ.w.metal, atIndex: 1)
+        command.setBuffer(_μ.metal, atIndex: 2)
+        command.setBuffer(_σ2.metal, atIndex: 3)
         command.setBytes(pNbChannels, atIndex: 4)
         command.setBytes(pNbBatch, atIndex: 5)
         command.setBytes(pDimensions, atIndex: 6)
-        command.setBuffer(layer.outs.metal(), atIndex: 7)
-        command.setBuffer(_xHat.metal(), atIndex: 8)
+        command.setBuffer(layer.outs.metal, atIndex: 7)
+        command.setBuffer(_xHat.metal, atIndex: 8)
         
         command.dispatchThreads(
             width: _nbNeurons * width,
@@ -969,15 +969,15 @@ class BatchNormalizationGPU: LayerWeightsStatsNormalization
             "forwardBNConvInference",
             deviceID: _deviceID
         )
-        command.setBuffer(_β.w.metal(), atIndex: 0)
-        command.setBuffer(_Ɣ.w.metal(), atIndex: 1)
-        command.setBuffer(_Eμ.metal(), atIndex: 2)
-        command.setBuffer(_Eσ2.metal(), atIndex: 3)
+        command.setBuffer(_β.w.metal, atIndex: 0)
+        command.setBuffer(_Ɣ.w.metal, atIndex: 1)
+        command.setBuffer(_Eμ.metal, atIndex: 2)
+        command.setBuffer(_Eσ2.metal, atIndex: 3)
         command.setBytes(pNbChannels, atIndex: 4)
         command.setBytes(pNbBatch, atIndex: 5)
         command.setBytes(pM, atIndex: 6)
         command.setBytes(pDimensions, atIndex: 7)
-        command.setBuffer(layer.outs.metal(), atIndex: 8)
+        command.setBuffer(layer.outs.metal, atIndex: 8)
     
         command.dispatchThreads(
             width: _nbNeurons * width,
@@ -1020,17 +1020,17 @@ class BatchNormalizationGPU: LayerWeightsStatsNormalization
         let command = MetalKernel.get.createCommand(
             "backwardWeightsBNConv", deviceID: _deviceID
         )
-        command.setBuffer(layer.delta.metal(), atIndex: 0)
-        command.setBuffer(_xHat.metal(), atIndex: 1)
-        command.setBuffer(_Ɣ.w.metal(), atIndex: 2)
+        command.setBuffer(layer.delta.metal, atIndex: 0)
+        command.setBuffer(_xHat.metal, atIndex: 1)
+        command.setBuffer(_Ɣ.w.metal, atIndex: 2)
         command.setBytes(pNbChannels, atIndex: 3)
         command.setBytes(pNbBatch, atIndex: 4)
         command.setBytes(pDimensions, atIndex: 5)
         command.setBytes(pAccumulate, atIndex: 6)
-        command.setBuffer(_sum1.metal(), atIndex: 7)
-        command.setBuffer(_sum2.metal(), atIndex: 8)
-        command.setBuffer(_Ɣ.g.metal(), atIndex: 9)
-        command.setBuffer(_β.g.metal(), atIndex: 10)
+        command.setBuffer(_sum1.metal, atIndex: 7)
+        command.setBuffer(_sum2.metal, atIndex: 8)
+        command.setBuffer(_Ɣ.g.metal, atIndex: 9)
+        command.setBuffer(_β.g.metal, atIndex: 10)
         
         command.dispatchThreads(_nbNeurons)
         command.enqueue()
@@ -1052,15 +1052,15 @@ class BatchNormalizationGPU: LayerWeightsStatsNormalization
         let command = MetalKernel.get.createCommand(
             "backwardBNConvTraining", deviceID: _deviceID
         )
-        command.setBuffer(_σ2.metal(), atIndex: 0)
-        command.setBuffer(_xHat.metal(), atIndex: 1)
-        command.setBuffer(_Ɣ.w.metal(), atIndex: 2)
-        command.setBuffer(_sum1.metal(), atIndex: 3)
-        command.setBuffer(_sum2.metal(), atIndex: 4)
+        command.setBuffer(_σ2.metal, atIndex: 0)
+        command.setBuffer(_xHat.metal, atIndex: 1)
+        command.setBuffer(_Ɣ.w.metal, atIndex: 2)
+        command.setBuffer(_sum1.metal, atIndex: 3)
+        command.setBuffer(_sum2.metal, atIndex: 4)
         command.setBytes(pNbChannels, atIndex: 5)
         command.setBytes(pNbBatch, atIndex: 6)
         command.setBytes(pDimensions, atIndex: 7)
-        command.setBuffer(layer.delta.metal(), atIndex: 8)
+        command.setBuffer(layer.delta.metal, atIndex: 8)
         
         command.dispatchThreads(
             width: _nbNeurons * width,
@@ -1084,13 +1084,13 @@ class BatchNormalizationGPU: LayerWeightsStatsNormalization
         let command = MetalKernel.get.createCommand(
             "backwardBNConvInference", deviceID: _deviceID
         )
-        command.setBuffer(_Ɣ.w.metal(), atIndex: 0)
-        command.setBuffer(_Eσ2.metal(), atIndex: 1)
+        command.setBuffer(_Ɣ.w.metal, atIndex: 0)
+        command.setBuffer(_Eσ2.metal, atIndex: 1)
         command.setBytes(pNbChannels, atIndex: 2)
         command.setBytes(pNbBatch, atIndex: 3)
         command.setBytes(pM, atIndex: 4)
         command.setBytes(pDimensions, atIndex: 5)
-        command.setBuffer(layer.delta.metal(), atIndex: 6)
+        command.setBuffer(layer.delta.metal, atIndex: 6)
         
         command.dispatchThreads(
             width: _nbNeurons * width,
@@ -1625,15 +1625,15 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         let command = MetalKernel.get.createCommand(
             "forwardInstanceNormConv", deviceID: _deviceID
         )
-        command.setBuffer(_β.w.metal(), atIndex: 0)
-        command.setBuffer(_Ɣ.w.metal(), atIndex: 1)
-        command.setBuffer(_μ.metal(), atIndex: 2)
-        command.setBuffer(_σ2.metal(), atIndex: 3)
+        command.setBuffer(_β.w.metal, atIndex: 0)
+        command.setBuffer(_Ɣ.w.metal, atIndex: 1)
+        command.setBuffer(_μ.metal, atIndex: 2)
+        command.setBuffer(_σ2.metal, atIndex: 3)
         command.setBytes(pNbChannels, atIndex: 4)
         command.setBytes(pNbBatch, atIndex: 5)
         command.setBytes(pDimensions, atIndex: 6)
-        command.setBuffer(layer.outs.metal(), atIndex: 7)
-        command.setBuffer(_xHat.metal(), atIndex: 8)
+        command.setBuffer(layer.outs.metal, atIndex: 7)
+        command.setBuffer(_xHat.metal, atIndex: 8)
         
         command.dispatchThreads(
             width: _nbNeurons * width,
@@ -1669,15 +1669,15 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         let command = MetalKernel.get.createCommand(
             "forwardAdaIN", deviceID: _deviceID
         )
-        command.setBuffer(layerFirst.outs.metal(), atIndex: 0)
-        command.setBuffer(layerLast.outs.metal(), atIndex: 1)
-        command.setBuffer(_μ.metal(), atIndex: 2)
-        command.setBuffer(_σ2.metal(), atIndex: 3)
+        command.setBuffer(layerFirst.outs.metal, atIndex: 0)
+        command.setBuffer(layerLast.outs.metal, atIndex: 1)
+        command.setBuffer(_μ.metal, atIndex: 2)
+        command.setBuffer(_σ2.metal, atIndex: 3)
         command.setBytes(pNbChannels, atIndex: 4)
         command.setBytes(pNbBatch, atIndex: 5)
         command.setBytes(pDimensions, atIndex: 6)
-        command.setBuffer(layer.outs.metal(), atIndex: 7)
-        command.setBuffer(_xHat.metal(), atIndex: 8)
+        command.setBuffer(layer.outs.metal, atIndex: 7)
+        command.setBuffer(_xHat.metal, atIndex: 8)
         
         command.dispatchThreads(
             width: _nbNeurons * width,
@@ -1708,11 +1708,11 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         let command = MetalKernel.get.createCommand(
             "computeInstanceNormConvμ", deviceID: _deviceID
         )
-        command.setBuffer(layer.outs.metal(), atIndex: 0)
+        command.setBuffer(layer.outs.metal, atIndex: 0)
         command.setBytes(pNbChannels, atIndex: 1)
         command.setBytes(pNbBatch, atIndex: 2)
         command.setBytes(pDimensions, atIndex: 3)
-        command.setBuffer(_μ.metal(), atIndex: 4)
+        command.setBuffer(_μ.metal, atIndex: 4)
         
         command.dispatchThreads(width: _nbNeurons, height: batchSize)
         command.enqueue()
@@ -1741,11 +1741,11 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         let command = MetalKernel.get.createCommand(
             "computeInstanceNormConvμ", deviceID: _deviceID
         )
-        command.setBuffer(layerFirst.outs.metal(), atIndex: 0)
+        command.setBuffer(layerFirst.outs.metal, atIndex: 0)
         command.setBytes(pNbChannels, atIndex: 1)
         command.setBytes(pNbBatch, atIndex: 2)
         command.setBytes(pDimensions, atIndex: 3)
-        command.setBuffer(_μ.metal(), atIndex: 4)
+        command.setBuffer(_μ.metal, atIndex: 4)
         
         command.dispatchThreads(width: _nbNeurons, height: batchSize)
         command.enqueue()
@@ -1773,12 +1773,12 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         let command = MetalKernel.get.createCommand(
             "computeInstanceNormConvσ2", deviceID: _deviceID
         )
-        command.setBuffer(layer.outs.metal(), atIndex: 0)
-        command.setBuffer(_μ.metal(), atIndex: 1)
+        command.setBuffer(layer.outs.metal, atIndex: 0)
+        command.setBuffer(_μ.metal, atIndex: 1)
         command.setBytes(pNbChannels, atIndex: 2)
         command.setBytes(pNbBatch, atIndex: 3)
         command.setBytes(pDimensions, atIndex: 4)
-        command.setBuffer(_σ2.metal(), atIndex: 5)
+        command.setBuffer(_σ2.metal, atIndex: 5)
         
         command.dispatchThreads(width: _nbNeurons, height: batchSize)
         command.enqueue()
@@ -1807,12 +1807,12 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         let command = MetalKernel.get.createCommand(
             "computeInstanceNormConvσ2", deviceID: _deviceID
         )
-        command.setBuffer(layerFirst.outs.metal(), atIndex: 0)
-        command.setBuffer(_μ.metal(), atIndex: 1)
+        command.setBuffer(layerFirst.outs.metal, atIndex: 0)
+        command.setBuffer(_μ.metal, atIndex: 1)
         command.setBytes(pNbChannels, atIndex: 2)
         command.setBytes(pNbBatch, atIndex: 3)
         command.setBytes(pDimensions, atIndex: 4)
-        command.setBuffer(_σ2.metal(), atIndex: 5)
+        command.setBuffer(_σ2.metal, atIndex: 5)
         
         command.dispatchThreads(width: _nbNeurons, height: batchSize)
         command.enqueue()
@@ -1834,15 +1834,15 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         let command = MetalKernel.get.createCommand(
             "backwardInstanceNormConv", deviceID: _deviceID
         )
-        command.setBuffer(_σ2.metal(), atIndex: 0)
-        command.setBuffer(_xHat.metal(), atIndex: 1)
-        command.setBuffer(_Ɣ.w.metal(), atIndex: 2)
-        command.setBuffer(_sum1.metal(), atIndex: 3)
-        command.setBuffer(_sum2.metal(), atIndex: 4)
+        command.setBuffer(_σ2.metal, atIndex: 0)
+        command.setBuffer(_xHat.metal, atIndex: 1)
+        command.setBuffer(_Ɣ.w.metal, atIndex: 2)
+        command.setBuffer(_sum1.metal, atIndex: 3)
+        command.setBuffer(_sum2.metal, atIndex: 4)
         command.setBytes(pNbChannels, atIndex: 5)
         command.setBytes(pNbBatch, atIndex: 6)
         command.setBytes(pDimensions, atIndex: 7)
-        command.setBuffer(layer.delta.metal(), atIndex: 8)
+        command.setBuffer(layer.delta.metal, atIndex: 8)
         
         command.dispatchThreads(
             width: _nbNeurons * width,
@@ -1870,17 +1870,17 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         let command = MetalKernel.get.createCommand(
             "backward1AdaIN", deviceID: _deviceID
         )
-        command.setBuffer(layer.delta.metal(), atIndex: 0)
-        command.setBuffer(_σ2.metal(), atIndex: 1)
-        command.setBuffer(_xHat.metal(), atIndex: 2)
-        command.setBuffer(layerLast.outs.metal(), atIndex: 3)
-        command.setBuffer(_sum1.metal(), atIndex: 4)
-        command.setBuffer(_sum2.metal(), atIndex: 5)
+        command.setBuffer(layer.delta.metal, atIndex: 0)
+        command.setBuffer(_σ2.metal, atIndex: 1)
+        command.setBuffer(_xHat.metal, atIndex: 2)
+        command.setBuffer(layerLast.outs.metal, atIndex: 3)
+        command.setBuffer(_sum1.metal, atIndex: 4)
+        command.setBuffer(_sum2.metal, atIndex: 5)
         command.setBytes(pNbChannels, atIndex: 6)
         command.setBytes(pNbBatch, atIndex: 7)
         command.setBytes(pDimensions, atIndex: 8)
         command.setBytes(pDirty, atIndex: 9)
-        command.setBuffer(layerFirst.delta.metal(), atIndex: 10)
+        command.setBuffer(layerFirst.delta.metal, atIndex: 10)
         
         command.dispatchThreads(
             width: _nbNeurons * width,
@@ -1914,17 +1914,17 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         let command = MetalKernel.get.createCommand(
             "backwardWeightsInstanceNormConv", deviceID: _deviceID
         )
-        command.setBuffer(layer.delta.metal(), atIndex: 0)
-        command.setBuffer(_xHat.metal(), atIndex: 1)
-        command.setBuffer(_Ɣ.w.metal(), atIndex: 2)
+        command.setBuffer(layer.delta.metal, atIndex: 0)
+        command.setBuffer(_xHat.metal, atIndex: 1)
+        command.setBuffer(_Ɣ.w.metal, atIndex: 2)
         command.setBytes(pNbChannels, atIndex: 3)
         command.setBytes(pNbBatch, atIndex: 4)
         command.setBytes(pDimensions, atIndex: 5)
         command.setBytes(pAccumulate, atIndex: 6)
-        command.setBuffer(_sum1.metal(), atIndex: 7)
-        command.setBuffer(_sum2.metal(), atIndex: 8)
-        command.setBuffer(_Ɣ.g.metal(), atIndex: 9)
-        command.setBuffer(_β.g.metal(), atIndex: 10)
+        command.setBuffer(_sum1.metal, atIndex: 7)
+        command.setBuffer(_sum2.metal, atIndex: 8)
+        command.setBuffer(_Ɣ.g.metal, atIndex: 9)
+        command.setBuffer(_β.g.metal, atIndex: 10)
         
         command.dispatchThreads(_nbNeurons)
         command.enqueue()
@@ -1956,16 +1956,16 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         let command = MetalKernel.get.createCommand(
             "backward2AdaIN", deviceID: _deviceID
         )
-        command.setBuffer(layer.delta.metal(), atIndex: 0)
-        command.setBuffer(_xHat.metal(), atIndex: 1)
-        command.setBuffer(layerLast.outs.metal(), atIndex: 2)
+        command.setBuffer(layer.delta.metal, atIndex: 0)
+        command.setBuffer(_xHat.metal, atIndex: 1)
+        command.setBuffer(layerLast.outs.metal, atIndex: 2)
         command.setBytes(pNbChannels, atIndex: 3)
         command.setBytes(pNbBatch, atIndex: 4)
         command.setBytes(pDimensions, atIndex: 5)
         command.setBytes(pDirty, atIndex: 6)
-        command.setBuffer(_sum1.metal(), atIndex: 7)
-        command.setBuffer(_sum2.metal(), atIndex: 8)
-        command.setBuffer(layerLast.delta.metal(), atIndex: 9)
+        command.setBuffer(_sum1.metal, atIndex: 7)
+        command.setBuffer(_sum2.metal, atIndex: 8)
+        command.setBuffer(layerLast.delta.metal, atIndex: 9)
         
         command.dispatchThreads(width: _nbNeurons, height: batchSize)
         command.enqueue()
@@ -2486,15 +2486,15 @@ class LayerNormalizationGPU: LayerWeightsNormalization
         let command = MetalKernel.get.createCommand(
             kernel, deviceID: _deviceID
         )
-        command.setBuffer(_β.w.metal(), atIndex: 0)
-        command.setBuffer(_Ɣ.w.metal(), atIndex: 1)
-        command.setBuffer(_μ.metal(), atIndex: 2)
-        command.setBuffer(_σ2.metal(), atIndex: 3)
+        command.setBuffer(_β.w.metal, atIndex: 0)
+        command.setBuffer(_Ɣ.w.metal, atIndex: 1)
+        command.setBuffer(_μ.metal, atIndex: 2)
+        command.setBuffer(_σ2.metal, atIndex: 3)
         command.setBytes(pNbNeurons, atIndex: 4)
         command.setBytes(pNbBatch, atIndex: 5)
         command.setBytes(pSequence, atIndex: 6)
-        command.setBuffer(layer.outs.metal(), atIndex: 7)
-        command.setBuffer(_xHat.metal(), atIndex: 8)
+        command.setBuffer(layer.outs.metal, atIndex: 7)
+        command.setBuffer(_xHat.metal, atIndex: 8)
         
         command.dispatchThreads(
             width: _nbNeurons / coeff,
@@ -2525,11 +2525,11 @@ class LayerNormalizationGPU: LayerWeightsNormalization
         let command = MetalKernel.get.createCommand(
             kernel, deviceID: _deviceID
         )
-        command.setBuffer(layer.outs.metal(), atIndex: 0)
+        command.setBuffer(layer.outs.metal, atIndex: 0)
         command.setBytes(pNbNeurons, atIndex: 1)
         command.setBytes(pNbBatch, atIndex: 2)
         command.setBytes(pSequence, atIndex: 3)
-        command.setBuffer(_μ.metal(), atIndex: 4)
+        command.setBuffer(_μ.metal, atIndex: 4)
         
         command.dispatchThreads(width: sequence, height: batchSize)
         command.enqueue()
@@ -2557,12 +2557,12 @@ class LayerNormalizationGPU: LayerWeightsNormalization
         let command = MetalKernel.get.createCommand(
             kernel, deviceID: _deviceID
         )
-        command.setBuffer(layer.outs.metal(), atIndex: 0)
-        command.setBuffer(_μ.metal(), atIndex: 1)
+        command.setBuffer(layer.outs.metal, atIndex: 0)
+        command.setBuffer(_μ.metal, atIndex: 1)
         command.setBytes(pNbNeurons, atIndex: 2)
         command.setBytes(pNbBatch, atIndex: 3)
         command.setBytes(pSequence, atIndex: 4)
-        command.setBuffer(_σ2.metal(), atIndex: 5)
+        command.setBuffer(_σ2.metal, atIndex: 5)
         
         command.dispatchThreads(width: sequence, height: batchSize)
         command.enqueue()
@@ -2587,15 +2587,15 @@ class LayerNormalizationGPU: LayerWeightsNormalization
         let command = MetalKernel.get.createCommand(
             kernel, deviceID: _deviceID
         )
-        command.setBuffer(_σ2.metal(), atIndex: 0)
-        command.setBuffer(_xHat.metal(), atIndex: 1)
-        command.setBuffer(_Ɣ.w.metal(), atIndex: 2)
-        command.setBuffer(_sum1.metal(), atIndex: 3)
-        command.setBuffer(_sum2.metal(), atIndex: 4)
+        command.setBuffer(_σ2.metal, atIndex: 0)
+        command.setBuffer(_xHat.metal, atIndex: 1)
+        command.setBuffer(_Ɣ.w.metal, atIndex: 2)
+        command.setBuffer(_sum1.metal, atIndex: 3)
+        command.setBuffer(_sum2.metal, atIndex: 4)
         command.setBytes(pNbNeurons, atIndex: 5)
         command.setBytes(pNbBatch, atIndex: 6)
         command.setBytes(pSequence, atIndex: 7)
-        command.setBuffer(layer.delta.metal(), atIndex: 8)
+        command.setBuffer(layer.delta.metal, atIndex: 8)
         
         command.dispatchThreads(
             width: _nbNeurons / coeff,
@@ -2629,14 +2629,14 @@ class LayerNormalizationGPU: LayerWeightsNormalization
         let command = MetalKernel.get.createCommand(
             kernel, deviceID: _deviceID
         )
-        command.setBuffer(layer.delta.metal(), atIndex: 0)
-        command.setBuffer(_xHat.metal(), atIndex: 1)
-        command.setBuffer(_Ɣ.w.metal(), atIndex: 2)
+        command.setBuffer(layer.delta.metal, atIndex: 0)
+        command.setBuffer(_xHat.metal, atIndex: 1)
+        command.setBuffer(_Ɣ.w.metal, atIndex: 2)
         command.setBytes(pNbNeurons, atIndex: 3)
         command.setBytes(pNbBatch, atIndex: 4)
         command.setBytes(pSequence, atIndex: 5)
-        command.setBuffer(_sum1.metal(), atIndex: 6)
-        command.setBuffer(_sum2.metal(), atIndex: 7)
+        command.setBuffer(_sum1.metal, atIndex: 6)
+        command.setBuffer(_sum2.metal, atIndex: 7)
         
         command.dispatchThreads(width: sequence, height: batchSize)
         command.enqueue()
@@ -2659,14 +2659,14 @@ class LayerNormalizationGPU: LayerWeightsNormalization
         let command = MetalKernel.get.createCommand(
             kernel, deviceID: _deviceID
         )
-        command.setBuffer(layer.delta.metal(), atIndex: 0)
-        command.setBuffer(_xHat.metal(), atIndex: 1)
+        command.setBuffer(layer.delta.metal, atIndex: 0)
+        command.setBuffer(_xHat.metal, atIndex: 1)
         command.setBytes(pNbNeurons, atIndex: 2)
         command.setBytes(pNbBatch, atIndex: 3)
         command.setBytes(pSequence, atIndex: 4)
         command.setBytes(pAccumulate, atIndex: 5)
-        command.setBuffer(_Ɣ.g.metal(), atIndex: 6)
-        command.setBuffer(_β.g.metal(), atIndex: 7)
+        command.setBuffer(_Ɣ.g.metal, atIndex: 6)
+        command.setBuffer(_β.g.metal, atIndex: 7)
         
         command.dispatchThreads(_nbNeurons / coeff)
         command.enqueue()

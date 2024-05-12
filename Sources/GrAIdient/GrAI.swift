@@ -77,12 +77,12 @@ public class GrAI
         public static var double: Bool
         {
             get {
-                return getCtx.precision == GrAIContext.PrecisionMode.Double
+                return getCtx.precision == PrecisionMode.Double
             }
             set {
                 if newValue && GrAI.Opti.CPU
                 {
-                    getCtx.precision = GrAIContext.PrecisionMode.Double
+                    getCtx.precision = PrecisionMode.Double
                 }
                 else if newValue
                 {
@@ -96,12 +96,12 @@ public class GrAI
         public static var float: Bool
         {
             get {
-                return getCtx.precision == GrAIContext.PrecisionMode.Float
+                return getCtx.precision == PrecisionMode.Float
             }
             set {
                 if newValue && GrAI.Opti.GPU
                 {
-                    getCtx.precision = GrAIContext.PrecisionMode.Float
+                    getCtx.precision = PrecisionMode.Float
                 }
                 else if newValue
                 {
@@ -115,12 +115,12 @@ public class GrAI
         public static var float16: Bool
         {
             get {
-                return getCtx.precision == GrAIContext.PrecisionMode.Float16
+                return getCtx.precision == PrecisionMode.Float16
             }
             set {
                 if newValue && GrAI.Opti.GPU
                 {
-                    getCtx.precision = GrAIContext.PrecisionMode.Float16
+                    getCtx.precision = PrecisionMode.Float16
                 }
                 else if newValue
                 {
@@ -408,6 +408,14 @@ public class GrAI
     }
 }
 
+/// Precision mode.
+public enum PrecisionMode
+{
+    case Double
+    case Float
+    case Float16
+}
+
 /// A global context with stored variables.
 fileprivate class GrAIContext
 {
@@ -437,12 +445,6 @@ fileprivate class GrAIContext
     //--------------------------------------------------------------------------
     /// Precision variable.
     var precision = PrecisionMode.Float
-    enum PrecisionMode
-    {
-        case Double
-        case Float
-        case Float16
-    }
     
     /// Used to select GPU device.
     var gpuNamedPriority = [String]()

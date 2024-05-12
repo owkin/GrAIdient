@@ -8,7 +8,7 @@ setup(
     license='MIT',
     install_requires=[
         "torch==1.13.1",
-        "torchvision==0.11.2",
+        "torchvision==0.14.1",
         "numpy==1.23.1",
         "opencv-python==4.6.0.66",
         "sentencepiece==0.2.0",

@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🔨 **refactor:** handle float16 along float on GPU ([#120](https://github.com/owkin/GrAIdient/pull/120))\
 🚀 **perf:** copy & generate weights faster ([119](https://github.com/owkin/GrAIdient/pull/119))\
 🚀 **perf:** Convolution2D ([118](https://github.com/owkin/GrAIdient/pull/118))\
 🪜 **feat:** LayerCAM2D -> VQGrad2D, LayerCAMSeq -> VQGradSeq ([#117](https://github.com/owkin/GrAIdient/pull/117))\

@@ -559,7 +559,7 @@ class Layer1DFlowTests: Input1DMSE1DCase
 
 // -----------------------------------------------------------------------------
 // Compare GPU gradients with Float precision versus Float16 precision.
-// We expect to see errors ~ 1e-7 and less.
+// We expect to see errors ~ 1e-4 and less.
 // -----------------------------------------------------------------------------
 class Layer1DFlowPrecisionTests: Input1DMSE1DCase
 {

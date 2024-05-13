@@ -33,14 +33,14 @@ kernel void MSE1DLossHalf(
         return ;
     }
     
-    float tmp = 0.0;
+    half tmp = 0.0;
     for (uint depth=0; depth<nbNeurons; depth++)
     {
         uint offset = depth + nbNeurons * elem;
     
-        float gt = groundTruth[offset];
-        float out = outs[offset];
-        float diff = out - gt;
+        half gt = groundTruth[offset];
+        half out = outs[offset];
+        half diff = out - gt;
         
         tmp += diff * diff;
     }
@@ -59,7 +59,7 @@ kernel void MSE1DLossDerivativeHalf(
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
-    float coeff;
+    half coeff;
     uint nbBatch;
     uint dirty;
     
@@ -84,17 +84,17 @@ kernel void MSE1DLossDerivativeHalf(
     
     uint offset = depth + nbNeurons * elem;
 
-    float gt = groundTruth[offset];
-    float out = outs[offset];
-    float diff = out - gt;
+    half gt = groundTruth[offset];
+    half out = outs[offset];
+    half diff = out - gt;
     
     if (dirty)
     {
-        deltaPrev[offset] = 2 * coeff * diff / float(nbNeurons * nbBatch);
+        deltaPrev[offset] = 2 * coeff * diff / half(nbNeurons * nbBatch);
     }
     else
     {
-        deltaPrev[offset] += 2 * coeff * diff / float(nbNeurons * nbBatch);
+        deltaPrev[offset] += 2 * coeff * diff / half(nbNeurons * nbBatch);
     }
 }
 
@@ -123,14 +123,14 @@ kernel void linearErrorLossHalf(
         return ;
     }
     
-    float tmp = 0.0;
+    half tmp = 0.0;
     for (uint depth=0; depth<nbNeurons; depth++)
     {
         uint offset = depth + nbNeurons * elem;
     
-        float gt = groundTruth[offset];
-        float out = outs[offset];
-        float diff = out - gt;
+        half gt = groundTruth[offset];
+        half out = outs[offset];
+        half diff = out - gt;
         
         tmp += diff;
     }
@@ -148,7 +148,7 @@ kernel void linearErrorLossDerivativeHalf(
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
-    float coeff;
+    half coeff;
     uint nbBatch;
     uint dirty;
     
@@ -174,11 +174,11 @@ kernel void linearErrorLossDerivativeHalf(
     
     if (dirty)
     {
-        deltaPrev[offset] = coeff / float(nbNeurons * nbBatch);
+        deltaPrev[offset] = coeff / half(nbNeurons * nbBatch);
     }
     else
     {
-        deltaPrev[offset] += coeff / float(nbNeurons * nbBatch);
+        deltaPrev[offset] += coeff / half(nbNeurons * nbBatch);
     }
 }
 
@@ -376,11 +376,11 @@ kernel void softmax1DForwardHalf(
         return ;
     }
     
-    float cMax = outsPrev[0+head*size + nbNeurons * elem];
+    half cMax = outsPrev[0+head*size + nbNeurons * elem];
     for (uint j=0; j<size; j++)
     {
         uint offset1 = j+head*size + nbNeurons * elem;
-        float outPrev = outsPrev[offset1];
+        half outPrev = outsPrev[offset1];
         
         if (outPrev > cMax)
         {
@@ -388,16 +388,16 @@ kernel void softmax1DForwardHalf(
         }
     }
     
-    float sum1 = 0.0;
+    half sum1 = 0.0;
     for (uint j=0; j<size; j++)
     {
         uint offset1 = j+head*size + nbNeurons * elem;
-        float outPrev = outsPrev[offset1];
+        half outPrev = outsPrev[offset1];
         sum1 += exp(outPrev - cMax);
     }
     
     uint offset = depth + nbNeurons * elem;
-    float outPrev = outsPrev[offset];
+    half outPrev = outsPrev[offset];
     outs[offset] = exp(outPrev - cMax) / sum1;
 }
 
@@ -439,15 +439,15 @@ kernel void softmax1DBackwardHalf(
     }
     
     uint offset = depth + nbNeurons * elem;
-    float outCur = outs[offset];
-    float deltaCur = delta[offset];
+    half outCur = outs[offset];
+    half deltaCur = delta[offset];
     
-    float sum1 = 0.0;
+    half sum1 = 0.0;
     for (uint j=0; j<size; j++)
     {
         uint offset1 = j+head*size + nbNeurons * elem;
-        float outCur1 = outs[offset1];
-        float deltaCur1 = delta[offset1];
+        half outCur1 = outs[offset1];
+        half deltaCur1 = delta[offset1];
         sum1 += outCur1 * deltaCur1;
     }
     
@@ -495,12 +495,12 @@ kernel void dotProduct1DForwardHalf(
         return ;
     }
     
-    float sum = 0.0;
+    half sum = 0.0;
     for (uint j=0; j<size; j++)
     {
         uint offset = j+depth*size + nbNeuronsPrev * elem;
-        float outPrev1 = outsPrev1[offset];
-        float outPrev2 = outsPrev2[offset];
+        half outPrev1 = outsPrev1[offset];
+        half outPrev2 = outsPrev2[offset];
         sum += outPrev1 * outPrev2;
     }
     
@@ -550,8 +550,8 @@ kernel void dotProduct1DBackwardHalf(
         uint offsetPrev = j+depth*size + nbNeuronsPrev * elem;
         uint offset = depth + nbNeurons * elem;
         
-        float outPrev = outsPrev[offsetPrev];
-        float deltaCur = delta[offset];
+        half outPrev = outsPrev[offsetPrev];
+        half deltaCur = delta[offset];
         if (dirty)
         {
             deltaPrev[offsetPrev] = outPrev * deltaCur;
@@ -618,15 +618,15 @@ kernel void BCE1DLossHalf(
         return ;
     }
     
-    float tmp = 0.0;
+    half tmp = 0.0;
     for (uint depth=0; depth<nbNeurons; depth++)
     {
         uint offset = depth + nbNeurons * elem;
     
-        float gt = groundTruth[offset];
-        float out = outs[offset];
-        float tmp1 = log(out);
-        float tmp2 = log(1 - out);
+        half gt = groundTruth[offset];
+        half out = outs[offset];
+        half tmp1 = log(out);
+        half tmp2 = log(1 - out);
         
         tmp -= (gt * tmp1 + (1 - gt) * tmp2);
     }
@@ -645,7 +645,7 @@ kernel void BCE1DLossDerivativeHalf(
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
-    float coeff;
+    half coeff;
     uint nbBatch;
     uint dirty;
     
@@ -670,9 +670,9 @@ kernel void BCE1DLossDerivativeHalf(
     
     uint offset = depth + nbNeurons * elem;
 
-    float gt = groundTruth[offset];
-    float out = outs[offset];
-    float derivative = 0.0;
+    half gt = groundTruth[offset];
+    half out = outs[offset];
+    half derivative = 0.0;
     
     if (gt == 1.0)
     {
@@ -685,11 +685,11 @@ kernel void BCE1DLossDerivativeHalf(
     
     if (dirty)
     {
-        deltaPrev[offset] = coeff * derivative / float(nbNeurons * nbBatch);
+        deltaPrev[offset] = coeff * derivative / half(nbNeurons * nbBatch);
     }
     else
     {
-        deltaPrev[offset] += coeff * derivative / float(nbNeurons * nbBatch);
+        deltaPrev[offset] += coeff * derivative / half(nbNeurons * nbBatch);
     }
 }
 
@@ -718,14 +718,14 @@ kernel void BCESigmoid1DLossHalf(
         return ;
     }
     
-    float tmp = 0.0;
+    half tmp = 0.0;
     for (uint depth=0; depth<nbNeurons; depth++)
     {
         uint offset = depth + nbNeurons * elem;
     
-        float gt = groundTruth[offset];
-        float out = outs[offset];
-        float value;
+        half gt = groundTruth[offset];
+        half out = outs[offset];
+        half value;
         
         if (out > 0)
         {
@@ -755,7 +755,7 @@ kernel void BCESigmoid1DLossDerivativeHalf(
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
-    float coeff;
+    half coeff;
     uint nbBatch;
     uint dirty;
     
@@ -780,9 +780,9 @@ kernel void BCESigmoid1DLossDerivativeHalf(
     
     uint offset = depth + nbNeurons * elem;
 
-    float gt = groundTruth[offset];
-    float out = outs[offset];
-    float value;
+    half gt = groundTruth[offset];
+    half out = outs[offset];
+    half value;
     
     if (out >= 0)
     {
@@ -795,11 +795,11 @@ kernel void BCESigmoid1DLossDerivativeHalf(
     
     if (dirty)
     {
-        deltaPrev[offset] = coeff * (value - gt) / float(nbNeurons * nbBatch);
+        deltaPrev[offset] = coeff * (value - gt) / half(nbNeurons * nbBatch);
     }
     else
     {
-        deltaPrev[offset] += coeff * (value - gt) / float(nbNeurons * nbBatch);
+        deltaPrev[offset] += coeff * (value - gt) / half(nbNeurons * nbBatch);
     }
 }
 
@@ -816,7 +816,7 @@ kernel void dropout1DForwardHalf(
     uint nbNeurons;
     uint nbBatch;
     bool applyDropout;
-    float coeff;
+    half coeff;
     
     if (pNbNeurons && pNbBatch && pApplyDropout && pCoeff &&
         dropout && outsPrev && outs)
@@ -866,7 +866,7 @@ kernel void dropout1DBackwardHalf(
     uint nbNeurons;
     uint nbBatch;
     bool applyDropout;
-    float coeff;
+    half coeff;
     uint dirty;
     
     if (pNbNeurons && pNbBatch && pApplyDropout && pCoeff &&
@@ -889,7 +889,7 @@ kernel void dropout1DBackwardHalf(
         return ;
     }
     
-    float newValue = 0.0;
+    half newValue = 0.0;
     uint offset = depth + nbNeurons * elem;
     if (applyDropout && !dropout[offset])
     {

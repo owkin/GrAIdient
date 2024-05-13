@@ -165,6 +165,44 @@ extension IOCase
     }
     
     ///
+    /// Run Flow Precision test.
+    ///
+    /// The goal is to compare the gradients of weights with Float precision context with
+    /// the gradients of weights computed with Float16 precision.
+    ///
+    /// - Parameters:
+    ///     - trainer: The testing pipeline to run.
+    ///     - nbRetry: The maximum number we can retry the test.
+    ///     - diffThreshold: The threshold above which the relative difference is too high.
+    ///
+    func run(
+        _ trainer: FlowPrecisionTrainer,
+        nbRetry: Int = NB_RETRY,
+        diffThreshold: Double = 0.001)
+    {
+        retryNumeric(
+            nbRetry: nbRetry,
+            {
+                () throws in
+                try trainer.run(
+                    setData: self.setData,
+                    setLoss: self.setLoss)
+                {
+                    (gradDiff: Double) in
+                    if gradDiff > diffThreshold
+                    {
+                        throw TestError.Numeric
+                    }
+                }
+            },
+            {
+                () in
+                XCTAssert(false)
+            }
+        )
+    }
+    
+    ///
     /// Run Flow Reset test.
     ///
     /// The goal is to compare the gradients of weights computed in the CPU execution context with

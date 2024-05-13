@@ -12,7 +12,7 @@ import GrAITestsUtils
 // Compare GPU gradients with CPU ones through time.
 // We expect to see errors ~ 1e-7 and less.
 // -----------------------------------------------------------------------------
-class OptimizerTests: Input1DMSE1DCase
+class OptimizerFlowTests: Input1DMSE1DCase
 {
     override func setUp()
     {
@@ -183,5 +183,183 @@ class OptimizerTests: Input1DMSE1DCase
                            lambda: 1e-3)
         let trainer = _buildTrainer()
         run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU gradients with Float precision versus Float16 precision.
+// We expect to see errors ~ 1e-4 and less.
+// -----------------------------------------------------------------------------
+class OptimizerFlowPrecisionTests: Input1DMSE1DCase
+{
+    override func setUp()
+    {
+        batchSize = 5
+        _ = MetalKernel.get
+        
+        GrAI.Opti.GPU = true
+        GrAI.Precision.float = true
+        
+        setOptimizerParams(params: &optimizerParams)
+        optimizerParams.nbLoops = 10
+    }
+    
+    private func _buildTrainer() -> FlowPrecisionTrainer
+    {
+        let trainer = FlowPrecisionTrainer(
+            name: "Optimizer",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            _buildModel(context: context)
+        }
+        return trainer
+    }
+    
+    private func _buildModel(context: ModelContext)
+    {
+        let params = GrAI.Model.Params(context: context)
+        
+        var layer: Layer1D = Input1D(nbNeurons: 1, params: params)
+        
+        layer = try! FullyConnected(
+            layerPrev: layer, nbNeurons: 1,
+            activation: LeakyReLU.str, biases: true,
+            params: params
+        )
+        
+        layer = try! FullyConnected(
+            layerPrev: layer, nbNeurons: 12,
+            activation: LeakyReLU.str, biases: true,
+            params: params
+        )
+        
+        layer = try! FullyConnected(
+            layerPrev: layer, nbNeurons: 1,
+            activation: LeakyReLU.str, biases: true,
+            params: params
+        )
+        
+        layer = MSE1D(layerPrev: layer, params: params)
+    }
+    
+    func testSGD() throws
+    {
+        let trainer = _buildTrainer()
+        run(trainer, diffThreshold: 0.002)
+    }
+    
+    func testSGDDecay() throws
+    {
+        setOptimizerParams(params: &optimizerParams,
+                           lambda: 1e-3)
+        let trainer = _buildTrainer()
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    func testSGDMomentum() throws
+    {
+        setOptimizerParams(params: &optimizerParams,
+                           optimizerClass: .SGDMomentum)
+        let trainer = _buildTrainer()
+        run(trainer, diffThreshold: 0.002)
+    }
+    
+    func testSGDMomentumDecay() throws
+    {
+        setOptimizerParams(params: &optimizerParams,
+                           optimizerClass: .SGDMomentum,
+                           lambda: 1e-3)
+        let trainer = _buildTrainer()
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    func testAdam() throws
+    {
+        setOptimizerParams(params: &optimizerParams,
+                           optimizerClass: .Adam)
+        let trainer = _buildTrainer()
+        run(trainer, diffThreshold: 0.002)
+    }
+    
+    func testAdamDecay() throws
+    {
+        setOptimizerParams(params: &optimizerParams,
+                           optimizerClass: .Adam,
+                           lambda: 1e-3)
+        let trainer = _buildTrainer()
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    func testAMSGrad() throws
+    {
+        setOptimizerParams(params: &optimizerParams,
+                           optimizerClass: .AMSGrad)
+        let trainer = _buildTrainer()
+        run(trainer, diffThreshold: 0.002)
+    }
+    
+    func testAMSGradDecay() throws
+    {
+        setOptimizerParams(params: &optimizerParams,
+                           optimizerClass: .AMSGrad,
+                           lambda: 1e-3)
+        let trainer = _buildTrainer()
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    func testAdamRectified() throws
+    {
+        optimizerParams.nbLoops = 5
+        setOptimizerParams(params: &optimizerParams,
+                           optimizerClass: .AdamRectified)
+        let trainer = _buildTrainer()
+        run(trainer, diffThreshold: 0.002)
+    }
+    
+    func testAdamRectifiedDecay() throws
+    {
+        optimizerParams.nbLoops = 5
+        setOptimizerParams(params: &optimizerParams,
+                           optimizerClass: .AdamRectified,
+                           lambda: 1e-3)
+        let trainer = _buildTrainer()
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    func testAdaBound() throws
+    {
+        setOptimizerParams(params: &optimizerParams,
+                           optimizerClass: .AdaBound)
+        let trainer = _buildTrainer()
+        run(trainer, diffThreshold: 0.002)
+    }
+    
+    func testAdaBoundDecay() throws
+    {
+        setOptimizerParams(params: &optimizerParams,
+                           optimizerClass: .AdaBound,
+                           lambda: 1e-3)
+        let trainer = _buildTrainer()
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    func testAMSBound() throws
+    {
+        setOptimizerParams(params: &optimizerParams,
+                           optimizerClass: .AMSBound)
+        let trainer = _buildTrainer()
+        run(trainer, diffThreshold: 0.002)
+    }
+    
+    func testAMSBoundDecay() throws
+    {
+        setOptimizerParams(params: &optimizerParams,
+                           optimizerClass: .AMSBound,
+                           lambda: 1e-3)
+        let trainer = _buildTrainer()
+        run(trainer, diffThreshold: 0.005)
     }
 }

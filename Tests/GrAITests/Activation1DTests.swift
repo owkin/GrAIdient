@@ -379,7 +379,7 @@ class Activation1DFlowPrecisionTests: Input1DMSE1DCase
         let trainer = _buildTrainer(
             model: "FullyConnected", activation: ReLU.str
         )
-        run(trainer)
+        run(trainer, diffThreshold: 0.002)
     }
     
     func testFLLeakyReLU() throws
@@ -387,7 +387,7 @@ class Activation1DFlowPrecisionTests: Input1DMSE1DCase
         let trainer = _buildTrainer(
             model: "FullyConnected", activation: LeakyReLU.str
         )
-        run(trainer)
+        run(trainer, diffThreshold: 0.002)
     }
     
     func testFLSoftReLU() throws
@@ -395,7 +395,7 @@ class Activation1DFlowPrecisionTests: Input1DMSE1DCase
         let trainer = _buildTrainer(
             model: "FullyConnected", activation: SoftReLU.str
         )
-        run(trainer)
+        run(trainer, diffThreshold: 0.002)
     }
     
     func testFLSigmoid() throws
@@ -411,7 +411,7 @@ class Activation1DFlowPrecisionTests: Input1DMSE1DCase
         let trainer = _buildTrainer(
             model: "FullyConnected", activation: GELUApprox.str
         )
-        run(trainer)
+        run(trainer, diffThreshold: 0.002)
     }
     
     func testFLGELU() throws
@@ -419,7 +419,7 @@ class Activation1DFlowPrecisionTests: Input1DMSE1DCase
         let trainer = _buildTrainer(
             model: "FullyConnected", activation: GELU.str
         )
-        run(trainer)
+        run(trainer, diffThreshold: 0.002)
     }
     
     func testReLU() throws
@@ -427,7 +427,7 @@ class Activation1DFlowPrecisionTests: Input1DMSE1DCase
         let trainer = _buildTrainer(
             model: "Activation", activation: ReLU.str
         )
-        run(trainer)
+        run(trainer, diffThreshold: 0.002)
     }
     
     func testLeakyReLU() throws
@@ -435,7 +435,7 @@ class Activation1DFlowPrecisionTests: Input1DMSE1DCase
         let trainer = _buildTrainer(
             model: "Activation", activation: LeakyReLU.str
         )
-        run(trainer)
+        run(trainer, diffThreshold: 0.002)
     }
     
     func testSoftReLU() throws
@@ -459,7 +459,7 @@ class Activation1DFlowPrecisionTests: Input1DMSE1DCase
         let trainer = _buildTrainer(
             model: "Activation", activation: GELUApprox.str
         )
-        run(trainer)
+        run(trainer, diffThreshold: 0.002)
     }
     
     func testGELU() throws
@@ -467,6 +467,6 @@ class Activation1DFlowPrecisionTests: Input1DMSE1DCase
         let trainer = _buildTrainer(
             model: "Activation", activation: GELU.str
         )
-        run(trainer)
+        run(trainer, diffThreshold: 0.002)
     }
 }

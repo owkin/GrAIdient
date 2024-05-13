@@ -496,6 +496,10 @@ open class FlowPrecisionTrainer: Trainer
                 
                 if let gradDiff = checkFlow(resultsFloat, resultsFloat16)
                 {
+                    if gradDiff.isNaN
+                    {
+                        fatalError("NaN")
+                    }
                     try validate(gradDiff)
                 }
                 

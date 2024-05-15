@@ -1884,6 +1884,398 @@ class Layer2DFlowTests: Input2DMSE1DCase
 }
 
 // -----------------------------------------------------------------------------
+// Compare GPU gradients with Float precision versus Float16 precision.
+// We expect to see errors ~ 1e-4 and less.
+// -----------------------------------------------------------------------------
+class Layer2DFlowPrecisionTests: Layer2DFlowTests
+{
+    private func _buildTrainer(model: String, bn: Bool) -> FlowPrecisionTrainer
+    {
+        let trainer = FlowPrecisionTrainer(
+            name: "Layer2D",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(model: model, bn: bn, context: context)
+        }
+        return trainer
+    }
+    
+    override func testConvolution1BN() throws
+    {
+        let trainer = _buildTrainer(model: "Convolution1", bn: true)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testConvolution1BNSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "Convolution1", bn: true)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testConvolution1NoBN() throws
+    {
+        let trainer = _buildTrainer(model: "Convolution1", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testConvolution1NoBNSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "Convolution1", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testConvolution2() throws
+    {
+        let trainer = _buildTrainer(model: "Convolution2", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testConvolution2Sample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "Convolution2", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testConvolutionStride1() throws
+    {
+        let trainer = _buildTrainer(model: "ConvolutionStride1", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testConvolutionStride1Sample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "ConvolutionStride1", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testConvolutionStride2() throws
+    {
+        let trainer = _buildTrainer(model: "ConvolutionStride2", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testConvolutionStride2Sample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "ConvolutionStride2", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testBN() throws
+    {
+        let trainer = _buildTrainer(model: "BN", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testMaxPool1() throws
+    {
+        let trainer = _buildTrainer(model: "MaxPool1", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testMaxPool2() throws
+    {
+        let trainer = _buildTrainer(model: "MaxPool2", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testMaxPool3() throws
+    {
+        let trainer = _buildTrainer(model: "MaxPool3", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testAvgPool() throws
+    {
+        let trainer = _buildTrainer(model: "AvgPooling", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testAdaptiveAvgPool1() throws
+    {
+        let trainer = _buildTrainer(model: "AdaptiveAvgPool1", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testAdaptiveAvgPool2() throws
+    {
+        let trainer = _buildTrainer(model: "AdaptiveAvgPool2", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testAdaptiveAvgPool3() throws
+    {
+        let trainer = _buildTrainer(model: "AdaptiveAvgPool3", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testAdaptiveAvgPool4() throws
+    {
+        let trainer = _buildTrainer(model: "AdaptiveAvgPool4", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testAdaptiveAvgPool5() throws
+    {
+        let trainer = _buildTrainer(model: "AdaptiveAvgPool5", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testSum() throws
+    {
+        let trainer = _buildTrainer(model: "Sum", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testActivation() throws
+    {
+        let trainer = _buildTrainer(model: "Activation", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testSelectNeurons() throws
+    {
+        let trainer = _buildTrainer(model: "SelectNeurons", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testIRDFT2RGB() throws
+    {
+        let trainer = _buildTrainer(model: "IRDFT2RGB", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testDecorrelateRGB() throws
+    {
+        let trainer = _buildTrainer(model: "DecorrelateRGB", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testLinearScale() throws
+    {
+        let trainer = _buildTrainer(model: "LinearScale", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testMultiply() throws
+    {
+        let trainer = _buildTrainer(model: "Multiply", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testPad() throws
+    {
+        let trainer = _buildTrainer(model: "Pad", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testCrop() throws
+    {
+        let trainer = _buildTrainer(model: "Crop", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testResizeBilinearPad1() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearPad1", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testResizeBilinearPad2() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearPad2", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testRotate() throws
+    {
+        let trainer = _buildTrainer(model: "Rotate", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testResizeBilinearCrop1() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop1", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testResizeBilinearCrop2() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinearCrop2", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testDeconvolution1BN() throws
+    {
+        let trainer = _buildTrainer(model: "Deconvolution1", bn: true)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testDeconvolution1SampleBN() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "Deconvolution1", bn: true)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testDeconvolution1NoBN() throws
+    {
+        let trainer = _buildTrainer(model: "Deconvolution1", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testDeconvolution1SampleNoBN() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "Deconvolution1", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testDeconvolution2() throws
+    {
+        let trainer = _buildTrainer(model: "Deconvolution2", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testDeconvolution2Sample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "Deconvolution2", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testDeconvolutionStride1() throws
+    {
+        let trainer = _buildTrainer(model: "DeconvolutionStride1", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testDeconvolutionStride1Sample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "DeconvolutionStride1", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testDeconvolutionStride2() throws
+    {
+        let trainer = _buildTrainer(model: "DeconvolutionStride2", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testDeconvolutionStride2Sample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "DeconvolutionStride2", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testConcat() throws
+    {
+        let trainer = _buildTrainer(model: "Concat", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testInstanceNorm() throws
+    {
+        let trainer = _buildTrainer(model: "InstanceNorm", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testAdaIN() throws
+    {
+        let trainer = _buildTrainer(model: "AdaIN", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testConstant() throws
+    {
+        let trainer = _buildTrainer(model: "Constant", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testVQ() throws
+    {
+        let trainer = _buildTrainer(model: "VQ", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testVQSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer(model: "VQ", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testResizeBilinear1() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinear1", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testResizeBilinear2() throws
+    {
+        let trainer = _buildTrainer(model: "ResizeBilinear2", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testSelfCorrelate() throws
+    {
+        let trainer = _buildTrainer(model: "SelfCorrelate", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testNormalize1() throws
+    {
+        let trainer = _buildTrainer(model: "Normalize1", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testNormalize12() throws
+    {
+        let trainer = _buildTrainer(model: "Normalize12", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testFlipHorizontal1() throws
+    {
+        let trainer = _buildTrainer(model: "FlipHorizontal1", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testFlipHorizontal2() throws
+    {
+        let trainer = _buildTrainer(model: "FlipHorizontal2", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testFlipVertical1() throws
+    {
+        let trainer = _buildTrainer(model: "FlipVertical1", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testFlipVertical2() throws
+    {
+        let trainer = _buildTrainer(model: "FlipVertical2", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testLayerOutput() throws
+    {
+        let trainer = _buildTrainer(model: "LayerOutput", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+}
+
+// -----------------------------------------------------------------------------
 // Compare GPU gradients with CPU ones through time.
 // We expect to see errors ~ 1e-7 and less.
 // -----------------------------------------------------------------------------

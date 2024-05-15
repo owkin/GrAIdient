@@ -158,7 +158,7 @@ kernel void maxPoolForwardHalf(
     uint offset = j + (offsetStart + i) * width;
     
     int indexMax = -1;
-    float maxVal = -10000.0;
+    half maxVal = -10000.0;
     for (int k=start; k<=end; k++){
     for (int l=start; l<=end; l++)
     {
@@ -170,7 +170,7 @@ kernel void maxPoolForwardHalf(
             uint offsetPrev = (int)(stride*j)+l +
                 (offsetStartPrev + (int)(stride*i)+k)*widthPrev;
             
-            float outPrev = outsPrev[offsetPrev];
+            half outPrev = outsPrev[offsetPrev];
             if (outPrev > maxVal)
             {
                 indexMax = offsetPrev;
@@ -404,7 +404,7 @@ kernel void adaptiveAvgPoolForward2Half(
         uint nbElemsJ = endJ - startJ;
         
         uint offsetPrev = j + (offsetStartPrev + i) * widthPrev;
-        float outPrev = outsPrev[offsetPrev];
+        half outPrev = outsPrev[offsetPrev];
         
         for (uint k = 0; k < nbElemsI; k++){
         for (uint l = 0; l < nbElemsJ; l++)
@@ -420,7 +420,7 @@ kernel void adaptiveAvgPoolForward2Half(
     for (uint J = 0; J < width; J++)
     {
         uint offset = J + (offsetStart + I) * width;
-        outs[offset] /= nbElems[offset];
+        outs[offset] = float(outs[offset]) / nbElems[offset];
     }}
 }
 
@@ -475,7 +475,7 @@ kernel void adaptiveAvgPoolBackward1Half(
         uint nbElems = nbElemsI * nbElemsJ;
         
         uint offset = j + (offsetStart + i) * width;
-        float deltaCur = delta[offset] / (float)nbElems;
+        half deltaCur = (float)delta[offset] / nbElems;
         
         for (uint k = 0; k < nbElemsI; k++){
         for (uint l = 0; l < nbElemsJ; l++)
@@ -632,7 +632,7 @@ kernel void selectNeurons2DBackwardHalf(
         return ;
     }
     
-    float deltaCur = 0.0;
+    half deltaCur = 0.0;
     if (i == targetI && j == targetJ)
     {
         uint offset = depthPrev + nbNeurons * elem;
@@ -1077,7 +1077,7 @@ kernel void pad2DForwardHalf(
     uint heightPrev, widthPrev;
     uint nbChannels;
     uint padDimension;
-    float padValue;
+    half padValue;
     uint nbBatch;
     
     if (pNbChannels && pDimensions && pNbBatch &&
@@ -1330,7 +1330,7 @@ kernel void resizeBilinearPadForwardHalf(
     uint nbChannels;
     uint padStartI, padEndI;
     uint padStartJ, padEndJ;
-    float padValue;
+    half padValue;
     uint nbBatch;
     
     if (pNbChannels && pDimensions && pDimensionsPrev && pDimensionsResize &&

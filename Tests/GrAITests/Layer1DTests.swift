@@ -561,7 +561,7 @@ class Layer1DFlowTests: Input1DMSE1DCase
 // Compare GPU gradients with Float precision versus Float16 precision.
 // We expect to see errors ~ 1e-4 and less.
 // -----------------------------------------------------------------------------
-class Layer1DFlowPrecisionTests: Input1DMSE1DCase
+class Layer1DFlowPrecisionTests: Layer1DFlowTests
 {
     private func _buildTrainer(_ model: String) -> FlowPrecisionTrainer
     {
@@ -577,205 +577,69 @@ class Layer1DFlowPrecisionTests: Input1DMSE1DCase
         return trainer
     }
     
-    func buildModel(model: String, context: ModelContext)
-    {
-        let params = GrAI.Model.Params(context: context)
-        
-        var layer: Layer1D = Input1D(nbNeurons: 1, params: params)
-        
-        layer = try! FullyConnected(
-            layerPrev: layer, nbNeurons: 5,
-            activation: LeakyReLU.str, biases: true,
-            params: params
-        )
-        
-        switch model
-        {
-        case "FullyConnected":
-            layer = try! FullyConnected(
-                layerPrev: layer, nbNeurons: 12,
-                activation: LeakyReLU.str, biases: true,
-                params: params
-            )
-            
-        case "Activation":
-            layer = Activation1D(
-                layerPrev: layer,
-                activation: LeakyReLU.str,
-                params: params
-            )
-            
-        case "SelectNeurons":
-            layer = SelectNeurons1D(
-                layerPrev: layer,
-                neurons: [1, 4],
-                coeffs: [0.6, 0.4],
-                params: params
-            )
-            
-        case "Concat":
-            let otherLayer1: Layer1D = try! FullyConnected(
-                layerPrev: layer, nbNeurons: 9,
-                activation: LeakyReLU.str, biases: true,
-                params: params
-            )
-            let otherLayer2: Layer1D = try! FullyConnected(
-                layerPrev: layer, nbNeurons: 6,
-                activation: LeakyReLU.str, biases: true,
-                params: params
-            )
-            layer = try! FullyConnected(
-                layerPrev: layer, nbNeurons: 3,
-                activation: LeakyReLU.str, biases: true,
-                params: params
-            )
-            layer = Concat1D(
-                layersPrev: [layer, otherLayer1, otherLayer2],
-                params: params
-            )
-            
-        case "Sum":
-            let otherLayer1: Layer1D = try! FullyConnected(
-                layerPrev: layer, nbNeurons: 10,
-                activation: LeakyReLU.str, biases: true,
-                params: params
-            )
-            let otherLayer2: Layer1D = try! FullyConnected(
-                layerPrev: layer, nbNeurons: 10,
-                activation: LeakyReLU.str, biases: true,
-                params: params
-            )
-            layer = try! FullyConnected(
-                layerPrev: layer, nbNeurons: 10,
-                activation: LeakyReLU.str, biases: true,
-                params: params
-            )
-            layer = try! Sum1D(
-                layersPrev: [layer, otherLayer1, otherLayer2],
-                params: params
-            )
-            
-        case "Softmax":
-            layer = try! FullyConnected(
-                layerPrev: layer, nbNeurons: 15,
-                activation: LeakyReLU.str, biases: true,
-                params: params
-            )
-            
-            layer = try! Softmax1D(layerPrev: layer, nbHeads: 3, params: params)
-            
-        case "DotProduct":
-            let otherLayer: Layer1D = try! FullyConnected(
-                layerPrev: layer, nbNeurons: 12,
-                activation: LeakyReLU.str, biases: true,
-                params: params
-            )
-            layer = try! FullyConnected(
-                layerPrev: layer, nbNeurons: 12,
-                activation: LeakyReLU.str, biases: true,
-                params: params
-            )
-            layer = try! DotProduct1D(
-                layersPrev: [layer, otherLayer], size: 3, params: params
-            )
-            
-        case "Constant":
-            var otherLayer: Layer1D = Constant1D(
-                nbNeurons: 5, params: params
-            )
-            (otherLayer as! Constant1D).weightsCPU = [1.0, 2.0, 3.0, 4.0, 5.0]
-            
-            otherLayer = try! FullyConnected(
-                layerPrev: otherLayer, nbNeurons: 5,
-                activation: LeakyReLU.str, biases: true,
-                params: params
-            )
-            layer = try! Sum1D(
-                layersPrev: [layer, otherLayer], params: params
-            )
-            
-        case "LayerOutput":
-            layer = MSE1D(layerPrev: layer, params: params)
-            
-        case "Dropout":
-            layer = Dropout1D(layerPrev: layer, coeff: 0.5, params: params)
-            
-        default:
-            fatalError("Unreachable.")
-        }
-        
-        layer = try! FullyConnected(
-            layerPrev: layer, nbNeurons: 1,
-            activation: LeakyReLU.str, biases: true,
-            params: params
-        )
-        
-        layer = MSE1D(layerPrev: layer, params: params)
-    }
-    
-    func testFL() throws
+    override func testFL() throws
     {
         let trainer = _buildTrainer("FullyConnected")
         run(trainer)
     }
     
-    func testFLSample() throws
+    override func testFLSample() throws
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer("FullyConnected")
         run(trainer)
     }
     
-    func testActivation() throws
+    override func testActivation() throws
     {
         let trainer = _buildTrainer("Activation")
         run(trainer)
     }
     
-    func testSelectNeurons() throws
+    override func testSelectNeurons() throws
     {
         let trainer = _buildTrainer("SelectNeurons")
         run(trainer)
     }
     
-    func testConcat() throws
+    override func testConcat() throws
     {
         let trainer = _buildTrainer("Concat")
         run(trainer)
     }
     
-    func testSum() throws
+    override func testSum() throws
     {
         let trainer = _buildTrainer("Sum")
         run(trainer)
     }
     
-    func testSoftmax() throws
+    override func testSoftmax() throws
     {
         let trainer = _buildTrainer("Softmax")
         run(trainer)
     }
     
-    func testDotProduct() throws
+    override func testDotProduct() throws
     {
         let trainer = _buildTrainer("DotProduct")
         run(trainer)
     }
     
-    func testConstant() throws
+    override func testConstant() throws
     {
         let trainer = _buildTrainer("Constant")
         run(trainer)
     }
     
-    func testConstantSample() throws
+    override func testConstantSample() throws
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer("Constant")
         run(trainer)
     }
     
-    func testLayerOutput() throws
+    override func testLayerOutput() throws
     {
         let trainer = _buildTrainer("LayerOutput")
         run(trainer)

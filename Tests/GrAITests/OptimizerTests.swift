@@ -40,7 +40,7 @@ class OptimizerFlowTests: Input1DMSE1DCase
         return trainer
     }
     
-    private func _buildModel(context: ModelContext)
+    fileprivate func _buildModel(context: ModelContext)
     {
         let params = GrAI.Model.Params(context: context)
         
@@ -190,7 +190,7 @@ class OptimizerFlowTests: Input1DMSE1DCase
 // Compare GPU gradients with Float precision versus Float16 precision.
 // We expect to see errors ~ 1e-4 and less.
 // -----------------------------------------------------------------------------
-class OptimizerFlowPrecisionTests: Input1DMSE1DCase
+class OptimizerFlowPrecisionTests: OptimizerFlowTests
 {
     override func setUp()
     {
@@ -218,40 +218,13 @@ class OptimizerFlowPrecisionTests: Input1DMSE1DCase
         return trainer
     }
     
-    private func _buildModel(context: ModelContext)
-    {
-        let params = GrAI.Model.Params(context: context)
-        
-        var layer: Layer1D = Input1D(nbNeurons: 1, params: params)
-        
-        layer = try! FullyConnected(
-            layerPrev: layer, nbNeurons: 1,
-            activation: LeakyReLU.str, biases: true,
-            params: params
-        )
-        
-        layer = try! FullyConnected(
-            layerPrev: layer, nbNeurons: 12,
-            activation: LeakyReLU.str, biases: true,
-            params: params
-        )
-        
-        layer = try! FullyConnected(
-            layerPrev: layer, nbNeurons: 1,
-            activation: LeakyReLU.str, biases: true,
-            params: params
-        )
-        
-        layer = MSE1D(layerPrev: layer, params: params)
-    }
-    
-    func testSGD() throws
+    override func testSGD() throws
     {
         let trainer = _buildTrainer()
         run(trainer, diffThreshold: 0.002)
     }
     
-    func testSGDDecay() throws
+    override func testSGDDecay() throws
     {
         setOptimizerParams(params: &optimizerParams,
                            lambda: 1e-3)
@@ -259,7 +232,7 @@ class OptimizerFlowPrecisionTests: Input1DMSE1DCase
         run(trainer, diffThreshold: 0.005)
     }
     
-    func testSGDMomentum() throws
+    override func testSGDMomentum() throws
     {
         setOptimizerParams(params: &optimizerParams,
                            optimizerClass: .SGDMomentum)
@@ -267,7 +240,7 @@ class OptimizerFlowPrecisionTests: Input1DMSE1DCase
         run(trainer, diffThreshold: 0.002)
     }
     
-    func testSGDMomentumDecay() throws
+    override func testSGDMomentumDecay() throws
     {
         setOptimizerParams(params: &optimizerParams,
                            optimizerClass: .SGDMomentum,
@@ -276,7 +249,7 @@ class OptimizerFlowPrecisionTests: Input1DMSE1DCase
         run(trainer, diffThreshold: 0.005)
     }
     
-    func testAdam() throws
+    override func testAdam() throws
     {
         setOptimizerParams(params: &optimizerParams,
                            optimizerClass: .Adam)
@@ -284,7 +257,7 @@ class OptimizerFlowPrecisionTests: Input1DMSE1DCase
         run(trainer, diffThreshold: 0.005)
     }
     
-    func testAdamDecay() throws
+    override func testAdamDecay() throws
     {
         setOptimizerParams(params: &optimizerParams,
                            optimizerClass: .Adam,
@@ -293,7 +266,7 @@ class OptimizerFlowPrecisionTests: Input1DMSE1DCase
         run(trainer, diffThreshold: 0.005)
     }
     
-    func testAMSGrad() throws
+    override func testAMSGrad() throws
     {
         setOptimizerParams(params: &optimizerParams,
                            optimizerClass: .AMSGrad)
@@ -301,7 +274,7 @@ class OptimizerFlowPrecisionTests: Input1DMSE1DCase
         run(trainer, diffThreshold: 0.005)
     }
     
-    func testAMSGradDecay() throws
+    override func testAMSGradDecay() throws
     {
         setOptimizerParams(params: &optimizerParams,
                            optimizerClass: .AMSGrad,
@@ -310,7 +283,7 @@ class OptimizerFlowPrecisionTests: Input1DMSE1DCase
         run(trainer, diffThreshold: 0.005)
     }
     
-    func testAdamRectified() throws
+    override func testAdamRectified() throws
     {
         optimizerParams.nbLoops = 5
         setOptimizerParams(params: &optimizerParams,
@@ -319,7 +292,7 @@ class OptimizerFlowPrecisionTests: Input1DMSE1DCase
         run(trainer, diffThreshold: 0.005)
     }
     
-    func testAdamRectifiedDecay() throws
+    override func testAdamRectifiedDecay() throws
     {
         optimizerParams.nbLoops = 5
         setOptimizerParams(params: &optimizerParams,
@@ -329,7 +302,7 @@ class OptimizerFlowPrecisionTests: Input1DMSE1DCase
         run(trainer, diffThreshold: 0.005)
     }
     
-    func testAdaBound() throws
+    override func testAdaBound() throws
     {
         setOptimizerParams(params: &optimizerParams,
                            optimizerClass: .AdaBound)
@@ -337,7 +310,7 @@ class OptimizerFlowPrecisionTests: Input1DMSE1DCase
         run(trainer, diffThreshold: 0.005)
     }
     
-    func testAdaBoundDecay() throws
+    override func testAdaBoundDecay() throws
     {
         setOptimizerParams(params: &optimizerParams,
                            optimizerClass: .AdaBound,
@@ -346,7 +319,7 @@ class OptimizerFlowPrecisionTests: Input1DMSE1DCase
         run(trainer, diffThreshold: 0.005)
     }
     
-    func testAMSBound() throws
+    override func testAMSBound() throws
     {
         setOptimizerParams(params: &optimizerParams,
                            optimizerClass: .AMSBound)
@@ -354,7 +327,7 @@ class OptimizerFlowPrecisionTests: Input1DMSE1DCase
         run(trainer, diffThreshold: 0.005)
     }
     
-    func testAMSBoundDecay() throws
+    override func testAMSBoundDecay() throws
     {
         setOptimizerParams(params: &optimizerParams,
                            optimizerClass: .AMSBound,

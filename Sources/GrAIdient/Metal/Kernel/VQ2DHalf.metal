@@ -46,7 +46,7 @@ kernel void vq2DForwardHalf(
     }
     
     int minIndex = -1;
-    float minValue = 0.0;
+    half minValue = 0.0;
     for (uint k=0; k<K; k++)
     {
         float value = 0.0;
@@ -138,7 +138,7 @@ kernel void vq2DBackwardHalf(
         uint offsetWeights = depth + nbChannels * minIndex;
         
         float vq = weights[offsetWeights];
-        float deltaCur = delta[offset];
+        half deltaCur = delta[offset];
         float outPrev = outsPrev[offset];
         
         if (dirty)

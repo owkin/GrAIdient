@@ -583,24 +583,13 @@ public class AdaptiveAvgPool2D: Layer2D
             }
             else
             {
-                var nbElems = _nbElems.nbElems
-                var pNbElems: [UInt32] = [UInt32(nbElems)]
+                let nbElems = _nbElems.nbElems
+                let pNbElems: [UInt32] = [UInt32(nbElems)]
                 
                 command = metalKernel.createCommand("reset", deviceID: deviceID)
                 
                 command.setBytes(pNbElems, atIndex: 0)
                 command.setBuffer(_nbElems.metal, atIndex: 1)
-                
-                command.dispatchThreads(nbElems)
-                command.enqueue()
-                
-                nbElems = outs.nbElems
-                pNbElems = [UInt32(nbElems)]
-                
-                command = metalKernel.createCommand("reset", deviceID: deviceID)
-                
-                command.setBytes(pNbElems, atIndex: 0)
-                command.setBuffer(outs.metal, atIndex: 1)
                 
                 command.dispatchThreads(nbElems)
                 command.enqueue()

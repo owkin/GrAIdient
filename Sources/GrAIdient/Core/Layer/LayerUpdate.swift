@@ -132,8 +132,12 @@ public class WeightBuffers: IWeightBuffers
         w = FloatBuffer(nbElems: nbElems, deviceID: deviceID)
         g = FloatBuffer(nbElems: nbElems, deviceID: deviceID)
         m = FloatBuffer(nbElems: nbElems, deviceID: deviceID)
-        v = FloatBuffer(nbElems: nbElems, deviceID: deviceID)
-        vHat = FloatBuffer(nbElems: nbElems, deviceID: deviceID)
+        v = FloatBuffer(
+            nbElems: nbElems, deviceID: deviceID, forceFloat: true
+        )
+        vHat = FloatBuffer(
+            nbElems: nbElems, deviceID: deviceID, forceFloat: true
+        )
     }
     
     /// Clean the buffers.

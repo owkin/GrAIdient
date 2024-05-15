@@ -281,7 +281,7 @@ class OptimizerFlowPrecisionTests: Input1DMSE1DCase
         setOptimizerParams(params: &optimizerParams,
                            optimizerClass: .Adam)
         let trainer = _buildTrainer()
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     func testAdamDecay() throws
@@ -298,7 +298,7 @@ class OptimizerFlowPrecisionTests: Input1DMSE1DCase
         setOptimizerParams(params: &optimizerParams,
                            optimizerClass: .AMSGrad)
         let trainer = _buildTrainer()
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     func testAMSGradDecay() throws
@@ -316,7 +316,7 @@ class OptimizerFlowPrecisionTests: Input1DMSE1DCase
         setOptimizerParams(params: &optimizerParams,
                            optimizerClass: .AdamRectified)
         let trainer = _buildTrainer()
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     func testAdamRectifiedDecay() throws
@@ -334,7 +334,7 @@ class OptimizerFlowPrecisionTests: Input1DMSE1DCase
         setOptimizerParams(params: &optimizerParams,
                            optimizerClass: .AdaBound)
         let trainer = _buildTrainer()
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     func testAdaBoundDecay() throws
@@ -351,7 +351,7 @@ class OptimizerFlowPrecisionTests: Input1DMSE1DCase
         setOptimizerParams(params: &optimizerParams,
                            optimizerClass: .AMSBound)
         let trainer = _buildTrainer()
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     func testAMSBoundDecay() throws

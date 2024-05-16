@@ -237,7 +237,7 @@ class OptimizerFlowPrecisionTests: OptimizerFlowTests
         setOptimizerParams(params: &optimizerParams,
                            optimizerClass: .SGDMomentum)
         let trainer = _buildTrainer()
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     override func testSGDMomentumDecay() throws

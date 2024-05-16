@@ -41,7 +41,7 @@ kernel void avgPoolForwardHalf(
         
     uint offsetStartPrev = (depth + nbNeurons * elem) * heightPrev;
     
-    float tmp = 0.0;
+    half tmp = 0.0;
     for (uint i=0; i<heightPrev; i++){
     for (uint j=0; j<widthPrev; j++)
     {
@@ -92,7 +92,7 @@ kernel void avgPoolBackwardHalf(
     }
     
     uint offset = depthPrev + nbNeurons * elem;
-    float deltaCur = delta[offset];
+    half deltaCur = delta[offset];
     
     uint offsetStartPrev = (depthPrev + nbNeurons * elem) * heightPrev;
     uint offsetPrev = j + (offsetStartPrev + i) * widthPrev;
@@ -236,7 +236,7 @@ kernel void maxPoolBackwardHalf(
     uint offsetStartPrev = (depth + nbChannels * elem) * heightPrev;
     uint offsetPrev = j + (offsetStartPrev + i) * widthPrev;
     
-    float tmp = 0.0;
+    half tmp = 0.0;
     for (int k=start; k<=end; k++){
     for (int l=start; l<=end; l++)
     {
@@ -341,7 +341,7 @@ kernel void adaptiveAvgPoolForward1Half(
     uint offsetStartPrev = (depth + nbChannels * elem) * heightPrev;
     uint offsetStart = (depth + nbChannels * elem) * height;
     
-    float tmp = 0.0;
+    half tmp = 0.0;
     for (uint k=0; k<nbElemsI; k++) {
     for (uint l=0; l<nbElemsJ; l++)
     {
@@ -350,7 +350,7 @@ kernel void adaptiveAvgPoolForward1Half(
     }}
     
     uint offset = j + (offsetStart + i) * width;
-    outs[offset] = tmp / (float)nbElems;
+    outs[offset] = tmp / (half)nbElems;
 }
 
 kernel void adaptiveAvgPoolForward2Half(
@@ -820,7 +820,7 @@ kernel void decorrelateRGBForwardHalf(
     uint offsetStart = (depth + nbChannels * elem) * height;
     uint offset = j + (offsetStart + i) * width;
     
-    float sum = 0.0;
+    half sum = 0.0;
     for (uint k=0; k<3; k++)
     {
         uint offsetStartPrev = (block * 3 + k + nbChannels * elem) * height;
@@ -875,7 +875,7 @@ kernel void decorrelateRGBBackwardHalf(
     uint offsetStartPrev = (depth + nbChannels * elem) * height;
     uint offsetPrev = j + (offsetStartPrev + i) * width;
     
-    float sum = 0.0;
+    half sum = 0.0;
     for (uint k=0; k<3; k++)
     {
         uint offsetStart = (block * 3 + k + nbChannels * elem) * height;
@@ -2139,7 +2139,7 @@ kernel void MSE2DLossHalf(
         return ;
     }
     
-    float tmp = 0.0;
+    half tmp = 0.0;
     for (uint depth=0; depth<nbChannels; depth++)
     {
         uint offsetStart = (depth + nbChannels * elem) * height;
@@ -2149,9 +2149,9 @@ kernel void MSE2DLossHalf(
         {
             uint offset = j + (offsetStart + i) * width;
             
-            float out = outs[offset];
-            float gt = groundTruth[offset];
-            float diff = out - gt;
+            half out = outs[offset];
+            half gt = groundTruth[offset];
+            half diff = out - gt;
             
             tmp += diff * diff;
         }}
@@ -2173,7 +2173,7 @@ kernel void MSE2DLossDerivativeHalf(
 {
     uint height, width;
     uint nbChannels;
-    float coeff;
+    half coeff;
     uint nbBatch;
     uint dirty;
     
@@ -2204,19 +2204,19 @@ kernel void MSE2DLossDerivativeHalf(
     uint offsetStart = (depth + nbChannels * elem) * height;
     uint offset = j + (offsetStart + i) * width;
     
-    float gt = groundTruth[offset];
-    float out = outs[offset];
-    float diff = out - gt;
+    half gt = groundTruth[offset];
+    half out = outs[offset];
+    half diff = out - gt;
     
     if (dirty)
     {
         deltaPrev[offset] = 2 * coeff * diff /
-            float(nbBatch * nbChannels * height * width);
+            half(nbBatch * nbChannels * height * width);
     }
     else
     {
         deltaPrev[offset] += 2 * coeff * diff /
-            float(nbBatch * nbChannels * height * width);
+            half(nbBatch * nbChannels * height * width);
     }
 }
 
@@ -2256,7 +2256,7 @@ kernel void selfCorrelate2DForwardHalf(
     uint offsetStart1 = (channel1 + nbChannelsPrev * elem) * heightPrev;
     uint offsetStart2 = (channel2 + nbChannelsPrev * elem) * heightPrev;
     
-    float correlation = 0.0;
+    half correlation = 0.0;
     for (uint i=0; i<heightPrev; i++){
     for (uint j=0; j<widthPrev; j++)
     {
@@ -2309,7 +2309,7 @@ kernel void selfCorrelate2DBackwardHalf(
         return ;
     }
     
-    float correlation = 0.0;
+    half correlation = 0.0;
     for (uint col=0; col<nbChannelsPrev; col++)
     {
         uint offsetStartPrev = (col + nbChannelsPrev * elem) * heightPrev;
@@ -2492,7 +2492,7 @@ kernel void computeSquaredNorm122DHalf(
      uint2 id [[ thread_position_in_grid ]])
 {
     constexpr uint threadsPerThreadgroup = 64;
-    threadgroup float normShared[threadsPerThreadgroup];
+    threadgroup half normShared[threadsPerThreadgroup];
     
     uint height, width;
     uint nbChannels;
@@ -2527,7 +2527,7 @@ kernel void computeSquaredNorm122DHalf(
     uint offsetStart = (depth + nbChannels * elem) * height;
     uint offset = j + (offsetStart + i) * width;
     
-    float outPrev = outsPrev[offset];
+    half outPrev = outsPrev[offset];
     normShared[threadId[0]] = outPrev * outPrev;
     threadgroup_barrier(mem_flags::mem_threadgroup);
     
@@ -2610,7 +2610,7 @@ kernel void computeDeltaTmp122DHalf(
      uint2 id [[ thread_position_in_grid ]])
 {
     constexpr uint threadsPerThreadgroup = 64;
-    threadgroup float deltaShared[threadsPerThreadgroup];
+    threadgroup half deltaShared[threadsPerThreadgroup];
     
     uint height, width;
     uint nbChannels;
@@ -2648,8 +2648,8 @@ kernel void computeDeltaTmp122DHalf(
         uint offsetStart = (depth + nbChannels * elem) * height;
         uint offset = j + (offsetStart + i) * width;
         
-        float deltaCur = delta[offset];
-        float outPrev = outsPrev[offset];
+        half deltaCur = delta[offset];
+        half outPrev = outsPrev[offset];
         
         deltaShared[threadId[0]] = outPrev * deltaCur;
         threadgroup_barrier(mem_flags::mem_threadgroup);
@@ -2870,7 +2870,7 @@ kernel void similarError2DLossDerivativeHalf(
 {
     uint height, width;
     uint nbChannels;
-    float coeff;
+    half coeff;
     uint globalOffset;
     uint nbBatch, nbBatchPrev;
     uint dirty;
@@ -2900,7 +2900,7 @@ kernel void similarError2DLossDerivativeHalf(
         return ;
     }
     
-    float sum = 0.0;
+    half sum = 0.0;
     for (uint elem1=0; elem1<nbBatch; elem1++)
     {
         if (elem1 == elem+globalOffset)
@@ -3289,7 +3289,7 @@ kernel void BCE2DLossHalf(
         return ;
     }
     
-    float tmp = 0.0;
+    half tmp = 0.0;
     for (uint depth=0; depth<nbChannels; depth++)
     {
         uint offsetStart = (depth + nbChannels * elem) * height;
@@ -3299,10 +3299,10 @@ kernel void BCE2DLossHalf(
         {
             uint offset = j + (offsetStart + i) * width;
             
-            float out = outs[offset];
-            float gt = groundTruth[offset];
-            float tmp1 = log(out);
-            float tmp2 = log(1 - out);
+            half out = outs[offset];
+            half gt = groundTruth[offset];
+            half tmp1 = log(out);
+            half tmp2 = log(1 - out);
             
             tmp -= (gt * tmp1 + (1 - gt) * tmp2);
         }}
@@ -3324,7 +3324,7 @@ kernel void BCE2DLossDerivativeHalf(
 {
     uint height, width;
     uint nbChannels;
-    float coeff;
+    half coeff;
     uint nbBatch;
     uint dirty;
     
@@ -3355,9 +3355,9 @@ kernel void BCE2DLossDerivativeHalf(
     uint offsetStart = (depth + nbChannels * elem) * height;
     uint offset = j + (offsetStart + i) * width;
     
-    float gt = groundTruth[offset];
-    float out = outs[offset];
-    float derivative = 0.0;
+    half gt = groundTruth[offset];
+    half out = outs[offset];
+    half derivative = 0.0;
     
     if (gt == 1.0)
     {
@@ -3371,12 +3371,12 @@ kernel void BCE2DLossDerivativeHalf(
     if (dirty)
     {
         deltaPrev[offset] = coeff * derivative /
-            float(nbBatch * nbChannels * height * width);
+            half(nbBatch * nbChannels * height * width);
     }
     else
     {
         deltaPrev[offset] += coeff * derivative /
-            float(nbBatch * nbChannels * height * width);
+            half(nbBatch * nbChannels * height * width);
     }
 }
 
@@ -3409,7 +3409,7 @@ kernel void BCESigmoid2DLossHalf(
         return ;
     }
     
-    float tmp = 0.0;
+    half tmp = 0.0;
     for (uint depth=0; depth<nbChannels; depth++)
     {
         uint offsetStart = (depth + nbChannels * elem) * height;
@@ -3419,9 +3419,9 @@ kernel void BCESigmoid2DLossHalf(
         {
             uint offset = j + (offsetStart + i) * width;
             
-            float out = outs[offset];
-            float gt = groundTruth[offset];
-            float value;
+            half out = outs[offset];
+            half gt = groundTruth[offset];
+            half value;
             
             if (out > 0)
             {
@@ -3454,7 +3454,7 @@ kernel void BCESigmoid2DLossDerivativeHalf(
 {
     uint height, width;
     uint nbChannels;
-    float coeff;
+    half coeff;
     uint nbBatch;
     uint dirty;
     
@@ -3485,9 +3485,9 @@ kernel void BCESigmoid2DLossDerivativeHalf(
     uint offsetStart = (depth + nbChannels * elem) * height;
     uint offset = j + (offsetStart + i) * width;
     
-    float gt = groundTruth[offset];
-    float out = outs[offset];
-    float value;
+    half gt = groundTruth[offset];
+    half out = outs[offset];
+    half value;
     
     if (out >= 0)
     {
@@ -3501,12 +3501,12 @@ kernel void BCESigmoid2DLossDerivativeHalf(
     if (dirty)
     {
         deltaPrev[offset] = coeff * (value - gt) /
-            float(nbBatch * nbChannels * height * width);
+            half(nbBatch * nbChannels * height * width);
     }
     else
     {
         deltaPrev[offset] += coeff * (value - gt) /
-            float(nbBatch * nbChannels * height * width);
+            half(nbBatch * nbChannels * height * width);
     }
 }
 

@@ -29,7 +29,7 @@ public class FloatBuffer
     public var metal: MTLBuffer
     {
         get {
-            if GrAI.Precision.float16
+            if GrAI.Precision.float16 && !_forceFloat
             {
                 if _float16 == nil
                 {

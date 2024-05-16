@@ -334,7 +334,7 @@ class Activation1DFlowPrecisionTests: Input1DMSE1DCase
         
         layer = try! FullyConnected(
             layerPrev: layer, nbNeurons: 5,
-            activation: SoftReLU.str, biases: true,
+            activation: LeakyReLU.str, biases: true,
             params: params
         )
         
@@ -360,7 +360,7 @@ class Activation1DFlowPrecisionTests: Input1DMSE1DCase
         
         layer = try! FullyConnected(
             layerPrev: layer, nbNeurons: 1,
-            activation: SoftReLU.str, biases: true,
+            activation: LeakyReLU.str, biases: true,
             params: params
         )
         

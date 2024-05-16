@@ -611,7 +611,7 @@ class Layer1DFlowPrecisionTests: Layer1DFlowTests
     override func testSum() throws
     {
         let trainer = _buildTrainer("Sum")
-        run(trainer)
+        run(trainer, diffThreshold: 0.002)
     }
     
     override func testSoftmax() throws

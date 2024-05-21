@@ -2721,13 +2721,13 @@ kernel void layerCAMSeqForwardFloat(
         return ;
     }
         
-    float sum = 0.0;
+    half sum = 0.0;
     for (uint depthPrev=0; depthPrev<nbNeuronsPrev; depthPrev++)
     {
         uint offsetPrev = depthPrev + nbNeuronsPrev * seq +
             sequence * nbNeuronsPrev * elem;
         
-        float deltaPrevTmp = deltaPrev[offsetPrev];
+        half deltaPrevTmp = deltaPrev[offsetPrev];
         if (!keepPositive)
         {
             deltaPrevTmp = -deltaPrevTmp;

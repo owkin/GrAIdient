@@ -3719,6 +3719,7 @@ class VQGradSeqTests: XCTestCase
             
             let diff = (lossGPU - lossCPU) * (lossGPU - lossCPU) /
                        (lossCPU * lossCPU + lossGPU * lossGPU)
+            print(diff)
             XCTAssert(diff < 0.001)
             
             mainCPU.incStep()

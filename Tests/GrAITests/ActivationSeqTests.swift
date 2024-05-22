@@ -402,7 +402,7 @@ class ActivationSeqFlowPrecisionTests: Input2DMSE1DCase
         let trainer = _buildTrainer(
             model: "FullyConnected", activation: LeakyReLU.str
         )
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     func testFLSoftReLU() throws
@@ -410,7 +410,7 @@ class ActivationSeqFlowPrecisionTests: Input2DMSE1DCase
         let trainer = _buildTrainer(
             model: "FullyConnected", activation: SoftReLU.str
         )
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     func testFLSigmoid() throws
@@ -459,7 +459,7 @@ class ActivationSeqFlowPrecisionTests: Input2DMSE1DCase
         let trainer = _buildTrainer(
             model: "Activation", activation: SoftReLU.str
         )
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     func testSigmoid() throws

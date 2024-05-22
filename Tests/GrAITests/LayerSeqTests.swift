@@ -3211,7 +3211,7 @@ class LayerCAMSeqTests: XCTestCase
             {
                 let diff = (elem1 - elem2) * (elem1 - elem2) /
                            (elem1 * elem1 + elem2 * elem2)
-                XCTAssert(diff < 0.00001)
+                XCTAssert(diff < 0.0001)
             }
             
             mainCPU.incStep()

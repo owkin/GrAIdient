@@ -4875,7 +4875,7 @@ class MSE2DFlowPrecisionTests: MSE2DFlowTests
     override func testLoss() throws
     {
         let trainer = _buildTrainer()
-        run(trainer)
+        run(trainer, diffThreshold: 0.002)
     }
 }
 

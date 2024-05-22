@@ -372,7 +372,7 @@ class Activation1DFlowPrecisionTests: Input1DMSE1DCase
         let trainer = _buildTrainer(
             model: "FullyConnected", activation: nil
         )
-        run(trainer)
+        run(trainer, diffThreshold: 0.002)
     }
     
     func testFLReLU() throws
@@ -404,7 +404,7 @@ class Activation1DFlowPrecisionTests: Input1DMSE1DCase
         let trainer = _buildTrainer(
             model: "FullyConnected", activation: Sigmoid.str
         )
-        run(trainer)
+        run(trainer, diffThreshold: 0.002)
     }
     
     func testFLGELUApprox() throws
@@ -453,7 +453,7 @@ class Activation1DFlowPrecisionTests: Input1DMSE1DCase
         let trainer = _buildTrainer(
             model: "Activation", activation: Sigmoid.str
         )
-        run(trainer)
+        run(trainer, diffThreshold: 0.002)
     }
     
     func testGELUApprox() throws

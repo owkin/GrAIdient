@@ -71,7 +71,7 @@ kernel void convForwardHalf(
     
     uint offsetStart = (depth+nbChannels*elem)*height;
     
-    float tmp = biases[depth];
+    half tmp = biases[depth];
     for (uint depthPrev=0; depthPrev<nbChannelsPrev; depthPrev++)
     {
         uint offsetStartPrev =
@@ -89,11 +89,11 @@ kernel void convForwardHalf(
             {
                 uint offsetPrev = (int)(stride*j)+l-offJ +
                     (offsetStartPrev + (int)(stride*i)+k-offI)*widthPrev;
-                float outPrev = outsPrev[offsetPrev];
+                half outPrev = outsPrev[offsetPrev];
                 
                 uint offsetWeights = l-startJ +
                     (offsetStartWeights + k-startI) * weightWidth;
-                float w = weights[offsetWeights];
+                half w = weights[offsetWeights];
                 
                 tmp += outPrev * w;
             }
@@ -166,7 +166,7 @@ kernel void conv16ForwardHalf(
         return ;
     }
     
-    float tmp[16] = {0};
+    half tmp[16] = {0};
     for (uint depthPrev=0; depthPrev<nbChannelsPrev; depthPrev++)
     {
         uint offsetStartPrev =
@@ -182,7 +182,7 @@ kernel void conv16ForwardHalf(
             {
                 uint offsetPrev = (int)(stride*j)+l-offJ +
                     (offsetStartPrev + (int)(stride*i)+k-offI)*widthPrev;
-                float outPrev = outsPrev[offsetPrev];
+                half outPrev = outsPrev[offsetPrev];
                 
                 for (uint c=0; c<coeff; c++)
                 {
@@ -190,7 +190,7 @@ kernel void conv16ForwardHalf(
                         (depthPrev + nbChannelsPrev * (depth*coeff+c));
                     uint offsetWeights = l-startJ +
                         (offsetStartWeights + k-startI) * weightWidth;
-                    float w = weights[offsetWeights];
+                    half w = weights[offsetWeights];
                     
                     tmp[c] += outPrev * w;
                 }
@@ -271,7 +271,7 @@ kernel void convBackwardHalf(
     
     uint offsetStartPrev = (depthPrev + nbChannelsPrev * elem) * heightPrev;
     
-    float tmp = 0.0;
+    half tmp = 0.0;
     for (uint depth=0; depth<nbChannels; depth++)
     {
         uint offsetStartWeights =
@@ -290,11 +290,11 @@ kernel void convBackwardHalf(
                     i1 >= 0 && i1 < (int)height)
                 {
                     uint offset = j1 + (offsetStart + i1) * width;
-                    float deltaCur = delta[offset];
+                    half deltaCur = delta[offset];
                     
                     uint offsetWeights = l-startJ +
                         (offsetStartWeights + k-startI) * weightWidth;
-                    float w = weights[offsetWeights];
+                    half w = weights[offsetWeights];
                     
                     tmp += deltaCur * w;
                 }
@@ -377,7 +377,7 @@ kernel void conv16BackwardHalf(
         return ;
     }
     
-    float tmp[16] = {0};
+    half tmp[16] = {0};
     for (uint depth=0; depth<nbChannels; depth++)
     {
         uint offsetStart = (depth + nbChannels * elem) * height;
@@ -394,7 +394,7 @@ kernel void conv16BackwardHalf(
                     i1 >= 0 && i1 < (int)height)
                 {
                     uint offset = j1 + (offsetStart + i1) * width;
-                    float deltaCur = delta[offset];
+                    half deltaCur = delta[offset];
                     
                     for (uint c=0; c<coeff; c++)
                     {
@@ -402,7 +402,7 @@ kernel void conv16BackwardHalf(
                             ((depthPrev*coeff+c) + nbChannelsPrev * depth);
                         uint offsetWeights = l-startJ +
                             (offsetStartWeights + k-startI) * weightWidth;
-                        float w = weights[offsetWeights];
+                        half w = weights[offsetWeights];
                         
                         tmp[c] += deltaCur * w;
                     }
@@ -495,7 +495,7 @@ kernel void convBatchDerWeightsHalf(
     int i = weightsI + startI;
     int j = weightsJ + startJ;
     
-    float tmp = 0.0;
+    half tmp = 0.0;
     for (uint elem=0; elem<nbBatch; elem++)
     {
         uint offsetStart =
@@ -512,11 +512,11 @@ kernel void convBatchDerWeightsHalf(
                 (int)(stride*k)+i-offI < (int)heightPrev)
             {
                 uint offset = l + (offsetStart + k) * width;
-                float deltaCur = delta[offset];
+                half deltaCur = delta[offset];
                 
                 uint offsetPrev = (int)(stride*l)+j-offJ +
                     (offsetStartPrev + (int)(stride*k)+i-offI)*widthPrev;
-                float outPrev = outsPrev[offsetPrev];
+                half outPrev = outsPrev[offsetPrev];
                 
                 tmp += deltaCur * outPrev;
             }
@@ -582,7 +582,7 @@ kernel void conv34BatchDerWeightsHalf(
         return ;
     }
     
-    float tmp[9] = {0.0};
+    half tmp[9] = {0.0};
     for (uint elem=0; elem<nbBatch; elem++)
     {
         uint offsetStart =
@@ -602,7 +602,7 @@ kernel void conv34BatchDerWeightsHalf(
             {
                 uint offsetPrev0 =
                     ((l-1)*4 + (offsetStartPrev + k*2-1) * widthPrev) / 4;
-                float outPrev0 = outsPrev[offsetPrev0][3];
+                half outPrev0 = outsPrev[offsetPrev0][3];
                 
                 tmp[0] += outPrev0 * delta4[0];
             }
@@ -627,7 +627,7 @@ kernel void conv34BatchDerWeightsHalf(
             {
                 uint offsetPrev2 =
                     ((l+1)*4 + (offsetStartPrev + k*2-1) * widthPrev) / 4;
-                float outPrev2 = outsPrev[offsetPrev2][0];
+                half outPrev2 = outsPrev[offsetPrev2][0];
                 
                 tmp[2] += outPrev2 * delta4[3];
             }
@@ -638,8 +638,8 @@ kernel void conv34BatchDerWeightsHalf(
                     ((l-1)*4 + (offsetStartPrev + k*2) * widthPrev) / 4;
                 uint offsetPrev6 =
                     ((l-1)*4 + (offsetStartPrev + k*2+1) * widthPrev) / 4;
-                float outPrev3 = outsPrev[offsetPrev3][3];
-                float outPrev6 = outsPrev[offsetPrev6][3];
+                half outPrev3 = outsPrev[offsetPrev3][3];
+                half outPrev6 = outsPrev[offsetPrev6][3];
                 
                 tmp[0] += outPrev3 * delta7[0];
                 tmp[3] += outPrev3 * delta4[0];
@@ -701,8 +701,8 @@ kernel void conv34BatchDerWeightsHalf(
                     ((l+1)*4 + (offsetStartPrev + k*2) * widthPrev) / 4;
                 uint offsetPrev8 =
                     ((l+1)*4 + (offsetStartPrev + k*2+1) * widthPrev) / 4;
-                float outPrev5 = outsPrev[offsetPrev5][0];
-                float outPrev8 = outsPrev[offsetPrev8][0];
+                half outPrev5 = outsPrev[offsetPrev5][0];
+                half outPrev8 = outsPrev[offsetPrev8][0];
                 
                 tmp[2] += outPrev5 * delta7[3];
                 tmp[5] += outPrev5 * delta4[3];
@@ -714,7 +714,7 @@ kernel void conv34BatchDerWeightsHalf(
             {
                 uint offsetPrev9 =
                     ((l-1)*4 + (offsetStartPrev + (k+1)*2) * widthPrev) / 4;
-                float outPrev9 = outsPrev[offsetPrev9][3];
+                half outPrev9 = outsPrev[offsetPrev9][3];
                 
                 tmp[6] += outPrev9 * delta7[0];
             }
@@ -739,7 +739,7 @@ kernel void conv34BatchDerWeightsHalf(
             {
                 uint offsetPrev11 =
                     ((l+1)*4 + (offsetStartPrev + (k+1)*2) * widthPrev) / 4;
-                float outPrev11 = outsPrev[offsetPrev11][0];
+                half outPrev11 = outsPrev[offsetPrev11][0];
                 
                 tmp[8] += outPrev11 * delta7[3];
             }
@@ -815,7 +815,7 @@ kernel void convBatchDerBiasesHalf(
         return ;
     }
     
-    float tmp = 0.0;
+    half tmp = 0.0;
     for (uint elem=0; elem<nbBatch; elem++)
     {
         uint offsetStart = (depth + nbChannels * elem) * height;
@@ -913,7 +913,7 @@ kernel void convDerWeightsHalf(
     uint offsetStartWeights =
         (depthPrev + nbChannelsPrev * depth) * weightHeight;
     
-    float tmp = 0.0;
+    half tmp = 0.0;
     for (uint k=0; k<height; k++){
     for (uint l=0; l<width; l++)
     {
@@ -923,11 +923,11 @@ kernel void convDerWeightsHalf(
             (int)(stride*k)+i-offI < (int)heightPrev)
         {
             uint offset = l + (offsetStart + k) * width;
-            float deltaCur = delta[offset];
+            half deltaCur = delta[offset];
             
             uint offsetPrev = (int)(stride*l)+j-offJ +
                 (offsetStartPrev + (int)(stride*k)+i-offI)*widthPrev;
-            float outPrev = outsPrev[offsetPrev];
+            half outPrev = outsPrev[offsetPrev];
             
             tmp += deltaCur * outPrev;
         }
@@ -970,7 +970,7 @@ kernel void convDerBiasesHalf(
     
     uint offsetStart = (depth + nbChannels * elem) * height;
     
-    float tmp = 0.0;
+    half tmp = 0.0;
     for (uint i=0; i<height; i++){
     for (uint j=0; j<width; j++)
     {
@@ -1027,7 +1027,7 @@ kernel void convReduceWeightsHalf(
     uint offsetWeights = weightsJ +
         (offsetStartWeights + weightsI) * weightWidth;
     
-    float tmp = 0.0;
+    half tmp = 0.0;
     for (uint elem=0; elem<nbBatch; elem++)
     {
         uint offsetStart =

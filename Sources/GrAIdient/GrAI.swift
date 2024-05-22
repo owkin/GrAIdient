@@ -73,16 +73,16 @@ public class GrAI
     /// Namespace for precision settings.
     public class Precision
     {
-        /// Get/Set precision.
+        /// Get/Set double precision.
         public static var double: Bool
         {
             get {
-                return getCtx.precision == PrecisionMode.Double
+                return getCtx.precision == PrecisionType.Double
             }
             set {
                 if newValue && GrAI.Opti.CPU
                 {
-                    getCtx.precision = PrecisionMode.Double
+                    getCtx.precision = PrecisionType.Double
                 }
                 else if newValue
                 {
@@ -92,16 +92,16 @@ public class GrAI
                 }
             }
         }
-        /// Get/Set precision.
+        /// Get/Set float precision.
         public static var float: Bool
         {
             get {
-                return getCtx.precision == PrecisionMode.Float
+                return getCtx.precision == PrecisionType.Float
             }
             set {
                 if newValue && GrAI.Opti.GPU
                 {
-                    getCtx.precision = PrecisionMode.Float
+                    getCtx.precision = PrecisionType.Float
                 }
                 else if newValue
                 {
@@ -111,16 +111,16 @@ public class GrAI
                 }
             }
         }
-        /// Get/Set precision.
+        /// Get/Set float16 precision.
         public static var float16: Bool
         {
             get {
-                return getCtx.precision == PrecisionMode.Float16
+                return getCtx.precision == PrecisionType.Float16
             }
             set {
                 if newValue && GrAI.Opti.GPU
                 {
-                    getCtx.precision = PrecisionMode.Float16
+                    getCtx.precision = PrecisionType.Float16
                 }
                 else if newValue
                 {
@@ -409,7 +409,7 @@ public class GrAI
 }
 
 /// Precision mode.
-public enum PrecisionMode
+public enum PrecisionType
 {
     case Double
     case Float
@@ -440,14 +440,14 @@ fileprivate class GrAIContext
         case GPU
     }
     
+    /// Used to select GPU device.
+    var gpuNamedPriority = [String]()
+    
     //--------------------------------------------------------------------------
     // PRECISION
     //--------------------------------------------------------------------------
-    /// Precision variable.
-    var precision = PrecisionMode.Float
-    
-    /// Used to select GPU device.
-    var gpuNamedPriority = [String]()
+    /// Precision type.
+    var precision = PrecisionType.Float
     
     //--------------------------------------------------------------------------
     // GRADIENT

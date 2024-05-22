@@ -322,7 +322,7 @@ final class VGGBenchmark: XCTestCase
     }
     
     /// Test: evaluate a VGG model.
-    func _test_EvalTransformer()
+    func _test_EvalVGG()
     {
         // Build a model with randomly initialized weights.
         let vgg = _buildModel(bn: true)

@@ -35,7 +35,7 @@ kernel void reduceBiasesHalf(
         return ;
     }
     
-    float tmp = 0.0;
+    half tmp = 0.0;
     for (uint elem=0; elem<nbBatch; elem++)
     {
         uint offset = depth + elem * nbNeurons;

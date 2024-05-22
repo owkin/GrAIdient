@@ -72,7 +72,7 @@ kernel void forwardLeakyReLUHalf(
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
-    float Ɛ = 0.01;
+    half Ɛ = 0.01;
     
     if (pNbElems)
     {
@@ -104,7 +104,7 @@ kernel void backwardLeakyReLUHalf(
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
-    float Ɛ = 0.01;
+    half Ɛ = 0.01;
     
     if (pNbElems)
     {
@@ -131,7 +131,7 @@ kernel void forwardSoftReLUHalf(
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
-    float Ɛ = 0.01;
+    half Ɛ = 0.01;
     
     if (pNbElems)
     {
@@ -156,7 +156,7 @@ kernel void backwardSoftReLUHalf(
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
-    float Ɛ = 0.01;
+    half Ɛ = 0.01;
     
     if (pNbElems)
     {
@@ -170,7 +170,7 @@ kernel void backwardSoftReLUHalf(
         return ;
     }
     
-    float derivative = Ɛ + (1 - Ɛ) / (1 + exp(-tmps[id]));
+    half derivative = Ɛ + (1 - Ɛ) / (1 + exp(-tmps[id]));
     delta[id] = delta[id] * derivative;
 }
 
@@ -225,7 +225,7 @@ kernel void backwardSigmoidHalf(
         return ;
     }
     
-    float tmp;
+    half tmp;
     if (tmps[id] >= 0)
     {
         tmp = 1.0 / (1.0 + exp(-tmps[id]));
@@ -235,7 +235,7 @@ kernel void backwardSigmoidHalf(
         tmp = exp(tmps[id]) / (1.0 + exp(tmps[id]));
     }
     
-    float derivative = tmp * (1 - tmp);
+    half derivative = tmp * (1 - tmp);
     delta[id] = delta[id] * derivative;
 }
 
@@ -259,10 +259,10 @@ kernel void forwardGELUApproxHalf(
         return ;
     }
     
-    float cst = sqrt(2.0 / 3.14159);
-    float x = outs[id];
-    float tmp1 = cst * (x + 0.044715 * pow(x, 3));
-    float tmp2;
+    half cst = sqrt(2.0 / 3.14159);
+    half x = outs[id];
+    half tmp1 = cst * (x + 0.044715 * pow(x, 3));
+    half tmp2;
     if (tmp1 >= 0)
     {
         tmp2 = (1.0 - exp(-2.0 * tmp1)) / (1.0 + exp(-2.0 * tmp1));
@@ -295,10 +295,10 @@ kernel void backwardGELUApproxHalf(
         return ;
     }
     
-    float cst = sqrt(2.0 / 3.14159);
-    float x = tmps[id];
-    float tmp1 = cst * (x + 0.044715 * pow(x, 3));
-    float tmp2;
+    half cst = sqrt(2.0 / 3.14159);
+    half x = tmps[id];
+    half tmp1 = cst * (x + 0.044715 * pow(x, 3));
+    half tmp2;
     if (tmp1 >= 0)
     {
         tmp2 = (1.0 - exp(-2.0 * tmp1)) / (1.0 + exp(-2.0 * tmp1));
@@ -307,8 +307,8 @@ kernel void backwardGELUApproxHalf(
     {
         tmp2 = (exp(2.0 * tmp1) - 1.0) / (exp(2.0 * tmp1) + 1.0);
     }
-    float tmp3 = cst * (1 + 3 * 0.044715 * x * x) * (1 - tmp2 * tmp2);
-    float derivative = 0.5 * (1 + tmp2 + x * tmp3);
+    half tmp3 = cst * (1 + 3 * 0.044715 * x * x) * (1 - tmp2 * tmp2);
+    half derivative = 0.5 * (1 + tmp2 + x * tmp3);
     delta[id] = delta[id] * derivative;
 }
 
@@ -370,7 +370,7 @@ kernel void forwardGELUHalf(
         return ;
     }
     
-    float x = outs[id];
+    half x = outs[id];
     tmps[id] = x;
     outs[id] = 0.5 * x * (1 + erf(x / sqrt(2.0)));
 }
@@ -395,9 +395,9 @@ kernel void backwardGELUHalf(
         return ;
     }
     
-    float x = tmps[id];
-    float tmp1 = 0.5 * (1.0 + erf(x / sqrt(2.0)));
-    float tmp2 = x / sqrt(2.0 * M_PI_F) * exp(-x * x / 2.0);
-    float derivative = tmp1 + tmp2;
+    half x = tmps[id];
+    half tmp1 = 0.5 * (1.0 + erf(x / sqrt(2.0)));
+    half tmp2 = x / sqrt(2.0 * M_PI_F) * exp(-x * x / 2.0);
+    half derivative = tmp1 + tmp2;
     delta[id] = delta[id] * derivative;
 }

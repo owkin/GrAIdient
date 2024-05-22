@@ -147,8 +147,8 @@ kernel void multiplyBackwardHalf(
         return ;
     }
     
-    float tmp = outs[id];
-    float deltaCur = delta[id];
+    half tmp = outs[id];
+    half deltaCur = delta[id];
     
     if (dirty)
     {

@@ -558,6 +558,95 @@ class Layer1DFlowTests: Input1DMSE1DCase
 }
 
 // -----------------------------------------------------------------------------
+// Compare GPU gradients with Float precision versus Float16 precision.
+// We expect to see errors ~ 1e-4 and less.
+// -----------------------------------------------------------------------------
+class Layer1DFlowPrecisionTests: Layer1DFlowTests
+{
+    private func _buildTrainer(_ model: String) -> FlowPrecisionTrainer
+    {
+        let trainer = FlowPrecisionTrainer(
+            name: "Layer1D",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(model: model, context: context)
+        }
+        return trainer
+    }
+    
+    override func testFL() throws
+    {
+        let trainer = _buildTrainer("FullyConnected")
+        run(trainer)
+    }
+    
+    override func testFLSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("FullyConnected")
+        run(trainer)
+    }
+    
+    override func testActivation() throws
+    {
+        let trainer = _buildTrainer("Activation")
+        run(trainer)
+    }
+    
+    override func testSelectNeurons() throws
+    {
+        let trainer = _buildTrainer("SelectNeurons")
+        run(trainer)
+    }
+    
+    override func testConcat() throws
+    {
+        let trainer = _buildTrainer("Concat")
+        run(trainer)
+    }
+    
+    override func testSum() throws
+    {
+        let trainer = _buildTrainer("Sum")
+        run(trainer, diffThreshold: 0.002)
+    }
+    
+    override func testSoftmax() throws
+    {
+        let trainer = _buildTrainer("Softmax")
+        run(trainer, diffThreshold: 0.002)
+    }
+    
+    override func testDotProduct() throws
+    {
+        let trainer = _buildTrainer("DotProduct")
+        run(trainer, diffThreshold: 0.002)
+    }
+    
+    override func testConstant() throws
+    {
+        let trainer = _buildTrainer("Constant")
+        run(trainer)
+    }
+    
+    override func testConstantSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("Constant")
+        run(trainer)
+    }
+    
+    override func testLayerOutput() throws
+    {
+        let trainer = _buildTrainer("LayerOutput")
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
 // Compare GPU gradients with CPU ones through time.
 // We expect to see errors ~ 1e-7 and less.
 // -----------------------------------------------------------------------------

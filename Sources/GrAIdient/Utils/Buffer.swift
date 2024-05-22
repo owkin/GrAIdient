@@ -181,8 +181,13 @@ public func copyArrayToBuffer<T: BNNSScalar>(
     start: Int,
     nbElems: Int)
 {
+    let base = buffer.baseAddress
+    let bufferPtr = UnsafeMutableBufferPointer<T>(
+        start: base, count: nbElems
+    )
+    
     var dest = BNNSNDArrayDescriptor(
-        data: buffer,
+        data: bufferPtr,
         shape: .vector(nbElems)
     )!
     

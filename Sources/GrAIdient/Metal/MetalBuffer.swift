@@ -17,6 +17,9 @@ public class FloatBuffer
     /// Whether to create a shared buffer or a private one.
     public let shared: Bool
     
+    /// Whether to force float precision or not.
+    let _forceFloat: Bool
+    
     /// Float buffer.
     var _float: MetalBuffer<Float>? = nil
     /// Float16 buffer.
@@ -26,7 +29,7 @@ public class FloatBuffer
     public var metal: MTLBuffer
     {
         get {
-            if GrAI.Precision.float16
+            if GrAI.Precision.float16 && !_forceFloat
             {
                 if _float16 == nil
                 {
@@ -74,12 +77,18 @@ public class FloatBuffer
     ///     - nbElems: The number of elements in the array.
     ///     - deviceID: GPU ID where the array will be sent.
     ///     - shared: Whether to create a shared buffer or a private one.
+    ///     - forceFloat: Whether to force float precision or not.
     ///
-    public init(nbElems: Int, deviceID: Int, shared: Bool = false)
+    public init(
+        nbElems: Int,
+        deviceID: Int,
+        shared: Bool = false,
+        forceFloat: Bool = false)
     {
         self.deviceID = deviceID
         self.nbElems = nbElems
         self.shared = shared
+        self._forceFloat = forceFloat
     }
     
     /// Clean the buffers.
@@ -92,7 +101,7 @@ public class FloatBuffer
     /// Initialize Metal buffer.
     public func initialize()
     {
-        if GrAI.Precision.float16
+        if GrAI.Precision.float16 && !_forceFloat
         {
             if _float16 == nil
             {
@@ -147,7 +156,7 @@ public class FloatBuffer
         array: inout [Float],
         start: Int = 0)
     {
-        if GrAI.Precision.float16
+        if GrAI.Precision.float16 && !_forceFloat
         {
             if _float16 == nil
             {
@@ -164,11 +173,14 @@ public class FloatBuffer
                     )
                 }
             }
+            // array.count < nbElems when batchSize of one batch is shorter.
+            // array.count > nbElems when using same array to allocate
+            // weights and biases.
             setupHalfBuffer(
                 array: &array,
                 out: _float16!,
                 start: start,
-                nbElems: nbElems,
+                nbElems: min(nbElems, array.count),
                 deviceID: deviceID
             )
         }
@@ -189,11 +201,14 @@ public class FloatBuffer
                     )
                 }
             }
+            // array.count < nbElems when batchSize of one batch is shorter.
+            // array.count > nbElems when using same array to allocate
+            // weights and biases.
             setupFloatBuffer(
                 array: &array,
                 out: _float!,
                 start: start,
-                nbElems: nbElems,
+                nbElems: min(nbElems, array.count),
                 deviceID: deviceID
             )
         }
@@ -202,7 +217,7 @@ public class FloatBuffer
     /// Retrieve Metal buffer content.
     public func download() -> [Float]
     {
-        if GrAI.Precision.float16
+        if GrAI.Precision.float16 && !_forceFloat
         {
             if _float16 == nil
             {

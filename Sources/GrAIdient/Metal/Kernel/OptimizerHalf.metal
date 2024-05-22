@@ -16,8 +16,8 @@ kernel void clipGradientsHalf(
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
-    float gradientNorm;
-    float normThreshold;
+    half gradientNorm;
+    half normThreshold;
     
     if (pNbElems && pGradientNorm && pNormThreshold && grads)
     {
@@ -43,7 +43,7 @@ kernel void multiplyGradientsHalf(
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
-    float factor;
+    half factor;
     
     if (pNbElems && pFactor && grads)
     {
@@ -70,7 +70,7 @@ kernel void weightsSGDHalf(
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
-    float alpha, lambda;
+    half alpha, lambda;
     
     if (pNbElems && pAlpha && pLambda && grads && weights)
     {
@@ -86,7 +86,7 @@ kernel void weightsSGDHalf(
         return ;
     }
     
-    float g = grads[id];
+    half g = grads[id];
     if (lambda != 0)
     {
         g += lambda * weights[id];
@@ -104,8 +104,8 @@ kernel void weightsMomentumHalf(
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
-    float alpha, lambda;
-    float β1 = 0.9;
+    half alpha, lambda;
+    half β1 = 0.9;
     
     if (pNbElems && pAlpha && pLambda && grads && weights && mPtr)
     {
@@ -121,13 +121,13 @@ kernel void weightsMomentumHalf(
         return ;
     }
     
-    float g = grads[id];
+    half g = grads[id];
     if (lambda != 0)
     {
         g += lambda * weights[id];
     }
     
-    float v = β1 * mPtr[id] + alpha * g;
+    half v = β1 * mPtr[id] + alpha * g;
     mPtr[id] = v;
     
     weights[id] = weights[id] - v;
@@ -141,7 +141,7 @@ kernel void weightsAdamHalf(
     constant float * pT,
     device half * weights,
     device half * mPtr,
-    device half * vPtr,
+    device float * vPtr,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
@@ -167,7 +167,7 @@ kernel void weightsAdamHalf(
         return ;
     }
     
-    float g = grads[id];
+    half g = grads[id];
     if (lambda != 0)
     {
         g += lambda * weights[id];
@@ -192,8 +192,8 @@ kernel void weightsAMSGradHalf(
     constant float * pT,
     device half * weights,
     device half * mPtr,
-    device half * vPtr,
-    device half * vHatPtr,
+    device float * vPtr,
+    device float * vHatPtr,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
@@ -219,15 +219,15 @@ kernel void weightsAMSGradHalf(
         return ;
     }
     
-    float g = grads[id];
+    half g = grads[id];
     if (lambda != 0)
     {
         g += lambda * weights[id];
     }
     
-    half m = β1 * mPtr[id] + (1 - β1) * g;
-    half v = β2 * vPtr[id] + (1 - β2) * g * g;
-    half vHat = max(v, vHatPtr[id]);
+    float m = β1 * mPtr[id] + (1 - β1) * g;
+    float v = β2 * vPtr[id] + (1 - β2) * g * g;
+    float vHat = max(v, vHatPtr[id]);
     
     mPtr[id] = m;
     vPtr[id] = v;
@@ -247,7 +247,7 @@ kernel void weightsAdamRectifiedHalf(
     constant float * pT,
     device half * weights,
     device half * mPtr,
-    device half * vPtr,
+    device float * vPtr,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
@@ -274,7 +274,7 @@ kernel void weightsAdamRectifiedHalf(
         return ;
     }
     
-    float g = grads[id];
+    half g = grads[id];
     if (lambda != 0)
     {
         g += lambda * weights[id];
@@ -311,8 +311,8 @@ kernel void weightsAdaBoundHalf(
     constant float * pLowerBound,
     constant float * pUpperBound,
     device half * weights,
-    device half * mPtr,
-    device half * vPtr,
+    device float * mPtr,
+    device float * vPtr,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
@@ -342,7 +342,7 @@ kernel void weightsAdaBoundHalf(
         return ;
     }
     
-    float g = grads[id];
+    half g = grads[id];
     if (lambda != 0)
     {
         g += lambda * weights[id];
@@ -378,8 +378,8 @@ kernel void weightsAMSBoundHalf(
     constant float * pUpperBound,
     device half * weights,
     device half * mPtr,
-    device half * vPtr,
-    device half * vHatPtr,
+    device float * vPtr,
+    device float * vHatPtr,
     uint id [[ thread_position_in_grid ]])
 {
     uint nbElems;
@@ -409,15 +409,15 @@ kernel void weightsAMSBoundHalf(
         return ;
     }
     
-    float g = grads[id];
+    half g = grads[id];
     if (lambda != 0)
     {
         g += lambda * weights[id];
     }
     
-    half m = β1 * mPtr[id] + (1 - β1) * g;
-    half v = β2 * vPtr[id] + (1 - β2) * g * g;
-    half vHat = max(v, vHatPtr[id]);
+    float m = β1 * mPtr[id] + (1 - β1) * g;
+    float v = β2 * vPtr[id] + (1 - β2) * g * g;
+    float vHat = max(v, vHatPtr[id]);
     
     mPtr[id] = m;
     vPtr[id] = v;

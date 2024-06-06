@@ -505,7 +505,7 @@ public class Constant2Seq: LayerSeq, LayerUpdate
     var _wBuffers: IWeightBuffers! = nil
     
     ///
-    /// Buffer of gradients per sample for biases.
+    /// Buffer of gradients per sample.
     /// Shape ~ (batch, sequence, nbNeurons).
     ///
     var _wDeltaWeights: FloatBuffer! = nil

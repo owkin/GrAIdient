@@ -1,50 +1,39 @@
 //
-// VQSeq.swift
+// EmbeddingSeq.swift
 // GrAIdient
 //
-// Created by Jean-François Reboud on 18/06/2023.
+// Created by Jean-François Reboud on 04/06/2024.
 //
 
 import Foundation
-import MetalKit
 
-/// Layer with a sequential shape neural structure and weights.
-public class VQSeq: LayerSeq, LayerWeightInit
+/// Input layer with a sequential shape neural structure and weights.
+class EmbeddingSeq: LayerSeq, LayerWeightInit
 {
-    /// The number of vector approximations.
-    public let K: Int
-    
-    /// Coefficient to be applied to the loss computation.
-    public var coeff: Double = 1.0
-    /// Coefficient for commitment.
-    public var beta: Double = 1.0
+    /// Size of vocabulary.
+    public var vocabularySize: Int
     
     ///
-    /// Loss buffer in the GPU execution context.
-    /// Shape ~ (batch,).
-    ///
-    public internal(set) var loss: FloatBuffer! = nil
-    ///
-    /// Indices of maximal elements.
+    /// Input buffer.
     /// Shape ~ (batch, seq).
     ///
-    public var indices: MetalBuffer<Int32>! = nil
+    public var ins: MetalBuffer<Int32>! = nil
     
     ///
     /// Grid of weights.
-    /// Shape ~ (K, nbNeurons).
+    /// Shape ~ (vocabularySize, nbNeurons).
     ///
     var _wArrays: WeightGrids! = nil
     
     ///
     /// Buffer of weights.
-    /// Shape ~ (K, nbNeurons).
+    /// Shape ~ (vocabularySize, nbNeurons).
     ///
     var _wBuffers: IWeightBuffers! = nil
     
     ///
     /// Buffer of gradients per sample.
-    /// Shape ~ (batch, K, nbNeurons).
+    /// Shape ~ (batch, vocabularySize, nbNeurons).
     ///
     var _wDeltaWeights: FloatBuffer! = nil
     
@@ -67,10 +56,10 @@ public class VQSeq: LayerSeq, LayerWeightInit
             }
             
             var weightsTmp = [Float]()
-            for k in 0..<K {
+            for index in 0..<vocabularySize {
             for depth in 0..<nbNeurons
             {
-                weightsTmp.append(Float(_wArrays.w(k, depth)))
+                weightsTmp.append(Float(_wArrays.w(index, depth)))
             }}
             return weightsTmp
         }
@@ -101,15 +90,13 @@ public class VQSeq: LayerSeq, LayerWeightInit
     public var connectivityIO: (Int, Int)
     {
         get {
-            return (nbNeurons, K)
+            return (nbNeurons, vocabularySize)
         }
     }
     
     private enum Keys: String, CodingKey
     {
-        case K
-        case coeff
-        case beta
+        case vocabularySize
         case weights
     }
     
@@ -117,18 +104,20 @@ public class VQSeq: LayerSeq, LayerWeightInit
     /// Create a layer with a sequential shape neural structure.
     ///
     /// - Parameters:
-    ///     - layerPrev: Previous layer that has been queued to the model.
-    ///     - K: The number of vector approximations.
+    ///     - sequence: Length of the sequence.
+    ///     - vocabularySize: Vocabulary size.
+    ///     - nbNeurons: Number of neurons.
     ///     - params: Contextual parameters linking to the model.
     ///
-    public init(layerPrev: LayerSeq,
-                K: Int,
+    public init(sequence: Int,
+                vocabularySize: Int,
+                nbNeurons: Int,
                 params: GrAI.Model.Params)
     {
-        self.K = K
-        super.init(layerPrev: layerPrev,
-                   sequence: layerPrev.sequence,
-                   nbNeurons: layerPrev.nbNeurons,
+        self.vocabularySize = vocabularySize
+        super.init(layerPrev: nil,
+                   sequence: sequence,
+                   nbNeurons: nbNeurons,
                    params: params)
     }
     
@@ -143,10 +132,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
     public required init(from decoder: Decoder) throws
     {
         let values = try decoder.container(keyedBy: Keys.self)
-        
-        K = try values.decode(Int.self, forKey: .K)
-        coeff = try Double(values.decode(Float.self, forKey: .coeff))
-        beta = try Double(values.decode(Float.self, forKey: .beta))
+        vocabularySize = try values.decode(Int.self, forKey: .vocabularySize)
         
         try super.init(from: decoder)
         
@@ -169,9 +155,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
     {
         var container = encoder.container(keyedBy: Keys.self)
         
-        try container.encode(K, forKey: .K)
-        try container.encode(Float(coeff), forKey: .coeff)
-        try container.encode(Float(beta), forKey: .beta)
+        try container.encode(vocabularySize, forKey: .vocabularySize)
         
         let weightsList: [Float]
         if GrAI.Opti.GPU
@@ -203,17 +187,21 @@ public class VQSeq: LayerSeq, LayerWeightInit
         mapping: Dictionary<Int, Layer>,
         inPlace: Bool) -> Layer
     {
-        let context = ModelContext(name: "", curID: 0)
-        let layerPrev = mapping[idPrev] as! LayerSeq
+        if idPrev > -1
+        {
+            fatalError("EmbeddingSeq must be the first layer.")
+        }
         
+        let context = ModelContext(name: "", curID: 0)
         let params = GrAI.Model.Params(context: context)
         params.context.curID = id
             
-        let layer = VQSeq(
-            layerPrev: layerPrev, K: K, params: params
+        let layer = EmbeddingSeq(
+            sequence: sequence,
+            vocabularySize: vocabularySize,
+            nbNeurons: nbNeurons,
+            params: params
         )
-        layer.coeff = coeff
-        layer.beta = beta
         
         if inPlace
         {
@@ -245,7 +233,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
     {
         super.resetKernelCPU()
         _wArrays?.reset()
-        indices = nil
+        ins = nil
     }
     
     ///
@@ -259,7 +247,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
     {
         super.resetKernelGPU()
         
-        indices = nil
+        ins = nil
         _wDeltaWeights = nil
         _wBuffers?.reset()
     }
@@ -343,7 +331,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
         if computeDeltaWeights &&
            GrAI.Gradient.sample && _wDeltaWeights == nil
         {
-            _wDeltaWeights = FloatBuffer(nbElems: 
+            _wDeltaWeights = FloatBuffer(nbElems:
                 batchSize * K * nbNeurons, deviceID: deviceID
             )
         }
@@ -785,7 +773,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
         {
             for elem in 0..<batchSize {
             for seq in 0..<sequence {
-            for depth in 0..<nbNeurons 
+            for depth in 0..<nbNeurons
             {
                 neurons.get(seq, depth)!.v[elem].delta = 0.0
             }}}
@@ -838,448 +826,4 @@ public class VQSeq: LayerSeq, LayerWeightInit
     {
         return [_wBuffers]
     }
-}
-
-/// Layer with a sequential shape neural structure and weights.
-public class VQGradSeq: VQSeq
-{
-    /// Scale coefficient for taking into account pixels with high magnitude of gradient norm.
-    public var magnitudeCoeff: Double = 1.0
-    
-    /// Number of threads per thread group in the GPU execution context.
-    private let _threadsPerThreadgroup = 64
-    
-    /// Layer computing a map of maximal activations with respect to the loss.
-    let _layerCAM: LayerCAMSeq
-    
-    ///
-    /// Maximal CAM elements.
-    /// Shape ~ (batch, nbThreadgroups).
-    ///
-    private var _camMax: FloatBuffer! = nil
-    
-    /// Number of thread groups in the GPU execution context.
-    var nbThreadgroups: Int
-    {
-        get {
-            let value = Double(sequence) /
-                        Double(_threadsPerThreadgroup)
-            return Int(ceil(value))
-        }
-    }
-    
-    /// Whether to take positive or negative part of gradients.
-    public var keepPositive: Bool
-    {
-        get {
-            return _layerCAM.keepPositive
-        }
-        set {
-            _layerCAM.keepPositive = newValue
-        }
-    }
-    
-    /// GPU device on which model is executed.
-    public override var deviceID: Int
-    {
-        get {
-            return super.deviceID
-        }
-        set {
-            super.batchSize = newValue
-            _layerCAM.batchSize = newValue
-        }
-    }
-    
-    /// Batch size of data.
-    public override var batchSize: Int
-    {
-        get {
-            return super.batchSize
-        }
-        set {
-            super.batchSize = newValue
-            _layerCAM.batchSize = newValue
-        }
-    }
-    
-    /// Running phase of a model: Training or Inference.
-    public override var phase: Phase?
-    {
-        get {
-            return super.phase
-        }
-        set {
-            super.phase = newValue
-            _layerCAM.phase = newValue
-        }
-    }
-    
-    private enum Keys: String, CodingKey
-    {
-        case magnitudeCoeff
-        case layerCAM
-    }
-    
-    ///
-    /// Create a layer with a 2D shape neural structure.
-    ///
-    /// - Parameters:
-    ///     - layerPrev: Previous layer that has been queued to the model.
-    ///     - K: The number of vector approximations.
-    ///     - params: Contextual parameters linking to the model.
-    ///
-    public override init(layerPrev: LayerSeq,
-                         K: Int,
-                         params: GrAI.Model.Params)
-    {
-        var paramsHidden = GrAI.Model.Params(params: params)
-        paramsHidden.hidden = true
-        
-        _layerCAM = try! LayerCAMSeq(layerPrev: layerPrev, params: paramsHidden)
-        
-        super.init(layerPrev: layerPrev, K: K, params: params)
-    }
-    
-    ///
-    /// Decode from the disk.
-    ///
-    /// Throw an error if reading from the decoder fails, or
-    /// if the data read is corrupted or otherwise invalid.
-    ///
-    /// - Parameter decoder: The decoder to read data from.
-    ///
-    public required init(from decoder: Decoder) throws
-    {
-        let container = try decoder.container(keyedBy: Keys.self)
-        let magnitudeCoeff = try container.decode(
-            Float.self, forKey: .magnitudeCoeff
-        )
-        self.magnitudeCoeff = Double(magnitudeCoeff)
-        _layerCAM = try container.decode(LayerCAMSeq.self, forKey: .layerCAM)
-        try super.init(from: decoder)
-    }
-    
-    ///
-    /// Encode to the disk.
-    ///
-    /// If the value fails to encode anything, `encoder` will encode an empty
-    /// keyed container in its place.
-    ///
-    /// Throw an error if any values are invalid for the given
-    /// encoder's format.
-    ///
-    /// - Parameter encoder: The encoder to write data to.
-    ///
-    public override func encode(to encoder: Encoder) throws
-    {
-        var container = encoder.container(keyedBy: Keys.self)
-        try container.encode(Float(magnitudeCoeff), forKey: .magnitudeCoeff)
-        try container.encode(_layerCAM, forKey: .layerCAM)
-        try super.encode(to: encoder)
-    }
-    
-    ///
-    /// Create a layer with same values as this.
-    ///
-    /// - Parameters:
-    ///     - mapping: Dictionary allowing to find the layer associated to some id.
-    ///     This dictionary is particularly useful when the different layers cannot access
-    ///     their `layerPrev`.
-    ///     - inPlace: Whether hard resources should be copied as is.
-    ///
-    /// - Returns: A new layer. When `inPlace` is false, `initKernel` is
-    /// necessary in order to recreate hard resources.
-    ///
-    public override func copy(
-        mapping: Dictionary<Int, Layer>,
-        inPlace: Bool) -> Layer
-    {
-        let context = ModelContext(name: "", curID: 0)
-        let layerPrev = mapping[idPrev] as! LayerSeq
-        
-        let params = GrAI.Model.Params(context: context)
-        params.context.curID = id
-            
-        let layer = VQGradSeq(
-            layerPrev: layerPrev, K: K, params: params
-        )
-        layer.magnitudeCoeff = magnitudeCoeff
-        layer.coeff = coeff
-        layer.beta = beta
-        
-        if inPlace
-        {
-            layer._wArrays = _wArrays
-            layer._wBuffers = _wBuffers
-        }
-        else
-        {
-            if GrAI.Opti.GPU
-            {
-                layer.weightsGPU = weightsGPU
-            }
-            else
-            {
-                layer.weightsCPU = weightsCPU
-            }
-        }
-        return layer
-    }
-    
-    ///
-    /// Find the `layerPrev` associated to the layer's `idPrev`.
-    ///
-    /// - Parameter layers: The potential layers where to find the layer's `idPrev`.
-    ///
-    public override func initLinks(_ layers: [Layer])
-    {
-        super.initLinks(layers)
-        _layerCAM.initLinks(layers)
-    }
-    
-    ///
-    /// Clean state resources in the GPU execution context.
-    ///
-    /// We first clean the neurons' state (forward and backward).
-    /// We do not clean weights and biases but must reset their delta (dependent on batch size) and
-    /// momentum state.
-    ///
-    public override func resetKernelGPU()
-    {
-        super.resetKernelGPU()
-        _layerCAM.resetKernelGPU()
-        _camMax = nil
-    }
-    
-    ///
-    /// Initialize state resources in the CPU execution context.
-    ///
-    /// We initialize the neurons' state (forward and backward).
-    ///
-    public override func checkStateCPU(batchSize: Int) throws
-    {
-        try super.checkStateCPU(batchSize: batchSize)
-        try _layerCAM.checkStateCPU(batchSize: batchSize)
-    }
-    
-    ///
-    /// Initialize state resources in the GPU execution context.
-    ///
-    /// We initialize the neurons' forward state.
-    /// We initialize the weights and biases' delta.
-    ///
-    public override func checkStateForwardGPU(batchSize: Int) throws
-    {
-        try super.checkStateForwardGPU(batchSize: batchSize)
-        try _layerCAM.checkStateForwardGPU(batchSize: batchSize)
-        
-        if _camMax == nil
-        {
-            _camMax = FloatBuffer(nbElems: 
-                batchSize * nbThreadgroups,
-                deviceID: deviceID
-            )
-        }
-    }
-    
-    ///
-    /// Initialize state resources in the GPU execution context.
-    ///
-    /// We initialize the neurons' backward state.
-    ///
-    public override func checkStateBackwardGPU(batchSize: Int) throws
-    {
-        try super.checkStateBackwardGPU(batchSize: batchSize)
-        try _layerCAM.checkStateBackwardGPU(batchSize: batchSize)
-    }
-    
-    ///
-    /// Apply the forward pass in the CPU execution context.
-    ///
-    /// Throw an error if batch size is greater than the first batch size.
-    ///
-    public override func forwardCPU() throws
-    {
-        if let layerPrev = self.layerPrev as? LayerSeq
-        {
-            if layerPrev.dirty
-            {
-                throw UpdateError.Dirty
-            }
-            
-            try _layerCAM.forwardCPU()
-            let neuronsCAM = _layerCAM.neurons!
-            
-            try checkStateCPU(batchSize: batchSize)
-            
-            let neuronsPrev = layerPrev.neurons!
-            let indicesPtr = (indices as! MetalSharedBuffer<Int32>).buffer
-            
-            for elem in 0..<batchSize
-            {
-                var camMax: Double = 0.0
-                for seq in 0..<sequence
-                {
-                    let cam: Double = neuronsCAM.get(seq, 0)!.v[elem].out
-                    camMax = max(cam, camMax)
-                }
-                
-                for seq in 0..<sequence
-                {
-                    let cam: Double = neuronsCAM.get(seq, 0)!.v[elem].out
-                    if cam / camMax >= magnitudeCoeff
-                    {
-                        var minIndex = -1
-                        var minValue: Double? = nil
-                        
-                        for k in 0..<K
-                        {
-                            var value: Double = 0.0
-                            for depth in 0..<nbNeurons
-                            {
-                                let outPrev =
-                                    neuronsPrev.get(seq, depth)!.v[elem].out
-                                let vq = _wArrays.w(k, depth)
-                                value += pow(outPrev - vq, 2.0)
-                            }
-                            
-                            if minValue == nil || value < minValue!
-                            {
-                                minValue = value
-                                minIndex = k
-                            }
-                        }
-                        
-                        if minIndex < 0
-                        {
-                            throw VQError.IndexValue
-                        }
-                        
-                        for depth in 0..<nbNeurons
-                        {
-                            neurons.get(seq, depth)!.v[elem].out =
-                                _wArrays.w(minIndex, depth)
-                        }
-                        indicesPtr[seq + elem * sequence] = Int32(minIndex)
-                    }
-                    else
-                    {
-                        indicesPtr[seq + elem * sequence] = -1
-                    }
-                }
-            }
-        }
-    }
-    
-    ///
-    /// Compute the squared norm in the GPU execution context.
-    ///
-    /// Throw an error if batch size is greater than the first batch size.
-    ///
-    private func _computeLayerCAMMaxGPU() throws
-    {
-        if let layerPrev = self.layerPrev as? LayerSeq
-        {
-            if layerPrev.dirty
-            {
-                throw UpdateError.Dirty
-            }
-            
-            // -----------------------------------------------------------------
-            // Begin the reduction that is specific to the gradient norm max.
-            // -----------------------------------------------------------------
-            
-            try checkStateForwardGPU(batchSize: batchSize)
-            
-            let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
-            let pNbBatch: [UInt32] = [UInt32(batchSize)]
-            let pSequence: [UInt32] = [UInt32(sequence)]
-            let pNbThreadgroups: [UInt32] = [UInt32(nbThreadgroups)]
-            
-            let command = MetalKernel.get.createCommand(
-                "vqLayerCAMMaxSeq", deviceID: deviceID
-            )
-            command.setBuffer(_layerCAM.outs.metal, atIndex: 0)
-            command.setBytes(pNbNeurons, atIndex: 1)
-            command.setBytes(pNbThreadgroups, atIndex: 2)
-            command.setBytes(pNbBatch, atIndex: 3)
-            command.setBytes(pSequence, atIndex: 4)
-            command.setBuffer(_camMax.metal, atIndex: 5)
-            
-            let threadsPerThreadgroup = MTLSizeMake(
-                _threadsPerThreadgroup, 1, 1
-            )
-            let threadsPerGrid = MTLSize(
-                width: sequence,
-                height: batchSize,
-                depth: 1
-            )
-            command.dispatchThreads(
-                threadsPerGrid: threadsPerGrid,
-                threadsPerThreadgroup: threadsPerThreadgroup
-            )
-            command.enqueue()
-            
-            // Continue the reduction in a more generic way.
-            reduceMax(
-                inBuffer: _camMax.metal,
-                outBuffer: _camMax.metal,
-                dim1: nbThreadgroups, dim2: batchSize,
-                deviceID: deviceID
-            )
-        }
-    }
-    
-    ///
-    /// Apply the forward pass in the GPU execution context.
-    ///
-    /// Throw an error if batch size is greater than the first batch size.
-    ///
-    public override func forwardGPU() throws
-    {
-        if let layerPrev = self.layerPrev as? LayerSeq
-        {
-            if layerPrev.dirty
-            {
-                throw UpdateError.Dirty
-            }
-            
-            try _layerCAM.forwardGPU()
-            try _computeLayerCAMMaxGPU()
-            
-            try checkStateForwardGPU(batchSize: batchSize)
-            
-            let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
-            let pNbBatch: [UInt32] = [UInt32(batchSize)]
-            let pSequence: [UInt32] = [UInt32(sequence)]
-            let pK: [UInt32] = [UInt32(K)]
-            let pMagnitudeCoeff: [Float] = [Float(magnitudeCoeff)]
-            
-            let command = MetalKernel.get.createCommand(
-                "vqGradSeqForward", deviceID: deviceID
-            )
-            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
-            command.setBuffer(_layerCAM.outs.metal, atIndex: 1)
-            command.setBuffer(_camMax.metal, atIndex: 2)
-            command.setBuffer(_wBuffers.w.metal, atIndex: 3)
-            command.setBytes(pNbNeurons, atIndex: 4)
-            command.setBytes(pK, atIndex: 5)
-            command.setBytes(pMagnitudeCoeff, atIndex: 6)
-            command.setBytes(pNbBatch, atIndex: 7)
-            command.setBytes(pSequence, atIndex: 8)
-            command.setBuffer(outs.metal, atIndex: 9)
-            command.setBuffer(indices.metal, atIndex: 10)
-            
-            command.dispatchThreads(
-                width: sequence,
-                height: batchSize
-            )
-            command.enqueue()
-        }
-    }
-    
-    override func _backwardCPU() {}
-    
-    override func _backwardGPU() throws {}
 }

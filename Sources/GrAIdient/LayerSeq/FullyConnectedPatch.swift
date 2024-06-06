@@ -47,7 +47,7 @@ public class FullyConnectedPatch: ActivationSeq,
     ///
     var _wDeltaWeights: FloatBuffer! = nil
     ///
-    /// Buffer of gradients per sample for biases.
+    /// Buffer of gradients per sample.
     /// Shape ~ (batch, nbNeurons).
     ///
     var _bDeltaWeights: FloatBuffer! = nil

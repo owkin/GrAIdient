@@ -59,7 +59,7 @@ public class VQ2D: LayerOutput2D, LayerWeightInit
     var _wBuffers: IWeightBuffers! = nil
     
     ///
-    /// Buffer of gradients per sample for biases.
+    /// Buffer of gradients per sample.
     /// Shape ~ (batch, K, nbChannels).
     ///
     var _wDeltaWeights: FloatBuffer! = nil

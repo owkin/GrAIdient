@@ -102,40 +102,36 @@ kernel void embeddingSeqBatchDerWeightsFloat(
 }
 
 kernel void embeddingSeqDerWeightsFloat(
-    const device float * outsPrev,
-    const device float * weights,
-    const device int * indices,
+    const device int * ins,
+    const device float * delta,
     constant uint * pNbNeurons,
-    constant uint * pK,
-    constant float * pCoeff,
+    constant uint * pVocabularySize,
     constant uint * pNbBatch,
     constant uint * pSequence,
     device float * deltaWeights,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint nbNeurons;
-    uint K;
-    float coeff;
+    uint vocabularySize;
     uint nbBatch;
     uint sequence;
     
-    if (pNbNeurons && pK && pCoeff && pNbBatch && pSequence &&
-        outsPrev && weights && indices && deltaWeights)
+    if (pNbNeurons && pVocabularySize && pNbBatch && pSequence &&
+        ins && delta && deltaWeights)
     {
         nbNeurons = *pNbNeurons;
-        K = *pK;
-        coeff = *pCoeff;
+        vocabularySize = *pVocabularySize;
         nbBatch = *pNbBatch;
         sequence = *pSequence;
     }
     else
         return ;
     
-    uint elem = id[1] / K;
-    uint k = id[1] % K;
+    uint elem = id[1] / vocabularySize;
+    uint embedding = id[1] % vocabularySize;
     uint depth = id[0];
     
-    if (depth >= nbNeurons || elem * k >= nbBatch * K)
+    if (depth >= nbNeurons || elem * embedding >= nbBatch * vocabularySize)
     {
         return ;
     }
@@ -143,20 +139,17 @@ kernel void embeddingSeqDerWeightsFloat(
     float sum = 0.0;
     for (uint seq=0; seq<sequence; seq++)
     {
-        int minIndex = indices[seq + elem * sequence];
-        if (minIndex == (int)k)
+        int minIndex = ins[seq + elem * sequence];
+        if (minIndex == (int)embedding)
         {
             uint offset = depth + nbNeurons * seq + sequence * nbNeurons * elem;
+            float deltaCur = delta[offset];
             
-            uint offsetWeights = depth + nbNeurons * minIndex;
-            
-            float vq = weights[offsetWeights];
-            float outPrev = outsPrev[offset];
-            
-            sum += vq - outPrev;
+            sum += deltaCur;
         }
     }
-    sum *= coeff / (float)(nbBatch * sequence) * 2.0;
     
-    deltaWeights[depth + nbNeurons * k + K * nbNeurons * elem] += sum;
+    uint offsetWeights = depth +
+        nbNeurons * embedding + vocabularySize * nbNeurons * elem;
+    deltaWeights[offsetWeights] += sum;
 }

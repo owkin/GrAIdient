@@ -456,24 +456,20 @@ class EmbeddingSeq: LayerSeq, LayerWeightInit
     ///
     public override func forwardCPU() throws
     {
-        if let layerPrev = self.layerPrev as? LayerSeq
+        try checkStateCPU(batchSize: batchSize)
+        
+        let insPtr = (ins as! MetalSharedBuffer<Int32>).buffer
+        
+        for elem in 0..<batchSize {
+        for seq in 0..<sequence
         {
-            try checkStateCPU(batchSize: batchSize)
-            
-            let neuronsPrev = layerPrev.neurons!
-            let insPtr = (ins as! MetalSharedBuffer<Int32>).buffer
-            
-            for elem in 0..<batchSize {
-            for seq in 0..<sequence
+            let index = Int(insPtr[sequence * elem + seq])
+            for depth in 0..<nbNeurons
             {
-                let index = Int(insPtr[sequence * elem + seq])
-                for depth in 0..<nbNeurons
-                {
-                    neurons.get(seq, depth)!.v[elem].out =
-                        _wArrays.w(index, depth)
-                }
-            }}
-        }
+                neurons.get(seq, depth)!.v[elem].out =
+                    _wArrays.w(index, depth)
+            }
+        }}
     }
     
     ///
@@ -483,33 +479,27 @@ class EmbeddingSeq: LayerSeq, LayerWeightInit
     ///
     public override func forwardGPU() throws
     {
-        if let layerPrev = self.layerPrev as? LayerSeq
-        {
-            try checkStateForwardGPU(batchSize: batchSize)
-            
-            let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
-            let pNbBatch: [UInt32] = [UInt32(batchSize)]
-            let pSequence: [UInt32] = [UInt32(sequence)]
-            let pK: [UInt32] = [UInt32(K)]
-            
-            let command = MetalKernel.get.createCommand(
-                "vqSeqForward", deviceID: deviceID
-            )
-            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
-            command.setBuffer(_wBuffers.w.metal, atIndex: 1)
-            command.setBytes(pNbNeurons, atIndex: 2)
-            command.setBytes(pK, atIndex: 3)
-            command.setBytes(pNbBatch, atIndex: 4)
-            command.setBytes(pSequence, atIndex: 5)
-            command.setBuffer(outs.metal, atIndex: 6)
-            command.setBuffer(indices.metal, atIndex: 7)
-            
-            command.dispatchThreads(
-                width: sequence,
-                height: batchSize
-            )
-            command.enqueue()
-        }
+        try checkStateForwardGPU(batchSize: batchSize)
+        
+        let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
+        let pNbBatch: [UInt32] = [UInt32(batchSize)]
+        let pSequence: [UInt32] = [UInt32(sequence)]
+        
+        let command = MetalKernel.get.createCommand(
+            "embeddingSeqForward", deviceID: deviceID
+        )
+        command.setBuffer(ins.metal, atIndex: 0)
+        command.setBuffer(_wBuffers.w.metal, atIndex: 1)
+        command.setBytes(pNbNeurons, atIndex: 2)
+        command.setBytes(pNbBatch, atIndex: 3)
+        command.setBytes(pSequence, atIndex: 4)
+        command.setBuffer(outs.metal, atIndex: 5)
+        
+        command.dispatchThreads(
+            width: sequence,
+            height: batchSize
+        )
+        command.enqueue()
     }
     
     /// Apply the backward pass in the CPU execution context.
@@ -520,39 +510,35 @@ class EmbeddingSeq: LayerSeq, LayerWeightInit
     
     fileprivate func _backwardWeightsCPU()
     {
-        if let layerPrev = self.layerPrev as? LayerSeq, computeDeltaWeights
+        let insPtr = (ins as! MetalSharedBuffer<Int32>).buffer
+        
+        if !accumulateDeltaWeights
         {
-            let neuronsPrev = layerPrev.neurons!
-            let insPtr = (ins as! MetalSharedBuffer<Int32>).buffer
-            
-            if !accumulateDeltaWeights
+            for index in 0..<vocabularySize {
+            for depth in 0..<nbNeurons
             {
-                for index in 0..<vocabularySize {
-                for depth in 0..<nbNeurons
-                {
-                    _wArrays.g(index, depth, 0.0)
-                }}
-            }
-            
-            for elem in 0..<batchSize {
-            for seq in 0..<sequence
-            {
-                let index = Int(insPtr[sequence * elem + seq])
-                if index < 0 || index >= vocabularySize
-                {
-                    fatalError("Index \(index) is out of range.")
-                }
-                for depth in 0..<nbNeurons
-                {
-                    let g = _wArrays.w(index, depth)
-                    let deltaCur = neurons.get(seq, depth)!.v[elem].delta
-                    
-                    _wArrays.g(
-                        index, depth, g + deltaCur
-                    )
-                }
+                _wArrays.g(index, depth, 0.0)
             }}
         }
+        
+        for elem in 0..<batchSize {
+        for seq in 0..<sequence
+        {
+            let index = Int(insPtr[sequence * elem + seq])
+            if index < 0 || index >= vocabularySize
+            {
+                fatalError("Index \(index) is out of range.")
+            }
+            for depth in 0..<nbNeurons
+            {
+                let g = _wArrays.w(index, depth)
+                let deltaCur = neurons.get(seq, depth)!.v[elem].delta
+                
+                _wArrays.g(
+                    index, depth, g + deltaCur
+                )
+            }
+        }}
     }
     
     ///
@@ -567,104 +553,100 @@ class EmbeddingSeq: LayerSeq, LayerWeightInit
     
     fileprivate func _backwardWeightsGPU()
     {
-        if let layerPrev = self.layerPrev as? LayerSeq, computeDeltaWeights
+        let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
+        let pNbBatch: [UInt32] = [UInt32(batchSize)]
+        let pSequence: [UInt32] = [UInt32(sequence)]
+        let pVocabularySize: [UInt32] = [UInt32(vocabularySize)]
+        let pAccumulate: [UInt32] = accumulateDeltaWeights ? [1] : [0]
+        
+        var command: MetalCommand
+        if GrAI.Gradient.batch
         {
-            let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
-            let pNbBatch: [UInt32] = [UInt32(batchSize)]
-            let pSequence: [UInt32] = [UInt32(sequence)]
-            let pK: [UInt32] = [UInt32(K)]
-            let pCoeff: [Float] = [Float(coeff)]
-            let pAccumulate: [UInt32] = accumulateDeltaWeights ? [1] : [0]
-            
-            var command: MetalCommand
-            if GrAI.Gradient.batch
+            if !accumulateDeltaWeights
             {
-                if !accumulateDeltaWeights
-                {
-                    let nbElems = _wBuffers.g.nbElems
-                    let pNbElems: [UInt32] = [UInt32(nbElems)]
-                    
-                    command = MetalKernel.get.createCommand(
-                        "reset", deviceID: deviceID
-                    )
-                    command.setBytes(pNbElems, atIndex: 0)
-                    command.setBuffer(_wBuffers.g.metal, atIndex: 1)
-                    
-                    command.dispatchThreads(nbElems)
-                    command.enqueue()
-                }
-                
-                // -------------------------------------------------------------
-                // Compute Gradients per batch
-                // -------------------------------------------------------------
-                command = MetalKernel.get.createCommand(
-                    "vqSeqBatchDerWeights", deviceID: deviceID
-                )
-                command.setBuffer(layerPrev.outs.metal, atIndex: 0)
-                command.setBuffer(_wBuffers.w.metal, atIndex: 1)
-                command.setBuffer(indices.metal, atIndex: 2)
-                command.setBytes(pNbNeurons, atIndex: 3)
-                command.setBytes(pK, atIndex: 4)
-                command.setBytes(pCoeff, atIndex: 5)
-                command.setBytes(pNbBatch, atIndex: 6)
-                command.setBytes(pSequence, atIndex: 7)
-                command.setBuffer(_wBuffers.g.metal, atIndex: 8)
-                
-                command.dispatchThreads(width: nbNeurons, height: K)
-                command.enqueue()
-            }
-            else
-            {
-                let nbElems = _wDeltaWeights.nbElems
+                let nbElems = _wBuffers.g.nbElems
                 let pNbElems: [UInt32] = [UInt32(nbElems)]
                 
                 command = MetalKernel.get.createCommand(
                     "reset", deviceID: deviceID
                 )
                 command.setBytes(pNbElems, atIndex: 0)
-                command.setBuffer(_wDeltaWeights.metal, atIndex: 1)
+                command.setBuffer(_wBuffers.g.metal, atIndex: 1)
                 
                 command.dispatchThreads(nbElems)
                 command.enqueue()
-                
-                // -------------------------------------------------------------
-                // Compute Gradients per sample
-                // -------------------------------------------------------------
-                command = MetalKernel.get.createCommand(
-                    "vqSeqDerWeights", deviceID: deviceID
-                )
-                command.setBuffer(layerPrev.outs.metal, atIndex: 0)
-                command.setBuffer(_wBuffers.w.metal, atIndex: 1)
-                command.setBuffer(indices.metal, atIndex: 2)
-                command.setBytes(pNbNeurons, atIndex: 3)
-                command.setBytes(pK, atIndex: 4)
-                command.setBytes(pCoeff, atIndex: 5)
-                command.setBytes(pNbBatch, atIndex: 6)
-                command.setBytes(pSequence, atIndex: 7)
-                command.setBuffer(_wDeltaWeights.metal, atIndex: 8)
-                
-                command.dispatchThreads(
-                    width: nbNeurons,
-                    height: batchSize * K
-                )
-                command.enqueue()
-                
-                // -------------------------------------------------------------
-                // Compute Gradients per batch
-                // -------------------------------------------------------------
-                command = MetalKernel.get.createCommand(
-                    "vq2DReduceWeights", deviceID: deviceID
-                ) // vqSeq and vq2D do the same reduction.
-                command.setBuffer(_wDeltaWeights.metal, atIndex: 0)
-                command.setBytes(pNbNeurons, atIndex: 1)
-                command.setBytes(pK, atIndex: 2)
-                command.setBytes(pNbBatch, atIndex: 3)
-                command.setBytes(pAccumulate, atIndex: 4)
-                command.setBuffer(_wBuffers.g.metal, atIndex: 5)
-                
-                command.dispatchThreads(width: nbNeurons, height: K)
-                command.enqueue()
             }
+            
+            // -------------------------------------------------------------
+            // Compute Gradients per batch
+            // -------------------------------------------------------------
+            command = MetalKernel.get.createCommand(
+                "embeddingSeqBatchDerWeightsFloat", deviceID: deviceID
+            )
+            command.setBuffer(ins.metal, atIndex: 0)
+            command.setBuffer(delta.metal, atIndex: 1)
+            command.setBytes(pNbNeurons, atIndex: 2)
+            command.setBytes(pVocabularySize, atIndex: 3)
+            command.setBytes(pNbBatch, atIndex: 4)
+            command.setBytes(pSequence, atIndex: 5)
+            command.setBuffer(_wBuffers.g.metal, atIndex: 6)
+            
+            command.dispatchThreads(
+                width: nbNeurons, height: vocabularySize
+            )
+            command.enqueue()
+        }
+        else
+        {
+            let nbElems = _wDeltaWeights.nbElems
+            let pNbElems: [UInt32] = [UInt32(nbElems)]
+            
+            command = MetalKernel.get.createCommand(
+                "reset", deviceID: deviceID
+            )
+            command.setBytes(pNbElems, atIndex: 0)
+            command.setBuffer(_wDeltaWeights.metal, atIndex: 1)
+            
+            command.dispatchThreads(nbElems)
+            command.enqueue()
+            
+            // -------------------------------------------------------------
+            // Compute Gradients per sample
+            // -------------------------------------------------------------
+            command = MetalKernel.get.createCommand(
+                "embeddingSeqDerWeights", deviceID: deviceID
+            )
+            command.setBuffer(ins.metal, atIndex: 0)
+            command.setBuffer(delta.metal, atIndex: 1)
+            command.setBytes(pNbNeurons, atIndex: 2)
+            command.setBytes(pVocabularySize, atIndex: 3)
+            command.setBytes(pNbBatch, atIndex: 4)
+            command.setBytes(pSequence, atIndex: 5)
+            command.setBuffer(_wDeltaWeights.metal, atIndex: 6)
+            
+            command.dispatchThreads(
+                width: nbNeurons,
+                height: batchSize * vocabularySize
+            )
+            command.enqueue()
+            
+            // -------------------------------------------------------------
+            // Compute Gradients per batch
+            // -------------------------------------------------------------
+            command = MetalKernel.get.createCommand(
+                "vq2DReduceWeights", deviceID: deviceID
+            ) // embeddingSeq and vq2D do the same reduction.
+            command.setBuffer(_wDeltaWeights.metal, atIndex: 0)
+            command.setBytes(pNbNeurons, atIndex: 1)
+            command.setBytes(pVocabularySize, atIndex: 2)
+            command.setBytes(pNbBatch, atIndex: 3)
+            command.setBytes(pAccumulate, atIndex: 4)
+            command.setBuffer(_wBuffers.g.metal, atIndex: 5)
+            
+            command.dispatchThreads(
+                width: nbNeurons, height: vocabularySize
+            )
+            command.enqueue()
         }
     }
     

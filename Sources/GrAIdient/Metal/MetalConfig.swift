@@ -95,6 +95,11 @@ let CONFIG_KERNELS =
         "deconvBatchDerWeightsHalf",
         "deconvDerWeightsHalf",
     ],
+    "EmbeddingSeqFloat": [
+        "embeddingSeqForwardFloat",
+        "embeddingSeqBatchDerWeightsFloat",
+        "embeddingSeqDerWeightsFloat",
+    ],
     "FullyConnectedFloat": [
         "flForwardFloat",
         "flBackwardFloat",

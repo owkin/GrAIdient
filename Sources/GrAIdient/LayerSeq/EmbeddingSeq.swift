@@ -264,13 +264,13 @@ class EmbeddingSeq: LayerSeq, LayerWeightInit
             _weightsList = generateWeightsList()
         }
         
-        _wArrays = WeightGrids(width: nbNeurons, height: K)
+        _wArrays = WeightGrids(width: nbNeurons, height: vocabularySize)
         
-        for k in 0..<K {
+        for index in 0..<vocabularySize {
         for depth in 0..<nbNeurons
         {
-            let offset = depth + nbNeurons * k
-            _wArrays.w(k, depth, Double(_weightsList[offset]))
+            let offset = depth + nbNeurons * index
+            _wArrays.w(index, depth, Double(_weightsList[offset]))
         }}
         _weightsList = []
     }
@@ -283,7 +283,7 @@ class EmbeddingSeq: LayerSeq, LayerWeightInit
     public func initWeightsGPU()
     {
         _wBuffers = WeightBuffers(
-            nbElems: K * nbNeurons,
+            nbElems: vocabularySize * nbNeurons,
             deviceID: deviceID
         )
         
@@ -301,21 +301,133 @@ class EmbeddingSeq: LayerSeq, LayerWeightInit
     }
     
     ///
-    /// Initialize state resources in the CPU execution context.
+    /// Check and setup input in the CPU execution context.
     ///
-    /// We initialize the neurons' state (forward and backward).
+    /// Throw an error if data size is not coherent.
     ///
-    public override func checkStateCPU(batchSize: Int) throws
+    /// - Parameters:
+    ///     - data: The input data.
+    ///     - batchSize: The batch size of data.
+    ///     - sequence: Length of the sequence.
+    ///
+    public func checkInputCPU(
+        _ data: [[Int]],
+        batchSize: Int,
+        sequence: Int) throws
     {
-        try super.checkStateCPU(batchSize: batchSize)
-        
-        if indices == nil
+        if data.count != batchSize || data.first!.count != sequence
         {
-            indices = MetalSharedBuffer<Int32>(
-                batchSize * sequence,
-                deviceID: deviceID
+            throw LayerError.DataSize
+        }
+        
+        if ins == nil
+        {
+            ins = MetalSharedBuffer<Int32>(
+                batchSize * sequence, deviceID: deviceID
             )
         }
+        else if batchSize <= 0 || batchSize > ins.nbElems / sequence
+        {
+            throw LayerError.BatchSize
+        }
+        
+        var dataFlat = data.flatMap { $0.map { Int32($0)} }
+        let ins_s = ins as! MetalSharedBuffer<Int32>
+        copyArrayToBuffer(
+            array: &dataFlat,
+            buffer: ins_s.buffer,
+            start: 0,
+            nbElems: batchSize * sequence
+        )
+    }
+    
+    ///
+    /// Check and setup input in the GPU execution context.
+    ///
+    /// Throw an error if data size is not coherent.
+    ///
+    /// - Parameters:
+    ///     - data: The input data.
+    ///     - batchSize: The batch size of data.
+    ///     - sequence: Length of the sequence.
+    ///
+    public func checkInputGPU(
+        _ data: [[Int]],
+        batchSize: Int,
+        sequence: Int) throws
+    {
+        if data.count != batchSize || data.first!.count != sequence
+        {
+            throw LayerError.DataSize
+        }
+        
+        if ins == nil
+        {
+            ins = MetalPrivateBuffer<Int32>(
+                batchSize * sequence, deviceID: deviceID
+            )
+        }
+        else if batchSize <= 0 || batchSize > ins.nbElems / sequence
+        {
+            throw LayerError.BatchSize
+        }
+        
+        // Wait for previous loop to end to avoid race condition.
+        _ = ins.download()
+        
+        var dataFlat = data.flatMap { $0.map { Int32($0)} }
+        let ins_s = ins as! MetalPrivateBuffer<Int32>
+        copyArrayToBuffer(
+            array: &dataFlat,
+            buffer: ins_s.shared.buffer,
+            start: 0,
+            nbElems: batchSize * sequence
+        )
+        ins.upload()
+    }
+    
+    ///
+    /// API to set data in the CPU execution context.
+    ///
+    /// Throw an error if data size is not coherent.
+    ///
+    /// - Parameters:
+    ///     - data: The data to set.
+    ///     - batchSize: The batch size of data.
+    ///     - sequence: Length of the sequence.
+    ///
+    public func setDataCPU(
+        _ data: [[Int]],
+        batchSize: Int,
+        sequence: Int) throws
+    {
+        try checkInputCPU(
+            data,
+            batchSize: batchSize,
+            sequence: sequence
+        )
+    }
+    
+    ///
+    /// API to set data in the GPU execution context.
+    ///
+    /// Throw an error if data size is not coherent.
+    ///
+    /// - Parameters:
+    ///     - data: The data to set.
+    ///     - batchSize: The batch size of data.
+    ///     - sequence: Length of the sequence.
+    ///
+    public func setDataGPU(
+        _ data: [[Int]],
+        batchSize: Int,
+        sequence: Int) throws
+    {
+        try checkInputGPU(
+            data,
+            batchSize: batchSize,
+            sequence: sequence
+        )
     }
     
     ///
@@ -332,37 +444,8 @@ class EmbeddingSeq: LayerSeq, LayerWeightInit
            GrAI.Gradient.sample && _wDeltaWeights == nil
         {
             _wDeltaWeights = FloatBuffer(nbElems:
-                batchSize * K * nbNeurons, deviceID: deviceID
+                batchSize * vocabularySize * nbNeurons, deviceID: deviceID
             )
-        }
-        
-        if indices == nil
-        {
-            indices = MetalPrivateBuffer<Int32>(
-                batchSize * sequence,
-                deviceID: deviceID
-            )
-        }
-    }
-    
-    ///
-    /// Setup loss state  in the GPU execution context.
-    ///
-    /// Throw an error if batch size or ground truth are incoherent.
-    ///
-    /// - Parameter batchSize: The batch size of data.
-    ///
-    public func checkLossGPU(batchSize: Int) throws
-    {
-        if loss == nil
-        {
-            loss = FloatBuffer(
-                nbElems: batchSize, deviceID: deviceID, shared: true
-            )
-        }
-        else if batchSize <= 0 || batchSize > loss.nbElems
-        {
-            throw LayerError.BatchSize
         }
     }
     

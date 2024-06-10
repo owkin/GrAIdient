@@ -461,42 +461,17 @@ class EmbeddingSeq: LayerSeq, LayerWeightInit
             try checkStateCPU(batchSize: batchSize)
             
             let neuronsPrev = layerPrev.neurons!
-            let indicesPtr = (indices as! MetalSharedBuffer<Int32>).buffer
+            let insPtr = (ins as! MetalSharedBuffer<Int32>).buffer
             
             for elem in 0..<batchSize {
             for seq in 0..<sequence
             {
-                var minIndex = -1
-                var minValue: Double? = nil
-                
-                for k in 0..<K
-                {
-                    var value: Double = 0.0
-                    for depth in 0..<nbNeurons
-                    {
-                        let outPrev = neuronsPrev.get(seq, depth)!.v[elem].out
-                        let vq = _wArrays.w(k, depth)
-                        value += pow(outPrev - vq, 2.0)
-                    }
-                    
-                    if minValue == nil || value < minValue!
-                    {
-                        minValue = value
-                        minIndex = k
-                    }
-                }
-                
-                if minIndex < 0
-                {
-                    throw VQError.IndexValue
-                }
-                
+                let index = Int(insPtr[sequence * elem + seq])
                 for depth in 0..<nbNeurons
                 {
                     neurons.get(seq, depth)!.v[elem].out =
-                        _wArrays.w(minIndex, depth)
+                        _wArrays.w(index, depth)
                 }
-                indicesPtr[seq + elem * sequence] = Int32(minIndex)
             }}
         }
     }
@@ -540,50 +515,7 @@ class EmbeddingSeq: LayerSeq, LayerWeightInit
     /// Apply the backward pass in the CPU execution context.
     public override func backwardCPU()
     {
-        _backwardCPU()
         _backwardWeightsCPU()
-    }
-    
-    fileprivate func _backwardCPU()
-    {
-        if let layerPrev = self.layerPrev as? LayerSeq, mustComputeBackward
-        {
-            let neuronsPrev = layerPrev.neurons!
-            let indicesPtr = (indices as! MetalSharedBuffer<Int32>).buffer
-            
-            for elem in 0..<batchSize {
-            for seq in 0..<sequence
-            {
-                let minIndex = Int(indicesPtr[seq + elem * sequence])
-                if minIndex >= 0 {
-                for depth in 0..<nbNeurons
-                {
-                    let vq = _wArrays.w(minIndex, depth)
-                    let deltaCur = neurons.get(seq, depth)!.v[elem].delta
-                    let outPrev = neuronsPrev.get(seq, depth)!.v[elem].out
-                    
-                    if layerPrev.dirty
-                    {
-                        neuronsPrev.get(seq, depth)!.v[elem].delta = deltaCur
-                    }
-                    else
-                    {
-                        neuronsPrev.get(seq, depth)!.v[elem].delta += deltaCur
-                    }
-                    
-                    // Commitment term.
-                    neuronsPrev.get(seq, depth)!.v[elem].delta +=
-                        beta / Double(batchSize * sequence) *
-                        2.0 * (outPrev - vq)
-                }}
-                else if layerPrev.dirty {
-                for depth in 0..<nbNeurons
-                {
-                    neuronsPrev.get(seq, depth)!.v[elem].delta = 0.0
-                }}
-            }}
-            propagateDirty()
-        }
     }
     
     fileprivate func _backwardWeightsCPU()
@@ -591,34 +523,34 @@ class EmbeddingSeq: LayerSeq, LayerWeightInit
         if let layerPrev = self.layerPrev as? LayerSeq, computeDeltaWeights
         {
             let neuronsPrev = layerPrev.neurons!
-            let indicesPtr = (indices as! MetalSharedBuffer<Int32>).buffer
+            let insPtr = (ins as! MetalSharedBuffer<Int32>).buffer
             
             if !accumulateDeltaWeights
             {
-                for k in 0..<K {
+                for index in 0..<vocabularySize {
                 for depth in 0..<nbNeurons
                 {
-                    _wArrays.g(k, depth, 0.0)
+                    _wArrays.g(index, depth, 0.0)
                 }}
             }
             
             for elem in 0..<batchSize {
             for seq in 0..<sequence
             {
-                let minIndex = Int(indicesPtr[seq + elem * sequence])
-                if minIndex >= 0 {
+                let index = Int(insPtr[sequence * elem + seq])
+                if index < 0 || index >= vocabularySize
+                {
+                    fatalError("Index \(index) is out of range.")
+                }
                 for depth in 0..<nbNeurons
                 {
-                    let vq = _wArrays.w(minIndex, depth)
+                    let g = _wArrays.w(index, depth)
                     let outPrev = neuronsPrev.get(seq, depth)!.v[elem].out
                     
-                    let g = _wArrays.g(minIndex, depth)
                     _wArrays.g(
-                        minIndex, depth,
-                        g + coeff / Double(batchSize * sequence) *
-                        2.0 * (vq - outPrev)
+                        index, depth, g
                     )
-                }}
+                }
             }}
         }
     }
@@ -630,46 +562,7 @@ class EmbeddingSeq: LayerSeq, LayerWeightInit
     ///
     public override func backwardGPU() throws
     {
-        try _backwardGPU()
         _backwardWeightsGPU()
-    }
-    
-    fileprivate func _backwardGPU() throws
-    {
-        if let layerPrev = self.layerPrev as? LayerSeq, mustComputeBackward
-        {
-            try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
-            
-            let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
-            let pNbBatch: [UInt32] = [UInt32(batchSize)]
-            let pSequence: [UInt32] = [UInt32(sequence)]
-            let pK: [UInt32] = [UInt32(K)]
-            let pBeta: [Float] = [Float(beta)]
-            let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
-            
-            let command = MetalKernel.get.createCommand(
-                "vqSeqBackward", deviceID: deviceID
-            )
-            command.setBuffer(layerPrev.outs.metal, atIndex: 0)
-            command.setBuffer(delta.metal, atIndex: 1)
-            command.setBuffer(_wBuffers.w.metal, atIndex: 2)
-            command.setBuffer(indices.metal, atIndex: 3)
-            command.setBytes(pNbNeurons, atIndex: 4)
-            command.setBytes(pK, atIndex: 5)
-            command.setBytes(pBeta, atIndex: 6)
-            command.setBytes(pNbBatch, atIndex: 7)
-            command.setBytes(pSequence, atIndex: 8)
-            command.setBytes(pDirty, atIndex: 9)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 10)
-            
-            command.dispatchThreads(
-                width: nbNeurons,
-                height: batchSize * sequence
-            )
-            command.enqueue()
-            
-            propagateDirty()
-        }
     }
     
     fileprivate func _backwardWeightsGPU()
@@ -773,129 +666,6 @@ class EmbeddingSeq: LayerSeq, LayerWeightInit
                 command.enqueue()
             }
         }
-    }
-    
-    ///
-    /// Get loss in the CPU execution context.
-    ///
-    /// - Returns: The loss value.
-    ///
-    public func getLossCPU<T: BinaryFloatingPoint>() -> T
-    {
-        var losses = [T](repeating: 0.0, count: batchSize)
-        
-        if let layerPrev = self.layerPrev as? LayerSeq
-        {
-            let neuronsPrev = layerPrev.neurons!
-            let indicesPtr = (indices as! MetalSharedBuffer<Int32>).buffer
-            
-            for elem in 0..<batchSize {
-            for seq in 0..<sequence
-            {
-                let minIndex = Int(indicesPtr[seq + elem * sequence])
-                if minIndex >= 0
-                {
-                    var value: Double = 0.0
-                    for depth in 0..<nbNeurons
-                    {
-                        let outPrev = neuronsPrev.get(seq, depth)!.v[elem].out
-                        let vq = neurons.get(seq, depth)!.v[elem].out
-                        value += pow(outPrev - vq, 2.0)
-                    }
-                    losses[elem] += T(value)
-                }
-            }}
-        }
-        return T(coeff) / T(batchSize * sequence) *
-            losses.reduce(0, +)
-    }
-    
-    ///
-    /// Get loss in the GPU execution context.
-    ///
-    /// - Returns: The loss value.
-    ///
-    public func getLossGPU<T: BinaryFloatingPoint>() throws -> T
-    {
-        try checkLossGPU(batchSize: batchSize)
-        
-        let layerPrev = self.layerPrev as! LayerSeq
-        
-        let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
-        let pNbBatch: [UInt32] = [UInt32(batchSize)]
-        let pSequence: [UInt32] = [UInt32(sequence)]
-        
-        let command = MetalKernel.get.createCommand(
-            "vqSeqLoss", deviceID: deviceID
-        )
-        command.setBuffer(layerPrev.outs.metal, atIndex: 0)
-        command.setBuffer(outs.metal, atIndex: 1)
-        command.setBuffer(indices.metal, atIndex: 2)
-        command.setBytes(pNbNeurons, atIndex: 3)
-        command.setBytes(pNbBatch, atIndex: 4)
-        command.setBytes(pSequence, atIndex: 5)
-        command.setBuffer(loss.metal, atIndex: 6)
-        
-        command.dispatchThreads(batchSize)
-        command.enqueue()
-        
-        var loss: Float = 0.0
-        let lossPtr = self.loss.download()
-        for i in 0..<batchSize
-        {
-            loss += lossPtr[i]
-        }
-        
-        return T(coeff) * T(loss) / T(batchSize * sequence)
-    }
-    
-    /// Compute the derivative of the loss in the CPU execution context.
-    public func lossDerivativeCPU() throws
-    {
-        if dirty
-        {
-            for elem in 0..<batchSize {
-            for seq in 0..<sequence {
-            for depth in 0..<nbNeurons
-            {
-                neurons.get(seq, depth)!.v[elem].delta = 0.0
-            }}}
-        }
-        else
-        {
-            throw VQError.RedundantLoss
-        }
-        
-        backwardCPU()
-        dirty = false
-    }
-    
-    /// Compute the derivative of the loss in the GPU execution context.
-    public func lossDerivativeGPU() throws
-    {
-        if dirty
-        {
-            try checkStateBackwardGPU(batchSize: batchSize)
-            
-            let nbElems = delta.nbElems
-            let pNbElems: [UInt32] = [UInt32(nbElems)]
-            
-            let command = MetalKernel.get.createCommand(
-                "reset", deviceID: deviceID
-            )
-            command.setBytes(pNbElems, atIndex: 0)
-            command.setBuffer(delta.metal, atIndex: 1)
-            
-            command.dispatchThreads(nbElems)
-            command.enqueue()
-        }
-        else
-        {
-            throw VQError.RedundantLoss
-        }
-        
-        try backwardGPU()
-        dirty = false
     }
     
     /// Get the weights in the CPU execution context.

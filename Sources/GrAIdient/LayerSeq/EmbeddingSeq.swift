@@ -545,10 +545,10 @@ class EmbeddingSeq: LayerSeq, LayerWeightInit
                 for depth in 0..<nbNeurons
                 {
                     let g = _wArrays.w(index, depth)
-                    let outPrev = neuronsPrev.get(seq, depth)!.v[elem].out
+                    let deltaCur = neurons.get(seq, depth)!.v[elem].delta
                     
                     _wArrays.g(
-                        index, depth, g
+                        index, depth, g + deltaCur
                     )
                 }
             }}

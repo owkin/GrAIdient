@@ -8,7 +8,7 @@
 import Foundation
 
 /// Input layer with a sequential shape neural structure and weights.
-class EmbeddingSeq: LayerSeq, LayerWeightInit
+public class EmbeddingSeq: LayerSeq, LayerWeightInit
 {
     /// Size of vocabulary.
     public var vocabularySize: Int

@@ -154,15 +154,15 @@ class NLPFlowPrecisionTests: NLPFlowTests
     
     override func testEmbedding() throws
     {
-        //let trainer = _buildTrainer("Embedding")
-        //run(trainer, diffThreshold: 0.002)
+        let trainer = _buildTrainer("Embedding")
+        run(trainer)
     }
     
     override func testEmbeddingSample() throws
     {
-        //GrAI.Gradient.sample = true
-        //let trainer = _buildTrainer("Embedding")
-        //run(trainer, diffThreshold: 0.002)
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("Embedding")
+        run(trainer)
     }
 }
 

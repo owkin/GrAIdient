@@ -100,6 +100,11 @@ let CONFIG_KERNELS =
         "embeddingSeqBatchDerWeightsFloat",
         "embeddingSeqDerWeightsFloat",
     ],
+    "EmbeddingSeqHalf": [
+        "embeddingSeqForwardHalf",
+        "embeddingSeqBatchDerWeightsHalf",
+        "embeddingSeqDerWeightsHalf",
+    ],
     "FullyConnectedFloat": [
         "flForwardFloat",
         "flBackwardFloat",

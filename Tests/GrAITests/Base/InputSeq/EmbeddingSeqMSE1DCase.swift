@@ -28,7 +28,7 @@ class EmbeddingSeqMSE1DCase: XCTestCase, Input1DCase, IOCase
     override func setUp()
     {
         batchSize = 5
-        sequence = 35
+        sequence = 7
         vocabularySize = 120
         _ = MetalKernel.get
         

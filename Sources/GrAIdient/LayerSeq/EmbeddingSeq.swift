@@ -684,7 +684,7 @@ public class EmbeddingSeq: LayerSeq, LayerWeightInit
             // Compute Gradients per batch
             // -------------------------------------------------------------
             command = MetalKernel.get.createCommand(
-                "embeddingSeqBatchDerWeightsFloat", deviceID: deviceID
+                "embeddingSeqBatchDerWeights", deviceID: deviceID
             )
             command.setBuffer(ins.metal, atIndex: 0)
             command.setBuffer(delta.metal, atIndex: 1)

@@ -94,6 +94,14 @@ public class EmbeddingSeq: LayerSeq, LayerWeightInit
         }
     }
     
+    /// Number of new weights due to this layer, estimated during the Gradient Checking.
+    var nbLearnedGC: Int
+    {
+        get {
+            return nbNeurons * vocabularySize
+        }
+    }
+    
     private enum Keys: String, CodingKey
     {
         case vocabularySize
@@ -450,6 +458,101 @@ public class EmbeddingSeq: LayerSeq, LayerWeightInit
     }
     
     ///
+    /// Apply the forward pass of the Gradient Checking in CPU execution context.
+    ///
+    /// Throw an error if batch size is greater than the first batch size.
+    ///
+    public override func forwardGCCPU() throws
+    {
+        try checkStateCPU(batchSize: batchSize)
+        
+        let newGC = 2 * nbLearnedGC
+        for seq in 0..<sequence {
+        for depth in 0..<nbNeurons
+        {
+            neurons.get(seq, depth)!.initGC(batchSize: batchSize, nbGC: newGC)
+        }}
+        
+        let insPtr = (ins as! MetalSharedBuffer<Int32>).buffer
+        
+        for batch in 0..<batchSize {
+        for seq in 0..<sequence {
+        for EMBEDDING in 0..<vocabularySize {
+        for DEPTH in 0..<nbNeurons {
+        for elem in 0...1
+        {
+            let index = Int(insPtr[sequence * batch + seq])
+            for depth in 0..<nbNeurons
+            {
+                var w = _wArrays.w(index, depth)
+                if EMBEDDING == index && DEPTH == depth
+                {
+                    if elem % 2 == 0
+                    {
+                        w += Ɛ
+                    }
+                    else
+                    {
+                        w -= Ɛ
+                    }
+                }
+                
+                let offset = 2 * (DEPTH + nbNeurons * EMBEDDING) + elem
+                neurons.get(seq, depth)!.gc[batch][offset].out = w
+            }
+        }}}}}
+    }
+    
+    ///
+    /// Apply the forward pass of the Gradient Checking in GPU execution context.
+    ///
+    /// Throw an error if batch size is greater than the first batch size.
+    ///
+    public override func forwardGCGPU() throws
+    {
+        try checkStateCPU(batchSize: batchSize)
+        
+        let newGC = 2 * nbLearnedGC
+        for seq in 0..<sequence {
+        for depth in 0..<nbNeurons
+        {
+            neurons.get(seq, depth)!.initGC(batchSize: batchSize, nbGC: newGC)
+        }}
+        
+        let insPtr = ins.download()
+        let weightsPtr = _wBuffers.w.download()
+        
+        for batch in 0..<batchSize {
+        for seq in 0..<sequence {
+        for EMBEDDING in 0..<vocabularySize {
+        for DEPTH in 0..<nbNeurons {
+        for elem in 0...1
+        {
+            let index = Int(insPtr[sequence * batch + seq])
+            for depth in 0..<nbNeurons
+            {
+                let offsetWeights = depth + nbNeurons * index
+                var w = Double(weightsPtr[offsetWeights])
+                
+                if EMBEDDING == index && DEPTH == depth
+                {
+                    if elem % 2 == 0
+                    {
+                        w += Ɛ
+                    }
+                    else
+                    {
+                        w -= Ɛ
+                    }
+                }
+                
+                let offset = 2 * (DEPTH + nbNeurons * EMBEDDING) + elem
+                neurons.get(seq, depth)!.gc[batch][offset].out = w
+            }
+        }}}}}
+    }
+    
+    ///
     /// Apply the forward pass in the CPU execution context.
     ///
     /// Throw an error if batch size is greater than the first batch size.
@@ -531,7 +634,7 @@ public class EmbeddingSeq: LayerSeq, LayerWeightInit
             }
             for depth in 0..<nbNeurons
             {
-                let g = _wArrays.w(index, depth)
+                let g = _wArrays.g(index, depth)
                 let deltaCur = neurons.get(seq, depth)!.v[elem].delta
                 
                 _wArrays.g(

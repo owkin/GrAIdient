@@ -41,7 +41,7 @@ class NLPGradTests: EmbeddingSeqMSE1DCase
     {
         let params = GrAI.Model.Params(context: context)
         
-        var layer: LayerSeq = EmbeddingSeq(
+        let layer: LayerSeq = EmbeddingSeq(
             sequence: sequence,
             vocabularySize: vocabularySize,
             nbNeurons: 5, params: params
@@ -102,7 +102,7 @@ class NLPFlowTests: EmbeddingSeqMSE1DCase
     {
         let params = GrAI.Model.Params(context: context)
         
-        var layer: LayerSeq = EmbeddingSeq(
+        let layer: LayerSeq = EmbeddingSeq(
             sequence: sequence,
             vocabularySize: vocabularySize,
             nbNeurons: 5, params: params
@@ -154,6 +154,13 @@ class NLPFlowPrecisionTests: NLPFlowTests
     
     override func testEmbedding() throws
     {
+        //let trainer = _buildTrainer("Embedding")
+        //run(trainer, diffThreshold: 0.002)
+    }
+    
+    override func testEmbeddingSample() throws
+    {
+        //GrAI.Gradient.sample = true
         //let trainer = _buildTrainer("Embedding")
         //run(trainer, diffThreshold: 0.002)
     }
@@ -267,7 +274,7 @@ class NLPFlowAccumulateTests: EmbeddingSeqMSE1DCase
     {
         let params = GrAI.Model.Params(context: context)
         
-        var layer: LayerSeq = EmbeddingSeq(
+        let layer: LayerSeq = EmbeddingSeq(
             sequence: sequence,
             vocabularySize: vocabularySize,
             nbNeurons: 5, params: params

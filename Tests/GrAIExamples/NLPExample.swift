@@ -16,7 +16,7 @@ final class NLPExample: XCTestCase
     let _modelPath = "TO/UPDATE"
     
     /// Prompt.
-    let _prompt = "What is your name?"
+    let _prompt = "I"
     
     /// Initialize test.
     override func setUp()
@@ -25,7 +25,7 @@ final class NLPExample: XCTestCase
         _ = MetalKernel.get
         
         GrAI.Opti.GPU = true
-        GrAI.Precision.float16 = true
+        GrAI.Precision.float = true
     }
     
     ///
@@ -87,10 +87,16 @@ final class NLPExample: XCTestCase
             _modelPath
         ))!
         
+        // Compute reference.
+        let arrayRef = [Float](numpy: pythonLib.generate_main(
+            _prompt,
+            _modelPath
+        ))!
+        
         // Load pre trained model.
         let model = _buildModel(
             modelPath: _modelPath,
-            sequence: 8,
+            sequence: prompt.count,
             hiddenDim: 4096,
             vocabularySize: 32000
         )
@@ -105,5 +111,15 @@ final class NLPExample: XCTestCase
             [prompt], batchSize: 1, sequence: prompt.count
         )
         try! model.forward()
+        
+        // Get result.
+        let arrayOut = (model.layers.last as! LayerSeq).outs.download()
+        
+        // Compare difference.
+        for (elemOut, elemRef) in zip(arrayOut, arrayRef)
+        {
+            let diffPercent = abs(elemOut - elemRef) / elemRef * 100.0
+            XCTAssert(diffPercent < 0.001)
+        }
     }
 }

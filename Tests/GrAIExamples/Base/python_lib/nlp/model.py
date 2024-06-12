@@ -397,7 +397,7 @@ class Transformer(torch.nn.Module):
         """
         h = self.tok_embeddings(x)
 
-        mask = None
+        """mask = None
         if h.shape[1] > 1:
             mask = Attention.create_additive_causal_mask(h.shape[1])
             mask = mask.type(h.dtype)
@@ -428,4 +428,5 @@ class Transformer(torch.nn.Module):
                 h, rotation_matrix=rotation_matrix, mask=mask, cache=cache[e]
             )
 
-        return self.output(self.norm(h)), cache
+        return self.output(self.norm(h)), cache"""
+        return h, cache

@@ -1,5 +1,6 @@
 import json
 import torch
+import numpy as np
 from pathlib import Path
 from typing import Generator, List
 
@@ -100,7 +101,7 @@ def generate(
 def generate_main(
     prompt: str,
     model_path: str
-):
+) -> np.ndarray:
     """
     Generate text based on the given prompt and model.
 
@@ -124,13 +125,18 @@ def generate_main(
     model.load_state_dict(state)
     model.to("mps")
 
-    generate(
+    prompt = torch.tensor(
+        tokenizer.encode(prompt), dtype=torch.long, device="mps"
+    )
+    out, _ = model(prompt)
+    return out.detach().cpu().numpy().flatten()
+    """generate(
         prompt=prompt,
         model=model,
         tokenizer=tokenizer,
         temp=0.7,
         max_tokens=200
-    )
+    )"""
 
 
 def encode(

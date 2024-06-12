@@ -23,5 +23,5 @@ func setPythonLib()
 {
     setenv("PYTHON_LIBRARY", PYTHON_LIB, 1)
     let sys = Python.import("sys")
-    sys.path.append(PYTHON_PACKAGES)
+    sys.path.insert(0, PYTHON_PACKAGES)
 }

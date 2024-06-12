@@ -1,14 +1,14 @@
 import json
 import torch
 from pathlib import Path
-from typing import Generator
+from typing import Generator, List
 
-from python_lib.llm.tokenizer import Tokenizer
-from python_lib.llm.model import LLM, ModelArgs
+from python_lib.nlp.tokenizer import Tokenizer
+from python_lib.nlp.model import Transformer, TransformerArgs
 
 
 def generate_with_cache(
-    prompt: torch.Tensor, model: LLM, temp: float = 0.0
+    prompt: torch.Tensor, model: Transformer, temp: float = 0.0
 ) -> Generator[torch.Tensor, None, None]:
     """
     Generate text based on the given prompt and model.
@@ -17,7 +17,7 @@ def generate_with_cache(
     ----------
     prompt: torch.Tensor
         The input prompt.
-    model: LLM
+    model: Transformer
         The model to use for generation.
     temp: float
         The temperature for sampling. If temp is 0, use max sampling.
@@ -48,7 +48,7 @@ def generate_with_cache(
 
 def generate(
     prompt: str,
-    model: LLM,
+    model: Transformer,
     tokenizer: Tokenizer,
     temp: float,
     max_tokens: int
@@ -97,26 +97,89 @@ def generate(
         return
 
 
-if __name__ == "__main__":
-    model_path = Path("TO_MODIFY/mistral/weights/mistral-7B-v0.1")
-    state = torch.load(str(model_path / "consolidated.00.pth"))
-    tokenizer = Tokenizer(str(model_path / "tokenizer.model"))
+def generate_main(
+    prompt: str,
+    model_path: str
+):
+    """
+    Generate text based on the given prompt and model.
 
-    with open(model_path / "params.json", "r") as f:
+    Parameters
+    ----------
+    prompt: torch.Tensor
+        The input prompt.
+    model_path: str
+        Path to the model on the disk.
+    """
+    state = torch.load(str(Path(model_path) / "consolidated.00.pth"))
+    tokenizer = Tokenizer(str(Path(model_path) / "tokenizer.model"))
+
+    with open(Path(model_path) / "params.json", "r") as f:
         config = json.loads(f.read())
         config.pop("sliding_window", None)
         config.pop("model_type", None)
-        quantization = config.pop("quantization", None)
-        model_args = ModelArgs(**config)
+        model_args = TransformerArgs(**config)
 
-    model = LLM(model_args)
+    model = Transformer(model_args)
     model.load_state_dict(state)
     model.to("mps")
 
     generate(
-        "Hello, what is your name?",
-        model,
-        tokenizer,
-        0.7,
-        200
+        prompt=prompt,
+        model=model,
+        tokenizer=tokenizer,
+        temp=0.7,
+        max_tokens=200
+    )
+
+
+def encode(
+    prompt: str,
+    model_path: str
+) -> List[int]:
+    """
+    Encode text.
+
+    Parameters
+    ----------
+    prompt: torch.Tensor
+        The input prompt.
+    model_path: str
+        Path to the model on the disk.
+    """
+    tokenizer = Tokenizer(str(Path(model_path) / "tokenizer.model"))
+    return tokenizer.encode(prompt)
+
+
+def decode(
+    prompt: List[int],
+    model_path: str
+) -> str:
+    """
+    Decode text.
+
+    Parameters
+    ----------
+    prompt: torch.Tensor
+        The input prompt.
+    model_path: str
+        Path to the model on the disk.
+    """
+    tokenizer = Tokenizer(str(Path(model_path) / "tokenizer.model"))
+    return tokenizer.decode(prompt)
+
+
+if __name__ == "__main__":
+    model_path = ""
+    prompt = encode(
+        prompt="Hello, what is your name?",
+        model_path=model_path
+    )
+    prompt = decode(
+        prompt=prompt,
+        model_path=model_path
+    )
+    generate_main(
+        prompt="Hello, what is your name?",
+        model_path=model_path
     )

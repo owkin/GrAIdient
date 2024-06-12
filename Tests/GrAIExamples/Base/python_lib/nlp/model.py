@@ -4,7 +4,31 @@ from typing import Optional, Tuple
 
 
 @dataclass
-class ModelArgs:
+class TransformerArgs:
+    """
+    Transformer parameters.
+
+    Parameters
+    ----------
+    dim: int
+        Base hidden dimension.
+    n_layers: int
+        Number of Transformer blocks.
+    head_dim:
+        Hidden dimension of each attention head.
+    hidden_dim:
+        Hidden dimension of the feed forward blocks.
+    n_heads: int
+        Number of heads for the queries.
+    n_kv_heads: int
+        Number of heads for keys and values.
+    norm_eps: float
+        Used to avoid division by 0 during normalization.
+    vocab_size: int
+        Vocabulary size.
+    rope_theta: float
+        Coefficient used to initialize rotation matrix.
+    """
     dim: int
     n_layers: int
     head_dim: int
@@ -14,81 +38,6 @@ class ModelArgs:
     norm_eps: float
     vocab_size: int
     rope_theta: float = 10000
-
-
-def get_rotary_matrix1(
-    context_len: int, embedding_dim: int
-) -> torch.Tensor:
-    """
-    Generate the rotary matrix for RoPE.
-
-    Parameters
-    ----------
-    context_len: int
-        The context length.
-    embedding_dim: int
-        Embedding dimension.
-
-    Returns
-    -------
-    R: torch.Tensor
-        The rotary matrix of dimension
-        (context_len, embedding_dim, embedding_dim).
-    """
-    R = torch.zeros(
-        (context_len, embedding_dim, embedding_dim),
-        requires_grad=False
-    )
-    positions = torch.arange(1, context_len+1).unsqueeze(1)
-    # Create matrix theta (shape: context_len, embedding_dim // 2).
-    slice_i = torch.arange(0, embedding_dim // 2)
-    theta = 10000. ** (-2.0 * (slice_i.float()) / embedding_dim)
-    m_theta = positions * theta
-    # Create sin and cos values.
-    cos_values = torch.cos(m_theta)
-    sin_values = torch.sin(m_theta)
-    # Populate the rotary matrix R using 2D slicing.
-    R[:, 2*slice_i, 2*slice_i] = cos_values
-    R[:, 2*slice_i, 2*slice_i+1] = -sin_values
-    R[:, 2*slice_i+1, 2*slice_i] = sin_values
-    R[:, 2*slice_i+1, 2*slice_i+1] = cos_values
-    return R
-
-
-def get_rotary_matrix2(
-    context_offset: int, embedding_dim: int
-) -> torch.Tensor:
-    """
-    Generate the rotary matrix for RoPE.
-
-    Parameters
-    ----------
-    context_offset: int
-        The context offset.
-    embedding_dim: int
-        Embedding dimension.
-
-    Returns
-    -------
-    R: torch.Tensor
-        The rotary matrix of dimension
-        (1, embedding_dim, embedding_dim).
-    """
-    R = torch.zeros((1, embedding_dim, embedding_dim), requires_grad=False)
-    positions = torch.tensor([context_offset + 1]).unsqueeze(1)
-    # Create matrix theta (shape: 1, embedding_dim // 2).
-    slice_i = torch.arange(0, embedding_dim // 2)
-    theta = 10000. ** (-2.0 * (slice_i.float()) / embedding_dim)
-    m_theta = positions * theta
-    # Create sin and cos values.
-    cos_values = torch.cos(m_theta)
-    sin_values = torch.sin(m_theta)
-    # Populate the rotary matrix R using 2D slicing.
-    R[:, 2*slice_i, 2*slice_i] = cos_values
-    R[:, 2*slice_i, 2*slice_i+1] = -sin_values
-    R[:, 2*slice_i+1, 2*slice_i] = sin_values
-    R[:, 2*slice_i+1, 2*slice_i+1] = cos_values
-    return R
 
 
 class RMSNorm(torch.nn.Module):
@@ -135,11 +84,11 @@ class Attention(torch.nn.Module):
 
     Parameters
     ----------
-    args: ModelArgs
+    args: TransformerArgs
         Model parameters.
     """
 
-    def __init__(self, args: ModelArgs):
+    def __init__(self, args: TransformerArgs):
         super().__init__()
         self.args = args
 
@@ -189,9 +138,57 @@ class Attention(torch.nn.Module):
         mask = mask.type(dtype) * -1e9
         return mask
 
+    @staticmethod
+    def create_rotation_matrix(
+        positions: torch.Tensor,
+        embedding_dim: int,
+        rope_theta: float,
+        device: torch.device,
+    ) -> torch.Tensor:
+        """
+        Generate the rotary matrix for RoPE.
+
+        Parameters
+        ----------
+        positions: torch.Tensor
+            Tensor containing the different indices of the sequential axis
+            to take into account for positional encoding.
+        embedding_dim: int
+            Embedding dimension.
+        rope_theta: float
+            RoPE theta.
+        device: torch.device
+            Device on which the matrix is to be loaded.
+
+        Returns
+        -------
+        R: torch.Tensor
+            The rotary matrix of dimension
+            (len(positions), embedding_dim, embedding_dim).
+        """
+        R = torch.zeros(
+            (len(positions), embedding_dim, embedding_dim),
+            requires_grad=False,
+            device=device,
+        )
+
+        slice_i = torch.arange(0, embedding_dim // 2, device=device)
+        theta = rope_theta ** (-2.0 * (slice_i.float()) / embedding_dim)
+        m_theta = positions * theta
+
+        cos_values = torch.cos(m_theta)
+        sin_values = torch.sin(m_theta)
+
+        R[:, 2 * slice_i, 2 * slice_i] = cos_values
+        R[:, 2 * slice_i, 2 * slice_i + 1] = -sin_values
+        R[:, 2 * slice_i + 1, 2 * slice_i] = sin_values
+        R[:, 2 * slice_i + 1, 2 * slice_i + 1] = cos_values
+        return R
+
     def forward(
         self,
         x: torch.Tensor,
+        rotation_matrix: torch.Tensor,
         mask: Optional[torch.Tensor] = None,
         cache: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
     ) -> Tuple[torch.Tensor, Optional[Tuple[torch.Tensor, torch.Tensor]]]:
@@ -202,6 +199,8 @@ class Attention(torch.nn.Module):
         ----------
         x: torch.Tensor
             The input tensor.
+        rotation_matrix: torch.Tensor
+            Rotation matrix used for positional encoding.
         mask: torch.Tensor
             Causal mask.
         cache: (key_cache, value_cache): (torch.Tensor, torch.Tensor)
@@ -215,19 +214,12 @@ class Attention(torch.nn.Module):
             (keys, values): cache for keys and values
         """
         B, L, D = x.shape
-
         queries, keys, values = self.wq(x), self.wk(x), self.wv(x)
 
         # Prepare the queries, keys and values for the attention computation.
-        queries = queries.reshape(
-            B, L, self.n_heads, -1
-        ).transpose(1, 2)
-        keys = keys.reshape(
-            B, L, self.n_kv_heads, -1
-        ).transpose(1, 2)
-        values = values.reshape(
-            B, L, self.n_kv_heads, -1
-        ).transpose(1, 2)
+        queries = queries.reshape(B, L, self.n_heads, -1).transpose(1, 2)
+        keys = keys.reshape(B, L, self.n_kv_heads, -1).transpose(1, 2)
+        values = values.reshape(B, L, self.n_kv_heads, -1).transpose(1, 2)
 
         def repeat(a):
             a = torch.concat([torch.unsqueeze(a, 2)] * self.repeats, dim=2)
@@ -237,25 +229,16 @@ class Attention(torch.nn.Module):
 
         if cache is not None:
             key_cache, value_cache = cache
-            R_matrix = get_rotary_matrix2(
-                key_cache.shape[2], self.args.head_dim
-            )
-            R_matrix = R_matrix.to("mps")
 
-            queries = torch.einsum("bhlj,lij->bhli", [queries, R_matrix])
-            keys = torch.einsum("bhlj,lij->bhli", [keys, R_matrix])
+            queries = torch.einsum("bhlj,lij->bhli", [queries, rotation_matrix])
+            keys = torch.einsum("bhlj,lij->bhli", [keys, rotation_matrix])
 
             keys = torch.concat([key_cache, keys], dim=2)
             values = torch.concat([value_cache, values], dim=2)
 
         else:
-            R_matrix = get_rotary_matrix1(
-                keys.shape[2], self.args.head_dim
-            )
-            R_matrix = R_matrix.to("mps")
-
-            queries = torch.einsum("bhlj,lij->bhli", [queries, R_matrix])
-            keys = torch.einsum("bhlj,lij->bhli", [keys, R_matrix])
+            queries = torch.einsum("bhlj,lij->bhli", [queries, rotation_matrix])
+            keys = torch.einsum("bhlj,lij->bhli", [keys, rotation_matrix])
 
         scores = torch.matmul(queries, keys.transpose(2, 3)) * self.scale
         if mask is not None:
@@ -264,7 +247,7 @@ class Attention(torch.nn.Module):
             scores.type(torch.float32), dim=-1
         ).type_as(scores)
 
-        output = torch.matmul(scores, values)  # (B, n_local_heads, L, head_dim)
+        output = torch.matmul(scores, values)
         output = output.transpose(1, 2).contiguous().reshape(B, L, -1)
 
         return self.wo(output), (keys, values)
@@ -276,11 +259,11 @@ class FeedForward(torch.nn.Module):
 
     Parameters
     ----------
-    args: ModelArgs
+    args: TransformerArgs
         Model parameters.
     """
 
-    def __init__(self, args: ModelArgs):
+    def __init__(self, args: TransformerArgs):
         super().__init__()
 
         self.w1 = torch.nn.Linear(args.dim, args.hidden_dim, bias=False)
@@ -310,11 +293,11 @@ class TransformerBlock(torch.nn.Module):
 
     Parameters
     ----------
-    args: ModelArgs
+    args: TransformerArgs
         Model parameters.
     """
 
-    def __init__(self, args: ModelArgs):
+    def __init__(self, args: TransformerArgs):
         super().__init__()
         self.n_heads = args.n_heads
         self.dim = args.dim
@@ -327,6 +310,7 @@ class TransformerBlock(torch.nn.Module):
     def forward(
         self,
         x: torch.Tensor,
+        rotation_matrix: torch.Tensor,
         mask: Optional[torch.Tensor] = None,
         cache: Optional[
             Tuple[torch.Tensor,
@@ -340,6 +324,8 @@ class TransformerBlock(torch.nn.Module):
         ----------
         x: torch.Tensor
             The input tensor.
+        rotation_matrix: torch.Tensor
+            Rotation matrix used for positional encoding.
         mask: torch.Tensor
             Causal mask.
         cache: (key_cache, value_cache): (torch.Tensor, torch.Tensor)
@@ -352,24 +338,29 @@ class TransformerBlock(torch.nn.Module):
             output: the output tensor
             (keys, values): cache for keys and values
         """
-        r, cache = self.attention(self.attention_norm(x), mask, cache)
+        r, cache = self.attention(
+            self.attention_norm(x),
+            rotation_matrix=rotation_matrix,
+            mask=mask,
+            cache=cache,
+        )
         h = x + r
         r = self.feed_forward(self.ffn_norm(h))
         out = h + r
         return out, cache
 
 
-class LLM(torch.nn.Module):
+class Transformer(torch.nn.Module):
     """
-    Large Language Model module.
+    Transformer model.
 
     Parameters
     ----------
-    args: ModelArgs
+    args: TransformerArgs
         Model parameters.
     """
 
-    def __init__(self, args: ModelArgs):
+    def __init__(self, args: TransformerArgs):
         super().__init__()
         self.args = args
         self.vocab_size = args.vocab_size
@@ -410,12 +401,31 @@ class LLM(torch.nn.Module):
         if h.shape[1] > 1:
             mask = Attention.create_additive_causal_mask(h.shape[1])
             mask = mask.type(h.dtype)
-            mask = mask.to("mps")
+            mask = mask.to(h.device)
+
+            positions = torch.arange(
+                1, h.shape[1] + 1, device=h.device
+            ).unsqueeze(1)
+
+        else:
+            key_cache = cache[0][0]
+            positions = torch.tensor(
+                [key_cache.shape[2] + 1], device=h.device
+            ).unsqueeze(1)
+
+        rotation_matrix = Attention.create_rotation_matrix(
+            positions=positions,
+            embedding_dim=self.args.head_dim,
+            rope_theta=self.args.rope_theta,
+            device=h.device,
+        )
 
         if cache is None:
             cache = [None] * len(self.layers)
 
         for e, layer in enumerate(self.layers):
-            h, cache[e] = layer(h, mask, cache[e])
+            h, cache[e] = layer(
+                h, rotation_matrix=rotation_matrix, mask=mask, cache=cache[e]
+            )
 
         return self.output(self.norm(h)), cache

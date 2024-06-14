@@ -10,25 +10,12 @@ using namespace metal;
 
 kernel void computeRMSNormSeqσ2Float(
     const device float * tmps,
-    constant uint & pNbNeurons,
-    constant uint & pNbBatch,
-    constant uint & pSequence,
+    constant uint & nbNeurons,
+    constant uint & nbBatch,
+    constant uint & sequence,
     device float * σ2,
     uint2 id [[ thread_position_in_grid ]])
 {
-    uint nbNeurons;
-    uint nbBatch;
-    uint sequence;
-    
-    if (pNbNeurons && pNbBatch && pSequence && tmps && σ2)
-    {
-        nbNeurons = *pNbNeurons;
-        nbBatch = *pNbBatch;
-        sequence = *pSequence;
-    }
-    else
-        return ;
-    
     uint elem = id[1];
     uint seq = id[0];
     if (elem >= nbBatch || seq >= sequence)
@@ -52,27 +39,14 @@ kernel void computeRMSNormSeqσ2Float(
 kernel void forwardRMSNormSeqFloat(
     const device float * Ɣ,
     const device float * σ2,
-    constant uint & pNbNeurons,
-    constant uint & pNbBatch,
-    constant uint & pSequence,
+    constant uint & nbNeurons,
+    constant uint & nbBatch,
+    constant uint & sequence,
     device float * tmps,
     device float * xHat,
     uint2 id [[ thread_position_in_grid ]])
 {
-    uint nbNeurons;
-    uint nbBatch;
-    uint sequence;
     float Ɛ = 1e-5;
-    
-    if (pNbNeurons && pNbBatch && pSequence && Ɣ &&
-        tmps && xHat && σ2)
-    {
-        nbNeurons = *pNbNeurons;
-        nbBatch = *pNbBatch;
-        sequence = *pSequence;
-    }
-    else
-        return ;
     
     uint depth = id[0];
     uint elem = id[1] / sequence;
@@ -96,26 +70,12 @@ kernel void backwardWeights1RMSNormSeqFloat(
     const device float * delta,
     const device float * xHat,
     const device float * Ɣ,
-    constant uint & pNbNeurons,
-    constant uint & pNbBatch,
-    constant uint & pSequence,
+    constant uint & nbNeurons,
+    constant uint & nbBatch,
+    constant uint & sequence,
     device float * sum2,
     uint2 id [[ thread_position_in_grid ]])
 {
-    uint nbNeurons;
-    uint nbBatch;
-    uint sequence;
-    
-    if (pNbNeurons && pNbBatch && pSequence &&
-        delta && xHat && Ɣ && sum2)
-    {
-        nbNeurons = *pNbNeurons;
-        nbBatch = *pNbBatch;
-        sequence = *pSequence;
-    }
-    else
-        return ;
-    
     uint elem = id[1];
     uint seq = id[0];
     if (elem >= nbBatch || seq >= sequence)
@@ -135,35 +95,19 @@ kernel void backwardWeights1RMSNormSeqFloat(
         float dxHat = Ɣ[depth] * deltaTmp;
         tmp += dxHat * xHatTmp;
     }
-    sum2[seq + sequence * elem] = tmp2;
+    sum2[seq + sequence * elem] = tmp;
 }
 
 kernel void backwardWeights2RMSNormSeqFloat(
     const device float * delta,
     const device float * xHat,
-    constant uint & pNbNeurons,
-    constant uint & pNbBatch,
-    constant uint & pSequence,
-    constant uint & pAccumulate,
+    constant uint & nbNeurons,
+    constant uint & nbBatch,
+    constant uint & sequence,
+    constant uint & accumulate,
     device float * dƔ,
     uint id [[ thread_position_in_grid ]])
 {
-    uint nbNeurons;
-    uint nbBatch;
-    uint sequence;
-    uint accumulate;
-    
-    if (pNbNeurons && pNbBatch && pSequence && pAccumulate &&
-        delta && xHat&& dƔ)
-    {
-        nbNeurons = *pNbNeurons;
-        nbBatch = *pNbBatch;
-        sequence = *pSequence;
-        accumulate = *pAccumulate;
-    }
-    else
-        return ;
-    
     uint depth = id;
     if (depth >= nbNeurons)
     {
@@ -171,15 +115,14 @@ kernel void backwardWeights2RMSNormSeqFloat(
     }
     
     float tmp = 0.0;
-    uint offset = nbNeurons * seq + sequence * nbNeurons * elem;
-    
     for (uint elem=0; elem<nbBatch; elem++) {
     for (uint seq=0; seq<sequence; seq++)
     {
-        uint offsetTmp = depth + offset;
+        uint offset = depth +
+            nbNeurons * seq + sequence * nbNeurons * elem;
             
-        float deltaTmp = delta[offsetTmp];
-        float xHatTmp = xHat[offsetTmp];
+        float deltaTmp = delta[offset];
+        float xHatTmp = xHat[offset];
         
         tmp += deltaTmp * xHatTmp;
     }}
@@ -199,26 +142,13 @@ kernel void backwardRMSNormSeqFloat(
     const device float * xHat,
     const device float * Ɣ,
     const device float * sum2,
-    constant uint & pNbNeurons,
-    constant uint & pNbBatch,
-    constant uint & pSequence,
+    constant uint & nbNeurons,
+    constant uint & nbBatch,
+    constant uint & sequence,
     device float * delta,
     uint2 id [[ thread_position_in_grid ]])
 {
-    uint nbNeurons;
-    uint nbBatch;
-    uint sequence;
     float Ɛ = 1e-5;
-    
-    if (pNbNeurons && pNbBatch && pSequence &&
-        σ2 && xHat && Ɣ && sum2 && delta)
-    {
-        nbNeurons = *pNbNeurons;
-        nbBatch = *pNbBatch;
-        sequence = *pSequence;
-    }
-    else
-        return ;
     
     uint depth = id[0];
     uint elem = id[1] / sequence;

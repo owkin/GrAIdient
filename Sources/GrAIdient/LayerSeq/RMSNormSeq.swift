@@ -298,11 +298,11 @@ public class RMSNormSeq: ActivationSeq, LayerUpdate, LayerWithActivation
         
         if let norm = _normGPU
         {
-            _norm = LayerNormalization(norm: norm)
+            _norm = RMSNormalization(norm: norm)
         }
         else if let norm = _norm
         {
-            _norm = LayerNormalization(norm: norm)
+            _norm = RMSNormalization(norm: norm)
         }
         
         if !GrAI.Loop.gradientChecking

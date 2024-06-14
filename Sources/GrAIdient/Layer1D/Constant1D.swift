@@ -21,7 +21,7 @@ public class Constant1D: Layer1D, LayerUpdate
     var _wBuffers: IWeightBuffers! = nil
     
     ///
-    /// Buffer of gradients per sample for biases.
+    /// Buffer of gradients per sample.
     /// Shape ~ (batch, nbNeurons).
     ///
     var _wDeltaWeights: FloatBuffer! = nil

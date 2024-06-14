@@ -6,10 +6,16 @@ from python_lib.cifar import (
 )
 from python_lib.weight import (
     load_simple_auto_encoder_weights,
+    load_llm_weights,
 )
 from python_lib.trainer import (
     train_simple_auto_encoder,
     step_simple_auto_encoder,
+)
+from python_lib.nlp.generate import (
+    generate_main,
+    encode,
+    decode,
 )
 
 __all__ = [
@@ -18,6 +24,10 @@ __all__ = [
     "iter_CIFAR",
     "next_data_CIFAR",
     "load_simple_auto_encoder_weights",
+    "load_llm_weights",
     "train_simple_auto_encoder",
     "step_simple_auto_encoder",
+    "generate_main",
+    "encode",
+    "decode",
 ]

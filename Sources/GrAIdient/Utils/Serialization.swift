@@ -54,6 +54,7 @@ let LAYER_REGISTRY: [String: Codable.Type] = buildRegistry(
     DecorrelateRGB.self,
     DotProduct1D.self,
     Dropout1D.self,
+    EmbeddingSeq.self,
     FlipHorizontal2D.self,
     FlipVertical2D.self,
     FTFrequences2D.self,

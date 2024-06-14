@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+✨ **layer_seq:** EmbeddingSeq ([122](https://github.com/owkin/GrAIdient/pull/122))\
 🚀 **perf:** use half in Metal kernels ([121](https://github.com/owkin/GrAIdient/pull/121))\
 🔨 **refactor:** handle float16 along float on GPU ([#120](https://github.com/owkin/GrAIdient/pull/120))\
 🚀 **perf:** copy & generate weights faster ([119](https://github.com/owkin/GrAIdient/pull/119))\

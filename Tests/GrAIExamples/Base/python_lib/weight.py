@@ -1,12 +1,13 @@
 import torch
 import numpy as np
-from typing import List, Tuple
+from pathlib import Path
+from typing import List, Tuple, Dict
 
 from python_lib.model import SimpleAutoEncoder
 
 
 def _flatten_weights(
-        weights: np.ndarray
+    weights: np.ndarray
 ) -> Tuple[np.ndarray, List[int]]:
     """
     Flatten weights and biases.
@@ -27,8 +28,38 @@ def _flatten_weights(
     return weights_list, dims_list
 
 
+def _extract_weights(
+    state: Dict[str, torch.Tensor]
+) -> Tuple[List[np.ndarray], List[List[int]]]:
+    """
+    Get weights and biases.
+
+    Parameters
+    ----------
+    state: [str: torch.Tensor]
+        The module state, containing the weights and biases.
+
+    Returns
+    -------
+    (_, _): List[np.ndarray], List[List[int]]
+        The flattened weights, their shape.
+    """
+    layers_weights: List[np.ndarray] = []
+    layers_dims: List[List[int]] = []
+    for name, layer_weights in state.items():
+        print(f"Extracting weigths {name}.")
+        weights_list, dims_list = _flatten_weights(
+            layer_weights.data.cpu().float().numpy()
+        )
+
+        layers_weights.append(weights_list)
+        layers_dims.append(dims_list)
+
+    return layers_weights, layers_dims
+
+
 def _extract_and_transpose_weights(
-        modules: [torch.nn.Module]
+    modules: [torch.nn.Module]
 ) -> Tuple[List[np.ndarray], List[List[int]]]:
     """
     Get weights and biases.
@@ -94,3 +125,21 @@ def load_simple_auto_encoder_weights(
     torch.manual_seed(42)
     model = SimpleAutoEncoder()
     return _extract_and_transpose_weights(list(model.children()))
+
+
+def load_llm_weights(
+    model_path: str
+) -> Tuple[List[np.ndarray], List[List[int]]]:
+    """
+    Get weights and biases for LLM.
+
+    Returns
+    -------
+    (_, _): List[np.ndarray], List[List[int]]
+        The flattened weights, their shape.
+    """
+    state = torch.load(
+        str(Path(model_path) / "consolidated.00.pth"),
+        map_location="cpu"
+    )
+    return _extract_weights(state)

@@ -43,7 +43,7 @@ public class VQSeq: LayerSeq, LayerWeightInit
     var _wBuffers: IWeightBuffers! = nil
     
     ///
-    /// Buffer of gradients per sample for biases.
+    /// Buffer of gradients per sample.
     /// Shape ~ (batch, K, nbNeurons).
     ///
     var _wDeltaWeights: FloatBuffer! = nil

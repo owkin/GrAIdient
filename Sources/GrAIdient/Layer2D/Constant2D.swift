@@ -21,7 +21,7 @@ public class Constant2D: Layer2D, LayerResize, LayerUpdate
     var _wBuffers: IWeightBuffers! = nil
     
     ///
-    /// Buffer of gradients per sample for biases.
+    /// Buffer of gradients per sample.
     /// Shape ~ (batch, nbChannels).
     ///
     var _wDeltaWeights: FloatBuffer! = nil

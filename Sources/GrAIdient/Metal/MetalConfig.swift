@@ -523,6 +523,13 @@ let CONFIG_KERNELS =
         "convertFloat2Half",
         "convertHalf2Float",
     ],
+    "RMSNormSeqFloat": [
+        "computeRMSNormSeqσ2Float",
+        "forwardRMSNormSeqFloat",
+        "backwardWeights1RMSNormSeqFloat",
+        "backwardWeights2RMSNormSeqFloat",
+        "backwardRMSNormSeqFloat",
+    ],
     "VQ2DFloat": [
         "vq2DForwardFloat",
         "vq2DBackwardFloat",

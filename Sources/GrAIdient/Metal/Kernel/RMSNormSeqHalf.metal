@@ -1,19 +1,19 @@
 //
-// RMSNormSeqFloat.metal
+// RMSNormSeqHalf.metal
 // GrAIdient
 //
-// Created by Jean-François Reboud on 14/06/2024.
+// Created by Jean-François Reboud on 15/06/2024.
 //
 
 #include <metal_stdlib>
 using namespace metal;
 
-kernel void computeRMSNormSeqσ2Float(
-    const device float * tmps,
+kernel void computeRMSNormSeqσ2Half(
+    const device half * tmps,
     constant uint & nbNeurons,
     constant uint & nbBatch,
     constant uint & sequence,
-    device float * σ2,
+    device half * σ2,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint elem = id[1];
@@ -36,14 +36,14 @@ kernel void computeRMSNormSeqσ2Float(
     σ2[seq + sequence * elem] = sum / nbElems;
 }
 
-kernel void forwardRMSNormSeqFloat(
-    const device float * Ɣ,
-    const device float * σ2,
+kernel void forwardRMSNormSeqHalf(
+    const device half * Ɣ,
+    const device half * σ2,
     constant uint & nbNeurons,
     constant uint & nbBatch,
     constant uint & sequence,
-    device float * tmps,
-    device float * xHat,
+    device half * tmps,
+    device half * xHat,
     uint2 id [[ thread_position_in_grid ]])
 {
     float Ɛ = 1e-5;
@@ -66,14 +66,14 @@ kernel void forwardRMSNormSeqFloat(
     tmps[offset] = Ɣ[depth] * xhat;
 }
 
-kernel void backwardWeights1RMSNormSeqFloat(
-    const device float * delta,
-    const device float * xHat,
-    const device float * Ɣ,
+kernel void backwardWeights1RMSNormSeqHalf(
+    const device half * delta,
+    const device half * xHat,
+    const device half * Ɣ,
     constant uint & nbNeurons,
     constant uint & nbBatch,
     constant uint & sequence,
-    device float * sum2,
+    device half * sum2,
     uint2 id [[ thread_position_in_grid ]])
 {
     uint elem = id[1];
@@ -98,14 +98,14 @@ kernel void backwardWeights1RMSNormSeqFloat(
     sum2[seq + sequence * elem] = tmp;
 }
 
-kernel void backwardWeights2RMSNormSeqFloat(
-    const device float * delta,
-    const device float * xHat,
+kernel void backwardWeights2RMSNormSeqHalf(
+    const device half * delta,
+    const device half * xHat,
     constant uint & nbNeurons,
     constant uint & nbBatch,
     constant uint & sequence,
     constant uint & accumulate,
-    device float * dƔ,
+    device half * dƔ,
     uint id [[ thread_position_in_grid ]])
 {
     uint depth = id;
@@ -115,7 +115,7 @@ kernel void backwardWeights2RMSNormSeqFloat(
     }
     
     float tmp = 0.0;
-    for (uint elem=0; elem<nbBatch; elem++) 
+    for (uint elem=0; elem<nbBatch; elem++)
     {
         uint offset = depth + sequence * nbNeurons * elem;
         for (uint seq=0; seq<sequence; seq++)
@@ -139,15 +139,15 @@ kernel void backwardWeights2RMSNormSeqFloat(
     }
 }
 
-kernel void backwardRMSNormSeqFloat(
-    const device float * σ2,
-    const device float * xHat,
-    const device float * Ɣ,
-    const device float * sum2,
+kernel void backwardRMSNormSeqHalf(
+    const device half * σ2,
+    const device half * xHat,
+    const device half * Ɣ,
+    const device half * sum2,
     constant uint & nbNeurons,
     constant uint & nbBatch,
     constant uint & sequence,
-    device float * delta,
+    device half * delta,
     uint2 id [[ thread_position_in_grid ]])
 {
     float Ɛ = 1e-5;

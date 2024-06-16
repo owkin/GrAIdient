@@ -51,18 +51,20 @@ public class RoPESeq: LayerSeq
                 seqPositions: [Int],
                 params: GrAI.Model.Params) throws
     {
+        self._seqPositions = seqPositions
+        self._dirtySeqPositions = true
+        
+        super.init(layerPrev: layerPrev,
+                   sequence: layerPrev.sequence,
+                   nbNeurons: layerPrev.nbNeurons,
+                   params: params)
+        
         if layerPrev.nbNeurons % 2 != 0
         {
             throw LayerError.Init(message:
                 "`nbNeurons` (\(nbNeurons) should be a multiple of 2."
             )
         }
-        
-        super.init(layerPrev: layerPrev,
-                   sequence: layerPrev.sequence,
-                   nbNeurons: layerPrev.nbNeurons,
-                   params: params)
-        self.seqPositions = seqPositions
     }
     
     ///
@@ -76,7 +78,8 @@ public class RoPESeq: LayerSeq
     public required init(from decoder: Decoder) throws
     {
         let values = try decoder.container(keyedBy: Keys.self)
-        seqPositions = try values.decode([Int].self, forKey: Keys.seqPositions)
+        _seqPositions = try values.decode([Int].self, forKey: Keys.seqPositions)
+        self._dirtySeqPositions = true
         try super.init(from: decoder)
     }
     
@@ -142,6 +145,23 @@ public class RoPESeq: LayerSeq
     }
     
     ///
+    /// Initialize state resources in the CPU execution context.
+    ///
+    /// We initialize the neurons' state (forward and backward).
+    ///
+    public override func checkStateCPU(batchSize: Int) throws
+    {
+        if seqPositions.count != sequence
+        {
+            throw LayerError.Init(message:
+                "`seqPositions` should contain \(sequence) elements but " +
+                "it contains \(seqPositions) elements."
+            )
+        }
+        try super.checkStateCPU(batchSize: batchSize)
+    }
+    
+    ///
     /// Initialize state resources in the GPU execution context.
     ///
     /// We initialize the neurons' forward state.
@@ -149,6 +169,14 @@ public class RoPESeq: LayerSeq
     ///
     public override func checkStateForwardGPU(batchSize: Int) throws
     {
+        if seqPositions.count != sequence
+        {
+            throw LayerError.Init(message:
+                "`seqPositions` should contain \(sequence) elements but " +
+                "it contains \(seqPositions) elements."
+            )
+        }
+        
         try super.checkStateForwardGPU(batchSize: batchSize)
         
         if _rotaryMatrix == nil || _dirtySeqPositions
@@ -157,7 +185,10 @@ public class RoPESeq: LayerSeq
             _rotaryMatrix = FloatBuffer(nbElems:
                 4 * nbBlocks, deviceID: deviceID
             )
+            
             // TODO: Update rotaryMatrix.
+            
+            _dirtySeqPositions = false
         }
     }
     
@@ -181,42 +212,34 @@ public class RoPESeq: LayerSeq
                 )
             }}
             
-            let size = nbNeurons / _nbHeads
+            let nbBlocks = nbNeurons / 2
             let neuronsPrev = layerPrev.neurons!
             
             for batch in 0..<batchSize {
             for seq in 0..<sequence {
             for elem in 0..<nbGC
             {
-                for head in 0..<_nbHeads
+                let position = seqPositions[seq]
+                for block in 0..<nbBlocks
                 {
-                    var cMax = neuronsPrev
-                        .get(seq, 0 + head * size)!.gc[batch][elem].out
-                    for j in 0..<size
-                    {
-                        let outPrev = neuronsPrev
-                            .get(seq, j + head * size)!.gc[batch][elem].out
-                        if outPrev > cMax
-                        {
-                            cMax = outPrev
-                        }
-                    }
+                    let theta = pow(
+                        10000.0,
+                        -2.0 * Double(block) / Double(nbNeurons)
+                    )
+                    let mTheta = Double(position) * theta
+                    let cosVal = cos(mTheta)
+                    let sinVal = sin(mTheta)
                     
-                    var sum1 = 0.0
-                    for j in 0..<size
-                    {
-                        let outPrev = neuronsPrev
-                            .get(seq, j + head * size)!.gc[batch][elem].out
-                        sum1 += exp(outPrev - cMax)
-                    }
+                    let in1 = neuronsPrev.get(seq, 0 + 2 * block)!
+                        .gc[batch][elem].out
+                    let in2 = neuronsPrev.get(seq, 1 + 2 * block)!
+                        .gc[batch][elem].out
                     
-                    for j in 0..<size
-                    {
-                        let outPrev = neuronsPrev
-                            .get(seq, j + head * size)!.gc[batch][elem].out
-                        neurons.get(seq, j + head * size)!.gc[batch][elem].out =
-                            exp(outPrev - cMax) / sum1
-                    }
+                    let out1 = in1 * cosVal - in2 * sinVal
+                    let out2 = in1 * sinVal + in2 * cosVal
+                    
+                    neurons.get(seq, 0 + 2 * block)!.gc[batch][elem].out = out1
+                    neurons.get(seq, 1 + 2 * block)!.gc[batch][elem].out = out2
                 }
             }}}
         }
@@ -243,40 +266,33 @@ public class RoPESeq: LayerSeq
         {
             try checkStateCPU(batchSize: batchSize)
             
-            let size = nbNeurons / _nbHeads
+            let nbBlocks = nbNeurons / 2
             let neuronsPrev = layerPrev.neurons!
             
             for elem in 0..<batchSize {
-            for seq in 0..<sequence {
-            for head in 0..<_nbHeads
+            for seq in 0..<sequence 
             {
-                var cMax = neuronsPrev.get(seq, 0 + head * size)!.v[elem].out
-                for j in 0..<size
+                let position = seqPositions[seq]
+                for block in 0..<nbBlocks
                 {
-                    let outPrev = neuronsPrev
-                        .get(seq, j + head * size)!.v[elem].out
-                    if outPrev > cMax
-                    {
-                        cMax = outPrev
-                    }
+                    let theta = pow(
+                        10000.0,
+                        -2.0 * Double(block) / Double(nbNeurons)
+                    )
+                    let mTheta = Double(position) * theta
+                    let cosVal = cos(mTheta)
+                    let sinVal = sin(mTheta)
+                    
+                    let in1 = neuronsPrev.get(seq, 0 + 2 * block)!.v[elem].out
+                    let in2 = neuronsPrev.get(seq, 1 + 2 * block)!.v[elem].out
+                    
+                    let out1 = in1 * cosVal - in2 * sinVal
+                    let out2 = in1 * sinVal + in2 * cosVal
+                    
+                    neurons.get(seq, 0 + 2 * block)!.v[elem].out = out1
+                    neurons.get(seq, 1 + 2 * block)!.v[elem].out = out2
                 }
-                
-                var sum1 = 0.0
-                for j in 0..<size
-                {
-                    let outPrev = neuronsPrev
-                        .get(seq, j + head * size)!.v[elem].out
-                    sum1 += exp(outPrev - cMax)
-                }
-                
-                for j in 0..<size
-                {
-                    let outPrev = neuronsPrev
-                        .get(seq, j + head * size)!.v[elem].out
-                    neurons.get(seq, j + head * size)!.v[elem].out =
-                        exp(outPrev - cMax) / sum1
-                }
-            }}}
+            }}
         }
     }
     
@@ -287,7 +303,7 @@ public class RoPESeq: LayerSeq
     ///
     public override func forwardGPU() throws
     {
-        if let layerPrev = self.layerPrev as? LayerSeq
+        /*if let layerPrev = self.layerPrev as? LayerSeq
         {
             try checkStateForwardGPU(batchSize: batchSize)
             
@@ -314,7 +330,7 @@ public class RoPESeq: LayerSeq
                 height: batchSize * sequence
             )
             command.enqueue()
-        }
+        }*/
     }
     
     /// Apply the backward pass in the CPU execution context.
@@ -322,40 +338,44 @@ public class RoPESeq: LayerSeq
     {
         if let layerPrev = self.layerPrev as? LayerSeq, mustComputeBackward
         {
-            let size = nbNeurons / _nbHeads
+            let nbBlocks = nbNeurons / 2
             let neuronsPrev = layerPrev.neurons!
             
             for elem in 0..<batchSize {
             for seq in 0..<sequence
             {
-                for head in 0..<_nbHeads {
-                for j in 0..<size
+                let position = seqPositions[seq]
+                for block in 0..<nbBlocks
                 {
-                    let outCur = neurons.get(seq, j + head * size)!.v[elem].out
-                    let deltaCur = neurons
-                        .get(seq, j + head * size)!.v[elem].delta
+                    let theta = pow(
+                        10000.0,
+                        -2.0 * Double(block) / Double(nbNeurons)
+                    )
+                    let mTheta = Double(position) * theta
+                    let cosVal = cos(mTheta)
+                    let sinVal = sin(mTheta)
                     
-                    var sum1: Double = 0.0
-                    for j1 in 0..<size
-                    {
-                        let deltaCur1 = neurons
-                            .get(seq, j1 + head * size)!.v[elem].delta
-                        let outCur1 = neurons
-                            .get(seq, j1 + head * size)!.v[elem].out
-                        sum1 += outCur1 * deltaCur1
-                    }
+                    let out1 = neuronsPrev.get(seq, 0 + 2 * block)!
+                        .v[elem].delta
+                    let out2 = neuronsPrev.get(seq, 1 + 2 * block)!
+                        .v[elem].delta
+                    
+                    let in1 = out1 * cosVal + out2 * sinVal
+                    let in2 = -out1 * sinVal + out2 * cosVal
                     
                     if layerPrev.dirty
                     {
-                        neuronsPrev.get(seq, j + head * size)!.v[elem].delta =
-                            outCur * (deltaCur - sum1)
+                        neuronsPrev.get(seq, 0 + 2 * block)!.v[elem].delta = in1
+                        neuronsPrev.get(seq, 1 + 2 * block)!.v[elem].delta = in2
                     }
                     else
                     {
-                        neuronsPrev.get(seq, j + head * size)!.v[elem].delta +=
-                            outCur * (deltaCur - sum1)
+                        neuronsPrev.get(seq, 0 + 2 * block)!.v[elem].delta += 
+                            in1
+                        neuronsPrev.get(seq, 1 + 2 * block)!.v[elem].delta += 
+                            in2
                     }
-                }}
+                }
             }}
             propagateDirty()
         }
@@ -368,7 +388,7 @@ public class RoPESeq: LayerSeq
     ///
     public override func backwardGPU() throws
     {
-        if let layerPrev = self.layerPrev as? LayerSeq, mustComputeBackward
+        /*if let layerPrev = self.layerPrev as? LayerSeq, mustComputeBackward
         {
             try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
             
@@ -400,6 +420,6 @@ public class RoPESeq: LayerSeq
             command.enqueue()
             
             propagateDirty()
-        }
+        }*/
     }
 }

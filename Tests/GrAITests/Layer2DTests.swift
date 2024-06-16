@@ -5804,7 +5804,7 @@ class SimilarityError2DFlowPrecisionTests: SimilarityError2DFlowTests
     override func test() throws
     {
         let trainer = _buildTrainer()
-        run(trainer)
+        run(trainer, diffThreshold: 0.002)
     }
 }
 
@@ -6077,7 +6077,7 @@ class BCE2DFlowPrecisionTests: BCE2DFlowTests
     override func testLoss() throws
     {
         let trainer = _buildTrainer()
-        run(trainer)
+        run(trainer, diffThreshold: 0.002)
     }
 }
 

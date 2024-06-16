@@ -12,29 +12,13 @@ kernel void flSeqForwardHalf(
     const device half * outsPrev,
     const device half * weights,
     const device half * biases,
-    constant uint * pNbNeurons,
-    constant uint * pNbNeuronsPrev,
-    constant uint * pNbBatch,
-    constant uint * pSequence,
+    constant uint & nbNeurons,
+    constant uint & nbNeuronsPrev,
+    constant uint & nbBatch,
+    constant uint & sequence,
     device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
-    uint nbNeurons;
-    uint nbNeuronsPrev;
-    uint nbBatch;
-    uint sequence;
-    
-    if (pNbNeurons && pNbNeuronsPrev && pNbBatch && pSequence &&
-        outsPrev && weights && biases && outs)
-    {
-        nbNeurons = *pNbNeurons;
-        nbNeuronsPrev = *pNbNeuronsPrev;
-        nbBatch = *pNbBatch;
-        sequence = *pSequence;
-    }
-    else
-        return ;
-    
     uint depth = id[0];
     uint elem = id[1] / sequence;
     uint seq = id[1] % sequence;
@@ -45,14 +29,13 @@ kernel void flSeqForwardHalf(
     }
     
     half tmp = biases[depth];
+    uint offsetPrev = nbNeuronsPrev * seq + sequence * nbNeuronsPrev * elem;
+    uint offsetWeights = nbNeuronsPrev * depth;
+    
     for (uint depthPrev=0; depthPrev<nbNeuronsPrev; depthPrev++)
     {
-        uint offsetPrev = depthPrev + nbNeuronsPrev * seq +
-            sequence * nbNeuronsPrev * elem;
-        half outPrev = outsPrev[offsetPrev];
-        
-        uint offsetWeights = depthPrev + nbNeuronsPrev * depth;
-        half w = weights[offsetWeights];
+        half outPrev = outsPrev[depthPrev + offsetPrev];
+        half w = weights[depthPrev + offsetWeights];
         
         tmp += outPrev * w;
     }
@@ -65,29 +48,13 @@ kernel void flSeq48ForwardHalf(
     const device half4 * outsPrev,
     const device half4 * weights,
     const device half * biases,
-    constant uint * pNbNeurons,
-    constant uint * pNbNeuronsPrev,
-    constant uint * pNbBatch,
-    constant uint * pSequence,
+    constant uint & nbNeurons,
+    constant uint & nbNeuronsPrev,
+    constant uint & nbBatch,
+    constant uint & sequence,
     device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
-    uint nbNeurons;
-    uint nbNeuronsPrev;
-    uint nbBatch;
-    uint sequence;
-    
-    if (pNbNeurons && pNbNeuronsPrev && pNbBatch && pSequence &&
-        outsPrev && weights && biases && outs)
-    {
-        nbNeurons = *pNbNeurons;
-        nbNeuronsPrev = *pNbNeuronsPrev;
-        nbBatch = *pNbBatch;
-        sequence = *pSequence;
-    }
-    else
-        return ;
-    
     uint coeff = 8;
     uint depth = id[0];
     uint elem = id[1] / sequence;
@@ -99,27 +66,31 @@ kernel void flSeq48ForwardHalf(
     }
     
     half4 tmp[8] = {0};
+    uint offsetPrev = nbNeuronsPrev * seq / 4;
+    uint offsetWeights = (nbNeuronsPrev * depth) / 4;
+    
     for (uint depthPrev=0; depthPrev<nbNeuronsPrev/4; depthPrev++)
     {
-        uint offsetWeights = (depthPrev * 4 + nbNeuronsPrev * depth) / 4;
-        half4 w = weights[offsetWeights];
+        half4 w = weights[depthPrev + offsetWeights];
+        uint offsetPrevTmp1 = depthPrev + offsetPrev;
         
         for (uint i=0; i<coeff; i++)
         {
-            uint offsetPrev = (depthPrev * 4 + nbNeuronsPrev * seq +
-                sequence * nbNeuronsPrev * (elem*coeff+i)) / 4;
-            half4 outPrev = outsPrev[offsetPrev];
+            uint offsetPrevTmp2 = offsetPrevTmp1 +
+                sequence * nbNeuronsPrev * (elem*coeff+i) / 4;
+            half4 outPrev = outsPrev[offsetPrevTmp2];
             
             tmp[i] += outPrev * w;
         }
     }
     
     half bias = biases[depth];
+    uint offset = depth + nbNeurons * seq;
+    
     for (uint i=0; i<coeff; i++)
     {
-        uint offset = depth + nbNeurons * seq +
-            sequence * nbNeurons * (elem*coeff+i);
-        outs[offset] = tmp[i][0] + tmp[i][1] + tmp[i][2] + tmp[i][3] + bias;
+        uint offsetTmp = offset + sequence * nbNeurons * (elem*coeff+i);
+        outs[offsetTmp] = tmp[i][0] + tmp[i][1] + tmp[i][2] + tmp[i][3] + bias;
     }
 }
 
@@ -127,29 +98,13 @@ kernel void flSeq4ForwardHalf(
     const device half4 * outsPrev,
     const device half4 * weights,
     const device half * biases,
-    constant uint * pNbNeurons,
-    constant uint * pNbNeuronsPrev,
-    constant uint * pNbBatch,
-    constant uint * pSequence,
+    constant uint & nbNeurons,
+    constant uint & nbNeuronsPrev,
+    constant uint & nbBatch,
+    constant uint & sequence,
     device half * outs,
     uint2 id [[ thread_position_in_grid ]])
 {
-    uint nbNeurons;
-    uint nbNeuronsPrev;
-    uint nbBatch;
-    uint sequence;
-    
-    if (pNbNeurons && pNbNeuronsPrev && pNbBatch && pSequence &&
-        outsPrev && weights && biases && outs)
-    {
-        nbNeurons = *pNbNeurons;
-        nbNeuronsPrev = *pNbNeuronsPrev;
-        nbBatch = *pNbBatch;
-        sequence = *pSequence;
-    }
-    else
-        return ;
-    
     uint depth = id[0];
     uint elem = id[1] / sequence;
     uint seq = id[1] % sequence;
@@ -160,14 +115,17 @@ kernel void flSeq4ForwardHalf(
     }
     
     half4 tmp = 0;
+    uint offsetPrev =
+        (nbNeuronsPrev * seq + sequence * nbNeuronsPrev * elem) / 4;
+    uint offsetWeights = (nbNeuronsPrev * depth) / 4;
+    
     for (uint depthPrev=0; depthPrev<nbNeuronsPrev/4; depthPrev++)
     {
-        uint offsetPrev = (depthPrev * 4 + nbNeuronsPrev * seq +
-            sequence * nbNeuronsPrev * elem) / 4;
-        half4 outPrev = outsPrev[offsetPrev];
+        uint offsetPrevTmp = depthPrev + offsetPrev;
+        half4 outPrev = outsPrev[offsetPrevTmp];
         
-        uint offsetWeights = (depthPrev * 4 + nbNeuronsPrev * depth) / 4;
-        half4 w = weights[offsetWeights];
+        uint offsetWeightsTmp = depthPrev + offsetWeights;
+        half4 w = weights[offsetWeightsTmp];
         
         tmp += outPrev * w;
     }
@@ -179,32 +137,14 @@ kernel void flSeq4ForwardHalf(
 kernel void flSeqBackwardHalf(
     const device half * delta,
     const device half * weights,
-    constant uint * pNbNeurons,
-    constant uint * pNbNeuronsPrev,
-    constant uint * pNbBatch,
-    constant uint * pSequence,
-    constant uint * pDirty,
+    constant uint & nbNeurons,
+    constant uint & nbNeuronsPrev,
+    constant uint & nbBatch,
+    constant uint & sequence,
+    constant uint & dirty,
     device half * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
-    uint nbNeurons;
-    uint nbNeuronsPrev;
-    uint nbBatch;
-    uint sequence;
-    uint dirty;
-    
-    if (pNbNeurons && pNbNeuronsPrev && pNbBatch && pDirty &&
-        deltaPrev && weights && delta)
-    {
-        nbNeurons = *pNbNeurons;
-        nbNeuronsPrev = *pNbNeuronsPrev;
-        nbBatch = *pNbBatch;
-        sequence = *pSequence;
-        dirty = *pDirty;
-    }
-    else
-        return ;
-    
     uint depthPrev = id[0];
     uint elem = id[1] / sequence;
     uint seq = id[1] % sequence;
@@ -215,13 +155,15 @@ kernel void flSeqBackwardHalf(
     }
     
     half tmp = 0.0;
+    uint offset = nbNeurons * seq + sequence * nbNeurons * elem;
+    
     for (uint depth=0; depth<nbNeurons; depth++)
     {
         uint offsetWeights = depthPrev + nbNeuronsPrev * depth;
         half w = weights[offsetWeights];
         
-        uint offset = depth + nbNeurons * seq + sequence * nbNeurons * elem;
-        half deltaCur = delta[offset];
+        uint offsetTmp = depth + offset;
+        half deltaCur = delta[offsetTmp];
         
         tmp += w * deltaCur;
     }
@@ -242,32 +184,14 @@ kernel void flSeqBackwardHalf(
 kernel void flSeq48BackwardHalf(
     const device half * delta,
     const device half4 * weights,
-    constant uint * pNbNeurons,
-    constant uint * pNbNeuronsPrev,
-    constant uint * pNbBatch,
-    constant uint * pSequence,
-    constant uint * pDirty,
+    constant uint & nbNeurons,
+    constant uint & nbNeuronsPrev,
+    constant uint & nbBatch,
+    constant uint & sequence,
+    constant uint & dirty,
     device half4 * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
-    uint nbNeurons;
-    uint nbNeuronsPrev;
-    uint nbBatch;
-    uint sequence;
-    uint dirty;
-    
-    if (pNbNeurons && pNbNeuronsPrev && pNbBatch && pDirty &&
-        deltaPrev && weights && delta)
-    {
-        nbNeurons = *pNbNeurons;
-        nbNeuronsPrev = *pNbNeuronsPrev;
-        nbBatch = *pNbBatch;
-        sequence = *pSequence;
-        dirty = *pDirty;
-    }
-    else
-        return ;
-    
     uint coeff = 8;
     uint depthPrev = id[0];
     uint elem = id[1] / sequence;
@@ -280,37 +204,41 @@ kernel void flSeq48BackwardHalf(
     }
     
     half4 tmp[8] = {0};
+    uint offset = nbNeurons * seq;
+    
     for (uint depth=0; depth<nbNeurons; depth++)
     {
+        uint offsetTmp1 = depth + offset;
         uint offsetWeights = (depthPrev * 4 + nbNeuronsPrev * depth) / 4;
         half4 w = weights[offsetWeights];
         
         for (uint i=0; i<coeff; i++)
         {
-            uint offset = depth + nbNeurons * seq +
+            uint offsetTmp2 = offsetTmp1 +
                 sequence * nbNeurons * (elem*coeff+i);
-            half deltaCur = delta[offset];
+            half deltaCur = delta[offsetTmp2];
             
             tmp[i] += w * deltaCur;
         }
     }
     
+    uint offsetPrev = depthPrev + (nbNeuronsPrev * seq) / 4;
     if (dirty)
     {
         for (uint i=0; i<coeff; i++)
         {
-            uint offsetPrev = (depthPrev * 4 + nbNeuronsPrev * seq +
-                sequence * nbNeuronsPrev * (elem*coeff+i)) / 4;
-            deltaPrev[offsetPrev] = tmp[i];
+            uint offsetPrevTmp = offsetPrev +
+                sequence * nbNeuronsPrev * (elem*coeff+i) / 4;
+            deltaPrev[offsetPrevTmp] = tmp[i];
         }
     }
     else
     {
         for (uint i=0; i<coeff; i++)
         {
-            uint offsetPrev = (depthPrev * 4 + nbNeuronsPrev * seq +
-                sequence * nbNeuronsPrev * (elem*coeff+i)) / 4;
-            deltaPrev[offsetPrev] += tmp[i];
+            uint offsetPrevTmp = offsetPrev +
+                sequence * nbNeuronsPrev * (elem*coeff+i) / 4;
+            deltaPrev[offsetPrevTmp] += tmp[i];
         }
     }
 }
@@ -318,32 +246,14 @@ kernel void flSeq48BackwardHalf(
 kernel void flSeq4BackwardHalf(
     const device half * delta,
     const device half4 * weights,
-    constant uint * pNbNeurons,
-    constant uint * pNbNeuronsPrev,
-    constant uint * pNbBatch,
-    constant uint * pSequence,
-    constant uint * pDirty,
+    constant uint & nbNeurons,
+    constant uint & nbNeuronsPrev,
+    constant uint & nbBatch,
+    constant uint & sequence,
+    constant uint & dirty,
     device half4 * deltaPrev,
     uint2 id [[ thread_position_in_grid ]])
 {
-    uint nbNeurons;
-    uint nbNeuronsPrev;
-    uint nbBatch;
-    uint sequence;
-    uint dirty;
-    
-    if (pNbNeurons && pNbNeuronsPrev && pNbBatch && pDirty &&
-        deltaPrev && weights && delta)
-    {
-        nbNeurons = *pNbNeurons;
-        nbNeuronsPrev = *pNbNeuronsPrev;
-        nbBatch = *pNbBatch;
-        sequence = *pSequence;
-        dirty = *pDirty;
-    }
-    else
-        return ;
-    
     uint depthPrev = id[0];
     uint elem = id[1] / sequence;
     uint seq = id[1] % sequence;
@@ -354,13 +264,15 @@ kernel void flSeq4BackwardHalf(
     }
     
     half4 tmp = 0.0;
+    uint offset = nbNeurons * seq + sequence * nbNeurons * elem;
+    
     for (uint depth=0; depth<nbNeurons; depth++)
     {
-        uint offsetWeights = (depthPrev * 4 + nbNeuronsPrev * depth) / 4;
+        uint offsetWeights = depthPrev + nbNeuronsPrev * depth / 4;
         half4 w = weights[offsetWeights];
         
-        uint offset = depth + nbNeurons * seq + sequence * nbNeurons * elem;
-        half deltaCur = delta[offset];
+        uint offsetTmp = depth + offset;
+        half deltaCur = delta[offsetTmp];
         
         tmp += w * deltaCur;
     }
@@ -381,32 +293,14 @@ kernel void flSeq4BackwardHalf(
 kernel void flSeqBatchDerWeightsHalf(
     const device half * outsPrev,
     const device half * delta,
-    constant uint * pNbNeurons,
-    constant uint * pNbNeuronsPrev,
-    constant uint * pNbBatch,
-    constant uint * pSequence,
-    constant uint * pAccumulate,
+    constant uint & nbNeurons,
+    constant uint & nbNeuronsPrev,
+    constant uint & nbBatch,
+    constant uint & sequence,
+    constant uint & accumulate,
     device half * grads,
     uint2 id [[ thread_position_in_grid ]])
 {
-    uint nbNeurons;
-    uint nbNeuronsPrev;
-    uint nbBatch;
-    uint sequence;
-    uint accumulate;
-    
-    if (pNbNeurons && pNbNeuronsPrev && pNbBatch && pSequence && pAccumulate &&
-        outsPrev && delta && grads)
-    {
-        nbNeurons = *pNbNeurons;
-        nbNeuronsPrev = *pNbNeuronsPrev;
-        nbBatch = *pNbBatch;
-        sequence = *pSequence;
-        accumulate = *pAccumulate;
-    }
-    else
-        return ;
-    
     uint depth = id[0];
     uint depthPrev = id[1];
     
@@ -443,32 +337,14 @@ kernel void flSeqBatchDerWeightsHalf(
 kernel void flSeqBatch4DerWeightsHalf(
     const device half4 * outsPrev,
     const device half * delta,
-    constant uint * pNbNeurons,
-    constant uint * pNbNeuronsPrev,
-    constant uint * pNbBatch,
-    constant uint * pSequence,
-    constant uint * pAccumulate,
+    constant uint & nbNeurons,
+    constant uint & nbNeuronsPrev,
+    constant uint & nbBatch,
+    constant uint & sequence,
+    constant uint & accumulate,
     device half4 * grads,
     uint2 id [[ thread_position_in_grid ]])
 {
-    uint nbNeurons;
-    uint nbNeuronsPrev;
-    uint nbBatch;
-    uint sequence;
-    uint accumulate;
-    
-    if (pNbNeurons && pNbNeuronsPrev && pNbBatch && pSequence && pAccumulate &&
-        outsPrev && delta && grads)
-    {
-        nbNeurons = *pNbNeurons;
-        nbNeuronsPrev = *pNbNeuronsPrev;
-        nbBatch = *pNbBatch;
-        sequence = *pSequence;
-        accumulate = *pAccumulate;
-    }
-    else
-        return ;
-    
     uint depth = id[0];
     uint depthPrev = id[1];
     
@@ -484,14 +360,14 @@ kernel void flSeqBatch4DerWeightsHalf(
         uint offset = depth + nbNeurons * seq + sequence * nbNeurons * elem;
         half deltaCur = delta[offset];
         
-        uint offsetPrev = (depthPrev * 4 + nbNeuronsPrev * seq +
+        uint offsetPrev = depthPrev + (nbNeuronsPrev * seq +
             sequence * nbNeuronsPrev * elem) / 4;
         half4 outPrev = outsPrev[offsetPrev];
         
         tmp += outPrev * deltaCur;
     }}
     
-    uint offsetWeights = (depthPrev * 4 + nbNeuronsPrev * depth) / 4;
+    uint offsetWeights = depthPrev + (nbNeuronsPrev * depth) / 4;
     if (accumulate)
     {
         grads[offsetWeights] += tmp;
@@ -505,29 +381,13 @@ kernel void flSeqBatch4DerWeightsHalf(
 kernel void flSeqDerWeightsHalf(
     const device half * outsPrev,
     const device half * delta,
-    constant uint * pNbNeurons,
-    constant uint * pNbNeuronsPrev,
-    constant uint * pNbBatch,
-    constant uint * pSequence,
+    constant uint & nbNeurons,
+    constant uint & nbNeuronsPrev,
+    constant uint & nbBatch,
+    constant uint & sequence,
     device half * deltaWeights,
     uint2 id [[ thread_position_in_grid ]])
 {
-    uint nbNeurons;
-    uint nbNeuronsPrev;
-    uint nbBatch;
-    uint sequence;
-    
-    if (pNbNeurons && pNbNeuronsPrev && pNbBatch && pSequence &&
-        outsPrev && delta && deltaWeights)
-    {
-        nbNeurons = *pNbNeurons;
-        nbNeuronsPrev = *pNbNeuronsPrev;
-        nbBatch = *pNbBatch;
-        sequence = *pSequence;
-    }
-    else
-        return ;
-    
     uint depth = id[0] % nbNeurons;
     uint depthPrev = id[1];
     uint elem = id[0] / nbNeurons;
@@ -539,14 +399,16 @@ kernel void flSeqDerWeightsHalf(
     }
     
     half tmp = 0.0;
+    uint offset = depth + sequence * nbNeurons * elem;
+    uint offsetPrev = depthPrev + sequence * nbNeuronsPrev * elem;
+    
     for (uint seq=0; seq<sequence; seq++)
     {
-        uint offset = depth + nbNeurons * seq + sequence * nbNeurons * elem;
-        half deltaCur = delta[offset];
+        uint offsetTmp = nbNeurons * seq + offset;
+        half deltaCur = delta[offsetTmp];
         
-        uint offsetPrev = depthPrev + nbNeuronsPrev * seq +
-            sequence * nbNeuronsPrev * elem;
-        half outPrev = outsPrev[offsetPrev];
+        uint offsetPrevTmp = nbNeuronsPrev * seq + offsetPrev;
+        half outPrev = outsPrev[offsetPrevTmp];
         
         tmp += outPrev * deltaCur;
     }
@@ -558,29 +420,13 @@ kernel void flSeqDerWeightsHalf(
 
 kernel void flSeqReduceWeightsHalf(
     const device half * deltaWeights,
-    constant uint * pNbNeurons,
-    constant uint * pNbNeuronsPrev,
-    constant uint * pNbBatch,
-    constant uint * pAccumulate,
+    constant uint & nbNeurons,
+    constant uint & nbNeuronsPrev,
+    constant uint & nbBatch,
+    constant uint & accumulate,
     device half * grads,
     uint2 id [[ thread_position_in_grid ]])
 {
-    uint nbNeurons;
-    uint nbNeuronsPrev;
-    uint nbBatch;
-    uint accumulate;
-    
-    if (pNbNeurons && pNbNeuronsPrev && pNbBatch && pAccumulate &&
-        deltaWeights && grads)
-    {
-        nbNeurons = *pNbNeurons;
-        nbNeuronsPrev = *pNbNeuronsPrev;
-        nbBatch = *pNbBatch;
-        accumulate = *pAccumulate;
-    }
-    else
-        return ;
-
     uint depth = id[0];
     uint depthPrev = id[1];
     

@@ -426,7 +426,6 @@ class Transformer(torch.nn.Module):
         for e, layer in enumerate(self.layers):
             h, cache[e] = layer(
                 h, rotation_matrix=rotation_matrix, mask=mask, cache=cache[e]
-            )
+            )"""
 
-        return self.output(self.norm(h)), cache"""
-        return h, cache
+        return self.output(self.norm(h)), cache

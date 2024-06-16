@@ -41,11 +41,26 @@ class NLPGradTests: EmbeddingSeqMSE1DCase
     {
         let params = GrAI.Model.Params(context: context)
         
-        let layer: LayerSeq = EmbeddingSeq(
+        var layer: LayerSeq = EmbeddingSeq(
             sequence: sequence,
             vocabularySize: vocabularySize,
             nbNeurons: 5, params: params
         )
+        
+        switch model
+        {
+        case "Embedding":
+            break
+        case "RMSNorm":
+            layer = RMSNormSeq(
+                layerPrev: layer,
+                activation: nil,
+                params: params
+            )
+            
+        default:
+            fatalError("Unreachable.")
+        }
         
         var head: Layer1D = AvgPoolSeq(layerPrev: layer, params: params)
         
@@ -76,6 +91,19 @@ class NLPGradTests: EmbeddingSeqMSE1DCase
         let trainer = _buildTrainer("Embedding")
         run(trainer)
     }
+    
+    func testRMSNormSeqCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("RMSNorm")
+        run(trainer)
+    }
+    
+    func testRMSNormSeqGPU() throws
+    {
+        let trainer = _buildTrainer("RMSNorm")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -102,11 +130,26 @@ class NLPFlowTests: EmbeddingSeqMSE1DCase
     {
         let params = GrAI.Model.Params(context: context)
         
-        let layer: LayerSeq = EmbeddingSeq(
+        var layer: LayerSeq = EmbeddingSeq(
             sequence: sequence,
             vocabularySize: vocabularySize,
             nbNeurons: 5, params: params
         )
+        
+        switch model
+        {
+        case "Embedding":
+            break
+        case "RMSNorm":
+            layer = RMSNormSeq(
+                layerPrev: layer,
+                activation: nil,
+                params: params
+            )
+            
+        default:
+            fatalError("Unreachable.")
+        }
         
         var head: Layer1D = AvgPoolSeq(layerPrev: layer, params: params)
         
@@ -128,6 +171,12 @@ class NLPFlowTests: EmbeddingSeqMSE1DCase
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer("Embedding")
+        run(trainer)
+    }
+    
+    func testRMSNormSeq() throws
+    {
+        let trainer = _buildTrainer("RMSNorm")
         run(trainer)
     }
 }
@@ -162,6 +211,12 @@ class NLPFlowPrecisionTests: NLPFlowTests
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer("Embedding")
+        run(trainer)
+    }
+    
+    override func testRMSNormSeq() throws
+    {
+        let trainer = _buildTrainer("RMSNorm")
         run(trainer)
     }
 }
@@ -206,6 +261,12 @@ class NLPFlowResetTests: NLPFlowTests
         let trainer = _buildTrainer("Embedding")
         run(trainer)
     }
+    
+    override func testRMSNormSeq() throws
+    {
+        let trainer = _buildTrainer("RMSNorm")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -248,6 +309,12 @@ class NLPFlowReverseTests: NLPFlowTests
         let trainer = _buildTrainer("Embedding")
         run(trainer)
     }
+    
+    override func testRMSNormSeq() throws
+    {
+        let trainer = _buildTrainer("RMSNorm")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -274,11 +341,26 @@ class NLPFlowAccumulateTests: EmbeddingSeqMSE1DCase
     {
         let params = GrAI.Model.Params(context: context)
         
-        let layer: LayerSeq = EmbeddingSeq(
+        var layer: LayerSeq = EmbeddingSeq(
             sequence: sequence,
             vocabularySize: vocabularySize,
             nbNeurons: 5, params: params
         )
+        
+        switch model
+        {
+        case "Embedding":
+            break
+        case "RMSNorm":
+            layer = RMSNormSeq(
+                layerPrev: layer,
+                activation: nil,
+                params: params
+            )
+            
+        default:
+            fatalError("Unreachable.")
+        }
         
         var head: Layer1D = AvgPoolSeq(layerPrev: layer, params: params)
         
@@ -300,6 +382,12 @@ class NLPFlowAccumulateTests: EmbeddingSeqMSE1DCase
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer("Embedding")
+        run(trainer)
+    }
+    
+    func testRMSNormSeq() throws
+    {
+        let trainer = _buildTrainer("RMSNorm")
         run(trainer)
     }
 }
@@ -336,6 +424,12 @@ class NLPInferenceTests: NLPFlowTests
         let trainer = _buildTrainer("Embedding")
         run(trainer)
     }
+    
+    override func testRMSNormSeq() throws
+    {
+        let trainer = _buildTrainer("RMSNorm")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -369,6 +463,12 @@ class NLPLoadTests: NLPFlowTests
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer("Embedding")
+        run(trainer)
+    }
+    
+    override func testRMSNormSeq() throws
+    {
+        let trainer = _buildTrainer("RMSNorm")
         run(trainer)
     }
 }
@@ -448,6 +548,12 @@ class NLPTransformTests: NLPFlowTests
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer("Embedding")
+        run(trainer)
+    }
+    
+    override func testRMSNormSeq() throws
+    {
+        let trainer = _buildTrainer("RMSNorm")
         run(trainer)
     }
 }

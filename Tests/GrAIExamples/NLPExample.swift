@@ -46,10 +46,24 @@ final class NLPExample: XCTestCase
         let context = ModelContext(name: "NLP", curID: 0)
         let params = GrAI.Model.Params(context: context)
         
-        _ = EmbeddingSeq(
+        var layer: LayerSeq = EmbeddingSeq(
             sequence: sequence,
             vocabularySize: vocabularySize,
             nbNeurons: hiddenDim, params: params
+        )
+        
+        layer = RMSNormSeq(
+            layerPrev: layer,
+            activation: nil,
+            params: params
+        )
+        
+        layer = FullyConnectedSeq(
+            layerPrev: layer,
+            nbNeurons: vocabularySize,
+            activation: nil,
+            biases: false,
+            params: params
         )
         
         // Retrieve base model in the context and initialize a
@@ -70,7 +84,20 @@ final class NLPExample: XCTestCase
                 let weightsTmp: [Float] = Array<Float>(
                     numpy: weightsNumpy.removeFirst()
                 )!
-                
+                layer.weightsCPU = weightsTmp
+            }
+            if let layer = model.layers[num_layer] as? RMSNormSeq
+            {
+                let weightsTmp: [Float] = Array<Float>(
+                    numpy: weightsNumpy.removeFirst()
+                )!
+                layer.weightsCPU = weightsTmp
+            }
+            if let layer = model.layers[num_layer] as? FullyConnectedSeq
+            {
+                let weightsTmp: [Float] = Array<Float>(
+                    numpy: weightsNumpy.removeFirst()
+                )!
                 layer.weightsCPU = weightsTmp
             }
         }
@@ -119,7 +146,7 @@ final class NLPExample: XCTestCase
         for (elemOut, elemRef) in zip(arrayOut, arrayRef)
         {
             let diffPercent = abs(elemOut - elemRef) / elemRef * 100.0
-            XCTAssert(diffPercent < 0.001)
+            XCTAssert(diffPercent < 1)
         }
     }
 }

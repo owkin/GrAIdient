@@ -355,10 +355,8 @@ public class RoPESeq: LayerSeq
                     let cosVal = cos(mTheta)
                     let sinVal = sin(mTheta)
                     
-                    let out1 = neuronsPrev.get(seq, 0 + 2 * block)!
-                        .v[elem].delta
-                    let out2 = neuronsPrev.get(seq, 1 + 2 * block)!
-                        .v[elem].delta
+                    let out1 = neurons.get(seq, 0 + 2 * block)!.v[elem].delta
+                    let out2 = neurons.get(seq, 1 + 2 * block)!.v[elem].delta
                     
                     let in1 = out1 * cosVal + out2 * sinVal
                     let in2 = -out1 * sinVal + out2 * cosVal

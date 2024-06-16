@@ -51,10 +51,25 @@ class NLPGradTests: EmbeddingSeqMSE1DCase
         {
         case "Embedding":
             break
+            
         case "RMSNorm":
             layer = RMSNormSeq(
                 layerPrev: layer,
                 activation: nil,
+                params: params
+            )
+            
+        case "RoPE":
+            layer = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 8,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = try! RoPESeq(
+                layerPrev: layer,
+                seqPositions: [Int](1...sequence),
                 params: params
             )
             
@@ -92,16 +107,23 @@ class NLPGradTests: EmbeddingSeqMSE1DCase
         run(trainer)
     }
     
-    func testRMSNormSeqCPU() throws
+    func testRMSNormCPU() throws
     {
         GrAI.Opti.CPU = true
         let trainer = _buildTrainer("RMSNorm")
         run(trainer)
     }
     
-    func testRMSNormSeqGPU() throws
+    func testRMSNormGPU() throws
     {
         let trainer = _buildTrainer("RMSNorm")
+        run(trainer)
+    }
+    
+    func testRoPECPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("RoPE")
         run(trainer)
     }
 }
@@ -140,6 +162,7 @@ class NLPFlowTests: EmbeddingSeqMSE1DCase
         {
         case "Embedding":
             break
+            
         case "RMSNorm":
             layer = RMSNormSeq(
                 layerPrev: layer,
@@ -174,7 +197,7 @@ class NLPFlowTests: EmbeddingSeqMSE1DCase
         run(trainer)
     }
     
-    func testRMSNormSeq() throws
+    func testRMSNorm() throws
     {
         let trainer = _buildTrainer("RMSNorm")
         run(trainer)
@@ -214,7 +237,7 @@ class NLPFlowPrecisionTests: NLPFlowTests
         run(trainer)
     }
     
-    override func testRMSNormSeq() throws
+    override func testRMSNorm() throws
     {
         let trainer = _buildTrainer("RMSNorm")
         run(trainer)
@@ -262,7 +285,7 @@ class NLPFlowResetTests: NLPFlowTests
         run(trainer)
     }
     
-    override func testRMSNormSeq() throws
+    override func testRMSNorm() throws
     {
         let trainer = _buildTrainer("RMSNorm")
         run(trainer)
@@ -310,7 +333,7 @@ class NLPFlowReverseTests: NLPFlowTests
         run(trainer)
     }
     
-    override func testRMSNormSeq() throws
+    override func testRMSNorm() throws
     {
         let trainer = _buildTrainer("RMSNorm")
         run(trainer)
@@ -351,6 +374,7 @@ class NLPFlowAccumulateTests: EmbeddingSeqMSE1DCase
         {
         case "Embedding":
             break
+            
         case "RMSNorm":
             layer = RMSNormSeq(
                 layerPrev: layer,
@@ -385,7 +409,7 @@ class NLPFlowAccumulateTests: EmbeddingSeqMSE1DCase
         run(trainer)
     }
     
-    func testRMSNormSeq() throws
+    func testRMSNorm() throws
     {
         let trainer = _buildTrainer("RMSNorm")
         run(trainer)
@@ -425,7 +449,7 @@ class NLPInferenceTests: NLPFlowTests
         run(trainer)
     }
     
-    override func testRMSNormSeq() throws
+    override func testRMSNorm() throws
     {
         let trainer = _buildTrainer("RMSNorm")
         run(trainer)
@@ -466,7 +490,7 @@ class NLPLoadTests: NLPFlowTests
         run(trainer)
     }
     
-    override func testRMSNormSeq() throws
+    override func testRMSNorm() throws
     {
         let trainer = _buildTrainer("RMSNorm")
         run(trainer)
@@ -551,7 +575,7 @@ class NLPTransformTests: NLPFlowTests
         run(trainer)
     }
     
-    override func testRMSNormSeq() throws
+    override func testRMSNorm() throws
     {
         let trainer = _buildTrainer("RMSNorm")
         run(trainer)

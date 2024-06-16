@@ -126,6 +126,12 @@ class NLPGradTests: EmbeddingSeqMSE1DCase
         let trainer = _buildTrainer("RoPE")
         run(trainer)
     }
+    
+    func testRoPEGPU() throws
+    {
+        let trainer = _buildTrainer("RoPE")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -170,6 +176,20 @@ class NLPFlowTests: EmbeddingSeqMSE1DCase
                 params: params
             )
             
+        case "RoPE":
+            layer = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 8,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = try! RoPESeq(
+                layerPrev: layer,
+                seqPositions: [Int](1...sequence),
+                params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -200,6 +220,12 @@ class NLPFlowTests: EmbeddingSeqMSE1DCase
     func testRMSNorm() throws
     {
         let trainer = _buildTrainer("RMSNorm")
+        run(trainer)
+    }
+    
+    func testRoPE() throws
+    {
+        let trainer = _buildTrainer("RoPE")
         run(trainer)
     }
 }
@@ -240,6 +266,12 @@ class NLPFlowPrecisionTests: NLPFlowTests
     override func testRMSNorm() throws
     {
         let trainer = _buildTrainer("RMSNorm")
+        run(trainer)
+    }
+    
+    override func testRoPE() throws
+    {
+        let trainer = _buildTrainer("RoPE")
         run(trainer)
     }
 }
@@ -290,6 +322,12 @@ class NLPFlowResetTests: NLPFlowTests
         let trainer = _buildTrainer("RMSNorm")
         run(trainer)
     }
+    
+    override func testRoPE() throws
+    {
+        let trainer = _buildTrainer("RoPE")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -336,6 +374,12 @@ class NLPFlowReverseTests: NLPFlowTests
     override func testRMSNorm() throws
     {
         let trainer = _buildTrainer("RMSNorm")
+        run(trainer)
+    }
+    
+    override func testRoPE() throws
+    {
+        let trainer = _buildTrainer("RoPE")
         run(trainer)
     }
 }
@@ -454,6 +498,12 @@ class NLPInferenceTests: NLPFlowTests
         let trainer = _buildTrainer("RMSNorm")
         run(trainer)
     }
+    
+    override func testRoPE() throws
+    {
+        let trainer = _buildTrainer("RoPE")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -493,6 +543,12 @@ class NLPLoadTests: NLPFlowTests
     override func testRMSNorm() throws
     {
         let trainer = _buildTrainer("RMSNorm")
+        run(trainer)
+    }
+    
+    override func testRoPE() throws
+    {
+        let trainer = _buildTrainer("RoPE")
         run(trainer)
     }
 }
@@ -578,6 +634,12 @@ class NLPTransformTests: NLPFlowTests
     override func testRMSNorm() throws
     {
         let trainer = _buildTrainer("RMSNorm")
+        run(trainer)
+    }
+    
+    override func testRoPE() throws
+    {
+        let trainer = _buildTrainer("RoPE")
         run(trainer)
     }
 }

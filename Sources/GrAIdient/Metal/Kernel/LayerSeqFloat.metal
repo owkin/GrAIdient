@@ -2743,3 +2743,115 @@ kernel void layerCAMSeqForwardFloat(
     uint offset = seq + sequence * elem;
     outs[offset] = sum;
 }
+
+kernel void createRoPESeqMatrixFloat(
+    constant int * seqPositions,
+    constant uint & nbNeurons,
+    constant uint & sequence,
+    device float * rotationMatrix,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint nbBlocks = nbNeurons / 2;
+    
+    uint block = id[0];
+    uint seq = id[1];
+    
+    if (block >= nbBlocks || seq >= sequence)
+    {
+        return ;
+    }
+    
+    float position = (float)seqPositions[seq];
+    float theta = pow(
+        10000.0,
+        -2.0 * (float)block / (float)nbNeurons
+    );
+    float mTheta = position * theta;
+    float cosVal = cos(mTheta);
+    float sinVal = sin(mTheta);
+    
+    uint offset = seq * nbNeurons;
+    rotationMatrix[2 * block + offset] = cosVal;
+    rotationMatrix[1 + 2 * block + offset] = sinVal;
+}
+
+kernel void RoPESeqForwardFloat(
+    const device float * outsPrev,
+    const device float * rotationMatrix,
+    constant uint & nbNeurons,
+    constant uint & nbBatch,
+    constant uint & sequence,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint nbBlocks = nbNeurons / 2;
+    
+    uint block = id[0];
+    uint elem = id[1] / sequence;
+    uint seq = id[1] % sequence;
+    
+    if (block >= nbBlocks || elem >= nbBatch || seq >= sequence)
+    {
+        return ;
+    }
+    
+    uint offset1 = seq * nbNeurons;
+    uint offset2 = nbNeurons * seq + sequence * nbNeurons * elem;
+    
+    float cosVal = rotationMatrix[2 * block + offset1];
+    float sinVal = rotationMatrix[1 + 2 * block + offset1];
+    
+    float in1 = outsPrev[2 * block + offset2];
+    float in2 = outsPrev[1 + 2 * block + offset2];
+    
+    float out1 = in1 * cosVal - in2 * sinVal;
+    float out2 = in1 * sinVal + in2 * cosVal;
+    
+    outs[2 * block + offset2] = out1;
+    outs[1 + 2 * block + offset2] = out2;
+}
+
+kernel void RoPESeqSeqBackwardFloat(
+    const device float * delta,
+    const device float * rotationMatrix,
+    constant uint & nbNeurons,
+    constant uint & nbBatch,
+    constant uint & sequence,
+    constant uint & dirty,
+    device float * deltaPrev,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint nbBlocks = nbNeurons / 2;
+    
+    uint block = id[0];
+    uint elem = id[1] / sequence;
+    uint seq = id[1] % sequence;
+    
+    if (block >= nbBlocks || elem >= nbBatch || seq >= sequence)
+    {
+        return ;
+    }
+    
+    uint offset1 = seq * nbNeurons;
+    uint offset2 = nbNeurons * seq + sequence * nbNeurons * elem;
+    
+    float cosVal = rotationMatrix[2 * block + offset1];
+    float sinVal = rotationMatrix[1 + 2 * block + offset1];
+    
+    float out1 = delta[2 * block + offset2];
+    float out2 = delta[1 + 2 * block + offset2];
+    
+    float in1 = out1 * cosVal + out2 * sinVal;
+    float in2 = -out1 * sinVal + out2 * cosVal;
+    
+    if (dirty)
+    {
+        deltaPrev[2 * block + offset2] = in1;
+        deltaPrev[1 + 2 * block + offset2] = in2;
+    }
+    else
+    {
+        deltaPrev[2 * block + offset2] += in1;
+        deltaPrev[1 + 2 * block + offset2] += in2;
+    }
+}

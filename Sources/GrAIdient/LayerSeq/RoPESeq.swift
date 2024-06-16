@@ -32,7 +32,7 @@ public class RoPESeq: LayerSeq
     }
     
     /// Rotary matrix.
-    var _rotaryMatrix: FloatBuffer! = nil
+    var _rotationMatrix: FloatBuffer! = nil
     
     private enum Keys: String, CodingKey
     {
@@ -141,7 +141,7 @@ public class RoPESeq: LayerSeq
     public override func resetKernelGPU()
     {
         super.resetKernelGPU()
-        _rotaryMatrix = nil
+        _rotationMatrix = nil
     }
     
     ///
@@ -179,14 +179,30 @@ public class RoPESeq: LayerSeq
         
         try super.checkStateForwardGPU(batchSize: batchSize)
         
-        if _rotaryMatrix == nil || _dirtySeqPositions
+        if _rotationMatrix == nil || _dirtySeqPositions
         {
             let nbBlocks = nbNeurons / 2
-            _rotaryMatrix = FloatBuffer(nbElems:
-                4 * nbBlocks, deviceID: deviceID
+            _rotationMatrix = FloatBuffer(
+                nbElems: sequence * 2 * nbBlocks, deviceID: deviceID
             )
             
-            // TODO: Update rotaryMatrix.
+            let seqPositions32: [Int32] = seqPositions.map { Int32($0) }
+            let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
+            let pSequence: [UInt32] = [UInt32(sequence)]
+            
+            let command = MetalKernel.get.createCommand(
+                "createRoPESeqMatrix", deviceID: deviceID
+            )
+            command.setBytes(seqPositions32, atIndex: 0)
+            command.setBytes(pNbNeurons, atIndex: 1)
+            command.setBytes(pSequence, atIndex: 2)
+            command.setBuffer(_rotationMatrix.metal, atIndex: 3)
+            
+            command.dispatchThreads(
+                width: nbNeurons / 2,
+                height: sequence
+            )
+            command.enqueue()
             
             _dirtySeqPositions = false
         }
@@ -303,34 +319,30 @@ public class RoPESeq: LayerSeq
     ///
     public override func forwardGPU() throws
     {
-        /*if let layerPrev = self.layerPrev as? LayerSeq
+        if let layerPrev = self.layerPrev as? LayerSeq
         {
             try checkStateForwardGPU(batchSize: batchSize)
             
-            let pNbHeads: [UInt32] = [UInt32(_nbHeads)]
             let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pSequence: [UInt32] = [UInt32(sequence)]
             
-            let kernel = (nbNeurons / _nbHeads) % 4 == 0 ?
-                "softmaxSeq4Forward" : "softmaxSeqForward"
-            let coeff = (nbNeurons / _nbHeads) % 4 == 0 ? 4 : 1
             let command = MetalKernel.get.createCommand(
-                kernel, deviceID: deviceID
+                "RoPESeqForward", deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
-            command.setBytes(pNbHeads, atIndex: 1)
+            command.setBuffer(_rotationMatrix.metal, atIndex: 1)
             command.setBytes(pNbNeurons, atIndex: 2)
             command.setBytes(pNbBatch, atIndex: 3)
             command.setBytes(pSequence, atIndex: 4)
             command.setBuffer(outs.metal, atIndex: 5)
             
             command.dispatchThreads(
-                width: nbNeurons / coeff,
+                width: nbNeurons / 2,
                 height: batchSize * sequence
             )
             command.enqueue()
-        }*/
+        }
     }
     
     /// Apply the backward pass in the CPU execution context.
@@ -386,38 +398,33 @@ public class RoPESeq: LayerSeq
     ///
     public override func backwardGPU() throws
     {
-        /*if let layerPrev = self.layerPrev as? LayerSeq, mustComputeBackward
+        if let layerPrev = self.layerPrev as? LayerSeq, mustComputeBackward
         {
             try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
             
-            let pNbHeads: [UInt32] = [UInt32(_nbHeads)]
             let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pSequence: [UInt32] = [UInt32(sequence)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
-            let kernel = (nbNeurons / _nbHeads) % 4 == 0 ?
-                "softmaxSeq4Backward" : "softmaxSeqBackward"
-            let coeff = (nbNeurons / _nbHeads) % 4 == 0 ? 4 : 1
             let command = MetalKernel.get.createCommand(
-                kernel, deviceID: deviceID
+                "RoPESeqSeqBackward", deviceID: deviceID
             )
-            command.setBuffer(outs.metal, atIndex: 0)
-            command.setBuffer(delta.metal, atIndex: 1)
-            command.setBytes(pNbHeads, atIndex: 2)
-            command.setBytes(pNbNeurons, atIndex: 3)
-            command.setBytes(pNbBatch, atIndex: 4)
-            command.setBytes(pSequence, atIndex: 5)
-            command.setBytes(pDirty, atIndex: 6)
-            command.setBuffer(layerPrev.delta.metal, atIndex: 7)
+            command.setBuffer(delta.metal, atIndex: 0)
+            command.setBuffer(_rotationMatrix.metal, atIndex: 1)
+            command.setBytes(pNbNeurons, atIndex: 2)
+            command.setBytes(pNbBatch, atIndex: 3)
+            command.setBytes(pSequence, atIndex: 4)
+            command.setBytes(pDirty, atIndex: 5)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 6)
             
             command.dispatchThreads(
-                width: nbNeurons / coeff,
+                width: nbNeurons / 2,
                 height: batchSize * sequence
             )
             command.enqueue()
             
             propagateDirty()
-        }*/
+        }
     }
 }

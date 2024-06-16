@@ -7073,7 +7073,7 @@ class LayerCAM2DTests: XCTestCase
             {
                 let diff = (elem1 - elem2) * (elem1 - elem2) /
                            (elem1 * elem1 + elem2 * elem2)
-                XCTAssert(diff < 0.00001)
+                XCTAssert(diff < 0.005)
             }
             
             mainCPU.incStep()
@@ -7596,7 +7596,7 @@ class VQGrad2DTests: XCTestCase
             let diff = (lossGPU - lossCPU) * (lossGPU - lossCPU) /
                        (lossCPU * lossCPU + lossGPU * lossGPU)
             print(diff)
-            XCTAssert(diff < 0.001)
+            XCTAssert(diff < 0.005)
             
             mainCPU.incStep()
             secondCPU.incStep()

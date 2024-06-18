@@ -267,7 +267,7 @@ public class RoPESeq: LayerSeq
                     
                     let theta = pow(
                         10000.0,
-                        -2.0 * Double(block) / Double(nbNeurons)
+                        -2.0 * Double(block) / Double(size)
                     )
                     let mTheta = Double(position) * theta
                     let cosVal = cos(mTheta)
@@ -324,7 +324,7 @@ public class RoPESeq: LayerSeq
                     
                     let theta = pow(
                         10000.0,
-                        -2.0 * Double(block) / Double(nbNeurons)
+                        -2.0 * Double(block) / Double(size)
                     )
                     let mTheta = Double(position) * theta
                     let cosVal = cos(mTheta)
@@ -401,7 +401,7 @@ public class RoPESeq: LayerSeq
                     
                     let theta = pow(
                         10000.0,
-                        -2.0 * Double(block) / Double(nbNeurons)
+                        -2.0 * Double(block) / Double(size)
                     )
                     let mTheta = Double(position) * theta
                     let cosVal = cos(mTheta)

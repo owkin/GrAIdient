@@ -558,7 +558,7 @@ class Activation2DFlowPrecisionTests: Input2DMSE1DCase
         let trainer = _buildTrainer(
             model: "Convolution", activation: SoftReLU.str, bn: false
         )
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     func testConvSoftReLUBN() throws

@@ -2766,7 +2766,7 @@ kernel void createRoPESeqMatrixHalf(
     float position = (float)seqPositions[seq];
     float theta = pow(
         10000.0,
-        -2.0 * (float)block / (float)nbNeurons
+        -2.0 * (float)block / (float)size
     );
     float mTheta = position * theta;
     float cosVal = cos(mTheta);

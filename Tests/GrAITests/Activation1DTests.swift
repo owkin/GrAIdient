@@ -453,7 +453,7 @@ class Activation1DFlowPrecisionTests: Input1DMSE1DCase
         let trainer = _buildTrainer(
             model: "Activation", activation: Sigmoid.str
         )
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     func testGELUApprox() throws

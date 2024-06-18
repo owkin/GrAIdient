@@ -62,7 +62,7 @@ class NLPGradTests: EmbeddingSeqMSE1DCase
         case "RoPE":
             layer = FullyConnectedSeq(
                 layerPrev: layer,
-                nbNeurons: 8,
+                nbNeurons: 3 * 8,
                 activation: nil,
                 biases: false,
                 params: params
@@ -70,6 +70,7 @@ class NLPGradTests: EmbeddingSeqMSE1DCase
             layer = try! RoPESeq(
                 layerPrev: layer,
                 seqPositions: [Int](1...sequence),
+                nbHeads: 3,
                 params: params
             )
             
@@ -179,7 +180,7 @@ class NLPFlowTests: EmbeddingSeqMSE1DCase
         case "RoPE":
             layer = FullyConnectedSeq(
                 layerPrev: layer,
-                nbNeurons: 8,
+                nbNeurons: 3 * 8,
                 activation: nil,
                 biases: false,
                 params: params
@@ -187,6 +188,7 @@ class NLPFlowTests: EmbeddingSeqMSE1DCase
             layer = try! RoPESeq(
                 layerPrev: layer,
                 seqPositions: [Int](1...sequence),
+                nbHeads: 3,
                 params: params
             )
             

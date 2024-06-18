@@ -14,6 +14,7 @@ import Foundation
 ///
 public class SoftmaxSeq: LayerSeq
 {
+    /// Number of heads (groups) of neurons.
     let _nbHeads: Int
     
     private enum Keys: String, CodingKey

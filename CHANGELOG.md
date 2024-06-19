@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+✨ **layer_seq:** RoPESeq ([124](https://github.com/owkin/GrAIdient/pull/124))\
 ✨ **layer_seq:** RMSNormSeq ([123](https://github.com/owkin/GrAIdient/pull/123))\
 ✨ **layer_seq:** EmbeddingSeq ([122](https://github.com/owkin/GrAIdient/pull/122))\
 🚀 **perf:** use half in Metal kernels ([121](https://github.com/owkin/GrAIdient/pull/121))\

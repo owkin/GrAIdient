@@ -433,6 +433,9 @@ let CONFIG_KERNELS =
         "selectSeqForwardFloat",
         "selectSeqBackwardFloat",
         "layerCAMSeqForwardFloat",
+        "createRoPESeqMatrixFloat",
+        "RoPESeqForwardFloat",
+        "RoPESeqSeqBackwardFloat",
     ],
     "LayerSeqHalf": [
         "avgPoolSeqForwardHalf",
@@ -480,6 +483,9 @@ let CONFIG_KERNELS =
         "selectSeqForwardHalf",
         "selectSeqBackwardHalf",
         "layerCAMSeqForwardHalf",
+        "createRoPESeqMatrixHalf",
+        "RoPESeqForwardHalf",
+        "RoPESeqSeqBackwardHalf",
     ],
     "OptimizerFloat": [
         "clipGradientsFloat",

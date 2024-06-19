@@ -37,11 +37,11 @@ def generate_with_cache(
             )
         )
 
+    y = prompt
     cache = None
-    y = prompt[None, ...]
 
     while True:
-        logits, cache = model(y, cache=cache)
+        logits, cache = model(y[None], cache=cache)
         logits = logits[:, -1, :]
         y = sample(logits)
         yield y
@@ -128,15 +128,8 @@ def generate_main(
     prompt = torch.tensor(
         tokenizer.encode(prompt), dtype=torch.long, device="mps"
     )
-    out, _ = model(prompt)
+    out, _ = model(prompt[None])
     return out.detach().cpu().numpy().flatten()
-    """generate(
-        prompt=prompt,
-        model=model,
-        tokenizer=tokenizer,
-        temp=0.7,
-        max_tokens=200
-    )"""
 
 
 def encode(

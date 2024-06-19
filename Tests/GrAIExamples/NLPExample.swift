@@ -34,6 +34,7 @@ final class NLPExample: XCTestCase
     /// - Parameters:
     ///     - sequence: Length of the sequence.
     ///     - hiddenDim: Dimension of neurons in the main branch.
+    ///     - nbHeads:  Number of heads (groups) of neurons.
     ///     - vocabularySize: Vocabulary size.
     /// - Returns: The model built.
     ///
@@ -41,6 +42,7 @@ final class NLPExample: XCTestCase
         modelPath: String,
         sequence: Int,
         hiddenDim: Int,
+        nbHeads: Int,
         vocabularySize: Int) -> Model
     {
         let context = ModelContext(name: "NLP", curID: 0)
@@ -52,7 +54,22 @@ final class NLPExample: XCTestCase
             nbNeurons: hiddenDim, params: params
         )
         
-        layer = RMSNormSeq(
+        layer = FullyConnectedSeq(
+            layerPrev: layer,
+            nbNeurons: hiddenDim,
+            activation: nil,
+            biases: false,
+            params: params
+        )
+        
+        layer = try! RoPESeq(
+            layerPrev: layer,
+            seqPositions: [Int](1...sequence),
+            nbHeads: nbHeads,
+            params: params
+        )
+        
+        /*layer = RMSNormSeq(
             layerPrev: layer,
             activation: nil,
             params: params
@@ -64,7 +81,7 @@ final class NLPExample: XCTestCase
             activation: nil,
             biases: false,
             params: params
-        )
+        )*/
         
         // Retrieve base model in the context and initialize a
         // real model (with `layerPrev` links updated).
@@ -85,6 +102,10 @@ final class NLPExample: XCTestCase
                     numpy: weightsNumpy.removeFirst()
                 )!
                 layer.weightsCPU = weightsTmp
+                
+                // TODO: remove this!
+                weightsNumpy.removeFirst()
+                weightsNumpy.removeFirst()
             }
             if let layer = model.layers[num_layer] as? RMSNormSeq
             {
@@ -125,6 +146,7 @@ final class NLPExample: XCTestCase
             modelPath: _modelPath,
             sequence: prompt.count,
             hiddenDim: 4096,
+            nbHeads: 32,
             vocabularySize: 32000
         )
         

@@ -240,7 +240,7 @@ class Attention(torch.nn.Module):
             queries = torch.einsum("bhlj,lij->bhli", [queries, rotation_matrix])
             keys = torch.einsum("bhlj,lij->bhli", [keys, rotation_matrix])
 
-        scores = torch.matmul(queries, keys.transpose(2, 3)) * self.scale
+        """scores = torch.matmul(queries, keys.transpose(2, 3)) * self.scale
         if mask is not None:
             scores += mask
         scores = torch.softmax(
@@ -250,7 +250,8 @@ class Attention(torch.nn.Module):
         output = torch.matmul(scores, values)
         output = output.transpose(1, 2).contiguous().reshape(B, L, -1)
 
-        return self.wo(output), (keys, values)
+        return self.wo(output), (keys, values)"""
+        return queries.transpose(1, 2).contiguous().reshape(B, L, -1), (keys, values)
 
 
 class FeedForward(torch.nn.Module):
@@ -339,6 +340,13 @@ class TransformerBlock(torch.nn.Module):
             (keys, values): cache for keys and values
         """
         r, cache = self.attention(
+            x,
+            rotation_matrix=rotation_matrix,
+            mask=mask,
+            cache=cache,
+        )
+        return r, cache
+        """r, cache = self.attention(
             self.attention_norm(x),
             rotation_matrix=rotation_matrix,
             mask=mask,
@@ -347,7 +355,7 @@ class TransformerBlock(torch.nn.Module):
         h = x + r
         r = self.feed_forward(self.ffn_norm(h))
         out = h + r
-        return out, cache
+        return out, cache"""
 
 
 class Transformer(torch.nn.Module):
@@ -397,7 +405,7 @@ class Transformer(torch.nn.Module):
         """
         h = self.tok_embeddings(x)
 
-        """mask = None
+        mask = None
         if h.shape[1] > 1:
             mask = Attention.create_additive_causal_mask(h.shape[1])
             mask = mask.type(h.dtype)
@@ -426,6 +434,8 @@ class Transformer(torch.nn.Module):
         for e, layer in enumerate(self.layers):
             h, cache[e] = layer(
                 h, rotation_matrix=rotation_matrix, mask=mask, cache=cache[e]
-            )"""
+            )
+            break
 
-        return self.output(self.norm(h)), cache
+        # return self.output(self.norm(h)), cache
+        return h, cache

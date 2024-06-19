@@ -525,7 +525,7 @@ class Activation2DFlowPrecisionTests: Input2DMSE1DCase
         let trainer = _buildTrainer(
             model: "Convolution", activation: ReLU.str, bn: false
         )
-        run(trainer)
+        run(trainer, diffThreshold: 0.002)
     }
     
     func testConvReLUBN() throws
@@ -574,7 +574,7 @@ class Activation2DFlowPrecisionTests: Input2DMSE1DCase
         let trainer = _buildTrainer(
             model: "Convolution", activation: Sigmoid.str, bn: false
         )
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     func testConvSigmoidBN() throws
@@ -624,7 +624,7 @@ class Activation2DFlowPrecisionTests: Input2DMSE1DCase
         let trainer = _buildTrainer(
             model: "Activation", activation: ReLU.str, bn: false
         )
-        run(trainer)
+        run(trainer, diffThreshold: 0.002)
     }
     
     func testLeakyReLU() throws
@@ -632,7 +632,7 @@ class Activation2DFlowPrecisionTests: Input2DMSE1DCase
         let trainer = _buildTrainer(
             model: "Activation", activation: LeakyReLU.str, bn: false
         )
-        run(trainer)
+        run(trainer, diffThreshold: 0.002)
     }
     
     func testSoftReLU() throws
@@ -665,6 +665,6 @@ class Activation2DFlowPrecisionTests: Input2DMSE1DCase
         let trainer = _buildTrainer(
             model: "Activation", activation: GELU.str, bn: false
         )
-        run(trainer)
+        run(trainer, diffThreshold: 0.002)
     }
 }

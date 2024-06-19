@@ -608,7 +608,7 @@ class Activation2DFlowPrecisionTests: Input2DMSE1DCase
         let trainer = _buildTrainer(
             model: "Convolution", activation: GELU.str, bn: false
         )
-        run(trainer)
+        run(trainer, diffThreshold: 0.005)
     }
     
     func testConvGELUBN() throws

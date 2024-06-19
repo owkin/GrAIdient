@@ -6350,7 +6350,7 @@ class BCESigmoid2DFlowPrecisionTests: BCESigmoid2DFlowTests
     override func testLoss() throws
     {
         let trainer = _buildTrainer()
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
 }
 

@@ -1141,6 +1141,39 @@ public class QueryCausalSeq: LayerMergeSeq
     }
     
     ///
+    /// Initialize state resources in the CPU execution context.
+    ///
+    /// We initialize the neurons' state (forward and backward).
+    ///
+    public override func checkStateCPU(batchSize: Int) throws
+    {
+        if neurons == nil
+        {
+            try super.checkStateCPU(batchSize: batchSize)
+            _encodeCausalityCPU()
+        }
+        else
+        {
+            try super.checkStateCPU(batchSize: batchSize)
+        }
+    }
+    
+    /// Update causality scores in the CPU execution context.
+    private func _encodeCausalityCPU()
+    {
+        let query = (_layersPrev[0] as! LayerSeq).neurons!
+        let key = (_layersPrev[1] as! LayerSeq).neurons!
+        
+        for elem in 0..<batchSize {
+        for headQuery in 0..<_nbHeadsQuery {
+        for seqQ in 0..<sequence {
+        for seqK in seqQ+1..<sequence
+        {
+            neurons.get(seqQ, seqK + headQuery * sequence)!.v[elem].out = -1e9
+        }}}}
+    }
+    
+    ///
     /// Apply the forward pass of the Gradient Checking in CPU execution context.
     ///
     /// Throw an error if batch size is greater than the first batch size.
@@ -1165,31 +1198,48 @@ public class QueryCausalSeq: LayerMergeSeq
         
         let query = (_layersPrev[0] as! LayerSeq).neurons!
         let key = (_layersPrev[1] as! LayerSeq).neurons!
-        let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeads
+        let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeadsQuery
         
         for batch in 0..<batchSize {
-        for head in 0..<_nbHeads {
+        for headQuery in 0..<_nbHeadsQuery {
         for seqQ in 0..<sequence {
         for seqK in 0..<sequence {
         for elem in 0..<nbSameElems
         {
-            var sum = 0.0
-            for j in 0..<size
+            if seqK <= seqQ
             {
-                let depthPrev = j + head * size
+                let headKey = headQuery / _nbHeadsKey
+                var sum = 0.0
                 
-                let queryTmp = query.get(seqQ, depthPrev)!.gc[batch][elem].out
-                let keyTmp = key.get(seqK, depthPrev)!.gc[batch][elem].out
+                for j in 0..<size
+                {
+                    let depthPrevKey = j + headKey * size
+                    let depthPrevQuery = j + headQuery * size
+                    
+                    let queryTmp = query.get(
+                        seqQ, depthPrevQuery
+                    )!.gc[batch][elem].out
+                    let keyTmp = key.get(
+                        seqK, depthPrevKey
+                    )!.gc[batch][elem].out
+                    
+                    sum += queryTmp * keyTmp
+                }
                 
-                sum += queryTmp * keyTmp
+                neurons.get(
+                    seqQ, seqK + headQuery * sequence
+                )!.gc[batch][elem].out = sum / sqrt(Double(size))
             }
-            
-            neurons.get(seqQ, seqK + head * sequence)!.gc[batch][elem].out =
-                sum / sqrt(Double(size))
+            else
+            {
+                neurons.get(
+                    seqQ, seqK + headQuery * sequence
+                )!.gc[batch][elem].out = -1e9
+            }
         }}}}}
         
         for batch in 0..<batchSize {
-        for head in 0..<_nbHeads {
+        for headQuery in 0..<_nbHeadsQuery {
         for seqQ in 0..<sequence {
         for seqK in 0..<sequence {
         var offset = nbSameElems
@@ -1198,32 +1248,47 @@ public class QueryCausalSeq: LayerMergeSeq
         for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
         for elem in 0..<nbElemsTmp
         {
-            var sum = 0.0
-            for j in 0..<size
+            if seqK <= seqQ
             {
-                let depthPrev = j + head * size
+                let headKey = headQuery / _nbHeadsKey
+                var sum = 0.0
                 
-                let queryTmp: Double
-                let keyTmp: Double
-                
-                if index == 0
+                for j in 0..<size
                 {
-                    queryTmp = query.get(seqQ, depthPrev)!
-                        .gc[batch][nbLastElems[index]+elem].out
-                    keyTmp = key.get(seqK, depthPrev)!.v[batch].out
-                }
-                else
-                {
-                    queryTmp = query.get(seqQ, depthPrev)!.v[batch].out
-                    keyTmp = key.get(seqK, depthPrev)!
-                        .gc[batch][nbLastElems[index]+elem].out
+                    let depthPrevKey = j + headKey * size
+                    let depthPrevQuery = j + headQuery * size
+                    
+                    let queryTmp: Double
+                    let keyTmp: Double
+                    
+                    if index == 0
+                    {
+                        queryTmp = query.get(
+                            seqQ, depthPrevQuery
+                        )!.gc[batch][nbLastElems[index]+elem].out
+                        keyTmp = key.get(seqK, depthPrevKey)!.v[batch].out
+                    }
+                    else
+                    {
+                        queryTmp = query.get(seqQ, depthPrevQuery)!.v[batch].out
+                        keyTmp = key.get(
+                            seqK, depthPrevKey
+                        )!.gc[batch][nbLastElems[index]+elem].out
+                    }
+                    
+                    sum += queryTmp * keyTmp
                 }
                 
-                sum += queryTmp * keyTmp
+                neurons.get(
+                    seqQ, seqK + headQuery * sequence
+                )!.gc[batch][offset+elem].out = sum / sqrt(Double(size))
             }
-            
-            neurons.get(seqQ, seqK + head * sequence)!
-                .gc[batch][offset+elem].out = sum / sqrt(Double(size))
+            else
+            {
+                neurons.get(
+                    seqQ, seqK + headQuery * sequence
+                )!.gc[batch][offset+elem].out = -1e9
+            }
         }
         
         offset += nbElemsTmp
@@ -1257,34 +1322,51 @@ public class QueryCausalSeq: LayerMergeSeq
         let query = (_layersPrev[0] as! LayerSeq).neurons!
         let key = (_layersPrev[1] as! LayerSeq).neurons!
         let nbNeuronsPrev = (_layersPrev[0] as! LayerSeq).nbNeurons
-        let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeads
+        let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeadsQuery
         
         for batch in 0..<batchSize {
-        for head in 0..<_nbHeads {
+        for headQuery in 0..<_nbHeadsQuery {
         for seqQ in 0..<sequence {
         for seqK in 0..<sequence {
         for elem in 0..<nbSameElems
         {
-            var sum = 0.0
-            for j in 0..<size
+            if seqK <= seqQ
             {
-                let depthPrev = j + head * size
+                let headKey = headQuery / _nbHeadsKey
+                var sum = 0.0
                 
-                let queryTmp = query.get(seqQ, depthPrev)!.gc[batch][elem].out
-                let keyTmp = key.get(seqK, depthPrev)!.gc[batch][elem].out
+                for j in 0..<size
+                {
+                    let depthPrevKey = j + headKey * size
+                    let depthPrevQuery = j + headQuery * size
+                    
+                    let queryTmp = query.get(
+                        seqQ, depthPrevQuery
+                    )!.gc[batch][elem].out
+                    let keyTmp = key.get(
+                        seqK, depthPrevKey
+                    )!.gc[batch][elem].out
+                    
+                    sum += queryTmp * keyTmp
+                }
                 
-                sum += queryTmp * keyTmp
+                neurons.get(
+                    seqQ, seqK + headQuery * sequence
+                )!.gc[batch][elem].out = sum / sqrt(Double(size))
             }
-            
-            neurons.get(seqQ, seqK + head * sequence)!.gc[batch][elem].out =
-                sum / sqrt(Double(size))
+            else
+            {
+                neurons.get(
+                    seqQ, seqK + headQuery * sequence
+                )!.gc[batch][elem].out = -1e9
+            }
         }}}}}
         
         let queryBuffer = (_layersPrev[0] as! LayerSeq).outs.download()
         let keyBuffer = (_layersPrev[1] as! LayerSeq).outs.download()
         
         for batch in 0..<batchSize {
-        for head in 0..<_nbHeads {
+        for headQuery in 0..<_nbHeadsQuery {
         for seqQ in 0..<sequence {
         for seqK in 0..<sequence {
         var offset = nbSameElems
@@ -1293,40 +1375,55 @@ public class QueryCausalSeq: LayerMergeSeq
         for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
         for elem in 0..<nbElemsTmp
         {
-            var sum = 0.0
-            for j in 0..<size
+            if seqK <= seqQ
             {
-                let depthPrev = j + head * size
+                let headKey = headQuery / _nbHeadsKey
+                var sum = 0.0
                 
-                let queryTmp: Double
-                let keyTmp: Double
-                
-                if index == 0
+                for j in 0..<size
                 {
-                    queryTmp = query.get(seqQ, depthPrev)!
-                        .gc[batch][nbLastElems[index]+elem].out
+                    let depthPrevKey = j + headKey * size
+                    let depthPrevQuery = j + headQuery * size
                     
-                    let offsetTmp = depthPrev + nbNeuronsPrev * seqK +
-                        sequence * nbNeuronsPrev * batch
+                    let queryTmp: Double
+                    let keyTmp: Double
                     
-                    keyTmp = Double(keyBuffer[offsetTmp])
-                }
-                else
-                {
-                    let offsetTmp = depthPrev + nbNeuronsPrev * seqQ +
-                        sequence * nbNeuronsPrev * batch
+                    if index == 0
+                    {
+                        queryTmp = query.get(
+                            seqQ, depthPrevQuery
+                        )!.gc[batch][nbLastElems[index]+elem].out
+                        
+                        let offsetTmp = depthPrevKey + nbNeuronsPrev * seqK +
+                            sequence * nbNeuronsPrev * batch
+                        
+                        keyTmp = Double(keyBuffer[offsetTmp])
+                    }
+                    else
+                    {
+                        let offsetTmp = depthPrevQuery + nbNeuronsPrev * seqQ +
+                            sequence * nbNeuronsPrev * batch
+                        
+                        queryTmp = Double(queryBuffer[offsetTmp])
+                        
+                        keyTmp = key.get(
+                            seqK, depthPrevKey
+                        )!.gc[batch][nbLastElems[index]+elem].out
+                    }
                     
-                    queryTmp = Double(queryBuffer[offsetTmp])
-                    
-                    keyTmp = key.get(seqK, depthPrev)!
-                        .gc[batch][nbLastElems[index]+elem].out
+                    sum += queryTmp * keyTmp
                 }
                 
-                sum += queryTmp * keyTmp
+                neurons.get(
+                    seqQ, seqK + headQuery * sequence
+                )!.gc[batch][offset+elem].out = sum / sqrt(Double(size))
             }
-            
-            neurons.get(seqQ, seqK + head * sequence)!
-                .gc[batch][offset+elem].out = sum / sqrt(Double(size))
+            else
+            {
+                neurons.get(
+                    seqQ, seqK + headQuery * sequence
+                )!.gc[batch][offset+elem].out = -1e9
+            }
         }
         
         offset += nbElemsTmp
@@ -1350,7 +1447,7 @@ public class QueryCausalSeq: LayerMergeSeq
         for elem in 0..<batchSize {
         for headQuery in 0..<_nbHeadsQuery {
         for seqQ in 0..<sequence {
-        for seqK in 0..<sequence
+        for seqK in 0...seqQ
         {
             let headKey = headQuery / _nbHeadsKey
             var sum = 0.0

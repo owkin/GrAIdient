@@ -1055,8 +1055,7 @@ public class QueryCausalSeq: LayerMergeSeq
                 "`query` and `key` should should have same hidden dimension."
             )
         }
-        if query.nbNeurons != key.nbNeurons ||
-           query.sequence != key.sequence
+        if query.sequence != key.sequence
         {
             throw LayerError.Init(message: "Layer structure error.")
         }
@@ -1475,7 +1474,7 @@ public class QueryCausalSeq: LayerMergeSeq
     ///
     public override func forwardGPU() throws
     {
-        try checkStateForwardGPU(batchSize: batchSize)
+        /*try checkStateForwardGPU(batchSize: batchSize)
         
         let query = _layersPrev[0] as! LayerSeq
         let key = _layersPrev[1] as! LayerSeq
@@ -1505,7 +1504,7 @@ public class QueryCausalSeq: LayerMergeSeq
             width: nbNeurons,
             height: batchSize * sequence
         )
-        command.enqueue()
+        command.enqueue()*/
     }
     
     /// Apply the backward pass in the CPU execution context.
@@ -1518,35 +1517,37 @@ public class QueryCausalSeq: LayerMergeSeq
         
         let query = (_layersPrev[0] as! LayerSeq).neurons!
         let key = (_layersPrev[1] as! LayerSeq).neurons!
-        let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeads
+        let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeadsQuery
         
         if _layersPrev[0].computeDelta
         {
             for elem in 0..<batchSize {
-            for head in 0..<_nbHeads {
+            for headQuery in 0..<_nbHeadsQuery {
+            let headKey = headQuery / _nbHeadsKey
             for seqQ in 0..<sequence {
             for j in 0..<size
             {
-                let depthPrev = j + head * size
+                let depthPrevKey = j + headKey * size
+                let depthPrevQuery = j + headQuery * size
                 
                 var sum = 0.0
-                for seqK in 0..<sequence
+                for seqK in 0...seqQ
                 {
                     let deltaCur = neurons
-                        .get(seqQ, seqK + head * sequence)!.v[elem].delta
-                    let keyTmp = key.get(seqK, depthPrev)!.v[elem].out
+                        .get(seqQ, seqK + headQuery * sequence)!.v[elem].delta
+                    let keyTmp = key.get(seqK, depthPrevKey)!.v[elem].out
                     
                     sum += deltaCur * keyTmp
                 }
                 
                 if _layersPrev[0].dirty
                 {
-                    query.get(seqQ, depthPrev)!.v[elem].delta =
+                    query.get(seqQ, depthPrevQuery)!.v[elem].delta =
                         sum / sqrt(Double(size))
                 }
                 else
                 {
-                    query.get(seqQ, depthPrev)!.v[elem].delta +=
+                    query.get(seqQ, depthPrevQuery)!.v[elem].delta +=
                         sum / sqrt(Double(size))
                 }
             }}}}
@@ -1554,30 +1555,32 @@ public class QueryCausalSeq: LayerMergeSeq
         if _layersPrev[1].computeDelta
         {
             for elem in 0..<batchSize {
-            for head in 0..<_nbHeads {
+            for headQuery in 0..<_nbHeadsQuery {
+            let headKey = headQuery / _nbHeadsKey
             for seqK in 0..<sequence {
             for j in 0..<size
             {
-                let depthPrev = j + head * size
+                let depthPrevKey = j + headKey * size
+                let depthPrevQuery = j + headQuery * size
                 
                 var sum = 0.0
-                for seqQ in 0..<sequence
+                for seqQ in 0..<seqK
                 {
                     let deltaCur = neurons
-                        .get(seqQ, seqK + head * sequence)!.v[elem].delta
-                    let queryTmp = query.get(seqQ, depthPrev)!.v[elem].out
+                        .get(seqQ, seqK + headQuery * sequence)!.v[elem].delta
+                    let queryTmp = query.get(seqQ, depthPrevQuery)!.v[elem].out
                     
                     sum += deltaCur * queryTmp
                 }
                 
                 if _layersPrev[1].dirty
                 {
-                    key.get(seqK, depthPrev)!.v[elem].delta =
+                    key.get(seqK, depthPrevKey)!.v[elem].delta =
                         sum / sqrt(Double(size))
                 }
                 else
                 {
-                    key.get(seqK, depthPrev)!.v[elem].delta +=
+                    key.get(seqK, depthPrevKey)!.v[elem].delta +=
                         sum / sqrt(Double(size))
                 }
             }}}}
@@ -1597,7 +1600,7 @@ public class QueryCausalSeq: LayerMergeSeq
             return
         }
         
-        let query = _layersPrev[0] as! LayerSeq
+        /*let query = _layersPrev[0] as! LayerSeq
         let key = _layersPrev[1] as! LayerSeq
         let nbNeuronsPrev = query.nbNeurons
         
@@ -1665,7 +1668,7 @@ public class QueryCausalSeq: LayerMergeSeq
                 height: batchSize * sequence
             )
             command.enqueue()
-        }
+        }*/
         propagateDirty()
     }
 }

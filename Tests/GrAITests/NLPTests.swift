@@ -74,6 +74,27 @@ class NLPGradTests: EmbeddingSeqMSE1DCase
                 params: params
             )
             
+        case "QueryCausal":
+            let otherLayer: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 2 * 3,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 4 * 3,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = try! QueryCausalSeq(
+                query: layer, key: otherLayer,
+                nbHeadsQuery: 4, nbHeadsKey: 2,
+                params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -131,6 +152,13 @@ class NLPGradTests: EmbeddingSeqMSE1DCase
     func testRoPEGPU() throws
     {
         let trainer = _buildTrainer("RoPE")
+        run(trainer)
+    }
+    
+    func testQueryCausalCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("QueryCausal")
         run(trainer)
     }
 }

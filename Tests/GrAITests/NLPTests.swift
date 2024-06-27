@@ -193,9 +193,21 @@ class NLPGradTests: EmbeddingSeqMSE1DCase
         run(trainer)
     }
     
+    func testQueryCausal1GPU() throws
+    {
+        let trainer = _buildTrainer("QueryCausal1")
+        run(trainer)
+    }
+    
     func testQueryCausal2CPU() throws
     {
         GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("QueryCausal2")
+        run(trainer)
+    }
+    
+    func testQueryCausal2GPU() throws
+    {
         let trainer = _buildTrainer("QueryCausal2")
         run(trainer)
     }
@@ -406,6 +418,18 @@ class NLPFlowPrecisionTests: NLPFlowTests
         let trainer = _buildTrainer("RoPE")
         run(trainer)
     }
+    
+    override func testQueryCausal1() throws
+    {
+        let trainer = _buildTrainer("QueryCausal1")
+        run(trainer)
+    }
+    
+    override func testQueryCausal2() throws
+    {
+        let trainer = _buildTrainer("QueryCausal2")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -460,6 +484,18 @@ class NLPFlowResetTests: NLPFlowTests
         let trainer = _buildTrainer("RoPE")
         run(trainer)
     }
+    
+    override func testQueryCausal1() throws
+    {
+        let trainer = _buildTrainer("QueryCausal1")
+        run(trainer)
+    }
+    
+    override func testQueryCausal2() throws
+    {
+        let trainer = _buildTrainer("QueryCausal2")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -512,6 +548,18 @@ class NLPFlowReverseTests: NLPFlowTests
     override func testRoPE() throws
     {
         let trainer = _buildTrainer("RoPE")
+        run(trainer)
+    }
+    
+    override func testQueryCausal1() throws
+    {
+        let trainer = _buildTrainer("QueryCausal1")
+        run(trainer)
+    }
+    
+    override func testQueryCausal2() throws
+    {
+        let trainer = _buildTrainer("QueryCausal2")
         run(trainer)
     }
 }
@@ -636,6 +684,18 @@ class NLPInferenceTests: NLPFlowTests
         let trainer = _buildTrainer("RoPE")
         run(trainer)
     }
+    
+    override func testQueryCausal1() throws
+    {
+        let trainer = _buildTrainer("QueryCausal1")
+        run(trainer)
+    }
+    
+    override func testQueryCausal2() throws
+    {
+        let trainer = _buildTrainer("QueryCausal2")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -681,6 +741,18 @@ class NLPLoadTests: NLPFlowTests
     override func testRoPE() throws
     {
         let trainer = _buildTrainer("RoPE")
+        run(trainer)
+    }
+    
+    override func testQueryCausal1() throws
+    {
+        let trainer = _buildTrainer("QueryCausal1")
+        run(trainer)
+    }
+    
+    override func testQueryCausal2() throws
+    {
+        let trainer = _buildTrainer("QueryCausal2")
         run(trainer)
     }
 }
@@ -772,6 +844,18 @@ class NLPTransformTests: NLPFlowTests
     override func testRoPE() throws
     {
         let trainer = _buildTrainer("RoPE")
+        run(trainer)
+    }
+    
+    override func testQueryCausal1() throws
+    {
+        let trainer = _buildTrainer("QueryCausal1")
+        run(trainer)
+    }
+    
+    override func testQueryCausal2() throws
+    {
+        let trainer = _buildTrainer("QueryCausal2")
         run(trainer)
     }
 }

@@ -1361,7 +1361,8 @@ public class QueryCausalSeq: LayerMergeSeq
         
         let query = (_layersPrev[0] as! LayerSeq).neurons!
         let key = (_layersPrev[1] as! LayerSeq).neurons!
-        let nbNeuronsPrev = (_layersPrev[0] as! LayerSeq).nbNeurons
+        let nbNeuronsPrevQuery = (_layersPrev[0] as! LayerSeq).nbNeurons
+        let nbNeuronsPrevKey = (_layersPrev[1] as! LayerSeq).nbNeurons
         let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeadsQuery
         
         for batch in 0..<batchSize {
@@ -1436,15 +1437,17 @@ public class QueryCausalSeq: LayerMergeSeq
                             seqQ, depthPrevQuery
                         )!.gc[batch][nbLastElems[index]+elem].out
                         
-                        let offsetTmp = depthPrevKey + nbNeuronsPrev * seqK +
-                            sequence * nbNeuronsPrev * batch
+                        let offsetTmp = depthPrevKey + 
+                            nbNeuronsPrevKey * seqK +
+                            sequence * nbNeuronsPrevKey * batch
                         
                         keyTmp = Double(keyBuffer[offsetTmp])
                     }
                     else
                     {
-                        let offsetTmp = depthPrevQuery + nbNeuronsPrev * seqQ +
-                            sequence * nbNeuronsPrev * batch
+                        let offsetTmp = depthPrevQuery + 
+                            nbNeuronsPrevQuery * seqQ +
+                            sequence * nbNeuronsPrevQuery * batch
                         
                         queryTmp = Double(queryBuffer[offsetTmp])
                         

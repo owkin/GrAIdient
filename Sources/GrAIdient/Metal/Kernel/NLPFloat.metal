@@ -289,7 +289,7 @@ kernel void queryCausalQuerySeqBackwardFloat(
     uint depthPrevQuery = j + headQuery * size;
     
     float tmp = 0.0;
-    for (uint seqK=0; seqK<seqQ; seqK++)
+    for (uint seqK=0; seqK<=seqQ; seqK++)
     {
         uint offset = seqK + headQuery * sequence +
             nbNeurons * seqQ + sequence * nbNeurons * elem;
@@ -346,7 +346,7 @@ kernel void queryCausalQuerySeq4BackwardFloat(
     uint depthPrevQuery = j * 4 + headQuery * size;
     
     float4 tmp = 0.0;
-    for (uint seqK=0; seqK<seqQ; seqK++)
+    for (uint seqK=0; seqK<=seqQ; seqK++)
     {
         uint offset = seqK + headQuery * sequence +
             nbNeurons * seqQ + sequence * nbNeurons * elem;

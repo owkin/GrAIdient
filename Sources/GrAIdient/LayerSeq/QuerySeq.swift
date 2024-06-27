@@ -1160,9 +1160,6 @@ public class QueryCausalSeq: LayerMergeSeq
     /// Update causality scores in the CPU execution context.
     private func _encodeCausalityCPU()
     {
-        let query = (_layersPrev[0] as! LayerSeq).neurons!
-        let key = (_layersPrev[1] as! LayerSeq).neurons!
-        
         for elem in 0..<batchSize {
         for headQuery in 0..<_nbHeadsQuery {
         for seqQ in 0..<sequence {
@@ -1207,7 +1204,8 @@ public class QueryCausalSeq: LayerMergeSeq
         {
             if seqK <= seqQ
             {
-                let headKey = headQuery / _nbHeadsKey
+                let headKey = _nbHeadsQuery == _nbHeadsKey ?
+                    headQuery : headQuery / _nbHeadsKey
                 var sum = 0.0
                 
                 for j in 0..<size
@@ -1249,7 +1247,8 @@ public class QueryCausalSeq: LayerMergeSeq
         {
             if seqK <= seqQ
             {
-                let headKey = headQuery / _nbHeadsKey
+                let headKey = _nbHeadsQuery == _nbHeadsKey ?
+                    headQuery : headQuery / _nbHeadsKey
                 var sum = 0.0
                 
                 for j in 0..<size
@@ -1331,7 +1330,8 @@ public class QueryCausalSeq: LayerMergeSeq
         {
             if seqK <= seqQ
             {
-                let headKey = headQuery / _nbHeadsKey
+                let headKey = _nbHeadsQuery == _nbHeadsKey ?
+                    headQuery : headQuery / _nbHeadsKey
                 var sum = 0.0
                 
                 for j in 0..<size
@@ -1376,7 +1376,8 @@ public class QueryCausalSeq: LayerMergeSeq
         {
             if seqK <= seqQ
             {
-                let headKey = headQuery / _nbHeadsKey
+                let headKey = _nbHeadsQuery == _nbHeadsKey ?
+                    headQuery : headQuery / _nbHeadsKey
                 var sum = 0.0
                 
                 for j in 0..<size
@@ -1448,7 +1449,8 @@ public class QueryCausalSeq: LayerMergeSeq
         for seqQ in 0..<sequence {
         for seqK in 0...seqQ
         {
-            let headKey = headQuery / _nbHeadsKey
+            let headKey = _nbHeadsQuery == _nbHeadsKey ?
+                headQuery : headQuery / _nbHeadsKey
             var sum = 0.0
             
             for j in 0..<size
@@ -1523,7 +1525,8 @@ public class QueryCausalSeq: LayerMergeSeq
         {
             for elem in 0..<batchSize {
             for headQuery in 0..<_nbHeadsQuery {
-            let headKey = headQuery / _nbHeadsKey
+            let headKey = _nbHeadsQuery == _nbHeadsKey ?
+                headQuery : headQuery / _nbHeadsKey
             for seqQ in 0..<sequence {
             for j in 0..<size
             {
@@ -1554,23 +1557,33 @@ public class QueryCausalSeq: LayerMergeSeq
         }
         if _layersPrev[1].computeDelta
         {
+            let nbBlocksHead = _nbHeadsQuery == _nbHeadsKey ?
+                1 : _nbHeadsQuery / _nbHeadsKey
+            
             for elem in 0..<batchSize {
-            for headQuery in 0..<_nbHeadsQuery {
-            let headKey = headQuery / _nbHeadsKey
+            for headKey in 0..<_nbHeadsKey {
             for seqK in 0..<sequence {
             for j in 0..<size
             {
                 let depthPrevKey = j + headKey * size
-                let depthPrevQuery = j + headQuery * size
                 
                 var sum = 0.0
-                for seqQ in 0..<seqK
+                for blockHead in 0..<nbBlocksHead
                 {
-                    let deltaCur = neurons
-                        .get(seqQ, seqK + headQuery * sequence)!.v[elem].delta
-                    let queryTmp = query.get(seqQ, depthPrevQuery)!.v[elem].out
+                    let headQuery = blockHead + nbBlocksHead * headKey
+                    let depthPrevQuery = j + headQuery * size
                     
-                    sum += deltaCur * queryTmp
+                    for seqQ in seqK..<sequence
+                    {
+                        let deltaCur = neurons.get(
+                            seqQ, seqK + headQuery * sequence
+                        )!.v[elem].delta
+                        let queryTmp = query.get(
+                            seqQ, depthPrevQuery
+                        )!.v[elem].out
+                        
+                        sum += deltaCur * queryTmp
+                    }
                 }
                 
                 if _layersPrev[1].dirty

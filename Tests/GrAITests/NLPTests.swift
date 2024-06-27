@@ -94,6 +94,11 @@ class NLPGradTests: EmbeddingSeqMSE1DCase
                 nbHeadsQuery: 4, nbHeadsKey: 2,
                 params: params
             )
+            layer = try! SoftmaxSeq(
+                layerPrev: layer,
+                nbHeads: 4,
+                params: params
+            )
             
         default:
             fatalError("Unreachable.")

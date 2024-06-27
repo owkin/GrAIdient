@@ -73,8 +73,34 @@ class NLPGradTests: EmbeddingSeqMSE1DCase
                 nbHeads: 3,
                 params: params
             )
+        
+        case "QueryCausal1":
+            let otherLayer: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 3 * 3,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 3 * 3,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = try! QueryCausalSeq(
+                query: layer, key: otherLayer,
+                nbHeadsQuery: 3, nbHeadsKey: 3,
+                params: params
+            )
+            layer = try! SoftmaxSeq(
+                layerPrev: layer,
+                nbHeads: 3,
+                params: params
+            )
             
-        case "QueryCausal":
+        case "QueryCausal2":
             let otherLayer: LayerSeq = FullyConnectedSeq(
                 layerPrev: layer,
                 nbNeurons: 2 * 3,
@@ -160,10 +186,17 @@ class NLPGradTests: EmbeddingSeqMSE1DCase
         run(trainer)
     }
     
-    func testQueryCausalCPU() throws
+    func testQueryCausal1CPU() throws
     {
         GrAI.Opti.CPU = true
-        let trainer = _buildTrainer("QueryCausal")
+        let trainer = _buildTrainer("QueryCausal1")
+        run(trainer)
+    }
+    
+    func testQueryCausal2CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("QueryCausal2")
         run(trainer)
     }
 }

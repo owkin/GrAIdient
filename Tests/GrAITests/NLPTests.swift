@@ -258,6 +258,58 @@ class NLPFlowTests: EmbeddingSeqMSE1DCase
                 params: params
             )
             
+        case "QueryCausal1":
+            let otherLayer: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 3 * 3,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 3 * 3,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = try! QueryCausalSeq(
+                query: layer, key: otherLayer,
+                nbHeadsQuery: 3, nbHeadsKey: 3,
+                params: params
+            )
+            layer = try! SoftmaxSeq(
+                layerPrev: layer,
+                nbHeads: 3,
+                params: params
+            )
+            
+        case "QueryCausal2":
+            let otherLayer: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 2 * 3,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 4 * 3,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = try! QueryCausalSeq(
+                query: layer, key: otherLayer,
+                nbHeadsQuery: 4, nbHeadsKey: 2,
+                params: params
+            )
+            layer = try! SoftmaxSeq(
+                layerPrev: layer,
+                nbHeads: 4,
+                params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -294,6 +346,18 @@ class NLPFlowTests: EmbeddingSeqMSE1DCase
     func testRoPE() throws
     {
         let trainer = _buildTrainer("RoPE")
+        run(trainer)
+    }
+    
+    func testQueryCausal1() throws
+    {
+        let trainer = _buildTrainer("QueryCausal1")
+        run(trainer)
+    }
+    
+    func testQueryCausal2() throws
+    {
+        let trainer = _buildTrainer("QueryCausal2")
         run(trainer)
     }
 }

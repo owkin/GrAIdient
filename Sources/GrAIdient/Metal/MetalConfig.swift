@@ -485,6 +485,13 @@ let CONFIG_KERNELS =
         "createRoPESeqMatrixFloat",
         "RoPESeqForwardFloat",
         "RoPESeqSeqBackwardFloat",
+        "encodeCausalityFloat",
+        "queryCausalSeqForwardFloat",
+        "queryCausalSeq4ForwardFloat",
+        "queryCausalQuerySeqBackwardFloat",
+        "queryCausalQuerySeq4BackwardFloat",
+        "queryCausalKeySeqBackwardFloat",
+        "queryCausalKeySeq4BackwardFloat",
     ],
     "NLPHalf": [
         "createRoPESeqMatrixHalf",

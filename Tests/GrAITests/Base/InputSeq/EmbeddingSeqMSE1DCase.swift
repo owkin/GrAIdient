@@ -28,8 +28,8 @@ class EmbeddingSeqMSE1DCase: XCTestCase, Input1DCase, IOCase
     override func setUp()
     {
         batchSize = 5
-        sequence = 7
-        vocabularySize = 120
+        sequence = 5
+        vocabularySize = 7
         _ = MetalKernel.get
         
         GrAI.Opti.GPU = true

@@ -996,3 +996,749 @@ public class QuerySelfSeq: LayerSeq
         }
     }
 }
+
+///
+/// Layer with a sequential shape neural structure.
+///
+/// This layer computes the causal attention scores between a query layer and a key layer.
+///
+public class QueryCausalSeq: LayerMergeSeq
+{
+    /// Number of heads (groups) of neurons for query.
+    let _nbHeadsQuery: Int
+    /// Number of heads (groups) of neurons for key.
+    let _nbHeadsKey: Int
+    
+    private enum Keys: String, CodingKey
+    {
+        case nbHeadsQuery
+        case nbHeadsKey
+    }
+    
+    ///
+    /// Create a layer with a sequential shape neural structure.
+    ///
+    /// - Parameters:
+    ///     - query: Previous layer containing the query to look for.
+    ///     - key: Previous layer containing the keys of reference.
+    ///     - nbHeadsQuery: Number of heads (groups) of neurons for query.
+    ///     - nbHeadsKey: Number of heads (groups) of neurons for key.
+    ///     - params: Contextual parameters linking to the model.
+    ///
+    public init(query: LayerSeq, key: LayerSeq, 
+                nbHeadsQuery: Int, nbHeadsKey: Int,
+                params: GrAI.Model.Params) throws
+    {
+        if query.nbNeurons % nbHeadsQuery != 0
+        {
+            throw LayerError.Init(message:
+                "`nbNeurons` (\(query.nbNeurons)) " +
+                "should be a multiple of `nbHeadsQuery` (\(nbHeadsQuery))."
+            )
+        }
+        if key.nbNeurons % nbHeadsKey != 0
+        {
+            throw LayerError.Init(message:
+                "`nbNeurons` (\(key.nbNeurons)) " +
+                "should be a multiple of `nbHeadsKey` (\(nbHeadsKey))."
+            )
+        }
+        if nbHeadsQuery % nbHeadsKey != 0
+        {
+            throw LayerError.Init(message:
+                "`nbHeadsQuery` should be a multiple of `nbHeadsKey`"
+            )
+        }
+        if query.nbNeurons / nbHeadsQuery != key.nbNeurons / nbHeadsKey
+        {
+            throw LayerError.Init(message:
+                "`query` and `key` should should have same hidden dimension."
+            )
+        }
+        if query.sequence != key.sequence
+        {
+            throw LayerError.Init(message: "Layer structure error.")
+        }
+        
+        _nbHeadsQuery = nbHeadsQuery
+        _nbHeadsKey = nbHeadsKey
+        
+        super.init(layersPrev: [query, key],
+                   sequence: query.sequence,
+                   nbNeurons: query.sequence * nbHeadsQuery,
+                   params: params)
+    }
+    
+    ///
+    /// Decode from the disk.
+    ///
+    /// Throw an error if reading from the decoder fails, or
+    /// if the data read is corrupted or otherwise invalid.
+    ///
+    /// - Parameter decoder: The decoder to read data from.
+    ///
+    public required init(from decoder: Decoder) throws
+    {
+        let values = try decoder.container(keyedBy: Keys.self)
+        _nbHeadsQuery = try values.decode(Int.self, forKey: Keys.nbHeadsQuery)
+        _nbHeadsKey = try values.decode(Int.self, forKey: Keys.nbHeadsKey)
+        try super.init(from: decoder)
+    }
+    
+    ///
+    /// Encode to the disk.
+    ///
+    /// If the value fails to encode anything, `encoder` will encode an empty
+    /// keyed container in its place.
+    ///
+    /// Throw an error if any values are invalid for the given
+    /// encoder's format.
+    ///
+    /// - Parameter encoder: The encoder to write data to.
+    ///
+    public override func encode(to encoder: Encoder) throws
+    {
+        var container = encoder.container(keyedBy: Keys.self)
+        try container.encode(_nbHeadsQuery, forKey: Keys.nbHeadsQuery)
+        try container.encode(_nbHeadsKey, forKey: Keys.nbHeadsKey)
+        try super.encode(to: encoder)
+    }
+    
+    ///
+    /// Create a layer with same values as this.
+    ///
+    /// - Parameters:
+    ///     - mapping: Dictionary allowing to find the layer associated to some id.
+    ///     This dictionary is particularly useful when the different layers cannot access
+    ///     their `layerPrev`.
+    ///     - inPlace: Whether hard resources should be copied as is.
+    ///
+    /// - Returns: A new layer. When `inPlace` is false, `initKernel` is
+    /// necessary in order to recreate hard resources.
+    ///
+    public override func copy(
+        mapping: Dictionary<Int, Layer>,
+        inPlace: Bool) -> Layer
+    {
+        let context = ModelContext(name: "", curID: 0)
+        let params = GrAI.Model.Params(context: context)
+        params.context.curID = id
+        
+        var layersPrev = [LayerSeq]()
+        for idPrev in _idsPrev
+        {
+            layersPrev.append(mapping[idPrev] as! LayerSeq)
+        }
+        
+        let layer = try! QueryCausalSeq(
+            query: layersPrev[0], key: layersPrev[1],
+            nbHeadsQuery: _nbHeadsQuery,
+            nbHeadsKey: _nbHeadsKey,
+            params: params
+        )
+        return layer
+    }
+    
+    ///
+    /// Initialize state resources in the CPU execution context.
+    ///
+    /// We initialize the neurons' state (forward and backward).
+    ///
+    public override func checkStateCPU(batchSize: Int) throws
+    {
+        if neurons == nil
+        {
+            try super.checkStateCPU(batchSize: batchSize)
+            _encodeCausalityCPU()
+        }
+        else
+        {
+            try super.checkStateCPU(batchSize: batchSize)
+        }
+    }
+    
+    /// Update causality scores in the CPU execution context.
+    private func _encodeCausalityCPU()
+    {
+        for elem in 0..<batchSize {
+        for headQuery in 0..<_nbHeadsQuery {
+        for seqQ in 0..<sequence {
+        for seqK in seqQ+1..<sequence
+        {
+            neurons.get(seqQ, seqK + headQuery * sequence)!.v[elem].out = -1e9
+        }}}}
+    }
+    
+    ///
+    /// Initialize state resources in the GPU execution context.
+    ///
+    /// We initialize the neurons' forward state.
+    ///
+    public override func checkStateForwardGPU(batchSize: Int) throws
+    {
+        if outs == nil
+        {
+            try super.checkStateForwardGPU(batchSize: batchSize)
+            _encodeCausalityGPU()
+        }
+        else
+        {
+            try super.checkStateForwardGPU(batchSize: batchSize)
+        }
+    }
+    
+    /// Update causality scores in the GPU execution context.
+    private func _encodeCausalityGPU()
+    {
+        let pNbHeadsQuery: [UInt32] = [UInt32(_nbHeadsQuery)]
+        let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
+        let pNbBatch: [UInt32] = [UInt32(batchSize)]
+        let pSequence: [UInt32] = [UInt32(sequence)]
+        
+        let command = MetalKernel.get.createCommand(
+            "encodeCausality", deviceID: deviceID
+        )
+        command.setBytes(pNbHeadsQuery, atIndex: 0)
+        command.setBytes(pNbNeurons, atIndex: 1)
+        command.setBytes(pNbBatch, atIndex: 2)
+        command.setBytes(pSequence, atIndex: 3)
+        command.setBuffer(outs.metal, atIndex: 4)
+        
+        command.dispatchThreads(
+            width: nbNeurons,
+            height: batchSize * sequence
+        )
+        command.enqueue()
+    }
+    
+    ///
+    /// Apply the forward pass of the Gradient Checking in CPU execution context.
+    ///
+    /// Throw an error if batch size is greater than the first batch size.
+    ///
+    public override func forwardGCCPU() throws
+    {
+        try checkStateCPU(batchSize: batchSize)
+        
+        let (nbSameElems, layersIndex, nbElems) = getMergedGraph()
+        
+        var nbGC = nbSameElems
+        for nbElemsTmp in nbElems
+        {
+            nbGC += nbElemsTmp
+        }
+        
+        for seqQ in 0..<sequence {
+        for seqK in 0..<nbNeurons
+        {
+            neurons.get(seqQ, seqK)!.initGC(batchSize: batchSize, nbGC: nbGC)
+        }}
+        
+        let query = (_layersPrev[0] as! LayerSeq).neurons!
+        let key = (_layersPrev[1] as! LayerSeq).neurons!
+        let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeadsQuery
+        
+        for batch in 0..<batchSize {
+        for headQuery in 0..<_nbHeadsQuery {
+        for seqQ in 0..<sequence {
+        for seqK in 0..<sequence {
+        for elem in 0..<nbSameElems
+        {
+            if seqK <= seqQ
+            {
+                let headKey = _nbHeadsQuery == _nbHeadsKey ?
+                    headQuery : headQuery / _nbHeadsKey
+                var sum = 0.0
+                
+                for j in 0..<size
+                {
+                    let depthPrevKey = j + headKey * size
+                    let depthPrevQuery = j + headQuery * size
+                    
+                    let queryTmp = query.get(
+                        seqQ, depthPrevQuery
+                    )!.gc[batch][elem].out
+                    let keyTmp = key.get(
+                        seqK, depthPrevKey
+                    )!.gc[batch][elem].out
+                    
+                    sum += queryTmp * keyTmp
+                }
+                
+                neurons.get(
+                    seqQ, seqK + headQuery * sequence
+                )!.gc[batch][elem].out = sum / sqrt(Double(size))
+            }
+            else
+            {
+                neurons.get(
+                    seqQ, seqK + headQuery * sequence
+                )!.gc[batch][elem].out = -1e9
+            }
+        }}}}}
+        
+        for batch in 0..<batchSize {
+        for headQuery in 0..<_nbHeadsQuery {
+        for seqQ in 0..<sequence {
+        for seqK in 0..<sequence {
+        var offset = nbSameElems
+        var nbLastElems = [Int](repeating: nbSameElems,
+                                count: _layersPrev.count)
+        for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
+        for elem in 0..<nbElemsTmp
+        {
+            if seqK <= seqQ
+            {
+                let headKey = _nbHeadsQuery == _nbHeadsKey ?
+                    headQuery : headQuery / _nbHeadsKey
+                var sum = 0.0
+                
+                for j in 0..<size
+                {
+                    let depthPrevKey = j + headKey * size
+                    let depthPrevQuery = j + headQuery * size
+                    
+                    let queryTmp: Double
+                    let keyTmp: Double
+                    
+                    if index == 0
+                    {
+                        queryTmp = query.get(
+                            seqQ, depthPrevQuery
+                        )!.gc[batch][nbLastElems[index]+elem].out
+                        keyTmp = key.get(seqK, depthPrevKey)!.v[batch].out
+                    }
+                    else
+                    {
+                        queryTmp = query.get(seqQ, depthPrevQuery)!.v[batch].out
+                        keyTmp = key.get(
+                            seqK, depthPrevKey
+                        )!.gc[batch][nbLastElems[index]+elem].out
+                    }
+                    
+                    sum += queryTmp * keyTmp
+                }
+                
+                neurons.get(
+                    seqQ, seqK + headQuery * sequence
+                )!.gc[batch][offset+elem].out = sum / sqrt(Double(size))
+            }
+            else
+            {
+                neurons.get(
+                    seqQ, seqK + headQuery * sequence
+                )!.gc[batch][offset+elem].out = -1e9
+            }
+        }
+        
+        offset += nbElemsTmp
+        nbLastElems[index] += nbElemsTmp
+        }}}}}
+    }
+    
+    ///
+    /// Apply the forward pass of the Gradient Checking in GPU execution context.
+    ///
+    /// Throw an error if batch size is greater than the first batch size.
+    ///
+    public override func forwardGCGPU() throws
+    {
+        try checkStateCPU(batchSize: batchSize)
+        
+        let (nbSameElems, layersIndex, nbElems) = getMergedGraph()
+        
+        var nbGC = nbSameElems
+        for nbElemsTmp in nbElems
+        {
+            nbGC += nbElemsTmp
+        }
+        
+        for seqQ in 0..<sequence {
+        for seqK in 0..<nbNeurons
+        {
+            neurons.get(seqQ, seqK)!.initGC(batchSize: batchSize, nbGC: nbGC)
+        }}
+        
+        let query = (_layersPrev[0] as! LayerSeq).neurons!
+        let key = (_layersPrev[1] as! LayerSeq).neurons!
+        let nbNeuronsPrevQuery = (_layersPrev[0] as! LayerSeq).nbNeurons
+        let nbNeuronsPrevKey = (_layersPrev[1] as! LayerSeq).nbNeurons
+        let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeadsQuery
+        
+        for batch in 0..<batchSize {
+        for headQuery in 0..<_nbHeadsQuery {
+        for seqQ in 0..<sequence {
+        for seqK in 0..<sequence {
+        for elem in 0..<nbSameElems
+        {
+            if seqK <= seqQ
+            {
+                let headKey = _nbHeadsQuery == _nbHeadsKey ?
+                    headQuery : headQuery / _nbHeadsKey
+                var sum = 0.0
+                
+                for j in 0..<size
+                {
+                    let depthPrevKey = j + headKey * size
+                    let depthPrevQuery = j + headQuery * size
+                    
+                    let queryTmp = query.get(
+                        seqQ, depthPrevQuery
+                    )!.gc[batch][elem].out
+                    let keyTmp = key.get(
+                        seqK, depthPrevKey
+                    )!.gc[batch][elem].out
+                    
+                    sum += queryTmp * keyTmp
+                }
+                
+                neurons.get(
+                    seqQ, seqK + headQuery * sequence
+                )!.gc[batch][elem].out = sum / sqrt(Double(size))
+            }
+            else
+            {
+                neurons.get(
+                    seqQ, seqK + headQuery * sequence
+                )!.gc[batch][elem].out = -1e9
+            }
+        }}}}}
+        
+        let queryBuffer = (_layersPrev[0] as! LayerSeq).outs.download()
+        let keyBuffer = (_layersPrev[1] as! LayerSeq).outs.download()
+        
+        for batch in 0..<batchSize {
+        for headQuery in 0..<_nbHeadsQuery {
+        for seqQ in 0..<sequence {
+        for seqK in 0..<sequence {
+        var offset = nbSameElems
+        var nbLastElems = [Int](repeating: nbSameElems,
+                                count: _layersPrev.count)
+        for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
+        for elem in 0..<nbElemsTmp
+        {
+            if seqK <= seqQ
+            {
+                let headKey = _nbHeadsQuery == _nbHeadsKey ?
+                    headQuery : headQuery / _nbHeadsKey
+                var sum = 0.0
+                
+                for j in 0..<size
+                {
+                    let depthPrevKey = j + headKey * size
+                    let depthPrevQuery = j + headQuery * size
+                    
+                    let queryTmp: Double
+                    let keyTmp: Double
+                    
+                    if index == 0
+                    {
+                        queryTmp = query.get(
+                            seqQ, depthPrevQuery
+                        )!.gc[batch][nbLastElems[index]+elem].out
+                        
+                        let offsetTmp = depthPrevKey + 
+                            nbNeuronsPrevKey * seqK +
+                            sequence * nbNeuronsPrevKey * batch
+                        
+                        keyTmp = Double(keyBuffer[offsetTmp])
+                    }
+                    else
+                    {
+                        let offsetTmp = depthPrevQuery + 
+                            nbNeuronsPrevQuery * seqQ +
+                            sequence * nbNeuronsPrevQuery * batch
+                        
+                        queryTmp = Double(queryBuffer[offsetTmp])
+                        
+                        keyTmp = key.get(
+                            seqK, depthPrevKey
+                        )!.gc[batch][nbLastElems[index]+elem].out
+                    }
+                    
+                    sum += queryTmp * keyTmp
+                }
+                
+                neurons.get(
+                    seqQ, seqK + headQuery * sequence
+                )!.gc[batch][offset+elem].out = sum / sqrt(Double(size))
+            }
+            else
+            {
+                neurons.get(
+                    seqQ, seqK + headQuery * sequence
+                )!.gc[batch][offset+elem].out = -1e9
+            }
+        }
+        
+        offset += nbElemsTmp
+        nbLastElems[index] += nbElemsTmp
+        }}}}}
+    }
+    
+    ///
+    /// Apply the forward pass in the CPU execution context.
+    ///
+    /// Throw an error if batch size is greater than the first batch size.
+    ///
+    public override func forwardCPU() throws
+    {
+        try checkStateCPU(batchSize: batchSize)
+        
+        let query = (_layersPrev[0] as! LayerSeq).neurons!
+        let key = (_layersPrev[1] as! LayerSeq).neurons!
+        let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeadsQuery
+        
+        for elem in 0..<batchSize {
+        for headQuery in 0..<_nbHeadsQuery {
+        for seqQ in 0..<sequence {
+        for seqK in 0...seqQ
+        {
+            let headKey = _nbHeadsQuery == _nbHeadsKey ?
+                headQuery : headQuery / _nbHeadsKey
+            var sum = 0.0
+            
+            for j in 0..<size
+            {
+                let depthPrevKey = j + headKey * size
+                let depthPrevQuery = j + headQuery * size
+                
+                let queryTmp = query.get(seqQ, depthPrevQuery)!.v[elem].out
+                let keyTmp = key.get(seqK, depthPrevKey)!.v[elem].out
+                
+                sum += queryTmp * keyTmp
+            }
+            
+            neurons.get(seqQ, seqK + headQuery * sequence)!.v[elem].out =
+                sum / sqrt(Double(size))
+        }}}}
+    }
+    
+    ///
+    /// Apply the forward pass in the GPU execution context.
+    ///
+    /// Throw an error if batch size is greater than the first batch size.
+    ///
+    public override func forwardGPU() throws
+    {
+        try checkStateForwardGPU(batchSize: batchSize)
+        
+        let query = _layersPrev[0] as! LayerSeq
+        let key = _layersPrev[1] as! LayerSeq
+        let nbNeuronsPrevQuery = query.nbNeurons
+        let nbNeuronsPrevKey = key.nbNeurons
+        
+        let pNbHeadsQuery: [UInt32] = [UInt32(_nbHeadsQuery)]
+        let pNbHeadsKey: [UInt32] = [UInt32(_nbHeadsKey)]
+        let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
+        let pNbNeuronsPrevQuery: [UInt32] = [UInt32(nbNeuronsPrevQuery)]
+        let pNbNeuronsPrevKey: [UInt32] = [UInt32(nbNeuronsPrevKey)]
+        let pNbBatch: [UInt32] = [UInt32(batchSize)]
+        let pSequence: [UInt32] = [UInt32(sequence)]
+        
+        let kernel = (nbNeuronsPrevQuery / _nbHeadsQuery) % 4 == 0 ?
+            "queryCausalSeq4Forward" : "queryCausalSeqForward"
+        let command = MetalKernel.get.createCommand(
+            kernel, deviceID: deviceID
+        )
+        command.setBuffer(query.outs.metal, atIndex: 0)
+        command.setBuffer(key.outs.metal, atIndex: 1)
+        command.setBytes(pNbHeadsQuery, atIndex: 2)
+        command.setBytes(pNbHeadsKey, atIndex: 3)
+        command.setBytes(pNbNeurons, atIndex: 4)
+        command.setBytes(pNbNeuronsPrevQuery, atIndex: 5)
+        command.setBytes(pNbNeuronsPrevKey, atIndex: 6)
+        command.setBytes(pNbBatch, atIndex: 7)
+        command.setBytes(pSequence, atIndex: 8)
+        command.setBuffer(outs.metal, atIndex: 9)
+        
+        command.dispatchThreads(
+            width: nbNeurons,
+            height: batchSize * sequence
+        )
+        command.enqueue()
+    }
+    
+    /// Apply the backward pass in the CPU execution context.
+    public override func backwardCPU()
+    {
+        if !mustComputeBackward
+        {
+            return
+        }
+        
+        let query = (_layersPrev[0] as! LayerSeq).neurons!
+        let key = (_layersPrev[1] as! LayerSeq).neurons!
+        let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeadsQuery
+        
+        if _layersPrev[0].computeDelta
+        {
+            for elem in 0..<batchSize {
+            for headQuery in 0..<_nbHeadsQuery {
+            let headKey = _nbHeadsQuery == _nbHeadsKey ?
+                headQuery : headQuery / _nbHeadsKey
+            for seqQ in 0..<sequence {
+            for j in 0..<size
+            {
+                let depthPrevKey = j + headKey * size
+                let depthPrevQuery = j + headQuery * size
+                
+                var sum = 0.0
+                for seqK in 0...seqQ
+                {
+                    let deltaCur = neurons
+                        .get(seqQ, seqK + headQuery * sequence)!.v[elem].delta
+                    let keyTmp = key.get(seqK, depthPrevKey)!.v[elem].out
+                    
+                    sum += deltaCur * keyTmp
+                }
+                
+                if _layersPrev[0].dirty
+                {
+                    query.get(seqQ, depthPrevQuery)!.v[elem].delta =
+                        sum / sqrt(Double(size))
+                }
+                else
+                {
+                    query.get(seqQ, depthPrevQuery)!.v[elem].delta +=
+                        sum / sqrt(Double(size))
+                }
+            }}}}
+        }
+        if _layersPrev[1].computeDelta
+        {
+            let nbBlocksHead = _nbHeadsQuery == _nbHeadsKey ?
+                1 : _nbHeadsQuery / _nbHeadsKey
+            
+            for elem in 0..<batchSize {
+            for headKey in 0..<_nbHeadsKey {
+            for seqK in 0..<sequence {
+            for j in 0..<size
+            {
+                let depthPrevKey = j + headKey * size
+                
+                var sum = 0.0
+                for blockHead in 0..<nbBlocksHead
+                {
+                    let headQuery = blockHead + nbBlocksHead * headKey
+                    let depthPrevQuery = j + headQuery * size
+                    
+                    for seqQ in seqK..<sequence
+                    {
+                        let deltaCur = neurons.get(
+                            seqQ, seqK + headQuery * sequence
+                        )!.v[elem].delta
+                        let queryTmp = query.get(
+                            seqQ, depthPrevQuery
+                        )!.v[elem].out
+                        
+                        sum += deltaCur * queryTmp
+                    }
+                }
+                
+                if _layersPrev[1].dirty
+                {
+                    key.get(seqK, depthPrevKey)!.v[elem].delta =
+                        sum / sqrt(Double(size))
+                }
+                else
+                {
+                    key.get(seqK, depthPrevKey)!.v[elem].delta +=
+                        sum / sqrt(Double(size))
+                }
+            }}}}
+        }
+        propagateDirty()
+    }
+    
+    ///
+    /// Apply the backward pass in the GPU execution context.
+    ///
+    /// Throw an error if batch size is greater than the first batch size.
+    ///
+    public override func backwardGPU() throws
+    {
+        if !mustComputeBackward
+        {
+            return
+        }
+        
+        let query = _layersPrev[0] as! LayerSeq
+        let key = _layersPrev[1] as! LayerSeq
+        let nbNeuronsPrevQuery = query.nbNeurons
+        let nbNeuronsPrevKey = key.nbNeurons
+        
+        let pNbHeadsQuery: [UInt32] = [UInt32(_nbHeadsQuery)]
+        let pNbHeadsKey: [UInt32] = [UInt32(_nbHeadsKey)]
+        let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
+        let pNbNeuronsPrevQuery: [UInt32] = [UInt32(nbNeuronsPrevQuery)]
+        let pNbNeuronsPrevKey: [UInt32] = [UInt32(nbNeuronsPrevKey)]
+        let pNbBatch: [UInt32] = [UInt32(batchSize)]
+        let pSequence: [UInt32] = [UInt32(sequence)]
+        
+        let metalKernel = MetalKernel.get
+        var command: MetalCommand
+        
+        if query.computeDelta
+        {
+            try query.checkStateBackwardGPU(batchSize: batchSize)
+            
+            let pDirty: [UInt32] = query.dirty ? [1] : [0]
+            
+            let kernel = (nbNeuronsPrevQuery / _nbHeadsQuery) % 4 == 0 ?
+                "queryCausalQuerySeq4Backward" : "queryCausalQuerySeqBackward"
+            let coeff = (nbNeuronsPrevQuery / _nbHeadsQuery) % 4 == 0 ? 4 : 1
+            command = metalKernel.createCommand(
+                kernel, deviceID: deviceID
+            )
+            command.setBuffer(delta.metal, atIndex: 0)
+            command.setBuffer(key.outs.metal, atIndex: 1)
+            command.setBytes(pNbHeadsQuery, atIndex: 2)
+            command.setBytes(pNbHeadsKey, atIndex: 3)
+            command.setBytes(pNbNeurons, atIndex: 4)
+            command.setBytes(pNbNeuronsPrevQuery, atIndex: 5)
+            command.setBytes(pNbNeuronsPrevKey, atIndex: 6)
+            command.setBytes(pNbBatch, atIndex: 7)
+            command.setBytes(pSequence, atIndex: 8)
+            command.setBytes(pDirty, atIndex: 9)
+            command.setBuffer(query.delta.metal, atIndex: 10)
+            
+            command.dispatchThreads(
+                width: nbNeuronsPrevQuery / coeff,
+                height: batchSize * sequence
+            )
+            command.enqueue()
+        }
+        if key.computeDelta
+        {
+            try key.checkStateBackwardGPU(batchSize: batchSize)
+            
+            let pDirty: [UInt32] = key.dirty ? [1] : [0]
+            
+            let kernel = (nbNeuronsPrevKey / _nbHeadsKey) % 4 == 0 ?
+                "queryCausalKeySeq4Backward" : "queryCausalKeySeqBackward"
+            let coeff = (nbNeuronsPrevKey / _nbHeadsKey) % 4 == 0 ? 4 : 1
+            command = metalKernel.createCommand(
+                kernel, deviceID: deviceID
+            )
+            command.setBuffer(delta.metal, atIndex: 0)
+            command.setBuffer(query.outs.metal, atIndex: 1)
+            command.setBytes(pNbHeadsQuery, atIndex: 2)
+            command.setBytes(pNbHeadsKey, atIndex: 3)
+            command.setBytes(pNbNeurons, atIndex: 4)
+            command.setBytes(pNbNeuronsPrevQuery, atIndex: 5)
+            command.setBytes(pNbNeuronsPrevKey, atIndex: 6)
+            command.setBytes(pNbBatch, atIndex: 7)
+            command.setBytes(pSequence, atIndex: 8)
+            command.setBytes(pDirty, atIndex: 9)
+            command.setBuffer(key.delta.metal, atIndex: 10)
+            
+            command.dispatchThreads(
+                width: nbNeuronsPrevKey / coeff,
+                height: batchSize * sequence
+            )
+            command.enqueue()
+        }
+        propagateDirty()
+    }
+}

@@ -240,18 +240,18 @@ class Attention(torch.nn.Module):
             queries = torch.einsum("bhlj,lij->bhli", [queries, rotation_matrix])
             keys = torch.einsum("bhlj,lij->bhli", [keys, rotation_matrix])
 
-        """scores = torch.matmul(queries, keys.transpose(2, 3)) * self.scale
+        scores = torch.matmul(queries, keys.transpose(2, 3)) * self.scale
         if mask is not None:
             scores += mask
         scores = torch.softmax(
             scores.type(torch.float32), dim=-1
         ).type_as(scores)
 
-        output = torch.matmul(scores, values)
+        """output = torch.matmul(scores, values)
         output = output.transpose(1, 2).contiguous().reshape(B, L, -1)
 
         return self.wo(output), (keys, values)"""
-        return queries.transpose(1, 2).contiguous().reshape(B, L, -1), (keys, values)
+        return scores.transpose(1, 2).contiguous().reshape(B, L, -1), (keys, values)
 
 
 class FeedForward(torch.nn.Module):

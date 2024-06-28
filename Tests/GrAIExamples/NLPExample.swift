@@ -16,7 +16,7 @@ final class NLPExample: XCTestCase
     let _modelPath = "TO/UPDATE"
     
     /// Prompt.
-    let _prompt = "I"
+    let _prompt = "Hello"
     
     /// Initialize test.
     override func setUp()
@@ -34,7 +34,9 @@ final class NLPExample: XCTestCase
     /// - Parameters:
     ///     - sequence: Length of the sequence.
     ///     - hiddenDim: Dimension of neurons in the main branch.
-    ///     - nbHeads:  Number of heads (groups) of neurons.
+    ///     - headDim: Dimension of neurons in the transformer branches.
+    ///     - nbHeads:  Number of heads (groups) of neurons for queries.
+    ///     - nbHeadsKV: Number of heads (groups) of neurons for keys and values.
     ///     - vocabularySize: Vocabulary size.
     /// - Returns: The model built.
     ///
@@ -42,7 +44,9 @@ final class NLPExample: XCTestCase
         modelPath: String,
         sequence: Int,
         hiddenDim: Int,
-        nbHeads: Int,
+        headDim: Int,
+        nbHeadsQuery: Int,
+        nbHeadsKV: Int,
         vocabularySize: Int) -> Model
     {
         let context = ModelContext(name: "NLP", curID: 0)
@@ -54,18 +58,42 @@ final class NLPExample: XCTestCase
             nbNeurons: hiddenDim, params: params
         )
         
-        layer = FullyConnectedSeq(
+        var query: LayerSeq = FullyConnectedSeq(
             layerPrev: layer,
-            nbNeurons: hiddenDim,
+            nbNeurons: nbHeadsQuery * headDim,
             activation: nil,
             biases: false,
             params: params
         )
-        
-        layer = try! RoPESeq(
-            layerPrev: layer,
+        query = try! RoPESeq(
+            layerPrev: query,
             seqPositions: [Int](1...sequence),
-            nbHeads: nbHeads,
+            nbHeads: nbHeadsQuery,
+            params: params
+        )
+        
+        var key: LayerSeq = FullyConnectedSeq(
+            layerPrev: layer,
+            nbNeurons: nbHeadsKV * headDim,
+            activation: nil,
+            biases: false,
+            params: params
+        )
+        key = try! RoPESeq(
+            layerPrev: key,
+            seqPositions: [Int](1...sequence),
+            nbHeads: nbHeadsKV,
+            params: params
+        )
+        
+        layer = try! QueryCausalSeq(
+            query: query, key: key,
+            nbHeadsQuery: nbHeadsQuery, nbHeadsKey: nbHeadsKV, 
+            params: params
+        )
+        layer = try! SoftmaxSeq(
+            layerPrev: layer,
+            nbHeads: nbHeadsQuery,
             params: params
         )
         
@@ -146,7 +174,9 @@ final class NLPExample: XCTestCase
             modelPath: _modelPath,
             sequence: prompt.count,
             hiddenDim: 4096,
-            nbHeads: 32,
+            headDim: 128,
+            nbHeadsQuery: 32,
+            nbHeadsKV: 8,
             vocabularySize: 32000
         )
         
@@ -167,8 +197,15 @@ final class NLPExample: XCTestCase
         // Compare difference.
         for (elemOut, elemRef) in zip(arrayOut, arrayRef)
         {
-            let diffPercent = abs(elemOut - elemRef) / elemRef * 100.0
-            XCTAssert(diffPercent < 1)
+            if elemRef == 0.0
+            {
+                XCTAssert(elemOut == 0.0)
+            }
+            else
+            {
+                let diffPercent = abs(elemOut - elemRef) / elemRef * 100.0
+                XCTAssert(diffPercent < 1)
+            }
         }
     }
 }

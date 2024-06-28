@@ -73,6 +73,58 @@ class NLPGradTests: EmbeddingSeqMSE1DCase
                 nbHeads: 3,
                 params: params
             )
+        
+        case "QueryCausal1":
+            let otherLayer: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 3 * 3,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 3 * 3,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = try! QueryCausalSeq(
+                query: layer, key: otherLayer,
+                nbHeadsQuery: 3, nbHeadsKey: 3,
+                params: params
+            )
+            layer = try! SoftmaxSeq(
+                layerPrev: layer,
+                nbHeads: 3,
+                params: params
+            )
+            
+        case "QueryCausal2":
+            let otherLayer: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 2 * 3,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 4 * 3,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = try! QueryCausalSeq(
+                query: layer, key: otherLayer,
+                nbHeadsQuery: 4, nbHeadsKey: 2,
+                params: params
+            )
+            layer = try! SoftmaxSeq(
+                layerPrev: layer,
+                nbHeads: 4,
+                params: params
+            )
             
         default:
             fatalError("Unreachable.")
@@ -131,6 +183,32 @@ class NLPGradTests: EmbeddingSeqMSE1DCase
     func testRoPEGPU() throws
     {
         let trainer = _buildTrainer("RoPE")
+        run(trainer)
+    }
+    
+    func testQueryCausal1CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("QueryCausal1")
+        run(trainer)
+    }
+    
+    func testQueryCausal1GPU() throws
+    {
+        let trainer = _buildTrainer("QueryCausal1")
+        run(trainer)
+    }
+    
+    func testQueryCausal2CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("QueryCausal2")
+        run(trainer)
+    }
+    
+    func testQueryCausal2GPU() throws
+    {
+        let trainer = _buildTrainer("QueryCausal2")
         run(trainer)
     }
 }
@@ -192,6 +270,58 @@ class NLPFlowTests: EmbeddingSeqMSE1DCase
                 params: params
             )
             
+        case "QueryCausal1":
+            let otherLayer: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 3 * 3,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 3 * 3,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = try! QueryCausalSeq(
+                query: layer, key: otherLayer,
+                nbHeadsQuery: 3, nbHeadsKey: 3,
+                params: params
+            )
+            layer = try! SoftmaxSeq(
+                layerPrev: layer,
+                nbHeads: 3,
+                params: params
+            )
+            
+        case "QueryCausal2":
+            let otherLayer: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 2 * 3,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 4 * 3,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = try! QueryCausalSeq(
+                query: layer, key: otherLayer,
+                nbHeadsQuery: 4, nbHeadsKey: 2,
+                params: params
+            )
+            layer = try! SoftmaxSeq(
+                layerPrev: layer,
+                nbHeads: 4,
+                params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -228,6 +358,18 @@ class NLPFlowTests: EmbeddingSeqMSE1DCase
     func testRoPE() throws
     {
         let trainer = _buildTrainer("RoPE")
+        run(trainer)
+    }
+    
+    func testQueryCausal1() throws
+    {
+        let trainer = _buildTrainer("QueryCausal1")
+        run(trainer)
+    }
+    
+    func testQueryCausal2() throws
+    {
+        let trainer = _buildTrainer("QueryCausal2")
         run(trainer)
     }
 }
@@ -275,6 +417,162 @@ class NLPFlowPrecisionTests: NLPFlowTests
     {
         let trainer = _buildTrainer("RoPE")
         run(trainer)
+    }
+    
+    override func testQueryCausal1() throws
+    {
+        let trainer = _buildTrainer("QueryCausal1")
+        run(trainer, diffThreshold: 0.002)
+    }
+    
+    override func testQueryCausal2() throws
+    {
+        let trainer = _buildTrainer("QueryCausal2")
+        run(trainer, diffThreshold: 0.002)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU gradients with CPU ones through time.
+// We expect to see errors ~ 1e-7 and less.
+// -----------------------------------------------------------------------------
+class NLP4FlowTests: EmbeddingSeqMSE1DCase
+{
+    private func _buildTrainer(_ model: String) -> FlowTrainer
+    {
+        let trainer = FlowTrainer(
+            name: "NLP",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(model: model, context: context)
+        }
+        return trainer
+    }
+    
+    func buildModel(model: String, context: ModelContext)
+    {
+        let params = GrAI.Model.Params(context: context)
+        
+        var layer: LayerSeq = EmbeddingSeq(
+            sequence: sequence,
+            vocabularySize: vocabularySize,
+            nbNeurons: 4, params: params
+        )
+        
+        switch model
+        {
+        case "QueryCausal1":
+            let otherLayer: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 3 * 4,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 3 * 4,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = try! QueryCausalSeq(
+                query: layer, key: otherLayer,
+                nbHeadsQuery: 3, nbHeadsKey: 3,
+                params: params
+            )
+            layer = try! SoftmaxSeq(
+                layerPrev: layer,
+                nbHeads: 3,
+                params: params
+            )
+            
+        case "QueryCausal2":
+            let otherLayer: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 2 * 4,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 4 * 4,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = try! QueryCausalSeq(
+                query: layer, key: otherLayer,
+                nbHeadsQuery: 4, nbHeadsKey: 2,
+                params: params
+            )
+            layer = try! SoftmaxSeq(
+                layerPrev: layer,
+                nbHeads: 4,
+                params: params
+            )
+            
+        default:
+            fatalError("Unreachable.")
+        }
+        
+        var head: Layer1D = AvgPoolSeq(layerPrev: layer, params: params)
+        
+        head = try! FullyConnected(
+            layerPrev: head, nbNeurons: 1,
+            activation: LeakyReLU.str, biases: true, params: params
+        )
+        
+        _ = MSE1D(layerPrev: head, params: params)
+    }
+    
+    func testQueryCausal1() throws
+    {
+        let trainer = _buildTrainer("QueryCausal1")
+        run(trainer)
+    }
+    
+    func testQueryCausal2() throws
+    {
+        let trainer = _buildTrainer("QueryCausal2")
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU gradients with Float precision versus Float16 precision.
+// We expect to see errors ~ 1e-4 and less.
+// -----------------------------------------------------------------------------
+class NLP4FlowPrecisionTests: NLP4FlowTests
+{
+    private func _buildTrainer(_ model: String) -> FlowPrecisionTrainer
+    {
+        let trainer = FlowPrecisionTrainer(
+            name: "NLP",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(model: model, context: context)
+        }
+        return trainer
+    }
+    
+    override func testQueryCausal1() throws
+    {
+        let trainer = _buildTrainer("QueryCausal1")
+        run(trainer, diffThreshold: 0.002)
+    }
+    
+    override func testQueryCausal2() throws
+    {
+        let trainer = _buildTrainer("QueryCausal2")
+        run(trainer, diffThreshold: 0.002)
     }
 }
 
@@ -330,6 +628,18 @@ class NLPFlowResetTests: NLPFlowTests
         let trainer = _buildTrainer("RoPE")
         run(trainer)
     }
+    
+    override func testQueryCausal1() throws
+    {
+        let trainer = _buildTrainer("QueryCausal1")
+        run(trainer)
+    }
+    
+    override func testQueryCausal2() throws
+    {
+        let trainer = _buildTrainer("QueryCausal2")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -382,6 +692,18 @@ class NLPFlowReverseTests: NLPFlowTests
     override func testRoPE() throws
     {
         let trainer = _buildTrainer("RoPE")
+        run(trainer)
+    }
+    
+    override func testQueryCausal1() throws
+    {
+        let trainer = _buildTrainer("QueryCausal1")
+        run(trainer)
+    }
+    
+    override func testQueryCausal2() throws
+    {
+        let trainer = _buildTrainer("QueryCausal2")
         run(trainer)
     }
 }
@@ -506,6 +828,18 @@ class NLPInferenceTests: NLPFlowTests
         let trainer = _buildTrainer("RoPE")
         run(trainer)
     }
+    
+    override func testQueryCausal1() throws
+    {
+        let trainer = _buildTrainer("QueryCausal1")
+        run(trainer)
+    }
+    
+    override func testQueryCausal2() throws
+    {
+        let trainer = _buildTrainer("QueryCausal2")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -551,6 +885,18 @@ class NLPLoadTests: NLPFlowTests
     override func testRoPE() throws
     {
         let trainer = _buildTrainer("RoPE")
+        run(trainer)
+    }
+    
+    override func testQueryCausal1() throws
+    {
+        let trainer = _buildTrainer("QueryCausal1")
+        run(trainer)
+    }
+    
+    override func testQueryCausal2() throws
+    {
+        let trainer = _buildTrainer("QueryCausal2")
         run(trainer)
     }
 }
@@ -642,6 +988,18 @@ class NLPTransformTests: NLPFlowTests
     override func testRoPE() throws
     {
         let trainer = _buildTrainer("RoPE")
+        run(trainer)
+    }
+    
+    override func testQueryCausal1() throws
+    {
+        let trainer = _buildTrainer("QueryCausal1")
+        run(trainer)
+    }
+    
+    override func testQueryCausal2() throws
+    {
+        let trainer = _buildTrainer("QueryCausal2")
         run(trainer)
     }
 }

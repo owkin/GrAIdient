@@ -126,6 +126,48 @@ class NLPGradTests: EmbeddingSeqMSE1DCase
                 params: params
             )
             
+        case "ValueCausal1":
+            let otherLayer: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 3 * sequence,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 3 * 3,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = try! ValueCausalSeq(
+                value: layer, score: otherLayer,
+                nbHeadsValue: 3, nbHeadsScore: 3,
+                params: params
+            )
+            
+        case "ValueCausal2":
+            let otherLayer: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 4 * sequence,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 2 * 3,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = try! ValueCausalSeq(
+                value: layer, score: otherLayer,
+                nbHeadsValue: 2, nbHeadsScore: 4,
+                params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -209,6 +251,20 @@ class NLPGradTests: EmbeddingSeqMSE1DCase
     func testQueryCausal2GPU() throws
     {
         let trainer = _buildTrainer("QueryCausal2")
+        run(trainer)
+    }
+    
+    func testValueCausal1CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("ValueCausal1")
+        run(trainer)
+    }
+    
+    func testValueCausal2CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("ValueCausal2")
         run(trainer)
     }
 }

@@ -1196,7 +1196,7 @@ public class QueryCausalSeq: LayerMergeSeq
         let pSequence: [UInt32] = [UInt32(sequence)]
         
         let command = MetalKernel.get.createCommand(
-            "encodeCausalityFloat", deviceID: deviceID
+            "encodeCausality", deviceID: deviceID
         )
         command.setBytes(pNbHeadsQuery, atIndex: 0)
         command.setBytes(pNbNeurons, atIndex: 1)

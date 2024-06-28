@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+✨ **layer_seq:** QueryCausalSeq ([125](https://github.com/owkin/GrAIdient/pull/125))\
 ✨ **layer_seq:** RoPESeq ([124](https://github.com/owkin/GrAIdient/pull/124))\
 ✨ **layer_seq:** RMSNormSeq ([123](https://github.com/owkin/GrAIdient/pull/123))\
 ✨ **layer_seq:** EmbeddingSeq ([122](https://github.com/owkin/GrAIdient/pull/122))\

@@ -497,6 +497,13 @@ let CONFIG_KERNELS =
         "createRoPESeqMatrixHalf",
         "RoPESeqForwardHalf",
         "RoPESeqSeqBackwardHalf",
+        "encodeCausalityHalf",
+        "queryCausalSeqForwardHalf",
+        "queryCausalSeq4ForwardHalf",
+        "queryCausalQuerySeqBackwardHalf",
+        "queryCausalQuerySeq4BackwardHalf",
+        "queryCausalKeySeqBackwardHalf",
+        "queryCausalKeySeq4BackwardHalf",
     ],
     "OptimizerFloat": [
         "clipGradientsFloat",

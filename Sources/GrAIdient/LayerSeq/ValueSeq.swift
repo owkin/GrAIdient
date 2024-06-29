@@ -1615,7 +1615,6 @@ public class ValueCausalSeq: LayerMergeSeq
                     }
                 }
                 
-                
                 if _layersPrev[0].dirty
                 {
                     value.get(seqK, depthValue)!.v[elem].delta = sum

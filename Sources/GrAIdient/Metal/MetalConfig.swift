@@ -492,6 +492,12 @@ let CONFIG_KERNELS =
         "queryCausalQuerySeq4BackwardFloat",
         "queryCausalKeySeqBackwardFloat",
         "queryCausalKeySeq4BackwardFloat",
+        "valueCausalSeqForwardFloat",
+        "valueCausalSeq4ForwardFloat",
+        "valueCausalValueSeqBackwardFloat",
+        "valueCausalValueSeq4BackwardFloat",
+        "valueCausalScoreSeqBackwardFloat",
+        "valueCausalScoreSeq4BackwardFloat",
     ],
     "NLPHalf": [
         "createRoPESeqMatrixHalf",

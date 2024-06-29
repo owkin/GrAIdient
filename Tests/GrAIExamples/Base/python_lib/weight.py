@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import List, Tuple, Dict
 
 from python_lib.model import SimpleAutoEncoder
+from python_lib.nlp.model import Transformer, TransformerArgs
 
 
 def _flatten_weights(
@@ -138,8 +139,21 @@ def load_llm_weights(
     (_, _): List[np.ndarray], List[List[int]]
         The flattened weights, their shape.
     """
-    state = torch.load(
+    torch.manual_seed(42)
+    model_args = TransformerArgs(
+        dim=2,
+        n_layers=32,
+        head_dim=2,
+        hidden_dim=2,
+        n_heads=2,
+        n_kv_heads=1,
+        norm_eps=1e-5,
+        vocab_size=32000
+    )
+    model = Transformer(model_args)
+    state = model.state_dict()
+    """state = torch.load(
         str(Path(model_path) / "consolidated.00.pth"),
         map_location="cpu"
-    )
+    )"""
     return _extract_weights(state)

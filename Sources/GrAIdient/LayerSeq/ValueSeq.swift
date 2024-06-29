@@ -1554,7 +1554,7 @@ public class ValueCausalSeq: LayerMergeSeq
         let pSequence: [UInt32] = [UInt32(sequence)]
         
         let kernel = (nbNeurons / _nbHeadsScore) % 4 == 0 ?
-            "valueCausalSeq4Forward" : "valueCausalSeqForward"
+            "valueCausalSeqForward" : "valueCausalSeqForward"
         let coeff = (nbNeurons / _nbHeadsScore) % 4 == 0 ? 4 : 1
         let command = MetalKernel.get.createCommand(
             kernel, deviceID: deviceID
@@ -1571,7 +1571,7 @@ public class ValueCausalSeq: LayerMergeSeq
         command.setBuffer(outs.metal, atIndex: 9)
         
         command.dispatchThreads(
-            width: nbNeurons / coeff,
+            width: nbNeurons,
             height: batchSize * sequence
         )
         command.enqueue()

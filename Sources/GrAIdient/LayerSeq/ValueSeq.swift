@@ -1474,8 +1474,8 @@ public class ValueCausalSeq: LayerMergeSeq
                 }
                 else
                 {
-                    let offsetTmp = depthValue + nbNeurons * seqK +
-                        sequence * nbNeurons * batch
+                    let offsetTmp = depthValue + nbNeuronsPrevValue * seqK +
+                        sequence * nbNeuronsPrevValue * batch
                     
                     valueTmp = Double(valueBuffer[offsetTmp])
                     
@@ -1540,36 +1540,41 @@ public class ValueCausalSeq: LayerMergeSeq
     {
         try checkStateForwardGPU(batchSize: batchSize)
         
-        /*let value = _layersPrev[0] as! LayerSeq
+        let value = _layersPrev[0] as! LayerSeq
         let score = _layersPrev[1] as! LayerSeq
-        let nbNeuronsPrev = score.nbNeurons
+        let nbNeuronsPrevValue = value.nbNeurons
+        let nbNeuronsPrevScore = score.nbNeurons
         
-        let pNbHeads: [UInt32] = [UInt32(_nbHeads)]
+        let pNbHeadsValue: [UInt32] = [UInt32(_nbHeadsValue)]
+        let pNbHeadsScore: [UInt32] = [UInt32(_nbHeadsScore)]
         let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
-        let pNbNeuronsPrev: [UInt32] = [UInt32(nbNeuronsPrev)]
+        let pNbNeuronsPrevValue: [UInt32] = [UInt32(nbNeuronsPrevValue)]
+        let pNbNeuronsPrevScore: [UInt32] = [UInt32(nbNeuronsPrevScore)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pSequence: [UInt32] = [UInt32(sequence)]
         
-        let kernel = (nbNeurons / _nbHeads) % 4 == 0 ?
-            "valueSeq4Forward" : "valueSeqForward"
-        let coeff = (nbNeurons / _nbHeads) % 4 == 0 ? 4 : 1
+        let kernel = (nbNeurons / _nbHeadsScore) % 4 == 0 ?
+            "valueCausalSeq4Forward" : "valueCausalSeqForward"
+        let coeff = (nbNeurons / _nbHeadsScore) % 4 == 0 ? 4 : 1
         let command = MetalKernel.get.createCommand(
             kernel, deviceID: deviceID
         )
         command.setBuffer(value.outs.metal, atIndex: 0)
         command.setBuffer(score.outs.metal, atIndex: 1)
-        command.setBytes(pNbHeads, atIndex: 2)
-        command.setBytes(pNbNeurons, atIndex: 3)
-        command.setBytes(pNbNeuronsPrev, atIndex: 4)
-        command.setBytes(pNbBatch, atIndex: 5)
-        command.setBytes(pSequence, atIndex: 6)
-        command.setBuffer(outs.metal, atIndex: 7)
+        command.setBytes(pNbHeadsValue, atIndex: 2)
+        command.setBytes(pNbHeadsScore, atIndex: 3)
+        command.setBytes(pNbNeurons, atIndex: 4)
+        command.setBytes(pNbNeuronsPrevValue, atIndex: 5)
+        command.setBytes(pNbNeuronsPrevScore, atIndex: 6)
+        command.setBytes(pNbBatch, atIndex: 7)
+        command.setBytes(pSequence, atIndex: 8)
+        command.setBuffer(outs.metal, atIndex: 9)
         
         command.dispatchThreads(
             width: nbNeurons / coeff,
             height: batchSize * sequence
         )
-        command.enqueue()*/
+        command.enqueue()
     }
     
     /// Apply the backward pass in the CPU execution context.
@@ -1673,13 +1678,16 @@ public class ValueCausalSeq: LayerMergeSeq
             return
         }
         
-        /*let value = _layersPrev[0] as! LayerSeq
+        let value = _layersPrev[0] as! LayerSeq
         let score = _layersPrev[1] as! LayerSeq
-        let nbNeuronsPrev = score.nbNeurons
+        let nbNeuronsPrevValue = value.nbNeurons
+        let nbNeuronsPrevScore = score.nbNeurons
         
-        let pNbHeads: [UInt32] = [UInt32(_nbHeads)]
+        let pNbHeadsValue: [UInt32] = [UInt32(_nbHeadsValue)]
+        let pNbHeadsScore: [UInt32] = [UInt32(_nbHeadsScore)]
         let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
-        let pNbNeuronsPrev: [UInt32] = [UInt32(nbNeuronsPrev)]
+        let pNbNeuronsPrevValue: [UInt32] = [UInt32(nbNeuronsPrevValue)]
+        let pNbNeuronsPrevScore: [UInt32] = [UInt32(nbNeuronsPrevScore)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pSequence: [UInt32] = [UInt32(sequence)]
         
@@ -1692,24 +1700,26 @@ public class ValueCausalSeq: LayerMergeSeq
             
             let pDirty: [UInt32] = value.dirty ? [1] : [0]
             
-            let kernel = (nbNeurons / _nbHeads) % 4 == 0 ?
-                "valueValueSeq4Backward" : "valueValueSeqBackward"
-            let coeff = (nbNeurons / _nbHeads) % 4 == 0 ? 4 : 1
+            let kernel = (nbNeuronsPrevValue / _nbHeadsValue) % 4 == 0 ?
+                "valueCausalValueSeq4Backward" : "valueCausalValueSeqBackward"
+            let coeff = (nbNeuronsPrevValue / _nbHeadsValue) % 4 == 0 ? 4 : 1
             command = metalKernel.createCommand(
                 kernel, deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBuffer(score.outs.metal, atIndex: 1)
-            command.setBytes(pNbHeads, atIndex: 2)
-            command.setBytes(pNbNeurons, atIndex: 3)
-            command.setBytes(pNbNeuronsPrev, atIndex: 4)
-            command.setBytes(pNbBatch, atIndex: 5)
-            command.setBytes(pSequence, atIndex: 6)
-            command.setBytes(pDirty, atIndex: 7)
-            command.setBuffer(value.delta.metal, atIndex: 8)
+            command.setBytes(pNbHeadsValue, atIndex: 2)
+            command.setBytes(pNbHeadsScore, atIndex: 3)
+            command.setBytes(pNbNeurons, atIndex: 4)
+            command.setBytes(pNbNeuronsPrevValue, atIndex: 5)
+            command.setBytes(pNbNeuronsPrevScore, atIndex: 6)
+            command.setBytes(pNbBatch, atIndex: 7)
+            command.setBytes(pSequence, atIndex: 8)
+            command.setBytes(pDirty, atIndex: 9)
+            command.setBuffer(value.delta.metal, atIndex: 10)
             
             command.dispatchThreads(
-                width: nbNeurons / coeff,
+                width: nbNeuronsPrevValue / coeff,
                 height: batchSize * sequence
             )
             command.enqueue()
@@ -1720,27 +1730,29 @@ public class ValueCausalSeq: LayerMergeSeq
             
             let pDirty: [UInt32] = score.dirty ? [1] : [0]
             
-            let kernel = (nbNeurons / _nbHeads) % 4 == 0 ?
-                "valueScoreSeq4Backward" : "valueScoreSeqBackward"
+            let kernel = (nbNeurons / _nbHeadsScore) % 4 == 0 ?
+                "valueCausalScoreSeq4Backward" : "valueCausalScoreSeqBackward"
             command = metalKernel.createCommand(
                 kernel, deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBuffer(value.outs.metal, atIndex: 1)
-            command.setBytes(pNbHeads, atIndex: 2)
-            command.setBytes(pNbNeurons, atIndex: 3)
-            command.setBytes(pNbNeuronsPrev, atIndex: 4)
-            command.setBytes(pNbBatch, atIndex: 5)
-            command.setBytes(pSequence, atIndex: 6)
-            command.setBytes(pDirty, atIndex: 7)
-            command.setBuffer(score.delta.metal, atIndex: 8)
+            command.setBytes(pNbHeadsValue, atIndex: 2)
+            command.setBytes(pNbHeadsScore, atIndex: 3)
+            command.setBytes(pNbNeurons, atIndex: 4)
+            command.setBytes(pNbNeuronsPrevValue, atIndex: 5)
+            command.setBytes(pNbNeuronsPrevScore, atIndex: 6)
+            command.setBytes(pNbBatch, atIndex: 7)
+            command.setBytes(pSequence, atIndex: 8)
+            command.setBytes(pDirty, atIndex: 9)
+            command.setBuffer(score.delta.metal, atIndex: 10)
             
             command.dispatchThreads(
-                width: nbNeuronsPrev,
+                width: nbNeuronsPrevScore,
                 height: batchSize * sequence
             )
             command.enqueue()
-        }*/
+        }
         propagateDirty()
     }
 }

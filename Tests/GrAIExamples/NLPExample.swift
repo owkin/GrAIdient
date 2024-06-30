@@ -13,7 +13,7 @@ import GrAIdient
 final class NLPExample: XCTestCase
 {
     /// Model path on the disk.
-    let _modelPath = "TO/UPDATE"
+    let _modelPath = "/Users/jean-francoisreboud/DocumentsNonSync/Projet/Python/mistral/weights/mistral-7B-v0.1/"
     
     /// Prompt.
     let _prompt = "How do you do?"
@@ -176,7 +176,7 @@ final class NLPExample: XCTestCase
     }
     
     /// Generate text from prompt.
-    func testGenerate() throws
+    func _testGenerate() throws
     {
         // Encode prompt.
         let pythonLib = Python.import("python_lib")

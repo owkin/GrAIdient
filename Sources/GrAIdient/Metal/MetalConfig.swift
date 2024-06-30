@@ -510,6 +510,12 @@ let CONFIG_KERNELS =
         "queryCausalQuerySeq4BackwardHalf",
         "queryCausalKeySeqBackwardHalf",
         "queryCausalKeySeq4BackwardHalf",
+        "valueCausalSeqForwardHalf",
+        "valueCausalSeq4ForwardHalf",
+        "valueCausalValueSeqBackwardHalf",
+        "valueCausalValueSeq4BackwardHalf",
+        "valueCausalScoreSeqBackwardHalf",
+        "valueCausalScoreSeq4BackwardHalf",
     ],
     "OptimizerFloat": [
         "clipGradientsFloat",

@@ -574,7 +574,7 @@ kernel void valueCausalSeq4ForwardFloat(
     uint depthValue = j * 4 + headValue * size;
     
     float4 tmp = 0.0;
-    for (uint seqK=0; seqK<seqQ; seqK++)
+    for (uint seqK=0; seqK<=seqQ; seqK++)
     {
         uint offsetValue = (depthValue +
             nbNeuronsPrevValue * seqK +

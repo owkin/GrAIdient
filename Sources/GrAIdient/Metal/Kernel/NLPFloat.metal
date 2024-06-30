@@ -171,6 +171,7 @@ kernel void queryCausalSeqForwardFloat(
     uint2 id [[ thread_position_in_grid ]])
 {
     uint size = nbNeuronsPrevQuery / nbHeadsQuery;
+    uint nbBlocksHead = nbHeadsQuery / nbHeadsKey;
     
     uint headQuery = id[0] / sequence;
     uint seqK = id[0] % sequence;
@@ -183,8 +184,7 @@ kernel void queryCausalSeqForwardFloat(
         return ;
     }
     
-    uint headKey = nbHeadsQuery == nbHeadsKey ?
-        headQuery : headQuery / nbHeadsKey;
+    uint headKey = headQuery / nbBlocksHead;
     float tmp = 0.0;
     
     for (uint j=0; j<size; j++)
@@ -220,6 +220,7 @@ kernel void queryCausalSeq4ForwardFloat(
     uint2 id [[ thread_position_in_grid ]])
 {
     uint size = nbNeuronsPrevQuery / nbHeadsQuery;
+    uint nbBlocksHead = nbHeadsQuery / nbHeadsKey;
     
     uint headQuery = id[0] / sequence;
     uint seqK = id[0] % sequence;
@@ -232,8 +233,7 @@ kernel void queryCausalSeq4ForwardFloat(
         return ;
     }
     
-    uint headKey = nbHeadsQuery == nbHeadsKey ?
-        headQuery : headQuery / nbHeadsKey;
+    uint headKey = headQuery / nbBlocksHead;
     float4 tmp = 0.0;
     
     for (uint j=0; j<size/4; j++)
@@ -271,6 +271,7 @@ kernel void queryCausalQuerySeqBackwardFloat(
     uint2 id [[ thread_position_in_grid ]])
 {
     uint size = nbNeuronsPrevQuery / nbHeadsQuery;
+    uint nbBlocksHead = nbHeadsQuery / nbHeadsKey;
     
     uint headQuery = id[0] / size;
     uint j = id[0] % size;
@@ -283,8 +284,7 @@ kernel void queryCausalQuerySeqBackwardFloat(
         return ;
     }
     
-    uint headKey = nbHeadsQuery == nbHeadsKey ?
-        headQuery : headQuery / nbHeadsKey;
+    uint headKey = headQuery / nbBlocksHead;
     uint depthPrevKey = j + headKey * size;
     uint depthPrevQuery = j + headQuery * size;
     
@@ -328,6 +328,7 @@ kernel void queryCausalQuerySeq4BackwardFloat(
     uint2 id [[ thread_position_in_grid ]])
 {
     uint size = nbNeuronsPrevQuery / nbHeadsQuery;
+    uint nbBlocksHead = nbHeadsQuery / nbHeadsKey;
     
     uint headQuery = id[0] / (size / 4);
     uint j = id[0] % (size / 4);
@@ -340,8 +341,7 @@ kernel void queryCausalQuerySeq4BackwardFloat(
         return ;
     }
     
-    uint headKey = nbHeadsQuery == nbHeadsKey ?
-        headQuery : headQuery / nbHeadsKey;
+    uint headKey = headQuery / nbBlocksHead;
     uint depthPrevKey = j * 4 + headKey * size;
     uint depthPrevQuery = j * 4 + headQuery * size;
     
@@ -385,6 +385,7 @@ kernel void queryCausalKeySeqBackwardFloat(
     uint2 id [[ thread_position_in_grid ]])
 {
     uint size = nbNeuronsPrevKey / nbHeadsKey;
+    uint nbBlocksHead = nbHeadsQuery / nbHeadsKey;
     
     uint headKey = id[0] / size;
     uint j = id[0] % size;
@@ -397,8 +398,6 @@ kernel void queryCausalKeySeqBackwardFloat(
         return ;
     }
     
-    uint nbBlocksHead = nbHeadsQuery == nbHeadsKey ?
-        1 : nbHeadsQuery / nbHeadsKey;
     uint depthPrevKey = j + headKey * size;
     
     float tmp = 0.0;
@@ -448,6 +447,7 @@ kernel void queryCausalKeySeq4BackwardFloat(
     uint2 id [[ thread_position_in_grid ]])
 {
     uint size = nbNeuronsPrevKey / nbHeadsKey;
+    uint nbBlocksHead = nbHeadsQuery / nbHeadsKey;
     
     uint headKey = id[0] / (size / 4);
     uint j = id[0] % (size / 4);
@@ -460,8 +460,6 @@ kernel void queryCausalKeySeq4BackwardFloat(
         return ;
     }
     
-    uint nbBlocksHead = nbHeadsQuery == nbHeadsKey ?
-        1 : nbHeadsQuery / nbHeadsKey;
     uint depthPrevKey = j * 4 + headKey * size;
     
     float4 tmp = 0.0;
@@ -510,6 +508,7 @@ kernel void valueCausalSeqForwardFloat(
     uint2 id [[ thread_position_in_grid ]])
 {
     uint size = nbNeuronsPrevValue / nbHeadsValue;
+    uint nbBlocksHead = nbHeadsScore / nbHeadsValue;
     
     uint headScore = id[0] / size;
     uint j = id[0] % size;
@@ -522,8 +521,7 @@ kernel void valueCausalSeqForwardFloat(
         return ;
     }
     
-    uint headValue = nbHeadsScore == nbHeadsValue ?
-        headScore : headScore / nbHeadsValue;
+    uint headValue = headScore / nbBlocksHead;
     
     uint depthScore = j + headScore * size;
     uint depthValue = j + headValue * size;
@@ -557,6 +555,7 @@ kernel void valueCausalSeq4ForwardFloat(
     uint2 id [[ thread_position_in_grid ]])
 {
     uint size = nbNeuronsPrevValue / nbHeadsValue;
+    uint nbBlocksHead = nbHeadsScore / nbHeadsValue;
     
     uint headScore = id[0] / (size / 4);
     uint j = id[0] % (size / 4);
@@ -569,8 +568,7 @@ kernel void valueCausalSeq4ForwardFloat(
         return ;
     }
     
-    uint headValue = nbHeadsScore == nbHeadsValue ?
-        headScore : headScore / nbHeadsValue;
+    uint headValue = headScore / nbBlocksHead;
     
     uint depthScore = j * 4 + headScore * size;
     uint depthValue = j * 4 + headValue * size;
@@ -607,6 +605,7 @@ kernel void valueCausalValueSeqBackwardFloat(
     uint2 id [[ thread_position_in_grid ]])
 {
     uint size = nbNeuronsPrevValue / nbHeadsValue;
+    uint nbBlocksHead = nbHeadsScore / nbHeadsValue;
     
     uint headValue = id[0] / size;
     uint j = id[0] % size;
@@ -619,8 +618,6 @@ kernel void valueCausalValueSeqBackwardFloat(
         return ;
     }
     
-    uint nbBlocksHead = nbHeadsScore == nbHeadsValue ?
-        1 : nbHeadsScore / nbHeadsValue;
     uint depthValue = j + headValue * size;
     
     float tmp = 0.0;
@@ -668,6 +665,7 @@ kernel void valueCausalValueSeq4BackwardFloat(
     uint2 id [[ thread_position_in_grid ]])
 {
     uint size = nbNeuronsPrevValue / nbHeadsValue;
+    uint nbBlocksHead = nbHeadsScore / nbHeadsValue;
     
     uint headValue = id[0] / (size / 4);
     uint j = id[0] % (size / 4);
@@ -680,8 +678,6 @@ kernel void valueCausalValueSeq4BackwardFloat(
         return ;
     }
     
-    uint nbBlocksHead = nbHeadsScore == nbHeadsValue ?
-        1 : nbHeadsScore / nbHeadsValue;
     uint depthValue = j + headValue * size;
     
     float4 tmp = 0.0;
@@ -729,6 +725,7 @@ kernel void valueCausalScoreSeqBackwardFloat(
     uint2 id [[ thread_position_in_grid ]])
 {
     uint size = nbNeuronsPrevValue / nbHeadsValue;
+    uint nbBlocksHead = nbHeadsScore / nbHeadsValue;
     
     uint headScore = id[0] / sequence;
     uint seqK = id[0] % sequence;
@@ -741,8 +738,7 @@ kernel void valueCausalScoreSeqBackwardFloat(
         return ;
     }
     
-    uint headValue = nbHeadsScore == nbHeadsValue ?
-        headScore : headScore / nbHeadsValue;
+    uint headValue = headScore / nbBlocksHead;
     
     float tmp = 0.0;
     for (uint j=0; j<size; j++)
@@ -786,6 +782,7 @@ kernel void valueCausalScoreSeq4BackwardFloat(
     uint2 id [[ thread_position_in_grid ]])
 {
     uint size = nbNeuronsPrevValue / nbHeadsValue;
+    uint nbBlocksHead = nbHeadsScore / nbHeadsValue;
     
     uint headScore = id[0] / sequence;
     uint seqK = id[0] % sequence;
@@ -798,8 +795,7 @@ kernel void valueCausalScoreSeq4BackwardFloat(
         return ;
     }
     
-    uint headValue = nbHeadsScore == nbHeadsValue ?
-        headScore : headScore / nbHeadsValue;
+    uint headValue = headScore / nbBlocksHead;
     
     float4 tmp = 0.0;
     for (uint j=0; j<size/4; j++)

@@ -171,6 +171,7 @@ kernel void queryCausalSeqForwardHalf(
     uint2 id [[ thread_position_in_grid ]])
 {
     uint size = nbNeuronsPrevQuery / nbHeadsQuery;
+    uint nbBlocksHead = nbHeadsQuery / nbHeadsKey;
     
     uint headQuery = id[0] / sequence;
     uint seqK = id[0] % sequence;
@@ -183,8 +184,7 @@ kernel void queryCausalSeqForwardHalf(
         return ;
     }
     
-    uint headKey = nbHeadsQuery == nbHeadsKey ?
-        headQuery : headQuery / nbHeadsKey;
+    uint headKey = headQuery / nbBlocksHead;
     half tmp = 0.0;
     
     for (uint j=0; j<size; j++)
@@ -220,6 +220,7 @@ kernel void queryCausalSeq4ForwardHalf(
     uint2 id [[ thread_position_in_grid ]])
 {
     uint size = nbNeuronsPrevQuery / nbHeadsQuery;
+    uint nbBlocksHead = nbHeadsQuery / nbHeadsKey;
     
     uint headQuery = id[0] / sequence;
     uint seqK = id[0] % sequence;
@@ -232,8 +233,7 @@ kernel void queryCausalSeq4ForwardHalf(
         return ;
     }
     
-    uint headKey = nbHeadsQuery == nbHeadsKey ?
-        headQuery : headQuery / nbHeadsKey;
+    uint headKey = headQuery / nbBlocksHead;
     half4 tmp = 0.0;
     
     for (uint j=0; j<size/4; j++)
@@ -271,6 +271,7 @@ kernel void queryCausalQuerySeqBackwardHalf(
     uint2 id [[ thread_position_in_grid ]])
 {
     uint size = nbNeuronsPrevQuery / nbHeadsQuery;
+    uint nbBlocksHead = nbHeadsQuery / nbHeadsKey;
     
     uint headQuery = id[0] / size;
     uint j = id[0] % size;
@@ -283,8 +284,8 @@ kernel void queryCausalQuerySeqBackwardHalf(
         return ;
     }
     
-    uint headKey = nbHeadsQuery == nbHeadsKey ?
-        headQuery : headQuery / nbHeadsKey;
+    uint headKey = headQuery / nbBlocksHead;
+    
     uint depthPrevKey = j + headKey * size;
     uint depthPrevQuery = j + headQuery * size;
     
@@ -328,6 +329,7 @@ kernel void queryCausalQuerySeq4BackwardHalf(
     uint2 id [[ thread_position_in_grid ]])
 {
     uint size = nbNeuronsPrevQuery / nbHeadsQuery;
+    uint nbBlocksHead = nbHeadsQuery / nbHeadsKey;
     
     uint headQuery = id[0] / (size / 4);
     uint j = id[0] % (size / 4);
@@ -340,8 +342,8 @@ kernel void queryCausalQuerySeq4BackwardHalf(
         return ;
     }
     
-    uint headKey = nbHeadsQuery == nbHeadsKey ?
-        headQuery : headQuery / nbHeadsKey;
+    uint headKey = headQuery / nbBlocksHead;
+    
     uint depthPrevKey = j * 4 + headKey * size;
     uint depthPrevQuery = j * 4 + headQuery * size;
     
@@ -385,6 +387,7 @@ kernel void queryCausalKeySeqBackwardHalf(
     uint2 id [[ thread_position_in_grid ]])
 {
     uint size = nbNeuronsPrevKey / nbHeadsKey;
+    uint nbBlocksHead = nbHeadsQuery / nbHeadsKey;
     
     uint headKey = id[0] / size;
     uint j = id[0] % size;
@@ -397,8 +400,6 @@ kernel void queryCausalKeySeqBackwardHalf(
         return ;
     }
     
-    uint nbBlocksHead = nbHeadsQuery == nbHeadsKey ?
-        1 : nbHeadsQuery / nbHeadsKey;
     uint depthPrevKey = j + headKey * size;
     
     half tmp = 0.0;
@@ -448,6 +449,7 @@ kernel void queryCausalKeySeq4BackwardHalf(
     uint2 id [[ thread_position_in_grid ]])
 {
     uint size = nbNeuronsPrevKey / nbHeadsKey;
+    uint nbBlocksHead = nbHeadsQuery / nbHeadsKey;
     
     uint headKey = id[0] / (size / 4);
     uint j = id[0] % (size / 4);
@@ -460,8 +462,6 @@ kernel void queryCausalKeySeq4BackwardHalf(
         return ;
     }
     
-    uint nbBlocksHead = nbHeadsQuery == nbHeadsKey ?
-        1 : nbHeadsQuery / nbHeadsKey;
     uint depthPrevKey = j * 4 + headKey * size;
     
     half4 tmp = 0.0;

@@ -24,8 +24,8 @@ final class NLPExample: XCTestCase
         setPythonLib()
         _ = MetalKernel.get
         
-        GrAI.Opti.GPU = true
-        GrAI.Precision.float = true
+        GrAI.Opti.CPU = true
+        //GrAI.Precision.float = true
     }
     
     ///
@@ -200,7 +200,7 @@ final class NLPExample: XCTestCase
         
         // Forward.
         let firstLayer: EmbeddingSeq = model.layers.first as! EmbeddingSeq
-        try! firstLayer.setDataGPU(
+        try! firstLayer.setDataCPU(
             [prompt], batchSize: 1, sequence: prompt.count
         )
         try! model.forward()

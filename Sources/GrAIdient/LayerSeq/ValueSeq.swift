@@ -1314,12 +1314,13 @@ public class ValueCausalSeq: LayerMergeSeq
         
         let value = (_layersPrev[0] as! LayerSeq).neurons!
         let score = (_layersPrev[1] as! LayerSeq).neurons!
+        
         let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeadsValue
+        let nbBlocksHead = _nbHeadsScore / _nbHeadsValue
         
         for batch in 0..<batchSize {
         for headScore in 0..<_nbHeadsScore {
-        let headValue = _nbHeadsScore == _nbHeadsValue ?
-            headScore : headScore / _nbHeadsValue
+        let headValue = headScore / nbBlocksHead
         for seqQ in 0..<sequence {
         for j in 0..<size {
         for elem in 0..<nbSameElems
@@ -1342,8 +1343,7 @@ public class ValueCausalSeq: LayerMergeSeq
         
         for batch in 0..<batchSize {
         for headScore in 0..<_nbHeadsScore {
-        let headValue = _nbHeadsScore == _nbHeadsValue ?
-            headScore : headScore / _nbHeadsValue
+        let headValue = headScore / nbBlocksHead
         for seqQ in 0..<sequence {
         for j in 0..<size {
         let depthScore = j + headScore * size
@@ -1410,14 +1410,16 @@ public class ValueCausalSeq: LayerMergeSeq
         
         let value = (_layersPrev[0] as! LayerSeq).neurons!
         let score = (_layersPrev[1] as! LayerSeq).neurons!
+        
         let nbNeuronsPrevValue = (_layersPrev[0] as! LayerSeq).nbNeurons
         let nbNeuronsPrevScore = (_layersPrev[1] as! LayerSeq).nbNeurons
+        
         let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeadsValue
+        let nbBlocksHead = _nbHeadsScore / _nbHeadsValue
         
         for batch in 0..<batchSize {
         for headScore in 0..<_nbHeadsScore {
-        let headValue = _nbHeadsScore == _nbHeadsValue ?
-            headScore : headScore / _nbHeadsValue
+        let headValue = headScore / nbBlocksHead
         for seqQ in 0..<sequence {
         for j in 0..<size {
         for elem in 0..<nbSameElems
@@ -1443,8 +1445,7 @@ public class ValueCausalSeq: LayerMergeSeq
         
         for batch in 0..<batchSize {
         for headScore in 0..<_nbHeadsScore {
-        let headValue = _nbHeadsScore == _nbHeadsValue ?
-            headScore : headScore / _nbHeadsValue
+        let headValue = headScore / nbBlocksHead
         for seqQ in 0..<sequence {
         for j in 0..<size {
         let depthScore = j + headScore * size
@@ -1505,12 +1506,13 @@ public class ValueCausalSeq: LayerMergeSeq
         
         let value = (_layersPrev[0] as! LayerSeq).neurons!
         let score = (_layersPrev[1] as! LayerSeq).neurons!
+        
         let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeadsValue
+        let nbBlocksHead = _nbHeadsScore / _nbHeadsValue
         
         for elem in 0..<batchSize {
         for headScore in 0..<_nbHeadsScore {
-        let headValue = _nbHeadsScore == _nbHeadsValue ?
-            headScore : headScore / _nbHeadsValue
+        let headValue = headScore / nbBlocksHead
         for seqQ in 0..<sequence {
         for j in 0..<size
         {
@@ -1587,13 +1589,12 @@ public class ValueCausalSeq: LayerMergeSeq
         
         let value = (_layersPrev[0] as! LayerSeq).neurons!
         let score = (_layersPrev[1] as! LayerSeq).neurons!
+        
         let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeadsValue
+        let nbBlocksHead = _nbHeadsScore / _nbHeadsValue
         
         if _layersPrev[0].computeDelta
         {
-            let nbBlocksHead = _nbHeadsScore == _nbHeadsValue ?
-                1 : _nbHeadsScore / _nbHeadsValue
-            
             for elem in 0..<batchSize {
             for headValue in 0..<_nbHeadsValue {
             for seqK in 0..<sequence {
@@ -1634,8 +1635,7 @@ public class ValueCausalSeq: LayerMergeSeq
         {
             for elem in 0..<batchSize {
             for headScore in 0..<_nbHeadsScore {
-            let headValue = _nbHeadsScore == _nbHeadsValue ?
-                headScore : headScore / _nbHeadsValue
+            let headValue = headScore / nbBlocksHead
             for seqQ in 0..<sequence {
             for seqK in 0...seqQ
             {

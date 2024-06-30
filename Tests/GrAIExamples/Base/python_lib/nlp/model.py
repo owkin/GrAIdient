@@ -248,10 +248,9 @@ class Attention(torch.nn.Module):
         ).type_as(scores)
 
         output = torch.matmul(scores, values)
-        """output = output.transpose(1, 2).contiguous().reshape(B, L, -1)
+        output = output.transpose(1, 2).contiguous().reshape(B, L, -1)
 
-        return self.wo(output), (keys, values)"""
-        return scores.transpose(1, 2).contiguous().reshape(B, L, -1), (keys, values)
+        return self.wo(output), (keys, values)
 
 
 class FeedForward(torch.nn.Module):

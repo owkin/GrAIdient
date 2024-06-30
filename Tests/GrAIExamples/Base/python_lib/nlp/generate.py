@@ -112,35 +112,21 @@ def generate_main(
     model_path: str
         Path to the model on the disk.
     """
-    torch.manual_seed(42)
-    model_args = TransformerArgs(
-        dim=2,
-        n_layers=32,
-        head_dim=2,
-        hidden_dim=2,
-        n_heads=2,
-        n_kv_heads=1,
-        norm_eps=1e-5,
-        vocab_size=32000
-    )
-    # state = torch.load(str(Path(model_path) / "consolidated.00.pth"))
-    # tokenizer = Tokenizer(str(Path(model_path) / "tokenizer.model"))
+    state = torch.load(str(Path(model_path) / "consolidated.00.pth"))
+    tokenizer = Tokenizer(str(Path(model_path) / "tokenizer.model"))
 
-    """with open(Path(model_path) / "params.json", "r") as f:
+    with open(Path(model_path) / "params.json", "r") as f:
         config = json.loads(f.read())
         config.pop("sliding_window", None)
         config.pop("model_type", None)
-        model_args = TransformerArgs(**config)"""
+        model_args = TransformerArgs(**config)
 
     model = Transformer(model_args)
-    # model.load_state_dict(state)
+    model.load_state_dict(state)
     model.to("mps")
 
-    """prompt = torch.tensor(
-        tokenizer.encode(prompt), dtype=torch.long, device="mps"
-    )"""
     prompt = torch.tensor(
-        [0, 1], dtype=torch.long, device="mps"
+        tokenizer.encode(prompt), dtype=torch.long, device="mps"
     )
     out, _ = model(prompt[None])
     return out.detach().cpu().numpy().flatten()
@@ -160,9 +146,8 @@ def encode(
     model_path: str
         Path to the model on the disk.
     """
-    # tokenizer = Tokenizer(str(Path(model_path) / "tokenizer.model"))
-    # return tokenizer.encode(prompt)
-    return [0, 1]
+    tokenizer = Tokenizer(str(Path(model_path) / "tokenizer.model"))
+    return tokenizer.encode(prompt)
 
 
 def decode(
@@ -185,14 +170,14 @@ def decode(
 
 if __name__ == "__main__":
     model_path = ""
-    """prompt = encode(
+    prompt = encode(
         prompt="Hello, what is your name?",
         model_path=model_path
     )
     prompt = decode(
         prompt=prompt,
         model_path=model_path
-    )"""
+    )
     generate_main(
         prompt="Hello, what is your name?",
         model_path=model_path

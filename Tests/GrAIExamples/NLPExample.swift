@@ -16,7 +16,7 @@ final class NLPExample: XCTestCase
     let _modelPath = "TO/UPDATE"
     
     /// Prompt.
-    let _prompt = "Hello"
+    let _prompt = "How do you do?"
     
     /// Initialize test.
     override func setUp()
@@ -24,8 +24,8 @@ final class NLPExample: XCTestCase
         setPythonLib()
         _ = MetalKernel.get
         
-        GrAI.Opti.CPU = true
-        //GrAI.Precision.float = true
+        GrAI.Opti.GPU = true
+        GrAI.Precision.float = true
     }
     
     ///
@@ -86,13 +86,13 @@ final class NLPExample: XCTestCase
             params: params
         )
         
-        /*let value: LayerSeq = FullyConnectedSeq(
+        let value: LayerSeq = FullyConnectedSeq(
             layerPrev: layer,
             nbNeurons: nbHeadsKV * headDim,
             activation: nil,
             biases: false,
             params: params
-        )*/
+        )
         
         layer = try! QueryCausalSeq(
             query: query, key: key,
@@ -105,11 +105,19 @@ final class NLPExample: XCTestCase
             params: params
         )
         
-        /*layer = try! ValueCausalSeq(
+        layer = try! ValueCausalSeq(
             value: value, score: layer,
             nbHeadsValue: nbHeadsKV, nbHeadsScore: nbHeadsQuery,
             params: params
-        )*/
+        )
+        
+        layer = FullyConnectedSeq(
+            layerPrev: layer,
+            nbNeurons: nbHeadsQuery * headDim,
+            activation: nil,
+            biases: false,
+            params: params
+        )
         
         /*layer = RMSNormSeq(
             layerPrev: layer,
@@ -178,7 +186,7 @@ final class NLPExample: XCTestCase
         ))!
         
         // Compute reference.
-        var arrayRef = [Float](numpy: pythonLib.generate_main(
+        let arrayRef = [Float](numpy: pythonLib.generate_main(
             _prompt,
             _modelPath
         ))!
@@ -186,11 +194,11 @@ final class NLPExample: XCTestCase
         // Load pre trained model.
         let model = _buildModel(
             modelPath: _modelPath,
-            sequence: 2,
-            hiddenDim: 2,
-            headDim: 2,
-            nbHeadsQuery: 2,
-            nbHeadsKV: 1,
+            sequence: prompt.count,
+            hiddenDim: 4096,
+            headDim: 128,
+            nbHeadsQuery: 32,
+            nbHeadsKV: 8,
             vocabularySize: 32000
         )
         
@@ -200,16 +208,13 @@ final class NLPExample: XCTestCase
         
         // Forward.
         let firstLayer: EmbeddingSeq = model.layers.first as! EmbeddingSeq
-        try! firstLayer.setDataCPU(
+        try! firstLayer.setDataGPU(
             [prompt], batchSize: 1, sequence: prompt.count
         )
         try! model.forward()
         
         // Get result.
-        var arrayOut = (model.layers.last as! LayerSeq).outs.download()
-        
-        // arrayRef = [Float](arrayRef[0..<4096])
-        // arrayOut = [Float](arrayOut[0..<4096])
+        let arrayOut = (model.layers.last as! LayerSeq).outs.download()
         
         // Compare difference.
         for (elemOut, elemRef) in zip(arrayOut, arrayRef)
@@ -221,11 +226,11 @@ final class NLPExample: XCTestCase
             else
             {
                 let diffPercent = abs(elemOut - elemRef) / elemRef * 100.0
-                if diffPercent >= 1
+                if diffPercent > 1
                 {
                     print(diffPercent)
                 }
-                //XCTAssert(diffPercent < 1)
+                XCTAssert(diffPercent < 1)
             }
         }
     }

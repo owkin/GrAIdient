@@ -97,6 +97,7 @@ let LAYER_REGISTRY: [String: Codable.Type] = buildRegistry(
     SelectSeq.self,
     SimilarityBatchError2D.self,
     SimilarityError2D.self,
+    ValueCausalSeq.self,
     ValueSeq.self,
     ValueSelfSeq.self,
     VQ2D.self,

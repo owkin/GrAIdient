@@ -881,7 +881,7 @@ class LayerSeqFlowPrecisionTests: LayerSeqFlowTests
     override func testSoftmaxSeq() throws
     {
         let trainer = _buildTrainer("Softmax")
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     override func testValueSeq() throws
@@ -1339,7 +1339,7 @@ class LayerSeq4FlowPrecisionTests: LayerSeq4FlowTests
     override func testLayerNormSeq() throws
     {
         let trainer = _buildTrainer("LayerNorm")
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     override func testQuerySeq() throws

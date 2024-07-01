@@ -126,6 +126,48 @@ class NLPGradTests: EmbeddingSeqMSE1DCase
                 params: params
             )
             
+        case "ValueCausal1":
+            let otherLayer: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 3 * sequence,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 3 * 3,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = try! ValueCausalSeq(
+                value: layer, score: otherLayer,
+                nbHeadsValue: 3, nbHeadsScore: 3,
+                params: params
+            )
+            
+        case "ValueCausal2":
+            let otherLayer: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 4 * sequence,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 2 * 3,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = try! ValueCausalSeq(
+                value: layer, score: otherLayer,
+                nbHeadsValue: 2, nbHeadsScore: 4,
+                params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -209,6 +251,32 @@ class NLPGradTests: EmbeddingSeqMSE1DCase
     func testQueryCausal2GPU() throws
     {
         let trainer = _buildTrainer("QueryCausal2")
+        run(trainer)
+    }
+    
+    func testValueCausal1CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("ValueCausal1")
+        run(trainer)
+    }
+    
+    func testValueCausal1GPU() throws
+    {
+        let trainer = _buildTrainer("ValueCausal1")
+        run(trainer)
+    }
+    
+    func testValueCausal2CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("ValueCausal2")
+        run(trainer)
+    }
+    
+    func testValueCausal2GPU() throws
+    {
+        let trainer = _buildTrainer("ValueCausal2")
         run(trainer)
     }
 }
@@ -322,6 +390,48 @@ class NLPFlowTests: EmbeddingSeqMSE1DCase
                 params: params
             )
             
+        case "ValueCausal1":
+            let otherLayer: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 3 * sequence,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 3 * 3,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = try! ValueCausalSeq(
+                value: layer, score: otherLayer,
+                nbHeadsValue: 3, nbHeadsScore: 3,
+                params: params
+            )
+            
+        case "ValueCausal2":
+            let otherLayer: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 4 * sequence,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 2 * 3,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = try! ValueCausalSeq(
+                value: layer, score: otherLayer,
+                nbHeadsValue: 2, nbHeadsScore: 4,
+                params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -370,6 +480,18 @@ class NLPFlowTests: EmbeddingSeqMSE1DCase
     func testQueryCausal2() throws
     {
         let trainer = _buildTrainer("QueryCausal2")
+        run(trainer)
+    }
+    
+    func testValueCausal1() throws
+    {
+        let trainer = _buildTrainer("ValueCausal1")
+        run(trainer)
+    }
+    
+    func testValueCausal2() throws
+    {
+        let trainer = _buildTrainer("ValueCausal2")
         run(trainer)
     }
 }
@@ -429,6 +551,18 @@ class NLPFlowPrecisionTests: NLPFlowTests
     {
         let trainer = _buildTrainer("QueryCausal2")
         run(trainer, diffThreshold: 0.002)
+    }
+    
+    override func testValueCausal1() throws
+    {
+        let trainer = _buildTrainer("ValueCausal1")
+        run(trainer)
+    }
+    
+    override func testValueCausal2() throws
+    {
+        let trainer = _buildTrainer("ValueCausal2")
+        run(trainer)
     }
 }
 
@@ -516,6 +650,48 @@ class NLP4FlowTests: EmbeddingSeqMSE1DCase
                 params: params
             )
             
+        case "ValueCausal1":
+            let otherLayer: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 3 * sequence,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 3 * 4,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = try! ValueCausalSeq(
+                value: layer, score: otherLayer,
+                nbHeadsValue: 3, nbHeadsScore: 3,
+                params: params
+            )
+            
+        case "ValueCausal2":
+            let otherLayer: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 4 * sequence,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: 2 * 4,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            layer = try! ValueCausalSeq(
+                value: layer, score: otherLayer,
+                nbHeadsValue: 2, nbHeadsScore: 4,
+                params: params
+            )
+            
         default:
             fatalError("Unreachable.")
         }
@@ -539,6 +715,18 @@ class NLP4FlowTests: EmbeddingSeqMSE1DCase
     func testQueryCausal2() throws
     {
         let trainer = _buildTrainer("QueryCausal2")
+        run(trainer)
+    }
+    
+    func testValueCausal1() throws
+    {
+        let trainer = _buildTrainer("ValueCausal1")
+        run(trainer)
+    }
+    
+    func testValueCausal2() throws
+    {
+        let trainer = _buildTrainer("ValueCausal2")
         run(trainer)
     }
 }
@@ -572,6 +760,18 @@ class NLP4FlowPrecisionTests: NLP4FlowTests
     override func testQueryCausal2() throws
     {
         let trainer = _buildTrainer("QueryCausal2")
+        run(trainer, diffThreshold: 0.002)
+    }
+    
+    override func testValueCausal1() throws
+    {
+        let trainer = _buildTrainer("ValueCausal1")
+        run(trainer, diffThreshold: 0.002)
+    }
+    
+    override func testValueCausal2() throws
+    {
+        let trainer = _buildTrainer("ValueCausal2")
         run(trainer, diffThreshold: 0.002)
     }
 }
@@ -640,6 +840,18 @@ class NLPFlowResetTests: NLPFlowTests
         let trainer = _buildTrainer("QueryCausal2")
         run(trainer)
     }
+    
+    override func testValueCausal1() throws
+    {
+        let trainer = _buildTrainer("ValueCausal1")
+        run(trainer)
+    }
+    
+    override func testValueCausal2() throws
+    {
+        let trainer = _buildTrainer("ValueCausal2")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -704,6 +916,18 @@ class NLPFlowReverseTests: NLPFlowTests
     override func testQueryCausal2() throws
     {
         let trainer = _buildTrainer("QueryCausal2")
+        run(trainer)
+    }
+    
+    override func testValueCausal1() throws
+    {
+        let trainer = _buildTrainer("ValueCausal1")
+        run(trainer)
+    }
+    
+    override func testValueCausal2() throws
+    {
+        let trainer = _buildTrainer("ValueCausal2")
         run(trainer)
     }
 }
@@ -840,6 +1064,18 @@ class NLPInferenceTests: NLPFlowTests
         let trainer = _buildTrainer("QueryCausal2")
         run(trainer)
     }
+    
+    override func testValueCausal1() throws
+    {
+        let trainer = _buildTrainer("ValueCausal1")
+        run(trainer)
+    }
+    
+    override func testValueCausal2() throws
+    {
+        let trainer = _buildTrainer("ValueCausal2")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -897,6 +1133,18 @@ class NLPLoadTests: NLPFlowTests
     override func testQueryCausal2() throws
     {
         let trainer = _buildTrainer("QueryCausal2")
+        run(trainer)
+    }
+    
+    override func testValueCausal1() throws
+    {
+        let trainer = _buildTrainer("ValueCausal1")
+        run(trainer)
+    }
+    
+    override func testValueCausal2() throws
+    {
+        let trainer = _buildTrainer("ValueCausal2")
         run(trainer)
     }
 }
@@ -1000,6 +1248,18 @@ class NLPTransformTests: NLPFlowTests
     override func testQueryCausal2() throws
     {
         let trainer = _buildTrainer("QueryCausal2")
+        run(trainer)
+    }
+    
+    override func testValueCausal1() throws
+    {
+        let trainer = _buildTrainer("ValueCausal1")
+        run(trainer)
+    }
+    
+    override func testValueCausal2() throws
+    {
+        let trainer = _buildTrainer("ValueCausal2")
         run(trainer)
     }
 }

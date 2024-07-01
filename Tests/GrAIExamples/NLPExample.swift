@@ -16,7 +16,7 @@ final class NLPExample: XCTestCase
     let _modelPath = "TO/UPDATE"
     
     /// Prompt.
-    let _prompt = "Hello"
+    let _prompt = "How do you do?"
     
     /// Initialize test.
     override func setUp()
@@ -86,6 +86,14 @@ final class NLPExample: XCTestCase
             params: params
         )
         
+        let value: LayerSeq = FullyConnectedSeq(
+            layerPrev: layer,
+            nbNeurons: nbHeadsKV * headDim,
+            activation: nil,
+            biases: false,
+            params: params
+        )
+        
         layer = try! QueryCausalSeq(
             query: query, key: key,
             nbHeadsQuery: nbHeadsQuery, nbHeadsKey: nbHeadsKV, 
@@ -94,6 +102,20 @@ final class NLPExample: XCTestCase
         layer = try! SoftmaxSeq(
             layerPrev: layer,
             nbHeads: nbHeadsQuery,
+            params: params
+        )
+        
+        layer = try! ValueCausalSeq(
+            value: value, score: layer,
+            nbHeadsValue: nbHeadsKV, nbHeadsScore: nbHeadsQuery,
+            params: params
+        )
+        
+        layer = FullyConnectedSeq(
+            layerPrev: layer,
+            nbNeurons: nbHeadsQuery * headDim,
+            activation: nil,
+            biases: false,
             params: params
         )
         
@@ -204,6 +226,10 @@ final class NLPExample: XCTestCase
             else
             {
                 let diffPercent = abs(elemOut - elemRef) / elemRef * 100.0
+                if diffPercent > 1
+                {
+                    print(diffPercent)
+                }
                 XCTAssert(diffPercent < 1)
             }
         }

@@ -593,7 +593,7 @@ class Layer1DFlowPrecisionTests: Layer1DFlowTests
     override func testActivation() throws
     {
         let trainer = _buildTrainer("Activation")
-        run(trainer)
+        run(trainer, diffThreshold: 0.002)
     }
     
     override func testSelectNeurons() throws

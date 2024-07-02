@@ -14,12 +14,12 @@ public class MultiplySeq: LayerMergeSeq
 {
     ///
     /// List of output buffers for CPU usage.
-    /// Shape ~ (batch, sequence, nbChannels).
+    /// Shape ~ (batch, sequence, nbNeurons).
     ///
     var _otherOuts1: [[Double]] = []
     ///
     /// List of output buffers for GPU usage.
-    /// Shape ~ (batch, nbChannels, height, width).
+    /// Shape ~ (batch, sequence, nbNeurons).
     ///
     var _otherOuts2: [FloatBuffer] = []
     

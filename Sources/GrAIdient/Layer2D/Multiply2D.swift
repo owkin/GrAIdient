@@ -125,6 +125,7 @@ public class Multiply2D: LayerMerge2D
     {
         try super.checkStateCPU(batchSize: batchSize)
         
+        if phase != nil && phase == .Training {
         if _otherOuts1.count == 0
         {
             for _ in 0..<_layersPrev.count
@@ -134,7 +135,7 @@ public class Multiply2D: LayerMerge2D
                     count: batchSize * nbChannels * height * width
                 ))
             }
-        }
+        }}
     }
     
     ///
@@ -146,17 +147,18 @@ public class Multiply2D: LayerMerge2D
     {
         try super.checkStateForwardGPU(batchSize: batchSize)
         
+        if phase != nil && phase == .Training {
         if _otherOuts2.count == 0
         {
             for _ in 0..<_layersPrev.count
             {
-                let buffer = FloatBuffer(nbElems: 
-                    batchSize * nbChannels * height * width,
+                let buffer = FloatBuffer(
+                    nbElems: batchSize * nbChannels * height * width,
                     deviceID: deviceID
                 )
                 _otherOuts2.append(buffer)
             }
-        }
+        }}
     }
     
     ///
@@ -365,18 +367,19 @@ public class Multiply2D: LayerMerge2D
                 }
                 neurons[depth].get(i, j)!.v[elem].out = mult
                 
+                if phase != nil && phase == .Training {
                 for num1 in 0..<_layersPrev.count
                 {
                     mult = 1.0
                     for num2 in 0..<_layersPrev.count {
-                    if num2 != num1
-                    {
-                        let neuronsPrev =
+                        if num2 != num1
+                        {
+                            let neuronsPrev =
                             (_layersPrev[num2] as! Layer2D).neurons
-                        mult *= neuronsPrev[depth].get(i, j)!.v[elem].out
-                    }}
+                            mult *= neuronsPrev[depth].get(i, j)!.v[elem].out
+                        }}
                     _otherOuts1[num1][offset] = mult
-                }
+                }}
             }}
         }}
     }

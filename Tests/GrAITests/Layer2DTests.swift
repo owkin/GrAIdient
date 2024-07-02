@@ -148,6 +148,22 @@ class Layer2DGradTests: Input2DMSE1DCase
                 params: params
             )
             
+        case "Multiply":
+            let otherLayer1: Layer2D = Convolution2D(
+                layerPrev: firstLayer, size: 1, nbChannels: 3, stride: 1,
+                activation: SoftReLU.str, biases: true, bn: false,
+                params: params
+            )
+            let otherLayer2: Layer2D = Convolution2D(
+                layerPrev: firstLayer, size: 1, nbChannels: 3, stride: 1,
+                activation: SoftReLU.str, biases: true, bn: false,
+                params: params
+            )
+            layer = try! Multiply2D(
+                layersPrev: [layer, otherLayer1, otherLayer2],
+                params: params
+            )
+            
         case "Activation":
             layer = Activation2D(
                 layerPrev: layer,
@@ -185,22 +201,6 @@ class Layer2DGradTests: Input2DMSE1DCase
                 layerPrev: layer,
                 weight: 2.0,
                 bias: 3.0,
-                params: params
-            )
-            
-        case "Multiply":
-            let otherLayer1: Layer2D = Convolution2D(
-                layerPrev: firstLayer, size: 1, nbChannels: 3, stride: 1,
-                activation: SoftReLU.str, biases: true, bn: false,
-                params: params
-            )
-            let otherLayer2: Layer2D = Convolution2D(
-                layerPrev: firstLayer, size: 1, nbChannels: 3, stride: 1,
-                activation: SoftReLU.str, biases: true, bn: false,
-                params: params
-            )
-            layer = try! Multiply2D(
-                layersPrev: [layer, otherLayer1, otherLayer2],
                 params: params
             )
             
@@ -1244,6 +1244,22 @@ class Layer2DFlowTests: Input2DMSE1DCase
                 params: params
             )
             
+        case "Multiply":
+            let otherLayer1: Layer2D = Convolution2D(
+                layerPrev: firstLayer, size: 1, nbChannels: 3, stride: 1,
+                activation: LeakyReLU.str, biases: true, bn: false,
+                params: params
+            )
+            let otherLayer2: Layer2D = Convolution2D(
+                layerPrev: firstLayer, size: 1, nbChannels: 3, stride: 1,
+                activation: LeakyReLU.str, biases: true, bn: false,
+                params: params
+            )
+            layer = try! Multiply2D(
+                layersPrev: [layer, otherLayer1, otherLayer2],
+                params: params
+            )
+            
         case "Activation":
             layer = Activation2D(
                 layerPrev: layer,
@@ -1281,22 +1297,6 @@ class Layer2DFlowTests: Input2DMSE1DCase
                 layerPrev: layer,
                 weight: 2.0,
                 bias: 3.0,
-                params: params
-            )
-            
-        case "Multiply":
-            let otherLayer1: Layer2D = Convolution2D(
-                layerPrev: firstLayer, size: 1, nbChannels: 3, stride: 1,
-                activation: LeakyReLU.str, biases: true, bn: false,
-                params: params
-            )
-            let otherLayer2: Layer2D = Convolution2D(
-                layerPrev: firstLayer, size: 1, nbChannels: 3, stride: 1,
-                activation: LeakyReLU.str, biases: true, bn: false,
-                params: params
-            )
-            layer = try! Multiply2D(
-                layersPrev: [layer, otherLayer1, otherLayer2],
                 params: params
             )
             

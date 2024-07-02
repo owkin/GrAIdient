@@ -77,6 +77,24 @@ class LayerSeqGradTests: Input2DMSE1DCase
                 params: params
             )
             
+        case "Multiply":
+            let otherLayer1: LayerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
+                activation: SoftReLU.str, biases: true, params: params
+            )
+            let otherLayer2: LayerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
+                activation: SoftReLU.str, biases: true, params: params
+            )
+            layerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
+                activation: SoftReLU.str, biases: true, params: params
+            )
+            layerSeq = try! MultiplySeq(
+                layersPrev: [layerSeq, otherLayer1, otherLayer2],
+                params: params
+            )
+            
         case "Concat1":
             let otherLayer: LayerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 5,
@@ -270,6 +288,13 @@ class LayerSeqGradTests: Input2DMSE1DCase
     func testSumGPU() throws
     {
         let trainer = _buildTrainer("Sum")
+        run(trainer)
+    }
+    
+    func testMultiplyCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("Multiply")
         run(trainer)
     }
     

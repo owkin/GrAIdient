@@ -881,6 +881,17 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
                 params: params
             )
             
+        case "Multiply":
+            let otherLayer: Layer2D = Convolution2D(
+                layerPrev: layer, size: 1, nbChannels: 3, stride: 1,
+                activation: LeakyReLU.str, biases: true, bn: false,
+                params: params
+            )
+            secondLayer = try! Multiply2D(
+                layersPrev: [firstLayer, otherLayer],
+                params: params
+            )
+            
         case "InstanceNorm":
             secondLayer = InstanceNorm2D(
                 layerPrev: layer, activation: LeakyReLU.str, params: params
@@ -1064,6 +1075,12 @@ class Layer2DDirtyFlowTests: Input2DMSE1DCase
     func testSum() throws
     {
         let trainer = _buildTrainer(model: "Sum")
+        run(trainer)
+    }
+    
+    func testMultiply() throws
+    {
+        let trainer = _buildTrainer(model: "Multiply")
         run(trainer)
     }
     

@@ -358,35 +358,64 @@ public class MultiplySeq: LayerMergeSeq
     {
         try checkStateForwardGPU(batchSize: batchSize)
         
-        var first = true
-        for num in 0..<_layersPrev.count
+        var first1 = true
+        for num1 in 0..<_layersPrev.count
         {
-            let nbElems = (_layersPrev[num] as! LayerSeq).outs.nbElems
+            let nbElems = (_layersPrev[num1] as! LayerSeq).outs.nbElems
             let pNbElems: [UInt32] = [UInt32(nbElems)]
             
-            let kernel: String
-            let coeff = nbElems % 4 == 0 ? 4 : 1
-            if first
+            var command: MetalCommand
+            if first1
             {
-                kernel = nbElems % 4 == 0 ? "sum14" : "sum1"
-                first = false
+                command = MetalKernel.get.createCommand(
+                    "sum1", deviceID: deviceID
+                )
+                first1 = false
             }
             else
             {
-                kernel = nbElems % 4 == 0 ? "sum24" : "sum2"
+                command = MetalKernel.get.createCommand(
+                    "multiplyForward", deviceID: deviceID
+                )
             }
-            let command = MetalKernel.get.createCommand(
-                kernel, deviceID: deviceID
-            )
             
             command.setBuffer(
-                (_layersPrev[num] as! LayerSeq).outs.metal, atIndex: 0
+                (_layersPrev[num1] as! LayerSeq).outs.metal, atIndex: 0
             )
             command.setBytes(pNbElems, atIndex: 1)
             command.setBuffer(outs.metal, atIndex: 2)
             
-            command.dispatchThreads(nbElems / coeff)
+            command.dispatchThreads(nbElems)
             command.enqueue()
+            
+            if phase != nil && phase == .Training {
+            var first2 = true
+            for num2 in 0..<_layersPrev.count {
+            if num2 != num1
+            {
+                if first2
+                {
+                    command = MetalKernel.get.createCommand(
+                        "sum1", deviceID: deviceID
+                    )
+                    first2 = false
+                }
+                else
+                {
+                    command = MetalKernel.get.createCommand(
+                        "multiplyForward", deviceID: deviceID
+                    )
+                }
+                
+                command.setBuffer(
+                    (_layersPrev[num2] as! LayerSeq).outs.metal, atIndex: 0
+                )
+                command.setBytes(pNbElems, atIndex: 1)
+                command.setBuffer(_otherOuts2[num1].metal, atIndex: 2)
+                
+                command.dispatchThreads(nbElems)
+                command.enqueue()
+            }}}
         }
     }
     
@@ -449,35 +478,24 @@ public class MultiplySeq: LayerMergeSeq
             {
                 continue
             }
+            let layerPrev = _layersPrev[num] as! LayerSeq
             
-            try (_layersPrev[num] as! LayerSeq).checkStateBackwardGPU(
-                batchSize: batchSize
-            )
+            try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
             
             let nbElems = delta.nbElems
             let pNbElems: [UInt32] = [UInt32(nbElems)]
+            let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
-            let kernel: String
-            let coeff = nbElems % 4 == 0 ? 4 : 1
-            if _layersPrev[num].dirty
-            {
-                kernel = nbElems % 4 == 0 ? "sum14" : "sum1"
-            }
-            else
-            {
-                kernel = nbElems % 4 == 0 ? "sum24" : "sum2"
-            }
             let command = MetalKernel.get.createCommand(
-                kernel, deviceID: deviceID
+                "multiplyBackward", deviceID: deviceID
             )
+            command.setBuffer(_otherOuts2[num].metal, atIndex: 0)
+            command.setBuffer(delta.metal, atIndex: 1)
+            command.setBytes(pNbElems, atIndex: 2)
+            command.setBytes(pDirty, atIndex: 3)
+            command.setBuffer(layerPrev.delta.metal, atIndex: 4)
             
-            command.setBuffer(delta.metal, atIndex: 0)
-            command.setBytes(pNbElems, atIndex: 1)
-            command.setBuffer(
-                (_layersPrev[num] as! LayerSeq).delta.metal, atIndex: 2
-            )
-            
-            command.dispatchThreads(nbElems / coeff)
+            command.dispatchThreads(nbElems)
             command.enqueue()
         }
         propagateDirty()

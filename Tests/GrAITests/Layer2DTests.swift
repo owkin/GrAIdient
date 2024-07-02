@@ -658,6 +658,19 @@ class Layer2DGradTests: Input2DMSE1DCase
         run(trainer)
     }
     
+    func testMultiplyCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(model: "Multiply", bn: false)
+        run(trainer)
+    }
+    
+    func testMultiplyGPU() throws
+    {
+        let trainer = _buildTrainer(model: "Multiply", bn: false)
+        run(trainer)
+    }
+    
     func testActivationCPU() throws
     {
         GrAI.Opti.CPU = true
@@ -720,19 +733,6 @@ class Layer2DGradTests: Input2DMSE1DCase
     func testLinearScaleGPU() throws
     {
         let trainer = _buildTrainer(model: "LinearScale", bn: false)
-        run(trainer)
-    }
-    
-    func testMultiplyCPU() throws
-    {
-        GrAI.Opti.CPU = true
-        let trainer = _buildTrainer(model: "Multiply", bn: false)
-        run(trainer)
-    }
-    
-    func testMultiplyGPU() throws
-    {
-        let trainer = _buildTrainer(model: "Multiply", bn: false)
         run(trainer)
     }
     
@@ -1642,6 +1642,12 @@ class Layer2DFlowTests: Input2DMSE1DCase
         run(trainer)
     }
     
+    func testMultiply() throws
+    {
+        let trainer = _buildTrainer(model: "Multiply", bn: false)
+        run(trainer)
+    }
+    
     func testActivation() throws
     {
         let trainer = _buildTrainer(model: "Activation", bn: false)
@@ -1669,12 +1675,6 @@ class Layer2DFlowTests: Input2DMSE1DCase
     func testLinearScale() throws
     {
         let trainer = _buildTrainer(model: "LinearScale", bn: false)
-        run(trainer)
-    }
-    
-    func testMultiply() throws
-    {
-        let trainer = _buildTrainer(model: "Multiply", bn: false)
         run(trainer)
     }
     
@@ -2040,6 +2040,12 @@ class Layer2DFlowPrecisionTests: Layer2DFlowTests
         run(trainer, diffThreshold: 0.005)
     }
     
+    override func testMultiply() throws
+    {
+        let trainer = _buildTrainer(model: "Multiply", bn: false)
+        run(trainer, diffThreshold: 0.005)
+    }
+    
     override func testActivation() throws
     {
         let trainer = _buildTrainer(model: "Activation", bn: false)
@@ -2067,12 +2073,6 @@ class Layer2DFlowPrecisionTests: Layer2DFlowTests
     override func testLinearScale() throws
     {
         let trainer = _buildTrainer(model: "LinearScale", bn: false)
-        run(trainer, diffThreshold: 0.005)
-    }
-    
-    override func testMultiply() throws
-    {
-        let trainer = _buildTrainer(model: "Multiply", bn: false)
         run(trainer, diffThreshold: 0.005)
     }
     
@@ -2638,6 +2638,12 @@ class Layer2DFlowResetTests: Layer2DFlowTests
         run(trainer)
     }
     
+    override func testMultiply() throws
+    {
+        let trainer = _buildTrainer(model: "Multiply", bn: false)
+        run(trainer)
+    }
+    
     override func testActivation() throws
     {
         let trainer = _buildTrainer(model: "Activation", bn: false)
@@ -2665,12 +2671,6 @@ class Layer2DFlowResetTests: Layer2DFlowTests
     override func testLinearScale() throws
     {
         let trainer = _buildTrainer(model: "LinearScale", bn: false)
-        run(trainer)
-    }
-    
-    override func testMultiply() throws
-    {
-        let trainer = _buildTrainer(model: "Multiply", bn: false)
         run(trainer)
     }
     
@@ -3038,6 +3038,12 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
         run(trainer)
     }
     
+    override func testMultiply() throws
+    {
+        let trainer = _buildTrainer(model: "Multiply", bn: false)
+        run(trainer)
+    }
+    
     override func testActivation() throws
     {
         let trainer = _buildTrainer(model: "Activation", bn: false)
@@ -3065,12 +3071,6 @@ class Layer2DFlowReverseTests: Layer2DFlowTests
     override func testLinearScale() throws
     {
         let trainer = _buildTrainer(model: "LinearScale", bn: false)
-        run(trainer)
-    }
-    
-    override func testMultiply() throws
-    {
-        let trainer = _buildTrainer(model: "Multiply", bn: false)
         run(trainer)
     }
     
@@ -3723,6 +3723,12 @@ class Layer2DInferenceTests: Layer2DFlowTests
         run(trainer)
     }
     
+    override func testMultiply() throws
+    {
+        let trainer = _buildTrainer(model: "Multiply", bn: false)
+        run(trainer)
+    }
+    
     override func testActivation() throws
     {
         let trainer = _buildTrainer(model: "Activation", bn: false)
@@ -3750,12 +3756,6 @@ class Layer2DInferenceTests: Layer2DFlowTests
     override func testLinearScale() throws
     {
         let trainer = _buildTrainer(model: "LinearScale", bn: false)
-        run(trainer)
-    }
-    
-    override func testMultiply() throws
-    {
-        let trainer = _buildTrainer(model: "Multiply", bn: false)
         run(trainer)
     }
     
@@ -4116,6 +4116,12 @@ class Layer2DLoadTests: Layer2DFlowTests
         run(trainer)
     }
     
+    override func testMultiply() throws
+    {
+        let trainer = _buildTrainer(model: "Multiply", bn: false)
+        run(trainer)
+    }
+    
     override func testActivation() throws
     {
         let trainer = _buildTrainer(model: "Activation", bn: false)
@@ -4143,12 +4149,6 @@ class Layer2DLoadTests: Layer2DFlowTests
     override func testLinearScale() throws
     {
         let trainer = _buildTrainer(model: "LinearScale", bn: false)
-        run(trainer)
-    }
-    
-    override func testMultiply() throws
-    {
-        let trainer = _buildTrainer(model: "Multiply", bn: false)
         run(trainer)
     }
     
@@ -4509,6 +4509,12 @@ class Layer2DTransformTests: Layer2DFlowTests
         run(trainer)
     }
     
+    override func testMultiply() throws
+    {
+        let trainer = _buildTrainer(model: "Multiply", bn: false)
+        run(trainer)
+    }
+    
     override func testActivation() throws
     {
         let trainer = _buildTrainer(model: "Activation", bn: false)
@@ -4536,12 +4542,6 @@ class Layer2DTransformTests: Layer2DFlowTests
     override func testLinearScale() throws
     {
         let trainer = _buildTrainer(model: "LinearScale", bn: false)
-        run(trainer)
-    }
-    
-    override func testMultiply() throws
-    {
-        let trainer = _buildTrainer(model: "Multiply", bn: false)
         run(trainer)
     }
     

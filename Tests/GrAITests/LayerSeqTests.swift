@@ -298,6 +298,12 @@ class LayerSeqGradTests: Input2DMSE1DCase
         run(trainer)
     }
     
+    func testMultiplyGPU() throws
+    {
+        let trainer = _buildTrainer("Multiply")
+        run(trainer)
+    }
+    
     func testConcat1CPU() throws
     {
         GrAI.Opti.CPU = true
@@ -516,6 +522,24 @@ class LayerSeqFlowTests: Input2DMSE1DCase
                 params: params
             )
             
+        case "Multiply":
+            let otherLayer1: LayerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            let otherLayer2: LayerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = try! MultiplySeq(
+                layersPrev: [layerSeq, otherLayer1, otherLayer2],
+                params: params
+            )
+            
         case "Concat1":
             let otherLayer: LayerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 5,
@@ -708,6 +732,12 @@ class LayerSeqFlowTests: Input2DMSE1DCase
         run(trainer)
     }
     
+    func testMultiply() throws
+    {
+        let trainer = _buildTrainer("Multiply")
+        run(trainer)
+    }
+    
     func testConcat1() throws
     {
         let trainer = _buildTrainer("Concat1")
@@ -838,6 +868,12 @@ class LayerSeqFlowPrecisionTests: LayerSeqFlowTests
     override func testSum() throws
     {
         let trainer = _buildTrainer("Sum")
+        run(trainer, diffThreshold: 0.002)
+    }
+    
+    override func testMultiply() throws
+    {
+        let trainer = _buildTrainer("Multiply")
         run(trainer, diffThreshold: 0.002)
     }
     
@@ -1095,6 +1131,24 @@ class LayerSeq4FlowTests: Input2DMSE1DCase
                 params: params
             )
             
+        case "Multiply":
+            let otherLayer1: LayerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 4 * 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            let otherLayer2: LayerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 4 * 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 4 * 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = try! MultiplySeq(
+                layersPrev: [layerSeq, otherLayer1, otherLayer2],
+                params: params
+            )
+            
         case "Concat1":
             let otherLayer: LayerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 4 * 5,
@@ -1249,6 +1303,12 @@ class LayerSeq4FlowTests: Input2DMSE1DCase
         run(trainer)
     }
     
+    func testMultiply() throws
+    {
+        let trainer = _buildTrainer("Multiply")
+        run(trainer)
+    }
+    
     func testConcat1() throws
     {
         let trainer = _buildTrainer("Concat1")
@@ -1333,6 +1393,12 @@ class LayerSeq4FlowPrecisionTests: LayerSeq4FlowTests
     override func testSum() throws
     {
         let trainer = _buildTrainer("Sum")
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testMultiply() throws
+    {
+        let trainer = _buildTrainer("Multiply")
         run(trainer, diffThreshold: 0.005)
     }
     
@@ -1443,6 +1509,12 @@ class LayerSeqFlowResetTests: LayerSeqFlowTests
     override func testSum() throws
     {
         let trainer = _buildTrainer("Sum")
+        run(trainer)
+    }
+    
+    override func testMultiply() throws
+    {
+        let trainer = _buildTrainer("Multiply")
         run(trainer)
     }
     
@@ -1584,6 +1656,12 @@ class LayerSeqFlowReverseTests: LayerSeqFlowTests
     override func testSum() throws
     {
         let trainer = _buildTrainer("Sum")
+        run(trainer)
+    }
+    
+    override func testMultiply() throws
+    {
+        let trainer = _buildTrainer("Multiply")
         run(trainer)
     }
     
@@ -1898,6 +1976,12 @@ class LayerSeqInferenceTests: LayerSeqFlowTests
         run(trainer)
     }
     
+    override func testMultiply() throws
+    {
+        let trainer = _buildTrainer("Multiply")
+        run(trainer)
+    }
+    
     override func testConcat1() throws
     {
         let trainer = _buildTrainer("Concat1")
@@ -2029,6 +2113,12 @@ class LayerSeqLoadTests: LayerSeqFlowTests
     override func testSum() throws
     {
         let trainer = _buildTrainer("Sum")
+        run(trainer)
+    }
+    
+    override func testMultiply() throws
+    {
+        let trainer = _buildTrainer("Multiply")
         run(trainer)
     }
     
@@ -2207,6 +2297,12 @@ class LayerSeqTransformTests: LayerSeqFlowTests
     override func testSum() throws
     {
         let trainer = _buildTrainer("Sum")
+        run(trainer)
+    }
+    
+    override func testMultiply() throws
+    {
+        let trainer = _buildTrainer("Multiply")
         run(trainer)
     }
     

@@ -423,6 +423,7 @@ public class Multiply2D: LayerMerge2D
             command.dispatchThreads(nbElems)
             command.enqueue()
             
+            if phase != nil && phase == .Training {
             var first2 = true
             for num2 in 0..<_layersPrev.count {
             if num2 != num1
@@ -449,7 +450,7 @@ public class Multiply2D: LayerMerge2D
                 
                 command.dispatchThreads(nbElems)
                 command.enqueue()
-            }}
+            }}}
         }
     }
     

@@ -9,20 +9,11 @@
 using namespace metal;
 
 kernel void forwardReLUFloat(
-    constant uint * pNbElems,
+    constant uint & nbElems,
     device float * tmps,
     device float * outs,
     uint id [[ thread_position_in_grid ]])
 {
-    uint nbElems;
-    
-    if (pNbElems)
-    {
-        nbElems = pNbElems[0];
-    }
-    else
-        return ;
-    
     if (id >= nbElems)
     {
         return ;
@@ -39,21 +30,33 @@ kernel void forwardReLUFloat(
     }
 }
 
+kernel void forwardReLUInferenceFloat(
+    constant uint & nbElems,
+    device float * outs,
+    uint id [[ thread_position_in_grid ]])
+{
+    if (id >= nbElems)
+    {
+        return ;
+    }
+    
+    float tmp = outs[id];
+    if (tmp < 0)
+    {
+        outs[id] = 0.0;
+    }
+    else
+    {
+        outs[id] = tmp;
+    }
+}
+
 kernel void backwardReLUFloat(
     const device float * tmps,
-    constant uint * pNbElems,
+    constant uint & nbElems,
     device float * delta,
     uint id [[ thread_position_in_grid ]])
 {
-    uint nbElems;
-    
-    if (pNbElems)
-    {
-        nbElems = pNbElems[0];
-    }
-    else
-        return ;
-    
     if (id >= nbElems)
     {
         return ;
@@ -66,20 +69,12 @@ kernel void backwardReLUFloat(
 }
 
 kernel void forwardLeakyReLUFloat(
-    constant uint * pNbElems,
+    constant uint & nbElems,
     device float * tmps,
     device float * outs,
     uint id [[ thread_position_in_grid ]])
 {
-    uint nbElems;
     float Ɛ = 0.01;
-    
-    if (pNbElems)
-    {
-        nbElems = pNbElems[0];
-    }
-    else
-        return ;
     
     if (id >= nbElems)
     {
@@ -97,21 +92,36 @@ kernel void forwardLeakyReLUFloat(
     }
 }
 
+kernel void forwardLeakyReLUInferenceFloat(
+    constant uint & nbElems,
+    device float * outs,
+    uint id [[ thread_position_in_grid ]])
+{
+    float Ɛ = 0.01;
+    
+    if (id >= nbElems)
+    {
+        return ;
+    }
+    
+    float tmp = outs[id];
+    if (outs[id] < 0)
+    {
+        outs[id] = Ɛ * tmp;
+    }
+    else
+    {
+        outs[id] = tmp;
+    }
+}
+
 kernel void backwardLeakyReLUFloat(
     const device float * tmps,
-    constant uint * pNbElems,
+    constant uint & nbElems,
     device float * delta,
     uint id [[ thread_position_in_grid ]])
 {
-    uint nbElems;
     float Ɛ = 0.01;
-    
-    if (pNbElems)
-    {
-        nbElems = pNbElems[0];
-    }
-    else
-        return ;
     
     if (id >= nbElems)
     {
@@ -125,20 +135,12 @@ kernel void backwardLeakyReLUFloat(
 }
 
 kernel void forwardSoftReLUFloat(
-    constant uint * pNbElems,
+    constant uint & nbElems,
     device float * tmps,
     device float * outs,
     uint id [[ thread_position_in_grid ]])
 {
-    uint nbElems;
     float Ɛ = 0.01;
-    
-    if (pNbElems)
-    {
-        nbElems = pNbElems[0];
-    }
-    else
-        return ;
     
     if (id >= nbElems)
     {
@@ -149,21 +151,29 @@ kernel void forwardSoftReLUFloat(
     outs[id] = Ɛ * tmps[id] + (1 - Ɛ) * log(1 + exp(tmps[id]));
 }
 
+kernel void forwardSoftReLUInferenceFloat(
+    constant uint & nbElems,
+    device float * outs,
+    uint id [[ thread_position_in_grid ]])
+{
+    float Ɛ = 0.01;
+    
+    if (id >= nbElems)
+    {
+        return ;
+    }
+    
+    float tmp = outs[id];
+    outs[id] = Ɛ * tmp + (1 - Ɛ) * log(1 + exp(tmp));
+}
+
 kernel void backwardSoftReLUFloat(
     const device float * tmps,
-    constant uint * pNbElems,
+    constant uint & nbElems,
     device float * delta,
     uint id [[ thread_position_in_grid ]])
 {
-    uint nbElems;
     float Ɛ = 0.01;
-    
-    if (pNbElems)
-    {
-        nbElems = pNbElems[0];
-    }
-    else
-        return ;
     
     if (id >= nbElems)
     {
@@ -175,20 +185,11 @@ kernel void backwardSoftReLUFloat(
 }
 
 kernel void forwardSigmoidFloat(
-   constant uint * pNbElems,
+   constant uint & nbElems,
    device float * tmps,
    device float * outs,
    uint id [[ thread_position_in_grid ]])
 {
-    uint nbElems;
-    
-    if (pNbElems)
-    {
-        nbElems = pNbElems[0];
-    }
-    else
-        return ;
-    
     if (id >= nbElems)
     {
         return ;
@@ -205,21 +206,33 @@ kernel void forwardSigmoidFloat(
     }
 }
 
+kernel void forwardSigmoidInferenceFloat(
+   constant uint & nbElems,
+   device float * outs,
+   uint id [[ thread_position_in_grid ]])
+{
+    if (id >= nbElems)
+    {
+        return ;
+    }
+    
+    float tmp = outs[id];
+    if (tmp >= 0)
+    {
+        outs[id] = 1.0 / (1.0 + exp(-tmp));
+    }
+    else
+    {
+        outs[id] = exp(tmp) / (1.0 + exp(tmp));
+    }
+}
+
 kernel void backwardSigmoidFloat(
     const device float * tmps,
-    constant uint * pNbElems,
+    constant uint & nbElems,
     device float * delta,
     uint id [[ thread_position_in_grid ]])
 {
-    uint nbElems;
-    
-    if (pNbElems)
-    {
-        nbElems = pNbElems[0];
-    }
-    else
-        return ;
-    
     if (id >= nbElems)
     {
         return ;
@@ -240,20 +253,11 @@ kernel void backwardSigmoidFloat(
 }
 
 kernel void forwardGELUApproxFloat(
-   constant uint * pNbElems,
+   constant uint & nbElems,
    device float * tmps,
    device float * outs,
    uint id [[ thread_position_in_grid ]])
 {
-    uint nbElems;
-    
-    if (pNbElems)
-    {
-        nbElems = pNbElems[0];
-    }
-    else
-        return ;
-    
     if (id >= nbElems)
     {
         return ;
@@ -275,21 +279,37 @@ kernel void forwardGELUApproxFloat(
     outs[id] = 0.5 * x * (1 + tmp2);
 }
 
+kernel void forwardGELUApproxInferenceFloat(
+   constant uint & nbElems,
+   device float * outs,
+   uint id [[ thread_position_in_grid ]])
+{
+    if (id >= nbElems)
+    {
+        return ;
+    }
+    
+    float cst = sqrt(2.0 / 3.14159);
+    float x = outs[id];
+    float tmp1 = cst * (x + 0.044715 * pow(x, 3));
+    float tmp2;
+    if (tmp1 >= 0)
+    {
+        tmp2 = (1.0 - exp(-2.0 * tmp1)) / (1.0 + exp(-2.0 * tmp1));
+    }
+    else
+    {
+        tmp2 = (exp(2.0 * tmp1) - 1.0) / (exp(2.0 * tmp1) + 1.0);
+    }
+    outs[id] = 0.5 * x * (1 + tmp2);
+}
+
 kernel void backwardGELUApproxFloat(
     const device float * tmps,
-    constant uint * pNbElems,
+    constant uint & nbElems,
     device float * delta,
     uint id [[ thread_position_in_grid ]])
 {
-    uint nbElems;
-    
-    if (pNbElems)
-    {
-        nbElems = pNbElems[0];
-    }
-    else
-        return ;
-    
     if (id >= nbElems)
     {
         return ;
@@ -351,20 +371,11 @@ float erf(float a)
 }
 
 kernel void forwardGELUFloat(
-   constant uint * pNbElems,
+   constant uint & nbElems,
    device float * tmps,
    device float * outs,
    uint id [[ thread_position_in_grid ]])
 {
-    uint nbElems;
-    
-    if (pNbElems)
-    {
-        nbElems = pNbElems[0];
-    }
-    else
-        return ;
-    
     if (id >= nbElems)
     {
         return ;
@@ -375,21 +386,26 @@ kernel void forwardGELUFloat(
     outs[id] = 0.5 * x * (1 + erf(x / sqrt(2.0)));
 }
 
+kernel void forwardGELUInferenceFloat(
+   constant uint & nbElems,
+   device float * outs,
+   uint id [[ thread_position_in_grid ]])
+{
+    if (id >= nbElems)
+    {
+        return ;
+    }
+    
+    float x = outs[id];
+    outs[id] = 0.5 * x * (1 + erf(x / sqrt(2.0)));
+}
+
 kernel void backwardGELUFloat(
     const device float * tmps,
-    constant uint * pNbElems,
+    constant uint & nbElems,
     device float * delta,
     uint id [[ thread_position_in_grid ]])
 {
-    uint nbElems;
-    
-    if (pNbElems)
-    {
-        nbElems = pNbElems[0];
-    }
-    else
-        return ;
-    
     if (id >= nbElems)
     {
         return ;

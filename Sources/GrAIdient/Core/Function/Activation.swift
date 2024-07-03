@@ -305,21 +305,45 @@ open class ActivationFunction: Codable
     ///     - tmp: Buffer containing forward values before activation.
     ///     - outs: Buffer containing forward values after activation.
     ///     - deviceID: GPU device where to execute the operation.
+    ///     - phase: Running phase: Training or Inference.
     ///
     private func _forwardGPU(
-        tmp: FloatBuffer,
+        tmp: inout FloatBuffer?,
         outs: FloatBuffer,
-        deviceID: Int)
+        deviceID: Int,
+        phase: Phase?)
     {
         let nbElems = outs.nbElems
+        let training = phase != nil && phase == .Training
+        
+        if training && tmp == nil
+        {
+            tmp = FloatBuffer(
+                nbElems: nbElems, deviceID: deviceID
+            )
+        }
+        
         let pNbElems: [UInt32] = [UInt32(nbElems)]
         
+        var kernel = forwardKernel
+        if !training
+        {
+            kernel += "Inference"
+        }
         let command = MetalKernel.get.createCommand(
-            forwardKernel, deviceID: deviceID
+            kernel, deviceID: deviceID
         )
+        
         command.setBytes(pNbElems, atIndex: 0)
-        command.setBuffer(tmp.metal, atIndex: 1)
-        command.setBuffer(outs.metal, atIndex: 2)
+        if training
+        {
+            command.setBuffer(tmp!.metal, atIndex: 1)
+            command.setBuffer(outs.metal, atIndex: 2)
+        }
+        else
+        {
+            command.setBuffer(outs.metal, atIndex: 1)
+        }
         
         command.dispatchThreads(nbElems)
         command.enqueue()
@@ -332,17 +356,11 @@ open class ActivationFunction: Codable
     ///
     open func forwardGPU(_ layer: Activation1D)
     {
-        let nbElems = layer.outs.nbElems
-        if layer._tmp == nil
-        {
-            layer._tmp = FloatBuffer(
-                nbElems: nbElems, deviceID: layer.deviceID
-            )
-        }
         _forwardGPU(
-            tmp: layer._tmp,
+            tmp: &layer.tmp,
             outs: layer.outs,
-            deviceID: layer.deviceID
+            deviceID: layer.deviceID,
+            phase: layer.phase
         )
     }
     
@@ -353,16 +371,11 @@ open class ActivationFunction: Codable
     ///
     open func forwardGPU(_ layer: Activation2D)
     {
-        let nbElems = layer.outs.nbElems
-        if layer._tmp == nil
-        {
-            layer._tmp = FloatBuffer(nbElems: 
-                nbElems, deviceID: layer.deviceID)
-        }
         _forwardGPU(
-            tmp: layer._tmp,
+            tmp: &layer.tmp,
             outs: layer.outs,
-            deviceID: layer.deviceID
+            deviceID: layer.deviceID,
+            phase: layer.phase
         )
     }
     
@@ -373,17 +386,11 @@ open class ActivationFunction: Codable
     ///
     open func forwardGPU(_ layer: ActivationSeq)
     {
-        let nbElems = layer.outs.nbElems
-        if layer._tmp == nil
-        {
-            layer._tmp = FloatBuffer(
-                nbElems: nbElems, deviceID: layer.deviceID
-            )
-        }
         _forwardGPU(
-            tmp: layer._tmp,
+            tmp: &layer.tmp,
             outs: layer.outs,
-            deviceID: layer.deviceID
+            deviceID: layer.deviceID,
+            phase: layer.phase
         )
     }
     
@@ -422,7 +429,7 @@ open class ActivationFunction: Codable
     open func backwardGPU(_ layer: Activation1D)
     {
         _backwardGPU(
-            tmp: layer._tmp,
+            tmp: layer.tmp,
             delta: layer.delta,
             deviceID: layer.deviceID
         )
@@ -436,7 +443,7 @@ open class ActivationFunction: Codable
     open func backwardGPU(_ layer: Activation2D)
     {
         _backwardGPU(
-            tmp: layer._tmp,
+            tmp: layer.tmp,
             delta: layer.delta,
             deviceID: layer.deviceID
         )
@@ -450,7 +457,7 @@ open class ActivationFunction: Codable
     open func backwardGPU(_ layer: ActivationSeq)
     {
         _backwardGPU(
-            tmp: layer._tmp,
+            tmp: layer.tmp,
             delta: layer.delta,
             deviceID: layer.deviceID
         )

@@ -16,7 +16,7 @@ public class ActivationSeq: LayerSeq
     /// used in the GPU execution context.
     /// Shape ~ (batch, nbNeurons).
     ///
-    var _tmp: FloatBuffer! = nil
+    var tmp: FloatBuffer! = nil
     
     /// Get coefficient (depending on activation function) to apply during the weights initialization.
     public var coeffInitWeights: Float
@@ -160,7 +160,7 @@ public class ActivationSeq: LayerSeq
     public override func resetKernelGPU()
     {
         super.resetKernelGPU()
-        _tmp = nil
+        tmp = nil
     }
     
     ///

@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+✨ **layer_seq:** MultiplySeq & SiLU ([127](https://github.com/owkin/GrAIdient/pull/127))\
 ✨ **layer_seq:** ValueCausalSeq ([126](https://github.com/owkin/GrAIdient/pull/126))\
 ✨ **layer_seq:** QueryCausalSeq ([125](https://github.com/owkin/GrAIdient/pull/125))\
 ✨ **layer_seq:** RoPESeq ([124](https://github.com/owkin/GrAIdient/pull/124))\

@@ -252,6 +252,74 @@ kernel void backwardSigmoidHalf(
     delta[id] = delta[id] * derivative;
 }
 
+kernel void forwardSiLUHalf(
+   constant uint & nbElems,
+   device half * tmps,
+   device half * outs,
+   uint id [[ thread_position_in_grid ]])
+{
+    if (id >= nbElems)
+    {
+        return ;
+    }
+    
+    tmps[id] = outs[id];
+    if (tmps[id] >= 0)
+    {
+        outs[id] = tmps[id] / (1.0 + exp(-tmps[id]));
+    }
+    else
+    {
+        outs[id] = tmps[id] * exp(tmps[id]) / (1.0 + exp(tmps[id]));
+    }
+}
+
+kernel void forwardSiLUInferenceHalf(
+   constant uint & nbElems,
+   device half * outs,
+   uint id [[ thread_position_in_grid ]])
+{
+    if (id >= nbElems)
+    {
+        return ;
+    }
+    
+    half tmp = outs[id];
+    if (tmp >= 0)
+    {
+        outs[id] = tmp / (1.0 + exp(-tmp));
+    }
+    else
+    {
+        outs[id] = tmp * exp(tmp) / (1.0 + exp(tmp));
+    }
+}
+
+kernel void backwardSiLUHalf(
+    const device half * tmps,
+    constant uint & nbElems,
+    device half * delta,
+    uint id [[ thread_position_in_grid ]])
+{
+    if (id >= nbElems)
+    {
+        return ;
+    }
+    
+    half tmp;
+    if (tmps[id] >= 0)
+    {
+        tmp = 1.0 / (1.0 + exp(-tmps[id]));
+    }
+    else
+    {
+        tmp = exp(tmps[id]) / (1.0 + exp(tmps[id]));
+    }
+    
+    half derivative = tmps[id] * tmp * (1 - tmp) + tmp;
+    delta[id] = delta[id] * derivative;
+}
+
 kernel void forwardGELUApproxHalf(
    constant uint & nbElems,
    device half * tmps,

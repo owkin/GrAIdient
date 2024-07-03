@@ -172,6 +172,23 @@ class ActivationSeqGradTests: Input2DMSE1DCase
         run(trainer)
     }
     
+    func testFLSiLUCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(
+            model: "FullyConnected", activation: SiLU.str
+        )
+        run(trainer)
+    }
+    
+    func testFLSiLUGPU() throws
+    {
+        let trainer = _buildTrainer(
+            model: "FullyConnected", activation: SiLU.str
+        )
+        run(trainer)
+    }
+    
     func testFLGELUApproxCPU() throws
     {
         GrAI.Opti.CPU = true
@@ -270,6 +287,23 @@ class ActivationSeqGradTests: Input2DMSE1DCase
     {
         let trainer = _buildTrainer(
             model: "Activation", activation: Sigmoid.str
+        )
+        run(trainer)
+    }
+    
+    func testSiLUCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(
+            model: "Activation", activation: SiLU.str
+        )
+        run(trainer)
+    }
+    
+    func testSiLUGPU() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Activation", activation: SiLU.str
         )
         run(trainer)
     }
@@ -421,6 +455,14 @@ class ActivationSeqInferenceTests: Input2DMSE1DCase
         run(trainer)
     }
     
+    func testFLSiLU() throws
+    {
+        let trainer = _buildTrainer(
+            model: "FullyConnected", activation: SiLU.str
+        )
+        run(trainer)
+    }
+    
     func testFLGELUApprox() throws
     {
         let trainer = _buildTrainer(
@@ -465,6 +507,14 @@ class ActivationSeqInferenceTests: Input2DMSE1DCase
     {
         let trainer = _buildTrainer(
             model: "Activation", activation: Sigmoid.str
+        )
+        run(trainer)
+    }
+    
+    func testSiLU() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Activation", activation: SiLU.str
         )
         run(trainer)
     }
@@ -549,6 +599,14 @@ class ActivationSeqFlowPrecisionTests: ActivationSeqInferenceTests
         run(trainer, diffThreshold: 0.005)
     }
     
+    override func testFLSiLU() throws
+    {
+        let trainer = _buildTrainer(
+            model: "FullyConnected", activation: SiLU.str
+        )
+        run(trainer, diffThreshold: 0.005)
+    }
+    
     override func testFLGELUApprox() throws
     {
         throw XCTSkip("Skipping this test because of precision issue.")
@@ -594,6 +652,14 @@ class ActivationSeqFlowPrecisionTests: ActivationSeqInferenceTests
     {
         let trainer = _buildTrainer(
             model: "Activation", activation: Sigmoid.str
+        )
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testSiLU() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Activation", activation: SiLU.str
         )
         run(trainer, diffThreshold: 0.005)
     }

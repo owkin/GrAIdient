@@ -252,6 +252,74 @@ kernel void backwardSigmoidFloat(
     delta[id] = delta[id] * derivative;
 }
 
+kernel void forwardSiLUFloat(
+   constant uint & nbElems,
+   device float * tmps,
+   device float * outs,
+   uint id [[ thread_position_in_grid ]])
+{
+    if (id >= nbElems)
+    {
+        return ;
+    }
+    
+    tmps[id] = outs[id];
+    if (tmps[id] >= 0)
+    {
+        outs[id] = tmps[id] / (1.0 + exp(-tmps[id]));
+    }
+    else
+    {
+        outs[id] = tmps[id] * exp(tmps[id]) / (1.0 + exp(tmps[id]));
+    }
+}
+
+kernel void forwardSiLUInferenceFloat(
+   constant uint & nbElems,
+   device float * outs,
+   uint id [[ thread_position_in_grid ]])
+{
+    if (id >= nbElems)
+    {
+        return ;
+    }
+    
+    float tmp = outs[id];
+    if (tmp >= 0)
+    {
+        outs[id] = tmp / (1.0 + exp(-tmp));
+    }
+    else
+    {
+        outs[id] = tmp * exp(tmp) / (1.0 + exp(tmp));
+    }
+}
+
+kernel void backwardSiLUFloat(
+    const device float * tmps,
+    constant uint & nbElems,
+    device float * delta,
+    uint id [[ thread_position_in_grid ]])
+{
+    if (id >= nbElems)
+    {
+        return ;
+    }
+    
+    float tmp;
+    if (tmps[id] >= 0)
+    {
+        tmp = 1.0 / (1.0 + exp(-tmps[id]));
+    }
+    else
+    {
+        tmp = exp(tmps[id]) / (1.0 + exp(tmps[id]));
+    }
+    
+    float derivative = tmps[id] * tmp * (1 - tmp) + tmp;
+    delta[id] = delta[id] * derivative;
+}
+
 kernel void forwardGELUApproxFloat(
    constant uint & nbElems,
    device float * tmps,

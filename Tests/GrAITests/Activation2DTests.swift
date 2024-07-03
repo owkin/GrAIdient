@@ -257,6 +257,40 @@ class Activation2DGradTests: Input2DMSE1DCase
         run(trainer)
     }
     
+    func testConvSiLUNoBNCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: SiLU.str, bn: false
+        )
+        run(trainer)
+    }
+    
+    func testConvSiLUBNCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: SiLU.str, bn: true
+        )
+        run(trainer)
+    }
+    
+    func testConvSiLUNoBNGPU() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: SiLU.str, bn: false
+        )
+        run(trainer)
+    }
+    
+    func testConvSiLUBNGPU() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: SiLU.str, bn: true
+        )
+        run(trainer)
+    }
+    
     func testConvGELUApproxNoBNCPU() throws
     {
         GrAI.Opti.CPU = true
@@ -389,6 +423,23 @@ class Activation2DGradTests: Input2DMSE1DCase
     {
         let trainer = _buildTrainer(
             model: "Activation", activation: Sigmoid.str, bn: false
+        )
+        run(trainer)
+    }
+    
+    func testSiLUCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(
+            model: "Activation", activation: SiLU.str, bn: false
+        )
+        run(trainer)
+    }
+    
+    func testSiLUGPU() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Activation", activation: SiLU.str, bn: false
         )
         run(trainer)
     }
@@ -587,6 +638,23 @@ class Activation2DInferenceTests: Input2DMSE1DCase
         run(trainer)
     }
     
+    func testConvSiLUNoBN() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: SiLU.str, bn: false
+        )
+        run(trainer)
+    }
+    
+    func testConvSiLUBN() throws
+    {
+        throw XCTSkip("Skipping this test because of precision issue.")
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: SiLU.str, bn: true
+        )
+        run(trainer, nbRetry: 5, diffThreshold: 0.01)
+    }
+    
     func testConvGELUApproxNoBN() throws
     {
         let trainer = _buildTrainer(
@@ -647,6 +715,14 @@ class Activation2DInferenceTests: Input2DMSE1DCase
     {
         let trainer = _buildTrainer(
             model: "Activation", activation: Sigmoid.str, bn: false
+        )
+        run(trainer)
+    }
+    
+    func testSiLU() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Activation", activation: SiLU.str, bn: false
         )
         run(trainer)
     }
@@ -778,6 +854,22 @@ class Activation2DFlowPrecisionTests: Activation2DInferenceTests
         run(trainer, diffThreshold: 0.005)
     }
     
+    override func testConvSiLUNoBN() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: SiLU.str, bn: false
+        )
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testConvSiLUBN() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: SiLU.str, bn: true
+        )
+        run(trainer, diffThreshold: 0.005)
+    }
+    
     override func testConvGELUApproxNoBN() throws
     {
         throw XCTSkip("Skipping this test because of precision issue.")
@@ -840,6 +932,14 @@ class Activation2DFlowPrecisionTests: Activation2DInferenceTests
     {
         let trainer = _buildTrainer(
             model: "Activation", activation: Sigmoid.str, bn: false
+        )
+        run(trainer, diffThreshold: 0.002)
+    }
+    
+    override func testSiLU() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Activation", activation: SiLU.str, bn: false
         )
         run(trainer, diffThreshold: 0.002)
     }

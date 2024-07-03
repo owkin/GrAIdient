@@ -1711,8 +1711,9 @@ class LayerSeqFlowReverseTests: LayerSeqFlowTests
     
     override func testLayerNormSeq() throws
     {
-        /*let trainer = _buildTrainer("LayerNorm")
-        run(trainer, nbRetry: 5)*/
+        throw XCTSkip("Skipping this test because of precision issue.")
+        let trainer = _buildTrainer("LayerNorm")
+        run(trainer, nbRetry: 5)
     }
     
     override func testQuerySeq() throws

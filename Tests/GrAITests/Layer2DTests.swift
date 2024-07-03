@@ -3594,8 +3594,9 @@ class Layer2DInferenceTests: Layer2DFlowTests
     
     override func testConvolution1BN() throws
     {
-        /*let trainer = _buildTrainer(model: "Convolution1", bn: true)
-        run(trainer, nbRetry: 5, diffThreshold: 0.01)*/
+        throw XCTSkip("Skipping this test because of precision issue.")
+        let trainer = _buildTrainer(model: "Convolution1", bn: true)
+        run(trainer, nbRetry: 5, diffThreshold: 0.01)
     }
     
     override func testConvolution1BNSample() throws
@@ -3659,8 +3660,9 @@ class Layer2DInferenceTests: Layer2DFlowTests
     
     override func testBN() throws
     {
-        /*let trainer = _buildTrainer(model: "BN", bn: false)
-        run(trainer, nbRetry: 5, diffThreshold: 0.01)*/
+        throw XCTSkip("Skipping this test because of precision issue.")
+        let trainer = _buildTrainer(model: "BN", bn: false)
+        run(trainer, nbRetry: 5, diffThreshold: 0.01)
     }
     
     override func testMaxPool1() throws

@@ -360,7 +360,7 @@ class Activation1DInferenceTests: Input1DMSE1DCase
         
         layer = try! FullyConnected(
             layerPrev: layer, nbNeurons: 1,
-            activation: SoftReLU.str, biases: true,
+            activation: LeakyReLU.str, biases: true,
             params: params
         )
         

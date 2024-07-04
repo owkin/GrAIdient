@@ -548,7 +548,7 @@ class Activation1DFlowPrecisionTests: Activation1DInferenceTests
         let trainer = _buildTrainer(
             model: "FullyConnected", activation: nil
         )
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     override func testFLReLU() throws

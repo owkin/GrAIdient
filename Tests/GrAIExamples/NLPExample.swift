@@ -29,6 +29,32 @@ final class NLPExample: XCTestCase
     }
     
     ///
+    /// Return the index of maximal element in array.
+    ///
+    /// - Parameter array: Input array.
+    /// - Returns: The index of the maximal element.
+    ///
+    func _argmax(array: [Float]) -> Int?
+    {
+        if array.isEmpty
+        {
+            return nil
+        }
+        
+        var maxIndex = 0
+        var maxValue = array[0]
+        for i in 1..<array.count
+        {
+            if array[i] > maxValue
+            {
+                maxIndex = i
+                maxValue = array[i]
+            }
+        }
+        return maxIndex
+    }
+    
+    ///
     /// Build LLM model.
     ///
     /// - Parameters:
@@ -290,7 +316,7 @@ final class NLPExample: XCTestCase
     }
     
     /// Generate text from prompt.
-    func _testGenerate1() throws
+    func _testPredict1() throws
     {
         // Encode prompt.
         let pythonLib = Python.import("python_lib")
@@ -300,7 +326,7 @@ final class NLPExample: XCTestCase
         ))!
         
         // Compute reference.
-        let arrayRef = [Float](numpy: pythonLib.generate_main(
+        let arrayRef = [Float](numpy: pythonLib.predict(
             _prompt,
             _modelPath
         ))!
@@ -352,7 +378,7 @@ final class NLPExample: XCTestCase
     }
     
     /// Generate text from prompt.
-    func _testGenerate32() throws
+    func _testPredict32() throws
     {
         // Encode prompt.
         let pythonLib = Python.import("python_lib")
@@ -386,6 +412,22 @@ final class NLPExample: XCTestCase
         try! model.forward()
         
         // Get result.
-        let _ = (model.layers.last as! LayerSeq).outs.download()
+        let out = (model.layers.last as! LayerSeq).outs.download()
+        
+        // Compute prediction for each token.
+        var predictions = [Int]()
+        for seq in 0..<out.count / 32000
+        {
+            let vector = [Float](out[32000*seq..<32000*(seq+1)])
+            let argmax = _argmax(array: vector)!
+            predictions.append(argmax)
+        }
+        
+        // Decode.
+        let prediction = String(pythonLib.decode(
+            predictions,
+            _modelPath
+        ))!
+        print(prediction)
     }
 }

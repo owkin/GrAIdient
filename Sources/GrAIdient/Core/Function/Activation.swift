@@ -316,9 +316,10 @@ open class ActivationFunction: Codable
         phase: Phase?)
     {
         let nbElems = outs.nbElems
-        let training = phase != nil && phase == .Training
+        let backward = phase != nil &&
+            (phase == .Training || phase == .InferenceBackward)
         
-        if training && tmp == nil
+        if backward && tmp == nil
         {
             tmp = FloatBuffer(
                 nbElems: nbElems, deviceID: deviceID
@@ -328,7 +329,7 @@ open class ActivationFunction: Codable
         let pNbElems: [UInt32] = [UInt32(nbElems)]
         
         var kernel = forwardKernel
-        if !training
+        if !backward
         {
             kernel += "Inference"
         }
@@ -337,7 +338,7 @@ open class ActivationFunction: Codable
         )
         
         command.setBytes(pNbElems, atIndex: 0)
-        if training
+        if backward
         {
             command.setBuffer(tmp!.metal, atIndex: 1)
             command.setBuffer(outs.metal, atIndex: 2)

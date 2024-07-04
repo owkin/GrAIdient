@@ -125,7 +125,7 @@ public class Multiply2D: LayerMerge2D
     {
         try super.checkStateCPU(batchSize: batchSize)
         
-        if phase != nil && phase == .Training {
+        if phase != nil && (phase == .Training || phase == .InferenceBackward) {
         if _otherOuts1.count == 0
         {
             for _ in 0..<_layersPrev.count
@@ -147,7 +147,7 @@ public class Multiply2D: LayerMerge2D
     {
         try super.checkStateForwardGPU(batchSize: batchSize)
         
-        if phase != nil && phase == .Training {
+        if phase != nil && (phase == .Training || phase == .InferenceBackward) {
         if _otherOuts2.count == 0
         {
             for _ in 0..<_layersPrev.count
@@ -367,7 +367,8 @@ public class Multiply2D: LayerMerge2D
                 }
                 neurons[depth].get(i, j)!.v[elem].out = mult
                 
-                if phase != nil && phase == .Training {
+                if phase != nil &&
+                   (phase == .Training || phase == .InferenceBackward) {
                 for num1 in 0..<_layersPrev.count
                 {
                     mult = 1.0
@@ -423,7 +424,8 @@ public class Multiply2D: LayerMerge2D
             command.dispatchThreads(nbElems)
             command.enqueue()
             
-            if phase != nil && phase == .Training {
+            if phase != nil &&
+               (phase == .Training || phase == .InferenceBackward) {
             var first2 = true
             for num2 in 0..<_layersPrev.count {
             if num2 != num1

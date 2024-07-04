@@ -35,6 +35,7 @@ final class NLPExample: XCTestCase
     ///     - sequence: Length of the sequence.
     ///     - hiddenDim: Dimension of neurons in the main branch.
     ///     - headDim: Dimension of neurons in the transformer branches.
+    ///     - mlpDim: Dimension of neurons in the MLP branches.
     ///     - nbHeads:  Number of heads (groups) of neurons for queries.
     ///     - nbHeadsKV: Number of heads (groups) of neurons for keys and values.
     ///     - vocabularySize: Vocabulary size.
@@ -45,6 +46,7 @@ final class NLPExample: XCTestCase
         sequence: Int,
         hiddenDim: Int,
         headDim: Int,
+        mlpDim: Int,
         nbHeadsQuery: Int,
         nbHeadsKV: Int,
         vocabularySize: Int) -> Model
@@ -57,6 +59,8 @@ final class NLPExample: XCTestCase
             vocabularySize: vocabularySize,
             nbNeurons: hiddenDim, params: params
         )
+        
+        var x: LayerSeq = layer
         
         var query: LayerSeq = FullyConnectedSeq(
             layerPrev: layer,
@@ -115,6 +119,18 @@ final class NLPExample: XCTestCase
             layerPrev: layer,
             nbNeurons: nbHeadsQuery * headDim,
             activation: nil,
+            biases: false,
+            params: params
+        )
+        
+        layer = try! SumSeq(layersPrev: [layer, x], params: params)
+        
+        x = layer
+        
+        layer = FullyConnectedSeq(
+            layerPrev: layer,
+            nbNeurons: mlpDim,
+            activation: SiLU.str,
             biases: false,
             params: params
         )
@@ -197,6 +213,7 @@ final class NLPExample: XCTestCase
             sequence: prompt.count,
             hiddenDim: 4096,
             headDim: 128,
+            mlpDim: 14336,
             nbHeadsQuery: 32,
             nbHeadsKV: 8,
             vocabularySize: 32000

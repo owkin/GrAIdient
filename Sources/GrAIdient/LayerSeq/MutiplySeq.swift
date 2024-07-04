@@ -124,7 +124,7 @@ public class MultiplySeq: LayerMergeSeq
     {
         try super.checkStateCPU(batchSize: batchSize)
         
-        if phase != nil && phase == .Training {
+        if phase != nil && (phase == .Training || phase == .InferenceBackward) {
         if _otherOuts1.count == 0
         {
             for _ in 0..<_layersPrev.count
@@ -146,7 +146,7 @@ public class MultiplySeq: LayerMergeSeq
     {
         try super.checkStateForwardGPU(batchSize: batchSize)
         
-        if phase != nil && phase == .Training {
+        if phase != nil && (phase == .Training || phase == .InferenceBackward) {
         if _otherOuts2.count == 0
         {
             for _ in 0..<_layersPrev.count
@@ -334,7 +334,8 @@ public class MultiplySeq: LayerMergeSeq
             }
             neurons.get(seq, depth)!.v[elem].out = value
             
-            if phase != nil && phase == .Training {
+            if phase != nil &&
+               (phase == .Training || phase == .InferenceBackward) {
             for num1 in 0..<_layersPrev.count
             {
                 value = 1.0
@@ -388,7 +389,8 @@ public class MultiplySeq: LayerMergeSeq
             command.dispatchThreads(nbElems)
             command.enqueue()
             
-            if phase != nil && phase == .Training {
+            if phase != nil &&
+               (phase == .Training || phase == .InferenceBackward) {
             var first2 = true
             for num2 in 0..<_layersPrev.count {
             if num2 != num1

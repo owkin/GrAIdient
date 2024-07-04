@@ -2492,7 +2492,7 @@ class Dropout1DFlowTest: Input1DMSE1DCase
         
         modelCPU.initialize(
             params: optimizerParams,
-            phase: .Inference,
+            phase: .InferenceBackward,
             deviceID: DEVICE_ID
         )
         modelCPU.computeDeltaWeights = true
@@ -2502,7 +2502,7 @@ class Dropout1DFlowTest: Input1DMSE1DCase
         GrAI.Opti.GPU = true
         modelGPU.initialize(
             params: optimizerParams,
-            phase: .Inference,
+            phase: .InferenceBackward,
             deviceID: DEVICE_ID
         )
         modelGPU.computeDeltaWeights = true

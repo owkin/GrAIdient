@@ -606,7 +606,8 @@ public class Model: BaseModel
     public func initKernel(phase: Phase? = nil, deviceID: Int = 0)
     {
         self.phase = phase
-        if phase != nil && phase! == .Inference
+        if phase != nil &&
+           (phase! == .Inference || phase! == .InferenceBackward)
         {
             self.computeDeltaWeights = false
         }

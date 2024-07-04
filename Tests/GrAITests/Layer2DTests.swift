@@ -6870,7 +6870,7 @@ class LayerCAM2DTests: XCTestCase
         
         mainFloat.initialize(
             params: optimizerParams,
-            phase: .Inference,
+            phase: .InferenceBackward,
             deviceID: DEVICE_ID
         )
         secondFloat.initKernel(
@@ -6887,7 +6887,7 @@ class LayerCAM2DTests: XCTestCase
             deviceID: DEVICE_ID
         )
         secondFloat16.initKernel(
-            phase: .Inference,
+            phase: .InferenceBackward,
             deviceID: DEVICE_ID
         )
         
@@ -6986,7 +6986,7 @@ class LayerCAM2DTests: XCTestCase
         
         mainCPU.initialize(
             params: optimizerParams,
-            phase: .Inference,
+            phase: .InferenceBackward,
             deviceID: DEVICE_ID
         )
         secondCPU.initKernel(
@@ -6999,7 +6999,7 @@ class LayerCAM2DTests: XCTestCase
         GrAI.Opti.GPU = true
         mainGPU.initialize(
             params: optimizerParams,
-            phase: .Inference,
+            phase: .InferenceBackward,
             deviceID: DEVICE_ID
         )
         secondGPU.initKernel(
@@ -7094,7 +7094,7 @@ class LayerCAM2DTests: XCTestCase
         
         mainBranch.initialize(
             params: optimizerParams,
-            phase: .Inference,
+            phase: .InferenceBackward,
             deviceID: DEVICE_ID
         )
         secondBranch.initKernel(
@@ -7130,7 +7130,7 @@ class LayerCAM2DTests: XCTestCase
         
         mainBranch.initialize(
             params: optimizerParams,
-            phase: .Inference,
+            phase: .InferenceBackward,
             deviceID: DEVICE_ID
         )
         secondBranch.initKernel(
@@ -7180,7 +7180,7 @@ class LayerCAM2DTests: XCTestCase
         
         mainBranch.initialize(
             params: optimizerParams,
-            phase: .Inference,
+            phase: .InferenceBackward,
             deviceID: DEVICE_ID
         )
         secondBranch.initKernel(
@@ -7196,7 +7196,7 @@ class LayerCAM2DTests: XCTestCase
         secondBranch = branches[1]
         
         mainBranch.setupOptimizers(params: optimizerParams)
-        mainBranch.phase = .Inference
+        mainBranch.phase = .InferenceBackward
         secondBranch.phase = .Inference
         
         let lastLayer = mainBranch.layers.last as! MSE1D
@@ -7398,7 +7398,7 @@ class VQGrad2DTests: XCTestCase
         
         mainFloat.initialize(
             params: optimizerParams,
-            phase: .Inference,
+            phase: .InferenceBackward,
             deviceID: DEVICE_ID
         )
         secondFloat.initialize(
@@ -7413,7 +7413,7 @@ class VQGrad2DTests: XCTestCase
         GrAI.Precision.float16 = true
         mainFloat16.initialize(
             params: optimizerParams,
-            phase: .Inference,
+            phase: .InferenceBackward,
             deviceID: DEVICE_ID
         )
         secondFloat16.initialize(
@@ -7509,7 +7509,7 @@ class VQGrad2DTests: XCTestCase
         
         mainCPU.initialize(
             params: optimizerParams,
-            phase: .Inference,
+            phase: .InferenceBackward,
             deviceID: DEVICE_ID
         )
         secondCPU.initialize(
@@ -7524,7 +7524,7 @@ class VQGrad2DTests: XCTestCase
         GrAI.Opti.GPU = true
         mainGPU.initialize(
             params: optimizerParams,
-            phase: .Inference,
+            phase: .InferenceBackward,
             deviceID: DEVICE_ID
         )
         secondGPU.initialize(
@@ -7619,7 +7619,7 @@ class VQGrad2DTests: XCTestCase
         
         mainBranch.initialize(
             params: optimizerParams,
-            phase: .Inference,
+            phase: .InferenceBackward,
             deviceID: DEVICE_ID
         )
         secondBranch.initialize(
@@ -7656,7 +7656,7 @@ class VQGrad2DTests: XCTestCase
         
         mainBranch.initialize(
             params: optimizerParams,
-            phase: .Inference,
+            phase: .InferenceBackward,
             deviceID: DEVICE_ID
         )
         secondBranch.initialize(
@@ -7710,7 +7710,7 @@ class VQGrad2DTests: XCTestCase
         
         mainBranch.initialize(
             params: optimizerParams,
-            phase: .Inference,
+            phase: .InferenceBackward,
             deviceID: DEVICE_ID
         )
         secondBranch.initialize(
@@ -7728,7 +7728,7 @@ class VQGrad2DTests: XCTestCase
         
         mainBranch.setupOptimizers(params: optimizerParams)
         secondBranch.setupOptimizers(params: optimizerParams)
-        mainBranch.phase = .Inference
+        mainBranch.phase = .InferenceBackward
         secondBranch.phase = .Inference
         
         let lastLayer = mainBranch.layers.last as! MSE1D

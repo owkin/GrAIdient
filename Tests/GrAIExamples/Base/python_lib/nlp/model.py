@@ -284,7 +284,8 @@ class FeedForward(torch.nn.Module):
         _: torch.Tensor
             The output tensor.
         """
-        return self.w2(torch.nn.SiLU()(self.w1(x)) * self.w3(x))
+        return torch.nn.SiLU()(self.w1(x))
+        # return self.w2(torch.nn.SiLU()(self.w1(x)) * self.w3(x))
 
 
 class TransformerBlock(torch.nn.Module):
@@ -344,6 +345,8 @@ class TransformerBlock(torch.nn.Module):
             mask=mask,
             cache=cache,
         )
+        h = x + r
+        r = self.feed_forward(h)
         return r, cache
         """r, cache = self.attention(
             self.attention_norm(x),

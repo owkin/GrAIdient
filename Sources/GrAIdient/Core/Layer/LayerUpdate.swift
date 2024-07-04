@@ -30,7 +30,7 @@ extension LossError: CustomStringConvertible
 /// Running phase of a model.
 public enum Phase
 {
-    case Training, Inference
+    case Training, InferenceBackward, Inference
 }
 
 /// API for a layer that have learning weights.

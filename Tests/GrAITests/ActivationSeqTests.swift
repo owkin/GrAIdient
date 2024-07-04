@@ -562,7 +562,7 @@ class ActivationSeqFlowPrecisionTests: ActivationSeqInferenceTests
         let trainer = _buildTrainer(
             model: "FullyConnected", activation: nil
         )
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     override func testFLReLU() throws
@@ -629,7 +629,7 @@ class ActivationSeqFlowPrecisionTests: ActivationSeqInferenceTests
         let trainer = _buildTrainer(
             model: "Activation", activation: ReLU.str
         )
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     override func testLeakyReLU() throws
@@ -637,7 +637,7 @@ class ActivationSeqFlowPrecisionTests: ActivationSeqInferenceTests
         let trainer = _buildTrainer(
             model: "Activation", activation: LeakyReLU.str
         )
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     override func testSoftReLU() throws

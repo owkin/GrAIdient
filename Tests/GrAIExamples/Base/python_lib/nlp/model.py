@@ -429,5 +429,4 @@ class Transformer(torch.nn.Module):
             )
             break
 
-        # return self.output(self.norm(h)), cache
-        return h, cache
+        return self.output(self.norm(h)), cache

@@ -33,6 +33,7 @@ final class NLPExample: XCTestCase
     ///
     /// - Parameters:
     ///     - sequence: Length of the sequence.
+    ///     - nbBlocks: Number of transformer + MLP blocks.
     ///     - hiddenDim: Dimension of neurons in the main branch.
     ///     - headDim: Dimension of neurons in the transformer branches.
     ///     - mlpDim: Dimension of neurons in the MLP branches.
@@ -44,6 +45,7 @@ final class NLPExample: XCTestCase
     func _buildModel(
         modelPath: String,
         sequence: Int,
+        nbBlocks: Int,
         hiddenDim: Int,
         headDim: Int,
         mlpDim: Int,
@@ -67,153 +69,161 @@ final class NLPExample: XCTestCase
         curGrAIdient += 1
         curPyTorch += 1 + 2
         
-        var x: LayerSeq = layer
+        for _ in 0..<nbBlocks
+        {
+            var x: LayerSeq = layer
+            
+            layer = RMSNormSeq(
+                layerPrev: layer,
+                activation: nil,
+                params: params
+            )
+            dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch + 4 + 3
+            curGrAIdient += 1
+            // curPyTorch += 1
+            
+            var query: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: nbHeadsQuery * headDim,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch
+            curGrAIdient += 1
+            curPyTorch += 1
+            query = try! RoPESeq(
+                layerPrev: query,
+                seqPositions: [Int](1...sequence),
+                nbHeads: nbHeadsQuery,
+                params: params
+            )
+            curGrAIdient += 1
+            
+            var key: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: nbHeadsKV * headDim,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch
+            curGrAIdient += 1
+            curPyTorch += 1
+            key = try! RoPESeq(
+                layerPrev: key,
+                seqPositions: [Int](1...sequence),
+                nbHeads: nbHeadsKV,
+                params: params
+            )
+            curGrAIdient += 1
+            
+            let value: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: nbHeadsKV * headDim,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch
+            curGrAIdient += 1
+            curPyTorch += 1
+            
+            layer = try! QueryCausalSeq(
+                query: query, key: key,
+                nbHeadsQuery: nbHeadsQuery, nbHeadsKey: nbHeadsKV,
+                params: params
+            )
+            curGrAIdient += 1
+            layer = try! SoftmaxSeq(
+                layerPrev: layer,
+                nbHeads: nbHeadsQuery,
+                params: params
+            )
+            curGrAIdient += 1
+            
+            layer = try! ValueCausalSeq(
+                value: value, score: layer,
+                nbHeadsValue: nbHeadsKV, nbHeadsScore: nbHeadsQuery,
+                params: params
+            )
+            curGrAIdient += 1
+            
+            layer = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: nbHeadsQuery * headDim,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch
+            curGrAIdient += 1
+            curPyTorch += 1
+            
+            layer = try! SumSeq(layersPrev: [layer, x], params: params)
+            curGrAIdient += 1
+            
+            x = layer
+            
+            layer = RMSNormSeq(
+                layerPrev: layer,
+                activation: nil,
+                params: params
+            )
+            dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch + 3 + 1
+            curGrAIdient += 1
+            // curPyTorch += 1
+            
+            let mult1: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: mlpDim,
+                activation: SiLU.str,
+                biases: false,
+                params: params
+            )
+            dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch
+            curGrAIdient += 1
+            curPyTorch += 1
+            
+            let mult2: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: mlpDim,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch + 1
+            curGrAIdient += 1
+            // curPyTorch += 1
+            
+            layer = try! MultiplySeq(layersPrev: [mult1, mult2], params: params)
+            curGrAIdient += 1
+            
+            layer = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: hiddenDim,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch
+            curGrAIdient += 1
+            curPyTorch += 2
+            
+            layer = try! SumSeq(layersPrev: [layer, x], params: params)
+            curGrAIdient += 1
+            
+            curPyTorch += 2
+        }
         
         layer = RMSNormSeq(
             layerPrev: layer,
             activation: nil,
             params: params
         )
-        dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch + 4 + 3
+        dicoGrAIdient2PyTorch[curGrAIdient] = 1
         curGrAIdient += 1
         // curPyTorch += 1
-        
-        var query: LayerSeq = FullyConnectedSeq(
-            layerPrev: layer,
-            nbNeurons: nbHeadsQuery * headDim,
-            activation: nil,
-            biases: false,
-            params: params
-        )
-        dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch
-        curGrAIdient += 1
-        curPyTorch += 1
-        query = try! RoPESeq(
-            layerPrev: query,
-            seqPositions: [Int](1...sequence),
-            nbHeads: nbHeadsQuery,
-            params: params
-        )
-        curGrAIdient += 1
-        
-        var key: LayerSeq = FullyConnectedSeq(
-            layerPrev: layer,
-            nbNeurons: nbHeadsKV * headDim,
-            activation: nil,
-            biases: false,
-            params: params
-        )
-        dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch
-        curGrAIdient += 1
-        curPyTorch += 1
-        key = try! RoPESeq(
-            layerPrev: key,
-            seqPositions: [Int](1...sequence),
-            nbHeads: nbHeadsKV,
-            params: params
-        )
-        curGrAIdient += 1
-        
-        let value: LayerSeq = FullyConnectedSeq(
-            layerPrev: layer,
-            nbNeurons: nbHeadsKV * headDim,
-            activation: nil,
-            biases: false,
-            params: params
-        )
-        dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch
-        curGrAIdient += 1
-        curPyTorch += 1
-        
-        layer = try! QueryCausalSeq(
-            query: query, key: key,
-            nbHeadsQuery: nbHeadsQuery, nbHeadsKey: nbHeadsKV, 
-            params: params
-        )
-        curGrAIdient += 1
-        layer = try! SoftmaxSeq(
-            layerPrev: layer,
-            nbHeads: nbHeadsQuery,
-            params: params
-        )
-        curGrAIdient += 1
-        
-        layer = try! ValueCausalSeq(
-            value: value, score: layer,
-            nbHeadsValue: nbHeadsKV, nbHeadsScore: nbHeadsQuery,
-            params: params
-        )
-        curGrAIdient += 1
-        
-        layer = FullyConnectedSeq(
-            layerPrev: layer,
-            nbNeurons: nbHeadsQuery * headDim,
-            activation: nil,
-            biases: false,
-            params: params
-        )
-        dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch
-        curGrAIdient += 1
-        curPyTorch += 1
-        
-        layer = try! SumSeq(layersPrev: [layer, x], params: params)
-        curGrAIdient += 1
-        
-        x = layer
-        
-        layer = RMSNormSeq(
-            layerPrev: layer,
-            activation: nil,
-            params: params
-        )
-        dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch + 3 + 1
-        curGrAIdient += 1
-        // curPyTorch += 1
-        
-        let mult1: LayerSeq = FullyConnectedSeq(
-            layerPrev: layer,
-            nbNeurons: mlpDim,
-            activation: SiLU.str,
-            biases: false,
-            params: params
-        )
-        dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch
-        curGrAIdient += 1
-        curPyTorch += 1
-        
-        let mult2: LayerSeq = FullyConnectedSeq(
-            layerPrev: layer,
-            nbNeurons: mlpDim,
-            activation: nil,
-            biases: false,
-            params: params
-        )
-        dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch + 1
-        curGrAIdient += 1
-        // curPyTorch += 1
-        
-        layer = try! MultiplySeq(layersPrev: [mult1, mult2], params: params)
-        curGrAIdient += 1
-        
-        layer = FullyConnectedSeq(
-            layerPrev: layer,
-            nbNeurons: hiddenDim,
-            activation: nil,
-            biases: false,
-            params: params
-        )
-        dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch
-        curGrAIdient += 1
-        curPyTorch += 2
-        
-        layer = try! SumSeq(layersPrev: [layer, x], params: params)
-        curGrAIdient += 1
-        
-        /*layer = RMSNormSeq(
-            layerPrev: layer,
-            activation: nil,
-            params: params
-        )
         
         layer = FullyConnectedSeq(
             layerPrev: layer,
@@ -221,7 +231,10 @@ final class NLPExample: XCTestCase
             activation: nil,
             biases: false,
             params: params
-        )*/
+        )
+        dicoGrAIdient2PyTorch[curGrAIdient] = 2
+        curGrAIdient += 1
+        // curPyTorch += 1
         
         // Retrieve base model in the context and initialize a
         // real model (with `layerPrev` links updated).
@@ -277,7 +290,7 @@ final class NLPExample: XCTestCase
     }
     
     /// Generate text from prompt.
-    func _testGenerate() throws
+    func _testGenerate1() throws
     {
         // Encode prompt.
         let pythonLib = Python.import("python_lib")
@@ -296,6 +309,7 @@ final class NLPExample: XCTestCase
         let model = _buildModel(
             modelPath: _modelPath,
             sequence: prompt.count,
+            nbBlocks: 1,
             hiddenDim: 4096,
             headDim: 128,
             mlpDim: 14336,
@@ -335,5 +349,43 @@ final class NLPExample: XCTestCase
                 XCTAssert(diffPercent < 1)
             }
         }
+    }
+    
+    /// Generate text from prompt.
+    func _testGenerate32() throws
+    {
+        // Encode prompt.
+        let pythonLib = Python.import("python_lib")
+        let prompt = [Int](pythonLib.encode(
+            _prompt,
+            _modelPath
+        ))!
+        
+        // Load pre trained model.
+        let model = _buildModel(
+            modelPath: _modelPath,
+            sequence: prompt.count,
+            nbBlocks: 32,
+            hiddenDim: 4096,
+            headDim: 128,
+            mlpDim: 14336,
+            nbHeadsQuery: 32,
+            nbHeadsKV: 8,
+            vocabularySize: 32000
+        )
+        
+        // Initialize for inference.
+        model.initKernel(phase: .Inference)
+        model.updateKernel(batchSize: 1)
+        
+        // Forward.
+        let firstLayer: EmbeddingSeq = model.layers.first as! EmbeddingSeq
+        try! firstLayer.setDataGPU(
+            [prompt], batchSize: 1, sequence: prompt.count
+        )
+        try! model.forward()
+        
+        // Get result.
+        let _ = (model.layers.last as! LayerSeq).outs.download()
     }
 }

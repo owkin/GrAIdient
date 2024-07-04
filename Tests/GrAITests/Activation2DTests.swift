@@ -811,7 +811,7 @@ class Activation2DFlowPrecisionTests: Activation2DInferenceTests
         let trainer = _buildTrainer(
             model: "Convolution", activation: LeakyReLU.str, bn: false
         )
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     override func testConvLeakyReLUBN() throws

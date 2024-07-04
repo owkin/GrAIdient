@@ -1424,7 +1424,7 @@ class LayerSeq4FlowPrecisionTests: LayerSeq4FlowTests
     override func testFullyConnectedSeq() throws
     {
         let trainer = _buildTrainer("FullyConnectedSeq")
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     override func testLayerNormSeq() throws

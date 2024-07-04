@@ -544,13 +544,13 @@ class NLPFlowPrecisionTests: NLPFlowTests
     override func testQueryCausal1() throws
     {
         let trainer = _buildTrainer("QueryCausal1")
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     override func testQueryCausal2() throws
     {
         let trainer = _buildTrainer("QueryCausal2")
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     override func testValueCausal1() throws

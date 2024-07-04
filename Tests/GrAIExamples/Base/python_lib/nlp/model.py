@@ -339,13 +339,6 @@ class TransformerBlock(torch.nn.Module):
             (keys, values): cache for keys and values
         """
         r, cache = self.attention(
-            x,
-            rotation_matrix=rotation_matrix,
-            mask=mask,
-            cache=cache,
-        )
-        return r, cache
-        """r, cache = self.attention(
             self.attention_norm(x),
             rotation_matrix=rotation_matrix,
             mask=mask,
@@ -354,7 +347,7 @@ class TransformerBlock(torch.nn.Module):
         h = x + r
         r = self.feed_forward(self.ffn_norm(h))
         out = h + r
-        return out, cache"""
+        return out, cache
 
 
 class Transformer(torch.nn.Module):
@@ -436,5 +429,4 @@ class Transformer(torch.nn.Module):
             )
             break
 
-        # return self.output(self.norm(h)), cache
-        return h, cache
+        return self.output(self.norm(h)), cache

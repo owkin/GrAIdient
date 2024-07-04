@@ -186,6 +186,16 @@ class LayerSeqDirtyFlowTests: Input2DMSE1DCase
                 params: params
             )
             
+        case "Multiply":
+            let otherLayer: LayerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            secondLayer = try! MultiplySeq(
+                layersPrev: [firstLayer, otherLayer],
+                params: params
+            )
+            
         case "Concat2":
             let otherLayer: LayerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 3,
@@ -298,6 +308,12 @@ class LayerSeqDirtyFlowTests: Input2DMSE1DCase
     func testSum() throws
     {
         let trainer = _buildTrainer("Sum")
+        run(trainer)
+    }
+    
+    func testMultiply() throws
+    {
+        let trainer = _buildTrainer("Multiply")
         run(trainer)
     }
     

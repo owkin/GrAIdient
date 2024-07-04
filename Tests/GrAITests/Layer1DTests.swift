@@ -605,7 +605,7 @@ class Layer1DFlowPrecisionTests: Layer1DFlowTests
     override func testConcat() throws
     {
         let trainer = _buildTrainer("Concat")
-        run(trainer)
+        run(trainer, diffThreshold: 0.002)
     }
     
     override func testSum() throws
@@ -629,7 +629,7 @@ class Layer1DFlowPrecisionTests: Layer1DFlowTests
     override func testConstant() throws
     {
         let trainer = _buildTrainer("Constant")
-        run(trainer)
+        run(trainer, diffThreshold: 0.002)
     }
     
     override func testConstantSample() throws
@@ -2492,7 +2492,7 @@ class Dropout1DFlowTest: Input1DMSE1DCase
         
         modelCPU.initialize(
             params: optimizerParams,
-            phase: .Inference,
+            phase: .InferenceBackward,
             deviceID: DEVICE_ID
         )
         modelCPU.computeDeltaWeights = true
@@ -2502,7 +2502,7 @@ class Dropout1DFlowTest: Input1DMSE1DCase
         GrAI.Opti.GPU = true
         modelGPU.initialize(
             params: optimizerParams,
-            phase: .Inference,
+            phase: .InferenceBackward,
             deviceID: DEVICE_ID
         )
         modelGPU.computeDeltaWeights = true

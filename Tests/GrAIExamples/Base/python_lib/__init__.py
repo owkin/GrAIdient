@@ -13,7 +13,7 @@ from python_lib.trainer import (
     step_simple_auto_encoder,
 )
 from python_lib.nlp.generate import (
-    generate_main,
+    predict,
     encode,
     decode,
 )
@@ -27,7 +27,7 @@ __all__ = [
     "load_llm_weights",
     "train_simple_auto_encoder",
     "step_simple_auto_encoder",
-    "generate_main",
+    "predict",
     "encode",
     "decode",
 ]

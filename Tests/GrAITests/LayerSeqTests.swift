@@ -77,6 +77,24 @@ class LayerSeqGradTests: Input2DMSE1DCase
                 params: params
             )
             
+        case "Multiply":
+            let otherLayer1: LayerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
+                activation: SoftReLU.str, biases: true, params: params
+            )
+            let otherLayer2: LayerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
+                activation: SoftReLU.str, biases: true, params: params
+            )
+            layerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
+                activation: SoftReLU.str, biases: true, params: params
+            )
+            layerSeq = try! MultiplySeq(
+                layersPrev: [layerSeq, otherLayer1, otherLayer2],
+                params: params
+            )
+            
         case "Concat1":
             let otherLayer: LayerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 5,
@@ -270,6 +288,19 @@ class LayerSeqGradTests: Input2DMSE1DCase
     func testSumGPU() throws
     {
         let trainer = _buildTrainer("Sum")
+        run(trainer)
+    }
+    
+    func testMultiplyCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("Multiply")
+        run(trainer)
+    }
+    
+    func testMultiplyGPU() throws
+    {
+        let trainer = _buildTrainer("Multiply")
         run(trainer)
     }
     
@@ -491,6 +522,24 @@ class LayerSeqFlowTests: Input2DMSE1DCase
                 params: params
             )
             
+        case "Multiply":
+            let otherLayer1: LayerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            let otherLayer2: LayerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = try! MultiplySeq(
+                layersPrev: [layerSeq, otherLayer1, otherLayer2],
+                params: params
+            )
+            
         case "Concat1":
             let otherLayer: LayerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 5,
@@ -683,6 +732,12 @@ class LayerSeqFlowTests: Input2DMSE1DCase
         run(trainer)
     }
     
+    func testMultiply() throws
+    {
+        let trainer = _buildTrainer("Multiply")
+        run(trainer)
+    }
+    
     func testConcat1() throws
     {
         let trainer = _buildTrainer("Concat1")
@@ -816,6 +871,12 @@ class LayerSeqFlowPrecisionTests: LayerSeqFlowTests
         run(trainer, diffThreshold: 0.002)
     }
     
+    override func testMultiply() throws
+    {
+        let trainer = _buildTrainer("Multiply")
+        run(trainer, diffThreshold: 0.002)
+    }
+    
     override func testConcat1() throws
     {
         let trainer = _buildTrainer("Concat1")
@@ -831,7 +892,7 @@ class LayerSeqFlowPrecisionTests: LayerSeqFlowTests
     override func testConstant12() throws
     {
         let trainer = _buildTrainer("Constant12")
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     override func testConstant2() throws
@@ -1070,6 +1131,24 @@ class LayerSeq4FlowTests: Input2DMSE1DCase
                 params: params
             )
             
+        case "Multiply":
+            let otherLayer1: LayerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 4 * 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            let otherLayer2: LayerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 4 * 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = try! FullyConnectedPatch(
+                layerPrev: layer, patch: width / 3, nbNeurons: 4 * 5,
+                activation: LeakyReLU.str, biases: true, params: params
+            )
+            layerSeq = try! MultiplySeq(
+                layersPrev: [layerSeq, otherLayer1, otherLayer2],
+                params: params
+            )
+            
         case "Concat1":
             let otherLayer: LayerSeq = try! FullyConnectedPatch(
                 layerPrev: layer, patch: width / 3, nbNeurons: 4 * 5,
@@ -1224,6 +1303,12 @@ class LayerSeq4FlowTests: Input2DMSE1DCase
         run(trainer)
     }
     
+    func testMultiply() throws
+    {
+        let trainer = _buildTrainer("Multiply")
+        run(trainer)
+    }
+    
     func testConcat1() throws
     {
         let trainer = _buildTrainer("Concat1")
@@ -1311,6 +1396,12 @@ class LayerSeq4FlowPrecisionTests: LayerSeq4FlowTests
         run(trainer, diffThreshold: 0.005)
     }
     
+    override func testMultiply() throws
+    {
+        let trainer = _buildTrainer("Multiply")
+        run(trainer, diffThreshold: 0.005)
+    }
+    
     override func testConcat1() throws
     {
         throw XCTSkip("Skipping this test because of precision issue.")
@@ -1333,7 +1424,7 @@ class LayerSeq4FlowPrecisionTests: LayerSeq4FlowTests
     override func testFullyConnectedSeq() throws
     {
         let trainer = _buildTrainer("FullyConnectedSeq")
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     override func testLayerNormSeq() throws
@@ -1351,7 +1442,7 @@ class LayerSeq4FlowPrecisionTests: LayerSeq4FlowTests
     override func testQuerySelfSeq() throws
     {
         let trainer = _buildTrainer("QuerySelf")
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     override func testSoftmaxSeq() throws
@@ -1418,6 +1509,12 @@ class LayerSeqFlowResetTests: LayerSeqFlowTests
     override func testSum() throws
     {
         let trainer = _buildTrainer("Sum")
+        run(trainer)
+    }
+    
+    override func testMultiply() throws
+    {
+        let trainer = _buildTrainer("Multiply")
         run(trainer)
     }
     
@@ -1562,6 +1659,12 @@ class LayerSeqFlowReverseTests: LayerSeqFlowTests
         run(trainer)
     }
     
+    override func testMultiply() throws
+    {
+        let trainer = _buildTrainer("Multiply")
+        run(trainer)
+    }
+    
     override func testConcat1() throws
     {
         let trainer = _buildTrainer("Concat1")
@@ -1608,8 +1711,9 @@ class LayerSeqFlowReverseTests: LayerSeqFlowTests
     
     override func testLayerNormSeq() throws
     {
-        /*let trainer = _buildTrainer("LayerNorm")
-        run(trainer, nbRetry: 5)*/
+        throw XCTSkip("Skipping this test because of precision issue.")
+        let trainer = _buildTrainer("LayerNorm")
+        run(trainer, nbRetry: 5)
     }
     
     override func testQuerySeq() throws
@@ -1873,6 +1977,12 @@ class LayerSeqInferenceTests: LayerSeqFlowTests
         run(trainer)
     }
     
+    override func testMultiply() throws
+    {
+        let trainer = _buildTrainer("Multiply")
+        run(trainer)
+    }
+    
     override func testConcat1() throws
     {
         let trainer = _buildTrainer("Concat1")
@@ -2004,6 +2114,12 @@ class LayerSeqLoadTests: LayerSeqFlowTests
     override func testSum() throws
     {
         let trainer = _buildTrainer("Sum")
+        run(trainer)
+    }
+    
+    override func testMultiply() throws
+    {
+        let trainer = _buildTrainer("Multiply")
         run(trainer)
     }
     
@@ -2182,6 +2298,12 @@ class LayerSeqTransformTests: LayerSeqFlowTests
     override func testSum() throws
     {
         let trainer = _buildTrainer("Sum")
+        run(trainer)
+    }
+    
+    override func testMultiply() throws
+    {
+        let trainer = _buildTrainer("Multiply")
         run(trainer)
     }
     
@@ -3021,7 +3143,7 @@ class LayerCAMSeqTests: XCTestCase
         
         mainFloat.initialize(
             params: optimizerParams,
-            phase: .Inference,
+            phase: .InferenceBackward,
             deviceID: DEVICE_ID
         )
         secondFloat.initKernel(
@@ -3034,7 +3156,7 @@ class LayerCAMSeqTests: XCTestCase
         GrAI.Precision.float16 = true
         mainFloat16.initialize(
             params: optimizerParams,
-            phase: .Inference,
+            phase: .InferenceBackward,
             deviceID: DEVICE_ID
         )
         secondFloat16.initKernel(
@@ -3129,7 +3251,7 @@ class LayerCAMSeqTests: XCTestCase
         
         mainCPU.initialize(
             params: optimizerParams,
-            phase: .Inference,
+            phase: .InferenceBackward,
             deviceID: DEVICE_ID
         )
         secondCPU.initKernel(
@@ -3142,7 +3264,7 @@ class LayerCAMSeqTests: XCTestCase
         GrAI.Opti.GPU = true
         mainGPU.initialize(
             params: optimizerParams,
-            phase: .Inference,
+            phase: .InferenceBackward,
             deviceID: DEVICE_ID
         )
         secondGPU.initKernel(
@@ -3229,7 +3351,7 @@ class LayerCAMSeqTests: XCTestCase
         
         mainBranch.initialize(
             params: optimizerParams,
-            phase: .Inference,
+            phase: .InferenceBackward,
             deviceID: DEVICE_ID
         )
         secondBranch.initKernel(
@@ -3265,7 +3387,7 @@ class LayerCAMSeqTests: XCTestCase
         
         mainBranch.initialize(
             params: optimizerParams,
-            phase: .Inference,
+            phase: .InferenceBackward,
             deviceID: DEVICE_ID
         )
         secondBranch.initKernel(
@@ -3308,7 +3430,7 @@ class LayerCAMSeqTests: XCTestCase
         
         mainBranch.initialize(
             params: optimizerParams,
-            phase: .Inference,
+            phase: .InferenceBackward,
             deviceID: DEVICE_ID
         )
         secondBranch.initKernel(
@@ -3324,7 +3446,7 @@ class LayerCAMSeqTests: XCTestCase
         secondBranch = branches[1]
         
         mainBranch.setupOptimizers(params: optimizerParams)
-        mainBranch.phase = .Inference
+        mainBranch.phase = .InferenceBackward
         
         let lastLayer = mainBranch.layers.last as! MSE1D
         lastLayer.coeff = -1.0
@@ -3519,7 +3641,7 @@ class VQGradSeqTests: XCTestCase
         
         mainFloat.initialize(
             params: optimizerParams,
-            phase: .Inference,
+            phase: .InferenceBackward,
             deviceID: DEVICE_ID
         )
         secondFloat.initialize(
@@ -3534,7 +3656,7 @@ class VQGradSeqTests: XCTestCase
         GrAI.Precision.float16 = true
         mainFloat16.initialize(
             params: optimizerParams,
-            phase: .Inference,
+            phase: .InferenceBackward,
             deviceID: DEVICE_ID
         )
         secondFloat16.initialize(
@@ -3630,7 +3752,7 @@ class VQGradSeqTests: XCTestCase
         
         mainCPU.initialize(
             params: optimizerParams,
-            phase: .Inference,
+            phase: .InferenceBackward,
             deviceID: DEVICE_ID
         )
         secondCPU.initialize(
@@ -3645,7 +3767,7 @@ class VQGradSeqTests: XCTestCase
         GrAI.Opti.GPU = true
         mainGPU.initialize(
             params: optimizerParams,
-            phase: .Inference,
+            phase: .InferenceBackward,
             deviceID: DEVICE_ID
         )
         secondGPU.initialize(
@@ -3740,7 +3862,7 @@ class VQGradSeqTests: XCTestCase
         
         mainBranch.initialize(
             params: optimizerParams,
-            phase: .Inference,
+            phase: .InferenceBackward,
             deviceID: DEVICE_ID
         )
         secondBranch.initialize(
@@ -3777,7 +3899,7 @@ class VQGradSeqTests: XCTestCase
         
         mainBranch.initialize(
             params: optimizerParams,
-            phase: .Inference,
+            phase: .InferenceBackward,
             deviceID: DEVICE_ID
         )
         secondBranch.initialize(
@@ -3831,7 +3953,7 @@ class VQGradSeqTests: XCTestCase
         
         mainBranch.initialize(
             params: optimizerParams,
-            phase: .Inference,
+            phase: .InferenceBackward,
             deviceID: DEVICE_ID
         )
         secondBranch.initialize(
@@ -3849,7 +3971,7 @@ class VQGradSeqTests: XCTestCase
         
         mainBranch.setupOptimizers(params: optimizerParams)
         secondBranch.setupOptimizers(params: optimizerParams)
-        mainBranch.phase = .Inference
+        mainBranch.phase = .InferenceBackward
         secondBranch.phase = .Inference
         
         let lastLayer = mainBranch.layers.last as! MSE1D

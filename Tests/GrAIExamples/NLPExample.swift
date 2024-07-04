@@ -29,12 +29,40 @@ final class NLPExample: XCTestCase
     }
     
     ///
+    /// Return the index of maximal element in array.
+    ///
+    /// - Parameter array: Input array.
+    /// - Returns: The index of the maximal element.
+    ///
+    func _argmax(array: [Float]) -> Int?
+    {
+        if array.isEmpty
+        {
+            return nil
+        }
+        
+        var maxIndex = 0
+        var maxValue = array[0]
+        for i in 1..<array.count
+        {
+            if array[i] > maxValue
+            {
+                maxIndex = i
+                maxValue = array[i]
+            }
+        }
+        return maxIndex
+    }
+    
+    ///
     /// Build LLM model.
     ///
     /// - Parameters:
     ///     - sequence: Length of the sequence.
+    ///     - nbBlocks: Number of transformer + MLP blocks.
     ///     - hiddenDim: Dimension of neurons in the main branch.
     ///     - headDim: Dimension of neurons in the transformer branches.
+    ///     - mlpDim: Dimension of neurons in the MLP branches.
     ///     - nbHeads:  Number of heads (groups) of neurons for queries.
     ///     - nbHeadsKV: Number of heads (groups) of neurons for keys and values.
     ///     - vocabularySize: Vocabulary size.
@@ -43,8 +71,10 @@ final class NLPExample: XCTestCase
     func _buildModel(
         modelPath: String,
         sequence: Int,
+        nbBlocks: Int,
         hiddenDim: Int,
         headDim: Int,
+        mlpDim: Int,
         nbHeadsQuery: Int,
         nbHeadsKV: Int,
         vocabularySize: Int) -> Model
@@ -52,78 +82,174 @@ final class NLPExample: XCTestCase
         let context = ModelContext(name: "NLP", curID: 0)
         let params = GrAI.Model.Params(context: context)
         
+        var curPyTorch = 0
+        var curGrAIdient = 0
+        var dicoGrAIdient2PyTorch = [Int: Int]()
+        
         var layer: LayerSeq = EmbeddingSeq(
             sequence: sequence,
             vocabularySize: vocabularySize,
             nbNeurons: hiddenDim, params: params
         )
+        dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch
+        curGrAIdient += 1
+        curPyTorch += 1 + 2
         
-        var query: LayerSeq = FullyConnectedSeq(
+        for _ in 0..<nbBlocks
+        {
+            var x: LayerSeq = layer
+            
+            layer = RMSNormSeq(
+                layerPrev: layer,
+                activation: nil,
+                params: params
+            )
+            dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch + 4 + 3
+            curGrAIdient += 1
+            // curPyTorch += 1
+            
+            var query: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: nbHeadsQuery * headDim,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch
+            curGrAIdient += 1
+            curPyTorch += 1
+            query = try! RoPESeq(
+                layerPrev: query,
+                seqPositions: [Int](1...sequence),
+                nbHeads: nbHeadsQuery,
+                params: params
+            )
+            curGrAIdient += 1
+            
+            var key: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: nbHeadsKV * headDim,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch
+            curGrAIdient += 1
+            curPyTorch += 1
+            key = try! RoPESeq(
+                layerPrev: key,
+                seqPositions: [Int](1...sequence),
+                nbHeads: nbHeadsKV,
+                params: params
+            )
+            curGrAIdient += 1
+            
+            let value: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: nbHeadsKV * headDim,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch
+            curGrAIdient += 1
+            curPyTorch += 1
+            
+            layer = try! QueryCausalSeq(
+                query: query, key: key,
+                nbHeadsQuery: nbHeadsQuery, nbHeadsKey: nbHeadsKV,
+                params: params
+            )
+            curGrAIdient += 1
+            layer = try! SoftmaxSeq(
+                layerPrev: layer,
+                nbHeads: nbHeadsQuery,
+                params: params
+            )
+            curGrAIdient += 1
+            
+            layer = try! ValueCausalSeq(
+                value: value, score: layer,
+                nbHeadsValue: nbHeadsKV, nbHeadsScore: nbHeadsQuery,
+                params: params
+            )
+            curGrAIdient += 1
+            
+            layer = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: nbHeadsQuery * headDim,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch
+            curGrAIdient += 1
+            curPyTorch += 1
+            
+            layer = try! SumSeq(layersPrev: [layer, x], params: params)
+            curGrAIdient += 1
+            
+            x = layer
+            
+            layer = RMSNormSeq(
+                layerPrev: layer,
+                activation: nil,
+                params: params
+            )
+            dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch + 3 + 1
+            curGrAIdient += 1
+            // curPyTorch += 1
+            
+            let mult1: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: mlpDim,
+                activation: SiLU.str,
+                biases: false,
+                params: params
+            )
+            dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch
+            curGrAIdient += 1
+            curPyTorch += 1
+            
+            let mult2: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: mlpDim,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch + 1
+            curGrAIdient += 1
+            // curPyTorch += 1
+            
+            layer = try! MultiplySeq(layersPrev: [mult1, mult2], params: params)
+            curGrAIdient += 1
+            
+            layer = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: hiddenDim,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch
+            curGrAIdient += 1
+            curPyTorch += 2
+            
+            layer = try! SumSeq(layersPrev: [layer, x], params: params)
+            curGrAIdient += 1
+            
+            curPyTorch += 2
+        }
+        
+        layer = RMSNormSeq(
             layerPrev: layer,
-            nbNeurons: nbHeadsQuery * headDim,
             activation: nil,
-            biases: false,
             params: params
         )
-        query = try! RoPESeq(
-            layerPrev: query,
-            seqPositions: [Int](1...sequence),
-            nbHeads: nbHeadsQuery,
-            params: params
-        )
-        
-        var key: LayerSeq = FullyConnectedSeq(
-            layerPrev: layer,
-            nbNeurons: nbHeadsKV * headDim,
-            activation: nil,
-            biases: false,
-            params: params
-        )
-        key = try! RoPESeq(
-            layerPrev: key,
-            seqPositions: [Int](1...sequence),
-            nbHeads: nbHeadsKV,
-            params: params
-        )
-        
-        let value: LayerSeq = FullyConnectedSeq(
-            layerPrev: layer,
-            nbNeurons: nbHeadsKV * headDim,
-            activation: nil,
-            biases: false,
-            params: params
-        )
-        
-        layer = try! QueryCausalSeq(
-            query: query, key: key,
-            nbHeadsQuery: nbHeadsQuery, nbHeadsKey: nbHeadsKV, 
-            params: params
-        )
-        layer = try! SoftmaxSeq(
-            layerPrev: layer,
-            nbHeads: nbHeadsQuery,
-            params: params
-        )
-        
-        layer = try! ValueCausalSeq(
-            value: value, score: layer,
-            nbHeadsValue: nbHeadsKV, nbHeadsScore: nbHeadsQuery,
-            params: params
-        )
-        
-        layer = FullyConnectedSeq(
-            layerPrev: layer,
-            nbNeurons: nbHeadsQuery * headDim,
-            activation: nil,
-            biases: false,
-            params: params
-        )
-        
-        /*layer = RMSNormSeq(
-            layerPrev: layer,
-            activation: nil,
-            params: params
-        )
+        dicoGrAIdient2PyTorch[curGrAIdient] = 1
+        curGrAIdient += 1
+        // curPyTorch += 1
         
         layer = FullyConnectedSeq(
             layerPrev: layer,
@@ -131,7 +257,10 @@ final class NLPExample: XCTestCase
             activation: nil,
             biases: false,
             params: params
-        )*/
+        )
+        dicoGrAIdient2PyTorch[curGrAIdient] = 2
+        curGrAIdient += 1
+        // curPyTorch += 1
         
         // Retrieve base model in the context and initialize a
         // real model (with `layerPrev` links updated).
@@ -140,43 +269,54 @@ final class NLPExample: XCTestCase
         // Load weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
         let data = pythonLib.load_llm_weights(modelPath)
-        var weightsNumpy = [PythonObject](data.tuple2.0)!
+        var weightsNumpy: [PythonObject?] = [PythonObject](data.tuple2.0)!
         
         // Apply weights on the `GrAIdient` model's layers.
-        for num_layer in 0..<model.layers.count
+        for layer in model.layers
         {
             // Load weights and biases.
-            if let layer = model.layers[num_layer] as? EmbeddingSeq
+            if let layerTmp = layer as? EmbeddingSeq
             {
-                let weightsTmp: [Float] = Array<Float>(
-                    numpy: weightsNumpy.removeFirst()
-                )!
-                layer.weightsCPU = weightsTmp
+                let idGrAIdient = layerTmp.id
+                let idPyTorch = dicoGrAIdient2PyTorch[idGrAIdient]!
                 
-                // TODO: remove this!
-                weightsNumpy.removeFirst()
-                weightsNumpy.removeFirst()
-            }
-            if let layer = model.layers[num_layer] as? RMSNormSeq
-            {
                 let weightsTmp: [Float] = Array<Float>(
-                    numpy: weightsNumpy.removeFirst()
+                    numpy: weightsNumpy[idPyTorch]!
                 )!
-                layer.weightsCPU = weightsTmp
+                layerTmp.weightsCPU = weightsTmp
+                
+                weightsNumpy[idPyTorch] = nil
             }
-            if let layer = model.layers[num_layer] as? FullyConnectedSeq
+            if let layerTmp = layer as? RMSNormSeq
             {
+                let idGrAIdient = layerTmp.id
+                let idPyTorch = dicoGrAIdient2PyTorch[idGrAIdient]!
+                
                 let weightsTmp: [Float] = Array<Float>(
-                    numpy: weightsNumpy.removeFirst()
+                    numpy: weightsNumpy[idPyTorch]!
                 )!
-                layer.weightsCPU = weightsTmp
+                layerTmp.weightsCPU = weightsTmp
+                
+                weightsNumpy[idPyTorch] = nil
+            }
+            if let layerTmp = layer as? FullyConnectedSeq
+            {
+                let idGrAIdient = layerTmp.id
+                let idPyTorch = dicoGrAIdient2PyTorch[idGrAIdient]!
+                
+                let weightsTmp: [Float] = Array<Float>(
+                    numpy: weightsNumpy[idPyTorch]!
+                )!
+                layerTmp.weightsCPU = weightsTmp
+                
+                weightsNumpy[idPyTorch] = nil
             }
         }
         return model
     }
     
     /// Generate text from prompt.
-    func _testGenerate() throws
+    func _testPredict1() throws
     {
         // Encode prompt.
         let pythonLib = Python.import("python_lib")
@@ -186,7 +326,7 @@ final class NLPExample: XCTestCase
         ))!
         
         // Compute reference.
-        let arrayRef = [Float](numpy: pythonLib.generate_main(
+        let arrayRef = [Float](numpy: pythonLib.predict(
             _prompt,
             _modelPath
         ))!
@@ -195,8 +335,10 @@ final class NLPExample: XCTestCase
         let model = _buildModel(
             modelPath: _modelPath,
             sequence: prompt.count,
+            nbBlocks: 1,
             hiddenDim: 4096,
             headDim: 128,
+            mlpDim: 14336,
             nbHeadsQuery: 32,
             nbHeadsKV: 8,
             vocabularySize: 32000
@@ -225,7 +367,7 @@ final class NLPExample: XCTestCase
             }
             else
             {
-                let diffPercent = abs(elemOut - elemRef) / elemRef * 100.0
+                let diffPercent = abs(elemOut - elemRef) / abs(elemRef) * 100.0
                 if diffPercent > 1
                 {
                     print(diffPercent)
@@ -233,5 +375,59 @@ final class NLPExample: XCTestCase
                 XCTAssert(diffPercent < 1)
             }
         }
+    }
+    
+    /// Generate text from prompt.
+    func _testPredict32() throws
+    {
+        // Encode prompt.
+        let pythonLib = Python.import("python_lib")
+        let prompt = [Int](pythonLib.encode(
+            _prompt,
+            _modelPath
+        ))!
+        
+        // Load pre trained model.
+        let model = _buildModel(
+            modelPath: _modelPath,
+            sequence: prompt.count,
+            nbBlocks: 32,
+            hiddenDim: 4096,
+            headDim: 128,
+            mlpDim: 14336,
+            nbHeadsQuery: 32,
+            nbHeadsKV: 8,
+            vocabularySize: 32000
+        )
+        
+        // Initialize for inference.
+        model.initKernel(phase: .Inference)
+        model.updateKernel(batchSize: 1)
+        
+        // Forward.
+        let firstLayer: EmbeddingSeq = model.layers.first as! EmbeddingSeq
+        try! firstLayer.setDataGPU(
+            [prompt], batchSize: 1, sequence: prompt.count
+        )
+        try! model.forward()
+        
+        // Get result.
+        let out = (model.layers.last as! LayerSeq).outs.download()
+        
+        // Compute prediction for each token.
+        var predictions = [Int]()
+        for seq in 0..<out.count / 32000
+        {
+            let vector = [Float](out[32000*seq..<32000*(seq+1)])
+            let argmax = _argmax(array: vector)!
+            predictions.append(argmax)
+        }
+        
+        // Decode.
+        let prediction = String(pythonLib.decode(
+            predictions,
+            _modelPath
+        ))!
+        print(prediction)
     }
 }

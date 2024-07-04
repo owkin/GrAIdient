@@ -9,20 +9,11 @@
 using namespace metal;
 
 kernel void forwardReLUHalf(
-    constant uint * pNbElems,
+    constant uint & nbElems,
     device half * tmps,
     device half * outs,
     uint id [[ thread_position_in_grid ]])
 {
-    uint nbElems;
-    
-    if (pNbElems)
-    {
-        nbElems = pNbElems[0];
-    }
-    else
-        return ;
-    
     if (id >= nbElems)
     {
         return ;
@@ -39,21 +30,33 @@ kernel void forwardReLUHalf(
     }
 }
 
+kernel void forwardReLUInferenceHalf(
+    constant uint & nbElems,
+    device half * outs,
+    uint id [[ thread_position_in_grid ]])
+{
+    if (id >= nbElems)
+    {
+        return ;
+    }
+    
+    half tmp = outs[id];
+    if (tmp < 0)
+    {
+        outs[id] = 0.0;
+    }
+    else
+    {
+        outs[id] = tmp;
+    }
+}
+
 kernel void backwardReLUHalf(
     const device half * tmps,
-    constant uint * pNbElems,
+    constant uint & nbElems,
     device half * delta,
     uint id [[ thread_position_in_grid ]])
 {
-    uint nbElems;
-    
-    if (pNbElems)
-    {
-        nbElems = pNbElems[0];
-    }
-    else
-        return ;
-    
     if (id >= nbElems)
     {
         return ;
@@ -66,20 +69,12 @@ kernel void backwardReLUHalf(
 }
 
 kernel void forwardLeakyReLUHalf(
-    constant uint * pNbElems,
+    constant uint & nbElems,
     device half * tmps,
     device half * outs,
     uint id [[ thread_position_in_grid ]])
 {
-    uint nbElems;
     half Ɛ = 0.01;
-    
-    if (pNbElems)
-    {
-        nbElems = pNbElems[0];
-    }
-    else
-        return ;
     
     if (id >= nbElems)
     {
@@ -97,21 +92,36 @@ kernel void forwardLeakyReLUHalf(
     }
 }
 
+kernel void forwardLeakyReLUInferenceHalf(
+    constant uint & nbElems,
+    device half * outs,
+    uint id [[ thread_position_in_grid ]])
+{
+    half Ɛ = 0.01;
+    
+    if (id >= nbElems)
+    {
+        return ;
+    }
+    
+    half tmp = outs[id];
+    if (tmp < 0)
+    {
+        outs[id] = Ɛ * tmp;
+    }
+    else
+    {
+        outs[id] = tmp;
+    }
+}
+
 kernel void backwardLeakyReLUHalf(
     const device half * tmps,
-    constant uint * pNbElems,
+    constant uint & nbElems,
     device half * delta,
     uint id [[ thread_position_in_grid ]])
 {
-    uint nbElems;
     half Ɛ = 0.01;
-    
-    if (pNbElems)
-    {
-        nbElems = pNbElems[0];
-    }
-    else
-        return ;
     
     if (id >= nbElems)
     {
@@ -125,20 +135,12 @@ kernel void backwardLeakyReLUHalf(
 }
 
 kernel void forwardSoftReLUHalf(
-    constant uint * pNbElems,
+    constant uint & nbElems,
     device half * tmps,
     device half * outs,
     uint id [[ thread_position_in_grid ]])
 {
-    uint nbElems;
     half Ɛ = 0.01;
-    
-    if (pNbElems)
-    {
-        nbElems = pNbElems[0];
-    }
-    else
-        return ;
     
     if (id >= nbElems)
     {
@@ -149,21 +151,29 @@ kernel void forwardSoftReLUHalf(
     outs[id] = Ɛ * tmps[id] + (1 - Ɛ) * log(1 + exp(tmps[id]));
 }
 
+kernel void forwardSoftReLUInferenceHalf(
+    constant uint & nbElems,
+    device half * outs,
+    uint id [[ thread_position_in_grid ]])
+{
+    half Ɛ = 0.01;
+    
+    if (id >= nbElems)
+    {
+        return ;
+    }
+    
+    half tmp = outs[id];
+    outs[id] = Ɛ * tmp + (1 - Ɛ) * log(1 + exp(tmp));
+}
+
 kernel void backwardSoftReLUHalf(
     const device half * tmps,
-    constant uint * pNbElems,
+    constant uint & nbElems,
     device half * delta,
     uint id [[ thread_position_in_grid ]])
 {
-    uint nbElems;
     half Ɛ = 0.01;
-    
-    if (pNbElems)
-    {
-        nbElems = pNbElems[0];
-    }
-    else
-        return ;
     
     if (id >= nbElems)
     {
@@ -175,20 +185,11 @@ kernel void backwardSoftReLUHalf(
 }
 
 kernel void forwardSigmoidHalf(
-   constant uint * pNbElems,
+   constant uint & nbElems,
    device half * tmps,
    device half * outs,
    uint id [[ thread_position_in_grid ]])
 {
-    uint nbElems;
-    
-    if (pNbElems)
-    {
-        nbElems = pNbElems[0];
-    }
-    else
-        return ;
-    
     if (id >= nbElems)
     {
         return ;
@@ -205,21 +206,33 @@ kernel void forwardSigmoidHalf(
     }
 }
 
+kernel void forwardSigmoidInferenceHalf(
+   constant uint & nbElems,
+   device half * outs,
+   uint id [[ thread_position_in_grid ]])
+{
+    if (id >= nbElems)
+    {
+        return ;
+    }
+    
+    half tmp = outs[id];
+    if (tmp >= 0)
+    {
+        outs[id] = 1.0 / (1.0 + exp(-tmp));
+    }
+    else
+    {
+        outs[id] = exp(tmp) / (1.0 + exp(tmp));
+    }
+}
+
 kernel void backwardSigmoidHalf(
     const device half * tmps,
-    constant uint * pNbElems,
+    constant uint & nbElems,
     device half * delta,
     uint id [[ thread_position_in_grid ]])
 {
-    uint nbElems;
-    
-    if (pNbElems)
-    {
-        nbElems = pNbElems[0];
-    }
-    else
-        return ;
-    
     if (id >= nbElems)
     {
         return ;
@@ -239,21 +252,80 @@ kernel void backwardSigmoidHalf(
     delta[id] = delta[id] * derivative;
 }
 
-kernel void forwardGELUApproxHalf(
-   constant uint * pNbElems,
+kernel void forwardSiLUHalf(
+   constant uint & nbElems,
    device half * tmps,
    device half * outs,
    uint id [[ thread_position_in_grid ]])
 {
-    uint nbElems;
-    
-    if (pNbElems)
+    if (id >= nbElems)
     {
-        nbElems = pNbElems[0];
+        return ;
+    }
+    
+    tmps[id] = outs[id];
+    if (tmps[id] >= 0)
+    {
+        outs[id] = tmps[id] / (1.0 + exp(-tmps[id]));
     }
     else
+    {
+        outs[id] = tmps[id] * exp(tmps[id]) / (1.0 + exp(tmps[id]));
+    }
+}
+
+kernel void forwardSiLUInferenceHalf(
+   constant uint & nbElems,
+   device half * outs,
+   uint id [[ thread_position_in_grid ]])
+{
+    if (id >= nbElems)
+    {
         return ;
+    }
     
+    half tmp = outs[id];
+    if (tmp >= 0)
+    {
+        outs[id] = tmp / (1.0 + exp(-tmp));
+    }
+    else
+    {
+        outs[id] = tmp * exp(tmp) / (1.0 + exp(tmp));
+    }
+}
+
+kernel void backwardSiLUHalf(
+    const device half * tmps,
+    constant uint & nbElems,
+    device half * delta,
+    uint id [[ thread_position_in_grid ]])
+{
+    if (id >= nbElems)
+    {
+        return ;
+    }
+    
+    half tmp;
+    if (tmps[id] >= 0)
+    {
+        tmp = 1.0 / (1.0 + exp(-tmps[id]));
+    }
+    else
+    {
+        tmp = exp(tmps[id]) / (1.0 + exp(tmps[id]));
+    }
+    
+    half derivative = tmps[id] * tmp * (1 - tmp) + tmp;
+    delta[id] = delta[id] * derivative;
+}
+
+kernel void forwardGELUApproxHalf(
+   constant uint & nbElems,
+   device half * tmps,
+   device half * outs,
+   uint id [[ thread_position_in_grid ]])
+{
     if (id >= nbElems)
     {
         return ;
@@ -275,21 +347,37 @@ kernel void forwardGELUApproxHalf(
     outs[id] = 0.5 * x * (1 + tmp2);
 }
 
+kernel void forwardGELUApproxInferenceHalf(
+   constant uint & nbElems,
+   device half * outs,
+   uint id [[ thread_position_in_grid ]])
+{
+    if (id >= nbElems)
+    {
+        return ;
+    }
+    
+    half cst = sqrt(2.0 / 3.14159);
+    half x = outs[id];
+    half tmp1 = cst * (x + 0.044715 * pow(x, 3));
+    half tmp2;
+    if (tmp1 >= 0)
+    {
+        tmp2 = (1.0 - exp(-2.0 * tmp1)) / (1.0 + exp(-2.0 * tmp1));
+    }
+    else
+    {
+        tmp2 = (exp(2.0 * tmp1) - 1.0) / (exp(2.0 * tmp1) + 1.0);
+    }
+    outs[id] = 0.5 * x * (1 + tmp2);
+}
+
 kernel void backwardGELUApproxHalf(
     const device half * tmps,
-    constant uint * pNbElems,
+    constant uint & nbElems,
     device half * delta,
     uint id [[ thread_position_in_grid ]])
 {
-    uint nbElems;
-    
-    if (pNbElems)
-    {
-        nbElems = pNbElems[0];
-    }
-    else
-        return ;
-    
     if (id >= nbElems)
     {
         return ;
@@ -351,20 +439,11 @@ float erf(float a)
 }
 
 kernel void forwardGELUHalf(
-   constant uint * pNbElems,
+   constant uint & nbElems,
    device half * tmps,
    device half * outs,
    uint id [[ thread_position_in_grid ]])
 {
-    uint nbElems;
-    
-    if (pNbElems)
-    {
-        nbElems = pNbElems[0];
-    }
-    else
-        return ;
-    
     if (id >= nbElems)
     {
         return ;
@@ -375,21 +454,26 @@ kernel void forwardGELUHalf(
     outs[id] = 0.5 * x * (1 + erf(x / sqrt(2.0)));
 }
 
+kernel void forwardGELUInferenceHalf(
+   constant uint & nbElems,
+   device half * outs,
+   uint id [[ thread_position_in_grid ]])
+{
+    if (id >= nbElems)
+    {
+        return ;
+    }
+    
+    half x = outs[id];
+    outs[id] = 0.5 * x * (1 + erf(x / sqrt(2.0)));
+}
+
 kernel void backwardGELUHalf(
     const device half * tmps,
-    constant uint * pNbElems,
+    constant uint & nbElems,
     device half * delta,
     uint id [[ thread_position_in_grid ]])
 {
-    uint nbElems;
-    
-    if (pNbElems)
-    {
-        nbElems = pNbElems[0];
-    }
-    else
-        return ;
-    
     if (id >= nbElems)
     {
         return ;

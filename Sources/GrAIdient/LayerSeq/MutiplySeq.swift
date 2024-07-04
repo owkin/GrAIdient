@@ -1,53 +1,52 @@
 //
-// Multiply2D.swift
+// MutiplySeq.swift
 // GrAIdient
 //
-// Created by Jean-François Reboud on 03/12/2022.
+// Created by Jean-François Reboud on 01/07/2024.
 //
 
 ///
-/// Layer with a 2D shape neural structure.
+/// Layer with a sequential shape neural structure.
 ///
-/// This layer merges multiple 2D layers together, multipliying the neurons at the same localization
-/// in the input grids (pixelwise multiplication).
+/// This layer merges multiple sequential layers, multiplying the neurons together.
 ///
-public class Multiply2D: LayerMerge2D
+public class MultiplySeq: LayerMergeSeq
 {
     ///
     /// List of output buffers for CPU usage.
-    /// Shape ~ (batch, nbChannels, height, width).
+    /// Shape ~ (batch, sequence, nbNeurons).
     ///
     var _otherOuts1: [[Double]] = []
     ///
     /// List of output buffers for GPU usage.
-    /// Shape ~ (batch, nbChannels, height, width).
+    /// Shape ~ (batch, sequence, nbNeurons).
     ///
     var _otherOuts2: [FloatBuffer] = []
     
     ///
-    /// Create a layer with a 2D shape neural structure.
+    /// Create a layer with a sequential shape neural structure.
     ///
     /// - Parameters:
     ///     - layersPrev: List of previous layers that have been queued to the model.
     ///     - params: Contextual parameters linking to the model.
     ///
-    public init(layersPrev: [Layer2D], params: GrAI.Model.Params) throws
+    public init(layersPrev: [LayerSeq], params: GrAI.Model.Params) throws
     {
         let layer0 = layersPrev[0]
+        let sequence = layer0.sequence
+        let nbNeurons = layer0.nbNeurons
         for layerPrev in layersPrev
         {
-            if layerPrev.nbChannels != layer0.nbChannels ||
-               layerPrev.height != layer0.height ||
-               layerPrev.width != layer0.width
+            if layerPrev.nbNeurons != nbNeurons ||
+               layerPrev.sequence != sequence
             {
                 throw LayerError.Init(message: "Layer structure error.")
             }
         }
         
         super.init(layersPrev: layersPrev,
-                   nbChannels: layer0.nbChannels,
-                   height: layer0.height,
-                   width: layer0.width,
+                   sequence: sequence,
+                   nbNeurons: nbNeurons,
                    params: params)
     }
     
@@ -84,13 +83,13 @@ public class Multiply2D: LayerMerge2D
         let params = GrAI.Model.Params(context: context)
         params.context.curID = id
         
-        var layersPrev = [Layer2D]()
+        var layersPrev = [LayerSeq]()
         for idPrev in _idsPrev
         {
-            layersPrev.append(mapping[idPrev] as! Layer2D)
+            layersPrev.append(mapping[idPrev] as! LayerSeq)
         }
         
-        let layer = try! Multiply2D(layersPrev: layersPrev, params: params)
+        let layer = try! MultiplySeq(layersPrev: layersPrev, params: params)
         return layer
     }
     
@@ -132,7 +131,7 @@ public class Multiply2D: LayerMerge2D
             {
                 _otherOuts1.append([Double](
                     repeating: 0.0,
-                    count: batchSize * nbChannels * height * width
+                    count: batchSize * sequence * nbNeurons
                 ))
             }
         }}
@@ -153,7 +152,7 @@ public class Multiply2D: LayerMerge2D
             for _ in 0..<_layersPrev.count
             {
                 let buffer = FloatBuffer(
-                    nbElems: batchSize * nbChannels * height * width,
+                    nbElems: batchSize * sequence * nbNeurons,
                     deviceID: deviceID
                 )
                 _otherOuts2.append(buffer)
@@ -178,71 +177,57 @@ public class Multiply2D: LayerMerge2D
             nbGC += nbElemsTmp
         }
         
-        for depth in 0..<nbChannels
+        for seq in 0..<sequence {
+        for depth in 0..<nbNeurons
         {
-            for i in 0..<height {
-            for j in 0..<width
-            {
-                neurons[depth].get(i, j)!.initGC(
-                    batchSize: batchSize,
-                    nbGC: nbGC
-                )
-            }}
-        }
+            neurons.get(seq, depth)!.initGC(batchSize: batchSize, nbGC: nbGC)
+        }}
         
         for batch in 0..<batchSize {
+        for seq in 0..<sequence {
         for elem in 0..<nbSameElems {
-        for depth in 0..<nbChannels
+        for depth in 0..<nbNeurons
         {
-            for i in 0..<height {
-            for j in 0..<width
+            var value = 1.0
+            for num in 0..<_layersPrev.count
             {
-                var mult = 1.0
-                for num in 0..<_layersPrev.count
-                {
-                    let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
-                    mult *= neuronsPrev[depth].get(i, j)!.gc[batch][elem].out
-                }
-                
-                neurons[depth].get(i, j)!.gc[batch][elem].out = mult
-            }}
-        }}}
+                let neuronsPrev = (_layersPrev[num] as! LayerSeq).neurons!
+                value *= neuronsPrev.get(seq, depth)!.gc[batch][elem].out
+            }
+            neurons.get(seq, depth)!.gc[batch][elem].out = value
+        }}}}
     
         for batch in 0..<batchSize {
+        for seq in 0..<sequence {
         var offset = nbSameElems
         var nbLastElems = [Int](repeating: nbSameElems,
                                 count: _layersPrev.count)
         for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
         for elem in 0..<nbElemsTmp {
-        for depth in 0..<nbChannels
+        for depth in 0..<nbNeurons
         {
-            for i in 0..<height {
-            for j in 0..<width
+            var value = 1.0
+            for num in 0..<_layersPrev.count
             {
-                var mult = 1.0
-                for num in 0..<_layersPrev.count
-                {
-                    let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
-                    
-                    if num == index
-                    {
-                        mult *= neuronsPrev[depth].get(i, j)!
-                            .gc[batch][nbLastElems[index]+elem].out
-                    }
-                    else
-                    {
-                        mult *= neuronsPrev[depth].get(i, j)!.v[batch].out
-                    }
-                }
+                let neuronsPrev = (_layersPrev[num] as! LayerSeq).neurons!
                 
-                neurons[depth].get(i, j)!
-                    .gc[batch][offset+elem].out = mult
-            }}
-        }}
+                if num == index
+                {
+                    value *= neuronsPrev.get(seq, depth)!
+                        .gc[batch][nbLastElems[index]+elem].out
+                }
+                else
+                {
+                    value *= neuronsPrev.get(seq, depth)!.v[batch].out
+                }
+            }
             
+            neurons.get(seq, depth)!.gc[batch][offset+elem].out = value
+        }}
+        
         offset += nbElemsTmp
         nbLastElems[index] += nbElemsTmp
-        }}
+        }}}
     }
     
     ///
@@ -257,7 +242,7 @@ public class Multiply2D: LayerMerge2D
         var buffersPrev = [[Float]]()
         for num in 0..<_layersPrev.count
         {
-            buffersPrev.append((_layersPrev[num] as! Layer2D).outs.download())
+            buffersPrev.append((_layersPrev[num] as! LayerSeq).outs.download())
         }
         
         let (nbSameElems, layersIndex, nbElems) = getMergedGraph()
@@ -268,75 +253,61 @@ public class Multiply2D: LayerMerge2D
             nbGC += nbElemsTmp
         }
         
-        for depth in 0..<nbChannels
+        for seq in 0..<sequence {
+        for depth in 0..<nbNeurons
         {
-            for i in 0..<height {
-            for j in 0..<width
-            {
-                neurons[depth].get(i, j)!.initGC(
-                    batchSize: batchSize,
-                    nbGC: nbGC
-                )
-            }}
-        }
+            neurons.get(seq, depth)!.initGC(batchSize: batchSize, nbGC: nbGC)
+        }}
         
         for batch in 0..<batchSize {
+        for seq in 0..<sequence {
         for elem in 0..<nbSameElems {
-        for depth in 0..<nbChannels
+        for depth in 0..<nbNeurons
         {
-            for i in 0..<height {
-            for j in 0..<width
+            var value = 1.0
+            for num in 0..<_layersPrev.count
             {
-                var mult = 1.0
-                for num in 0..<_layersPrev.count
-                {
-                    let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
-                    mult *= neuronsPrev[depth].get(i, j)!.gc[batch][elem].out
-                }
-                
-                neurons[depth].get(i, j)!.gc[batch][elem].out = mult
-            }}
-        }}}
+                let neuronsPrev = (_layersPrev[num] as! LayerSeq).neurons!
+                value *= neuronsPrev.get(seq, depth)!.gc[batch][elem].out
+            }
+            neurons.get(seq, depth)!.gc[batch][elem].out = value
+        }}}}
         
         for batch in 0..<batchSize {
+        for seq in 0..<sequence {
         var offset = nbSameElems
         var nbLastElems = [Int](repeating: nbSameElems,
                                 count: _layersPrev.count)
         for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
         for elem in 0..<nbElemsTmp {
-        for depth in 0..<nbChannels
+        for depth in 0..<nbNeurons
         {
-            for i in 0..<height {
-            for j in 0..<width
+            var value = 1.0
+            for num in 0..<_layersPrev.count
             {
-                var mult = 1.0
-                for num in 0..<_layersPrev.count
-                {
-                    let outsPrevPtr = buffersPrev[num]
-                    let neuronsPrev =
-                        (_layersPrev[num] as! Layer2D).neurons
-                    
-                    if num == index
-                    {
-                        mult *= neuronsPrev[depth].get(i, j)!
-                            .gc[batch][nbLastElems[index]+elem].out
-                    }
-                    else
-                    {
-                        let offsetStart = (depth + nbChannels * batch) * height
-                        let offsetTmp = j + (offsetStart + i) * width
-                        
-                        mult *= Double(outsPrevPtr[offsetTmp])
-                    }
-                }
+                let outsPrevPtr = buffersPrev[num]
+                let neuronsPrev =
+                    (_layersPrev[num] as! LayerSeq).neurons!
                 
-                neurons[depth].get(i, j)!.gc[batch][offset+elem].out = mult
-            }}
-        }}
+                if num == index
+                {
+                    value *= neuronsPrev.get(seq, depth)!
+                        .gc[batch][nbLastElems[index]+elem].out
+                }
+                else
+                {
+                    let offsetTmp = depth + nbNeurons * seq +
+                        sequence * nbNeurons * batch
+                    value *= Double(outsPrevPtr[offsetTmp])
+                }
+            }
             
+            neurons.get(seq, depth)!.gc[batch][offset+elem].out = value
+        }}
+        
         offset += nbElemsTmp
         nbLastElems[index] += nbElemsTmp
-        }}
+        }}}
     }
     
     ///
@@ -349,40 +320,34 @@ public class Multiply2D: LayerMerge2D
         try checkStateCPU(batchSize: batchSize)
         
         for elem in 0..<batchSize {
-        for depth in 0..<nbChannels
+        for seq in 0..<sequence {
+        for depth in 0..<nbNeurons
         {
-            let offsetStart = (depth + nbChannels * elem) * height
+            let offset = depth + nbNeurons * seq +
+                sequence * nbNeurons * elem
             
-            for i in 0..<height {
-            for j in 0..<width
+            var value = 1.0
+            for num in 0..<_layersPrev.count
             {
-                let offset = j + (offsetStart + i) * width
-                
-                var mult = 1.0
-                for num in 0..<_layersPrev.count
+                let neuronsPrev = (_layersPrev[num] as! LayerSeq).neurons!
+                value *= neuronsPrev.get(seq, depth)!.v[elem].out
+            }
+            neurons.get(seq, depth)!.v[elem].out = value
+            
+            if phase != nil &&
+               (phase == .Training || phase == .InferenceBackward) {
+            for num1 in 0..<_layersPrev.count
+            {
+                value = 1.0
+                for num2 in 0..<_layersPrev.count {
+                if num2 != num1
                 {
-                    let neuronsPrev =
-                        (_layersPrev[num] as! Layer2D).neurons
-                    mult *= neuronsPrev[depth].get(i, j)!.v[elem].out
-                }
-                neurons[depth].get(i, j)!.v[elem].out = mult
-                
-                if phase != nil &&
-                   (phase == .Training || phase == .InferenceBackward) {
-                for num1 in 0..<_layersPrev.count
-                {
-                    mult = 1.0
-                    for num2 in 0..<_layersPrev.count {
-                        if num2 != num1
-                        {
-                            let neuronsPrev =
-                            (_layersPrev[num2] as! Layer2D).neurons
-                            mult *= neuronsPrev[depth].get(i, j)!.v[elem].out
-                        }}
-                    _otherOuts1[num1][offset] = mult
+                    let neuronsPrev = (_layersPrev[num2] as! LayerSeq).neurons!
+                    value *= neuronsPrev.get(seq, depth)!.v[elem].out
                 }}
+                _otherOuts1[num1][offset] = value
             }}
-        }}
+        }}}
     }
     
     ///
@@ -397,7 +362,7 @@ public class Multiply2D: LayerMerge2D
         var first1 = true
         for num1 in 0..<_layersPrev.count
         {
-            let nbElems = (_layersPrev[num1] as! Layer2D).outs.nbElems
+            let nbElems = (_layersPrev[num1] as! LayerSeq).outs.nbElems
             let pNbElems: [UInt32] = [UInt32(nbElems)]
             
             var command: MetalCommand
@@ -416,7 +381,7 @@ public class Multiply2D: LayerMerge2D
             }
             
             command.setBuffer(
-                (_layersPrev[num1] as! Layer2D).outs.metal, atIndex: 0
+                (_layersPrev[num1] as! LayerSeq).outs.metal, atIndex: 0
             )
             command.setBytes(pNbElems, atIndex: 1)
             command.setBuffer(outs.metal, atIndex: 2)
@@ -445,7 +410,7 @@ public class Multiply2D: LayerMerge2D
                 }
                 
                 command.setBuffer(
-                    (_layersPrev[num2] as! Layer2D).outs.metal, atIndex: 0
+                    (_layersPrev[num2] as! LayerSeq).outs.metal, atIndex: 0
                 )
                 command.setBytes(pNbElems, atIndex: 1)
                 command.setBuffer(_otherOuts2[num1].metal, atIndex: 2)
@@ -471,34 +436,28 @@ public class Multiply2D: LayerMerge2D
                 continue
             }
             
-            let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
+            let neuronsPrev = (_layersPrev[num] as! LayerSeq).neurons!
             let buffer = _otherOuts1[num]
             
             for elem in 0..<batchSize {
-            for depth in 0..<nbChannels
+            for seq in 0..<sequence {
+            for depth in 0..<nbNeurons
             {
-                let offsetStart = (depth + nbChannels * elem) * height
+                let offset = depth + nbNeurons * seq +
+                    sequence * nbNeurons * elem
                 
-                for i in 0..<height {
-                for j in 0..<width
+                let tmp = Double(buffer[offset])
+                let deltaCur = neurons.get(seq, depth)!.v[elem].delta
+                
+                if _layersPrev[num].dirty
                 {
-                    let offset = j + (offsetStart + i) * width
-                    
-                    let tmp = Double(buffer[offset])
-                    let deltaCur = neurons[depth].get(i, j)!.v[elem].delta
-                    
-                    if _layersPrev[num].dirty
-                    {
-                        neuronsPrev[depth].get(i, j)!.v[elem].delta =
-                            deltaCur * tmp
-                    }
-                    else
-                    {
-                        neuronsPrev[depth].get(i, j)!.v[elem].delta +=
-                            deltaCur * tmp
-                    }
-                }}
-            }}
+                    neuronsPrev.get(seq, depth)!.v[elem].delta = deltaCur * tmp
+                }
+                else
+                {
+                    neuronsPrev.get(seq, depth)!.v[elem].delta += deltaCur * tmp
+                }
+            }}}
         }
         propagateDirty()
     }
@@ -521,7 +480,7 @@ public class Multiply2D: LayerMerge2D
             {
                 continue
             }
-            let layerPrev = _layersPrev[num] as! Layer2D
+            let layerPrev = _layersPrev[num] as! LayerSeq
             
             try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
             

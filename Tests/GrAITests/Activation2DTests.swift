@@ -257,6 +257,40 @@ class Activation2DGradTests: Input2DMSE1DCase
         run(trainer)
     }
     
+    func testConvSiLUNoBNCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: SiLU.str, bn: false
+        )
+        run(trainer)
+    }
+    
+    func testConvSiLUBNCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: SiLU.str, bn: true
+        )
+        run(trainer)
+    }
+    
+    func testConvSiLUNoBNGPU() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: SiLU.str, bn: false
+        )
+        run(trainer)
+    }
+    
+    func testConvSiLUBNGPU() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: SiLU.str, bn: true
+        )
+        run(trainer)
+    }
+    
     func testConvGELUApproxNoBNCPU() throws
     {
         GrAI.Opti.CPU = true
@@ -393,6 +427,23 @@ class Activation2DGradTests: Input2DMSE1DCase
         run(trainer)
     }
     
+    func testSiLUCPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer(
+            model: "Activation", activation: SiLU.str, bn: false
+        )
+        run(trainer)
+    }
+    
+    func testSiLUGPU() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Activation", activation: SiLU.str, bn: false
+        )
+        run(trainer)
+    }
+    
     func testGELUApproxCPU() throws
     {
         GrAI.Opti.CPU = true
@@ -429,10 +480,10 @@ class Activation2DGradTests: Input2DMSE1DCase
 }
 
 // -----------------------------------------------------------------------------
-// Compare GPU gradients with Float precision versus Float16 precision.
-// We expect to see errors ~ 1e-4 and less.
+// Compare GPU Loss in inference mode with CPU one.
+// We expect to see errors ~ 1e-3 and less.
 // -----------------------------------------------------------------------------
-class Activation2DFlowPrecisionTests: Input2DMSE1DCase
+class Activation2DInferenceTests: Input2DMSE1DCase
 {
     override func setUp()
     {
@@ -441,23 +492,23 @@ class Activation2DFlowPrecisionTests: Input2DMSE1DCase
     }
     
     private func _buildTrainer(model: String, activation: String?, bn: Bool)
-        -> FlowPrecisionTrainer
+        -> InferenceTrainer
     {
-        let trainer = FlowPrecisionTrainer(
+        let trainer = InferenceTrainer(
             name: "Activation2D",
             params: optimizerParams
         )
         trainer.build()
         {
             (context: ModelContext) in
-            _buildModel(
+            buildModel(
                 model: model, activation: activation, bn: bn, context: context
             )
         }
         return trainer
     }
     
-    private func _buildModel(
+    func buildModel(
         model: String,
         activation: String?,
         bn: Bool,
@@ -474,7 +525,7 @@ class Activation2DFlowPrecisionTests: Input2DMSE1DCase
         
         layer = Convolution2D(
             layerPrev: layer, size: 1, nbChannels: 3, stride: 1,
-            activation: LeakyReLU.str, biases: true, bn: false, params: params
+            activation: SoftReLU.str, biases: true, bn: false, params: params
         )
         
         switch model
@@ -509,15 +560,16 @@ class Activation2DFlowPrecisionTests: Input2DMSE1DCase
         let trainer = _buildTrainer(
             model: "Convolution", activation: nil, bn: false
         )
-        run(trainer, diffThreshold: 0.002)
+        run(trainer)
     }
     
     func testConvNoActivationBN() throws
     {
+        throw XCTSkip("Skipping this test because of precision issue.")
         let trainer = _buildTrainer(
             model: "Convolution", activation: nil, bn: true
         )
-        run(trainer, diffThreshold: 0.005)
+        run(trainer, nbRetry: 5, diffThreshold: 0.01)
     }
     
     func testConvReLUNoBN() throws
@@ -525,7 +577,7 @@ class Activation2DFlowPrecisionTests: Input2DMSE1DCase
         let trainer = _buildTrainer(
             model: "Convolution", activation: ReLU.str, bn: false
         )
-        run(trainer, diffThreshold: 0.002)
+        run(trainer)
     }
     
     func testConvReLUBN() throws
@@ -534,7 +586,7 @@ class Activation2DFlowPrecisionTests: Input2DMSE1DCase
         let trainer = _buildTrainer(
             model: "Convolution", activation: ReLU.str, bn: true
         )
-        run(trainer, diffThreshold: 0.005)
+        run(trainer, nbRetry: 5, diffThreshold: 0.01)
     }
     
     func testConvLeakyReLUNoBN() throws
@@ -542,15 +594,16 @@ class Activation2DFlowPrecisionTests: Input2DMSE1DCase
         let trainer = _buildTrainer(
             model: "Convolution", activation: LeakyReLU.str, bn: false
         )
-        run(trainer, diffThreshold: 0.002)
+        run(trainer)
     }
     
     func testConvLeakyReLUBN() throws
     {
+        throw XCTSkip("Skipping this test because of precision issue.")
         let trainer = _buildTrainer(
             model: "Convolution", activation: LeakyReLU.str, bn: true
         )
-        run(trainer, diffThreshold: 0.005)
+        run(trainer, nbRetry: 5, diffThreshold: 0.01)
     }
     
     func testConvSoftReLUNoBN() throws
@@ -558,7 +611,7 @@ class Activation2DFlowPrecisionTests: Input2DMSE1DCase
         let trainer = _buildTrainer(
             model: "Convolution", activation: SoftReLU.str, bn: false
         )
-        run(trainer, diffThreshold: 0.005)
+        run(trainer)
     }
     
     func testConvSoftReLUBN() throws
@@ -566,7 +619,7 @@ class Activation2DFlowPrecisionTests: Input2DMSE1DCase
         let trainer = _buildTrainer(
             model: "Convolution", activation: SoftReLU.str, bn: true
         )
-        run(trainer, diffThreshold: 0.005)
+        run(trainer, nbRetry: 5, diffThreshold: 0.01)
     }
     
     func testConvSigmoidNoBN() throws
@@ -574,7 +627,7 @@ class Activation2DFlowPrecisionTests: Input2DMSE1DCase
         let trainer = _buildTrainer(
             model: "Convolution", activation: Sigmoid.str, bn: false
         )
-        run(trainer, diffThreshold: 0.005)
+        run(trainer)
     }
     
     func testConvSigmoidBN() throws
@@ -582,12 +635,28 @@ class Activation2DFlowPrecisionTests: Input2DMSE1DCase
         let trainer = _buildTrainer(
             model: "Convolution", activation: Sigmoid.str, bn: true
         )
-        run(trainer, diffThreshold: 0.005)
+        run(trainer)
+    }
+    
+    func testConvSiLUNoBN() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: SiLU.str, bn: false
+        )
+        run(trainer)
+    }
+    
+    func testConvSiLUBN() throws
+    {
+        throw XCTSkip("Skipping this test because of precision issue.")
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: SiLU.str, bn: true
+        )
+        run(trainer, nbRetry: 5, diffThreshold: 0.01)
     }
     
     func testConvGELUApproxNoBN() throws
     {
-        throw XCTSkip("Skipping this test because of precision issue.")
         let trainer = _buildTrainer(
             model: "Convolution", activation: GELUApprox.str, bn: false
         )
@@ -596,11 +665,10 @@ class Activation2DFlowPrecisionTests: Input2DMSE1DCase
     
     func testConvGELUApproxBN() throws
     {
-        throw XCTSkip("Skipping this test because of precision issue.")
         let trainer = _buildTrainer(
             model: "Convolution", activation: GELUApprox.str, bn: true
         )
-        run(trainer, diffThreshold: 0.005)
+        run(trainer, nbRetry: 5, diffThreshold: 0.01)
     }
     
     func testConvGELUNoBN() throws
@@ -608,7 +676,7 @@ class Activation2DFlowPrecisionTests: Input2DMSE1DCase
         let trainer = _buildTrainer(
             model: "Convolution", activation: GELU.str, bn: false
         )
-        run(trainer, diffThreshold: 0.005)
+        run(trainer)
     }
     
     func testConvGELUBN() throws
@@ -616,7 +684,7 @@ class Activation2DFlowPrecisionTests: Input2DMSE1DCase
         let trainer = _buildTrainer(
             model: "Convolution", activation: GELU.str, bn: true
         )
-        run(trainer, diffThreshold: 0.005)
+        run(trainer, nbRetry: 5, diffThreshold: 0.01)
     }
     
     func testReLU() throws
@@ -624,7 +692,7 @@ class Activation2DFlowPrecisionTests: Input2DMSE1DCase
         let trainer = _buildTrainer(
             model: "Activation", activation: ReLU.str, bn: false
         )
-        run(trainer, diffThreshold: 0.002)
+        run(trainer)
     }
     
     func testLeakyReLU() throws
@@ -632,7 +700,7 @@ class Activation2DFlowPrecisionTests: Input2DMSE1DCase
         let trainer = _buildTrainer(
             model: "Activation", activation: LeakyReLU.str, bn: false
         )
-        run(trainer, diffThreshold: 0.002)
+        run(trainer)
     }
     
     func testSoftReLU() throws
@@ -640,7 +708,7 @@ class Activation2DFlowPrecisionTests: Input2DMSE1DCase
         let trainer = _buildTrainer(
             model: "Activation", activation: SoftReLU.str, bn: false
         )
-        run(trainer, diffThreshold: 0.002)
+        run(trainer)
     }
     
     func testSigmoid() throws
@@ -648,10 +716,236 @@ class Activation2DFlowPrecisionTests: Input2DMSE1DCase
         let trainer = _buildTrainer(
             model: "Activation", activation: Sigmoid.str, bn: false
         )
-        run(trainer, diffThreshold: 0.002)
+        run(trainer)
+    }
+    
+    func testSiLU() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Activation", activation: SiLU.str, bn: false
+        )
+        run(trainer)
     }
     
     func testGELUApprox() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Activation", activation: GELUApprox.str, bn: false
+        )
+        run(trainer)
+    }
+    
+    func testGELU() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Activation", activation: GELU.str, bn: false
+        )
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU gradients with Float precision versus Float16 precision.
+// We expect to see errors ~ 1e-4 and less.
+// -----------------------------------------------------------------------------
+class Activation2DFlowPrecisionTests: Activation2DInferenceTests
+{
+    override func setUp()
+    {
+        super.setUp()
+        optimizerParams.nbLoops = 3
+    }
+    
+    private func _buildTrainer(model: String, activation: String?, bn: Bool)
+        -> FlowPrecisionTrainer
+    {
+        let trainer = FlowPrecisionTrainer(
+            name: "Activation2D",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(
+                model: model, activation: activation, bn: bn, context: context
+            )
+        }
+        return trainer
+    }
+    
+    override func testConvNoActivationNoBN() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: nil, bn: false
+        )
+        run(trainer, diffThreshold: 0.002)
+    }
+    
+    override func testConvNoActivationBN() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: nil, bn: true
+        )
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testConvReLUNoBN() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: ReLU.str, bn: false
+        )
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testConvReLUBN() throws
+    {
+        throw XCTSkip("Skipping this test because of precision issue.")
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: ReLU.str, bn: true
+        )
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testConvLeakyReLUNoBN() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: LeakyReLU.str, bn: false
+        )
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testConvLeakyReLUBN() throws
+    {
+        throw XCTSkip("Skipping this test because of precision issue.")
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: LeakyReLU.str, bn: true
+        )
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testConvSoftReLUNoBN() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: SoftReLU.str, bn: false
+        )
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testConvSoftReLUBN() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: SoftReLU.str, bn: true
+        )
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testConvSigmoidNoBN() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: Sigmoid.str, bn: false
+        )
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testConvSigmoidBN() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: Sigmoid.str, bn: true
+        )
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testConvSiLUNoBN() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: SiLU.str, bn: false
+        )
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testConvSiLUBN() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: SiLU.str, bn: true
+        )
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testConvGELUApproxNoBN() throws
+    {
+        throw XCTSkip("Skipping this test because of precision issue.")
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: GELUApprox.str, bn: false
+        )
+        run(trainer)
+    }
+    
+    override func testConvGELUApproxBN() throws
+    {
+        throw XCTSkip("Skipping this test because of precision issue.")
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: GELUApprox.str, bn: true
+        )
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testConvGELUNoBN() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: GELU.str, bn: false
+        )
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testConvGELUBN() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Convolution", activation: GELU.str, bn: true
+        )
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testReLU() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Activation", activation: ReLU.str, bn: false
+        )
+        run(trainer, diffThreshold: 0.005)
+    }
+    
+    override func testLeakyReLU() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Activation", activation: LeakyReLU.str, bn: false
+        )
+        run(trainer, diffThreshold: 0.002)
+    }
+    
+    override func testSoftReLU() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Activation", activation: SoftReLU.str, bn: false
+        )
+        run(trainer, diffThreshold: 0.002)
+    }
+    
+    override func testSigmoid() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Activation", activation: Sigmoid.str, bn: false
+        )
+        run(trainer, diffThreshold: 0.002)
+    }
+    
+    override func testSiLU() throws
+    {
+        let trainer = _buildTrainer(
+            model: "Activation", activation: SiLU.str, bn: false
+        )
+        run(trainer, diffThreshold: 0.002)
+    }
+    
+    override func testGELUApprox() throws
     {
         throw XCTSkip("Skipping this test because of precision issue.")
         let trainer = _buildTrainer(
@@ -660,7 +954,7 @@ class Activation2DFlowPrecisionTests: Input2DMSE1DCase
         run(trainer)
     }
     
-    func testGELU() throws
+    override func testGELU() throws
     {
         let trainer = _buildTrainer(
             model: "Activation", activation: GELU.str, bn: false

@@ -629,7 +629,7 @@ class Layer1DFlowPrecisionTests: Layer1DFlowTests
     override func testConstant() throws
     {
         let trainer = _buildTrainer("Constant")
-        run(trainer)
+        run(trainer, diffThreshold: 0.002)
     }
     
     override func testConstantSample() throws

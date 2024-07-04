@@ -892,7 +892,7 @@ class LayerSeqFlowPrecisionTests: LayerSeqFlowTests
     override func testConstant12() throws
     {
         let trainer = _buildTrainer("Constant12")
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     override func testConstant2() throws

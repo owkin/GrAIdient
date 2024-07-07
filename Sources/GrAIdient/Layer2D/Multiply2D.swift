@@ -85,7 +85,7 @@ public class Multiply2D: LayerMerge2D
         params.context.curID = id
         
         var layersPrev = [Layer2D]()
-        for idPrev in _idsPrev
+        for idPrev in idsPrev
         {
             layersPrev.append(mapping[idPrev] as! Layer2D)
         }
@@ -128,7 +128,7 @@ public class Multiply2D: LayerMerge2D
         if phase != nil && (phase == .Training || phase == .InferenceBackward) {
         if _otherOuts1.count == 0
         {
-            for _ in 0..<_layersPrev.count
+            for _ in 0..<layersPrev.count
             {
                 _otherOuts1.append([Double](
                     repeating: 0.0,
@@ -150,7 +150,7 @@ public class Multiply2D: LayerMerge2D
         if phase != nil && (phase == .Training || phase == .InferenceBackward) {
         if _otherOuts2.count == 0
         {
-            for _ in 0..<_layersPrev.count
+            for _ in 0..<layersPrev.count
             {
                 let buffer = FloatBuffer(
                     nbElems: batchSize * nbChannels * height * width,
@@ -198,9 +198,9 @@ public class Multiply2D: LayerMerge2D
             for j in 0..<width
             {
                 var mult = 1.0
-                for num in 0..<_layersPrev.count
+                for num in 0..<layersPrev.count
                 {
-                    let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
+                    let neuronsPrev = (layersPrev[num] as! Layer2D).neurons
                     mult *= neuronsPrev[depth].get(i, j)!.gc[batch][elem].out
                 }
                 
@@ -211,7 +211,7 @@ public class Multiply2D: LayerMerge2D
         for batch in 0..<batchSize {
         var offset = nbSameElems
         var nbLastElems = [Int](repeating: nbSameElems,
-                                count: _layersPrev.count)
+                                count: layersPrev.count)
         for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
         for elem in 0..<nbElemsTmp {
         for depth in 0..<nbChannels
@@ -220,9 +220,9 @@ public class Multiply2D: LayerMerge2D
             for j in 0..<width
             {
                 var mult = 1.0
-                for num in 0..<_layersPrev.count
+                for num in 0..<layersPrev.count
                 {
-                    let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
+                    let neuronsPrev = (layersPrev[num] as! Layer2D).neurons
                     
                     if num == index
                     {
@@ -255,9 +255,9 @@ public class Multiply2D: LayerMerge2D
         try checkStateCPU(batchSize: batchSize)
         
         var buffersPrev = [[Float]]()
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            buffersPrev.append((_layersPrev[num] as! Layer2D).outs.download())
+            buffersPrev.append((layersPrev[num] as! Layer2D).outs.download())
         }
         
         let (nbSameElems, layersIndex, nbElems) = getMergedGraph()
@@ -288,9 +288,9 @@ public class Multiply2D: LayerMerge2D
             for j in 0..<width
             {
                 var mult = 1.0
-                for num in 0..<_layersPrev.count
+                for num in 0..<layersPrev.count
                 {
-                    let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
+                    let neuronsPrev = (layersPrev[num] as! Layer2D).neurons
                     mult *= neuronsPrev[depth].get(i, j)!.gc[batch][elem].out
                 }
                 
@@ -301,7 +301,7 @@ public class Multiply2D: LayerMerge2D
         for batch in 0..<batchSize {
         var offset = nbSameElems
         var nbLastElems = [Int](repeating: nbSameElems,
-                                count: _layersPrev.count)
+                                count: layersPrev.count)
         for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
         for elem in 0..<nbElemsTmp {
         for depth in 0..<nbChannels
@@ -310,11 +310,11 @@ public class Multiply2D: LayerMerge2D
             for j in 0..<width
             {
                 var mult = 1.0
-                for num in 0..<_layersPrev.count
+                for num in 0..<layersPrev.count
                 {
                     let outsPrevPtr = buffersPrev[num]
                     let neuronsPrev =
-                        (_layersPrev[num] as! Layer2D).neurons
+                        (layersPrev[num] as! Layer2D).neurons
                     
                     if num == index
                     {
@@ -359,24 +359,24 @@ public class Multiply2D: LayerMerge2D
                 let offset = j + (offsetStart + i) * width
                 
                 var mult = 1.0
-                for num in 0..<_layersPrev.count
+                for num in 0..<layersPrev.count
                 {
                     let neuronsPrev =
-                        (_layersPrev[num] as! Layer2D).neurons
+                        (layersPrev[num] as! Layer2D).neurons
                     mult *= neuronsPrev[depth].get(i, j)!.v[elem].out
                 }
                 neurons[depth].get(i, j)!.v[elem].out = mult
                 
                 if phase != nil &&
                    (phase == .Training || phase == .InferenceBackward) {
-                for num1 in 0..<_layersPrev.count
+                for num1 in 0..<layersPrev.count
                 {
                     mult = 1.0
-                    for num2 in 0..<_layersPrev.count {
+                    for num2 in 0..<layersPrev.count {
                         if num2 != num1
                         {
                             let neuronsPrev =
-                            (_layersPrev[num2] as! Layer2D).neurons
+                            (layersPrev[num2] as! Layer2D).neurons
                             mult *= neuronsPrev[depth].get(i, j)!.v[elem].out
                         }}
                     _otherOuts1[num1][offset] = mult
@@ -395,9 +395,9 @@ public class Multiply2D: LayerMerge2D
         try checkStateForwardGPU(batchSize: batchSize)
         
         var first1 = true
-        for num1 in 0..<_layersPrev.count
+        for num1 in 0..<layersPrev.count
         {
-            let nbElems = (_layersPrev[num1] as! Layer2D).outs.nbElems
+            let nbElems = (layersPrev[num1] as! Layer2D).outs.nbElems
             let pNbElems: [UInt32] = [UInt32(nbElems)]
             
             var command: MetalCommand
@@ -416,7 +416,7 @@ public class Multiply2D: LayerMerge2D
             }
             
             command.setBuffer(
-                (_layersPrev[num1] as! Layer2D).outs.metal, atIndex: 0
+                (layersPrev[num1] as! Layer2D).outs.metal, atIndex: 0
             )
             command.setBytes(pNbElems, atIndex: 1)
             command.setBuffer(outs.metal, atIndex: 2)
@@ -427,7 +427,7 @@ public class Multiply2D: LayerMerge2D
             if phase != nil &&
                (phase == .Training || phase == .InferenceBackward) {
             var first2 = true
-            for num2 in 0..<_layersPrev.count {
+            for num2 in 0..<layersPrev.count {
             if num2 != num1
             {
                 if first2
@@ -445,7 +445,7 @@ public class Multiply2D: LayerMerge2D
                 }
                 
                 command.setBuffer(
-                    (_layersPrev[num2] as! Layer2D).outs.metal, atIndex: 0
+                    (layersPrev[num2] as! Layer2D).outs.metal, atIndex: 0
                 )
                 command.setBytes(pNbElems, atIndex: 1)
                 command.setBuffer(_otherOuts2[num1].metal, atIndex: 2)
@@ -464,14 +464,14 @@ public class Multiply2D: LayerMerge2D
             return
         }
         
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            if !_layersPrev[num].computeDelta
+            if !layersPrev[num].computeDelta
             {
                 continue
             }
             
-            let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
+            let neuronsPrev = (layersPrev[num] as! Layer2D).neurons
             let buffer = _otherOuts1[num]
             
             for elem in 0..<batchSize {
@@ -487,7 +487,7 @@ public class Multiply2D: LayerMerge2D
                     let tmp = Double(buffer[offset])
                     let deltaCur = neurons[depth].get(i, j)!.v[elem].delta
                     
-                    if _layersPrev[num].dirty
+                    if layersPrev[num].dirty
                     {
                         neuronsPrev[depth].get(i, j)!.v[elem].delta =
                             deltaCur * tmp
@@ -515,13 +515,13 @@ public class Multiply2D: LayerMerge2D
             return
         }
         
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            if !_layersPrev[num].computeDelta
+            if !layersPrev[num].computeDelta
             {
                 continue
             }
-            let layerPrev = _layersPrev[num] as! Layer2D
+            let layerPrev = layersPrev[num] as! Layer2D
             
             try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
             

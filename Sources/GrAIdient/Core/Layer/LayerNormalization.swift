@@ -1658,8 +1658,8 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
         _computeμ(layer)
         _computeσ2(layer)
         
-        let layerFirst = layer._layersPrev.first as! Layer2D
-        let layerLast = layer._layersPrev.last as! Layer1D
+        let layerFirst = layer.layersPrev.first as! Layer2D
+        let layerLast = layer.layersPrev.last as! Layer1D
         let batchSize = layer.batchSize
         let width = layer.width
         let height = layer.height
@@ -1731,7 +1731,7 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
     /// Compute the averages of the different independent normalization units.
     private func _computeμ(_ layer: AdaIN)
     {
-        let layerFirst = layer._layersPrev.first as! Layer2D
+        let layerFirst = layer.layersPrev.first as! Layer2D
         let nbChannels = layer.nbChannels
         let batchSize = layer.batchSize
         let width = layer.width
@@ -1797,7 +1797,7 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
     /// Compute the deviations of the different independent normalization units.
     private func _computeσ2(_ layer: AdaIN)
     {
-        let layerFirst = layer._layersPrev.first as! Layer2D
+        let layerFirst = layer.layersPrev.first as! Layer2D
         let nbChannels = layer.nbChannels
         let batchSize = layer.batchSize
         let width = layer.width
@@ -1866,8 +1866,8 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
     {
         _backward(layer)
         
-        let layerFirst = layer._layersPrev.first as! Layer2D
-        let layerLast = layer._layersPrev.last as! Layer1D
+        let layerFirst = layer.layersPrev.first as! Layer2D
+        let layerLast = layer.layersPrev.last as! Layer1D
         let batchSize = layer.batchSize
         let width = layer.width
         let height = layer.height
@@ -1943,7 +1943,7 @@ class InstanceNormalizationGPU: LayerWeightsNormalization
     /// Compute the gradients of weights  in the GPU execution context.
     private func _backward(_ layer: AdaIN)
     {
-        let layerLast = layer._layersPrev.last as! Layer1D
+        let layerLast = layer.layersPrev.last as! Layer1D
         let batchSize = layer.batchSize
         let width = layer.width
         let height = layer.height

@@ -315,7 +315,7 @@ final class NLPExample: XCTestCase
         return model
     }
     
-    /// Generate text from prompt.
+    /// Predict text from prompt.
     func _testPredict1() throws
     {
         // Encode prompt.
@@ -377,7 +377,7 @@ final class NLPExample: XCTestCase
         }
     }
     
-    /// Generate text from prompt.
+    /// Predict text from prompt.
     func _testPredict32() throws
     {
         // Encode prompt.
@@ -429,5 +429,76 @@ final class NLPExample: XCTestCase
             _modelPath
         ))!
         print(prediction)
+    }
+    
+    /// Generate text from prompt.
+    func _testGenerate() throws
+    {
+        // Encode prompt.
+        let pythonLib = Python.import("python_lib")
+        let prompt = [Int](pythonLib.encode(
+            _prompt,
+            _modelPath
+        ))!
+        
+        // Load pre trained model.
+        let model = _buildModel(
+            modelPath: _modelPath,
+            sequence: prompt.count,
+            nbBlocks: 32,
+            hiddenDim: 4096,
+            headDim: 128,
+            mlpDim: 14336,
+            nbHeadsQuery: 32,
+            nbHeadsKV: 8,
+            vocabularySize: 32000
+        )
+        
+        // Initialize for inference.
+        model.initKernel(phase: .Inference)
+        model.updateKernel(batchSize: 1)
+        
+        // Forward.
+        let firstLayer: EmbeddingSeq = model.layers.first as! EmbeddingSeq
+        try! firstLayer.setDataGPU(
+            [prompt], batchSize: 1, sequence: prompt.count
+        )
+        try! model.forward()
+        
+        // Get result.
+        let out = (model.layers.last as! LayerSeq).outs.download()
+        
+        // Compute prediction for each token.
+        var predictions = [Int]()
+        for seq in 0..<out.count / 32000
+        {
+            let vector = [Float](out[32000*seq..<32000*(seq+1)])
+            let argmax = _argmax(array: vector)!
+            predictions.append(argmax)
+        }
+        
+        // Decode.
+        let prediction = String(pythonLib.decode(
+            predictions,
+            _modelPath
+        ))!
+        print(prediction)
+        
+        var cache = [Int: FloatBuffer]()
+        for layer in model.layers
+        {
+            let id = layer.id
+            if let layerTmp = layer as? QueryCausalSeq
+            {
+                cache[id] = (layerTmp.layersPrev[1] as! LayerSeq).outs
+            }
+            else if let layerTmp = layer as? ValueCausalSeq
+            {
+                cache[id] = (layerTmp.layersPrev[0] as! LayerSeq).outs
+            }
+        }
+        
+        model.resetKernel()
+        print("COUCOU")
     }
 }

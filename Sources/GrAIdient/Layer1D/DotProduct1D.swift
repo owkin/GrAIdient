@@ -99,7 +99,7 @@ public class DotProduct1D: LayerMerge1D
         params.context.curID = id
         
         var layersPrev = [Layer1D]()
-        for idPrev in _idsPrev
+        for idPrev in idsPrev
         {
             layersPrev.append(mapping[idPrev] as! Layer1D)
         }
@@ -134,8 +134,8 @@ public class DotProduct1D: LayerMerge1D
             neurons.get(depth)!.initGC(batchSize: batchSize, nbGC: nbGC)
         }
         
-        let neuronsPrev1 = (_layersPrev[0] as! Layer1D).neurons
-        let neuronsPrev2 = (_layersPrev[1] as! Layer1D).neurons
+        let neuronsPrev1 = (layersPrev[0] as! Layer1D).neurons
+        let neuronsPrev2 = (layersPrev[1] as! Layer1D).neurons
         
         for batch in 0..<batchSize {
         for elem in 0..<nbSameElems
@@ -158,7 +158,7 @@ public class DotProduct1D: LayerMerge1D
         for batch in 0..<batchSize {
         var offset = nbSameElems
         var nbLastElems = [Int](repeating: nbSameElems,
-                                count: _layersPrev.count)
+                                count: layersPrev.count)
         for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
         for elem in 0..<nbElemsTmp {
         for block in 0..<nbNeurons
@@ -214,8 +214,8 @@ public class DotProduct1D: LayerMerge1D
             neurons.get(depth)!.initGC(batchSize: batchSize, nbGC: nbGC)
         }
         
-        let neuronsPrev1 = (_layersPrev[0] as! Layer1D).neurons
-        let neuronsPrev2 = (_layersPrev[1] as! Layer1D).neurons
+        let neuronsPrev1 = (layersPrev[0] as! Layer1D).neurons
+        let neuronsPrev2 = (layersPrev[1] as! Layer1D).neurons
         
         for batch in 0..<batchSize {
         for elem in 0..<nbSameElems
@@ -235,13 +235,13 @@ public class DotProduct1D: LayerMerge1D
             }
         }}
         
-        let buffer1 = (_layersPrev[0] as! Layer1D).outs.download()
-        let buffer2 = (_layersPrev[1] as! Layer1D).outs.download()
+        let buffer1 = (layersPrev[0] as! Layer1D).outs.download()
+        let buffer2 = (layersPrev[1] as! Layer1D).outs.download()
         
         for batch in 0..<batchSize {
         var offset = nbSameElems
         var nbLastElems = [Int](repeating: nbSameElems,
-                                count: _layersPrev.count)
+                                count: layersPrev.count)
         for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
         for elem in 0..<nbElemsTmp {
         for block in 0..<nbNeurons
@@ -284,8 +284,8 @@ public class DotProduct1D: LayerMerge1D
     {
         try checkStateCPU(batchSize: batchSize)
         
-        let neuronsPrev1 = (_layersPrev[0] as! Layer1D).neurons
-        let neuronsPrev2 = (_layersPrev[1] as! Layer1D).neurons
+        let neuronsPrev1 = (layersPrev[0] as! Layer1D).neurons
+        let neuronsPrev2 = (layersPrev[1] as! Layer1D).neurons
         
         for elem in 0..<batchSize
         {
@@ -314,7 +314,7 @@ public class DotProduct1D: LayerMerge1D
     {
         try checkStateForwardGPU(batchSize: batchSize)
         
-        let nbNeuronsPrev = (_layersPrev[0] as! Layer1D).nbNeurons
+        let nbNeuronsPrev = (layersPrev[0] as! Layer1D).nbNeurons
         
         let pSize: [UInt32] = [UInt32(_size)]
         let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
@@ -324,8 +324,8 @@ public class DotProduct1D: LayerMerge1D
         let command = MetalKernel.get.createCommand(
             "dotProduct1DForward", deviceID: deviceID
         )
-        command.setBuffer((_layersPrev[0] as! Layer1D).outs.metal, atIndex: 0)
-        command.setBuffer((_layersPrev[1] as! Layer1D).outs.metal, atIndex: 1)
+        command.setBuffer((layersPrev[0] as! Layer1D).outs.metal, atIndex: 0)
+        command.setBuffer((layersPrev[1] as! Layer1D).outs.metal, atIndex: 1)
         command.setBytes(pSize, atIndex: 2)
         command.setBytes(pNbNeurons, atIndex: 3)
         command.setBytes(pNbneuronsPrev, atIndex: 4)
@@ -347,8 +347,8 @@ public class DotProduct1D: LayerMerge1D
             return
         }
         
-        let neuronsPrev1 = (_layersPrev[0] as! Layer1D).neurons
-        let neuronsPrev2 = (_layersPrev[1] as! Layer1D).neurons
+        let neuronsPrev1 = (layersPrev[0] as! Layer1D).neurons
+        let neuronsPrev2 = (layersPrev[1] as! Layer1D).neurons
         
         for elem in 0..<batchSize
         {
@@ -362,20 +362,20 @@ public class DotProduct1D: LayerMerge1D
                     let out1 = neuronPrev1.v[elem].out
                     let out2 = neuronPrev2.v[elem].out
                 
-                    if _layersPrev[0].dirty && _layersPrev[0].computeDelta
+                    if layersPrev[0].dirty && layersPrev[0].computeDelta
                     {
                         neuronPrev1.v[elem].delta = deltaCur * out2
                     }
-                    else if _layersPrev[0].computeDelta
+                    else if layersPrev[0].computeDelta
                     {
                         neuronPrev1.v[elem].delta += deltaCur * out2
                     }
                     
-                    if _layersPrev[1].dirty && _layersPrev[1].computeDelta
+                    if layersPrev[1].dirty && layersPrev[1].computeDelta
                     {
                         neuronPrev2.v[elem].delta = deltaCur * out1
                     }
-                    else if _layersPrev[1].computeDelta
+                    else if layersPrev[1].computeDelta
                     {
                         neuronPrev2.v[elem].delta += deltaCur * out1
                     }
@@ -397,8 +397,8 @@ public class DotProduct1D: LayerMerge1D
             return
         }
         
-        let layerPrev1 = _layersPrev[0] as! Layer1D
-        let layerPrev2 = _layersPrev[1] as! Layer1D
+        let layerPrev1 = layersPrev[0] as! Layer1D
+        let layerPrev2 = layersPrev[1] as! Layer1D
         
         let nbNeuronsPrev = layerPrev1.nbNeurons
         

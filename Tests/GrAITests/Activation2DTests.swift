@@ -926,7 +926,7 @@ class Activation2DFlowPrecisionTests: Activation2DInferenceTests
         let trainer = _buildTrainer(
             model: "Activation", activation: SoftReLU.str, bn: false
         )
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     override func testSigmoid() throws

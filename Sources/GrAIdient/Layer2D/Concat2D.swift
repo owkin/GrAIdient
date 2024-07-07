@@ -63,7 +63,7 @@ public class Concat2D: LayerMerge2D
         params.context.curID = id
         
         var layersPrev = [Layer2D]()
-        for idPrev in _idsPrev
+        for idPrev in idsPrev
         {
             layersPrev.append(mapping[idPrev] as! Layer2D)
         }
@@ -104,9 +104,9 @@ public class Concat2D: LayerMerge2D
         for batch in 0..<batchSize {
         for elem in 0..<nbSameElems {
         var curElem = 0
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
+            let neuronsPrev = (layersPrev[num] as! Layer2D).neurons
             let nbChannels = neuronsPrev.count
             
             for depth in 0..<nbChannels {
@@ -123,13 +123,13 @@ public class Concat2D: LayerMerge2D
         for batch in 0..<batchSize {
         var offset = nbSameElems
         var nbLastElems = [Int](repeating: nbSameElems,
-                                count: _layersPrev.count)
+                                count: layersPrev.count)
         for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
         for elem in 0..<nbElemsTmp {
         var curElem = 0
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
+            let neuronsPrev = (layersPrev[num] as! Layer2D).neurons
             let nbChannels = neuronsPrev.count
             
             for depth in 0..<nbChannels {
@@ -169,9 +169,9 @@ public class Concat2D: LayerMerge2D
         try checkStateCPU(batchSize: batchSize)
         
         var buffersPrev = [[Float]]()
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            buffersPrev.append((_layersPrev[num] as! Layer2D).outs.download())
+            buffersPrev.append((layersPrev[num] as! Layer2D).outs.download())
         }
         
         let (nbSameElems, layersIndex, nbElems) = getMergedGraph()
@@ -197,9 +197,9 @@ public class Concat2D: LayerMerge2D
         for batch in 0..<batchSize {
         for elem in 0..<nbSameElems {
         var curElem = 0
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
+            let neuronsPrev = (layersPrev[num] as! Layer2D).neurons
             let nbChannels = neuronsPrev.count
             
             for depth in 0..<nbChannels {
@@ -216,14 +216,14 @@ public class Concat2D: LayerMerge2D
         for batch in 0..<batchSize {
         var offset = nbSameElems
         var nbLastElems = [Int](repeating: nbSameElems,
-                                count: _layersPrev.count)
+                                count: layersPrev.count)
         for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
         for elem in 0..<nbElemsTmp {
         var curElem = 0
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
             let outsPrevPtr = buffersPrev[num]
-            let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
+            let neuronsPrev = (layersPrev[num] as! Layer2D).neurons
             let nbChannels = neuronsPrev.count
             
             for depth in 0..<nbChannels {
@@ -268,9 +268,9 @@ public class Concat2D: LayerMerge2D
         for elem in 0..<batchSize
         {
             var curElem = 0
-            for num in 0..<_layersPrev.count
+            for num in 0..<layersPrev.count
             {
-                let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
+                let neuronsPrev = (layersPrev[num] as! Layer2D).neurons
                 let nbChannels = neuronsPrev.count
                 
                 for depth in 0..<nbChannels {
@@ -303,9 +303,9 @@ public class Concat2D: LayerMerge2D
         var command: MetalCommand
         
         var globalOffset = 0
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            let nbChannelsPrev = (_layersPrev[num] as! Layer2D).nbChannels
+            let nbChannelsPrev = (layersPrev[num] as! Layer2D).nbChannels
             
             let pGlobalOffset: [UInt32] = [UInt32(globalOffset)]
             let pNbChannelsPrev: [UInt32] = [UInt32(nbChannelsPrev)]
@@ -314,7 +314,7 @@ public class Concat2D: LayerMerge2D
                 "concat12DForward", deviceID: deviceID
             )
             command.setBuffer(
-                (_layersPrev[num] as! Layer2D).outs.metal, atIndex: 0
+                (layersPrev[num] as! Layer2D).outs.metal, atIndex: 0
             )
             command.setBytes(pGlobalOffset, atIndex: 1)
             command.setBytes(pNbChannels, atIndex: 2)
@@ -344,13 +344,13 @@ public class Concat2D: LayerMerge2D
         for elem in 0..<batchSize
         {
             var curElem = 0
-            for num in 0..<_layersPrev.count
+            for num in 0..<layersPrev.count
             {
-                let layerPrev = _layersPrev[num] as! Layer2D
-                let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
+                let layerPrev = layersPrev[num] as! Layer2D
+                let neuronsPrev = (layersPrev[num] as! Layer2D).neurons
                 let nbChannels = layerPrev.nbChannels
                 
-                if !_layersPrev[num].computeDelta
+                if !layersPrev[num].computeDelta
                 {
                     curElem += nbChannels
                     continue
@@ -399,12 +399,12 @@ public class Concat2D: LayerMerge2D
         var command: MetalCommand
         
         var globalOffset = 0
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            let layerPrev = _layersPrev[num] as! Layer2D
+            let layerPrev = layersPrev[num] as! Layer2D
             let nbChannelsPrev = layerPrev.nbChannels
             
-            if !_layersPrev[num].computeDelta
+            if !layersPrev[num].computeDelta
             {
                 globalOffset += nbChannelsPrev
                 continue

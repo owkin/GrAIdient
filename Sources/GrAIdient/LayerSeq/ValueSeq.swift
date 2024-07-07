@@ -112,7 +112,7 @@ public class ValueSeq: LayerMergeSeq
         params.context.curID = id
         
         var layersPrev = [LayerSeq]()
-        for idPrev in _idsPrev
+        for idPrev in idsPrev
         {
             layersPrev.append(mapping[idPrev] as! LayerSeq)
         }
@@ -147,9 +147,9 @@ public class ValueSeq: LayerMergeSeq
             neurons.get(seq, depth)!.initGC(batchSize: batchSize, nbGC: nbGC)
         }}
         
-        let value = (_layersPrev[0] as! LayerSeq).neurons!
-        let score = (_layersPrev[1] as! LayerSeq).neurons!
-        let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeads
+        let value = (layersPrev[0] as! LayerSeq).neurons!
+        let score = (layersPrev[1] as! LayerSeq).neurons!
+        let size = (layersPrev[0] as! LayerSeq).nbNeurons / _nbHeads
         
         for batch in 0..<batchSize {
         for head in 0..<_nbHeads {
@@ -179,7 +179,7 @@ public class ValueSeq: LayerMergeSeq
         let depth = j + head * size
         var offset = nbSameElems
         var nbLastElems = [Int](repeating: nbSameElems,
-                                count: _layersPrev.count)
+                                count: layersPrev.count)
         for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
         for elem in 0..<nbElemsTmp
         {
@@ -237,10 +237,10 @@ public class ValueSeq: LayerMergeSeq
             neurons.get(seq, depth)!.initGC(batchSize: batchSize, nbGC: nbGC)
         }}
         
-        let value = (_layersPrev[0] as! LayerSeq).neurons!
-        let score = (_layersPrev[1] as! LayerSeq).neurons!
-        let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeads
-        let nbNeuronsPrev = (_layersPrev[1] as! LayerSeq).nbNeurons
+        let value = (layersPrev[0] as! LayerSeq).neurons!
+        let score = (layersPrev[1] as! LayerSeq).neurons!
+        let size = (layersPrev[0] as! LayerSeq).nbNeurons / _nbHeads
+        let nbNeuronsPrev = (layersPrev[1] as! LayerSeq).nbNeurons
         
         for batch in 0..<batchSize {
         for head in 0..<_nbHeads {
@@ -263,8 +263,8 @@ public class ValueSeq: LayerMergeSeq
             neurons.get(seqQ, depth)!.gc[batch][elem].out = sum
         }}}}}
         
-        let valueBuffer = (_layersPrev[0] as! LayerSeq).outs.download()
-        let scoreBuffer = (_layersPrev[1] as! LayerSeq).outs.download()
+        let valueBuffer = (layersPrev[0] as! LayerSeq).outs.download()
+        let scoreBuffer = (layersPrev[1] as! LayerSeq).outs.download()
         
         for batch in 0..<batchSize {
         for head in 0..<_nbHeads {
@@ -273,7 +273,7 @@ public class ValueSeq: LayerMergeSeq
         let depth = j + head * size
         var offset = nbSameElems
         var nbLastElems = [Int](repeating: nbSameElems,
-                                count: _layersPrev.count)
+                                count: layersPrev.count)
         for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
         for elem in 0..<nbElemsTmp
         {
@@ -325,9 +325,9 @@ public class ValueSeq: LayerMergeSeq
     {
         try checkStateCPU(batchSize: batchSize)
         
-        let value = (_layersPrev[0] as! LayerSeq).neurons!
-        let score = (_layersPrev[1] as! LayerSeq).neurons!
-        let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeads
+        let value = (layersPrev[0] as! LayerSeq).neurons!
+        let score = (layersPrev[1] as! LayerSeq).neurons!
+        let size = (layersPrev[0] as! LayerSeq).nbNeurons / _nbHeads
         
         for elem in 0..<batchSize {
         for head in 0..<_nbHeads {
@@ -359,8 +359,8 @@ public class ValueSeq: LayerMergeSeq
     {
         try checkStateForwardGPU(batchSize: batchSize)
         
-        let value = _layersPrev[0] as! LayerSeq
-        let score = _layersPrev[1] as! LayerSeq
+        let value = layersPrev[0] as! LayerSeq
+        let score = layersPrev[1] as! LayerSeq
         let nbNeuronsPrev = score.nbNeurons
         
         let pNbHeads: [UInt32] = [UInt32(_nbHeads)]
@@ -399,11 +399,11 @@ public class ValueSeq: LayerMergeSeq
             return
         }
         
-        let value = (_layersPrev[0] as! LayerSeq).neurons!
-        let score = (_layersPrev[1] as! LayerSeq).neurons!
-        let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeads
+        let value = (layersPrev[0] as! LayerSeq).neurons!
+        let score = (layersPrev[1] as! LayerSeq).neurons!
+        let size = (layersPrev[0] as! LayerSeq).nbNeurons / _nbHeads
         
-        if _layersPrev[0].computeDelta
+        if layersPrev[0].computeDelta
         {
             for elem in 0..<batchSize {
             for head in 0..<_nbHeads {
@@ -422,7 +422,7 @@ public class ValueSeq: LayerMergeSeq
                     sum += deltaCur * scoreTmp
                 }
                 
-                if _layersPrev[0].dirty
+                if layersPrev[0].dirty
                 {
                     value.get(seqK, depth)!.v[elem].delta = sum
                 }
@@ -432,7 +432,7 @@ public class ValueSeq: LayerMergeSeq
                 }
             }}}}
         }
-        if _layersPrev[1].computeDelta
+        if layersPrev[1].computeDelta
         {
             for elem in 0..<batchSize {
             for head in 0..<_nbHeads {
@@ -450,7 +450,7 @@ public class ValueSeq: LayerMergeSeq
                     sum += deltaCur * valueTmp
                 }
                 
-                if _layersPrev[1].dirty
+                if layersPrev[1].dirty
                 {
                     score.get(seqQ, seqK + head * sequence)!
                         .v[elem].delta = sum
@@ -477,8 +477,8 @@ public class ValueSeq: LayerMergeSeq
             return
         }
         
-        let value = _layersPrev[0] as! LayerSeq
-        let score = _layersPrev[1] as! LayerSeq
+        let value = layersPrev[0] as! LayerSeq
+        let score = layersPrev[1] as! LayerSeq
         let nbNeuronsPrev = score.nbNeurons
         
         let pNbHeads: [UInt32] = [UInt32(_nbHeads)]
@@ -672,7 +672,7 @@ public class ValueSelfSeq: LayerMergeSeq
         params.context.curID = id
         
         var layersPrev = [LayerSeq]()
-        for idPrev in _idsPrev
+        for idPrev in idsPrev
         {
             layersPrev.append(mapping[idPrev] as! LayerSeq)
         }
@@ -709,8 +709,8 @@ public class ValueSelfSeq: LayerMergeSeq
             neurons.get(seq, depth)!.initGC(batchSize: batchSize, nbGC: nbGC)
         }}
         
-        let value = (_layersPrev[0] as! LayerSeq).neurons!
-        let score = (_layersPrev[1] as! LayerSeq).neurons!
+        let value = (layersPrev[0] as! LayerSeq).neurons!
+        let score = (layersPrev[1] as! LayerSeq).neurons!
         let size = nbNeurons / _nbHeads
         
         for batch in 0..<batchSize {
@@ -743,7 +743,7 @@ public class ValueSelfSeq: LayerMergeSeq
         let depth = j + head * size
         var offset = nbSameElems
         var nbLastElems = [Int](repeating: nbSameElems,
-                                count: _layersPrev.count)
+                                count: layersPrev.count)
         for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
         for elem in 0..<nbElemsTmp
         {
@@ -804,13 +804,13 @@ public class ValueSelfSeq: LayerMergeSeq
             neurons.get(seq, depth)!.initGC(batchSize: batchSize, nbGC: nbGC)
         }}
         
-        let value = (_layersPrev[0] as! LayerSeq).neurons!
-        let score = (_layersPrev[1] as! LayerSeq).neurons!
+        let value = (layersPrev[0] as! LayerSeq).neurons!
+        let score = (layersPrev[1] as! LayerSeq).neurons!
         let size = nbNeurons / _nbHeads
         
         let nbNeurons1 = nbNeurons * _nbBlocksPrev
         let nbNeurons2 = nbNeurons
-        let nbNeuronsPrev = (_layersPrev[1] as! LayerSeq).nbNeurons
+        let nbNeuronsPrev = (layersPrev[1] as! LayerSeq).nbNeurons
         
         for batch in 0..<batchSize {
         for head in 0..<_nbHeads {
@@ -835,8 +835,8 @@ public class ValueSelfSeq: LayerMergeSeq
             neurons.get(seqQ, depth)!.gc[batch][elem].out = sum
         }}}}}
         
-        let valueBuffer = (_layersPrev[0] as! LayerSeq).outs.download()
-        let scoreBuffer = (_layersPrev[1] as! LayerSeq).outs.download()
+        let valueBuffer = (layersPrev[0] as! LayerSeq).outs.download()
+        let scoreBuffer = (layersPrev[1] as! LayerSeq).outs.download()
         
         for batch in 0..<batchSize {
         for head in 0..<_nbHeads {
@@ -845,7 +845,7 @@ public class ValueSelfSeq: LayerMergeSeq
         let depth = j + head * size
         var offset = nbSameElems
         var nbLastElems = [Int](repeating: nbSameElems,
-                                count: _layersPrev.count)
+                                count: layersPrev.count)
         for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
         for elem in 0..<nbElemsTmp
         {
@@ -898,8 +898,8 @@ public class ValueSelfSeq: LayerMergeSeq
     {
         try checkStateCPU(batchSize: batchSize)
         
-        let value = (_layersPrev[0] as! LayerSeq).neurons!
-        let score = (_layersPrev[1] as! LayerSeq).neurons!
+        let value = (layersPrev[0] as! LayerSeq).neurons!
+        let score = (layersPrev[1] as! LayerSeq).neurons!
         let size = nbNeurons / _nbHeads
         
         for elem in 0..<batchSize {
@@ -934,8 +934,8 @@ public class ValueSelfSeq: LayerMergeSeq
     {
         try checkStateForwardGPU(batchSize: batchSize)
         
-        let value = _layersPrev[0] as! LayerSeq
-        let score = _layersPrev[1] as! LayerSeq
+        let value = layersPrev[0] as! LayerSeq
+        let score = layersPrev[1] as! LayerSeq
         let nbNeuronsPrev = score.nbNeurons
         
         let pNbHeads: [UInt32] = [UInt32(_nbHeads)]
@@ -978,13 +978,13 @@ public class ValueSelfSeq: LayerMergeSeq
             return
         }
         
-        let value = (_layersPrev[0] as! LayerSeq).neurons!
-        let score = (_layersPrev[1] as! LayerSeq).neurons!
+        let value = (layersPrev[0] as! LayerSeq).neurons!
+        let score = (layersPrev[1] as! LayerSeq).neurons!
         let size = nbNeurons / _nbHeads
         
-        if _layersPrev[0].computeDelta
+        if layersPrev[0].computeDelta
         {
-            if _layersPrev[0].dirty
+            if layersPrev[0].dirty
             {
                 for elem in 0..<batchSize {
                 for seqK in 0..<sequence {
@@ -1016,7 +1016,7 @@ public class ValueSelfSeq: LayerMergeSeq
                 )!.v[elem].delta += sum
             }}}}
         }
-        if _layersPrev[1].computeDelta
+        if layersPrev[1].computeDelta
         {
             for elem in 0..<batchSize {
             for head in 0..<_nbHeads {
@@ -1036,7 +1036,7 @@ public class ValueSelfSeq: LayerMergeSeq
                     sum += deltaCur * valueTmp
                 }
                 
-                if _layersPrev[1].dirty
+                if layersPrev[1].dirty
                 {
                     score.get(seqQ, seqK + head * sequence)!
                         .v[elem].delta = sum
@@ -1063,8 +1063,8 @@ public class ValueSelfSeq: LayerMergeSeq
             return
         }
         
-        let value = _layersPrev[0] as! LayerSeq
-        let score = _layersPrev[1] as! LayerSeq
+        let value = layersPrev[0] as! LayerSeq
+        let score = layersPrev[1] as! LayerSeq
         let nbNeuronsPrev = score.nbNeurons
         
         let pNbHeads: [UInt32] = [UInt32(_nbHeads)]
@@ -1275,7 +1275,7 @@ public class ValueCausalSeq: LayerMergeSeq
         params.context.curID = id
         
         var layersPrev = [LayerSeq]()
-        for idPrev in _idsPrev
+        for idPrev in idsPrev
         {
             layersPrev.append(mapping[idPrev] as! LayerSeq)
         }
@@ -1312,10 +1312,10 @@ public class ValueCausalSeq: LayerMergeSeq
             neurons.get(seq, depth)!.initGC(batchSize: batchSize, nbGC: nbGC)
         }}
         
-        let value = (_layersPrev[0] as! LayerSeq).neurons!
-        let score = (_layersPrev[1] as! LayerSeq).neurons!
+        let value = (layersPrev[0] as! LayerSeq).neurons!
+        let score = (layersPrev[1] as! LayerSeq).neurons!
         
-        let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeadsValue
+        let size = (layersPrev[0] as! LayerSeq).nbNeurons / _nbHeadsValue
         let nbBlocksHead = _nbHeadsScore / _nbHeadsValue
         
         for batch in 0..<batchSize {
@@ -1350,7 +1350,7 @@ public class ValueCausalSeq: LayerMergeSeq
         let depthValue = j + headValue * size
         var offset = nbSameElems
         var nbLastElems = [Int](repeating: nbSameElems,
-                                count: _layersPrev.count)
+                                count: layersPrev.count)
         for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
         for elem in 0..<nbElemsTmp
         {
@@ -1408,13 +1408,13 @@ public class ValueCausalSeq: LayerMergeSeq
             neurons.get(seq, depth)!.initGC(batchSize: batchSize, nbGC: nbGC)
         }}
         
-        let value = (_layersPrev[0] as! LayerSeq).neurons!
-        let score = (_layersPrev[1] as! LayerSeq).neurons!
+        let value = (layersPrev[0] as! LayerSeq).neurons!
+        let score = (layersPrev[1] as! LayerSeq).neurons!
         
-        let nbNeuronsPrevValue = (_layersPrev[0] as! LayerSeq).nbNeurons
-        let nbNeuronsPrevScore = (_layersPrev[1] as! LayerSeq).nbNeurons
+        let nbNeuronsPrevValue = (layersPrev[0] as! LayerSeq).nbNeurons
+        let nbNeuronsPrevScore = (layersPrev[1] as! LayerSeq).nbNeurons
         
-        let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeadsValue
+        let size = (layersPrev[0] as! LayerSeq).nbNeurons / _nbHeadsValue
         let nbBlocksHead = _nbHeadsScore / _nbHeadsValue
         
         for batch in 0..<batchSize {
@@ -1440,8 +1440,8 @@ public class ValueCausalSeq: LayerMergeSeq
             neurons.get(seqQ, depthScore)!.gc[batch][elem].out = sum
         }}}}}
         
-        let valueBuffer = (_layersPrev[0] as! LayerSeq).outs.download()
-        let scoreBuffer = (_layersPrev[1] as! LayerSeq).outs.download()
+        let valueBuffer = (layersPrev[0] as! LayerSeq).outs.download()
+        let scoreBuffer = (layersPrev[1] as! LayerSeq).outs.download()
         
         for batch in 0..<batchSize {
         for headScore in 0..<_nbHeadsScore {
@@ -1452,7 +1452,7 @@ public class ValueCausalSeq: LayerMergeSeq
         let depthValue = j + headValue * size
         var offset = nbSameElems
         var nbLastElems = [Int](repeating: nbSameElems,
-                                count: _layersPrev.count)
+                                count: layersPrev.count)
         for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
         for elem in 0..<nbElemsTmp
         {
@@ -1504,10 +1504,10 @@ public class ValueCausalSeq: LayerMergeSeq
     {
         try checkStateCPU(batchSize: batchSize)
         
-        let value = (_layersPrev[0] as! LayerSeq).neurons!
-        let score = (_layersPrev[1] as! LayerSeq).neurons!
+        let value = (layersPrev[0] as! LayerSeq).neurons!
+        let score = (layersPrev[1] as! LayerSeq).neurons!
         
-        let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeadsValue
+        let size = (layersPrev[0] as! LayerSeq).nbNeurons / _nbHeadsValue
         let nbBlocksHead = _nbHeadsScore / _nbHeadsValue
         
         for elem in 0..<batchSize {
@@ -1542,8 +1542,8 @@ public class ValueCausalSeq: LayerMergeSeq
     {
         try checkStateForwardGPU(batchSize: batchSize)
         
-        let value = _layersPrev[0] as! LayerSeq
-        let score = _layersPrev[1] as! LayerSeq
+        let value = layersPrev[0] as! LayerSeq
+        let score = layersPrev[1] as! LayerSeq
         let nbNeuronsPrevValue = value.nbNeurons
         let nbNeuronsPrevScore = score.nbNeurons
         
@@ -1587,13 +1587,13 @@ public class ValueCausalSeq: LayerMergeSeq
             return
         }
         
-        let value = (_layersPrev[0] as! LayerSeq).neurons!
-        let score = (_layersPrev[1] as! LayerSeq).neurons!
+        let value = (layersPrev[0] as! LayerSeq).neurons!
+        let score = (layersPrev[1] as! LayerSeq).neurons!
         
-        let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeadsValue
+        let size = (layersPrev[0] as! LayerSeq).nbNeurons / _nbHeadsValue
         let nbBlocksHead = _nbHeadsScore / _nbHeadsValue
         
-        if _layersPrev[0].computeDelta
+        if layersPrev[0].computeDelta
         {
             for elem in 0..<batchSize {
             for headValue in 0..<_nbHeadsValue {
@@ -1621,7 +1621,7 @@ public class ValueCausalSeq: LayerMergeSeq
                     }
                 }
                 
-                if _layersPrev[0].dirty
+                if layersPrev[0].dirty
                 {
                     value.get(seqK, depthValue)!.v[elem].delta = sum
                 }
@@ -1631,7 +1631,7 @@ public class ValueCausalSeq: LayerMergeSeq
                 }
             }}}}
         }
-        if _layersPrev[1].computeDelta
+        if layersPrev[1].computeDelta
         {
             for elem in 0..<batchSize {
             for headScore in 0..<_nbHeadsScore {
@@ -1651,7 +1651,7 @@ public class ValueCausalSeq: LayerMergeSeq
                     sum += deltaCur * valueTmp
                 }
                 
-                if _layersPrev[1].dirty
+                if layersPrev[1].dirty
                 {
                     score.get(seqQ, seqK + headScore * sequence)!
                         .v[elem].delta = sum
@@ -1678,8 +1678,8 @@ public class ValueCausalSeq: LayerMergeSeq
             return
         }
         
-        let value = _layersPrev[0] as! LayerSeq
-        let score = _layersPrev[1] as! LayerSeq
+        let value = layersPrev[0] as! LayerSeq
+        let score = layersPrev[1] as! LayerSeq
         let nbNeuronsPrevValue = value.nbNeurons
         let nbNeuronsPrevScore = score.nbNeurons
         

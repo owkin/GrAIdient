@@ -108,7 +108,7 @@ public class QuerySeq: LayerMergeSeq
         params.context.curID = id
         
         var layersPrev = [LayerSeq]()
-        for idPrev in _idsPrev
+        for idPrev in idsPrev
         {
             layersPrev.append(mapping[idPrev] as! LayerSeq)
         }
@@ -143,9 +143,9 @@ public class QuerySeq: LayerMergeSeq
             neurons.get(seqQ, seqK)!.initGC(batchSize: batchSize, nbGC: nbGC)
         }}
         
-        let query = (_layersPrev[0] as! LayerSeq).neurons!
-        let key = (_layersPrev[1] as! LayerSeq).neurons!
-        let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeads
+        let query = (layersPrev[0] as! LayerSeq).neurons!
+        let key = (layersPrev[1] as! LayerSeq).neurons!
+        let size = (layersPrev[0] as! LayerSeq).nbNeurons / _nbHeads
         
         for batch in 0..<batchSize {
         for head in 0..<_nbHeads {
@@ -174,7 +174,7 @@ public class QuerySeq: LayerMergeSeq
         for seqK in 0..<sequence {
         var offset = nbSameElems
         var nbLastElems = [Int](repeating: nbSameElems,
-                                count: _layersPrev.count)
+                                count: layersPrev.count)
         for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
         for elem in 0..<nbElemsTmp
         {
@@ -234,10 +234,10 @@ public class QuerySeq: LayerMergeSeq
             neurons.get(seqQ, seqK)!.initGC(batchSize: batchSize, nbGC: nbGC)
         }}
         
-        let query = (_layersPrev[0] as! LayerSeq).neurons!
-        let key = (_layersPrev[1] as! LayerSeq).neurons!
-        let nbNeuronsPrev = (_layersPrev[0] as! LayerSeq).nbNeurons
-        let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeads
+        let query = (layersPrev[0] as! LayerSeq).neurons!
+        let key = (layersPrev[1] as! LayerSeq).neurons!
+        let nbNeuronsPrev = (layersPrev[0] as! LayerSeq).nbNeurons
+        let size = (layersPrev[0] as! LayerSeq).nbNeurons / _nbHeads
         
         for batch in 0..<batchSize {
         for head in 0..<_nbHeads {
@@ -260,8 +260,8 @@ public class QuerySeq: LayerMergeSeq
                 sum / sqrt(Double(size))
         }}}}}
         
-        let queryBuffer = (_layersPrev[0] as! LayerSeq).outs.download()
-        let keyBuffer = (_layersPrev[1] as! LayerSeq).outs.download()
+        let queryBuffer = (layersPrev[0] as! LayerSeq).outs.download()
+        let keyBuffer = (layersPrev[1] as! LayerSeq).outs.download()
         
         for batch in 0..<batchSize {
         for head in 0..<_nbHeads {
@@ -269,7 +269,7 @@ public class QuerySeq: LayerMergeSeq
         for seqK in 0..<sequence {
         var offset = nbSameElems
         var nbLastElems = [Int](repeating: nbSameElems,
-                                count: _layersPrev.count)
+                                count: layersPrev.count)
         for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
         for elem in 0..<nbElemsTmp
         {
@@ -323,9 +323,9 @@ public class QuerySeq: LayerMergeSeq
     {
         try checkStateCPU(batchSize: batchSize)
         
-        let query = (_layersPrev[0] as! LayerSeq).neurons!
-        let key = (_layersPrev[1] as! LayerSeq).neurons!
-        let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeads
+        let query = (layersPrev[0] as! LayerSeq).neurons!
+        let key = (layersPrev[1] as! LayerSeq).neurons!
+        let size = (layersPrev[0] as! LayerSeq).nbNeurons / _nbHeads
         
         for elem in 0..<batchSize {
         for head in 0..<_nbHeads {
@@ -357,8 +357,8 @@ public class QuerySeq: LayerMergeSeq
     {
         try checkStateForwardGPU(batchSize: batchSize)
         
-        let query = _layersPrev[0] as! LayerSeq
-        let key = _layersPrev[1] as! LayerSeq
+        let query = layersPrev[0] as! LayerSeq
+        let key = layersPrev[1] as! LayerSeq
         let nbNeuronsPrev = query.nbNeurons
         
         let pNbHeads: [UInt32] = [UInt32(_nbHeads)]
@@ -396,11 +396,11 @@ public class QuerySeq: LayerMergeSeq
             return
         }
         
-        let query = (_layersPrev[0] as! LayerSeq).neurons!
-        let key = (_layersPrev[1] as! LayerSeq).neurons!
-        let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeads
+        let query = (layersPrev[0] as! LayerSeq).neurons!
+        let key = (layersPrev[1] as! LayerSeq).neurons!
+        let size = (layersPrev[0] as! LayerSeq).nbNeurons / _nbHeads
         
-        if _layersPrev[0].computeDelta
+        if layersPrev[0].computeDelta
         {
             for elem in 0..<batchSize {
             for head in 0..<_nbHeads {
@@ -419,7 +419,7 @@ public class QuerySeq: LayerMergeSeq
                     sum += deltaCur * keyTmp
                 }
                 
-                if _layersPrev[0].dirty
+                if layersPrev[0].dirty
                 {
                     query.get(seqQ, depthPrev)!.v[elem].delta =
                         sum / sqrt(Double(size))
@@ -431,7 +431,7 @@ public class QuerySeq: LayerMergeSeq
                 }
             }}}}
         }
-        if _layersPrev[1].computeDelta
+        if layersPrev[1].computeDelta
         {
             for elem in 0..<batchSize {
             for head in 0..<_nbHeads {
@@ -450,7 +450,7 @@ public class QuerySeq: LayerMergeSeq
                     sum += deltaCur * queryTmp
                 }
                 
-                if _layersPrev[1].dirty
+                if layersPrev[1].dirty
                 {
                     key.get(seqK, depthPrev)!.v[elem].delta =
                         sum / sqrt(Double(size))
@@ -477,8 +477,8 @@ public class QuerySeq: LayerMergeSeq
             return
         }
         
-        let query = _layersPrev[0] as! LayerSeq
-        let key = _layersPrev[1] as! LayerSeq
+        let query = layersPrev[0] as! LayerSeq
+        let key = layersPrev[1] as! LayerSeq
         let nbNeuronsPrev = query.nbNeurons
         
         let pNbHeads: [UInt32] = [UInt32(_nbHeads)]
@@ -1125,7 +1125,7 @@ public class QueryCausalSeq: LayerMergeSeq
         params.context.curID = id
         
         var layersPrev = [LayerSeq]()
-        for idPrev in _idsPrev
+        for idPrev in idsPrev
         {
             layersPrev.append(mapping[idPrev] as! LayerSeq)
         }
@@ -1234,10 +1234,10 @@ public class QueryCausalSeq: LayerMergeSeq
             neurons.get(seqQ, seqK)!.initGC(batchSize: batchSize, nbGC: nbGC)
         }}
         
-        let query = (_layersPrev[0] as! LayerSeq).neurons!
-        let key = (_layersPrev[1] as! LayerSeq).neurons!
+        let query = (layersPrev[0] as! LayerSeq).neurons!
+        let key = (layersPrev[1] as! LayerSeq).neurons!
         
-        let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeadsQuery
+        let size = (layersPrev[0] as! LayerSeq).nbNeurons / _nbHeadsQuery
         let nbBlocksHead = _nbHeadsQuery / _nbHeadsKey
         
         for batch in 0..<batchSize {
@@ -1284,7 +1284,7 @@ public class QueryCausalSeq: LayerMergeSeq
         for seqK in 0..<sequence {
         var offset = nbSameElems
         var nbLastElems = [Int](repeating: nbSameElems,
-                                count: _layersPrev.count)
+                                count: layersPrev.count)
         for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
         for elem in 0..<nbElemsTmp
         {
@@ -1357,13 +1357,13 @@ public class QueryCausalSeq: LayerMergeSeq
             neurons.get(seqQ, seqK)!.initGC(batchSize: batchSize, nbGC: nbGC)
         }}
         
-        let query = (_layersPrev[0] as! LayerSeq).neurons!
-        let key = (_layersPrev[1] as! LayerSeq).neurons!
+        let query = (layersPrev[0] as! LayerSeq).neurons!
+        let key = (layersPrev[1] as! LayerSeq).neurons!
         
-        let nbNeuronsPrevQuery = (_layersPrev[0] as! LayerSeq).nbNeurons
-        let nbNeuronsPrevKey = (_layersPrev[1] as! LayerSeq).nbNeurons
+        let nbNeuronsPrevQuery = (layersPrev[0] as! LayerSeq).nbNeurons
+        let nbNeuronsPrevKey = (layersPrev[1] as! LayerSeq).nbNeurons
         
-        let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeadsQuery
+        let size = (layersPrev[0] as! LayerSeq).nbNeurons / _nbHeadsQuery
         let nbBlocksHead = _nbHeadsQuery / _nbHeadsKey
         
         for batch in 0..<batchSize {
@@ -1403,8 +1403,8 @@ public class QueryCausalSeq: LayerMergeSeq
             }
         }}}}}
         
-        let queryBuffer = (_layersPrev[0] as! LayerSeq).outs.download()
-        let keyBuffer = (_layersPrev[1] as! LayerSeq).outs.download()
+        let queryBuffer = (layersPrev[0] as! LayerSeq).outs.download()
+        let keyBuffer = (layersPrev[1] as! LayerSeq).outs.download()
         
         for batch in 0..<batchSize {
         for headQuery in 0..<_nbHeadsQuery {
@@ -1413,7 +1413,7 @@ public class QueryCausalSeq: LayerMergeSeq
         for seqK in 0..<sequence {
         var offset = nbSameElems
         var nbLastElems = [Int](repeating: nbSameElems,
-                                count: _layersPrev.count)
+                                count: layersPrev.count)
         for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
         for elem in 0..<nbElemsTmp
         {
@@ -1482,10 +1482,10 @@ public class QueryCausalSeq: LayerMergeSeq
     {
         try checkStateCPU(batchSize: batchSize)
         
-        let query = (_layersPrev[0] as! LayerSeq).neurons!
-        let key = (_layersPrev[1] as! LayerSeq).neurons!
+        let query = (layersPrev[0] as! LayerSeq).neurons!
+        let key = (layersPrev[1] as! LayerSeq).neurons!
         
-        let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeadsQuery
+        let size = (layersPrev[0] as! LayerSeq).nbNeurons / _nbHeadsQuery
         let nbBlocksHead = _nbHeadsQuery / _nbHeadsKey
         
         for elem in 0..<batchSize {
@@ -1520,8 +1520,8 @@ public class QueryCausalSeq: LayerMergeSeq
     {
         try checkStateForwardGPU(batchSize: batchSize)
         
-        let query = _layersPrev[0] as! LayerSeq
-        let key = _layersPrev[1] as! LayerSeq
+        let query = layersPrev[0] as! LayerSeq
+        let key = layersPrev[1] as! LayerSeq
         let nbNeuronsPrevQuery = query.nbNeurons
         let nbNeuronsPrevKey = key.nbNeurons
         
@@ -1564,13 +1564,13 @@ public class QueryCausalSeq: LayerMergeSeq
             return
         }
         
-        let query = (_layersPrev[0] as! LayerSeq).neurons!
-        let key = (_layersPrev[1] as! LayerSeq).neurons!
+        let query = (layersPrev[0] as! LayerSeq).neurons!
+        let key = (layersPrev[1] as! LayerSeq).neurons!
         
-        let size = (_layersPrev[0] as! LayerSeq).nbNeurons / _nbHeadsQuery
+        let size = (layersPrev[0] as! LayerSeq).nbNeurons / _nbHeadsQuery
         let nbBlocksHead = _nbHeadsQuery / _nbHeadsKey
         
-        if _layersPrev[0].computeDelta
+        if layersPrev[0].computeDelta
         {
             for elem in 0..<batchSize {
             for headQuery in 0..<_nbHeadsQuery {
@@ -1591,7 +1591,7 @@ public class QueryCausalSeq: LayerMergeSeq
                     sum += deltaCur * keyTmp
                 }
                 
-                if _layersPrev[0].dirty
+                if layersPrev[0].dirty
                 {
                     query.get(seqQ, depthPrevQuery)!.v[elem].delta =
                         sum / sqrt(Double(size))
@@ -1603,7 +1603,7 @@ public class QueryCausalSeq: LayerMergeSeq
                 }
             }}}}
         }
-        if _layersPrev[1].computeDelta
+        if layersPrev[1].computeDelta
         {
             for elem in 0..<batchSize {
             for headKey in 0..<_nbHeadsKey {
@@ -1631,7 +1631,7 @@ public class QueryCausalSeq: LayerMergeSeq
                     }
                 }
                 
-                if _layersPrev[1].dirty
+                if layersPrev[1].dirty
                 {
                     key.get(seqK, depthPrevKey)!.v[elem].delta =
                         sum / sqrt(Double(size))
@@ -1658,8 +1658,8 @@ public class QueryCausalSeq: LayerMergeSeq
             return
         }
         
-        let query = _layersPrev[0] as! LayerSeq
-        let key = _layersPrev[1] as! LayerSeq
+        let query = layersPrev[0] as! LayerSeq
+        let key = layersPrev[1] as! LayerSeq
         let nbNeuronsPrevQuery = query.nbNeurons
         let nbNeuronsPrevKey = key.nbNeurons
         

@@ -1268,7 +1268,7 @@ public class QueryCausalSeq: LayerMergeSeq
         
         let kernel = nbElems % 4 == 0 ? "sum14" : "sum1"
         let coeff = nbElems % 4 == 0 ? 4 : 1
-        var command = MetalKernel.get.createCommand(
+        let command = MetalKernel.get.createCommand(
             kernel, deviceID: deviceID
         )
         command.setBuffer(from.metal, atIndex: 0)
@@ -1588,9 +1588,7 @@ public class QueryCausalSeq: LayerMergeSeq
     {
         try checkStateForwardGPU(batchSize: batchSize)
         
-        if cacheKey != nil && cacheSeq != nil &&
-           cacheKey.nbElems !=
-            batchSize * cacheSeqMax * cacheSeqMax * _nbHeadsQuery
+        if cacheKey != nil && cacheSeq != nil
         {
             try _generateGPU()
         }

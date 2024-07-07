@@ -506,6 +506,8 @@ let CONFIG_KERNELS =
         "encodeCausalityFloat",
         "queryCausalSeqForwardFloat",
         "queryCausalSeq4ForwardFloat",
+        "queryCausalSeqGenerateFloat",
+        "queryCausalSeq4GenerateFloat",
         "queryCausalQuerySeqBackwardFloat",
         "queryCausalQuerySeq4BackwardFloat",
         "queryCausalKeySeqBackwardFloat",

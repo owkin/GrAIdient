@@ -23,7 +23,7 @@ open class LayerSeq: Layer
     public var delta: FloatBuffer! = nil
     
     /// Length of the sequence.
-    public let sequence: Int
+    public var sequence: Int
     /// Number of neurons.
     public let nbNeurons: Int
     

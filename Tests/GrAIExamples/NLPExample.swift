@@ -442,7 +442,7 @@ final class NLPExample: XCTestCase
         ))!
         
         // Load pre trained model.
-        let model = _buildModel(
+        var model = _buildModel(
             modelPath: _modelPath,
             sequence: prompt.count,
             nbBlocks: 32,
@@ -459,7 +459,7 @@ final class NLPExample: XCTestCase
         model.updateKernel(batchSize: 1)
         
         // Forward.
-        let firstLayer: EmbeddingSeq = model.layers.first as! EmbeddingSeq
+        var firstLayer: EmbeddingSeq = model.layers.first as! EmbeddingSeq
         try! firstLayer.setDataGPU(
             [prompt], batchSize: 1, sequence: prompt.count
         )
@@ -498,9 +498,20 @@ final class NLPExample: XCTestCase
             }
         }
         
-        model.resetKernel()
-        model.initKernel(phase: .Inference)
+        model = Model.updateSeq(
+            models: [model],
+            sequence: 1,
+            inPlace: true
+        )[0]
+        
+        // model.resetKernel()
+        // model.initKernel(phase: .Inference)
+        model.phase = .Inference
         model.updateKernel(batchSize: 1)
+        
+        var lastToken = predictions.last!
+        var nbTokens = predictions.count
+        firstLayer = model.layers.first as! EmbeddingSeq
         
         for layer in model.layers
         {
@@ -508,13 +519,43 @@ final class NLPExample: XCTestCase
             if let layerTmp = layer as? QueryCausalSeq
             {
                 layerTmp.cacheKey = cache[id]!
+                layerTmp.cacheSeq = nbTokens
             }
             else if let layerTmp = layer as? ValueCausalSeq
             {
                 layerTmp.cacheValue = cache[id]!
+                // layerTmp.cacheSeq = nbTokens
             }
         }
         
-        print("COUCOU")
+        for _ in 0..<128
+        {
+            try! firstLayer.setDataGPU(
+                [[lastToken]], batchSize: 1, sequence: 1
+            )
+            for layer in model.layers
+            {
+                if let layerTmp = layer as? RoPESeq
+                {
+                    layerTmp.seqPositions = [nbTokens + 1]
+                }
+            }
+            try! model.forward()
+            
+            // Get result.
+            let out = (model.layers.last as! LayerSeq).outs.download()
+            
+            // Compute prediction for each token.
+            var predictions = [Int]()
+            for seq in 0..<out.count / 32000
+            {
+                let vector = [Float](out[32000*seq..<32000*(seq+1)])
+                let argmax = _argmax(array: vector)!
+                predictions.append(argmax)
+            }
+            
+            lastToken = predictions.last!
+            nbTokens += 1
+        }
     }
 }

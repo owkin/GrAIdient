@@ -611,3 +611,112 @@ extension Input2DCase
         }
     }
 }
+
+/// Use case where first layer is a LayerSeq.
+protocol InputSeqCase
+{
+    /// Length of the sequence.
+    var sequence: Int { get }
+    
+    /// Optimizer parameters.
+    var optimizerParams: GrAI.Optimizer.Params { get }
+}
+
+extension InputSeqCase
+{
+    ///
+    /// Copy a model.
+    ///
+    /// We must call the `initKernel` API.
+    ///
+    /// - Parameter model: The model.
+    /// - Returns: The transformed model.
+    ///
+    func copy(_ model: Model) -> Model
+    {
+        let modelNew = Model.copy(models: [model], inPlace: false)[0]
+        modelNew.initialize(
+            params: optimizerParams,
+            phase: .Inference,
+            deviceID: DEVICE_ID
+        )
+        return modelNew
+    }
+    
+    ///
+    /// Copy a model in place.
+    ///
+    /// No need to call the `initKernel` API.
+    ///
+    /// - Parameter model: The model.
+    /// - Returns: The transformed model.
+    ///
+    func copyInPlace(_ model: Model) -> Model
+    {
+        let modelNew = Model.copy(models: [model], inPlace: true)[0]
+        modelNew.setupOptimizers(params: optimizerParams)
+        modelNew.phase = .Inference
+        return modelNew
+    }
+    
+    ///
+    /// Update sequence.
+    ///
+    /// We must call the `initKernel` API.
+    ///
+    /// - Parameter model: The model.
+    /// - Returns: The transformed model.
+    ///
+    func updateSeq(_ model: Model) -> Model
+    {
+        let modelsNew = Model.updateSeq(
+            models: [model],
+            sequence: sequence + 10,
+            inPlace: false
+        )
+        let modelNew = Model.updateSeq(
+            models: modelsNew,
+            sequence: sequence,
+            inPlace: false
+        )[0]
+        modelNew.initialize(
+            params: optimizerParams,
+            phase: .Inference,
+            deviceID: DEVICE_ID
+        )
+        return modelNew
+    }
+    
+    ///
+    /// Update sequence in place.
+    ///
+    /// No need to call the `initKernel` API.
+    ///
+    /// - Parameter model: The model.
+    /// - Returns: The transformed model.
+    ///
+    func updateSeqInPlace(_ model: Model) -> Model
+    {
+        let modelsNew = Model.updateSeq(
+            models: [model],
+            sequence: sequence + 10,
+            inPlace: true
+        )
+        let modelNew = Model.updateSeq(
+            models: modelsNew,
+            sequence: sequence,
+            inPlace: true
+        )[0]
+        modelNew.setupOptimizers(params: optimizerParams)
+        modelNew.phase = .Inference
+        return modelNew
+    }
+    
+    /// A list of functions that transform the model into another one.
+    var transforms: [(Model) -> Model]
+    {
+        get {
+            return [copy, copyInPlace, updateSeq, updateSeqInPlace]
+        }
+    }
+}

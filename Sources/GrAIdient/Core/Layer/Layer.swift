@@ -58,30 +58,6 @@ public protocol LayerWithActivation: Layer
     func removeActivation(params: GrAI.Model.Params) -> Layer
 }
 
-/// A layer that needs image size information.
-public protocol LayerResize: Layer
-{
-    ///
-    /// Resize this layer.
-    ///
-    /// - Parameters:
-    ///     - imageWidth: New size width.
-    ///     - imageHeight: New size height.
-    ///     - mapping: Dictionary allowing to find the layer associated to some id.
-    ///     This dictionary is particularly useful when the different layers cannot access
-    ///     their `layerPrev`.
-    ///
-    /// - Returns: A new layer. When `inPlace` is false, `initKernel` is
-    ///  necessary in order to recreate hard resources.
-    ///
-    func resize(
-        imageWidth: Int,
-        imageHeight: Int,
-        mapping: Dictionary<Int, Layer>,
-        inPlace: Bool
-    ) -> Layer
-}
-
 /// Abstract layer of a deep learning model.
 open class Layer: Codable
 {

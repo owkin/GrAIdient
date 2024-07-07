@@ -499,6 +499,22 @@ final class NLPExample: XCTestCase
         }
         
         model.resetKernel()
+        model.initKernel(phase: .Inference)
+        model.updateKernel(batchSize: 1)
+        
+        for layer in model.layers
+        {
+            let id = layer.id
+            if let layerTmp = layer as? QueryCausalSeq
+            {
+                layerTmp.cacheKey = cache[id]!
+            }
+            else if let layerTmp = layer as? ValueCausalSeq
+            {
+                layerTmp.cacheValue = cache[id]!
+            }
+        }
+        
         print("COUCOU")
     }
 }

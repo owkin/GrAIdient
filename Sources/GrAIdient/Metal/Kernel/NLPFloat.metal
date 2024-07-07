@@ -256,6 +256,98 @@ kernel void queryCausalSeq4ForwardFloat(
     outs[offset] = tmp[0] + tmp[1] + tmp[2] + tmp[3];
 }
 
+kernel void queryCausalSeqGenerateFloat(
+    const device float * query,
+    const device float * key,
+    constant uint & nbHeadsQuery,
+    constant uint & nbHeadsKey,
+    constant uint & nbNeurons,
+    constant uint & nbNeuronsPrevQuery,
+    constant uint & nbNeuronsPrevKey,
+    constant uint & nbBatch,
+    constant uint & sequence,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint size = nbNeuronsPrevQuery / nbHeadsQuery;
+    uint nbBlocksHead = nbHeadsQuery / nbHeadsKey;
+    
+    uint headQuery = id[0] / sequence;
+    uint seqK = id[0] % sequence;
+    uint elem = id[1];
+    
+    if (headQuery >= nbHeadsQuery || seqK >= sequence ||
+        elem >= nbBatch)
+    {
+        return ;
+    }
+    
+    uint headKey = headQuery / nbBlocksHead;
+    float tmp = 0.0;
+    
+    for (uint j=0; j<size; j++)
+    {
+        uint depthPrevKey = j + headKey * size;
+        uint depthPrevQuery = j + headQuery * size;
+        
+        uint offsetQuery = depthPrevQuery + nbNeuronsPrevQuery * elem;
+        uint offsetKey = depthPrevKey +
+            nbNeuronsPrevKey * seqK + sequence * nbNeuronsPrevKey * elem;
+        
+        tmp += query[offsetQuery] * key[offsetKey];
+    }
+    tmp /= sqrt((float)size);
+    
+    uint offset = seqK + headQuery * sequence + nbNeurons * elem;
+    outs[offset] = tmp;
+}
+
+kernel void queryCausalSeq4GenerateFloat(
+    const device float4 * query,
+    const device float4 * key,
+    constant uint & nbHeadsQuery,
+    constant uint & nbHeadsKey,
+    constant uint & nbNeurons,
+    constant uint & nbNeuronsPrevQuery,
+    constant uint & nbNeuronsPrevKey,
+    constant uint & nbBatch,
+    constant uint & sequence,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint size = nbNeuronsPrevQuery / nbHeadsQuery;
+    uint nbBlocksHead = nbHeadsQuery / nbHeadsKey;
+    
+    uint headQuery = id[0] / sequence;
+    uint seqK = id[0] % sequence;
+    uint elem = id[1];
+    
+    if (headQuery >= nbHeadsQuery || seqK >= sequence ||
+        elem >= nbBatch)
+    {
+        return ;
+    }
+    
+    uint headKey = headQuery / nbBlocksHead;
+    float4 tmp = 0.0;
+    
+    for (uint j=0; j<size/4; j++)
+    {
+        uint depthPrevKey = j * 4 + headKey * size;
+        uint depthPrevQuery = j * 4 + headQuery * size;
+        
+        uint offsetQuery = (depthPrevQuery + nbNeuronsPrevQuery * elem) / 4;
+        uint offsetKey = (depthPrevKey +
+            nbNeuronsPrevKey * seqK + sequence * nbNeuronsPrevKey * elem) / 4;
+        
+        tmp += query[offsetQuery] * key[offsetKey];
+    }
+    tmp /= sqrt((float)size);
+    
+    uint offset = seqK + headQuery * sequence + nbNeurons * elem;
+    outs[offset] = tmp[0] + tmp[1] + tmp[2] + tmp[3];
+}
+
 kernel void queryCausalQuerySeqBackwardFloat(
     const device float * delta,
     const device float * key,

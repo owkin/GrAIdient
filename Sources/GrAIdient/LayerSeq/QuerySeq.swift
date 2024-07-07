@@ -1009,6 +1009,17 @@ public class QueryCausalSeq: LayerMergeSeq
     /// Number of heads (groups) of neurons for key.
     let _nbHeadsKey: Int
     
+    /// Cache key of shape (batch, sequence, nbHeadsQuery x sequence).
+    public var cacheKey: FloatBuffer! = nil
+    /// Cache key of shape (batch, sequence, nbHeadsQuery x sequence).
+    var _cacheKeyTmp: FloatBuffer! = nil
+    
+    /// Maximal sequence of cache.
+    public var cacheSeqMax = 128
+    
+    /// Current cache sequence.
+    public var cacheSeq: Int! = nil
+    
     private enum Keys: String, CodingKey
     {
         case nbHeadsQuery
@@ -1140,6 +1151,19 @@ public class QueryCausalSeq: LayerMergeSeq
     }
     
     ///
+    /// Clean state resources in the GPU execution context.
+    ///
+    /// We first clean the neurons' state (forward and backward).
+    /// We do not clean weights and biases but must reset their delta (dependent on batch size) and
+    /// momentum state.
+    ///
+    public override func resetKernelGPU()
+    {
+        super.resetKernelGPU()
+        cacheKey = nil
+    }
+    
+    ///
     /// Initialize state resources in the CPU execution context.
     ///
     /// We initialize the neurons' state (forward and backward).
@@ -1184,6 +1208,47 @@ public class QueryCausalSeq: LayerMergeSeq
         else
         {
             try super.checkStateForwardGPU(batchSize: batchSize)
+        }
+        
+        if cacheKey != nil && cacheSeq != nil &&
+           cacheKey.nbElems !=
+            batchSize * cacheSeqMax * cacheSeqMax * _nbHeadsQuery
+        {
+            let nbElems = batchSize * cacheSeq * cacheSeq * _nbHeadsQuery
+            
+            _cacheKeyTmp = FloatBuffer(
+                nbElems: batchSize * cacheSeqMax * cacheSeqMax * _nbHeadsQuery,
+                deviceID: deviceID
+            )
+            
+            let pNbElems: [UInt32] = [UInt32(nbElems)]
+            
+            let kernel = nbElems % 4 == 0 ? "sum14" : "sum1"
+            let coeff = nbElems % 4 == 0 ? 4 : 1
+            var command = MetalKernel.get.createCommand(
+                kernel, deviceID: deviceID
+            )
+            command.setBuffer(cacheKey.metal, atIndex: 0)
+            command.setBytes(pNbElems, atIndex: 1)
+            command.setBuffer(_cacheKeyTmp.metal, atIndex: 2)
+            
+            command.dispatchThreads(nbElems / coeff)
+            command.enqueue()
+            
+            cacheKey = FloatBuffer(
+                nbElems: batchSize * cacheSeqMax * cacheSeqMax * _nbHeadsQuery,
+                deviceID: deviceID
+            )
+            
+            command = MetalKernel.get.createCommand(
+                kernel, deviceID: deviceID
+            )
+            command.setBuffer(_cacheKeyTmp.metal, atIndex: 0)
+            command.setBytes(pNbElems, atIndex: 1)
+            command.setBuffer(cacheKey.metal, atIndex: 2)
+            
+            command.dispatchThreads(nbElems / coeff)
+            command.enqueue()
         }
     }
     
@@ -1520,6 +1585,135 @@ public class QueryCausalSeq: LayerMergeSeq
     {
         try checkStateForwardGPU(batchSize: batchSize)
         
+        if cacheKey != nil && cacheSeq != nil &&
+           cacheKey.nbElems !=
+            batchSize * cacheSeqMax * cacheSeqMax * _nbHeadsQuery
+        {
+            try _generateGPU()
+        }
+        else
+        {
+            _forwardGPU()
+        }
+    }
+    
+    /// Apply the generate pass in the GPU execution context.
+    private func _generateGPU() throws
+    {
+        if sequence != 1
+        {
+            throw LayerError.Init(message: "`sequence` should be 1.")
+        }
+        
+        let query = layersPrev[0] as! LayerSeq
+        let key = layersPrev[1] as! LayerSeq
+        let nbNeuronsPrevQuery = query.nbNeurons
+        let nbNeuronsPrevKey = key.nbNeurons
+        
+        let pNbHeadsQuery: [UInt32] = [UInt32(_nbHeadsQuery)]
+        let pNbHeadsKey: [UInt32] = [UInt32(_nbHeadsKey)]
+        let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
+        let pNbNeuronsPrevQuery: [UInt32] = [UInt32(nbNeuronsPrevQuery)]
+        let pNbNeuronsPrevKey: [UInt32] = [UInt32(nbNeuronsPrevKey)]
+        let pNbBatch: [UInt32] = [UInt32(batchSize)]
+        let pSequence: [UInt32] = [UInt32(cacheSeq + 1)]
+        let pSequenceCache: [UInt32] = [UInt32(cacheSeq)]
+        let pSequenceKey: [UInt32] = [UInt32(1)]
+        
+        let metalKernel = MetalKernel.get
+        var kernel: String
+        var coeff: Int
+        var command: MetalCommand
+        
+        var globalOffset = 0
+        
+        var pGlobalOffset: [UInt32] = [UInt32(globalOffset)]
+        
+        kernel = nbNeurons % 4 == 0 ?
+            "concat1Seq4Forward" : "concat1SeqForward"
+        coeff = nbNeurons % 4 == 0 ? 4 : 1
+        command = metalKernel.createCommand(
+            kernel, deviceID: deviceID
+        )
+        command.setBuffer(cacheKey.metal, atIndex: 0)
+        command.setBytes(pGlobalOffset, atIndex: 1)
+        command.setBytes(pNbNeurons, atIndex: 2)
+        command.setBytes(pNbBatch, atIndex: 3)
+        command.setBytes(pSequence, atIndex: 4)
+        command.setBytes(pSequenceCache, atIndex: 5)
+        command.setBuffer(_cacheKeyTmp.metal, atIndex: 6)
+        
+        command.dispatchThreads(
+            width: nbNeurons / coeff,
+            height: batchSize * cacheSeq
+        )
+        command.enqueue()
+        
+        globalOffset += cacheSeq
+        
+        pGlobalOffset = [UInt32(globalOffset)]
+        
+        command = metalKernel.createCommand(
+            kernel, deviceID: deviceID
+        )
+        command.setBuffer(key.outs.metal, atIndex: 0)
+        command.setBytes(pGlobalOffset, atIndex: 1)
+        command.setBytes(pNbNeurons, atIndex: 2)
+        command.setBytes(pNbBatch, atIndex: 3)
+        command.setBytes(pSequence, atIndex: 4)
+        command.setBytes(pSequenceKey, atIndex: 5)
+        command.setBuffer(_cacheKeyTmp.metal, atIndex: 6)
+        
+        command.dispatchThreads(
+            width: nbNeurons / coeff,
+            height: batchSize * cacheSeq
+        )
+        command.enqueue()
+        
+        
+        kernel = (nbNeuronsPrevQuery / _nbHeadsQuery) % 4 == 0 ?
+            "queryCausalSeq4Generate" : "queryCausalSeqGenerate"
+        command = MetalKernel.get.createCommand(
+            kernel, deviceID: deviceID
+        )
+        command.setBuffer(query.outs.metal, atIndex: 0)
+        command.setBuffer(_cacheKeyTmp.metal, atIndex: 1)
+        command.setBytes(pNbHeadsQuery, atIndex: 2)
+        command.setBytes(pNbHeadsKey, atIndex: 3)
+        command.setBytes(pNbNeurons, atIndex: 4)
+        command.setBytes(pNbNeuronsPrevQuery, atIndex: 5)
+        command.setBytes(pNbNeuronsPrevKey, atIndex: 6)
+        command.setBytes(pNbBatch, atIndex: 7)
+        command.setBytes(pSequence, atIndex: 8)
+        command.setBuffer(outs.metal, atIndex: 9)
+        
+        command.dispatchThreads(
+            width: nbNeurons,
+            height: batchSize * 1
+        )
+        command.enqueue()
+        
+        let nbElems = batchSize * (cacheSeq + 1) * _nbHeadsQuery
+        let pNbElems: [UInt32] = [UInt32(nbElems)]
+        
+        kernel = nbElems % 4 == 0 ? "sum14" : "sum1"
+        coeff = nbElems % 4 == 0 ? 4 : 1
+        command = MetalKernel.get.createCommand(
+            kernel, deviceID: deviceID
+        )
+        command.setBuffer(_cacheKeyTmp.metal, atIndex: 0)
+        command.setBytes(pNbElems, atIndex: 1)
+        command.setBuffer(cacheKey.metal, atIndex: 2)
+        
+        command.dispatchThreads(nbElems / coeff)
+        command.enqueue()
+        
+        cacheSeq += 1
+    }
+    
+    /// Apply the forward pass in the GPU execution context.
+    private func _forwardGPU()
+    {
         let query = layersPrev[0] as! LayerSeq
         let key = layersPrev[1] as! LayerSeq
         let nbNeuronsPrevQuery = query.nbNeurons

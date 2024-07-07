@@ -1165,6 +1165,12 @@ public class ValueCausalSeq: LayerMergeSeq
     /// Number of heads (groups) of neurons for value.
     let _nbHeadsValue: Int
     
+    /// Cache value of shape (batch, sequence, nbNeurons).
+    public var cacheValue: FloatBuffer! = nil
+    
+    /// Maximal sequence of cache.
+    public var cacheSeqMax = 128
+    
     private enum Keys: String, CodingKey
     {
         case nbHeadsScore
@@ -1287,6 +1293,19 @@ public class ValueCausalSeq: LayerMergeSeq
             params: params
         )
         return layer
+    }
+    
+    ///
+    /// Clean state resources in the GPU execution context.
+    ///
+    /// We first clean the neurons' state (forward and backward).
+    /// We do not clean weights and biases but must reset their delta (dependent on batch size) and
+    /// momentum state.
+    ///
+    public override func resetKernelGPU()
+    {
+        super.resetKernelGPU()
+        cacheValue = nil
     }
     
     ///

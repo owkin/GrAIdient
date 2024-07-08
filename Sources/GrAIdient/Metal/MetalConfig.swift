@@ -514,6 +514,8 @@ let CONFIG_KERNELS =
         "queryCausalKeySeq4BackwardFloat",
         "valueCausalSeqForwardFloat",
         "valueCausalSeq4ForwardFloat",
+        "valueCausalSeqGenerateFloat",
+        "valueCausalSeq4GenerateFloat",
         "valueCausalValueSeqBackwardFloat",
         "valueCausalValueSeq4BackwardFloat",
         "valueCausalScoreSeqBackwardFloat",

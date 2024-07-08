@@ -682,6 +682,99 @@ kernel void valueCausalSeq4ForwardFloat(
     outs[offset] = tmp;
 }
 
+kernel void valueCausalSeqGenerateFloat(
+    const device float * value,
+    const device float * score,
+    constant uint & nbHeadsValue,
+    constant uint & nbHeadsScore,
+    constant uint & nbNeurons,
+    constant uint & nbNeuronsPrevValue,
+    constant uint & nbNeuronsPrevScore,
+    constant uint & nbBatch,
+    constant uint & sequence,
+    device float * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint size = nbNeuronsPrevValue / nbHeadsValue;
+    uint nbBlocksHead = nbHeadsScore / nbHeadsValue;
+    
+    uint headScore = id[0] / size;
+    uint j = id[0] % size;
+    uint elem = id[1];
+    
+    if (headScore >= nbHeadsScore || j >= size ||
+        elem >= nbBatch)
+    {
+        return ;
+    }
+    
+    uint headValue = headScore / nbBlocksHead;
+    
+    uint depthScore = j + headScore * size;
+    uint depthValue = j + headValue * size;
+    
+    float tmp = 0.0;
+    for (uint seqK=0; seqK<=sequence; seqK++)
+    {
+        uint offsetValue = depthValue +
+            nbNeuronsPrevValue * seqK + sequence * nbNeuronsPrevValue * elem;
+        uint offsetScore = seqK + headScore * sequence +
+            nbNeuronsPrevScore * elem;
+        
+        tmp += value[offsetValue] * score[offsetScore];
+    }
+    
+    uint offset = depthScore + nbNeurons * elem;
+    outs[offset] = tmp;
+}
+
+kernel void valueCausalSeq4GenerateFloat(
+    const device float4 * value,
+    const device float * score,
+    constant uint & nbHeadsValue,
+    constant uint & nbHeadsScore,
+    constant uint & nbNeurons,
+    constant uint & nbNeuronsPrevValue,
+    constant uint & nbNeuronsPrevScore,
+    constant uint & nbBatch,
+    constant uint & sequence,
+    device float4 * outs,
+    uint2 id [[ thread_position_in_grid ]])
+{
+    uint size = nbNeuronsPrevValue / nbHeadsValue;
+    uint nbBlocksHead = nbHeadsScore / nbHeadsValue;
+    
+    uint headScore = id[0] / (size / 4);
+    uint j = id[0] % (size / 4);
+    uint elem = id[1];
+    
+    if (headScore >= nbHeadsScore || j >= size ||
+        elem >= nbBatch)
+    {
+        return ;
+    }
+    
+    uint headValue = headScore / nbBlocksHead;
+    
+    uint depthScore = j * 4 + headScore * size;
+    uint depthValue = j * 4 + headValue * size;
+    
+    float4 tmp = 0.0;
+    for (uint seqK=0; seqK<=sequence; seqK++)
+    {
+        uint offsetValue = (depthValue +
+            nbNeuronsPrevValue * seqK +
+            sequence * nbNeuronsPrevValue * elem) / 4;
+        uint offsetScore = seqK + headScore * sequence +
+            nbNeuronsPrevScore * elem;
+        
+        tmp += value[offsetValue] * score[offsetScore];
+    }
+    
+    uint offset = (depthScore + nbNeurons * elem) / 4;
+    outs[offset] = tmp;
+}
+
 kernel void valueCausalValueSeqBackwardFloat(
     const device float * delta,
     const device float * score,

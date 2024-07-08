@@ -484,6 +484,9 @@ final class NLPExample: XCTestCase
         ))!
         print(prediction)
         
+        var lastToken = predictions.last!
+        var nbTokens = predictions.count
+        
         var cache = [Int: FloatBuffer]()
         for layer in model.layers
         {
@@ -491,10 +494,12 @@ final class NLPExample: XCTestCase
             if let layerTmp = layer as? QueryCausalSeq
             {
                 cache[id] = (layerTmp.layersPrev[1] as! LayerSeq).outs
+                layerTmp.cacheSeq = nbTokens
             }
             else if let layerTmp = layer as? ValueCausalSeq
             {
                 cache[id] = (layerTmp.layersPrev[0] as! LayerSeq).outs
+                layerTmp.cacheSeq = nbTokens
             }
         }
         
@@ -509,22 +514,17 @@ final class NLPExample: XCTestCase
         model.phase = .Inference
         model.updateKernel(batchSize: 1)
         
-        var lastToken = predictions.last!
-        var nbTokens = predictions.count
         firstLayer = model.layers.first as! EmbeddingSeq
-        
         for layer in model.layers
         {
             let id = layer.id
             if let layerTmp = layer as? QueryCausalSeq
             {
                 layerTmp.cacheKey = cache[id]!
-                layerTmp.cacheSeq = nbTokens
             }
             else if let layerTmp = layer as? ValueCausalSeq
             {
                 layerTmp.cacheValue = cache[id]!
-                // layerTmp.cacheSeq = nbTokens
             }
         }
         
@@ -556,6 +556,13 @@ final class NLPExample: XCTestCase
             
             lastToken = predictions.last!
             nbTokens += 1
+            
+            // Decode.
+            let prediction = String(pythonLib.decode(
+                predictions,
+                _modelPath
+            ))!
+            print(prediction)
         }
     }
 }

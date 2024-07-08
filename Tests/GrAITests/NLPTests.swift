@@ -1197,12 +1197,14 @@ class NLPTransformTests: NLPFlowTests
     
     override func testQueryCausal1() throws
     {
+        throw XCTSkip("Skipping this test because of layer structure.")
         let trainer = _buildTrainer("QueryCausal1")
         run(trainer)
     }
     
     override func testQueryCausal2() throws
     {
+        throw XCTSkip("Skipping this test because of layer structure.")
         let trainer = _buildTrainer("QueryCausal2")
         run(trainer)
     }

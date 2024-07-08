@@ -1009,9 +1009,9 @@ public class QueryCausalSeq: LayerMergeSeq
     /// Number of heads (groups) of neurons for key.
     let _nbHeadsKey: Int
     
-    /// Cache key of shape (batch, sequence, nbHeadsQuery x sequence).
+    /// Cache key of shape (batch, cacheSeqMax, nbHeadsQuery x sequence).
     public var cacheKey: FloatBuffer! = nil
-    /// Cache key of shape (batch, sequence, nbHeadsQuery x sequence).
+    /// Cache key of shape (batch, cacheSeqMax, nbHeadsQuery x sequence).
     var _cacheKeyTmp: FloatBuffer! = nil
     
     /// Maximal sequence of cache.
@@ -1024,6 +1024,8 @@ public class QueryCausalSeq: LayerMergeSeq
     {
         case nbHeadsQuery
         case nbHeadsKey
+        case cacheSeqMax
+        case cacheSeq
     }
     
     ///
@@ -1081,6 +1083,62 @@ public class QueryCausalSeq: LayerMergeSeq
     }
     
     ///
+    /// Create a layer with a sequential shape neural structure.
+    ///
+    /// - Parameters:
+    ///     - query: Previous layer containing the query to look for.
+    ///     - key: Previous layer containing the keys of reference.
+    ///     - nbHeadsQuery: Number of heads (groups) of neurons for query.
+    ///     - nbHeadsKey: Number of heads (groups) of neurons for key.
+    ///     - hiddenSeq: Length of the hidden sequence.
+    ///     - params: Contextual parameters linking to the model.
+    ///
+    public init(query: LayerSeq, key: LayerSeq,
+                nbHeadsQuery: Int, nbHeadsKey: Int,
+                hiddenSeq: Int,
+                params: GrAI.Model.Params) throws
+    {
+        if query.nbNeurons % nbHeadsQuery != 0
+        {
+            throw LayerError.Init(message:
+                "`nbNeurons` (\(query.nbNeurons)) " +
+                "should be a multiple of `nbHeadsQuery` (\(nbHeadsQuery))."
+            )
+        }
+        if key.nbNeurons % nbHeadsKey != 0
+        {
+            throw LayerError.Init(message:
+                "`nbNeurons` (\(key.nbNeurons)) " +
+                "should be a multiple of `nbHeadsKey` (\(nbHeadsKey))."
+            )
+        }
+        if nbHeadsQuery % nbHeadsKey != 0
+        {
+            throw LayerError.Init(message:
+                "`nbHeadsQuery` should be a multiple of `nbHeadsKey`"
+            )
+        }
+        if query.nbNeurons / nbHeadsQuery != key.nbNeurons / nbHeadsKey
+        {
+            throw LayerError.Init(message:
+                "`query` and `key` should should have same hidden dimension."
+            )
+        }
+        if query.sequence != key.sequence
+        {
+            throw LayerError.Init(message: "Layer structure error.")
+        }
+        
+        _nbHeadsQuery = nbHeadsQuery
+        _nbHeadsKey = nbHeadsKey
+        
+        super.init(layersPrev: [query, key],
+                   sequence: query.sequence,
+                   nbNeurons: hiddenSeq * nbHeadsQuery,
+                   params: params)
+    }
+    
+    ///
     /// Decode from the disk.
     ///
     /// Throw an error if reading from the decoder fails, or
@@ -1093,6 +1151,8 @@ public class QueryCausalSeq: LayerMergeSeq
         let values = try decoder.container(keyedBy: Keys.self)
         _nbHeadsQuery = try values.decode(Int.self, forKey: Keys.nbHeadsQuery)
         _nbHeadsKey = try values.decode(Int.self, forKey: Keys.nbHeadsKey)
+        cacheSeqMax = try values.decode(Int.self, forKey: Keys.cacheSeqMax)
+        cacheSeq = try values.decodeIfPresent(Int.self, forKey: .cacheSeq)
         try super.init(from: decoder)
     }
     
@@ -1112,6 +1172,11 @@ public class QueryCausalSeq: LayerMergeSeq
         var container = encoder.container(keyedBy: Keys.self)
         try container.encode(_nbHeadsQuery, forKey: Keys.nbHeadsQuery)
         try container.encode(_nbHeadsKey, forKey: Keys.nbHeadsKey)
+        try container.encode(cacheSeqMax, forKey: Keys.cacheSeqMax)
+        if cacheSeq != nil
+        {
+            try container.encode(cacheSeq, forKey: Keys.cacheSeq)
+        }
         try super.encode(to: encoder)
     }
     
@@ -1141,12 +1206,30 @@ public class QueryCausalSeq: LayerMergeSeq
             layersPrev.append(mapping[idPrev] as! LayerSeq)
         }
         
-        let layer = try! QueryCausalSeq(
-            query: layersPrev[0], key: layersPrev[1],
-            nbHeadsQuery: _nbHeadsQuery,
-            nbHeadsKey: _nbHeadsKey,
-            params: params
-        )
+        let layer: QueryCausalSeq
+        if cacheSeq != nil // Generation.
+        {
+            layer = try! QueryCausalSeq(
+                query: layersPrev[0], key: layersPrev[1],
+                nbHeadsQuery: _nbHeadsQuery,
+                nbHeadsKey: _nbHeadsKey,
+                hiddenSeq: cacheSeqMax,
+                params: params
+            )
+        }
+        else
+        {
+            layer = try! QueryCausalSeq(
+                query: layersPrev[0], key: layersPrev[1],
+                nbHeadsQuery: _nbHeadsQuery,
+                nbHeadsKey: _nbHeadsKey,
+                params: params
+            )
+        }
+        
+        layer.cacheSeqMax = cacheSeqMax
+        layer.cacheSeq = cacheSeq
+        
         return layer
     }
     
@@ -1160,7 +1243,10 @@ public class QueryCausalSeq: LayerMergeSeq
     public override func resetKernelGPU()
     {
         super.resetKernelGPU()
+        
         cacheKey = nil
+        _cacheKeyTmp = nil
+        cacheSeq = nil
     }
     
     ///
@@ -1218,13 +1304,15 @@ public class QueryCausalSeq: LayerMergeSeq
                 nbElems: batchSize * cacheSeqMax * cacheSeqMax * _nbHeadsQuery,
                 deviceID: deviceID
             )
+            
+            let nbElems = batchSize * cacheSeq * cacheSeq * _nbHeadsQuery
+            _copyGPU(nbElems: nbElems, from: cacheKey, to: _cacheKeyTmp)
+            
             cacheKey = FloatBuffer(
                 nbElems: batchSize * cacheSeqMax * cacheSeqMax * _nbHeadsQuery,
                 deviceID: deviceID
             )
             
-            let nbElems = batchSize * cacheSeq * cacheSeq * _nbHeadsQuery
-            _copyGPU(nbElems: nbElems, from: cacheKey, to: _cacheKeyTmp)
             _copyGPU(nbElems: nbElems, from: _cacheKeyTmp, to: cacheKey)
         }
     }
@@ -1612,6 +1700,7 @@ public class QueryCausalSeq: LayerMergeSeq
         let key = layersPrev[1] as! LayerSeq
         let nbNeuronsPrevQuery = query.nbNeurons
         let nbNeuronsPrevKey = key.nbNeurons
+        let nbNeurons = (cacheSeq + 1) * _nbHeadsQuery
         
         let pNbHeadsQuery: [UInt32] = [UInt32(_nbHeadsQuery)]
         let pNbHeadsKey: [UInt32] = [UInt32(_nbHeadsKey)]
@@ -1654,8 +1743,9 @@ public class QueryCausalSeq: LayerMergeSeq
     {
         let key = layersPrev[1] as! LayerSeq
         let nbNeuronsPrevKey = key.nbNeurons
+        let nbNeurons = nbNeuronsPrevKey
         
-        let pNbNeurons: [UInt32] = [UInt32(nbNeuronsPrevKey)]
+        let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pSequence: [UInt32] = [UInt32(cacheSeq + 1)]
         let pSequenceCache: [UInt32] = [UInt32(cacheSeq)]
@@ -1705,7 +1795,7 @@ public class QueryCausalSeq: LayerMergeSeq
         
         command.dispatchThreads(
             width: nbNeurons / coeff,
-            height: batchSize * cacheSeq
+            height: batchSize * 1
         )
         command.enqueue()
     }

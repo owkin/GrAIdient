@@ -435,6 +435,9 @@ final class NLPExample: XCTestCase
     /// Generate text from prompt.
     func _testGenerate() throws
     {
+        // Use Float16 for faster results.
+        GrAI.Precision.float16 = true
+        
         // Encode prompt.
         let pythonLib = Python.import("python_lib")
         let prompt = [Int](pythonLib.encode(
@@ -486,6 +489,8 @@ final class NLPExample: XCTestCase
             [lastToken],
             _modelPath
         ))!
+        
+        let start = Date()
         print("Start generating...")
         print(prediction, terminator: "")
         
@@ -568,5 +573,9 @@ final class NLPExample: XCTestCase
         }
         print("")
         print("End generating.")
+        
+        let end = Date()
+        let timeSpent = end.timeIntervalSince(start)
+        print("Process took \(timeSpent)s.")
     }
 }

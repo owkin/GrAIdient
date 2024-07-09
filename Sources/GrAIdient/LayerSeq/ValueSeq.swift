@@ -1265,6 +1265,7 @@ public class ValueCausalSeq: LayerMergeSeq
     {
         var container = encoder.container(keyedBy: Keys.self)
         try container.encode(_nbHeadsScore, forKey: Keys.nbHeadsScore)
+        try container.encode(_nbHeadsValue, forKey: Keys.nbHeadsValue)
         try container.encode(cacheSeqMax, forKey: Keys.cacheSeqMax)
         if cacheSeq != nil
         {

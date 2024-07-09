@@ -1426,7 +1426,7 @@ class NLPGenerateTests: XCTestCase
         return model
     }
     
-    func testGenerate() throws
+    func runGenerate()
     {
         // Build models.
         let model1 = buildModel(
@@ -1575,5 +1575,16 @@ class NLPGenerateTests: XCTestCase
         print("Predictions1: \(predictions1).")
         print("Predictions2: \(predictions2).")
         XCTAssert(predictions1 == predictions2)
+    }
+    
+    func testGenerateFloat()
+    {
+        runGenerate()
+    }
+    
+    func testGenerateFloat16()
+    {
+        GrAI.Precision.float16 = true
+        runGenerate()
     }
 }

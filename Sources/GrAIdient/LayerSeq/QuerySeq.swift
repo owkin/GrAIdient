@@ -1264,20 +1264,22 @@ public class QueryCausalSeq: LayerMergeSeq
             try super.checkStateForwardGPU(batchSize: batchSize)
         }
         
+        let key = layersPrev[1] as! LayerSeq
+        let nbNeuronsPrevKey = key.nbNeurons
+        
         if cacheKey != nil && cacheSeq != nil &&
-           cacheKey.nbElems !=
-            batchSize * cacheSeqMax * cacheSeqMax * _nbHeadsQuery
+           cacheKey.nbElems != batchSize * cacheSeqMax * nbNeuronsPrevKey
         {
             _cacheKeyTmp = FloatBuffer(
-                nbElems: batchSize * cacheSeqMax * cacheSeqMax * _nbHeadsQuery,
+                nbElems: batchSize * cacheSeqMax * nbNeuronsPrevKey,
                 deviceID: deviceID
             )
             
-            let nbElems = batchSize * cacheSeq * cacheSeq * _nbHeadsQuery
+            let nbElems = batchSize * cacheSeq * nbNeuronsPrevKey
             _copyGPU(nbElems: nbElems, from: cacheKey, to: _cacheKeyTmp)
             
             cacheKey = FloatBuffer(
-                nbElems: batchSize * cacheSeqMax * cacheSeqMax * _nbHeadsQuery,
+                nbElems: batchSize * cacheSeqMax * nbNeuronsPrevKey,
                 deviceID: deviceID
             )
             
@@ -1700,7 +1702,7 @@ public class QueryCausalSeq: LayerMergeSeq
         )
         command.enqueue()
         
-        let nbElems = batchSize * (cacheSeq + 1) * _nbHeadsQuery
+        let nbElems = batchSize * (cacheSeq + 1) * nbNeuronsPrevKey
         _copyGPU(nbElems: nbElems, from: _cacheKeyTmp, to: cacheKey)
         
         cacheSeq += 1

@@ -13,7 +13,7 @@ import GrAIdient
 final class NLPExample: XCTestCase
 {
     /// Model path on the disk.
-    let _modelPath = "TO/UPDATE"
+    let _modelPath = "/Users/jean-francoisreboud/DocumentsNonSync/Projet/Python/mistral/weights/mistral-7B-v0.1/"
     
     /// Prompt.
     let _prompt = "How do you do?"
@@ -162,7 +162,7 @@ final class NLPExample: XCTestCase
                 params: params
             )
             curGrAIdient += 1
-            layer = try! SoftmaxSeq(
+            layer = try! SoftmaxCausalSeq(
                 layerPrev: layer,
                 nbHeads: nbHeadsQuery,
                 params: params
@@ -478,16 +478,18 @@ final class NLPExample: XCTestCase
             predictions.append(argmax)
         }
         
-        // Decode.
-        let prediction = String(pythonLib.decode(
-            predictions,
-            _modelPath
-        ))!
-        print(prediction)
-        
         var lastToken = predictions.last!
         var nbTokens = predictions.count
         
+        // Decode.
+        let prediction = String(pythonLib.decode(
+            [lastToken],
+            _modelPath
+        ))!
+        print("Start generating...")
+        print(prediction, terminator: "")
+        
+        // Save cache.
         var cache = [Int: FloatBuffer]()
         for layer in model.layers
         {
@@ -497,6 +499,10 @@ final class NLPExample: XCTestCase
                 cache[id] = (layerTmp.layersPrev[1] as! LayerSeq).outs
                 layerTmp.cacheSeq = nbTokens
             }
+            else if let layerTmp = layer as? SoftmaxCausalSeq
+            {
+                layerTmp.cacheSeq = nbTokens
+            }
             else if let layerTmp = layer as? ValueCausalSeq
             {
                 cache[id] = (layerTmp.layersPrev[0] as! LayerSeq).outs
@@ -504,17 +510,17 @@ final class NLPExample: XCTestCase
             }
         }
         
+        // Prepare model for prediction of one token.
         model = Model.updateSeq(
             models: [model],
             sequence: 1,
             inPlace: true
         )[0]
         
-        // model.resetKernel()
-        // model.initKernel(phase: .Inference)
         model.phase = .Inference
         model.updateKernel(batchSize: 1)
         
+        // Set cache.
         firstLayer = model.layers.first as! EmbeddingSeq
         for layer in model.layers
         {
@@ -529,8 +535,11 @@ final class NLPExample: XCTestCase
             }
         }
         
-        for _ in 0..<128
+        // Generate.
+        let finalStep = 128 - nbTokens
+        for _ in 0..<finalStep
         {
+            // Forward.
             try! firstLayer.setDataGPU(
                 [[lastToken]], batchSize: 1, sequence: 1
             )
@@ -545,15 +554,7 @@ final class NLPExample: XCTestCase
             
             // Get result.
             let out = (model.layers.last as! LayerSeq).outs.download()
-            
-            // Compute prediction for each token.
-            var predictions = [Int]()
-            for seq in 0..<out.count / 32000
-            {
-                let vector = [Float](out[32000*seq..<32000*(seq+1)])
-                let argmax = _argmax(array: vector)!
-                predictions.append(argmax)
-            }
+            let predictions = [_argmax(array: out)!]
             
             lastToken = predictions.last!
             nbTokens += 1
@@ -563,7 +564,9 @@ final class NLPExample: XCTestCase
                 predictions,
                 _modelPath
             ))!
-            print(prediction)
+            print(prediction, terminator: "")
         }
+        print("")
+        print("End generating.")
     }
 }

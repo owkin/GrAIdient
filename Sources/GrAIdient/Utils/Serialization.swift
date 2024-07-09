@@ -89,6 +89,7 @@ let LAYER_REGISTRY: [String: Codable.Type] = buildRegistry(
     RMSNormSeq.self,
     SelfCorrelate2D.self,
     Softmax1D.self,
+    SoftmaxCausalSeq.self,
     SoftmaxSeq.self,
     Sum1D.self,
     Sum2D.self,

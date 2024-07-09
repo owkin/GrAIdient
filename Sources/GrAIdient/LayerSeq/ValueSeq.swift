@@ -1337,19 +1337,22 @@ public class ValueCausalSeq: LayerMergeSeq
     {
         try super.checkStateForwardGPU(batchSize: batchSize)
         
+        let value = layersPrev[0] as! LayerSeq
+        let nbNeuronsPrevValue = value.nbNeurons
+        
         if cacheValue != nil && cacheSeq != nil &&
-           cacheValue.nbElems != batchSize * cacheSeqMax * nbNeurons
+           cacheValue.nbElems != batchSize * cacheSeqMax * nbNeuronsPrevValue
         {
             _cacheValueTmp = FloatBuffer(
-                nbElems: batchSize * cacheSeqMax * nbNeurons,
+                nbElems: batchSize * cacheSeqMax * nbNeuronsPrevValue,
                 deviceID: deviceID
             )
             
-            let nbElems = batchSize * cacheSeq * nbNeurons
+            let nbElems = batchSize * cacheSeq * nbNeuronsPrevValue
             _copyGPU(nbElems: nbElems, from: cacheValue, to: _cacheValueTmp)
             
             cacheValue = FloatBuffer(
-                nbElems: batchSize * cacheSeqMax * nbNeurons,
+                nbElems: batchSize * cacheSeqMax * nbNeuronsPrevValue,
                 deviceID: deviceID
             )
             
@@ -1692,7 +1695,7 @@ public class ValueCausalSeq: LayerMergeSeq
         )
         command.enqueue()
         
-        let nbElems = batchSize * (cacheSeq + 1) * nbNeurons
+        let nbElems = batchSize * (cacheSeq + 1) * nbNeuronsPrevValue
         _copyGPU(nbElems: nbElems, from: _cacheValueTmp, to: cacheValue)
         
         cacheSeq += 1

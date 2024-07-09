@@ -1347,7 +1347,7 @@ class NLPGenerateTests: XCTestCase
                 nbHeadsQuery: nbHeadsQuery, nbHeadsKey: nbHeadsKV,
                 params: params
             )
-            layer = try! SoftmaxSeq(
+            layer = try! SoftmaxCausalSeq(
                 layerPrev: layer,
                 nbHeads: nbHeadsQuery,
                 params: params
@@ -1501,6 +1501,7 @@ class NLPGenerateTests: XCTestCase
         
         var nbTokens = predictions2.count
         
+        // Save cache.
         var cache = [Int: FloatBuffer]()
         for layer in model2.layers
         {
@@ -1511,6 +1512,10 @@ class NLPGenerateTests: XCTestCase
                 layerTmp.cacheSeq = nbTokens
                 layerTmp.cacheSeqMax = 5
             }
+            else if let layerTmp = layer as? SoftmaxCausalSeq
+            {
+                layerTmp.cacheSeq = nbTokens
+            }
             else if let layerTmp = layer as? ValueCausalSeq
             {
                 cache[id] = (layerTmp.layersPrev[0] as! LayerSeq).outs
@@ -1519,6 +1524,7 @@ class NLPGenerateTests: XCTestCase
             }
         }
         
+        // Prepare model for prediction of one token.
         model2 = Model.updateSeq(
             models: [model2],
             sequence: 1,
@@ -1528,6 +1534,7 @@ class NLPGenerateTests: XCTestCase
         model2.phase = .Inference
         model2.updateKernel(batchSize: 1)
         
+        // Set cache.
         firstLayer2 = model2.layers.first as! EmbeddingSeq
         for layer in model2.layers
         {
@@ -1542,8 +1549,10 @@ class NLPGenerateTests: XCTestCase
             }
         }
         
+        // Generate.
         for i in 0..<3
         {
+            // Forward.
             try! firstLayer2.setDataGPU(
                 [[prompt1[2 + i]]], batchSize: 1, sequence: 1
             )
@@ -1558,8 +1567,6 @@ class NLPGenerateTests: XCTestCase
             
             // Get result.
             let out2 = (model2.layers.last as! LayerSeq).outs.download()
-            
-            // Compute prediction for each token.
             predictions2.append(argmax(array: out2)!)
             
             nbTokens += 1

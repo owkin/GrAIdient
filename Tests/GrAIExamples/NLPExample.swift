@@ -58,6 +58,7 @@ final class NLPExample: XCTestCase
     /// Build LLM model.
     ///
     /// - Parameters:
+    ///     - modelPath: Model path on the disk.
     ///     - sequence: Length of the sequence.
     ///     - nbBlocks: Number of transformer + MLP blocks.
     ///     - hiddenDim: Dimension of neurons in the main branch.

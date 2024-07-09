@@ -1038,48 +1038,16 @@ public class QueryCausalSeq: LayerMergeSeq
     ///     - nbHeadsKey: Number of heads (groups) of neurons for key.
     ///     - params: Contextual parameters linking to the model.
     ///
-    public init(query: LayerSeq, key: LayerSeq, 
-                nbHeadsQuery: Int, nbHeadsKey: Int,
-                params: GrAI.Model.Params) throws
+    public convenience init(query: LayerSeq, key: LayerSeq,
+                            nbHeadsQuery: Int, nbHeadsKey: Int,
+                            params: GrAI.Model.Params) throws
     {
-        if query.nbNeurons % nbHeadsQuery != 0
-        {
-            throw LayerError.Init(message:
-                "`nbNeurons` (\(query.nbNeurons)) " +
-                "should be a multiple of `nbHeadsQuery` (\(nbHeadsQuery))."
-            )
-        }
-        if key.nbNeurons % nbHeadsKey != 0
-        {
-            throw LayerError.Init(message:
-                "`nbNeurons` (\(key.nbNeurons)) " +
-                "should be a multiple of `nbHeadsKey` (\(nbHeadsKey))."
-            )
-        }
-        if nbHeadsQuery % nbHeadsKey != 0
-        {
-            throw LayerError.Init(message:
-                "`nbHeadsQuery` should be a multiple of `nbHeadsKey`"
-            )
-        }
-        if query.nbNeurons / nbHeadsQuery != key.nbNeurons / nbHeadsKey
-        {
-            throw LayerError.Init(message:
-                "`query` and `key` should should have same hidden dimension."
-            )
-        }
-        if query.sequence != key.sequence
-        {
-            throw LayerError.Init(message: "Layer structure error.")
-        }
-        
-        _nbHeadsQuery = nbHeadsQuery
-        _nbHeadsKey = nbHeadsKey
-        
-        super.init(layersPrev: [query, key],
-                   sequence: query.sequence,
-                   nbNeurons: query.sequence * nbHeadsQuery,
-                   params: params)
+        try self.init(
+            query: query, key: key,
+            nbHeadsQuery: nbHeadsQuery, nbHeadsKey: nbHeadsKey,
+            hiddenSeq: query.sequence,
+            params: params
+        )
     }
     
     ///

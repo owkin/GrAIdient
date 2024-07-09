@@ -1221,3 +1221,352 @@ class NLPTransformTests: NLPFlowTests
         run(trainer)
     }
 }
+
+// Test that generation process computes same outputs as forward pass.
+class NLPGenerateTests: XCTestCase
+{
+    /// Length of the data sequence.
+    let sequence = 5
+    
+    /// Initialize test.
+    override func setUp()
+    {
+        _ = MetalKernel.get
+        
+        GrAI.Opti.GPU = true
+        GrAI.Precision.float = true
+    }
+    
+    ///
+    /// Return the index of maximal element in array.
+    ///
+    /// - Parameter array: Input array.
+    /// - Returns: The index of the maximal element.
+    ///
+    func argmax(array: [Float]) -> Int?
+    {
+        if array.isEmpty
+        {
+            return nil
+        }
+        
+        var maxIndex = 0
+        var maxValue = array[0]
+        for i in 1..<array.count
+        {
+            if array[i] > maxValue
+            {
+                maxIndex = i
+                maxValue = array[i]
+            }
+        }
+        return maxIndex
+    }
+    
+    ///
+    /// Build LLM model.
+    ///
+    /// - Parameters:
+    ///     - sequence: Length of the sequence.
+    ///     - nbBlocks: Number of transformer + MLP blocks.
+    ///     - hiddenDim: Dimension of neurons in the main branch.
+    ///     - headDim: Dimension of neurons in the transformer branches.
+    ///     - mlpDim: Dimension of neurons in the MLP branches.
+    ///     - nbHeads:  Number of heads (groups) of neurons for queries.
+    ///     - nbHeadsKV: Number of heads (groups) of neurons for keys and values.
+    ///     - vocabularySize: Vocabulary size.
+    /// - Returns: The model built.
+    ///
+    func buildModel(
+        sequence: Int,
+        nbBlocks: Int,
+        hiddenDim: Int,
+        headDim: Int,
+        mlpDim: Int,
+        nbHeadsQuery: Int,
+        nbHeadsKV: Int,
+        vocabularySize: Int) -> Model
+    {
+        let context = ModelContext(name: "NLP", curID: 0)
+        let params = GrAI.Model.Params(context: context)
+        
+        var layer: LayerSeq = EmbeddingSeq(
+            sequence: sequence,
+            vocabularySize: vocabularySize,
+            nbNeurons: hiddenDim, params: params
+        )
+        
+        for _ in 0..<nbBlocks
+        {
+            var x: LayerSeq = layer
+            
+            layer = RMSNormSeq(
+                layerPrev: layer,
+                activation: nil,
+                params: params
+            )
+            
+            var query: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: nbHeadsQuery * headDim,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            query = try! RoPESeq(
+                layerPrev: query,
+                seqPositions: [Int](1...sequence),
+                nbHeads: nbHeadsQuery,
+                params: params
+            )
+            
+            var key: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: nbHeadsKV * headDim,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            key = try! RoPESeq(
+                layerPrev: key,
+                seqPositions: [Int](1...sequence),
+                nbHeads: nbHeadsKV,
+                params: params
+            )
+            
+            let value: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: nbHeadsKV * headDim,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            
+            layer = try! QueryCausalSeq(
+                query: query, key: key,
+                nbHeadsQuery: nbHeadsQuery, nbHeadsKey: nbHeadsKV,
+                params: params
+            )
+            layer = try! SoftmaxSeq(
+                layerPrev: layer,
+                nbHeads: nbHeadsQuery,
+                params: params
+            )
+            
+            layer = try! ValueCausalSeq(
+                value: value, score: layer,
+                nbHeadsValue: nbHeadsKV, nbHeadsScore: nbHeadsQuery,
+                params: params
+            )
+            
+            layer = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: nbHeadsQuery * headDim,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            
+            layer = try! SumSeq(layersPrev: [layer, x], params: params)
+            
+            x = layer
+            
+            layer = RMSNormSeq(
+                layerPrev: layer,
+                activation: nil,
+                params: params
+            )
+            
+            let mult1: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: mlpDim,
+                activation: SiLU.str,
+                biases: false,
+                params: params
+            )
+            
+            let mult2: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: mlpDim,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            
+            layer = try! MultiplySeq(layersPrev: [mult1, mult2], params: params)
+            
+            layer = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: hiddenDim,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            
+            layer = try! SumSeq(layersPrev: [layer, x], params: params)
+        }
+        
+        layer = RMSNormSeq(
+            layerPrev: layer,
+            activation: nil,
+            params: params
+        )
+        
+        layer = FullyConnectedSeq(
+            layerPrev: layer,
+            nbNeurons: vocabularySize,
+            activation: nil,
+            biases: false,
+            params: params
+        )
+        
+        // Retrieve base model in the context and initialize a
+        // real model (with `layerPrev` links updated).
+        let model = Model(model: context.model, modelsPrev: [])
+        return model
+    }
+    
+    func testGenerate() throws
+    {
+        // Build models.
+        let model1 = buildModel(
+            sequence: sequence,
+            nbBlocks: 1,
+            hiddenDim: 8,
+            headDim: 2,
+            mlpDim: 8,
+            nbHeadsQuery: 4,
+            nbHeadsKV: 2,
+            vocabularySize: 10
+        )
+        var model2 = buildModel(
+            sequence: 2,
+            nbBlocks: 1,
+            hiddenDim: 8,
+            headDim: 2,
+            mlpDim: 8,
+            nbHeadsQuery: 4,
+            nbHeadsKV: 2,
+            vocabularySize: 10
+        )
+        
+        // Initialize for inference.
+        model1.initKernel(phase: .Inference)
+        model2.weights = model1.weights
+        model2.initKernel(phase: .Inference)
+        
+        let firstLayer1 = model1.layers.first as! EmbeddingSeq
+        var firstLayer2 = model2.layers.first as! EmbeddingSeq
+        
+        // Forward.
+        model1.updateKernel(batchSize: 1)
+        let prompt1 = [Int](0..<sequence)
+        try! firstLayer1.setDataGPU(
+            [prompt1], batchSize: 1, sequence: prompt1.count
+        )
+        try! model1.forward()
+        
+        // Get result.
+        let out1 = (model1.layers.last as! LayerSeq).outs.download()
+        
+        // Compute prediction for each token.
+        var predictions1 = [Int]()
+        for seq in 0..<out1.count / 10
+        {
+            let vector = [Float](out1[10*seq..<10*(seq+1)])
+            let argmaxTmp = argmax(array: vector)!
+            predictions1.append(argmaxTmp)
+        }
+        
+        // Forward.
+        model2.updateKernel(batchSize: 1)
+        let prompt2 = [0, 1]
+        
+        try! firstLayer2.setDataGPU(
+            [prompt2], batchSize: 1, sequence: prompt2.count
+        )
+        try! model2.forward()
+        
+        // Get result.
+        let out2 = (model2.layers.last as! LayerSeq).outs.download()
+        
+        // Compute prediction for each token.
+        var predictions2 = [Int]()
+        for seq in 0..<out2.count / 10
+        {
+            let vector = [Float](out2[10*seq..<10*(seq+1)])
+            let argmaxTmp = argmax(array: vector)!
+            predictions2.append(argmaxTmp)
+        }
+        
+        var nbTokens = predictions2.count
+        
+        var cache = [Int: FloatBuffer]()
+        for layer in model2.layers
+        {
+            let id = layer.id
+            if let layerTmp = layer as? QueryCausalSeq
+            {
+                cache[id] = (layerTmp.layersPrev[1] as! LayerSeq).outs
+                layerTmp.cacheSeq = nbTokens
+                layerTmp.cacheSeqMax = 5
+            }
+            else if let layerTmp = layer as? ValueCausalSeq
+            {
+                cache[id] = (layerTmp.layersPrev[0] as! LayerSeq).outs
+                layerTmp.cacheSeq = nbTokens
+                layerTmp.cacheSeqMax = 5
+            }
+        }
+        
+        model2 = Model.updateSeq(
+            models: [model2],
+            sequence: 1,
+            inPlace: true
+        )[0]
+        
+        model2.phase = .Inference
+        model2.updateKernel(batchSize: 1)
+        
+        firstLayer2 = model2.layers.first as! EmbeddingSeq
+        for layer in model2.layers
+        {
+            let id = layer.id
+            if let layerTmp = layer as? QueryCausalSeq
+            {
+                layerTmp.cacheKey = cache[id]!
+            }
+            else if let layerTmp = layer as? ValueCausalSeq
+            {
+                layerTmp.cacheValue = cache[id]!
+            }
+        }
+        
+        for i in 0..<3
+        {
+            try! firstLayer2.setDataGPU(
+                [[prompt1[2 + i]]], batchSize: 1, sequence: 1
+            )
+            for layer in model2.layers
+            {
+                if let layerTmp = layer as? RoPESeq
+                {
+                    layerTmp.seqPositions = [nbTokens + 1]
+                }
+            }
+            try! model2.forward()
+            
+            // Get result.
+            let out2 = (model2.layers.last as! LayerSeq).outs.download()
+            
+            // Compute prediction for each token.
+            predictions2.append(argmax(array: out2)!)
+            
+            nbTokens += 1
+        }
+        
+        print("Predictions1: \(predictions1).")
+        print("Predictions2: \(predictions2).")
+        XCTAssert(predictions1 == predictions2)
+    }
+}

@@ -84,7 +84,7 @@ public class MultiplySeq: LayerMergeSeq
         params.context.curID = id
         
         var layersPrev = [LayerSeq]()
-        for idPrev in _idsPrev
+        for idPrev in idsPrev
         {
             layersPrev.append(mapping[idPrev] as! LayerSeq)
         }
@@ -127,7 +127,7 @@ public class MultiplySeq: LayerMergeSeq
         if phase != nil && (phase == .Training || phase == .InferenceBackward) {
         if _otherOuts1.count == 0
         {
-            for _ in 0..<_layersPrev.count
+            for _ in 0..<layersPrev.count
             {
                 _otherOuts1.append([Double](
                     repeating: 0.0,
@@ -149,7 +149,7 @@ public class MultiplySeq: LayerMergeSeq
         if phase != nil && (phase == .Training || phase == .InferenceBackward) {
         if _otherOuts2.count == 0
         {
-            for _ in 0..<_layersPrev.count
+            for _ in 0..<layersPrev.count
             {
                 let buffer = FloatBuffer(
                     nbElems: batchSize * sequence * nbNeurons,
@@ -189,9 +189,9 @@ public class MultiplySeq: LayerMergeSeq
         for depth in 0..<nbNeurons
         {
             var value = 1.0
-            for num in 0..<_layersPrev.count
+            for num in 0..<layersPrev.count
             {
-                let neuronsPrev = (_layersPrev[num] as! LayerSeq).neurons!
+                let neuronsPrev = (layersPrev[num] as! LayerSeq).neurons!
                 value *= neuronsPrev.get(seq, depth)!.gc[batch][elem].out
             }
             neurons.get(seq, depth)!.gc[batch][elem].out = value
@@ -201,15 +201,15 @@ public class MultiplySeq: LayerMergeSeq
         for seq in 0..<sequence {
         var offset = nbSameElems
         var nbLastElems = [Int](repeating: nbSameElems,
-                                count: _layersPrev.count)
+                                count: layersPrev.count)
         for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
         for elem in 0..<nbElemsTmp {
         for depth in 0..<nbNeurons
         {
             var value = 1.0
-            for num in 0..<_layersPrev.count
+            for num in 0..<layersPrev.count
             {
-                let neuronsPrev = (_layersPrev[num] as! LayerSeq).neurons!
+                let neuronsPrev = (layersPrev[num] as! LayerSeq).neurons!
                 
                 if num == index
                 {
@@ -240,9 +240,9 @@ public class MultiplySeq: LayerMergeSeq
         try checkStateCPU(batchSize: batchSize)
         
         var buffersPrev = [[Float]]()
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            buffersPrev.append((_layersPrev[num] as! LayerSeq).outs.download())
+            buffersPrev.append((layersPrev[num] as! LayerSeq).outs.download())
         }
         
         let (nbSameElems, layersIndex, nbElems) = getMergedGraph()
@@ -265,9 +265,9 @@ public class MultiplySeq: LayerMergeSeq
         for depth in 0..<nbNeurons
         {
             var value = 1.0
-            for num in 0..<_layersPrev.count
+            for num in 0..<layersPrev.count
             {
-                let neuronsPrev = (_layersPrev[num] as! LayerSeq).neurons!
+                let neuronsPrev = (layersPrev[num] as! LayerSeq).neurons!
                 value *= neuronsPrev.get(seq, depth)!.gc[batch][elem].out
             }
             neurons.get(seq, depth)!.gc[batch][elem].out = value
@@ -277,17 +277,17 @@ public class MultiplySeq: LayerMergeSeq
         for seq in 0..<sequence {
         var offset = nbSameElems
         var nbLastElems = [Int](repeating: nbSameElems,
-                                count: _layersPrev.count)
+                                count: layersPrev.count)
         for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
         for elem in 0..<nbElemsTmp {
         for depth in 0..<nbNeurons
         {
             var value = 1.0
-            for num in 0..<_layersPrev.count
+            for num in 0..<layersPrev.count
             {
                 let outsPrevPtr = buffersPrev[num]
                 let neuronsPrev =
-                    (_layersPrev[num] as! LayerSeq).neurons!
+                    (layersPrev[num] as! LayerSeq).neurons!
                 
                 if num == index
                 {
@@ -327,22 +327,22 @@ public class MultiplySeq: LayerMergeSeq
                 sequence * nbNeurons * elem
             
             var value = 1.0
-            for num in 0..<_layersPrev.count
+            for num in 0..<layersPrev.count
             {
-                let neuronsPrev = (_layersPrev[num] as! LayerSeq).neurons!
+                let neuronsPrev = (layersPrev[num] as! LayerSeq).neurons!
                 value *= neuronsPrev.get(seq, depth)!.v[elem].out
             }
             neurons.get(seq, depth)!.v[elem].out = value
             
             if phase != nil &&
                (phase == .Training || phase == .InferenceBackward) {
-            for num1 in 0..<_layersPrev.count
+            for num1 in 0..<layersPrev.count
             {
                 value = 1.0
-                for num2 in 0..<_layersPrev.count {
+                for num2 in 0..<layersPrev.count {
                 if num2 != num1
                 {
-                    let neuronsPrev = (_layersPrev[num2] as! LayerSeq).neurons!
+                    let neuronsPrev = (layersPrev[num2] as! LayerSeq).neurons!
                     value *= neuronsPrev.get(seq, depth)!.v[elem].out
                 }}
                 _otherOuts1[num1][offset] = value
@@ -360,9 +360,9 @@ public class MultiplySeq: LayerMergeSeq
         try checkStateForwardGPU(batchSize: batchSize)
         
         var first1 = true
-        for num1 in 0..<_layersPrev.count
+        for num1 in 0..<layersPrev.count
         {
-            let nbElems = (_layersPrev[num1] as! LayerSeq).outs.nbElems
+            let nbElems = (layersPrev[num1] as! LayerSeq).outs.nbElems
             let pNbElems: [UInt32] = [UInt32(nbElems)]
             
             var command: MetalCommand
@@ -381,7 +381,7 @@ public class MultiplySeq: LayerMergeSeq
             }
             
             command.setBuffer(
-                (_layersPrev[num1] as! LayerSeq).outs.metal, atIndex: 0
+                (layersPrev[num1] as! LayerSeq).outs.metal, atIndex: 0
             )
             command.setBytes(pNbElems, atIndex: 1)
             command.setBuffer(outs.metal, atIndex: 2)
@@ -392,7 +392,7 @@ public class MultiplySeq: LayerMergeSeq
             if phase != nil &&
                (phase == .Training || phase == .InferenceBackward) {
             var first2 = true
-            for num2 in 0..<_layersPrev.count {
+            for num2 in 0..<layersPrev.count {
             if num2 != num1
             {
                 if first2
@@ -410,7 +410,7 @@ public class MultiplySeq: LayerMergeSeq
                 }
                 
                 command.setBuffer(
-                    (_layersPrev[num2] as! LayerSeq).outs.metal, atIndex: 0
+                    (layersPrev[num2] as! LayerSeq).outs.metal, atIndex: 0
                 )
                 command.setBytes(pNbElems, atIndex: 1)
                 command.setBuffer(_otherOuts2[num1].metal, atIndex: 2)
@@ -429,14 +429,14 @@ public class MultiplySeq: LayerMergeSeq
             return
         }
         
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            if !_layersPrev[num].computeDelta
+            if !layersPrev[num].computeDelta
             {
                 continue
             }
             
-            let neuronsPrev = (_layersPrev[num] as! LayerSeq).neurons!
+            let neuronsPrev = (layersPrev[num] as! LayerSeq).neurons!
             let buffer = _otherOuts1[num]
             
             for elem in 0..<batchSize {
@@ -449,7 +449,7 @@ public class MultiplySeq: LayerMergeSeq
                 let tmp = Double(buffer[offset])
                 let deltaCur = neurons.get(seq, depth)!.v[elem].delta
                 
-                if _layersPrev[num].dirty
+                if layersPrev[num].dirty
                 {
                     neuronsPrev.get(seq, depth)!.v[elem].delta = deltaCur * tmp
                 }
@@ -474,13 +474,13 @@ public class MultiplySeq: LayerMergeSeq
             return
         }
         
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            if !_layersPrev[num].computeDelta
+            if !layersPrev[num].computeDelta
             {
                 continue
             }
-            let layerPrev = _layersPrev[num] as! LayerSeq
+            let layerPrev = layersPrev[num] as! LayerSeq
             
             try layerPrev.checkStateBackwardGPU(batchSize: batchSize)
             

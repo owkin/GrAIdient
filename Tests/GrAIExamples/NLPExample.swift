@@ -58,6 +58,7 @@ final class NLPExample: XCTestCase
     /// Build LLM model.
     ///
     /// - Parameters:
+    ///     - modelPath: Model path on the disk.
     ///     - sequence: Length of the sequence.
     ///     - nbBlocks: Number of transformer + MLP blocks.
     ///     - hiddenDim: Dimension of neurons in the main branch.
@@ -161,7 +162,7 @@ final class NLPExample: XCTestCase
                 params: params
             )
             curGrAIdient += 1
-            layer = try! SoftmaxSeq(
+            layer = try! SoftmaxCausalSeq(
                 layerPrev: layer,
                 nbHeads: nbHeadsQuery,
                 params: params
@@ -315,9 +316,100 @@ final class NLPExample: XCTestCase
         return model
     }
     
-    /// Generate text from prompt.
+    ///
+    /// Prepare model for generation.
+    ///
+    /// - Parameters:
+    ///     - model: Model.
+    ///     - nbTokens: Number of tokens which have been generated.
+    ///     - seqMax: Maximal number of tokens to generate.
+    /// - Returns: The cache.
+    ///
+    func _prepareForGeneration(
+        model: Model,
+        nbTokens: Int,
+        seqMax: Int) -> [Int: FloatBuffer]
+    {
+        var cache = [Int: FloatBuffer]()
+        for layer in model.layers
+        {
+            let id = layer.id
+            if let layerTmp = layer as? QueryCausalSeq
+            {
+                cache[id] = (layerTmp.layersPrev[1] as! LayerSeq).outs
+                layerTmp.cacheSeq = nbTokens
+                layerTmp.cacheSeqMax = seqMax
+            }
+            else if let layerTmp = layer as? SoftmaxCausalSeq
+            {
+                layerTmp.cacheSeq = nbTokens
+            }
+            else if let layerTmp = layer as? ValueCausalSeq
+            {
+                cache[id] = (layerTmp.layersPrev[0] as! LayerSeq).outs
+                layerTmp.cacheSeq = nbTokens
+                layerTmp.cacheSeqMax = seqMax
+            }
+        }
+        return cache
+    }
+    
+    ///
+    /// Set cache.
+    ///
+    /// - Parameters:
+    ///     - model: Model.
+    ///     - cache: The cache to set.
+    ///
+    /// - Returns: The cache.
+    ///
+    func _setCache(
+        model: Model,
+        cache: [Int: FloatBuffer])
+    {
+        for layer in model.layers
+        {
+            let id = layer.id
+            if let layerTmp = layer as? QueryCausalSeq
+            {
+                layerTmp.cacheKey = cache[id]!
+            }
+            else if let layerTmp = layer as? ValueCausalSeq
+            {
+                layerTmp.cacheValue = cache[id]!
+            }
+        }
+    }
+    
+    ///
+    /// Update sequence positions of RoPE layers.
+    ///
+    /// - Parameters:
+    ///     - model: Model.
+    ///     - curSeq: New sequence position to set.
+    ///
+    func _updateRoPE(model: Model, curSeq: Int)
+    {
+        for layer in model.layers
+        {
+            if let layerTmp = layer as? RoPESeq
+            {
+                layerTmp.seqPositions = [curSeq]
+            }
+        }
+    }
+    
+    /// Predict text from prompt.
     func _testPredict1() throws
     {
+        let nbBlocks = 1
+        let hiddenDim = 4096
+        let headDim = 128
+        let mlpDim = 14336
+        let nbHeadsQuery = 32
+        let nbHeadsKV = 8
+        let vocabularySize = 32000
+        
         // Encode prompt.
         let pythonLib = Python.import("python_lib")
         let prompt = [Int](pythonLib.encode(
@@ -335,13 +427,13 @@ final class NLPExample: XCTestCase
         let model = _buildModel(
             modelPath: _modelPath,
             sequence: prompt.count,
-            nbBlocks: 1,
-            hiddenDim: 4096,
-            headDim: 128,
-            mlpDim: 14336,
-            nbHeadsQuery: 32,
-            nbHeadsKV: 8,
-            vocabularySize: 32000
+            nbBlocks: nbBlocks,
+            hiddenDim: hiddenDim,
+            headDim: headDim,
+            mlpDim: mlpDim,
+            nbHeadsQuery: nbHeadsQuery,
+            nbHeadsKV: nbHeadsKV,
+            vocabularySize: vocabularySize
         )
         
         // Initialize for inference.
@@ -377,9 +469,17 @@ final class NLPExample: XCTestCase
         }
     }
     
-    /// Generate text from prompt.
+    /// Predict text from prompt.
     func _testPredict32() throws
     {
+        let nbBlocks = 32
+        let hiddenDim = 4096
+        let headDim = 128
+        let mlpDim = 14336
+        let nbHeadsQuery = 32
+        let nbHeadsKV = 8
+        let vocabularySize = 32000
+        
         // Encode prompt.
         let pythonLib = Python.import("python_lib")
         let prompt = [Int](pythonLib.encode(
@@ -391,13 +491,13 @@ final class NLPExample: XCTestCase
         let model = _buildModel(
             modelPath: _modelPath,
             sequence: prompt.count,
-            nbBlocks: 32,
-            hiddenDim: 4096,
-            headDim: 128,
-            mlpDim: 14336,
-            nbHeadsQuery: 32,
-            nbHeadsKV: 8,
-            vocabularySize: 32000
+            nbBlocks: nbBlocks,
+            hiddenDim: hiddenDim,
+            headDim: headDim,
+            mlpDim: mlpDim,
+            nbHeadsQuery: nbHeadsQuery,
+            nbHeadsKV: nbHeadsKV,
+            vocabularySize: vocabularySize
         )
         
         // Initialize for inference.
@@ -416,9 +516,11 @@ final class NLPExample: XCTestCase
         
         // Compute prediction for each token.
         var predictions = [Int]()
-        for seq in 0..<out.count / 32000
+        for seq in 0..<out.count / vocabularySize
         {
-            let vector = [Float](out[32000*seq..<32000*(seq+1)])
+            let vector = [Float](
+                out[vocabularySize*seq..<vocabularySize*(seq+1)]
+            )
             let argmax = _argmax(array: vector)!
             predictions.append(argmax)
         }
@@ -429,5 +531,134 @@ final class NLPExample: XCTestCase
             _modelPath
         ))!
         print(prediction)
+    }
+    
+    /// Generate text from prompt.
+    func _testGenerate() throws
+    {
+        let nbBlocks = 32
+        let hiddenDim = 4096
+        let headDim = 128
+        let mlpDim = 14336
+        let nbHeadsQuery = 32
+        let nbHeadsKV = 8
+        let vocabularySize = 32000
+        let maxTokens = 128 // maximal number of tokens to generate
+        
+        // Use Float16 for faster results.
+        GrAI.Precision.float16 = true
+        
+        // Encode prompt.
+        let pythonLib = Python.import("python_lib")
+        let prompt = [Int](pythonLib.encode(
+            _prompt,
+            _modelPath
+        ))!
+        
+        // Load pre trained model.
+        var model = _buildModel(
+            modelPath: _modelPath,
+            sequence: prompt.count,
+            nbBlocks: nbBlocks,
+            hiddenDim: hiddenDim,
+            headDim: headDim,
+            mlpDim: mlpDim,
+            nbHeadsQuery: nbHeadsQuery,
+            nbHeadsKV: nbHeadsKV,
+            vocabularySize: vocabularySize
+        )
+        
+        // Initialize for inference.
+        model.initKernel(phase: .Inference)
+        model.updateKernel(batchSize: 1)
+        
+        // Forward.
+        var firstLayer: EmbeddingSeq = model.layers.first as! EmbeddingSeq
+        try! firstLayer.setDataGPU(
+            [prompt], batchSize: 1, sequence: prompt.count
+        )
+        try! model.forward()
+        
+        // Get result.
+        let out = (model.layers.last as! LayerSeq).outs.download()
+        
+        // Compute prediction for each token.
+        var predictions = [Int]()
+        for seq in 0..<out.count / vocabularySize
+        {
+            let vector = [Float](
+                out[vocabularySize*seq..<vocabularySize*(seq+1)]
+            )
+            let argmax = _argmax(array: vector)!
+            predictions.append(argmax)
+        }
+        
+        var lastToken = predictions.last!
+        var nbTokens = predictions.count
+        
+        // Decode.
+        let prediction = String(pythonLib.decode(
+            [lastToken],
+            _modelPath
+        ))!
+        
+        let start = Date()
+        print("Start generating...")
+        print(prediction, terminator: "")
+        
+        // Prepare model for generation.
+        let cache = _prepareForGeneration(
+            model: model,
+            nbTokens: nbTokens,
+            seqMax: maxTokens
+        )
+        
+        // Update model's sequence.
+        model = Model.updateSeq(
+            models: [model],
+            sequence: 1,
+            inPlace: true
+        )[0]
+        model.phase = .Inference
+        model.updateKernel(batchSize: 1)
+        
+        // Set cache.
+        firstLayer = model.layers.first as! EmbeddingSeq
+        _setCache(
+            model: model,
+            cache: cache
+        )
+        
+        // Generate.
+        let finalStep = maxTokens - nbTokens
+        for _ in 0..<finalStep
+        {
+            // Forward.
+            try! firstLayer.setDataGPU(
+                [[lastToken]], batchSize: 1, sequence: 1
+            )
+            _updateRoPE(model: model, curSeq: nbTokens + 1)
+            try! model.forward()
+            
+            // Get result.
+            let out = (model.layers.last as! LayerSeq).outs.download()
+            let predictions = [_argmax(array: out)!]
+            
+            lastToken = predictions.last!
+            nbTokens += 1
+            
+            // Decode.
+            let prediction = String(pythonLib.decode(
+                predictions,
+                _modelPath
+            ))!
+            print(prediction, terminator: "")
+        }
+        print("")
+        print("End generating.")
+        
+        let end = Date()
+        let timeSpent = end.timeIntervalSince(start)
+        print("Process took \(timeSpent)s.")
     }
 }

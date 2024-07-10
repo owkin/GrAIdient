@@ -978,18 +978,18 @@ open class TransformTrainer: FlowTrainer
             // 5. Compare results.
             
             let diffCPU =
-            (lossCPUNew - lossCPURef) * (lossCPUNew - lossCPURef) /
-            (lossCPUNew * lossCPUNew + lossCPURef * lossCPURef)
+                (lossCPUNew - lossCPURef) * (lossCPUNew - lossCPURef) /
+                (lossCPUNew * lossCPUNew + lossCPURef * lossCPURef)
             let diffGPU =
-            (lossGPUNew - lossGPURef) * (lossGPUNew - lossGPURef) /
-            (lossGPUNew * lossGPUNew + lossGPURef * lossGPURef)
+                (lossGPUNew - lossGPURef) * (lossGPUNew - lossGPURef) /
+                (lossGPUNew * lossGPUNew + lossGPURef * lossGPURef)
             
             var warning = ""
             let maxDiff = max(diffCPU, diffGPU)
             let maxIndex = diffCPU < diffGPU ? "GPU" : "CPU"
             if diffCPU > 0.0000001
             {
-                warning = "Load Check Warning " + maxIndex + " : "
+                warning = "Transform Check Warning " + maxIndex + " : "
             }
             let strDump = warning + String(maxDiff)
             print(strDump)

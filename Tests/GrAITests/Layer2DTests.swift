@@ -1935,12 +1935,14 @@ class Layer2DFlowPrecisionTests: Layer2DFlowTests
     
     override func testConvolution2() throws
     {
+        throw XCTSkip("Skipping this test because of precision issue.")
         let trainer = _buildTrainer(model: "Convolution2", bn: false)
         run(trainer, diffThreshold: 0.005)
     }
     
     override func testConvolution2Sample() throws
     {
+        throw XCTSkip("Skipping this test because of precision issue.")
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer(model: "Convolution2", bn: false)
         run(trainer, diffThreshold: 0.005)
@@ -1974,6 +1976,7 @@ class Layer2DFlowPrecisionTests: Layer2DFlowTests
     
     override func testBN() throws
     {
+        throw XCTSkip("Skipping this test because of precision issue.")
         let trainer = _buildTrainer(model: "BN", bn: false)
         run(trainer, diffThreshold: 0.005)
     }

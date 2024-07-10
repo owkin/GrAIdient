@@ -53,7 +53,7 @@ final class GrAITorchTests: XCTestCase
         let finalModel = Model(model: context.model, modelsPrev: [])
         
         // Initialize for inference.
-        finalModel.initKernel(phase: .Inference)
+        finalModel.initKernel(phase: .InferenceBackward)
         // Avoid the compute of every gradients of weights.
         model.computeDeltaWeights = false
         
@@ -124,7 +124,7 @@ final class GrAITorchTests: XCTestCase
         let finalModel = Model(model: context.model, modelsPrev: [model])
         
         // Initialize for inference.
-        finalModel.initKernel(phase: .Inference)
+        finalModel.initKernel(phase: .InferenceBackward)
         // Avoid the compute of every gradients of weights.
         model.computeDeltaWeights = false
         
@@ -212,7 +212,7 @@ final class GrAITorchTests: XCTestCase
         let finalModel = Model(model: context.model, modelsPrev: [])
         
         // Initialize for inference.
-        finalModel.initKernel(phase: .Inference)
+        finalModel.initKernel(phase: .InferenceBackward)
         // Avoid the compute of every gradients of weights.
         model.computeDeltaWeights = false
         
@@ -321,7 +321,7 @@ final class GrAITorchTests: XCTestCase
         let finalModel = Model(model: context.model, modelsPrev: [])
         
         // Initialize for inference.
-        model.initKernel(phase: .Inference)
+        model.initKernel(phase: .InferenceBackward)
         // Avoid the compute of every gradients of weights.
         model.computeDeltaWeights = false
         

@@ -73,7 +73,7 @@ public class SumSeq: LayerMergeSeq
         params.context.curID = id
         
         var layersPrev = [LayerSeq]()
-        for idPrev in _idsPrev
+        for idPrev in idsPrev
         {
             layersPrev.append(mapping[idPrev] as! LayerSeq)
         }
@@ -111,9 +111,9 @@ public class SumSeq: LayerMergeSeq
         for depth in 0..<nbNeurons
         {
             var sum = 0.0
-            for num in 0..<_layersPrev.count
+            for num in 0..<layersPrev.count
             {
-                let neuronsPrev = (_layersPrev[num] as! LayerSeq).neurons!
+                let neuronsPrev = (layersPrev[num] as! LayerSeq).neurons!
                 sum += neuronsPrev.get(seq, depth)!.gc[batch][elem].out
             }
             neurons.get(seq, depth)!.gc[batch][elem].out = sum
@@ -123,15 +123,15 @@ public class SumSeq: LayerMergeSeq
         for seq in 0..<sequence {
         var offset = nbSameElems
         var nbLastElems = [Int](repeating: nbSameElems,
-                                count: _layersPrev.count)
+                                count: layersPrev.count)
         for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
         for elem in 0..<nbElemsTmp {
         for depth in 0..<nbNeurons
         {
             var sum = 0.0
-            for num in 0..<_layersPrev.count
+            for num in 0..<layersPrev.count
             {
-                let neuronsPrev = (_layersPrev[num] as! LayerSeq).neurons!
+                let neuronsPrev = (layersPrev[num] as! LayerSeq).neurons!
                 
                 if num == index
                 {
@@ -162,9 +162,9 @@ public class SumSeq: LayerMergeSeq
         try checkStateCPU(batchSize: batchSize)
         
         var buffersPrev = [[Float]]()
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            buffersPrev.append((_layersPrev[num] as! LayerSeq).outs.download())
+            buffersPrev.append((layersPrev[num] as! LayerSeq).outs.download())
         }
         
         let (nbSameElems, layersIndex, nbElems) = getMergedGraph()
@@ -187,9 +187,9 @@ public class SumSeq: LayerMergeSeq
         for depth in 0..<nbNeurons
         {
             var sum = 0.0
-            for num in 0..<_layersPrev.count
+            for num in 0..<layersPrev.count
             {
-                let neuronsPrev = (_layersPrev[num] as! LayerSeq).neurons!
+                let neuronsPrev = (layersPrev[num] as! LayerSeq).neurons!
                 sum += neuronsPrev.get(seq, depth)!.gc[batch][elem].out
             }
             neurons.get(seq, depth)!.gc[batch][elem].out = sum
@@ -199,17 +199,17 @@ public class SumSeq: LayerMergeSeq
         for seq in 0..<sequence {
         var offset = nbSameElems
         var nbLastElems = [Int](repeating: nbSameElems,
-                                count: _layersPrev.count)
+                                count: layersPrev.count)
         for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
         for elem in 0..<nbElemsTmp {
         for depth in 0..<nbNeurons
         {
             var sum = 0.0
-            for num in 0..<_layersPrev.count
+            for num in 0..<layersPrev.count
             {
                 let outsPrevPtr = buffersPrev[num]
                 let neuronsPrev =
-                    (_layersPrev[num] as! LayerSeq).neurons!
+                    (layersPrev[num] as! LayerSeq).neurons!
                 
                 if num == index
                 {
@@ -246,9 +246,9 @@ public class SumSeq: LayerMergeSeq
         for depth in 0..<nbNeurons
         {
             var sum = 0.0
-            for num in 0..<_layersPrev.count
+            for num in 0..<layersPrev.count
             {
-                let neuronsPrev = (_layersPrev[num] as! LayerSeq).neurons!
+                let neuronsPrev = (layersPrev[num] as! LayerSeq).neurons!
                 sum += neuronsPrev.get(seq, depth)!.v[elem].out
             }
             neurons.get(seq, depth)!.v[elem].out = sum
@@ -265,9 +265,9 @@ public class SumSeq: LayerMergeSeq
         try checkStateForwardGPU(batchSize: batchSize)
         
         var first = true
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            let nbElems = (_layersPrev[num] as! LayerSeq).outs.nbElems
+            let nbElems = (layersPrev[num] as! LayerSeq).outs.nbElems
             let pNbElems: [UInt32] = [UInt32(nbElems)]
             
             let kernel: String
@@ -286,7 +286,7 @@ public class SumSeq: LayerMergeSeq
             )
             
             command.setBuffer(
-                (_layersPrev[num] as! LayerSeq).outs.metal, atIndex: 0
+                (layersPrev[num] as! LayerSeq).outs.metal, atIndex: 0
             )
             command.setBytes(pNbElems, atIndex: 1)
             command.setBuffer(outs.metal, atIndex: 2)
@@ -304,21 +304,21 @@ public class SumSeq: LayerMergeSeq
             return
         }
         
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            if !_layersPrev[num].computeDelta
+            if !layersPrev[num].computeDelta
             {
                 continue
             }
             
-            let neuronsPrev = (_layersPrev[num] as! LayerSeq).neurons!
+            let neuronsPrev = (layersPrev[num] as! LayerSeq).neurons!
             for elem in 0..<batchSize {
             for seq in 0..<sequence {
             for depth in 0..<nbNeurons
             {
                 let deltaCur = neurons.get(seq, depth)!.v[elem].delta
                 
-                if _layersPrev[num].dirty
+                if layersPrev[num].dirty
                 {
                     neuronsPrev.get(seq, depth)!.v[elem].delta = deltaCur
                 }
@@ -343,14 +343,14 @@ public class SumSeq: LayerMergeSeq
             return
         }
         
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            if !_layersPrev[num].computeDelta
+            if !layersPrev[num].computeDelta
             {
                 continue
             }
             
-            try (_layersPrev[num] as! LayerSeq).checkStateBackwardGPU(
+            try (layersPrev[num] as! LayerSeq).checkStateBackwardGPU(
                 batchSize: batchSize
             )
             
@@ -359,7 +359,7 @@ public class SumSeq: LayerMergeSeq
             
             let kernel: String
             let coeff = nbElems % 4 == 0 ? 4 : 1
-            if _layersPrev[num].dirty
+            if layersPrev[num].dirty
             {
                 kernel = nbElems % 4 == 0 ? "sum14" : "sum1"
             }
@@ -374,7 +374,7 @@ public class SumSeq: LayerMergeSeq
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBytes(pNbElems, atIndex: 1)
             command.setBuffer(
-                (_layersPrev[num] as! LayerSeq).delta.metal, atIndex: 2
+                (layersPrev[num] as! LayerSeq).delta.metal, atIndex: 2
             )
             
             command.dispatchThreads(nbElems / coeff)

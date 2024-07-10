@@ -74,7 +74,7 @@ public class Sum2D: LayerMerge2D
         params.context.curID = id
         
         var layersPrev = [Layer2D]()
-        for idPrev in _idsPrev
+        for idPrev in idsPrev
         {
             layersPrev.append(mapping[idPrev] as! Layer2D)
         }
@@ -120,9 +120,9 @@ public class Sum2D: LayerMerge2D
             for j in 0..<width
             {
                 var sum = 0.0
-                for num in 0..<_layersPrev.count
+                for num in 0..<layersPrev.count
                 {
-                    let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
+                    let neuronsPrev = (layersPrev[num] as! Layer2D).neurons
                     sum += neuronsPrev[depth].get(i, j)!.gc[batch][elem].out
                 }
                 
@@ -133,7 +133,7 @@ public class Sum2D: LayerMerge2D
         for batch in 0..<batchSize {
         var offset = nbSameElems
         var nbLastElems = [Int](repeating: nbSameElems,
-                                count: _layersPrev.count)
+                                count: layersPrev.count)
         for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
         for elem in 0..<nbElemsTmp {
         for depth in 0..<nbChannels
@@ -142,9 +142,9 @@ public class Sum2D: LayerMerge2D
             for j in 0..<width
             {
                 var sum = 0.0
-                for num in 0..<_layersPrev.count
+                for num in 0..<layersPrev.count
                 {
-                    let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
+                    let neuronsPrev = (layersPrev[num] as! Layer2D).neurons
                     
                     if num == index
                     {
@@ -177,9 +177,9 @@ public class Sum2D: LayerMerge2D
         try checkStateCPU(batchSize: batchSize)
         
         var buffersPrev = [[Float]]()
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            buffersPrev.append((_layersPrev[num] as! Layer2D).outs.download())
+            buffersPrev.append((layersPrev[num] as! Layer2D).outs.download())
         }
         
         let (nbSameElems, layersIndex, nbElems) = getMergedGraph()
@@ -210,9 +210,9 @@ public class Sum2D: LayerMerge2D
             for j in 0..<width
             {
                 var sum = 0.0
-                for num in 0..<_layersPrev.count
+                for num in 0..<layersPrev.count
                 {
-                    let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
+                    let neuronsPrev = (layersPrev[num] as! Layer2D).neurons
                     sum += neuronsPrev[depth].get(i, j)!.gc[batch][elem].out
                 }
                 
@@ -223,7 +223,7 @@ public class Sum2D: LayerMerge2D
         for batch in 0..<batchSize {
         var offset = nbSameElems
         var nbLastElems = [Int](repeating: nbSameElems,
-                                count: _layersPrev.count)
+                                count: layersPrev.count)
         for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
         for elem in 0..<nbElemsTmp {
         for depth in 0..<nbChannels
@@ -232,11 +232,11 @@ public class Sum2D: LayerMerge2D
             for j in 0..<width
             {
                 var sum = 0.0
-                for num in 0..<_layersPrev.count
+                for num in 0..<layersPrev.count
                 {
                     let outsPrevPtr = buffersPrev[num]
                     let neuronsPrev =
-                        (_layersPrev[num] as! Layer2D).neurons
+                        (layersPrev[num] as! Layer2D).neurons
                     
                     if num == index
                     {
@@ -277,10 +277,10 @@ public class Sum2D: LayerMerge2D
             for j in 0..<width
             {
                 var sum = 0.0
-                for num in 0..<_layersPrev.count
+                for num in 0..<layersPrev.count
                 {
                     let neuronsPrev =
-                        (_layersPrev[num] as! Layer2D).neurons
+                        (layersPrev[num] as! Layer2D).neurons
                     sum += neuronsPrev[depth].get(i, j)!.v[elem].out
                 }
                 
@@ -299,9 +299,9 @@ public class Sum2D: LayerMerge2D
         try checkStateForwardGPU(batchSize: batchSize)
         
         var first = true
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            let nbElems = (_layersPrev[num] as! Layer2D).outs.nbElems
+            let nbElems = (layersPrev[num] as! Layer2D).outs.nbElems
             let pNbElems: [UInt32] = [UInt32(nbElems)]
             
             let kernel: String
@@ -320,7 +320,7 @@ public class Sum2D: LayerMerge2D
             )
             
             command.setBuffer(
-                (_layersPrev[num] as! Layer2D).outs.metal, atIndex: 0
+                (layersPrev[num] as! Layer2D).outs.metal, atIndex: 0
             )
             command.setBytes(pNbElems, atIndex: 1)
             command.setBuffer(outs.metal, atIndex: 2)
@@ -338,14 +338,14 @@ public class Sum2D: LayerMerge2D
             return
         }
         
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            if !_layersPrev[num].computeDelta
+            if !layersPrev[num].computeDelta
             {
                 continue
             }
             
-            let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
+            let neuronsPrev = (layersPrev[num] as! Layer2D).neurons
             for elem in 0..<batchSize {
             for depth in 0..<nbChannels
             {
@@ -354,7 +354,7 @@ public class Sum2D: LayerMerge2D
                 {
                     let deltaCur = neurons[depth].get(i, j)!.v[elem].delta
                     
-                    if _layersPrev[num].dirty
+                    if layersPrev[num].dirty
                     {
                         neuronsPrev[depth].get(i, j)!.v[elem].delta =
                             deltaCur
@@ -382,14 +382,14 @@ public class Sum2D: LayerMerge2D
             return
         }
         
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            if !_layersPrev[num].computeDelta
+            if !layersPrev[num].computeDelta
             {
                 continue
             }
             
-            try (_layersPrev[num] as! Layer2D).checkStateBackwardGPU(
+            try (layersPrev[num] as! Layer2D).checkStateBackwardGPU(
                 batchSize: batchSize
             )
             
@@ -398,7 +398,7 @@ public class Sum2D: LayerMerge2D
             
             let kernel: String
             let coeff = nbElems % 4 == 0 ? 4 : 1
-            if _layersPrev[num].dirty
+            if layersPrev[num].dirty
             {
                 kernel = nbElems % 4 == 0 ? "sum14" : "sum1"
             }
@@ -413,7 +413,7 @@ public class Sum2D: LayerMerge2D
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBytes(pNbElems, atIndex: 1)
             command.setBuffer(
-                (_layersPrev[num] as! Layer2D).delta.metal, atIndex: 2
+                (layersPrev[num] as! Layer2D).delta.metal, atIndex: 2
             )
             
             command.dispatchThreads(nbElems / coeff)

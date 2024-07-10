@@ -9,15 +9,15 @@
 open class LayerMerge2D: Layer2D
 {
     /// List of links to the previous layers in the model.
-    var _layersPrev = [Layer]()
+    public var layersPrev = [Layer]()
     /// List of identifiers of the previous layers in the model.
-    let _idsPrev: [Int]
+    public let idsPrev: [Int]
     
     /// Whether backward pass should continue backward or not.
     public override var mustComputeBackward: Bool
     {
         get {
-            for layerPrev in _layersPrev
+            for layerPrev in layersPrev
             {
                 if layerPrev.computeDelta
                 {
@@ -37,7 +37,7 @@ open class LayerMerge2D: Layer2D
         }
         
         var valueFirst: Double! = nil
-        for layerPrev in _layersPrev
+        for layerPrev in layersPrev
         {
             if let layerPrevTmp = layerPrev as? Layer2D
             {
@@ -66,7 +66,7 @@ open class LayerMerge2D: Layer2D
         }
         
         var valueMax: Int! = nil
-        for layerPrev in _layersPrev
+        for layerPrev in layersPrev
         {
             if let layerPrevTmp = layerPrev as? Layer2D
             {
@@ -106,7 +106,7 @@ open class LayerMerge2D: Layer2D
         {
             idsPrev.append(layer.id)
         }
-        _idsPrev = idsPrev
+        self.idsPrev = idsPrev
         
         super.init(layerPrev: layersPrev[0],
                    nbChannels: nbChannels,
@@ -126,7 +126,7 @@ open class LayerMerge2D: Layer2D
     public required init(from decoder: Decoder) throws
     {
         let container = try decoder.container(keyedBy: Keys.self)
-        _idsPrev = try container.decode([Int].self, forKey: .idsPrev)
+        idsPrev = try container.decode([Int].self, forKey: .idsPrev)
         try super.init(from: decoder)
     }
     
@@ -144,7 +144,7 @@ open class LayerMerge2D: Layer2D
     public override func encode(to encoder: Encoder) throws
     {
         var container = encoder.container(keyedBy: Keys.self)
-        try container.encode(_idsPrev, forKey: .idsPrev)
+        try container.encode(idsPrev, forKey: .idsPrev)
         try super.encode(to: encoder)
     }
     
@@ -155,14 +155,14 @@ open class LayerMerge2D: Layer2D
     ///
     public override func initLinks(_ layers: [Layer])
     {
-        _layersPrev = [Layer]()
-        for id in _idsPrev
+        layersPrev = [Layer]()
+        for id in idsPrev
         {
             for testLayer in layers
             {
                 if testLayer.id == id
                 {
-                    _layersPrev.append(testLayer)
+                    layersPrev.append(testLayer)
                     break
                 }
             }
@@ -176,9 +176,9 @@ open class LayerMerge2D: Layer2D
     ///
     public override func propagateDirty(_ dirty: Bool = false)
     {
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            _layersPrev[num].dirty = dirty
+            layersPrev[num].dirty = dirty
         }
     }
     
@@ -191,7 +191,7 @@ open class LayerMerge2D: Layer2D
     private func _getMergedGraph() -> ([Layer], [Int])
     {
         var layersBranches = [Layer?]()
-        for layer in _layersPrev
+        for layer in layersPrev
         {
             layersBranches.append(layer)
         }
@@ -292,7 +292,7 @@ open class LayerMerge2D: Layer2D
         
         var nbElems = [Int]()
         var nbLastElems = [Int](repeating: nbSameElems,
-                                count: _layersPrev.count)
+                                count: layersPrev.count)
         for (index, layer) in zip(layersIndex, layersMerged)
         {
             let nbElemsTmp = layer.nbGC

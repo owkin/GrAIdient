@@ -255,6 +255,10 @@ def decode(
 
 if __name__ == "__main__":
     model_path = ""
+    _generate(
+        prompt="How do you do?",
+        model_path=model_path
+    )
     prompt = encode(
         prompt="How do you do?",
         model_path=model_path

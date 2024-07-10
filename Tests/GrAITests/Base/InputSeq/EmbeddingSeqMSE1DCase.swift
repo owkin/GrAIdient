@@ -13,7 +13,7 @@ import GrAITestsUtils
 /// A class that will test a model with a structural hypothesis:
 /// the model last layer is a MSE1D layer, the model first layer is an EmbeddingSeq.
 ///
-class EmbeddingSeqMSE1DCase: XCTestCase, Input1DCase, IOCase
+class EmbeddingSeqMSE1DCase: XCTestCase, InputSeqCase, IOCase
 {
     /// Batch size of data.
     var batchSize: Int = -1

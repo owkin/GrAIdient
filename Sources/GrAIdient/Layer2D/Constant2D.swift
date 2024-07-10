@@ -205,6 +205,7 @@ public class Constant2D: Layer2D, LayerResize, LayerUpdate
     ///     - mapping: Dictionary allowing to find the layer associated to some id.
     ///     This dictionary is particularly useful when the different layers cannot access
     ///     their `layerPrev`.
+    ///     - inPlace: Whether hard resources should be copied as is.
     ///
     /// - Returns: A new instance of `Layer`. When `inPlace` is false, `initKernel` is
     ///  necessary in order to recreate hard resources.

@@ -70,7 +70,7 @@ public class Sum1D: LayerMerge1D
         params.context.curID = id
         
         var layersPrev = [Layer1D]()
-        for idPrev in _idsPrev
+        for idPrev in idsPrev
         {
             layersPrev.append(mapping[idPrev] as! Layer1D)
         }
@@ -106,9 +106,9 @@ public class Sum1D: LayerMerge1D
         for depth in 0..<nbNeurons
         {
             var sum = 0.0
-            for num in 0..<_layersPrev.count
+            for num in 0..<layersPrev.count
             {
-                let neuronsPrev = (_layersPrev[num] as! Layer1D).neurons
+                let neuronsPrev = (layersPrev[num] as! Layer1D).neurons
                 sum += neuronsPrev.get(depth)!.gc[batch][elem].out
             }
             neurons.get(depth)!.gc[batch][elem].out = sum
@@ -117,15 +117,15 @@ public class Sum1D: LayerMerge1D
         for batch in 0..<batchSize {
         var offset = nbSameElems
         var nbLastElems = [Int](repeating: nbSameElems,
-                                count: _layersPrev.count)
+                                count: layersPrev.count)
         for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
         for elem in 0..<nbElemsTmp {
         for depth in 0..<nbNeurons
         {
             var sum = 0.0
-            for num in 0..<_layersPrev.count
+            for num in 0..<layersPrev.count
             {
-                let neuronsPrev = (_layersPrev[num] as! Layer1D).neurons
+                let neuronsPrev = (layersPrev[num] as! Layer1D).neurons
                 
                 if num == index
                 {
@@ -156,9 +156,9 @@ public class Sum1D: LayerMerge1D
         try checkStateCPU(batchSize: batchSize)
         
         var buffersPrev = [[Float]]()
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            buffersPrev.append((_layersPrev[num] as! Layer1D).outs.download())
+            buffersPrev.append((layersPrev[num] as! Layer1D).outs.download())
         }
         
         let (nbSameElems, layersIndex, nbElems) = getMergedGraph()
@@ -179,9 +179,9 @@ public class Sum1D: LayerMerge1D
         for depth in 0..<nbNeurons
         {
             var sum = 0.0
-            for num in 0..<_layersPrev.count
+            for num in 0..<layersPrev.count
             {
-                let neuronsPrev = (_layersPrev[num] as! Layer1D).neurons
+                let neuronsPrev = (layersPrev[num] as! Layer1D).neurons
                 sum += neuronsPrev.get(depth)!.gc[batch][elem].out
             }
             neurons.get(depth)!.gc[batch][elem].out = sum
@@ -190,17 +190,17 @@ public class Sum1D: LayerMerge1D
         for batch in 0..<batchSize {
         var offset = nbSameElems
         var nbLastElems = [Int](repeating: nbSameElems,
-                                count: _layersPrev.count)
+                                count: layersPrev.count)
         for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
         for elem in 0..<nbElemsTmp {
         for depth in 0..<nbNeurons
         {
             var sum = 0.0
-            for num in 0..<_layersPrev.count
+            for num in 0..<layersPrev.count
             {
                 let outsPrevPtr = buffersPrev[num]
                 let neuronsPrev =
-                    (_layersPrev[num] as! Layer1D).neurons
+                    (layersPrev[num] as! Layer1D).neurons
                 
                 if num == index
                 {
@@ -235,9 +235,9 @@ public class Sum1D: LayerMerge1D
         for depth in 0..<nbNeurons
         {
             var sum = 0.0
-            for num in 0..<_layersPrev.count
+            for num in 0..<layersPrev.count
             {
-                let neuronsPrev = (_layersPrev[num] as! Layer1D).neurons
+                let neuronsPrev = (layersPrev[num] as! Layer1D).neurons
                 sum += neuronsPrev.get(depth)!.v[elem].out
             }
             neurons.get(depth)!.v[elem].out = sum
@@ -254,9 +254,9 @@ public class Sum1D: LayerMerge1D
         try checkStateForwardGPU(batchSize: batchSize)
         
         var first = true
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            let nbElems = (_layersPrev[num] as! Layer1D).outs.nbElems
+            let nbElems = (layersPrev[num] as! Layer1D).outs.nbElems
             let pNbElems: [UInt32] = [UInt32(nbElems)]
             
             let kernel: String
@@ -275,7 +275,7 @@ public class Sum1D: LayerMerge1D
             )
             
             command.setBuffer(
-                (_layersPrev[num] as! Layer1D).outs.metal, atIndex: 0
+                (layersPrev[num] as! Layer1D).outs.metal, atIndex: 0
             )
             command.setBytes(pNbElems, atIndex: 1)
             command.setBuffer(outs.metal, atIndex: 2)
@@ -293,20 +293,20 @@ public class Sum1D: LayerMerge1D
             return
         }
         
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            if !_layersPrev[num].computeDelta
+            if !layersPrev[num].computeDelta
             {
                 continue
             }
             
-            let neuronsPrev = (_layersPrev[num] as! Layer1D).neurons
+            let neuronsPrev = (layersPrev[num] as! Layer1D).neurons
             for elem in 0..<batchSize {
             for depth in 0..<nbNeurons
             {
                 let deltaCur = neurons.get(depth)!.v[elem].delta
                 
-                if _layersPrev[num].dirty
+                if layersPrev[num].dirty
                 {
                     neuronsPrev.get(depth)!.v[elem].delta = deltaCur
                 }
@@ -331,14 +331,14 @@ public class Sum1D: LayerMerge1D
             return
         }
         
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            if !_layersPrev[num].computeDelta
+            if !layersPrev[num].computeDelta
             {
                 continue
             }
             
-            try (_layersPrev[num] as! Layer1D).checkStateBackwardGPU(
+            try (layersPrev[num] as! Layer1D).checkStateBackwardGPU(
                 batchSize: batchSize
             )
             
@@ -347,7 +347,7 @@ public class Sum1D: LayerMerge1D
             
             let kernel: String
             let coeff = nbElems % 4 == 0 ? 4 : 1
-            if _layersPrev[num].dirty
+            if layersPrev[num].dirty
             {
                 kernel = nbElems % 4 == 0 ? "sum14" : "sum1"
             }
@@ -362,7 +362,7 @@ public class Sum1D: LayerMerge1D
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBytes(pNbElems, atIndex: 1)
             command.setBuffer(
-                (_layersPrev[num] as! Layer1D).delta.metal, atIndex: 2
+                (layersPrev[num] as! Layer1D).delta.metal, atIndex: 2
             )
             
             command.dispatchThreads(nbElems / coeff)

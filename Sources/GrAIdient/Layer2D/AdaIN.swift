@@ -34,7 +34,7 @@ public class AdaIN: LayerMerge2D
     var computeDeltaMain: Bool
     {
         get {
-            let layerFirst = _layersPrev.first as! Layer2D
+            let layerFirst = layersPrev.first as! Layer2D
             return layerFirst.computeDelta
         }
     }
@@ -42,7 +42,7 @@ public class AdaIN: LayerMerge2D
     var computeDeltaStyle: Bool
     {
         get {
-            let layerLast = _layersPrev.last as! Layer1D
+            let layerLast = layersPrev.last as! Layer1D
             return layerLast.computeDelta
         }
     }
@@ -143,7 +143,7 @@ public class AdaIN: LayerMerge2D
         params.context.curID = id
         
         var layersPrev = [Layer]()
-        for idPrev in _idsPrev
+        for idPrev in idsPrev
         {
             layersPrev.append(mapping[idPrev]!)
         }
@@ -293,7 +293,7 @@ public class AdaIN: LayerMerge2D
         for batch in 0..<batchSize {
         var offset = nbSameElems
         var nbLastElems = [Int](repeating: nbSameElems,
-                                count: _layersPrev.count)
+                                count: layersPrev.count)
         for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
         for elem in 0..<nbElemsTmp {
         for depth in 0..<nbChannels
@@ -360,8 +360,8 @@ public class AdaIN: LayerMerge2D
     {
         try checkStateCPU(batchSize: batchSize)
         
-        let layerFirst = _layersPrev.first as! Layer2D
-        let layerLast = _layersPrev.last as! Layer1D
+        let layerFirst = layersPrev.first as! Layer2D
+        let layerLast = layersPrev.last as! Layer1D
         
         let bufferOuts = layerFirst.outs.download()
         let bufferStyles = layerLast.outs.download()
@@ -411,7 +411,7 @@ public class AdaIN: LayerMerge2D
         for batch in 0..<batchSize {
         var offset = nbSameElems
         var nbLastElems = [Int](repeating: nbSameElems,
-                                count: _layersPrev.count)
+                                count: layersPrev.count)
         for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
         for elem in 0..<nbElemsTmp {
         for depth in 0..<nbChannels
@@ -519,8 +519,8 @@ public class AdaIN: LayerMerge2D
             return
         }
         
-        let layerFirst = _layersPrev.first as! Layer2D
-        let layerLast = _layersPrev.last as! Layer1D
+        let layerFirst = layersPrev.first as! Layer2D
+        let layerLast = layersPrev.last as! Layer1D
         
         if layerFirst.computeDelta
         {
@@ -547,7 +547,7 @@ public class AdaIN: LayerMerge2D
     ///
     func getOutsPrevGC(depth: Int, batch: Int, elem: Int) -> [Double]
     {
-        let layerFirst = _layersPrev.first as! Layer2D
+        let layerFirst = layersPrev.first as! Layer2D
         var outs = [Double](repeating: 0.0, count: height * width)
         
         for i in 0..<height {
@@ -572,7 +572,7 @@ public class AdaIN: LayerMerge2D
     ///
     func getOutStyleGC(depth: Int, batch: Int, elem: Int) -> Double
     {
-        let layerLast = _layersPrev.last as! Layer1D
+        let layerLast = layersPrev.last as! Layer1D
         return layerLast.neurons.get(depth)!.gc[batch][elem].out
     }
     
@@ -606,7 +606,7 @@ public class AdaIN: LayerMerge2D
     ///
     func getOutsPrev(depth: Int, batch: Int) -> [Double]
     {
-        let layerFirst = _layersPrev.first as! Layer2D
+        let layerFirst = layersPrev.first as! Layer2D
         var outs = [Double](repeating: 0.0, count: height * width)
         
         for i in 0..<height {
@@ -629,7 +629,7 @@ public class AdaIN: LayerMerge2D
     ///
     func getOutStyle(depth: Int, batch: Int) -> Double
     {
-        let layerLast = _layersPrev.last as! Layer1D
+        let layerLast = layersPrev.last as! Layer1D
         return layerLast.neurons.get(depth)!.v[batch].out
     }
     
@@ -695,7 +695,7 @@ public class AdaIN: LayerMerge2D
         depth: Int,
         batch: Int) -> Double
     {
-        let layerLast = _layersPrev.last as! Layer1D
+        let layerLast = layersPrev.last as! Layer1D
         let offset = depth + layerLast.nbNeurons * batch
         return Double(buffer[offset])
     }
@@ -736,7 +736,7 @@ public class AdaIN: LayerMerge2D
             return
         }
         
-        let layerFirst = _layersPrev.first as! Layer2D
+        let layerFirst = layersPrev.first as! Layer2D
         for i in 0..<height {
         for j in 0..<width
         {
@@ -771,7 +771,7 @@ public class AdaIN: LayerMerge2D
             return
         }
         
-        let layerLast = _layersPrev.last as! Layer1D
+        let layerLast = layersPrev.last as! Layer1D
         if layerLast.dirty
         {
             layerLast.neurons.get(depth)!.v[batch].delta = delta

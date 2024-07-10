@@ -9,15 +9,15 @@
 public class LayerMergeSeq: LayerSeq
 {
     /// List of links to the previous layers in the model.
-    var _layersPrev = [Layer]()
+    public var layersPrev = [Layer]()
     /// List of identifiers of the previous layers in the model.
-    let _idsPrev: [Int]
+    public let idsPrev: [Int]
     
     /// Whether backward pass should continue backward or not.
     public override var mustComputeBackward: Bool
     {
         get {
-            for layerPrev in _layersPrev
+            for layerPrev in layersPrev
             {
                 if layerPrev.computeDelta
                 {
@@ -52,7 +52,7 @@ public class LayerMergeSeq: LayerSeq
         {
             idsPrev.append(layer.id)
         }
-        _idsPrev = idsPrev
+        self.idsPrev = idsPrev
         
         super.init(layerPrev: layersPrev[0],
                    sequence: sequence,
@@ -71,7 +71,7 @@ public class LayerMergeSeq: LayerSeq
     public required init(from decoder: Decoder) throws
     {
         let container = try decoder.container(keyedBy: Keys.self)
-        _idsPrev = try container.decode([Int].self, forKey: .idsPrev)
+        idsPrev = try container.decode([Int].self, forKey: .idsPrev)
         try super.init(from: decoder)
     }
     
@@ -89,7 +89,7 @@ public class LayerMergeSeq: LayerSeq
     public override func encode(to encoder: Encoder) throws
     {
         var container = encoder.container(keyedBy: Keys.self)
-        try container.encode(_idsPrev, forKey: .idsPrev)
+        try container.encode(idsPrev, forKey: .idsPrev)
         try super.encode(to: encoder)
     }
     
@@ -100,14 +100,14 @@ public class LayerMergeSeq: LayerSeq
     ///
     public override func initLinks(_ layers: [Layer])
     {
-        _layersPrev = [Layer]()
-        for id in _idsPrev
+        self.layersPrev = [Layer]()
+        for id in idsPrev
         {
             for testLayer in layers
             {
                 if testLayer.id == id
                 {
-                    _layersPrev.append(testLayer)
+                    self.layersPrev.append(testLayer)
                     break
                 }
             }
@@ -121,9 +121,9 @@ public class LayerMergeSeq: LayerSeq
     ///
     public override func propagateDirty(_ dirty: Bool = false)
     {
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            _layersPrev[num].dirty = dirty
+            layersPrev[num].dirty = dirty
         }
     }
     
@@ -136,7 +136,7 @@ public class LayerMergeSeq: LayerSeq
     private func _getMergedGraph() -> ([Layer], [Int])
     {
         var layersBranches = [Layer?]()
-        for layer in _layersPrev
+        for layer in layersPrev
         {
             layersBranches.append(layer)
         }
@@ -237,7 +237,7 @@ public class LayerMergeSeq: LayerSeq
         
         var nbElems = [Int]()
         var nbLastElems = [Int](repeating: nbSameElems,
-                                count: _layersPrev.count)
+                                count: layersPrev.count)
         for (index, layer) in zip(layersIndex, layersMerged)
         {
             let nbElemsTmp = layer.nbGC

@@ -65,7 +65,7 @@ public class Concat1Seq: LayerMergeSeq
         params.context.curID = id
         
         var layersPrev = [LayerSeq]()
-        for idPrev in _idsPrev
+        for idPrev in idsPrev
         {
             layersPrev.append(mapping[idPrev] as! LayerSeq)
         }
@@ -101,9 +101,9 @@ public class Concat1Seq: LayerMergeSeq
         for depth in 0..<nbNeurons {
         for elem in 0..<nbSameElems {
         var curElem = 0
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            let layerPrev = _layersPrev[num] as! LayerSeq
+            let layerPrev = layersPrev[num] as! LayerSeq
             let neuronsPrev = layerPrev.neurons!
             let sequence = layerPrev.sequence
             
@@ -120,13 +120,13 @@ public class Concat1Seq: LayerMergeSeq
         for depth in 0..<nbNeurons {
         var offset = nbSameElems
         var nbLastElems = [Int](repeating: nbSameElems,
-                                count: _layersPrev.count)
+                                count: layersPrev.count)
         for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
         for elem in 0..<nbElemsTmp {
         var curElem = 0
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            let layerPrev = _layersPrev[num] as! LayerSeq
+            let layerPrev = layersPrev[num] as! LayerSeq
             let neuronsPrev = layerPrev.neurons!
             let sequence = layerPrev.sequence
             
@@ -165,9 +165,9 @@ public class Concat1Seq: LayerMergeSeq
         try checkStateCPU(batchSize: batchSize)
         
         var buffersPrev = [[Float]]()
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            buffersPrev.append((_layersPrev[num] as! LayerSeq).outs.download())
+            buffersPrev.append((layersPrev[num] as! LayerSeq).outs.download())
         }
         
         let (nbSameElems, layersIndex, nbElems) = getMergedGraph()
@@ -188,9 +188,9 @@ public class Concat1Seq: LayerMergeSeq
         for depth in 0..<nbNeurons {
         for elem in 0..<nbSameElems {
         var curElem = 0
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            let layerPrev = _layersPrev[num] as! LayerSeq
+            let layerPrev = layersPrev[num] as! LayerSeq
             let neuronsPrev = layerPrev.neurons!
             let sequence = layerPrev.sequence
             
@@ -207,13 +207,13 @@ public class Concat1Seq: LayerMergeSeq
         for depth in 0..<nbNeurons {
         var offset = nbSameElems
         var nbLastElems = [Int](repeating: nbSameElems,
-                                count: _layersPrev.count)
+                                count: layersPrev.count)
         for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
         for elem in 0..<nbElemsTmp {
         var curElem = 0
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            let layerPrev = _layersPrev[num] as! LayerSeq
+            let layerPrev = layersPrev[num] as! LayerSeq
             let outsPrevPtr = buffersPrev[num]
             let neuronsPrev = layerPrev.neurons!
             let sequence = layerPrev.sequence
@@ -258,9 +258,9 @@ public class Concat1Seq: LayerMergeSeq
         for depth in 0..<nbNeurons
         {
             var curElem = 0
-            for num in 0..<_layersPrev.count
+            for num in 0..<layersPrev.count
             {
-                let layerPrev = _layersPrev[num] as! LayerSeq
+                let layerPrev = layersPrev[num] as! LayerSeq
                 let neuronsPrev = layerPrev.neurons!
                 let sequence = layerPrev.sequence
                 
@@ -294,9 +294,9 @@ public class Concat1Seq: LayerMergeSeq
         var command: MetalCommand
         
         var globalOffset = 0
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            let layerPrev = _layersPrev[num] as! LayerSeq
+            let layerPrev = layersPrev[num] as! LayerSeq
             let sequencePrev = layerPrev.sequence
             
             let pGlobalOffset: [UInt32] = [UInt32(globalOffset)]
@@ -338,13 +338,13 @@ public class Concat1Seq: LayerMergeSeq
         for depth in 0..<nbNeurons
         {
             var curElem = 0
-            for num in 0..<_layersPrev.count
+            for num in 0..<layersPrev.count
             {
-                let layerPrev = _layersPrev[num] as! LayerSeq
+                let layerPrev = layersPrev[num] as! LayerSeq
                 let neuronsPrev = layerPrev.neurons!
                 let sequence = layerPrev.sequence
                 
-                if !_layersPrev[num].computeDelta
+                if !layersPrev[num].computeDelta
                 {
                     curElem += sequence
                     continue
@@ -393,12 +393,12 @@ public class Concat1Seq: LayerMergeSeq
         var command: MetalCommand
         
         var globalOffset = 0
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            let layerPrev = _layersPrev[num] as! LayerSeq
+            let layerPrev = layersPrev[num] as! LayerSeq
             let sequencePrev = layerPrev.sequence
             
-            if !_layersPrev[num].computeDelta
+            if !layersPrev[num].computeDelta
             {
                 globalOffset += sequencePrev
                 continue
@@ -497,7 +497,7 @@ public class Concat2Seq: LayerMergeSeq
         params.context.curID = id
         
         var layersPrev = [LayerSeq]()
-        for idPrev in _idsPrev
+        for idPrev in idsPrev
         {
             layersPrev.append(mapping[idPrev] as! LayerSeq)
         }
@@ -533,9 +533,9 @@ public class Concat2Seq: LayerMergeSeq
         for seq in 0..<sequence {
         for elem in 0..<nbSameElems {
         var curElem = 0
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            let layerPrev = _layersPrev[num] as! LayerSeq
+            let layerPrev = layersPrev[num] as! LayerSeq
             let neuronsPrev = layerPrev.neurons!
             let nbNeurons = layerPrev.nbNeurons
             
@@ -552,13 +552,13 @@ public class Concat2Seq: LayerMergeSeq
         for seq in 0..<sequence {
         var offset = nbSameElems
         var nbLastElems = [Int](repeating: nbSameElems,
-                                count: _layersPrev.count)
+                                count: layersPrev.count)
         for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
         for elem in 0..<nbElemsTmp {
         var curElem = 0
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            let layerPrev = _layersPrev[num] as! LayerSeq
+            let layerPrev = layersPrev[num] as! LayerSeq
             let neuronsPrev = layerPrev.neurons!
             let nbNeurons = layerPrev.nbNeurons
             
@@ -597,9 +597,9 @@ public class Concat2Seq: LayerMergeSeq
         try checkStateCPU(batchSize: batchSize)
         
         var buffersPrev = [[Float]]()
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            buffersPrev.append((_layersPrev[num] as! LayerSeq).outs.download())
+            buffersPrev.append((layersPrev[num] as! LayerSeq).outs.download())
         }
         
         let (nbSameElems, layersIndex, nbElems) = getMergedGraph()
@@ -620,9 +620,9 @@ public class Concat2Seq: LayerMergeSeq
         for seq in 0..<sequence {
         for elem in 0..<nbSameElems {
         var curElem = 0
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            let layerPrev = _layersPrev[num] as! LayerSeq
+            let layerPrev = layersPrev[num] as! LayerSeq
             let neuronsPrev = layerPrev.neurons!
             let nbNeurons = layerPrev.nbNeurons
             
@@ -639,13 +639,13 @@ public class Concat2Seq: LayerMergeSeq
         for seq in 0..<sequence {
         var offset = nbSameElems
         var nbLastElems = [Int](repeating: nbSameElems,
-                                count: _layersPrev.count)
+                                count: layersPrev.count)
         for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
         for elem in 0..<nbElemsTmp {
         var curElem = 0
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            let layerPrev = _layersPrev[num] as! LayerSeq
+            let layerPrev = layersPrev[num] as! LayerSeq
             let outsPrevPtr = buffersPrev[num]
             let neuronsPrev = layerPrev.neurons!
             let nbNeurons = layerPrev.nbNeurons
@@ -690,9 +690,9 @@ public class Concat2Seq: LayerMergeSeq
         for seq in 0..<sequence
         {
             var curElem = 0
-            for num in 0..<_layersPrev.count
+            for num in 0..<layersPrev.count
             {
-                let layerPrev = _layersPrev[num] as! LayerSeq
+                let layerPrev = layersPrev[num] as! LayerSeq
                 let neuronsPrev = layerPrev.neurons!
                 let nbNeurons = layerPrev.nbNeurons
                 
@@ -724,9 +724,9 @@ public class Concat2Seq: LayerMergeSeq
         var command: MetalCommand
         
         var globalOffset = 0
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            let layerPrev = _layersPrev[num] as! LayerSeq
+            let layerPrev = layersPrev[num] as! LayerSeq
             let nbNeuronsPrev = layerPrev.nbNeurons
             
             let pGlobalOffset: [UInt32] = [UInt32(globalOffset)]
@@ -765,13 +765,13 @@ public class Concat2Seq: LayerMergeSeq
         for seq in 0..<sequence
         {
             var curElem = 0
-            for num in 0..<_layersPrev.count
+            for num in 0..<layersPrev.count
             {
-                let layerPrev = _layersPrev[num] as! LayerSeq
+                let layerPrev = layersPrev[num] as! LayerSeq
                 let neuronsPrev = layerPrev.neurons!
                 let nbNeurons = layerPrev.nbNeurons
                 
-                if !_layersPrev[num].computeDelta
+                if !layersPrev[num].computeDelta
                 {
                     curElem += nbNeurons
                     continue
@@ -818,12 +818,12 @@ public class Concat2Seq: LayerMergeSeq
         var command: MetalCommand
         
         var globalOffset = 0
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            let layerPrev = _layersPrev[num] as! LayerSeq
+            let layerPrev = layersPrev[num] as! LayerSeq
             let nbNeuronsPrev = layerPrev.nbNeurons
             
-            if !_layersPrev[num].computeDelta
+            if !layersPrev[num].computeDelta
             {
                 globalOffset += nbNeuronsPrev
                 continue

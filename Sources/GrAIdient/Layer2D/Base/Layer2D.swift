@@ -5,6 +5,31 @@
 // Created by Jean-François Reboud on 09/10/2022.
 //
 
+/// A layer that needs image size information.
+public protocol LayerResize: Layer
+{
+    ///
+    /// Resize this layer.
+    ///
+    /// - Parameters:
+    ///     - imageWidth: New size width.
+    ///     - imageHeight: New size height.
+    ///     - mapping: Dictionary allowing to find the layer associated to some id.
+    ///     This dictionary is particularly useful when the different layers cannot access
+    ///     their `layerPrev`.
+    ///     - inPlace: Whether hard resources should be copied as is.
+    ///
+    /// - Returns: A new layer. When `inPlace` is false, `initKernel` is
+    ///  necessary in order to recreate hard resources.
+    ///
+    func resize(
+        imageWidth: Int,
+        imageHeight: Int,
+        mapping: Dictionary<Int, Layer>,
+        inPlace: Bool
+    ) -> Layer
+}
+
 /// Layer with a 2D shape neural structure.
 open class Layer2D: Layer
 {

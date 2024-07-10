@@ -186,6 +186,45 @@ public class BaseModel: Codable
         newModel.layers = newLayers
         return newModel
     }
+    
+    ///
+    /// Update sequence of the model, creating a new one.
+    ///
+    /// - Parameters:
+    ///     - mapping: Dictionary allowing to find the layer associated to some id.
+    ///     This dictionary is particularly useful when the different layers cannot access
+    ///     their `layerPrev`.
+    ///     - inPlace: Whether hard resources should be copied as is.
+    ///     - sequence: Length of the sequence.
+    ///
+    /// - Returns: A new model. When `inPlace` is false, `initKernel` is
+    ///  necessary in order to recreate hard resources.
+    ///
+    func updateSeq(
+        mapping: inout Dictionary<Int, Layer>,
+        inPlace: Bool,
+        sequence: Int) -> BaseModel
+    {
+        let newModel = BaseModel(name: name)
+        var newLayers = [Layer]()
+        
+        var updatedSeq = false
+        for layer in layers
+        {
+            let newLayer = layer.copy(mapping: mapping, inPlace: inPlace)
+            newLayers.append(newLayer)
+            mapping[layer.id] = newLayer
+            
+            if let layerTmp = newLayer as? LayerSeq, !updatedSeq
+            {
+                layerTmp.sequence = sequence
+                updatedSeq = true
+            }
+        }
+        
+        newModel.layers = newLayers
+        return newModel
+    }
 }
 
 ///
@@ -812,6 +851,39 @@ public class Model: BaseModel
                 inPlace: inPlace,
                 imageWidth: imageWidth,
                 imageHeight: imageHeight
+            )
+            let newModel = Model(model: newBaseModel, modelsPrev: newModels)
+            newModels.append(newModel)
+        }
+        
+        return newModels
+    }
+    
+    ///
+    /// Return a list of models, updating the sequence.
+    ///
+    /// - Parameters:
+    ///     - models: The different models to resize.
+    ///     - sequence: Length of the sequence.
+    ///     - inPlace: Whether hard resources should be copied as is.
+    ///
+    /// - Returns: The list of created models. When `inPlace` is false, `initKernel` is
+    ///  necessary in order to recreate hard resources.
+    ///
+    public static func updateSeq(
+        models: [BaseModel],
+        sequence: Int,
+        inPlace: Bool) -> [Model]
+    {
+        var mapping = Dictionary<Int, Layer>()
+        
+        var newModels = [Model]()
+        for model in models
+        {
+            let newBaseModel = model.updateSeq(
+                mapping: &mapping,
+                inPlace: inPlace,
+                sequence: sequence
             )
             let newModel = Model(model: newBaseModel, modelsPrev: newModels)
             newModels.append(newModel)

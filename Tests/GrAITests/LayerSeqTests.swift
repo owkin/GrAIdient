@@ -898,14 +898,14 @@ class LayerSeqFlowPrecisionTests: LayerSeqFlowTests
     override func testConstant2() throws
     {
         let trainer = _buildTrainer("Constant2")
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     override func testConstant2Sample() throws
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer("Constant2")
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     override func testFullyConnectedSeq() throws

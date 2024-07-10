@@ -989,7 +989,7 @@ open class TransformTrainer: FlowTrainer
             let maxIndex = diffCPU < diffGPU ? "GPU" : "CPU"
             if diffCPU > 0.0000001
             {
-                warning = "Transformer Check Warning " + maxIndex + " : "
+                warning = "Transform Check Warning " + maxIndex + " : "
             }
             let strDump = warning + String(maxDiff)
             print(strDump)

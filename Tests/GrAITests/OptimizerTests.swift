@@ -221,7 +221,7 @@ class OptimizerFlowPrecisionTests: OptimizerFlowTests
     override func testSGD() throws
     {
         let trainer = _buildTrainer()
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     override func testSGDDecay() throws

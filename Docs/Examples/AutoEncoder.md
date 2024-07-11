@@ -64,7 +64,18 @@ conda env remove --name graiexamples
 
 ## Steps
 
-1. Dump the training dataset.  
+Each train example uses a `CIFARAutoEncoderTrainer` responsible for 
+initializing the training dataset before the actual training takes place.
+
 1. Train a simple auto encoder model.
 1. Train a UNet like auto encoder model.
 1. Train a StyleGAN like auto encoder model.
+
+## Further tests
+
+Further tests are available at  
+[AutoEncoderTests](../../Tests/GrAIExamples/AutoEncoderTests.swift).
+
+The test `testTrain` compares the training of a `SimpleAutoEncoder` 
+in GrAIdient and in PyTorch to show that the same `loss` is computed 
+throughout the training.

@@ -420,7 +420,8 @@ final class NLPExample: XCTestCase
         // Compute reference.
         let arrayRef = [Float](numpy: pythonLib.predict(
             _prompt,
-            _modelPath
+            _modelPath,
+            1
         ))!
         
         // Load pre trained model.
@@ -530,7 +531,9 @@ final class NLPExample: XCTestCase
             predictions,
             _modelPath
         ))!
+        
         print(prediction)
+        XCTAssert(prediction == " # to you know it\n")
     }
     
     /// Generate text from prompt.

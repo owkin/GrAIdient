@@ -86,3 +86,20 @@ conda env remove --name graiexamples
 
 1. Dump the training dataset.  
 1. Train a simple Vision Transformer model.
+
+## Benchmarks
+
+To benchmark the time performance of the a Vision Transformer like model, 
+look at 
+[TransformerBenchmark](../../Tests/GrAIExamples/TransformerBenchmark.swift) 
+and rename 
+`_test_TrainTransformer` and `_test_EvalTransformer` into 
+`test_TrainTransformer` and `test_EvalTransformer`.
+
+The test `test_TrainTransformer` will measure the time spent for training the 
+VisionTransformer model for 20 steps.
+
+The test `test_EvalTransformer` will measure the time spent for running the 
+VisionTransformer model in inference for 20 steps.
+
+Note that for both tests, the data is random and fixed once and for all.

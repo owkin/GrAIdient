@@ -94,7 +94,7 @@ conda env remove --name graiexamples
    
 ## Benchmarks
 
-To benchmark the time performance of the a VGG like model, look at 
+To benchmark the time performance of the VGG model, look at 
 [VGGBenchmark](../../Tests/GrAIExamples/VGGBenchmark.swift) and rename 
 `_test_TrainVGG` and `_test_EvalVGG` into `test_TrainVGG` and `test_EvalVGG`.
 

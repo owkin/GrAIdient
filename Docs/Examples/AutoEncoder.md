@@ -64,8 +64,9 @@ conda env remove --name graiexamples
 
 ## Steps
 
-Each train example uses a `CIFARAutoEncoderTrainer` responsible for 
-initializing the training dataset before the actual training takes place.
+Each train example uses a `CIFARAutoEncoderTrainer`. 
+The latter is responsible for initializing the training dataset 
+before the actual training takes place.
 
 1. Train a simple auto encoder model.
 1. Train a UNet like auto encoder model.
@@ -73,7 +74,7 @@ initializing the training dataset before the actual training takes place.
 
 ## Further tests
 
-Further tests are available at  
+Further tests are available at 
 [AutoEncoderTests](../../Tests/GrAIExamples/AutoEncoderTests.swift).
 
 The test `testTrain` compares the training of a `SimpleAutoEncoder` 

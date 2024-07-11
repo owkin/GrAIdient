@@ -89,7 +89,7 @@ conda env remove --name graiexamples
 
 ## Benchmarks
 
-To benchmark the time performance of the a Vision Transformer like model, 
+To benchmark the time performance of the Vision Transformer model, 
 look at 
 [TransformerBenchmark](../../Tests/GrAIExamples/TransformerBenchmark.swift) 
 and rename 

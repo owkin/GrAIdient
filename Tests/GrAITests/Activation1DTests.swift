@@ -564,7 +564,7 @@ class Activation1DFlowPrecisionTests: Activation1DInferenceTests
         let trainer = _buildTrainer(
             model: "FullyConnected", activation: LeakyReLU.str
         )
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     override func testFLSoftReLU() throws

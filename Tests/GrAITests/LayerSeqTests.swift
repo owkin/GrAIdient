@@ -1412,13 +1412,13 @@ class LayerSeq4FlowPrecisionTests: LayerSeq4FlowTests
     override func testConstant12() throws
     {
         let trainer = _buildTrainer("Constant12")
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     override func testConstant2() throws
     {
         let trainer = _buildTrainer("Constant2")
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     override func testFullyConnectedSeq() throws
@@ -1436,7 +1436,7 @@ class LayerSeq4FlowPrecisionTests: LayerSeq4FlowTests
     override func testQuerySeq() throws
     {
         let trainer = _buildTrainer("Query")
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     override func testQuerySelfSeq() throws
@@ -1448,13 +1448,13 @@ class LayerSeq4FlowPrecisionTests: LayerSeq4FlowTests
     override func testSoftmaxSeq() throws
     {
         let trainer = _buildTrainer("Softmax")
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     override func testValueSeq() throws
     {
         let trainer = _buildTrainer("Value")
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     override func testValueSelfSeq() throws

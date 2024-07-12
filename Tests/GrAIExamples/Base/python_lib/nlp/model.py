@@ -377,6 +377,7 @@ class Transformer(torch.nn.Module):
         self,
         x: torch.Tensor,
         cache=None,
+        n_layers=None
     ) -> Tuple[torch.Tensor, Optional[list]]:
         """
         Forward pass.
@@ -388,6 +389,8 @@ class Transformer(torch.nn.Module):
         cache: (key_cache, value_cache): (torch.Tensor, torch.Tensor)
             cache for keys and values
             for generating tokens with past context.
+        n_layers: Int
+            Modifier of the number of Transformer blocks.
 
         Returns
         -------
@@ -424,9 +427,11 @@ class Transformer(torch.nn.Module):
             cache = [None] * len(self.layers)
 
         for e, layer in enumerate(self.layers):
+            if n_layers is not None and e == n_layers:
+                break
+
             h, cache[e] = layer(
                 h, rotation_matrix=rotation_matrix, mask=mask, cache=cache[e]
             )
-            break
 
         return self.output(self.norm(h)), cache

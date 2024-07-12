@@ -2,14 +2,17 @@ import json
 import torch
 import numpy as np
 from pathlib import Path
-from typing import Generator, List
+from typing import Generator, List, Optional
 
 from python_lib.nlp.tokenizer import Tokenizer
 from python_lib.nlp.model import Transformer, TransformerArgs
 
 
 def _predict_no_cache(
-    prompt: torch.Tensor, model: Transformer, temp: float = 0.0
+    prompt: torch.Tensor,
+    model: Transformer,
+    temp: float = 0.0,
+    n_layers: Optional[int] = None
 ) -> torch.Tensor:
     """
     Predict text based on the given prompt and model.
@@ -22,6 +25,8 @@ def _predict_no_cache(
         The model to use for generation.
     temp: float
         The temperature for sampling. If temp is 0, use max sampling.
+    n_layers: int
+        Modifier of the number of Transformer blocks.
 
     Returns
     -------
@@ -38,7 +43,7 @@ def _predict_no_cache(
         )
 
     y = prompt
-    logits, _ = model(y[None], cache=None)
+    logits, _ = model(y[None], cache=None, n_layers=n_layers)
     return sample(logits)
 
 
@@ -146,6 +151,7 @@ def _predict(
     prompt: str,
     model_path: str,
     temp: float = 0,
+    n_layers: Optional[int] = None
 ):
     """
     Predict text based on the given prompt and model.
@@ -158,6 +164,8 @@ def _predict(
         Path to the model on the disk.
     temp: float
         The temperature for sampling. If temp is 0, use max sampling.
+    n_layers: int
+        Modifier of the number of Transformer blocks.
     """
     state = torch.load(str(Path(model_path) / "consolidated.00.pth"))
     tokenizer = Tokenizer(str(Path(model_path) / "tokenizer.model"))
@@ -178,14 +186,15 @@ def _predict(
     )
 
     tokens = _predict_no_cache(
-        prompt, model, temp
+        prompt, model, temp, n_layers
     ).squeeze(dim=0).cpu().numpy().tolist()
     print(tokenizer.decode(tokens))
 
 
 def predict(
     prompt: str,
-    model_path: str
+    model_path: str,
+    n_layers: Optional[int] = None
 ) -> np.ndarray:
     """
     Predict text based on the given prompt and model.
@@ -196,6 +205,8 @@ def predict(
         The input prompt.
     model_path: str
         Path to the model on the disk.
+    n_layers: int
+        Modifier of the number of Transformer blocks.
     """
     state = torch.load(str(Path(model_path) / "consolidated.00.pth"))
     tokenizer = Tokenizer(str(Path(model_path) / "tokenizer.model"))
@@ -213,7 +224,7 @@ def predict(
     prompt = torch.tensor(
         tokenizer.encode(prompt), dtype=torch.long, device="mps"
     )
-    out, _ = model(prompt[None])
+    out, _ = model(prompt[None], n_layers=n_layers)
     return out.detach().cpu().numpy().flatten()
 
 
@@ -255,12 +266,14 @@ def decode(
 
 if __name__ == "__main__":
     model_path = ""
+    prompt = "How do you do?"
+
     _generate(
         prompt="How do you do?",
         model_path=model_path
     )
     prompt = encode(
-        prompt="How do you do?",
+        prompt=prompt,
         model_path=model_path
     )
     prompt = decode(
@@ -268,10 +281,12 @@ if __name__ == "__main__":
         model_path=model_path
     )
     _predict(
-        prompt="How do you do?",
+        prompt=prompt,
         model_path=model_path,
+        n_layers=None
     )
     predict(
-        prompt="How do you do?",
-        model_path=model_path
+        prompt=prompt,
+        model_path=model_path,
+        n_layers=1
     )

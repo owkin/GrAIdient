@@ -1,8 +1,8 @@
 //
-// NLPExample.swift
+// NLPExampleTests.swift
 // GrAIExamples
 //
-// Created by Jean-François Reboud on 12/06/2024.
+// Created by Jean-François Reboud on 12/07/2024.
 //
 
 import XCTest
@@ -10,7 +10,7 @@ import PythonKit
 import GrAIdient
 
 /// Run generation from prompt.
-final class NLPExample: XCTestCase
+final class NLPExampleTests: XCTestCase
 {
     /// Model path on the disk.
     let _modelPath = "TO/UPDATE"
@@ -316,103 +316,16 @@ final class NLPExample: XCTestCase
         return model
     }
     
-    ///
-    /// Prepare model for generation.
-    ///
-    /// - Parameters:
-    ///     - model: Model.
-    ///     - nbTokens: Number of tokens which have been generated.
-    ///     - seqMax: Maximal number of tokens to generate.
-    /// - Returns: The cache.
-    ///
-    func _prepareForGeneration(
-        model: Model,
-        nbTokens: Int,
-        seqMax: Int) -> [Int: FloatBuffer]
+    /// Predict text from prompt.
+    func _testPredict1() throws
     {
-        var cache = [Int: FloatBuffer]()
-        for layer in model.layers
-        {
-            let id = layer.id
-            if let layerTmp = layer as? QueryCausalSeq
-            {
-                cache[id] = (layerTmp.layersPrev[1] as! LayerSeq).outs
-                layerTmp.cacheSeq = nbTokens
-                layerTmp.cacheSeqMax = seqMax
-            }
-            else if let layerTmp = layer as? SoftmaxCausalSeq
-            {
-                layerTmp.cacheSeq = nbTokens
-            }
-            else if let layerTmp = layer as? ValueCausalSeq
-            {
-                cache[id] = (layerTmp.layersPrev[0] as! LayerSeq).outs
-                layerTmp.cacheSeq = nbTokens
-                layerTmp.cacheSeqMax = seqMax
-            }
-        }
-        return cache
-    }
-    
-    ///
-    /// Set cache.
-    ///
-    /// - Parameters:
-    ///     - model: Model.
-    ///     - cache: The cache to set.
-    ///
-    /// - Returns: The cache.
-    ///
-    func _setCache(
-        model: Model,
-        cache: [Int: FloatBuffer])
-    {
-        for layer in model.layers
-        {
-            let id = layer.id
-            if let layerTmp = layer as? QueryCausalSeq
-            {
-                layerTmp.cacheKey = cache[id]!
-            }
-            else if let layerTmp = layer as? ValueCausalSeq
-            {
-                layerTmp.cacheValue = cache[id]!
-            }
-        }
-    }
-    
-    ///
-    /// Update sequence positions of RoPE layers.
-    ///
-    /// - Parameters:
-    ///     - model: Model.
-    ///     - curSeq: New sequence position to set.
-    ///
-    func _updateRoPE(model: Model, curSeq: Int)
-    {
-        for layer in model.layers
-        {
-            if let layerTmp = layer as? RoPESeq
-            {
-                layerTmp.seqPositions = [curSeq]
-            }
-        }
-    }
-    
-    /// Generate text from prompt.
-    func _testGenerate() throws
-    {
-        let nbBlocks = 32
+        let nbBlocks = 1
         let hiddenDim = 4096
         let headDim = 128
         let mlpDim = 14336
         let nbHeadsQuery = 32
         let nbHeadsKV = 8
         let vocabularySize = 32000
-        let maxTokens = 128 // maximal number of tokens to generate
-        
-        // Use Float16 for faster results.
-        GrAI.Precision.float16 = true
         
         // Encode prompt.
         let pythonLib = Python.import("python_lib")
@@ -421,8 +334,15 @@ final class NLPExample: XCTestCase
             _modelPath
         ))!
         
+        // Compute reference.
+        let arrayRef = [Float](numpy: pythonLib.predict(
+            _prompt,
+            _modelPath,
+            1
+        ))!
+        
         // Load pre trained model.
-        var model = _buildModel(
+        let model = _buildModel(
             modelPath: _modelPath,
             sequence: prompt.count,
             nbBlocks: nbBlocks,
@@ -439,7 +359,71 @@ final class NLPExample: XCTestCase
         model.updateKernel(batchSize: 1)
         
         // Forward.
-        var firstLayer: EmbeddingSeq = model.layers.first as! EmbeddingSeq
+        let firstLayer: EmbeddingSeq = model.layers.first as! EmbeddingSeq
+        try! firstLayer.setDataGPU(
+            [prompt], batchSize: 1, sequence: prompt.count
+        )
+        try! model.forward()
+        
+        // Get result.
+        let arrayOut = (model.layers.last as! LayerSeq).outs.download()
+        
+        // Compare difference.
+        for (elemOut, elemRef) in zip(arrayOut, arrayRef)
+        {
+            if elemRef == 0.0
+            {
+                XCTAssert(elemOut == 0.0)
+            }
+            else
+            {
+                let diffPercent = abs(elemOut - elemRef) / abs(elemRef) * 100.0
+                if diffPercent > 1
+                {
+                    print(diffPercent)
+                }
+                XCTAssert(diffPercent < 1)
+            }
+        }
+    }
+    
+    /// Predict text from prompt.
+    func _testPredict32() throws
+    {
+        let nbBlocks = 32
+        let hiddenDim = 4096
+        let headDim = 128
+        let mlpDim = 14336
+        let nbHeadsQuery = 32
+        let nbHeadsKV = 8
+        let vocabularySize = 32000
+        
+        // Encode prompt.
+        let pythonLib = Python.import("python_lib")
+        let prompt = [Int](pythonLib.encode(
+            _prompt,
+            _modelPath
+        ))!
+        
+        // Load pre trained model.
+        let model = _buildModel(
+            modelPath: _modelPath,
+            sequence: prompt.count,
+            nbBlocks: nbBlocks,
+            hiddenDim: hiddenDim,
+            headDim: headDim,
+            mlpDim: mlpDim,
+            nbHeadsQuery: nbHeadsQuery,
+            nbHeadsKV: nbHeadsKV,
+            vocabularySize: vocabularySize
+        )
+        
+        // Initialize for inference.
+        model.initKernel(phase: .Inference)
+        model.updateKernel(batchSize: 1)
+        
+        // Forward.
+        let firstLayer: EmbeddingSeq = model.layers.first as! EmbeddingSeq
         try! firstLayer.setDataGPU(
             [prompt], batchSize: 1, sequence: prompt.count
         )
@@ -459,72 +443,13 @@ final class NLPExample: XCTestCase
             predictions.append(argmax)
         }
         
-        var lastToken = predictions.last!
-        var nbTokens = predictions.count
-        
         // Decode.
         let prediction = String(pythonLib.decode(
-            [lastToken],
+            predictions,
             _modelPath
         ))!
         
-        let start = Date()
-        print("Start generating...")
-        print(prediction, terminator: "")
-        
-        // Prepare model for generation.
-        let cache = _prepareForGeneration(
-            model: model,
-            nbTokens: nbTokens,
-            seqMax: maxTokens
-        )
-        
-        // Update model's sequence.
-        model = Model.updateSeq(
-            models: [model],
-            sequence: 1,
-            inPlace: true
-        )[0]
-        model.phase = .Inference
-        model.updateKernel(batchSize: 1)
-        
-        // Set cache.
-        firstLayer = model.layers.first as! EmbeddingSeq
-        _setCache(
-            model: model,
-            cache: cache
-        )
-        
-        // Generate.
-        let finalStep = maxTokens - nbTokens
-        for _ in 0..<finalStep
-        {
-            // Forward.
-            try! firstLayer.setDataGPU(
-                [[lastToken]], batchSize: 1, sequence: 1
-            )
-            _updateRoPE(model: model, curSeq: nbTokens + 1)
-            try! model.forward()
-            
-            // Get result.
-            let out = (model.layers.last as! LayerSeq).outs.download()
-            let predictions = [_argmax(array: out)!]
-            
-            lastToken = predictions.last!
-            nbTokens += 1
-            
-            // Decode.
-            let prediction = String(pythonLib.decode(
-                predictions,
-                _modelPath
-            ))!
-            print(prediction, terminator: "")
-        }
-        print("")
-        print("End generating.")
-        
-        let end = Date()
-        let timeSpent = end.timeIntervalSince(start)
-        print("Process took \(timeSpent)s.")
+        print(prediction)
+        XCTAssert(prediction == " # to you know it\n")
     }
 }

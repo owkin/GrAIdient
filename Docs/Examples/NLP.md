@@ -15,15 +15,15 @@ cd Tests/GrAIExamples/Base
 pip install -e .
 ```
 
-Then, download weights from 
+Then: 
+- download weights from 
 [MistralAI](https://docs.mistral.ai/getting-started/open_weight_models/).
-
-Update `_modelPath` in the 
+- Update `_modelPath` in the 
 [NLPExample](../../Tests/GrAIExamples/NLPExample.swift) file with the 
-previous downloaded weights.
-Potentially update the `_prompt`.
-
-Then rename `_testGenerate` into `testGenerate` and run the test.
+previous downloaded weights. 
+- Optionnally update `_prompt`.
+- Rename `_testGenerate` into `testGenerate`. 
+- Run the test.
 
 It is finally possible to clean the environment 🌍
 
@@ -39,7 +39,8 @@ conda env remove --name graiexamples
 ## Further tests
 
 Further tests are available at 
-[NLPExampleTests](../../Tests/GrAIExamples/NLPExampleTests.swift) and rename 
+[NLPExampleTests](../../Tests/GrAIExamples/NLPExampleTests.swift). 
+In order to run them, rename 
 `_testPredict1` and `_testPredict32` into `testPredict1` and `testPredict32`.
 
 The test `testPredict1` compares the first step of generation 

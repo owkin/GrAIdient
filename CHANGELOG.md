@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+📚 **docs:** LLM doc & split tests ([129](https://github.com/owkin/GrAIdient/pull/129))\
 ✨ **layer_seq:** LLM generate ([128](https://github.com/owkin/GrAIdient/pull/128))\
 ✨ **layer_seq:** MultiplySeq, SiLU & LLM test ([127](https://github.com/owkin/GrAIdient/pull/127))\
 ✨ **layer_seq:** ValueCausalSeq ([126](https://github.com/owkin/GrAIdient/pull/126))\

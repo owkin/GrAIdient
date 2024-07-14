@@ -59,6 +59,32 @@ def _extract_weights(
     return layers_weights, layers_dims
 
 
+def _extract_state(
+    state: Dict[str, torch.Tensor]
+) -> Dict[str, np.ndarray]:
+    """
+    Get weights and biases.
+
+    Parameters
+    ----------
+    state: [str: torch.Tensor]
+        The module state, containing the weights and biases.
+
+    Returns
+    -------
+    layer_weights: Dict[str, np.ndarray]
+        Dictionary of flattened weights.
+    """
+    layers_weights: Dict[str, np.ndarray] = {}
+    for name, layer_weights in state.items():
+        print(f"Extracting weigths {name}.")
+        weights_list, _ = _flatten_weights(
+            layer_weights.data.cpu().float().numpy()
+        )
+        layers_weights[name] = weights_list
+    return layers_weights
+
+
 def _extract_and_transpose_weights(
     modules: [torch.nn.Module]
 ) -> Tuple[List[np.ndarray], List[List[int]]]:
@@ -130,17 +156,17 @@ def load_simple_auto_encoder_weights(
 
 def load_mistral_weights(
     model_path: str
-) -> Tuple[List[np.ndarray], List[List[int]]]:
+) -> Dict[str, np.ndarray]:
     """
     Get weights and biases for LLM.
 
     Returns
     -------
-    (_, _): List[np.ndarray], List[List[int]]
-        The flattened weights, their shape.
+    _: Dict[str, np.ndarray]
+        Dictionary of flattened weights.
     """
     state = load_file(
         str(Path(model_path) / "consolidated.safetensors"),
         "cpu"
     )
-    return _extract_weights(state)
+    return _extract_state(state)

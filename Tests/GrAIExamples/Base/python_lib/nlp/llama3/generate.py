@@ -30,6 +30,19 @@ def generate(
     tokenizer = Tokenizer(str(Path(model_path) / "tokenizer.model"))
     formatter = ChatFormat(tokenizer)
 
+    print(prompt, end="", flush=True)
+    dialogs = [
+        [
+            {"role": "user", "content": prompt},
+        ],
+    ]
+    prompt = torch.tensor(
+        [
+            formatter.encode_dialog_prompt(dialog) for dialog in dialogs
+        ][0],
+        dtype=torch.long, device="mps"
+    )
+
     model_args = TransformerArgs(
         dim=4096,
         n_layers=32,
@@ -45,19 +58,6 @@ def generate(
     model = Transformer(model_args)
     model.load_state_dict(state)
     model.to("mps")
-
-    print(prompt, end="", flush=True)
-    dialogs = [
-        [
-            {"role": "user", "content": prompt},
-        ],
-    ]
-    prompt = torch.tensor(
-        [
-            formatter.encode_dialog_prompt(dialog) for dialog in dialogs
-        ][0],
-        dtype=torch.long, device="mps"
-    )
 
     tokens = []
     skip = 0

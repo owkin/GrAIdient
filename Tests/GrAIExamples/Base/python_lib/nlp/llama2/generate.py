@@ -30,6 +30,11 @@ def generate(
     state.pop("rope.freqs")
     tokenizer = Tokenizer(str(Path(model_path) / "tokenizer.model"))
 
+    print(prompt, end="", flush=True)
+    prompt = torch.tensor(
+        tokenizer.encode(prompt), dtype=torch.long, device="mps"
+    )
+
     model_args = TransformerArgs(
         dim=4096,
         n_layers=32,
@@ -45,11 +50,6 @@ def generate(
     model = Transformer(model_args)
     model.load_state_dict(state)
     model.to("mps")
-
-    print(prompt, end="", flush=True)
-    prompt = torch.tensor(
-        tokenizer.encode(prompt), dtype=torch.long, device="mps"
-    )
 
     tokens = []
     skip = 0

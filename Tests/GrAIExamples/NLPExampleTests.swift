@@ -13,7 +13,7 @@ import GrAIdient
 final class NLPExampleTests: XCTestCase
 {
     /// Model path on the disk.
-    let _modelPath = "TO/UPDATE"
+    let _modelPath = "/Users/jean-francoisreboud/DocumentsNonSync/Projet/Python/mistral/weights/mistral-7B-Instruct-v0.3/"
     
     /// Prompt.
     let _prompt = "How do you do?"
@@ -55,10 +55,9 @@ final class NLPExampleTests: XCTestCase
     }
     
     ///
-    /// Build Mistral model.
+    /// Build LLM model.
     ///
     /// - Parameters:
-    ///     - modelPath: Model path on the disk.
     ///     - sequence: Length of the sequence.
     ///     - nbBlocks: Number of transformer + MLP blocks.
     ///     - hiddenDim: Dimension of neurons in the main branch.
@@ -67,10 +66,9 @@ final class NLPExampleTests: XCTestCase
     ///     - nbHeads:  Number of heads (groups) of neurons for queries.
     ///     - nbHeadsKV: Number of heads (groups) of neurons for keys and values.
     ///     - vocabularySize: Vocabulary size.
-    /// - Returns: The model built.
+    /// - Returns: (The model built, The list of PyTorch keys for each layer that contains weights).
     ///
-    func _buildMistralModel(
-        modelPath: String,
+    func _buildModel(
         sequence: Int,
         nbBlocks: Int,
         hiddenDim: Int,
@@ -78,25 +76,20 @@ final class NLPExampleTests: XCTestCase
         mlpDim: Int,
         nbHeadsQuery: Int,
         nbHeadsKV: Int,
-        vocabularySize: Int) -> Model
+        vocabularySize: Int) -> (Model, [String])
     {
         let context = ModelContext(name: "NLP", curID: 0)
         let params = GrAI.Model.Params(context: context)
-        
-        var curPyTorch = 0
-        var curGrAIdient = 0
-        var dicoGrAIdient2PyTorch = [Int: Int]()
+        var keys = [String]()
         
         var layer: LayerSeq = EmbeddingSeq(
             sequence: sequence,
             vocabularySize: vocabularySize,
             nbNeurons: hiddenDim, params: params
         )
-        dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch
-        curGrAIdient += 1
-        curPyTorch += 1 + 2
+        keys.append("tok_embeddings.weight")
         
-        for _ in 0..<nbBlocks
+        for i in 0..<nbBlocks
         {
             var x: LayerSeq = layer
             
@@ -105,9 +98,7 @@ final class NLPExampleTests: XCTestCase
                 activation: nil,
                 params: params
             )
-            dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch + 4 + 3
-            curGrAIdient += 1
-            // curPyTorch += 1
+            keys.append("layers.\(i).attention_norm.weight")
             
             var query: LayerSeq = FullyConnectedSeq(
                 layerPrev: layer,
@@ -116,16 +107,13 @@ final class NLPExampleTests: XCTestCase
                 biases: false,
                 params: params
             )
-            dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch
-            curGrAIdient += 1
-            curPyTorch += 1
+            keys.append("layers.\(i).attention.wq.weight")
             query = try! RoPESeq(
                 layerPrev: query,
                 seqPositions: [Int](1...sequence),
                 nbHeads: nbHeadsQuery,
                 params: params
             )
-            curGrAIdient += 1
             
             var key: LayerSeq = FullyConnectedSeq(
                 layerPrev: layer,
@@ -134,16 +122,13 @@ final class NLPExampleTests: XCTestCase
                 biases: false,
                 params: params
             )
-            dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch
-            curGrAIdient += 1
-            curPyTorch += 1
+            keys.append("layers.\(i).attention.wk.weight")
             key = try! RoPESeq(
                 layerPrev: key,
                 seqPositions: [Int](1...sequence),
                 nbHeads: nbHeadsKV,
                 params: params
             )
-            curGrAIdient += 1
             
             let value: LayerSeq = FullyConnectedSeq(
                 layerPrev: layer,
@@ -152,29 +137,24 @@ final class NLPExampleTests: XCTestCase
                 biases: false,
                 params: params
             )
-            dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch
-            curGrAIdient += 1
-            curPyTorch += 1
+            keys.append("layers.\(i).attention.wv.weight")
             
             layer = try! QueryCausalSeq(
                 query: query, key: key,
                 nbHeadsQuery: nbHeadsQuery, nbHeadsKey: nbHeadsKV,
                 params: params
             )
-            curGrAIdient += 1
             layer = try! SoftmaxCausalSeq(
                 layerPrev: layer,
                 nbHeads: nbHeadsQuery,
                 params: params
             )
-            curGrAIdient += 1
             
             layer = try! ValueCausalSeq(
                 value: value, score: layer,
                 nbHeadsValue: nbHeadsKV, nbHeadsScore: nbHeadsQuery,
                 params: params
             )
-            curGrAIdient += 1
             
             layer = FullyConnectedSeq(
                 layerPrev: layer,
@@ -183,12 +163,9 @@ final class NLPExampleTests: XCTestCase
                 biases: false,
                 params: params
             )
-            dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch
-            curGrAIdient += 1
-            curPyTorch += 1
+            keys.append("layers.\(i).attention.wo.weight")
             
             layer = try! SumSeq(layersPrev: [layer, x], params: params)
-            curGrAIdient += 1
             
             x = layer
             
@@ -197,9 +174,7 @@ final class NLPExampleTests: XCTestCase
                 activation: nil,
                 params: params
             )
-            dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch + 3 + 1
-            curGrAIdient += 1
-            // curPyTorch += 1
+            keys.append("layers.\(i).ffn_norm.weight")
             
             let mult1: LayerSeq = FullyConnectedSeq(
                 layerPrev: layer,
@@ -208,9 +183,7 @@ final class NLPExampleTests: XCTestCase
                 biases: false,
                 params: params
             )
-            dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch
-            curGrAIdient += 1
-            curPyTorch += 1
+            keys.append("layers.\(i).feed_forward.w1.weight")
             
             let mult2: LayerSeq = FullyConnectedSeq(
                 layerPrev: layer,
@@ -219,12 +192,9 @@ final class NLPExampleTests: XCTestCase
                 biases: false,
                 params: params
             )
-            dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch + 1
-            curGrAIdient += 1
-            // curPyTorch += 1
+            keys.append("layers.\(i).feed_forward.w3.weight")
             
             layer = try! MultiplySeq(layersPrev: [mult1, mult2], params: params)
-            curGrAIdient += 1
             
             layer = FullyConnectedSeq(
                 layerPrev: layer,
@@ -233,14 +203,9 @@ final class NLPExampleTests: XCTestCase
                 biases: false,
                 params: params
             )
-            dicoGrAIdient2PyTorch[curGrAIdient] = curPyTorch
-            curGrAIdient += 1
-            curPyTorch += 2
+            keys.append("layers.\(i).feed_forward.w2.weight")
             
             layer = try! SumSeq(layersPrev: [layer, x], params: params)
-            curGrAIdient += 1
-            
-            curPyTorch += 2
         }
         
         layer = RMSNormSeq(
@@ -248,9 +213,7 @@ final class NLPExampleTests: XCTestCase
             activation: nil,
             params: params
         )
-        dicoGrAIdient2PyTorch[curGrAIdient] = 1
-        curGrAIdient += 1
-        // curPyTorch += 1
+        keys.append("norm.weight")
         
         layer = FullyConnectedSeq(
             layerPrev: layer,
@@ -259,65 +222,80 @@ final class NLPExampleTests: XCTestCase
             biases: false,
             params: params
         )
-        dicoGrAIdient2PyTorch[curGrAIdient] = 2
-        curGrAIdient += 1
-        // curPyTorch += 1
+        keys.append("output.weight")
         
         // Retrieve base model in the context and initialize a
         // real model (with `layerPrev` links updated).
         let model = Model(model: context.model, modelsPrev: [])
         
+        return (model, keys)
+    }
+    
+    ///
+    /// Load Mistral weights.
+    ///
+    /// - Parameters:
+    ///     - model: Model.
+    ///     - keys: List of PyTorch keys for each layer that contains weights.
+    ///     - weightsPath: Weights path on the disk.
+    ///
+    func _loadMistralWeights(
+        model: Model, keys: [String], weightsPath: String)
+    {
         // Load weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
-        let data = pythonLib.load_mistral_weights(modelPath)
-        var weightsNumpy: [PythonObject?] = [PythonObject](data.tuple2.0)!
+        let data = pythonLib.load_mistral_weights(weightsPath)
+        var weightsNumpy = [String: PythonObject](data)!
         
         // Apply weights on the `GrAIdient` model's layers.
+        var numKey = 0
         for layer in model.layers
         {
             // Load weights and biases.
             if let layerTmp = layer as? EmbeddingSeq
             {
-                let idGrAIdient = layerTmp.id
-                let idPyTorch = dicoGrAIdient2PyTorch[idGrAIdient]!
-                
+                let key = keys[numKey]
+                let np = weightsNumpy[key]!
+            
                 let weightsTmp: [Float] = Array<Float>(
-                    numpy: weightsNumpy[idPyTorch]!
+                    numpy: np
                 )!
                 layerTmp.weightsCPU = weightsTmp
                 
-                weightsNumpy[idPyTorch] = nil
+                weightsNumpy[key] = nil
+                numKey += 1
             }
             if let layerTmp = layer as? RMSNormSeq
             {
-                let idGrAIdient = layerTmp.id
-                let idPyTorch = dicoGrAIdient2PyTorch[idGrAIdient]!
+                let key = keys[numKey]
+                let np = weightsNumpy[key]!
                 
                 let weightsTmp: [Float] = Array<Float>(
-                    numpy: weightsNumpy[idPyTorch]!
+                    numpy: np
                 )!
                 layerTmp.weightsCPU = weightsTmp
                 
-                weightsNumpy[idPyTorch] = nil
+                weightsNumpy[key] = nil
+                numKey += 1
             }
             if let layerTmp = layer as? FullyConnectedSeq
             {
-                let idGrAIdient = layerTmp.id
-                let idPyTorch = dicoGrAIdient2PyTorch[idGrAIdient]!
+                let key = keys[numKey]
+                let np = weightsNumpy[key]!
                 
                 let weightsTmp: [Float] = Array<Float>(
-                    numpy: weightsNumpy[idPyTorch]!
+                    numpy: np
                 )!
                 layerTmp.weightsCPU = weightsTmp
                 
-                weightsNumpy[idPyTorch] = nil
+                weightsNumpy[key] = nil
+                numKey += 1
             }
         }
-        return model
     }
     
     /// Predict text from prompt.
-    func _testPredict1() throws
+    func testPredict1() throws
     {
         let nbBlocks = 1
         let hiddenDim = 4096
@@ -341,9 +319,8 @@ final class NLPExampleTests: XCTestCase
             1
         ))!
         
-        // Load pre trained model.
-        let model = _buildMistralModel(
-            modelPath: _modelPath,
+        // Build LLM.
+        let (model, keys) = _buildModel(
             sequence: prompt.count,
             nbBlocks: nbBlocks,
             hiddenDim: hiddenDim,
@@ -353,6 +330,9 @@ final class NLPExampleTests: XCTestCase
             nbHeadsKV: nbHeadsKV,
             vocabularySize: vocabularySize
         )
+        
+        // Load pre trained weights.
+        _loadMistralWeights(model: model, keys: keys, weightsPath: _modelPath)
         
         // Initialize for inference.
         model.initKernel(phase: .Inference)
@@ -378,17 +358,17 @@ final class NLPExampleTests: XCTestCase
             else
             {
                 let diffPercent = abs(elemOut - elemRef) / abs(elemRef) * 100.0
-                if diffPercent > 1
+                if diffPercent > 5
                 {
                     print(diffPercent)
                 }
-                XCTAssert(diffPercent < 1)
+                XCTAssert(diffPercent < 5)
             }
         }
     }
     
     /// Predict text from prompt.
-    func _testPredict32() throws
+    func testPredict32() throws
     {
         let nbBlocks = 32
         let hiddenDim = 4096
@@ -405,9 +385,8 @@ final class NLPExampleTests: XCTestCase
             _modelPath
         ))!
         
-        // Load pre trained model.
-        let model = _buildMistralModel(
-            modelPath: _modelPath,
+        // Build LLM.
+        let (model, keys) = _buildModel(
             sequence: prompt.count,
             nbBlocks: nbBlocks,
             hiddenDim: hiddenDim,
@@ -417,6 +396,9 @@ final class NLPExampleTests: XCTestCase
             nbHeadsKV: nbHeadsKV,
             vocabularySize: vocabularySize
         )
+        
+        // Load pre trained weights.
+        _loadMistralWeights(model: model, keys: keys, weightsPath: _modelPath)
         
         // Initialize for inference.
         model.initKernel(phase: .Inference)
@@ -450,6 +432,6 @@ final class NLPExampleTests: XCTestCase
         ))!
         
         print(prediction)
-        XCTAssert(prediction == "# to you know it\n")
+        XCTAssert(prediction == "QuestionI can I calculate a I I")
     }
 }

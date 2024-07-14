@@ -378,7 +378,7 @@ final class NLPExample: XCTestCase
     }
     
     /// Generate text from prompt.
-    func testGenerate() throws
+    func _testGenerate() throws
     {
         let nbBlocks = 32
         let hiddenDim = 4096
@@ -442,15 +442,8 @@ final class NLPExample: XCTestCase
         var lastToken = predictions.last!
         var nbTokens = predictions.count
         
-        // Decode.
-        let prediction = String(pythonLib.decode(
-            [lastToken],
-            _modelPath
-        ))!
-        
         let start = Date()
         print("Start generating...")
-        print(prediction, terminator: "")
         
         // Prepare model for generation.
         let cache = _prepareForGeneration(
@@ -476,7 +469,28 @@ final class NLPExample: XCTestCase
         )
         
         // Generate.
+        var skip = 0
+        var tokens = [lastToken]
         let finalStep = maxTokens - nbTokens
+        
+        // Decode.
+        var sentence = String(pythonLib.decode(
+            tokens,
+            _modelPath
+        ))!
+        
+        // Print.
+        if sentence.count - skip > 1
+        {
+            let rangeToPrint = sentence.index(
+                sentence.startIndex, offsetBy: skip
+            )..<sentence.index(sentence.endIndex, offsetBy: -1)
+            let strToPrint = sentence[rangeToPrint]
+            
+            print(strToPrint, terminator: "")
+            skip = sentence.count - 1
+        }
+        
         for _ in 0..<finalStep
         {
             // Forward.
@@ -488,18 +502,50 @@ final class NLPExample: XCTestCase
             
             // Get result.
             let out = (model.layers.last as! LayerSeq).outs.download()
-            let predictions = [_argmax(array: out)!]
             
-            lastToken = predictions.last!
+            lastToken = _argmax(array: out)!
+            tokens.append(lastToken)
             nbTokens += 1
             
+            // End generation.
+            if lastToken == 2
+            {
+                break
+            }
+            
             // Decode.
-            let prediction = String(pythonLib.decode(
-                predictions,
+            sentence = String(pythonLib.decode(
+                tokens,
                 _modelPath
             ))!
-            print(prediction, terminator: "")
+            
+            // Print.
+            if sentence.count - skip > 1
+            {
+                let rangeToPrint = sentence.index(
+                    sentence.startIndex, offsetBy: skip
+                )..<sentence.index(sentence.endIndex, offsetBy: -1)
+                let strToPrint = sentence[rangeToPrint]
+                
+                print(strToPrint, terminator: "")
+                skip = sentence.count - 1
+            }
         }
+        
+        // Decode.
+        sentence = String(pythonLib.decode(
+            tokens,
+            _modelPath
+        ))!
+        
+        // Print.
+        let rangeToPrint = sentence.index(
+            sentence.startIndex, offsetBy: skip
+        )..<sentence.endIndex
+        let strToPrint = sentence[rangeToPrint]
+        
+        print(strToPrint, terminator: "")
+        
         print("")
         print("End generating.")
         

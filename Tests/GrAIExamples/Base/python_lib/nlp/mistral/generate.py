@@ -124,6 +124,7 @@ def _predict(
         config.pop("sliding_window", None)
         config.pop("model_type", None)
         model_args = TransformerArgs(**config)
+        model_args.rope_theta = 10000
 
     model = Transformer(model_args)
     model.load_state_dict(state)
@@ -172,6 +173,7 @@ def predict(
         config.pop("sliding_window", None)
         config.pop("model_type", None)
         model_args = TransformerArgs(**config)
+        model_args.rope_theta = 10000
 
     model = Transformer(model_args)
     model.load_state_dict(state)

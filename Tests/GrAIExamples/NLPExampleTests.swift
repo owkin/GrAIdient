@@ -13,7 +13,7 @@ import GrAIdient
 final class NLPExampleTests: XCTestCase
 {
     /// Model path on the disk.
-    let _modelPath = "/Users/jean-francoisreboud/DocumentsNonSync/Projet/Python/mistral/weights/mistral-7B-Instruct-v0.3/"
+    let _modelPath = "TO/UPDATE"
     
     /// Prompt.
     let _prompt = "How do you do?"
@@ -295,7 +295,7 @@ final class NLPExampleTests: XCTestCase
     }
     
     /// Predict text from prompt.
-    func testPredict1() throws
+    func _testPredict1() throws
     {
         let nbBlocks = 1
         let hiddenDim = 4096
@@ -358,17 +358,17 @@ final class NLPExampleTests: XCTestCase
             else
             {
                 let diffPercent = abs(elemOut - elemRef) / abs(elemRef) * 100.0
-                if diffPercent > 5
+                if diffPercent > 1
                 {
                     print(diffPercent)
                 }
-                XCTAssert(diffPercent < 5)
+                XCTAssert(diffPercent < 1)
             }
         }
     }
     
     /// Predict text from prompt.
-    func testPredict32() throws
+    func _testPredict32() throws
     {
         let nbBlocks = 32
         let hiddenDim = 4096
@@ -415,19 +415,19 @@ final class NLPExampleTests: XCTestCase
         let out = (model.layers.last as! LayerSeq).outs.download()
         
         // Compute prediction for each token.
-        var predictions = [Int]()
+        var tokens = [Int]()
         for seq in 0..<out.count / vocabularySize
         {
             let vector = [Float](
                 out[vocabularySize*seq..<vocabularySize*(seq+1)]
             )
-            let argmax = _argmax(array: vector)!
-            predictions.append(argmax)
+            let token = _argmax(array: vector)!
+            tokens.append(token)
         }
         
         // Decode.
         let prediction = String(pythonLib.decode(
-            predictions,
+            tokens,
             _modelPath
         ))!
         

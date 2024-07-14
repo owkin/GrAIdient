@@ -3,6 +3,7 @@ import numpy as np
 from pathlib import Path
 from typing import List, Tuple, Dict
 
+from safetensors.torch import load_file
 from python_lib.model import SimpleAutoEncoder
 
 
@@ -127,7 +128,7 @@ def load_simple_auto_encoder_weights(
     return _extract_and_transpose_weights(list(model.children()))
 
 
-def load_llm_weights(
+def load_mistral_weights(
     model_path: str
 ) -> Tuple[List[np.ndarray], List[List[int]]]:
     """
@@ -138,8 +139,8 @@ def load_llm_weights(
     (_, _): List[np.ndarray], List[List[int]]
         The flattened weights, their shape.
     """
-    state = torch.load(
-        str(Path(model_path) / "consolidated.00.pth"),
-        map_location="cpu"
+    state = load_file(
+        str(Path(model_path) / "consolidated.safetensors"),
+        "cpu"
     )
     return _extract_weights(state)

@@ -55,7 +55,7 @@ final class NLPExample: XCTestCase
     }
     
     ///
-    /// Build LLM model.
+    /// Build Mistral model.
     ///
     /// - Parameters:
     ///     - modelPath: Model path on the disk.
@@ -69,7 +69,7 @@ final class NLPExample: XCTestCase
     ///     - vocabularySize: Vocabulary size.
     /// - Returns: The model built.
     ///
-    func _buildModel(
+    func _buildMistralModel(
         modelPath: String,
         sequence: Int,
         nbBlocks: Int,
@@ -269,7 +269,7 @@ final class NLPExample: XCTestCase
         
         // Load weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
-        let data = pythonLib.load_llm_weights(modelPath)
+        let data = pythonLib.load_mistral_weights(modelPath)
         var weightsNumpy: [PythonObject?] = [PythonObject](data.tuple2.0)!
         
         // Apply weights on the `GrAIdient` model's layers.
@@ -408,7 +408,7 @@ final class NLPExample: XCTestCase
         let mlpDim = 14336
         let nbHeadsQuery = 32
         let nbHeadsKV = 8
-        let vocabularySize = 32000
+        let vocabularySize = 32768
         let maxTokens = 128 // maximal number of tokens to generate
         
         // Use Float16 for faster results.
@@ -422,7 +422,7 @@ final class NLPExample: XCTestCase
         ))!
         
         // Load pre trained model.
-        var model = _buildModel(
+        var model = _buildMistralModel(
             modelPath: _modelPath,
             sequence: prompt.count,
             nbBlocks: nbBlocks,

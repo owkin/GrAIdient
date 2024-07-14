@@ -55,7 +55,7 @@ final class NLPExampleTests: XCTestCase
     }
     
     ///
-    /// Build LLM model.
+    /// Build Mistral model.
     ///
     /// - Parameters:
     ///     - modelPath: Model path on the disk.
@@ -69,7 +69,7 @@ final class NLPExampleTests: XCTestCase
     ///     - vocabularySize: Vocabulary size.
     /// - Returns: The model built.
     ///
-    func _buildModel(
+    func _buildMistralModel(
         modelPath: String,
         sequence: Int,
         nbBlocks: Int,
@@ -269,7 +269,7 @@ final class NLPExampleTests: XCTestCase
         
         // Load weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
-        let data = pythonLib.load_llm_weights(modelPath)
+        let data = pythonLib.load_mistral_weights(modelPath)
         var weightsNumpy: [PythonObject?] = [PythonObject](data.tuple2.0)!
         
         // Apply weights on the `GrAIdient` model's layers.
@@ -325,7 +325,7 @@ final class NLPExampleTests: XCTestCase
         let mlpDim = 14336
         let nbHeadsQuery = 32
         let nbHeadsKV = 8
-        let vocabularySize = 32000
+        let vocabularySize = 32768
         
         // Encode prompt.
         let pythonLib = Python.import("python_lib")
@@ -342,7 +342,7 @@ final class NLPExampleTests: XCTestCase
         ))!
         
         // Load pre trained model.
-        let model = _buildModel(
+        let model = _buildMistralModel(
             modelPath: _modelPath,
             sequence: prompt.count,
             nbBlocks: nbBlocks,
@@ -396,7 +396,7 @@ final class NLPExampleTests: XCTestCase
         let mlpDim = 14336
         let nbHeadsQuery = 32
         let nbHeadsKV = 8
-        let vocabularySize = 32000
+        let vocabularySize = 32768
         
         // Encode prompt.
         let pythonLib = Python.import("python_lib")
@@ -406,7 +406,7 @@ final class NLPExampleTests: XCTestCase
         ))!
         
         // Load pre trained model.
-        let model = _buildModel(
+        let model = _buildMistralModel(
             modelPath: _modelPath,
             sequence: prompt.count,
             nbBlocks: nbBlocks,
@@ -450,6 +450,6 @@ final class NLPExampleTests: XCTestCase
         ))!
         
         print(prediction)
-        XCTAssert(prediction == " # to you know it\n")
+        XCTAssert(prediction == "# to you know it\n")
     }
 }

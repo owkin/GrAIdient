@@ -158,7 +158,7 @@ def load_mistral_weights(
     model_path: str
 ) -> Dict[str, np.ndarray]:
     """
-    Get weights and biases for LLM.
+    Get weights and biases for Mistral-7B-Instruct-v0.3 LLM.
 
     Returns
     -------
@@ -167,6 +167,24 @@ def load_mistral_weights(
     """
     state = load_file(
         str(Path(model_path) / "consolidated.safetensors"),
+        "cpu"
+    )
+    return _extract_state(state)
+
+
+def load_llama_weights(
+    model_path: str
+) -> Dict[str, np.ndarray]:
+    """
+    Get weights and biases for Llama-2-7B-Chat or Llama-3-8B-Instruct.
+
+    Returns
+    -------
+    _: Dict[str, np.ndarray]
+        Dictionary of flattened weights.
+    """
+    state = load_file(
+        str(Path(model_path) / "consolidated.00.pth"),
         "cpu"
     )
     return _extract_state(state)

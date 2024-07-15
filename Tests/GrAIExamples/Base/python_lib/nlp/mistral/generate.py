@@ -1,4 +1,5 @@
 import json
+import time
 import torch
 import numpy as np
 from pathlib import Path
@@ -61,6 +62,9 @@ def generate(
     model.load_state_dict(state)
     model.to("mps")
 
+    start_time = time.time()
+    print("Start generating...")
+
     tokens = []
     skip = 0
     for token, n in zip(
@@ -77,14 +81,17 @@ def generate(
             skip = len(s) - 1
 
     print(tokenizer.decode(tokens)[skip:], flush=True)
-    print("=" * 10)
+    print("End generating.")
 
     if len(tokens) == 0:
         print("No tokens generated for this prompt.")
         return
 
+    elapsed_time = time.time() - start_time
+    print(f"Generation took: {elapsed_time:.6f} seconds.")
 
-def _predict(
+
+def predict(
     prompt: str,
     model_path: str,
     temp: float = 0,
@@ -138,7 +145,7 @@ def _predict(
     print(prediction)
 
 
-def predict(
+def predict_mistral(
     prompt: str,
     model_path: str,
     n_layers: Optional[int] = None
@@ -183,7 +190,7 @@ def predict(
     return out.detach().cpu().numpy().flatten()
 
 
-def load_tokenizer(model_path: str) -> MistralTokenizer:
+def load_mistral_tokenizer(model_path: str) -> MistralTokenizer:
     """
     Load tokenizer from the disk.
 
@@ -203,7 +210,7 @@ def load_tokenizer(model_path: str) -> MistralTokenizer:
     return tokenizer
 
 
-def encode(
+def encode_mistral(
     prompt: str,
     tokenizer: MistralTokenizer
 ) -> List[int]:
@@ -229,7 +236,7 @@ def encode(
     return tokenizer.encode_chat_completion(completion_request).tokens
 
 
-def decode(
+def decode_mistral(
     prompt: List[int],
     tokenizer: MistralTokenizer
 ) -> str:
@@ -252,14 +259,16 @@ def decode(
 
 if __name__ == "__main__":
     model_path = "/Users/jean-francoisreboud/DocumentsNonSync/Projet/Python/mistral/weights/mistral-7B-Instruct-v0.3/"
-    prompt = "How do you do?"
+    prompt = "What is the meaning of life?"
 
     generate(
-        prompt="How do you do?",
+        prompt=prompt,
         model_path=model_path,
-        max_tokens=128,
+        max_tokens=4096,
     )
 
+    """
+    prompt = "How do you do?"
     tokenizer = load_tokenizer(model_path)
     prompt = encode(
         prompt=prompt,
@@ -269,13 +278,14 @@ if __name__ == "__main__":
         prompt=prompt,
         tokenizer=tokenizer
     )
-    _predict(
+    _redict(
         prompt=prompt,
         model_path=model_path,
         n_layers=None
     )
-    predict(
+    predict_mistral(
         prompt=prompt,
         model_path=model_path,
         n_layers=1
     )
+    """

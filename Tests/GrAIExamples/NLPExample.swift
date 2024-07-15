@@ -16,7 +16,7 @@ final class NLPExample: XCTestCase
     let _modelPath = "/Users/jean-francoisreboud/DocumentsNonSync/Projet/Python/mistral/weights/mistral-7B-Instruct-v0.3/"
     
     /// Prompt.
-    let _prompt = "How do you do?"
+    let _prompt = "What is the meaning of life?"
     
     /// Initialize test.
     override func setUp()
@@ -232,6 +232,64 @@ final class NLPExample: XCTestCase
     }
     
     ///
+    /// Load weights.
+    ///
+    /// - Parameters:
+    ///     - model: Model.
+    ///     - keys: List of PyTorch keys for each layer that contains weights.
+    ///     - weights: The weights to set.
+    ///
+    func _loadWeights(
+        model: Model, keys: [String], weights: inout [String: PythonObject])
+    {
+        // Apply weights on the `GrAIdient` model's layers.
+        var numKey = 0
+        for layer in model.layers
+        {
+            // Load weights and biases.
+            if let layerTmp = layer as? EmbeddingSeq
+            {
+                let key = keys[numKey]
+                let np = weights[key]!
+            
+                let weightsTmp: [Float] = Array<Float>(
+                    numpy: np
+                )!
+                layerTmp.weightsCPU = weightsTmp
+                
+                weights[key] = nil
+                numKey += 1
+            }
+            if let layerTmp = layer as? RMSNormSeq
+            {
+                let key = keys[numKey]
+                let np = weights[key]!
+                
+                let weightsTmp: [Float] = Array<Float>(
+                    numpy: np
+                )!
+                layerTmp.weightsCPU = weightsTmp
+                
+                weights[key] = nil
+                numKey += 1
+            }
+            if let layerTmp = layer as? FullyConnectedSeq
+            {
+                let key = keys[numKey]
+                let np = weights[key]!
+                
+                let weightsTmp: [Float] = Array<Float>(
+                    numpy: np
+                )!
+                layerTmp.weightsCPU = weightsTmp
+                
+                weights[key] = nil
+                numKey += 1
+            }
+        }
+    }
+    
+    ///
     /// Load Mistral weights.
     ///
     /// - Parameters:
@@ -242,56 +300,53 @@ final class NLPExample: XCTestCase
     func _loadMistralWeights(
         model: Model, keys: [String], weightsPath: String)
     {
-        // Load weights from `PyTorch`.
+        // Get weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
         let data = pythonLib.load_mistral_weights(weightsPath)
-        var weightsNumpy = [String: PythonObject](data)!
+        var weights = [String: PythonObject](data)!
         
-        // Apply weights on the `GrAIdient` model's layers.
-        var numKey = 0
-        for layer in model.layers
-        {
-            // Load weights and biases.
-            if let layerTmp = layer as? EmbeddingSeq
-            {
-                let key = keys[numKey]
-                let np = weightsNumpy[key]!
-            
-                let weightsTmp: [Float] = Array<Float>(
-                    numpy: np
-                )!
-                layerTmp.weightsCPU = weightsTmp
-                
-                weightsNumpy[key] = nil
-                numKey += 1
-            }
-            if let layerTmp = layer as? RMSNormSeq
-            {
-                let key = keys[numKey]
-                let np = weightsNumpy[key]!
-                
-                let weightsTmp: [Float] = Array<Float>(
-                    numpy: np
-                )!
-                layerTmp.weightsCPU = weightsTmp
-                
-                weightsNumpy[key] = nil
-                numKey += 1
-            }
-            if let layerTmp = layer as? FullyConnectedSeq
-            {
-                let key = keys[numKey]
-                let np = weightsNumpy[key]!
-                
-                let weightsTmp: [Float] = Array<Float>(
-                    numpy: np
-                )!
-                layerTmp.weightsCPU = weightsTmp
-                
-                weightsNumpy[key] = nil
-                numKey += 1
-            }
-        }
+        // Load weights.
+        _loadWeights(model: model, keys: keys, weights: &weights)
+    }
+    
+    ///
+    /// Load Llama2 weights.
+    ///
+    /// - Parameters:
+    ///     - model: Model.
+    ///     - keys: List of PyTorch keys for each layer that contains weights.
+    ///     - weightsPath: Weights path on the disk.
+    ///
+    func _loadLlama2Weights(
+        model: Model, keys: [String], weightsPath: String)
+    {
+        // Get weights from `PyTorch`.
+        let pythonLib = Python.import("python_lib")
+        let data = pythonLib.load_llama2_weights(weightsPath)
+        var weights = [String: PythonObject](data)!
+        
+        // Load weights.
+        _loadWeights(model: model, keys: keys, weights: &weights)
+    }
+    
+    ///
+    /// Load Llama3 weights.
+    ///
+    /// - Parameters:
+    ///     - model: Model.
+    ///     - keys: List of PyTorch keys for each layer that contains weights.
+    ///     - weightsPath: Weights path on the disk.
+    ///
+    func _loadLlama3Weights(
+        model: Model, keys: [String], weightsPath: String)
+    {
+        // Get weights from `PyTorch`.
+        let pythonLib = Python.import("python_lib")
+        let data = pythonLib.load_llama3_weights(weightsPath)
+        var weights = [String: PythonObject](data)!
+        
+        // Load weights.
+        _loadWeights(model: model, keys: keys, weights: &weights)
     }
     
     ///
@@ -399,41 +454,16 @@ final class NLPExample: XCTestCase
     }
     
     /// Generate text from prompt.
-    func testGenerate() throws
+    func generate(
+        prompt: String, 
+        maxTokens: Int,
+        specialLastToken: Int,
+        model: Model,
+        encoder: (String) -> [Int],
+        decoder: ([Int]) -> String) throws
     {
-        let nbBlocks = 32
-        let hiddenDim = 4096
-        let headDim = 128
-        let mlpDim = 14336
-        let nbHeadsQuery = 32
-        let nbHeadsKV = 8
-        let vocabularySize = 32768
-        let maxTokens = 128 // maximal number of tokens to generate
-        
-        // Load tokenizer.
-        let pythonLib = Python.import("python_lib")
-        let tokenizer = pythonLib.load_tokenizer(_modelPath)
-        
         // Encode prompt.
-        let prompt = [Int](pythonLib.encode(
-            _prompt,
-            tokenizer
-        ))!
-        
-        // Build LLM.
-        var (model, keys) = _buildModel(
-            sequence: prompt.count,
-            nbBlocks: nbBlocks,
-            hiddenDim: hiddenDim,
-            headDim: headDim,
-            mlpDim: mlpDim,
-            nbHeadsQuery: nbHeadsQuery,
-            nbHeadsKV: nbHeadsKV,
-            vocabularySize: vocabularySize
-        )
-        
-        // Load pre trained weights.
-        _loadMistralWeights(model: model, keys: keys, weightsPath: _modelPath)
+        let promptTmp = encoder(prompt)
         
         // Initialize for inference.
         model.initKernel(phase: .Inference)
@@ -442,7 +472,7 @@ final class NLPExample: XCTestCase
         // Forward.
         var firstLayer: EmbeddingSeq = model.layers.first as! EmbeddingSeq
         try! firstLayer.setDataGPU(
-            [prompt], batchSize: 1, sequence: prompt.count
+            [promptTmp], batchSize: 1, sequence: promptTmp.count
         )
         try! model.forward()
         
@@ -450,11 +480,14 @@ final class NLPExample: XCTestCase
         let out = (model.layers.last as! LayerSeq).outs.download()
         
         // Compute prediction for each token.
+        let fistLayer = model.layers.first as! EmbeddingSeq
+        let vocabularySize = fistLayer.vocabularySize
+        
         var tokens = [Int]()
         for seq in 0..<out.count / vocabularySize
         {
             let probas = [Float](
-                out[vocabularySize*seq..<vocabularySize*(seq+1)]
+                out[vocabularySize * seq..<vocabularySize * (seq+1)]
             )
             let argmax = _argmax(array: probas)!
             tokens.append(argmax)
@@ -474,18 +507,18 @@ final class NLPExample: XCTestCase
         )
         
         // Update model's sequence.
-        model = Model.updateSeq(
+        let modelTmp = Model.updateSeq(
             models: [model],
             sequence: 1,
             inPlace: true
         )[0]
-        model.phase = .Inference
-        model.updateKernel(batchSize: 1)
+        modelTmp.phase = .Inference
+        modelTmp.updateKernel(batchSize: 1)
         
         // Set cache.
-        firstLayer = model.layers.first as! EmbeddingSeq
+        firstLayer = modelTmp.layers.first as! EmbeddingSeq
         _setCache(
-            model: model,
+            model: modelTmp,
             cache: cache
         )
         
@@ -493,10 +526,7 @@ final class NLPExample: XCTestCase
         tokens = [lastToken]
         
         // Decode.
-        var sentence = String(pythonLib.decode(
-            tokens,
-            tokenizer
-        ))!
+        var sentence = decoder(tokens)
         _printChunk(sentence: sentence, skip: &skip)
         
         // Generate.
@@ -504,7 +534,7 @@ final class NLPExample: XCTestCase
         for _ in 0..<finalStep
         {
             // End generation.
-            if lastToken == 2
+            if lastToken == specialLastToken
             {
                 break
             }
@@ -513,29 +543,23 @@ final class NLPExample: XCTestCase
             try! firstLayer.setDataGPU(
                 [[lastToken]], batchSize: 1, sequence: 1
             )
-            _updateRoPE(model: model, curSeq: nbTokens + 1)
-            try! model.forward()
+            _updateRoPE(model: modelTmp, curSeq: nbTokens + 1)
+            try! modelTmp.forward()
             
             // Get result.
-            let out = (model.layers.last as! LayerSeq).outs.download()
+            let out = (modelTmp.layers.last as! LayerSeq).outs.download()
             
             lastToken = _argmax(array: out)!
             tokens.append(lastToken)
             nbTokens += 1
             
             // Decode.
-            sentence = String(pythonLib.decode(
-                tokens,
-                tokenizer
-            ))!
+            sentence = decoder(tokens)
             _printChunk(sentence: sentence, skip: &skip)
         }
         
         // Decode.
-        sentence = String(pythonLib.decode(
-            tokens,
-            tokenizer
-        ))!
+        sentence = decoder(tokens)
         
         // Print.
         let rangeToPrint = sentence.index(
@@ -548,6 +572,195 @@ final class NLPExample: XCTestCase
         
         let end = Date()
         let timeSpent = end.timeIntervalSince(start)
-        print("Process took \(timeSpent)s.")
+        print("Generation took \(timeSpent)s.")
+    }
+    
+    /// Generate text from prompt with Mistral 7B Instruct.
+    func testGenerateMistral() throws
+    {
+        let prompt = _prompt
+        
+        let nbBlocks = 32
+        let hiddenDim = 4096
+        let headDim = 128
+        let mlpDim = 14336
+        let nbHeadsQuery = 32
+        let nbHeadsKV = 8
+        let vocabularySize = 32768
+        let maxTokens = 4096 // maximal number of tokens to generate
+        
+        // Load python objects.
+        let pythonLib = Python.import("python_lib")
+        let tokenizer = pythonLib.load_mistral_tokenizer(_modelPath)
+        
+        // Create encoder.
+        let encoder = {
+            (prompt: String) in
+            
+            return [Int](pythonLib.encode_mistral(
+                prompt,
+                tokenizer
+            ))!
+        }
+        // Create decoder.
+        let decoder = {
+            (tokens: [Int]) in
+            
+            return String(pythonLib.decode_mistral(
+                tokens,
+                tokenizer
+            ))!
+        }
+        
+        // Build LLM.
+        let (model, keys) = _buildModel(
+            sequence: prompt.count,
+            nbBlocks: nbBlocks,
+            hiddenDim: hiddenDim,
+            headDim: headDim,
+            mlpDim: mlpDim,
+            nbHeadsQuery: nbHeadsQuery,
+            nbHeadsKV: nbHeadsKV,
+            vocabularySize: vocabularySize
+        )
+        
+        // Load pre trained weights.
+        _loadMistralWeights(model: model, keys: keys, weightsPath: _modelPath)
+        
+        // Generate.
+        try generate(
+            prompt: prompt,
+            maxTokens: maxTokens,
+            specialLastToken: 2,
+            model: model,
+            encoder: encoder,
+            decoder: decoder
+        )
+    }
+    
+    /// Generate text from prompt with Metal Llama 2 7B Chat.
+    func testGenerateLlama2() throws
+    {
+        let prompt = "How do you do?"
+        
+        let nbBlocks = 32
+        let hiddenDim = 4096
+        let headDim = 128
+        let mlpDim = 11008
+        let nbHeadsQuery = 32
+        let nbHeadsKV = 32
+        let vocabularySize = 32000
+        let maxTokens = 4096 // maximal number of tokens to generate
+        
+        // Load python objects.
+        let pythonLib = Python.import("python_lib")
+        let tokenizer = pythonLib.load_llama2_tokenizer(_modelPath)
+        
+        // Create encoder.
+        let encoder = {
+            (prompt: String) in
+            
+            return [Int](pythonLib.encode_llama2(
+                prompt,
+                tokenizer
+            ))!
+        }
+        // Create decoder.
+        let decoder = {
+            (tokens: [Int]) in
+            
+            return String(pythonLib.decode_llama2(
+                tokens,
+                tokenizer
+            ))!
+        }
+        
+        // Build LLM.
+        let (model, keys) = _buildModel(
+            sequence: prompt.count,
+            nbBlocks: nbBlocks,
+            hiddenDim: hiddenDim,
+            headDim: headDim,
+            mlpDim: mlpDim,
+            nbHeadsQuery: nbHeadsQuery,
+            nbHeadsKV: nbHeadsKV,
+            vocabularySize: vocabularySize
+        )
+        
+        // Load pre trained weights.
+        _loadLlama2Weights(model: model, keys: keys, weightsPath: _modelPath)
+        
+        // Generate.
+        try generate(
+            prompt: prompt,
+            maxTokens: maxTokens,
+            specialLastToken: 2,
+            model: model,
+            encoder: encoder,
+            decoder: decoder
+        )
+    }
+    
+    /// Generate text from prompt with Metal Llama 3 8B Instruct.
+    func testGenerateLlama3() throws
+    {
+        let prompt = _prompt
+        
+        let nbBlocks = 32
+        let hiddenDim = 4096
+        let headDim = 128
+        let mlpDim = 14336
+        let nbHeadsQuery = 32
+        let nbHeadsKV = 8
+        let vocabularySize = 128256
+        let maxTokens = 4096 // maximal number of tokens to generate
+        
+        // Load python objects.
+        let pythonLib = Python.import("python_lib")
+        let tokenizer = pythonLib.load_llama2_tokenizer(_modelPath)
+        
+        // Create encoder.
+        let encoder = {
+            (prompt: String) in
+            
+            return [Int](pythonLib.encode_llama2(
+                prompt,
+                tokenizer
+            ))!
+        }
+        // Create decoder.
+        let decoder = {
+            (tokens: [Int]) in
+            
+            return String(pythonLib.decode_llama2(
+                tokens,
+                tokenizer
+            ))!
+        }
+        
+        // Build LLM.
+        let (model, keys) = _buildModel(
+            sequence: prompt.count,
+            nbBlocks: nbBlocks,
+            hiddenDim: hiddenDim,
+            headDim: headDim,
+            mlpDim: mlpDim,
+            nbHeadsQuery: nbHeadsQuery,
+            nbHeadsKV: nbHeadsKV,
+            vocabularySize: vocabularySize
+        )
+        
+        // Load pre trained weights.
+        _loadLlama2Weights(model: model, keys: keys, weightsPath: _modelPath)
+        
+        // Generate.
+        try generate(
+            prompt: prompt,
+            maxTokens: maxTokens,
+            specialLastToken: 128009,
+            model: model,
+            encoder: encoder,
+            decoder: decoder
+        )
     }
 }

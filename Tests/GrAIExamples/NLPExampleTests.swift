@@ -232,6 +232,64 @@ final class NLPExampleTests: XCTestCase
     }
     
     ///
+    /// Load weights.
+    ///
+    /// - Parameters:
+    ///     - model: Model.
+    ///     - keys: List of PyTorch keys for each layer that contains weights.
+    ///     - weights: The weights to set.
+    ///
+    func _loadWeights(
+        model: Model, keys: [String], weights: inout [String: PythonObject])
+    {
+        // Apply weights on the `GrAIdient` model's layers.
+        var numKey = 0
+        for layer in model.layers
+        {
+            // Load weights and biases.
+            if let layerTmp = layer as? EmbeddingSeq
+            {
+                let key = keys[numKey]
+                let np = weights[key]!
+            
+                let weightsTmp: [Float] = Array<Float>(
+                    numpy: np
+                )!
+                layerTmp.weightsCPU = weightsTmp
+                
+                weights[key] = nil
+                numKey += 1
+            }
+            if let layerTmp = layer as? RMSNormSeq
+            {
+                let key = keys[numKey]
+                let np = weights[key]!
+                
+                let weightsTmp: [Float] = Array<Float>(
+                    numpy: np
+                )!
+                layerTmp.weightsCPU = weightsTmp
+                
+                weights[key] = nil
+                numKey += 1
+            }
+            if let layerTmp = layer as? FullyConnectedSeq
+            {
+                let key = keys[numKey]
+                let np = weights[key]!
+                
+                let weightsTmp: [Float] = Array<Float>(
+                    numpy: np
+                )!
+                layerTmp.weightsCPU = weightsTmp
+                
+                weights[key] = nil
+                numKey += 1
+            }
+        }
+    }
+    
+    ///
     /// Load Mistral weights.
     ///
     /// - Parameters:
@@ -242,56 +300,13 @@ final class NLPExampleTests: XCTestCase
     func _loadMistralWeights(
         model: Model, keys: [String], weightsPath: String)
     {
-        // Load weights from `PyTorch`.
+        // Get weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
         let data = pythonLib.load_mistral_weights(weightsPath)
-        var weightsNumpy = [String: PythonObject](data)!
+        var weights = [String: PythonObject](data)!
         
-        // Apply weights on the `GrAIdient` model's layers.
-        var numKey = 0
-        for layer in model.layers
-        {
-            // Load weights and biases.
-            if let layerTmp = layer as? EmbeddingSeq
-            {
-                let key = keys[numKey]
-                let np = weightsNumpy[key]!
-            
-                let weightsTmp: [Float] = Array<Float>(
-                    numpy: np
-                )!
-                layerTmp.weightsCPU = weightsTmp
-                
-                weightsNumpy[key] = nil
-                numKey += 1
-            }
-            if let layerTmp = layer as? RMSNormSeq
-            {
-                let key = keys[numKey]
-                let np = weightsNumpy[key]!
-                
-                let weightsTmp: [Float] = Array<Float>(
-                    numpy: np
-                )!
-                layerTmp.weightsCPU = weightsTmp
-                
-                weightsNumpy[key] = nil
-                numKey += 1
-            }
-            if let layerTmp = layer as? FullyConnectedSeq
-            {
-                let key = keys[numKey]
-                let np = weightsNumpy[key]!
-                
-                let weightsTmp: [Float] = Array<Float>(
-                    numpy: np
-                )!
-                layerTmp.weightsCPU = weightsTmp
-                
-                weightsNumpy[key] = nil
-                numKey += 1
-            }
-        }
+        // Load weights.
+        _loadWeights(model: model, keys: keys, weights: &weights)
     }
     
     /// Predict text from prompt.

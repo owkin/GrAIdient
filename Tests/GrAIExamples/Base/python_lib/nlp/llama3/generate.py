@@ -1,4 +1,6 @@
+import time
 import torch
+from typing import List
 from pathlib import Path
 
 from python_lib.nlp.generate import generate_with_cache
@@ -59,13 +61,16 @@ def generate(
     model.load_state_dict(state)
     model.to("mps")
 
+    start_time = time.time()
+    print("Start generating...")
+
     tokens = []
     skip = 0
     for token, n in zip(
         generate_with_cache(prompt, model, temp),
         range(max_tokens),
     ):
-        if token == tokenizer.eos_id:
+        if token == tokenizer.special_tokens["<|eot_id|>"]:
             break
 
         tokens.append(token.item())
@@ -75,19 +80,109 @@ def generate(
             skip = len(s) - 1
 
     print(tokenizer.decode(tokens)[skip:], flush=True)
-    print("=" * 10)
+    print("End generating.")
 
     if len(tokens) == 0:
         print("No tokens generated for this prompt.")
         return
 
+    elapsed_time = time.time() - start_time
+    print(f"Generation took: {elapsed_time:.6f} seconds.")
+
+
+def load_llama3_tokenizer(model_path: str) -> Tokenizer:
+    """
+    Load tokenizer from the disk.
+
+    Parameters
+    ----------
+    model_path: str
+        Path to the model on the disk.
+
+    Returns
+    -------
+    tokenizer: Tokenizer
+        The loaded tokenizer.
+    """
+    tokenizer = Tokenizer(str(Path(model_path) / "tokenizer.model"))
+    return tokenizer
+
+
+def load_llama3_formatter(model_path: str) -> ChatFormat:
+    """
+    Load formatter from the disk.
+
+    Parameters
+    ----------
+    model_path: str
+        Path to the model on the disk.
+
+    Returns
+    -------
+    formatter: ChatFormat
+        The loaded formatter.
+    """
+    tokenizer = Tokenizer(str(Path(model_path) / "tokenizer.model"))
+    formatter = ChatFormat(tokenizer)
+    return formatter
+
+
+def encode_llama3(
+    prompt: str,
+    formatter: ChatFormat
+) -> List[int]:
+    """
+    Encode text.
+
+    Parameters
+    ----------
+    prompt: torch.Tensor
+        The input prompt.
+    formatter: ChatFormat
+        The formatter.
+
+    Returns
+    -------
+    _: List of encoded tokens.
+    """
+    dialogs = [
+        [
+            {"role": "user", "content": prompt},
+        ],
+    ]
+    prompt = [
+        formatter.encode_dialog_prompt(dialog) for dialog in dialogs
+    ][0]
+    return prompt
+
+
+def decode_llama3(
+    prompt: List[int],
+    tokenizer: Tokenizer
+) -> str:
+    """
+    Decode text.
+
+    Parameters
+    ----------
+    prompt: [int]
+        The input prompt.
+    tokenizer: Tokenizer
+        The tokenizer.
+
+    Returns
+    -------
+    _: Decoded text.
+    """
+    return tokenizer.decode(prompt)
+
 
 if __name__ == "__main__":
     model_path = "/Users/jean-francoisreboud/DocumentsNonSync/Projet/Python/mistral/weights/Meta-Llama-3-8B-Instruct/"
-    prompt = "How do you do?"
+    prompt = "What is the meaning of life?"
 
     generate(
-        prompt="How do you do?",
+        prompt=prompt,
         model_path=model_path,
-        max_tokens=1000,
+        max_tokens=4096,
     )

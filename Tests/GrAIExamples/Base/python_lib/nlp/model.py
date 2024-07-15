@@ -367,11 +367,11 @@ class Transformer(torch.nn.Module):
         self.n_layers = args.n_layers
         assert self.vocab_size > 0
         self.tok_embeddings = torch.nn.Embedding(args.vocab_size, args.dim)
-        self.norm = RMSNorm(args.dim, eps=args.norm_eps)
-        self.output = torch.nn.Linear(args.dim, args.vocab_size, bias=False)
         self.layers = torch.nn.ModuleList([
             TransformerBlock(args=args) for _ in range(args.n_layers)
         ])
+        self.norm = RMSNorm(args.dim, eps=args.norm_eps)
+        self.output = torch.nn.Linear(args.dim, args.vocab_size, bias=False)
 
     def forward(
         self,

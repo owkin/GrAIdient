@@ -143,7 +143,7 @@ def decode_llama2(
 
 
 if __name__ == "__main__":
-    model_path = "/Users/jean-francoisreboud/DocumentsNonSync/Projet/Python/mistral/weights/llama-2-7b-chat/"
+    model_path = "/TO/UPDATE/llama-2-7b-chat/"
     prompt = "How do you do?"
 
     generate(

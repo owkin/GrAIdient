@@ -7,7 +7,7 @@ from python_lib.cifar import (
 from python_lib.weight import (
     extract_state_key,
     load_simple_auto_encoder_weights,
-    load_mistral_weights,
+    load_mistral_state,
     load_llama_state,
 )
 from python_lib.trainer import (
@@ -39,7 +39,7 @@ __all__ = [
     "next_data_CIFAR",
     "extract_state_key",
     "load_simple_auto_encoder_weights",
-    "load_mistral_weights",
+    "load_mistral_state",
     "load_llama_state",
     "train_simple_auto_encoder",
     "step_simple_auto_encoder",

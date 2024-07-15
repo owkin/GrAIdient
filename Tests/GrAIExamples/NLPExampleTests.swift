@@ -13,7 +13,7 @@ import GrAIdient
 final class NLPExampleTests: XCTestCase
 {
     /// Model path on the disk.
-    let _modelPath = "TO/UPDATE"
+    let _modelPath = "/TO/UPDATE/mistral-7B-Instruct-v0.3/"
     
     /// Prompt.
     let _prompt = "How do you do?"
@@ -238,9 +238,12 @@ final class NLPExampleTests: XCTestCase
     ///     - model: Model.
     ///     - keys: List of PyTorch keys for each layer that contains weights.
     ///     - weights: The weights to set.
+    ///     - pythonLib: Library to call Python functions.
     ///
     func _loadWeights(
-        model: Model, keys: [String], weights: inout [String: PythonObject])
+        model: Model, keys: [String],
+        weights: inout [String: PythonObject],
+        pythonLib: PythonObject)
     {
         // Apply weights on the `GrAIdient` model's layers.
         var numKey = 0
@@ -250,7 +253,7 @@ final class NLPExampleTests: XCTestCase
             if let layerTmp = layer as? EmbeddingSeq
             {
                 let key = keys[numKey]
-                let np = weights[key]!
+                let np = pythonLib.extract_state_key(key, weights)
             
                 let weightsTmp: [Float] = Array<Float>(
                     numpy: np
@@ -263,7 +266,7 @@ final class NLPExampleTests: XCTestCase
             if let layerTmp = layer as? RMSNormSeq
             {
                 let key = keys[numKey]
-                let np = weights[key]!
+                let np = pythonLib.extract_state_key(key, weights)
                 
                 let weightsTmp: [Float] = Array<Float>(
                     numpy: np
@@ -276,7 +279,7 @@ final class NLPExampleTests: XCTestCase
             if let layerTmp = layer as? FullyConnectedSeq
             {
                 let key = keys[numKey]
-                let np = weights[key]!
+                let np = pythonLib.extract_state_key(key, weights)
                 
                 let weightsTmp: [Float] = Array<Float>(
                     numpy: np
@@ -302,11 +305,16 @@ final class NLPExampleTests: XCTestCase
     {
         // Get weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
-        let data = pythonLib.load_mistral_weights(weightsPath)
+        let data = pythonLib.load_mistral_state(weightsPath)
         var weights = [String: PythonObject](data)!
         
         // Load weights.
-        _loadWeights(model: model, keys: keys, weights: &weights)
+        _loadWeights(
+            model: model,
+            keys: keys,
+            weights: &weights,
+            pythonLib: pythonLib
+        )
     }
     
     /// Predict text from prompt.
@@ -322,16 +330,16 @@ final class NLPExampleTests: XCTestCase
         
         // Load tokenizer.
         let pythonLib = Python.import("python_lib")
-        let tokenizer = pythonLib.load_tokenizer(_modelPath)
+        let tokenizer = pythonLib.load_mistral_tokenizer(_modelPath)
         
         // Encode prompt.
-        let prompt = [Int](pythonLib.encode(
+        let prompt = [Int](pythonLib.encode_mistral(
             _prompt,
             tokenizer
         ))!
         
         // Compute reference.
-        let arrayRef = [Float](numpy: pythonLib.predict(
+        let arrayRef = [Float](numpy: pythonLib.predict_mistral(
             _prompt,
             _modelPath,
             1
@@ -398,10 +406,10 @@ final class NLPExampleTests: XCTestCase
         
         // Load tokenizer.
         let pythonLib = Python.import("python_lib")
-        let tokenizer = pythonLib.load_tokenizer(_modelPath)
+        let tokenizer = pythonLib.load_mistral_tokenizer(_modelPath)
         
         // Encode prompt.
-        let prompt = [Int](pythonLib.encode(
+        let prompt = [Int](pythonLib.encode_mistral(
             _prompt,
             tokenizer
         ))!
@@ -447,7 +455,7 @@ final class NLPExampleTests: XCTestCase
         }
         
         // Decode.
-        let prediction = String(pythonLib.decode(
+        let prediction = String(pythonLib.decode_mistral(
             tokens,
             tokenizer
         ))!

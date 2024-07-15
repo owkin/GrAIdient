@@ -13,9 +13,9 @@ import GrAIdient
 final class NLPExample: XCTestCase
 {
     /// Model path on the disk.
-    let _modelPathMistral = "/Users/jean-francoisreboud/DocumentsNonSync/Projet/Python/mistral/weights/mistral-7B-Instruct-v0.3/"
-    let _modelPathLlama2 = "/Users/jean-francoisreboud/DocumentsNonSync/Projet/Python/mistral/weights/llama-2-7b-chat/"
-    let _modelPathLlama3 = "/Users/jean-francoisreboud/DocumentsNonSync/Projet/Python/mistral/weights/Meta-Llama-3-8B-Instruct/"
+    let _modelPathMistral = "/TO/UPDATE/mistral-7B-Instruct-v0.3/"
+    let _modelPathLlama2 = "/TO/UPDATE/llama-2-7b-chat/"
+    let _modelPathLlama3 = "/TO/UPDATE/Meta-Llama-3-8B-Instruct/"
     
     /// Prompt.
     let _prompt = "What is the meaning of life?"
@@ -240,67 +240,9 @@ final class NLPExample: XCTestCase
     ///     - model: Model.
     ///     - keys: List of PyTorch keys for each layer that contains weights.
     ///     - weights: The weights to set.
-    ///
-    func _loadWeights(
-        model: Model, keys: [String], weights: inout [String: PythonObject])
-    {
-        // Apply weights on the `GrAIdient` model's layers.
-        var numKey = 0
-        for layer in model.layers
-        {
-            // Load weights and biases.
-            if let layerTmp = layer as? EmbeddingSeq
-            {
-                let key = keys[numKey]
-                let np = weights[key]!
-            
-                let weightsTmp: [Float] = Array<Float>(
-                    numpy: np
-                )!
-                layerTmp.weightsCPU = weightsTmp
-                
-                weights[key] = nil
-                numKey += 1
-            }
-            if let layerTmp = layer as? RMSNormSeq
-            {
-                let key = keys[numKey]
-                let np = weights[key]!
-                
-                let weightsTmp: [Float] = Array<Float>(
-                    numpy: np
-                )!
-                layerTmp.weightsCPU = weightsTmp
-                
-                weights[key] = nil
-                numKey += 1
-            }
-            if let layerTmp = layer as? FullyConnectedSeq
-            {
-                let key = keys[numKey]
-                let np = weights[key]!
-                
-                let weightsTmp: [Float] = Array<Float>(
-                    numpy: np
-                )!
-                layerTmp.weightsCPU = weightsTmp
-                
-                weights[key] = nil
-                numKey += 1
-            }
-        }
-    }
-    
-    ///
-    /// Load weights.
-    ///
-    /// - Parameters:
-    ///     - model: Model.
-    ///     - keys: List of PyTorch keys for each layer that contains weights.
-    ///     - weights: The weights to set.
     ///     - pythonLib: Library to call Python functions.
     ///
-    func _loadWeightsIncremental(
+    func _loadWeights(
         model: Model, keys: [String], 
         weights: inout [String: PythonObject],
         pythonLib: PythonObject)
@@ -365,11 +307,16 @@ final class NLPExample: XCTestCase
     {
         // Get weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
-        let data = pythonLib.load_mistral_weights(weightsPath)
+        let data = pythonLib.load_mistral_state(weightsPath)
         var weights = [String: PythonObject](data)!
         
         // Load weights.
-        _loadWeights(model: model, keys: keys, weights: &weights)
+        _loadWeights(
+            model: model, 
+            keys: keys,
+            weights: &weights,
+            pythonLib: pythonLib
+        )
     }
     
     ///
@@ -389,7 +336,7 @@ final class NLPExample: XCTestCase
         var weights = [String: PythonObject](data)!
         
         // Load weights.
-        _loadWeightsIncremental(
+        _loadWeights(
             model: model,
             keys: keys,
             weights: &weights,
@@ -624,7 +571,7 @@ final class NLPExample: XCTestCase
     }
     
     /// Generate text from prompt with Mistral 7B Instruct.
-    func testGenerateMistral() throws
+    func _testGenerateMistral() throws
     {
         let prompt = _prompt
         
@@ -692,7 +639,7 @@ final class NLPExample: XCTestCase
     }
     
     /// Generate text from prompt with Metal Llama 2 7B Chat.
-    func testGenerateLlama2() throws
+    func _testGenerateLlama2() throws
     {
         let prompt = "How do you do?"
         
@@ -760,7 +707,7 @@ final class NLPExample: XCTestCase
     }
     
     /// Generate text from prompt with Metal Llama 3 8B Instruct.
-    func testGenerateLlama3() throws
+    func _testGenerateLlama3() throws
     {
         let prompt = _prompt
         

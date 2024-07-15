@@ -258,7 +258,7 @@ def decode_mistral(
 
 
 if __name__ == "__main__":
-    model_path = "/Users/jean-francoisreboud/DocumentsNonSync/Projet/Python/mistral/weights/mistral-7B-Instruct-v0.3/"
+    model_path = "/TO/UPDATE/mistral-7B-Instruct-v0.3/"
     prompt = "What is the meaning of life?"
 
     generate(

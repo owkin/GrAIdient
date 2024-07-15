@@ -180,22 +180,22 @@ def load_simple_auto_encoder_weights(
     return _extract_and_transpose_weights(list(model.children()))
 
 
-def load_mistral_weights(
+def load_mistral_state(
     model_path: str
-) -> Dict[str, np.ndarray]:
+) -> Dict[str, torch.Tensor]:
     """
     Get weights and biases for Mistral-7B-Instruct-v0.3 LLM.
 
     Returns
     -------
     _: Dict[str, np.ndarray]
-        Dictionary of flattened weights.
+        Dictionary of weights.
     """
     state = load_file(
         str(Path(model_path) / "consolidated.safetensors"),
         "cpu"
     )
-    return _extract_state(state)
+    return state
 
 
 def load_llama_state(
@@ -207,17 +207,10 @@ def load_llama_state(
     Returns
     -------
     _: Dict[str, np.ndarray]
-        Dictionary of flattened weights.
+        Dictionary of weights.
     """
     state = torch.load(
         str(Path(model_path) / "consolidated.00.pth"),
         "cpu"
     )
     return state
-
-
-if __name__ == "__main__":
-    state = load_llama_state("/Users/jean-francoisreboud/DocumentsNonSync/Projet/Python/mistral/weights/llama-2-7b-chat/")
-    test = extract_state_key("tok_embeddings.weight", state)
-    print("COUCOU")
-

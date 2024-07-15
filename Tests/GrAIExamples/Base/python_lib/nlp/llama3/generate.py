@@ -178,7 +178,7 @@ def decode_llama3(
 
 
 if __name__ == "__main__":
-    model_path = "/Users/jean-francoisreboud/DocumentsNonSync/Projet/Python/mistral/weights/Meta-Llama-3-8B-Instruct/"
+    model_path = "/TO/UPDATE/Meta-Llama-3-8B-Instruct/"
     prompt = "What is the meaning of life?"
 
     generate(

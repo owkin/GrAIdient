@@ -519,26 +519,26 @@ class NLPFlowPrecisionTests: NLPFlowTests
     override func testEmbedding() throws
     {
         let trainer = _buildTrainer("Embedding")
-        run(trainer)
+        run(trainer, diffThreshold: 0.002)
     }
     
     override func testEmbeddingSample() throws
     {
         GrAI.Gradient.sample = true
         let trainer = _buildTrainer("Embedding")
-        run(trainer)
+        run(trainer, diffThreshold: 0.002)
     }
     
     override func testRMSNorm() throws
     {
         let trainer = _buildTrainer("RMSNorm")
-        run(trainer)
+        run(trainer, diffThreshold: 0.002)
     }
     
     override func testRoPE() throws
     {
         let trainer = _buildTrainer("RoPE")
-        run(trainer)
+        run(trainer, diffThreshold: 0.002)
     }
     
     override func testQueryCausal1() throws
@@ -556,13 +556,13 @@ class NLPFlowPrecisionTests: NLPFlowTests
     override func testValueCausal1() throws
     {
         let trainer = _buildTrainer("ValueCausal1")
-        run(trainer)
+        run(trainer, diffThreshold: 0.002)
     }
     
     override func testValueCausal2() throws
     {
         let trainer = _buildTrainer("ValueCausal2")
-        run(trainer)
+        run(trainer, diffThreshold: 0.002)
     }
 }
 

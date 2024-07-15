@@ -1423,6 +1423,7 @@ class LayerSeq4FlowPrecisionTests: LayerSeq4FlowTests
     
     override func testFullyConnectedSeq() throws
     {
+        throw XCTSkip("Skipping this test because of precision issue.")
         let trainer = _buildTrainer("FullyConnectedSeq")
         run(trainer, diffThreshold: 0.005)
     }

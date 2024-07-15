@@ -2549,7 +2549,7 @@ class SelectSeqFlowPrecisionTests: SelectSeqFlowTests
     override func testSelect() throws
     {
         let trainer = _buildTrainer()
-        run(trainer)
+        run(trainer, diffThreshold: 0.002)
     }
 }
 

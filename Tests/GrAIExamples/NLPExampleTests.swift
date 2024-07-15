@@ -305,11 +305,14 @@ final class NLPExampleTests: XCTestCase
         let nbHeadsKV = 8
         let vocabularySize = 32768
         
-        // Encode prompt.
+        // Load tokenizer.
         let pythonLib = Python.import("python_lib")
+        let tokenizer = pythonLib.load_tokenizer(_modelPath)
+        
+        // Encode prompt.
         let prompt = [Int](pythonLib.encode(
             _prompt,
-            _modelPath
+            tokenizer
         ))!
         
         // Compute reference.
@@ -378,11 +381,14 @@ final class NLPExampleTests: XCTestCase
         let nbHeadsKV = 8
         let vocabularySize = 32768
         
-        // Encode prompt.
+        // Load tokenizer.
         let pythonLib = Python.import("python_lib")
+        let tokenizer = pythonLib.load_tokenizer(_modelPath)
+        
+        // Encode prompt.
         let prompt = [Int](pythonLib.encode(
             _prompt,
-            _modelPath
+            tokenizer
         ))!
         
         // Build LLM.
@@ -418,17 +424,17 @@ final class NLPExampleTests: XCTestCase
         var tokens = [Int]()
         for seq in 0..<out.count / vocabularySize
         {
-            let vector = [Float](
+            let probas = [Float](
                 out[vocabularySize*seq..<vocabularySize*(seq+1)]
             )
-            let token = _argmax(array: vector)!
+            let token = _argmax(array: probas)!
             tokens.append(token)
         }
         
         // Decode.
         let prediction = String(pythonLib.decode(
             tokens,
-            _modelPath
+            tokenizer
         ))!
         
         print(prediction)

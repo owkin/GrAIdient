@@ -25,7 +25,7 @@ final class NLPExample: XCTestCase
         _ = MetalKernel.get
         
         GrAI.Opti.GPU = true
-        GrAI.Precision.float = true
+        GrAI.Precision.float16 = true // for faster restuls
     }
     
     ///
@@ -377,8 +377,29 @@ final class NLPExample: XCTestCase
         }
     }
     
+    ///
+    /// Print sentence, chunk by chunk.
+    ///
+    /// - Parameters:
+    ///     - sentence: The sentence to print.
+    ///     - skip: What has already been printed.
+    ///
+    func _printChunk(sentence: String, skip: inout Int)
+    {
+        if sentence.count - skip > 1
+        {
+            let rangeToPrint = sentence.index(
+                sentence.startIndex, offsetBy: skip
+            )..<sentence.index(sentence.endIndex, offsetBy: -1)
+            let strToPrint = sentence[rangeToPrint]
+            
+            print(strToPrint, terminator: "")
+            skip = sentence.count - 1
+        }
+    }
+    
     /// Generate text from prompt.
-    func _testGenerate() throws
+    func testGenerate() throws
     {
         let nbBlocks = 32
         let hiddenDim = 4096
@@ -389,14 +410,14 @@ final class NLPExample: XCTestCase
         let vocabularySize = 32768
         let maxTokens = 128 // maximal number of tokens to generate
         
-        // Use Float16 for faster results.
-        GrAI.Precision.float16 = true
+        // Load tokenizer.
+        let pythonLib = Python.import("python_lib")
+        let tokenizer = pythonLib.load_tokenizer(_modelPath)
         
         // Encode prompt.
-        let pythonLib = Python.import("python_lib")
         let prompt = [Int](pythonLib.encode(
             _prompt,
-            _modelPath
+            tokenizer
         ))!
         
         // Build LLM.
@@ -429,18 +450,18 @@ final class NLPExample: XCTestCase
         let out = (model.layers.last as! LayerSeq).outs.download()
         
         // Compute prediction for each token.
-        var predictions = [Int]()
+        var tokens = [Int]()
         for seq in 0..<out.count / vocabularySize
         {
-            let vector = [Float](
+            let probas = [Float](
                 out[vocabularySize*seq..<vocabularySize*(seq+1)]
             )
-            let argmax = _argmax(array: vector)!
-            predictions.append(argmax)
+            let argmax = _argmax(array: probas)!
+            tokens.append(argmax)
         }
         
-        var lastToken = predictions.last!
-        var nbTokens = predictions.count
+        var lastToken = tokens.last!
+        var nbTokens = tokens.count
         
         let start = Date()
         print("Start generating...")
@@ -468,31 +489,26 @@ final class NLPExample: XCTestCase
             cache: cache
         )
         
-        // Generate.
         var skip = 0
-        var tokens = [lastToken]
-        let finalStep = maxTokens - nbTokens
+        tokens = [lastToken]
         
         // Decode.
         var sentence = String(pythonLib.decode(
             tokens,
-            _modelPath
+            tokenizer
         ))!
+        _printChunk(sentence: sentence, skip: &skip)
         
-        // Print.
-        if sentence.count - skip > 1
-        {
-            let rangeToPrint = sentence.index(
-                sentence.startIndex, offsetBy: skip
-            )..<sentence.index(sentence.endIndex, offsetBy: -1)
-            let strToPrint = sentence[rangeToPrint]
-            
-            print(strToPrint, terminator: "")
-            skip = sentence.count - 1
-        }
-        
+        // Generate.
+        let finalStep = maxTokens - nbTokens
         for _ in 0..<finalStep
         {
+            // End generation.
+            if lastToken == 2
+            {
+                break
+            }
+            
             // Forward.
             try! firstLayer.setDataGPU(
                 [[lastToken]], batchSize: 1, sequence: 1
@@ -507,35 +523,18 @@ final class NLPExample: XCTestCase
             tokens.append(lastToken)
             nbTokens += 1
             
-            // End generation.
-            if lastToken == 2
-            {
-                break
-            }
-            
             // Decode.
             sentence = String(pythonLib.decode(
                 tokens,
-                _modelPath
+                tokenizer
             ))!
-            
-            // Print.
-            if sentence.count - skip > 1
-            {
-                let rangeToPrint = sentence.index(
-                    sentence.startIndex, offsetBy: skip
-                )..<sentence.index(sentence.endIndex, offsetBy: -1)
-                let strToPrint = sentence[rangeToPrint]
-                
-                print(strToPrint, terminator: "")
-                skip = sentence.count - 1
-            }
+            _printChunk(sentence: sentence, skip: &skip)
         }
         
         // Decode.
         sentence = String(pythonLib.decode(
             tokens,
-            _modelPath
+            tokenizer
         ))!
         
         // Print.
@@ -544,9 +543,7 @@ final class NLPExample: XCTestCase
         )..<sentence.endIndex
         let strToPrint = sentence[rangeToPrint]
         
-        print(strToPrint, terminator: "")
-        
-        print("")
+        print(strToPrint)
         print("End generating.")
         
         let end = Date()

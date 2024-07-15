@@ -183,9 +183,29 @@ def predict(
     return out.detach().cpu().numpy().flatten()
 
 
+def load_tokenizer(model_path: str) -> MistralTokenizer:
+    """
+    Load tokenizer from the disk.
+
+    Parameters
+    ----------
+    model_path: str
+        Path to the model on the disk.
+
+    Returns
+    -------
+    tokenizer: Tokenizer
+        The loaded tokenizer.
+    """
+    tokenizer = MistralTokenizer.from_file(
+        str(Path(model_path) / "tokenizer.model.v3")
+    )
+    return tokenizer
+
+
 def encode(
     prompt: str,
-    model_path: str
+    tokenizer: MistralTokenizer
 ) -> List[int]:
     """
     Encode text.
@@ -194,16 +214,13 @@ def encode(
     ----------
     prompt: torch.Tensor
         The input prompt.
-    model_path: str
-        Path to the model on the disk.
+    tokenizer: MistralTokenizer
+        The tokenizer.
 
     Returns
     -------
     _: List of encoded tokens.
     """
-    tokenizer = MistralTokenizer.from_file(
-        str(Path(model_path) / "tokenizer.model.v3")
-    )
     completion_request = ChatCompletionRequest(
         messages=[
             UserMessage(content=prompt),
@@ -214,7 +231,7 @@ def encode(
 
 def decode(
     prompt: List[int],
-    model_path: str
+    tokenizer: MistralTokenizer
 ) -> str:
     """
     Decode text.
@@ -223,16 +240,13 @@ def decode(
     ----------
     prompt: [int]
         The input prompt.
-    model_path: str
-        Path to the model on the disk.
+    tokenizer: MistralTokenizer
+        The tokenizer.
 
     Returns
     -------
     _: Decoded text.
     """
-    tokenizer = MistralTokenizer.from_file(
-        str(Path(model_path) / "tokenizer.model.v3")
-    )
     return tokenizer.decode(prompt)
 
 
@@ -245,13 +259,15 @@ if __name__ == "__main__":
         model_path=model_path,
         max_tokens=128,
     )
+
+    tokenizer = load_tokenizer(model_path)
     prompt = encode(
         prompt=prompt,
-        model_path=model_path
+        tokenizer=tokenizer
     )
     prompt = decode(
         prompt=prompt,
-        model_path=model_path
+        tokenizer=tokenizer
     )
     _predict(
         prompt=prompt,

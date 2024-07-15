@@ -14,6 +14,7 @@ from python_lib.trainer import (
 )
 from python_lib.nlp.mistral.generate import (
     predict,
+    load_tokenizer,
     encode,
     decode,
 )
@@ -28,6 +29,7 @@ __all__ = [
     "train_simple_auto_encoder",
     "step_simple_auto_encoder",
     "predict",
+    "load_tokenizer",
     "encode",
     "decode",
 ]

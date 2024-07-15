@@ -24,7 +24,7 @@ and / or
 [LLMExample](../../Tests/GrAIExamples/LLMExample.swift) file with the 
 previous downloaded weights. 
 - Optionnally update `_prompt`.
-- Rename `testGenerateMistral`, `testGenerateLlama2` and `testGenerateLlama3` 
+- Rename `_testGenerateMistral`, `_testGenerateLlama2` and `_testGenerateLlama3` 
 into 
 `testGenerateMistral`, `testGenerateLlama2` and `testGenerateLlama3`. 
 - Run the tests.

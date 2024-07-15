@@ -32,7 +32,7 @@ def generate(
     state.pop("rope.freqs")
     tokenizer = Tokenizer(str(Path(model_path) / "tokenizer.model"))
 
-    print(prompt, end="", flush=True)
+    print(prompt)
     prompt = torch.tensor(
         tokenizer.encode(prompt), dtype=torch.long, device="mps"
     )

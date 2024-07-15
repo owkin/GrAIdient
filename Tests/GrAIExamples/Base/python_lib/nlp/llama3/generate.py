@@ -32,7 +32,7 @@ def generate(
     tokenizer = Tokenizer(str(Path(model_path) / "tokenizer.model"))
     formatter = ChatFormat(tokenizer)
 
-    print(prompt, end="", flush=True)
+    print(prompt)
     dialogs = [
         [
             {"role": "user", "content": prompt},

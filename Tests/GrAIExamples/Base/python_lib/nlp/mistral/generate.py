@@ -48,7 +48,7 @@ def generate(
     )
     tokens = tokenizer.encode_chat_completion(completion_request).tokens
 
-    print(prompt, end="", flush=True)
+    print(prompt)
     prompt = torch.tensor(tokens, dtype=torch.long, device="mps")
 
     with open(Path(model_path) / "params.json", "r") as f:
@@ -123,7 +123,7 @@ def predict(
     )
     tokens = tokenizer.encode_chat_completion(completion_request).tokens
 
-    print(prompt, end="", flush=True)
+    print(prompt)
     prompt = torch.tensor(tokens, dtype=torch.long, device="mps")
 
     with open(Path(model_path) / "params.json", "r") as f:

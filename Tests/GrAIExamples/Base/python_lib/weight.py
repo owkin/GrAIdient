@@ -48,7 +48,7 @@ def _extract_weights(
     layers_weights: List[np.ndarray] = []
     layers_dims: List[List[int]] = []
     for name, layer_weights in state.items():
-        print(f"Extracting weigths {name}.")
+        print(f"Extracting weights {name}.")
         weights_list, dims_list = _flatten_weights(
             layer_weights.data.cpu().float().numpy()
         )
@@ -77,12 +77,38 @@ def _extract_state(
     """
     layers_weights: Dict[str, np.ndarray] = {}
     for name, layer_weights in state.items():
-        print(f"Extracting weigths {name}.")
+        print(f"Extracting weights {name}.")
         weights_list, _ = _flatten_weights(
             layer_weights.data.cpu().float().numpy()
         )
         layers_weights[name] = weights_list
     return layers_weights
+
+
+def extract_state_key(
+    key: str,
+    state: Dict[str, torch.Tensor]
+) -> np.ndarray:
+    """
+    Get weights and biases.
+
+    Parameters
+    ----------
+    key: str
+        Key to extract.
+    state: [str: torch.Tensor]
+        The module state, containing the weights and biases.
+
+    Returns
+    -------
+    weights_list: np.ndarray
+        Array of flattened weights.
+    """
+    print(f"Extracting weigths {key}.")
+    weights_list, _ = _flatten_weights(
+        state[key].data.cpu().float().numpy()
+    )
+    return weights_list
 
 
 def _extract_and_transpose_weights(
@@ -172,19 +198,26 @@ def load_mistral_weights(
     return _extract_state(state)
 
 
-def load_llama_weights(
+def load_llama_state(
     model_path: str
-) -> Dict[str, np.ndarray]:
+) -> Dict[str, torch.Tensor]:
     """
-    Get weights and biases for Llama-2-7B-Chat or Llama-3-8B-Instruct.
+    Get state for Llama-2-7B-Chat or Llama-3-8B-Instruct.
 
     Returns
     -------
     _: Dict[str, np.ndarray]
         Dictionary of flattened weights.
     """
-    state = load_file(
+    state = torch.load(
         str(Path(model_path) / "consolidated.00.pth"),
         "cpu"
     )
-    return _extract_state(state)
+    return state
+
+
+if __name__ == "__main__":
+    state = load_llama_state("/Users/jean-francoisreboud/DocumentsNonSync/Projet/Python/mistral/weights/llama-2-7b-chat/")
+    test = extract_state_key("tok_embeddings.weight", state)
+    print("COUCOU")
+

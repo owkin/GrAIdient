@@ -13,7 +13,9 @@ import GrAIdient
 final class NLPExample: XCTestCase
 {
     /// Model path on the disk.
-    let _modelPath = "/Users/jean-francoisreboud/DocumentsNonSync/Projet/Python/mistral/weights/mistral-7B-Instruct-v0.3/"
+    let _modelPathMistral = "/Users/jean-francoisreboud/DocumentsNonSync/Projet/Python/mistral/weights/mistral-7B-Instruct-v0.3/"
+    let _modelPathLlama2 = "/Users/jean-francoisreboud/DocumentsNonSync/Projet/Python/mistral/weights/llama-2-7b-chat/"
+    let _modelPathLlama3 = "/Users/jean-francoisreboud/DocumentsNonSync/Projet/Python/mistral/weights/Meta-Llama-3-8B-Instruct/"
     
     /// Prompt.
     let _prompt = "What is the meaning of life?"
@@ -290,6 +292,67 @@ final class NLPExample: XCTestCase
     }
     
     ///
+    /// Load weights.
+    ///
+    /// - Parameters:
+    ///     - model: Model.
+    ///     - keys: List of PyTorch keys for each layer that contains weights.
+    ///     - weights: The weights to set.
+    ///     - pythonLib: Library to call Python functions.
+    ///
+    func _loadWeightsIncremental(
+        model: Model, keys: [String], 
+        weights: inout [String: PythonObject],
+        pythonLib: PythonObject)
+    {
+        // Apply weights on the `GrAIdient` model's layers.
+        var numKey = 0
+        for layer in model.layers
+        {
+            // Load weights and biases.
+            if let layerTmp = layer as? EmbeddingSeq
+            {
+                let key = keys[numKey]
+                let np = pythonLib.extract_state_key(key, weights)
+            
+                let weightsTmp: [Float] = Array<Float>(
+                    numpy: np
+                )!
+                layerTmp.weightsCPU = weightsTmp
+                
+                weights[key] = nil
+                numKey += 1
+            }
+            if let layerTmp = layer as? RMSNormSeq
+            {
+                let key = keys[numKey]
+                let np = pythonLib.extract_state_key(key, weights)
+                
+                let weightsTmp: [Float] = Array<Float>(
+                    numpy: np
+                )!
+                layerTmp.weightsCPU = weightsTmp
+                
+                weights[key] = nil
+                numKey += 1
+            }
+            if let layerTmp = layer as? FullyConnectedSeq
+            {
+                let key = keys[numKey]
+                let np = pythonLib.extract_state_key(key, weights)
+                
+                let weightsTmp: [Float] = Array<Float>(
+                    numpy: np
+                )!
+                layerTmp.weightsCPU = weightsTmp
+                
+                weights[key] = nil
+                numKey += 1
+            }
+        }
+    }
+    
+    ///
     /// Load Mistral weights.
     ///
     /// - Parameters:
@@ -317,36 +380,21 @@ final class NLPExample: XCTestCase
     ///     - keys: List of PyTorch keys for each layer that contains weights.
     ///     - weightsPath: Weights path on the disk.
     ///
-    func _loadLlama2Weights(
+    func _loadLlamaWeights(
         model: Model, keys: [String], weightsPath: String)
     {
         // Get weights from `PyTorch`.
         let pythonLib = Python.import("python_lib")
-        let data = pythonLib.load_llama2_weights(weightsPath)
+        let data = pythonLib.load_llama_state(weightsPath)
         var weights = [String: PythonObject](data)!
         
         // Load weights.
-        _loadWeights(model: model, keys: keys, weights: &weights)
-    }
-    
-    ///
-    /// Load Llama3 weights.
-    ///
-    /// - Parameters:
-    ///     - model: Model.
-    ///     - keys: List of PyTorch keys for each layer that contains weights.
-    ///     - weightsPath: Weights path on the disk.
-    ///
-    func _loadLlama3Weights(
-        model: Model, keys: [String], weightsPath: String)
-    {
-        // Get weights from `PyTorch`.
-        let pythonLib = Python.import("python_lib")
-        let data = pythonLib.load_llama3_weights(weightsPath)
-        var weights = [String: PythonObject](data)!
-        
-        // Load weights.
-        _loadWeights(model: model, keys: keys, weights: &weights)
+        _loadWeightsIncremental(
+            model: model,
+            keys: keys,
+            weights: &weights,
+            pythonLib: pythonLib
+        )
     }
     
     ///
@@ -591,7 +639,7 @@ final class NLPExample: XCTestCase
         
         // Load python objects.
         let pythonLib = Python.import("python_lib")
-        let tokenizer = pythonLib.load_mistral_tokenizer(_modelPath)
+        let tokenizer = pythonLib.load_mistral_tokenizer(_modelPathMistral)
         
         // Create encoder.
         let encoder = {
@@ -613,8 +661,9 @@ final class NLPExample: XCTestCase
         }
         
         // Build LLM.
+        let promptTmp = encoder(prompt)
         let (model, keys) = _buildModel(
-            sequence: prompt.count,
+            sequence: promptTmp.count,
             nbBlocks: nbBlocks,
             hiddenDim: hiddenDim,
             headDim: headDim,
@@ -625,7 +674,11 @@ final class NLPExample: XCTestCase
         )
         
         // Load pre trained weights.
-        _loadMistralWeights(model: model, keys: keys, weightsPath: _modelPath)
+        _loadMistralWeights(
+            model: model,
+            keys: keys,
+            weightsPath: _modelPathMistral
+        )
         
         // Generate.
         try generate(
@@ -654,7 +707,7 @@ final class NLPExample: XCTestCase
         
         // Load python objects.
         let pythonLib = Python.import("python_lib")
-        let tokenizer = pythonLib.load_llama2_tokenizer(_modelPath)
+        let tokenizer = pythonLib.load_llama2_tokenizer(_modelPathLlama2)
         
         // Create encoder.
         let encoder = {
@@ -676,8 +729,9 @@ final class NLPExample: XCTestCase
         }
         
         // Build LLM.
+        let promptTmp = encoder(prompt)
         let (model, keys) = _buildModel(
-            sequence: prompt.count,
+            sequence: promptTmp.count,
             nbBlocks: nbBlocks,
             hiddenDim: hiddenDim,
             headDim: headDim,
@@ -688,7 +742,11 @@ final class NLPExample: XCTestCase
         )
         
         // Load pre trained weights.
-        _loadLlama2Weights(model: model, keys: keys, weightsPath: _modelPath)
+        _loadLlamaWeights(
+            model: model,
+            keys: keys,
+            weightsPath: _modelPathLlama2
+        )
         
         // Generate.
         try generate(
@@ -717,30 +775,32 @@ final class NLPExample: XCTestCase
         
         // Load python objects.
         let pythonLib = Python.import("python_lib")
-        let tokenizer = pythonLib.load_llama2_tokenizer(_modelPath)
+        let tokenizer = pythonLib.load_llama3_tokenizer(_modelPathLlama3)
+        let formatter = pythonLib.load_llama3_formatter(_modelPathLlama3)
         
         // Create encoder.
         let encoder = {
             (prompt: String) in
             
-            return [Int](pythonLib.encode_llama2(
+            return [Int](pythonLib.encode_llama3(
                 prompt,
-                tokenizer
+                formatter
             ))!
         }
         // Create decoder.
         let decoder = {
             (tokens: [Int]) in
             
-            return String(pythonLib.decode_llama2(
+            return String(pythonLib.decode_llama3(
                 tokens,
                 tokenizer
             ))!
         }
         
         // Build LLM.
+        let promptTmp = encoder(prompt)
         let (model, keys) = _buildModel(
-            sequence: prompt.count,
+            sequence: promptTmp.count,
             nbBlocks: nbBlocks,
             hiddenDim: hiddenDim,
             headDim: headDim,
@@ -751,7 +811,11 @@ final class NLPExample: XCTestCase
         )
         
         // Load pre trained weights.
-        _loadLlama2Weights(model: model, keys: keys, weightsPath: _modelPath)
+        _loadLlamaWeights(
+            model: model,
+            keys: keys,
+            weightsPath: _modelPathLlama3
+        )
         
         // Generate.
         try generate(

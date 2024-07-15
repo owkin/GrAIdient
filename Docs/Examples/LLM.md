@@ -1,7 +1,7 @@
-#  🚀 NLP Example
+#  🚀 LLM Example
 
 This is the documentation for running 
-[LLMs](../../Tests/GrAIExamples/NLPExample.swift) on the GPU.
+[LLMs](../../Tests/GrAIExamples/LLMExample.swift) on the GPU.
 
 ## Setup
 
@@ -17,13 +17,17 @@ pip install -e .
 
 Then: 
 - download weights from 
-[MistralAI](https://docs.mistral.ai/getting-started/open_weight_models/).
-- Update `_modelPath` in the 
-[NLPExample](../../Tests/GrAIExamples/NLPExample.swift) file with the 
+[MistralAI](https://docs.mistral.ai/getting-started/open_weight_models/) 
+and / or
+[Llama](https://llama.meta.com/llama-downloads/) 
+- Update `_modelPathMistral`, `_modelPathLlama2`, `_modelPathLlama3` in the 
+[LLMExample](../../Tests/GrAIExamples/LLMExample.swift) file with the 
 previous downloaded weights. 
 - Optionnally update `_prompt`.
-- Rename `_testGenerate` into `testGenerate`. 
-- Run the test.
+- Rename `testGenerateMistral`, `testGenerateLlama2` and `testGenerateLlama3` 
+into 
+`testGenerateMistral`, `testGenerateLlama2` and `testGenerateLlama3`. 
+- Run the tests.
 
 It is finally possible to clean the environment 🌍
 
@@ -34,12 +38,14 @@ conda env remove --name graiexamples
 
 ## Steps
 
-1. Generate text from a prompt.   
+1. Generate text from a prompt with Mistral 7B Instruct model.
+1. Generate text from a prompt with Llama 2 7B Chat model.
+1. Generate text from a prompt with Llama 3 8B Instruct model.  
 
 ## Further tests
 
 Further tests are available at 
-[NLPExampleTests](../../Tests/GrAIExamples/NLPExampleTests.swift). 
+[LLMExampleTests](../../Tests/GrAIExamples/LLMExampleTests.swift). 
 In order to run them, rename 
 `_testPredict1` and `_testPredict32` into `testPredict1` and `testPredict32`.
 

@@ -1,5 +1,5 @@
 //
-// NLPExampleTests.swift
+// LLMExampleTests.swift
 // GrAIExamples
 //
 // Created by Jean-François Reboud on 12/07/2024.
@@ -10,7 +10,7 @@ import PythonKit
 import GrAIdient
 
 /// Run generation from prompt.
-final class NLPExampleTests: XCTestCase
+final class LLMExampleTests: XCTestCase
 {
     /// Model path on the disk.
     let _modelPath = "/TO/UPDATE/mistral-7B-Instruct-v0.3/"
@@ -78,7 +78,7 @@ final class NLPExampleTests: XCTestCase
         nbHeadsKV: Int,
         vocabularySize: Int) -> (Model, [String])
     {
-        let context = ModelContext(name: "NLP", curID: 0)
+        let context = ModelContext(name: "LLM", curID: 0)
         let params = GrAI.Model.Params(context: context)
         var keys = [String]()
         

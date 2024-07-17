@@ -1560,7 +1560,7 @@ class NLPGenerateTests: XCTestCase
         model1.updateKernel(batchSize: 1)
         let prompt1 = [Int](0..<sequence)
         try! firstLayer1.setDataGPU(
-            [prompt1], batchSize: 1, sequence: prompt1.count
+            [prompt1], batchSize: 1, sequence: sequence
         )
         try! model1.forward()
         
@@ -1583,7 +1583,7 @@ class NLPGenerateTests: XCTestCase
         let prompt2 = [Int](prompt1[0..<tmpSeq])
         
         try! firstLayer2.setDataGPU(
-            [prompt2], batchSize: 1, sequence: prompt2.count
+            [prompt2], batchSize: 1, sequence: tmpSeq
         )
         try! model2.forward()
         
@@ -1649,6 +1649,163 @@ class NLPGenerateTests: XCTestCase
         XCTAssert(predictions1 == predictions2)
     }
     
+    ///
+    /// Predict tokens from prompt with two ways.
+    /// 1. Use end to end forward pass.
+    /// 2. Use partial end to end forward pass followed by generation one token at a time.
+    ///
+    func runGenerateBatchSize()
+    {
+        let nbBlocks = 1
+        let hiddenDim = 8
+        let headDim = 2
+        let mlpDim = 8
+        let nbHeadsQuery = 4
+        let nbHeadsKV = 2
+        let vocabularySize = 10
+        let maxTokens = 5 // maximal number of tokens to generate
+        let tmpSeq = 2 // partial forward step
+        
+        // Build models.
+        let model1 = buildModel(
+            sequence: sequence,
+            nbBlocks: nbBlocks,
+            hiddenDim: hiddenDim,
+            headDim: headDim,
+            mlpDim: mlpDim,
+            nbHeadsQuery: nbHeadsQuery,
+            nbHeadsKV: nbHeadsKV,
+            vocabularySize: vocabularySize
+        )
+        var model2 = buildModel(
+            sequence: tmpSeq,
+            nbBlocks: nbBlocks,
+            hiddenDim: hiddenDim,
+            headDim: headDim,
+            mlpDim: mlpDim,
+            nbHeadsQuery: nbHeadsQuery,
+            nbHeadsKV: nbHeadsKV,
+            vocabularySize: vocabularySize
+        )
+        
+        // Initialize for inference.
+        model1.initKernel(phase: .Inference)
+        model2.weights = model1.weights
+        model2.initKernel(phase: .Inference)
+        
+        let firstLayer1 = model1.layers.first as! EmbeddingSeq
+        var firstLayer2 = model2.layers.first as! EmbeddingSeq
+        
+        // Forward.
+        model1.updateKernel(batchSize: 2)
+        let prompt1 = [Int](0..<sequence)
+        let prompt2 = [Int](prompt1.reversed())
+        
+        try! firstLayer1.setDataGPU(
+            [prompt1, prompt2], batchSize: 2, sequence: sequence
+        )
+        try! model1.forward()
+        
+        // Get result.
+        let out1 = (model1.layers.last as! LayerSeq).outs.download()
+        
+        // Compute prediction for each token.
+        var predictions1 = [Int]()
+        for seq in 0..<out1.count / vocabularySize
+        {
+            let vector = [Float](
+                out1[vocabularySize*seq..<vocabularySize*(seq+1)]
+            )
+            let argmaxTmp = argmax(array: vector)!
+            predictions1.append(argmaxTmp)
+        }
+        
+        // Forward.
+        model2.updateKernel(batchSize: 2)
+        let prompt3 = [Int](prompt1[0..<tmpSeq])
+        let prompt4 = [Int](prompt2[0..<tmpSeq])
+        
+        try! firstLayer2.setDataGPU(
+            [prompt3, prompt4], batchSize: 2, sequence: tmpSeq
+        )
+        try! model2.forward()
+        
+        // Get result.
+        let out2 = (model2.layers.last as! LayerSeq).outs.download()
+        
+        // Compute prediction for each token.
+        var predictions2 = [Int](repeating: 0, count: 2 * sequence)
+        for seq in 0..<out2.count / vocabularySize
+        {
+            let vector = [Float](
+                out2[vocabularySize*seq..<vocabularySize*(seq+1)]
+            )
+            let argmaxTmp = argmax(array: vector)!
+            
+            let offset = seq % tmpSeq + (seq / tmpSeq) * sequence
+            predictions2[offset] = argmaxTmp
+        }
+        
+        var nbTokens = tmpSeq
+        
+        // Prepare model for generation.
+        let cache = prepareForGeneration(
+            model: model2,
+            nbTokens: nbTokens,
+            seqMax: maxTokens
+        )
+        
+        // Update model's sequence.
+        model2 = Model.updateSeq(
+            models: [model2],
+            sequence: 1,
+            inPlace: true
+        )[0]
+        model2.phase = .Inference
+        model2.updateKernel(batchSize: 2)
+        
+        // Set cache.
+        firstLayer2 = model2.layers.first as! EmbeddingSeq
+        setCache(
+            model: model2,
+            cache: cache
+        )
+        
+        // Generate.
+        let finalStep = maxTokens - nbTokens
+        for i in 0..<finalStep
+        {
+            // Forward.
+            try! firstLayer2.setDataGPU(
+                [[prompt1[tmpSeq + i]], [prompt2[tmpSeq + i]]],
+                batchSize: 2, sequence: 1
+            )
+            updateRoPE(model: model2, curSeq: nbTokens + 1)
+            try! model2.forward()
+            
+            // Get result.
+            let out2 = (model2.layers.last as! LayerSeq).outs.download()
+            
+            // Compute prediction for each token.
+            for seq in 0..<out2.count / vocabularySize
+            {
+                let vector = [Float](
+                    out2[vocabularySize*seq..<vocabularySize*(seq+1)]
+                )
+                let argmaxTmp = argmax(array: vector)!
+                
+                let offset = tmpSeq + i + (seq % 2) * sequence
+                predictions2[offset] = argmaxTmp
+            }
+            
+            nbTokens += 1
+        }
+        
+        print("Predictions1: \(predictions1).")
+        print("Predictions2: \(predictions2).")
+        XCTAssert(predictions1 == predictions2)
+    }
+    
     func testGenerateFloat()
     {
         runGenerate()
@@ -1659,5 +1816,17 @@ class NLPGenerateTests: XCTestCase
         throw XCTSkip("Skipping this test because of precision issue.")
         GrAI.Precision.float16 = true
         runGenerate()
+    }
+    
+    func testGenerateBatchSizeFloat()
+    {
+        runGenerateBatchSize()
+    }
+    
+    func testGenerateBatchSizeFloat16() throws
+    {
+        throw XCTSkip("Skipping this test because of precision issue.")
+        GrAI.Precision.float16 = true
+        runGenerateBatchSize()
     }
 }

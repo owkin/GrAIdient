@@ -1758,6 +1758,12 @@ public class ValueCausalSeq: LayerMergeSeq
         }
         
         globalOffset += cacheSeq % cacheSeqMax
+        // TODO: when using sliding window with an instruct model,
+        // it is risky to erase the header information!
+        // if cacheSeq >= cacheSeqMax
+        // {
+        //     globalOffset += 5
+        // }
         
         let pGlobalOffset = [UInt32(globalOffset)]
         

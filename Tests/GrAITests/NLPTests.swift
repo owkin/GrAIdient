@@ -1807,6 +1807,143 @@ class NLPGenerateTests: XCTestCase
         XCTAssert(predictions1 == predictions2)
     }
     
+    ///
+    /// Predict tokens from prompt with two ways.
+    /// 1. Use end to end forward pass.
+    /// 2. Use partial end to end forward pass followed by generation one token at a time.
+    ///
+    func runGenerateSlidingWindow()
+    {
+        let nbBlocks = 1
+        let hiddenDim = 8
+        let headDim = 2
+        let mlpDim = 8
+        let nbHeadsQuery = 4
+        let nbHeadsKV = 2
+        let vocabularySize = 10
+        let maxTokens = 5 // maximal number of tokens to generate
+        let tmpSeq = 2 // partial forward step
+        
+        // Build models.
+        var model = buildModel(
+            sequence: tmpSeq,
+            nbBlocks: nbBlocks,
+            hiddenDim: hiddenDim,
+            headDim: headDim,
+            mlpDim: mlpDim,
+            nbHeadsQuery: nbHeadsQuery,
+            nbHeadsKV: nbHeadsKV,
+            vocabularySize: vocabularySize
+        )
+        
+        // Initialize for inference.
+        model.initKernel(phase: .Inference)
+        
+        var firstLayer = model.layers.first as! EmbeddingSeq
+        let prompt1 = [Int](0..<sequence)
+        
+        // Forward.
+        model.updateKernel(batchSize: 1)
+        let prompt2 = [Int](prompt1[0..<tmpSeq])
+        
+        try! firstLayer.setDataGPU(
+            [prompt2], batchSize: 1, sequence: tmpSeq
+        )
+        try! model.forward()
+        
+        // Get result.
+        let out = (model.layers.last as! LayerSeq).outs.download()
+        
+        // Compute prediction for each token.
+        var tokens = [Int]()
+        for seq in 0..<out.count / vocabularySize
+        {
+            let vector = [Float](
+                out[vocabularySize*seq..<vocabularySize*(seq+1)]
+            )
+            let argmaxTmp = argmax(array: vector)!
+            tokens.append(argmaxTmp)
+        }
+        
+        var lastToken = tokens.last!
+        var nbTokens = tokens.count
+        
+        // Prepare model for generation.
+        let cache = prepareForGeneration(
+            model: model,
+            nbTokens: nbTokens,
+            seqMax: maxTokens
+        )
+        
+        // Update model's sequence.
+        model = Model.updateSeq(
+            models: [model],
+            sequence: 1,
+            inPlace: true
+        )[0]
+        model.phase = .Inference
+        model.updateKernel(batchSize: 1)
+        
+        // Set cache.
+        firstLayer = model.layers.first as! EmbeddingSeq
+        setCache(
+            model: model,
+            cache: cache
+        )
+        
+        var scoreLayer: LayerSeq! = nil
+        for layer in model.layers
+        {
+            if let layerTmp = layer as? ValueCausalSeq
+            {
+                scoreLayer = layerTmp.layersPrev[1] as? LayerSeq
+                break
+            }
+        }
+        
+        // Generate.
+        let finalStep = 2 * maxTokens - nbTokens
+        for _ in 0..<finalStep
+        {
+            // Forward.
+            try! firstLayer.setDataGPU(
+                [[lastToken]], batchSize: 1, sequence: 1
+            )
+            updateRoPE(model: model, curSeq: nbTokens + 1)
+            try! model.forward()
+            
+            // Test that sum of scores equal to 1.
+            let scores = scoreLayer.outs.download()
+            var sum = 0.0
+            for (j, score) in scores.enumerated()
+            {
+                sum += Double(score)
+                if (j + 1) % (nbTokens + 1) == 0
+                {
+                    if sum != 0.0
+                    {
+                        let value = round(sum * 100) / 100.0
+                        XCTAssert(value == 1.0)
+                    }
+                    sum = 0.0
+                }
+            }
+            if sum != 0.0
+            {
+                let value = round(sum * 100) / 100.0
+                XCTAssert(value == 1.0)
+            }
+            
+            // Get result.
+            let out = (model.layers.last as! LayerSeq).outs.download()
+            
+            lastToken = argmax(array: out)!
+            tokens.append(lastToken)
+            nbTokens += 1
+        }
+        print("Tokens: \(tokens).")
+    }
+    
     func testGenerateFloat()
     {
         runGenerate()
@@ -1827,5 +1964,16 @@ class NLPGenerateTests: XCTestCase
     {
         GrAI.Precision.float16 = true
         runGenerateBatchSize()
+    }
+    
+    func testGenerateSlidingWindowFloat()
+    {
+        runGenerateSlidingWindow()
+    }
+    
+    func testGenerateSlidingWindowFloat16() throws
+    {
+        GrAI.Precision.float16 = true
+        runGenerateSlidingWindow()
     }
 }

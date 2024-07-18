@@ -1651,7 +1651,7 @@ class NLPGenerateTests: XCTestCase
     }
     
     ///
-    /// Predict tokens from prompt with two ways.
+    /// Predict tokens from prompt with two ways, using batch size greater than 1.
     /// 1. Use end to end forward pass.
     /// 2. Use partial end to end forward pass followed by generation one token at a time.
     ///
@@ -1807,11 +1807,7 @@ class NLPGenerateTests: XCTestCase
         XCTAssert(predictions1 == predictions2)
     }
     
-    ///
-    /// Predict tokens from prompt with two ways.
-    /// 1. Use end to end forward pass.
-    /// 2. Use partial end to end forward pass followed by generation one token at a time.
-    ///
+    /// Predict tokens with sliding window.
     func runGenerateSlidingWindow()
     {
         let nbBlocks = 1
@@ -1903,7 +1899,7 @@ class NLPGenerateTests: XCTestCase
         
         // Generate.
         let finalStep = 2 * maxTokens - nbTokens
-        for _ in 0..<finalStep
+        for i in 0..<finalStep
         {
             // Forward.
             try! firstLayer.setDataGPU(
@@ -1918,7 +1914,22 @@ class NLPGenerateTests: XCTestCase
             for (j, score) in scores.enumerated()
             {
                 sum += Double(score)
-                if (j + 1) % (nbTokens + 1) == 0
+                
+                // Every seqK is not yet used: we still have 0.0 in the
+                // context cache.
+                if (j + 1) == scores.count && i < maxTokens - tmpSeq - 1
+                {
+                    XCTAssert(sum == 0.0)
+                }
+                // Every seqK is used: there should not be any 0.0 as
+                // the context cache is full.
+                else if (j + 1) == scores.count
+                {
+                    let value = round(sum * 100) / 100.0
+                    XCTAssert(value == 1.0)
+                }
+                // Nominal case, we are feeding `sum`.
+                else if (j + 1) % (min(nbTokens + 1, maxTokens)) == 0
                 {
                     if sum != 0.0
                     {
@@ -1928,17 +1939,193 @@ class NLPGenerateTests: XCTestCase
                     sum = 0.0
                 }
             }
-            if sum != 0.0
-            {
-                let value = round(sum * 100) / 100.0
-                XCTAssert(value == 1.0)
-            }
             
             // Get result.
             let out = (model.layers.last as! LayerSeq).outs.download()
             
             lastToken = argmax(array: out)!
             tokens.append(lastToken)
+            nbTokens += 1
+        }
+        print("Tokens: \(tokens).")
+    }
+    
+    /// Predict tokens with sliding window and batch size greater than 1.
+    func runGenerateSlidingWindowBatchSize()
+    {
+        let nbBlocks = 1
+        let hiddenDim = 8
+        let headDim = 2
+        let mlpDim = 8
+        let nbHeadsQuery = 4
+        let nbHeadsKV = 2
+        let vocabularySize = 10
+        let maxTokens = 5 // maximal number of tokens to generate
+        let tmpSeq = 2 // partial forward step
+        
+        // Build models.
+        var model = buildModel(
+            sequence: tmpSeq,
+            nbBlocks: nbBlocks,
+            hiddenDim: hiddenDim,
+            headDim: headDim,
+            mlpDim: mlpDim,
+            nbHeadsQuery: nbHeadsQuery,
+            nbHeadsKV: nbHeadsKV,
+            vocabularySize: vocabularySize
+        )
+        
+        // Initialize for inference.
+        model.initKernel(phase: .Inference)
+        
+        var firstLayer = model.layers.first as! EmbeddingSeq
+        let prompt1 = [Int](0..<sequence)
+        let prompt2 = [Int](prompt1.reversed())
+        
+        // Forward.
+        model.updateKernel(batchSize: 2)
+        let prompt3 = [Int](prompt1[0..<tmpSeq])
+        let prompt4 = [Int](prompt2[0..<tmpSeq])
+        
+        try! firstLayer.setDataGPU(
+            [prompt3, prompt4], batchSize: 2, sequence: tmpSeq
+        )
+        try! model.forward()
+        
+        // Get result.
+        let out = (model.layers.last as! LayerSeq).outs.download()
+        
+        // Compute prediction for each token.
+        var tokens = [Int](repeating: 0, count: 4 * maxTokens)
+        for seq in 0..<out.count / vocabularySize
+        {
+            let vector = [Float](
+                out[vocabularySize*seq..<vocabularySize*(seq+1)]
+            )
+            let argmaxTmp = argmax(array: vector)!
+            
+            let offset = seq % tmpSeq + (seq / tmpSeq) * 2 * maxTokens
+            tokens[offset] = argmaxTmp
+        }
+        
+        var lastToken1 = tokens[tmpSeq-1]
+        var lastToken2 = tokens[2 * maxTokens + tmpSeq - 1]
+        var nbTokens = tmpSeq
+        
+        // Prepare model for generation.
+        let cache = prepareForGeneration(
+            model: model,
+            nbTokens: nbTokens,
+            seqMax: maxTokens
+        )
+        
+        // Update model's sequence.
+        model = Model.updateSeq(
+            models: [model],
+            sequence: 1,
+            inPlace: true
+        )[0]
+        model.phase = .Inference
+        model.updateKernel(batchSize: 2)
+        
+        // Set cache.
+        firstLayer = model.layers.first as! EmbeddingSeq
+        setCache(
+            model: model,
+            cache: cache
+        )
+        
+        var score1Layer: LayerSeq! = nil
+        for layer in model.layers
+        {
+            if let layerTmp = layer as? QueryCausalSeq
+            {
+                score1Layer = layerTmp
+                break
+            }
+        }
+        
+        var score2Layer: LayerSeq! = nil
+        for layer in model.layers
+        {
+            if let layerTmp = layer as? ValueCausalSeq
+            {
+                score2Layer = layerTmp.layersPrev[1] as? LayerSeq
+                break
+            }
+        }
+        
+        // Generate.
+        let finalStep = 2 * maxTokens - nbTokens
+        for i in 0..<finalStep
+        {
+            // Forward.
+            try! firstLayer.setDataGPU(
+                [[lastToken1], [lastToken2]], batchSize: 2, sequence: 1
+            )
+            updateRoPE(model: model, curSeq: nbTokens + 1)
+            try! model.forward()
+            
+            // Test that all scores are set when the context cache is full.
+            var scores = score1Layer.outs.download()
+            if i >= maxTokens - tmpSeq - 1
+            {
+                for score in scores
+                {
+                    XCTAssert(score != 0.0)
+                }
+            }
+            
+            // Test that sum of scores equal to 1.
+            scores = score2Layer.outs.download()
+            var sum = 0.0
+            for (j, score) in scores.enumerated()
+            {
+                sum += Double(score)
+                
+                // Every seqK is not yet used: we still have 0.0 in the
+                // context cache.
+                if (j + 1) == scores.count && i < maxTokens - tmpSeq - 1
+                {
+                    XCTAssert(sum == 0.0)
+                }
+                // Every seqK is used: there should not be any 0.0 as
+                // the context cache is full.
+                else if (j + 1) == scores.count
+                {
+                    let value = round(sum * 100) / 100.0
+                    XCTAssert(value == 1.0)
+                }
+                // Nominal case, we are feeding `sum`.
+                else if (j + 1) % (min(nbTokens + 1, maxTokens)) == 0
+                {
+                    if sum != 0.0
+                    {
+                        let value = round(sum * 100) / 100.0
+                        XCTAssert(value == 1.0)
+                    }
+                    sum = 0.0
+                }
+            }
+            
+            // Get result.
+            let out = (model.layers.last as! LayerSeq).outs.download()
+            
+            // Compute prediction for each token.
+            for seq in 0..<out.count / vocabularySize
+            {
+                let vector = [Float](
+                    out[vocabularySize*seq..<vocabularySize*(seq+1)]
+                )
+                let argmaxTmp = argmax(array: vector)!
+                
+                let offset = tmpSeq + i + (seq % 2) * 2 * maxTokens
+                tokens[offset] = argmaxTmp
+            }
+            
+            lastToken1 = tokens[tmpSeq + i]
+            lastToken2 = tokens[tmpSeq + i + 2 * maxTokens]
+            
             nbTokens += 1
         }
         print("Tokens: \(tokens).")
@@ -1975,5 +2162,16 @@ class NLPGenerateTests: XCTestCase
     {
         GrAI.Precision.float16 = true
         runGenerateSlidingWindow()
+    }
+    
+    func testGenerateSlidingWindowBatchSizeFloat()
+    {
+        runGenerateSlidingWindowBatchSize()
+    }
+    
+    func testGenerateSlidingWindowBatchSizeFloat16() throws
+    {
+        GrAI.Precision.float16 = true
+        runGenerateSlidingWindowBatchSize()
     }
 }

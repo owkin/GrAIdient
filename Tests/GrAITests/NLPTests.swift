@@ -1453,6 +1453,7 @@ class NLPGenerateTests: XCTestCase
             else if let layerTmp = layer as? SoftmaxCausalSeq
             {
                 layerTmp.cacheSeq = nbTokens
+                layerTmp.cacheSeqMax = seqMax
             }
             else if let layerTmp = layer as? ValueCausalSeq
             {
@@ -1813,7 +1814,6 @@ class NLPGenerateTests: XCTestCase
     
     func testGenerateFloat16() throws
     {
-        throw XCTSkip("Skipping this test because of precision issue.")
         GrAI.Precision.float16 = true
         runGenerate()
     }
@@ -1825,7 +1825,6 @@ class NLPGenerateTests: XCTestCase
     
     func testGenerateBatchSizeFloat16() throws
     {
-        throw XCTSkip("Skipping this test because of precision issue.")
         GrAI.Precision.float16 = true
         runGenerateBatchSize()
     }

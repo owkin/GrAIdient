@@ -1270,20 +1270,25 @@ public class QueryCausalSeq: LayerMergeSeq
         if cacheKey != nil && cacheSeq != nil &&
            cacheKey.nbElems != batchSize * cacheSeqMax * nbNeuronsPrevKey
         {
-            _cacheKeyTmp = FloatBuffer(
+            let cacheKeyTmp = FloatBuffer(
                 nbElems: batchSize * cacheSeqMax * nbNeuronsPrevKey,
                 deviceID: deviceID
             )
             
             let nbElems = batchSize * cacheSeq * nbNeuronsPrevKey
-            _copyGPU(nbElems: nbElems, from: cacheKey, to: _cacheKeyTmp)
+            _copyGPU(nbElems: nbElems, from: cacheKey, to: cacheKeyTmp)
             
             cacheKey = FloatBuffer(
                 nbElems: batchSize * cacheSeqMax * nbNeuronsPrevKey,
                 deviceID: deviceID
             )
             
-            _copyGPU(nbElems: nbElems, from: _cacheKeyTmp, to: cacheKey)
+            _copyGPU(nbElems: nbElems, from: cacheKeyTmp, to: cacheKey)
+            
+            if batchSize > 1
+            {
+                _cacheKeyTmp = cacheKeyTmp
+            }
         }
     }
     
@@ -1664,13 +1669,13 @@ public class QueryCausalSeq: LayerMergeSeq
             throw LayerError.Init(message: "`sequence` should be 1.")
         }
         
-        _concatGPU()
+        _mergeCacheGPU()
         
         let query = layersPrev[0] as! LayerSeq
         let key = layersPrev[1] as! LayerSeq
         let nbNeuronsPrevQuery = query.nbNeurons
         let nbNeuronsPrevKey = key.nbNeurons
-        let nbNeurons = (cacheSeq + 1) * _nbHeadsQuery
+        let nbNeurons = min(cacheSeq + 1, cacheSeqMax) * _nbHeadsQuery
         
         let pNbHeadsQuery: [UInt32] = [UInt32(_nbHeadsQuery)]
         let pNbHeadsKey: [UInt32] = [UInt32(_nbHeadsKey)]
@@ -1678,7 +1683,7 @@ public class QueryCausalSeq: LayerMergeSeq
         let pNbNeuronsPrevQuery: [UInt32] = [UInt32(nbNeuronsPrevQuery)]
         let pNbNeuronsPrevKey: [UInt32] = [UInt32(nbNeuronsPrevKey)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
-        let pSequence: [UInt32] = [UInt32(cacheSeq + 1)]
+        let pSequence: [UInt32] = [UInt32(min(cacheSeq + 1, cacheSeqMax))]
         
         let kernel = (nbNeuronsPrevQuery / _nbHeadsQuery) % 4 == 0 ?
             "queryCausalSeq4Generate" : "queryCausalSeqGenerate"
@@ -1686,7 +1691,7 @@ public class QueryCausalSeq: LayerMergeSeq
             kernel, deviceID: deviceID
         )
         command.setBuffer(query.outs.metal, atIndex: 0)
-        command.setBuffer(_cacheKeyTmp.metal, atIndex: 1)
+        command.setBuffer(_getKeyCacheOutputGPU()!.metal, atIndex: 1)
         command.setBytes(pNbHeadsQuery, atIndex: 2)
         command.setBytes(pNbHeadsKey, atIndex: 3)
         command.setBytes(pNbNeurons, atIndex: 4)
@@ -1702,22 +1707,29 @@ public class QueryCausalSeq: LayerMergeSeq
         )
         command.enqueue()
         
-        let nbElems = batchSize * (cacheSeq + 1) * nbNeuronsPrevKey
-        _copyGPU(nbElems: nbElems, from: _cacheKeyTmp, to: cacheKey)
-        
         cacheSeq += 1
     }
     
-    /// Concatenate cache to key.
-    private func _concatGPU()
+    /// Merge cache to key.
+    private func _mergeCacheGPU()
     {
+        let slidingWindow: Bool
+        if cacheSeq >= cacheSeqMax
+        {
+            slidingWindow = true
+        }
+        else
+        {
+            slidingWindow = false
+        }
+        
         let key = layersPrev[1] as! LayerSeq
         let nbNeuronsPrevKey = key.nbNeurons
         let nbNeurons = nbNeuronsPrevKey
         
         let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
-        let pSequence: [UInt32] = [UInt32(cacheSeq + 1)]
+        let pSequence: [UInt32] = [UInt32(min(cacheSeq + 1, cacheSeqMax))]
         let pSequenceCache: [UInt32] = [UInt32(cacheSeq)]
         let pSequenceKey: [UInt32] = [UInt32(1)]
         
@@ -1725,32 +1737,41 @@ public class QueryCausalSeq: LayerMergeSeq
         var command: MetalCommand
         
         var globalOffset = 0
-        
-        var pGlobalOffset: [UInt32] = [UInt32(globalOffset)]
-        
         let kernel = nbNeurons % 4 == 0 ?
             "concat1Seq4Forward" : "concat1SeqForward"
         let coeff = nbNeurons % 4 == 0 ? 4 : 1
-        command = metalKernel.createCommand(
-            kernel, deviceID: deviceID
-        )
-        command.setBuffer(cacheKey.metal, atIndex: 0)
-        command.setBytes(pGlobalOffset, atIndex: 1)
-        command.setBytes(pNbNeurons, atIndex: 2)
-        command.setBytes(pNbBatch, atIndex: 3)
-        command.setBytes(pSequence, atIndex: 4)
-        command.setBytes(pSequenceCache, atIndex: 5)
-        command.setBuffer(_cacheKeyTmp.metal, atIndex: 6)
         
-        command.dispatchThreads(
-            width: nbNeurons / coeff,
-            height: batchSize * cacheSeq
-        )
-        command.enqueue()
+        if batchSize != 1 && !slidingWindow
+        {
+            let pGlobalOffset: [UInt32] = [UInt32(globalOffset)]
+            
+            command = metalKernel.createCommand(
+                kernel, deviceID: deviceID
+            )
+            command.setBuffer(_getKeyCacheInputGPU()!.metal, atIndex: 0)
+            command.setBytes(pGlobalOffset, atIndex: 1)
+            command.setBytes(pNbNeurons, atIndex: 2)
+            command.setBytes(pNbBatch, atIndex: 3)
+            command.setBytes(pSequence, atIndex: 4)
+            command.setBytes(pSequenceCache, atIndex: 5)
+            command.setBuffer(_getKeyCacheOutputGPU()!.metal, atIndex: 6)
+            
+            command.dispatchThreads(
+                width: nbNeurons / coeff,
+                height: batchSize * cacheSeq
+            )
+            command.enqueue()
+        }
         
-        globalOffset += cacheSeq
+        globalOffset += cacheSeq % cacheSeqMax
+        // TODO: when using sliding window with an instruct model,
+        // it is risky to erase the header information!
+        // if cacheSeq >= cacheSeqMax
+        // {
+        //     globalOffset += 5
+        // }
         
-        pGlobalOffset = [UInt32(globalOffset)]
+        let pGlobalOffset = [UInt32(globalOffset)]
         
         command = metalKernel.createCommand(
             kernel, deviceID: deviceID
@@ -1761,13 +1782,74 @@ public class QueryCausalSeq: LayerMergeSeq
         command.setBytes(pNbBatch, atIndex: 3)
         command.setBytes(pSequence, atIndex: 4)
         command.setBytes(pSequenceKey, atIndex: 5)
-        command.setBuffer(_cacheKeyTmp.metal, atIndex: 6)
+        command.setBuffer(_getKeyCacheOutputGPU()!.metal, atIndex: 6)
         
         command.dispatchThreads(
             width: nbNeurons / coeff,
             height: batchSize * 1
         )
         command.enqueue()
+    }
+    
+    ///
+    /// Get key cache buffer to use as input in Metal kernel.
+    ///
+    /// - Returns: key cache to use as input.
+    ///
+    private func _getKeyCacheInputGPU() -> FloatBuffer?
+    {
+        if cacheSeq != nil
+        {
+            if cacheSeq % 2 == 0
+            {
+                return _cacheKeyTmp
+            }
+            else
+            {
+                return cacheKey
+            }
+        }
+        return nil
+    }
+    
+    ///
+    /// Get key cache buffer to use as input in Metal kernel.
+    ///
+    /// - Returns: key cache to use as input.
+    ///
+    private func _getKeyCacheOutputGPU() -> FloatBuffer?
+    {
+        if cacheSeq != nil
+        {
+            if batchSize == 1
+            {
+                return cacheKey
+            }
+            else
+            {
+                if cacheSeq >= cacheSeqMax  // sliding window
+                {
+                    // The cache key has not changed.
+                    if (cacheSeqMax - 1) % 2 == 0
+                    {
+                        return cacheKey
+                    }
+                    else
+                    {
+                        return _cacheKeyTmp
+                    }
+                }
+                else if cacheSeq % 2 == 0
+                {
+                    return cacheKey
+                }
+                else
+                {
+                    return _cacheKeyTmp
+                }
+            }
+        }
+        return nil
     }
     
     /// Apply the forward pass in the GPU execution context.

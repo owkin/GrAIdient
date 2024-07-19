@@ -716,7 +716,7 @@ kernel void valueCausalSeqGenerateHalf(
     uint depthValue = j + headValue * size;
     
     half tmp = 0.0;
-    for (uint seqK=0; seqK<=sequence; seqK++)
+    for (uint seqK=0; seqK<sequence; seqK++)
     {
         uint offsetValue = depthValue +
             nbNeuronsPrevValue * seqK + sequence * nbNeuronsPrevValue * elem;
@@ -762,7 +762,7 @@ kernel void valueCausalSeq4GenerateHalf(
     uint depthValue = j * 4 + headValue * size;
     
     half4 tmp = 0.0;
-    for (uint seqK=0; seqK<=sequence; seqK++)
+    for (uint seqK=0; seqK<sequence; seqK++)
     {
         uint offsetValue = (depthValue +
             nbNeuronsPrevValue * seqK +

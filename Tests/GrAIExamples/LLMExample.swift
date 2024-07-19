@@ -371,6 +371,7 @@ final class LLMExample: XCTestCase
             else if let layerTmp = layer as? SoftmaxCausalSeq
             {
                 layerTmp.cacheSeq = nbTokens
+                layerTmp.cacheSeqMax = seqMax
             }
             else if let layerTmp = layer as? ValueCausalSeq
             {

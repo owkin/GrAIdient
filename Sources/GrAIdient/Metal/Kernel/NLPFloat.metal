@@ -714,7 +714,7 @@ kernel void valueCausalSeqGenerateFloat(
     uint depthValue = j + headValue * size;
     
     float tmp = 0.0;
-    for (uint seqK=0; seqK<=sequence; seqK++)
+    for (uint seqK=0; seqK<sequence; seqK++)
     {
         uint offsetValue = depthValue +
             nbNeuronsPrevValue * seqK + sequence * nbNeuronsPrevValue * elem;
@@ -760,7 +760,7 @@ kernel void valueCausalSeq4GenerateFloat(
     uint depthValue = j * 4 + headValue * size;
     
     float4 tmp = 0.0;
-    for (uint seqK=0; seqK<=sequence; seqK++)
+    for (uint seqK=0; seqK<sequence; seqK++)
     {
         uint offsetValue = (depthValue +
             nbNeuronsPrevValue * seqK +

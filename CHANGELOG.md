@@ -4,7 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
-🚀 **examples**: 3 LLMs examples ([#130](https://github.com/owkin/GrAIdient/pull/130))\
+✨ **layer_seq:** LLM sliding window ([#131](https://github.com/owkin/GrAIdient/pull/131))\
+🚀 **examples:** 3 LLMs examples ([#130](https://github.com/owkin/GrAIdient/pull/130))\
 📚 **docs:** LLM doc & split tests ([129](https://github.com/owkin/GrAIdient/pull/129))\
 ✨ **layer_seq:** LLM generate ([128](https://github.com/owkin/GrAIdient/pull/128))\
 ✨ **layer_seq:** MultiplySeq, SiLU & LLM test ([127](https://github.com/owkin/GrAIdient/pull/127))\

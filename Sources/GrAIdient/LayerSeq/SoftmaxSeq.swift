@@ -363,11 +363,15 @@ public class SoftmaxSeq: LayerSeq
 ///
 public class SoftmaxCausalSeq: SoftmaxSeq
 {
+    /// Maximal sequence of cache.
+    public var cacheSeqMax = 128
+    
     /// Current cache sequence.
     public var cacheSeq: Int! = nil
     
     private enum Keys: String, CodingKey
     {
+        case cacheSeqMax
         case cacheSeq
     }
     
@@ -401,6 +405,7 @@ public class SoftmaxCausalSeq: SoftmaxSeq
     public required init(from decoder: Decoder) throws
     {
         let values = try decoder.container(keyedBy: Keys.self)
+        cacheSeqMax = try values.decode(Int.self, forKey: Keys.cacheSeqMax)
         cacheSeq = try values.decodeIfPresent(Int.self, forKey: .cacheSeq)
         try super.init(from: decoder)
     }
@@ -419,6 +424,7 @@ public class SoftmaxCausalSeq: SoftmaxSeq
     public override func encode(to encoder: Encoder) throws
     {
         var container = encoder.container(keyedBy: Keys.self)
+        try container.encode(cacheSeqMax, forKey: Keys.cacheSeqMax)
         if cacheSeq != nil
         {
             try container.encode(cacheSeq, forKey: Keys.cacheSeq)
@@ -453,6 +459,8 @@ public class SoftmaxCausalSeq: SoftmaxSeq
             nbHeads: _nbHeads,
             params: params
         )
+        
+        layer.cacheSeqMax = cacheSeqMax
         layer.cacheSeq = cacheSeq
         
         return layer
@@ -507,7 +515,7 @@ public class SoftmaxCausalSeq: SoftmaxSeq
         
         if let layerPrev = self.layerPrev as? LayerSeq
         {
-            let nbNeurons = (cacheSeq + 1) * _nbHeads
+            let nbNeurons = min(cacheSeq + 1, cacheSeqMax) * _nbHeads
             
             let pNbHeads: [UInt32] = [UInt32(_nbHeads)]
             let pNbNeurons: [UInt32] = [UInt32(nbNeurons)]

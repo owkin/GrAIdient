@@ -16,6 +16,7 @@ final class LLMExample: XCTestCase
     let _modelPathMistral = "/TO/UPDATE/mistral-7B-Instruct-v0.3/"
     let _modelPathLlama2 = "/TO/UPDATE/llama-2-7b-chat/"
     let _modelPathLlama3 = "/TO/UPDATE/Meta-Llama-3-8B-Instruct/"
+    let _modelPathGemma2 = "/TO/UPDATE/Gemma-2-2b-it/"
     
     /// Prompt.
     let _prompt = "What is the meaning of life?"
@@ -278,6 +279,15 @@ final class LLMExample: XCTestCase
             nbNeurons: hiddenDim, params: params
         )
         keys.append("embed_tokens.weight")
+        
+        let constant = Constant2Seq(
+            sequence: sequence, nbNeurons: hiddenDim, params: params
+        )
+        constant.weightsCPU = [Float](
+            repeating: sqrt(Float(hiddenDim)), count: hiddenDim
+        )
+        
+        layer = try! MultiplySeq(layersPrev: [layer, constant], params: params)
         
         for i in 0..<nbBlocks
         {
@@ -1015,7 +1025,7 @@ final class LLMExample: XCTestCase
     }
     
     /// Generate text from prompt with Gemma2 2B Instruct.
-    func testGenerateGemma2() throws
+    func _testGenerateGemma2() throws
     {
         let prompt = _prompt
         

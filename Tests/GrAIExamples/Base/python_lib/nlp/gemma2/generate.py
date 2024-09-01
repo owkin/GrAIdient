@@ -141,7 +141,11 @@ def encode_gemma2(
     -------
     _: List of encoded tokens.
     """
-    return tokenizer.encode(prompt)
+    return [2, 106] + \
+        tokenizer.encode("user", bos=False) + \
+        tokenizer.encode(prompt, bos=False) + \
+        [107, 106] + \
+        tokenizer.encode("model", bos=False)
 
 
 def decode_gemma2(

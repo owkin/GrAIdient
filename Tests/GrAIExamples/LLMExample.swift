@@ -707,6 +707,9 @@ final class LLMExample: XCTestCase
         model.initKernel(phase: .Inference)
         model.updateKernel(batchSize: 1)
         
+        let start = Date()
+        print("Start generating...")
+        
         // Forward.
         var firstLayer: EmbeddingSeq = model.layers.first as! EmbeddingSeq
         try! firstLayer.setDataGPU(
@@ -733,9 +736,6 @@ final class LLMExample: XCTestCase
         
         var lastToken = tokens.last!
         var nbTokens = tokens.count
-        
-        let start = Date()
-        print("Start generating...")
         
         // Prepare model for generation.
         let cache = _prepareForGeneration(
@@ -886,7 +886,7 @@ final class LLMExample: XCTestCase
     /// Generate text from prompt with Metal Llama 2 7B Chat.
     func _testGenerateLlama2() throws
     {
-        let prompt = _prompt
+        let prompt = "How do you do?"
         
         let nbBlocks = 32
         let hiddenDim = 4096
@@ -1025,7 +1025,7 @@ final class LLMExample: XCTestCase
     }
     
     /// Generate text from prompt with Gemma2 2B Instruct.
-    func _testGenerateGemma2() throws
+    func testGenerateGemma2() throws
     {
         let prompt = _prompt
         
@@ -1087,7 +1087,7 @@ final class LLMExample: XCTestCase
         try generate(
             prompt: prompt,
             maxTokens: maxTokens,
-            specialLastToken: 107,
+            specialLastToken: 109,
             model: model,
             encoder: encoder,
             decoder: decoder

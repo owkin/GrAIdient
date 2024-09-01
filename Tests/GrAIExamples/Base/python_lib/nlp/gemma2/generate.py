@@ -85,7 +85,7 @@ def generate(
         generate_with_cache(prompt, model, temp),
         range(max_tokens),
     ):
-        if token == 107 or token == 1:
+        if token == 107 or token == 1 or token == 109:
             break
 
         tokens.append(token.item())

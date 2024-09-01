@@ -244,10 +244,13 @@ class Attention(torch.nn.Module):
             keys = torch.einsum("bhlj,lij->bhli", [keys, rotation_matrix])
 
         scores = torch.matmul(queries, keys.transpose(2, 3)) * self.scale
-        """if self.args.attn_logit_softcapping is not None:
+        """
+        # Do not use for now.
+        if self.args.attn_logit_softcapping is not None:
             scores = scores / self.args.attn_logit_softcapping
             scores = torch.tanh(scores)
-            scores = scores * self.args.attn_logit_softcapping"""
+            scores = scores * self.args.attn_logit_softcapping
+        """
         if mask is not None:
             scores += mask
         scores = torch.softmax(
@@ -450,9 +453,12 @@ class Transformer(torch.nn.Module):
 
         h = self.norm(h)
         logits = self.output(h)
-        """if self.args.final_logit_softcapping is not None:
+        """
+        # Do not use for now.
+        if self.args.final_logit_softcapping is not None:
             logits = logits / self.args.final_logit_softcapping
             logits = torch.tanh(logits)
-            logits = logits * self.args.final_logit_softcapping"""
+            logits = logits * self.args.final_logit_softcapping
+        """
 
         return logits, cache

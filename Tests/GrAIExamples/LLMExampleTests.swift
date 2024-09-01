@@ -96,6 +96,7 @@ final class LLMExampleTests: XCTestCase
             layer = RMSNormSeq(
                 layerPrev: layer,
                 activation: nil,
+                addUnitOffset: false,
                 params: params
             )
             keys.append("layers.\(i).attention_norm.weight")
@@ -158,7 +159,7 @@ final class LLMExampleTests: XCTestCase
             
             layer = FullyConnectedSeq(
                 layerPrev: layer,
-                nbNeurons: nbHeadsQuery * headDim,
+                nbNeurons: hiddenDim,
                 activation: nil,
                 biases: false,
                 params: params
@@ -172,6 +173,7 @@ final class LLMExampleTests: XCTestCase
             layer = RMSNormSeq(
                 layerPrev: layer,
                 activation: nil,
+                addUnitOffset: false,
                 params: params
             )
             keys.append("layers.\(i).ffn_norm.weight")
@@ -211,6 +213,7 @@ final class LLMExampleTests: XCTestCase
         layer = RMSNormSeq(
             layerPrev: layer,
             activation: nil,
+            addUnitOffset: false,
             params: params
         )
         keys.append("norm.weight")

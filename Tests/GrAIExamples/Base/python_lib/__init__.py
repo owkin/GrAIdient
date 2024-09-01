@@ -7,12 +7,18 @@ from python_lib.cifar import (
 from python_lib.weight import (
     extract_state_key,
     load_simple_auto_encoder_weights,
+    load_gemma_state,
     load_mistral_state,
     load_llama_state,
 )
 from python_lib.trainer import (
     train_simple_auto_encoder,
     step_simple_auto_encoder,
+)
+from python_lib.nlp.gemma2.generate import (
+    load_gemma2_tokenizer,
+    encode_gemma2,
+    decode_gemma2
 )
 from python_lib.nlp.mistral.generate import (
     predict_mistral,
@@ -39,10 +45,14 @@ __all__ = [
     "next_data_CIFAR",
     "extract_state_key",
     "load_simple_auto_encoder_weights",
+    "load_gemma_state",
     "load_mistral_state",
     "load_llama_state",
     "train_simple_auto_encoder",
     "step_simple_auto_encoder",
+    "load_gemma2_tokenizer",
+    "encode_gemma2",
+    "decode_gemma2",
     "predict_mistral",
     "load_mistral_tokenizer",
     "encode_mistral",

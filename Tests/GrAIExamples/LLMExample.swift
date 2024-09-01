@@ -16,6 +16,7 @@ final class LLMExample: XCTestCase
     let _modelPathMistral = "/TO/UPDATE/mistral-7B-Instruct-v0.3/"
     let _modelPathLlama2 = "/TO/UPDATE/llama-2-7b-chat/"
     let _modelPathLlama3 = "/TO/UPDATE/Meta-Llama-3-8B-Instruct/"
+    let _modelPathGemma2 = "/TO/UPDATE/Gemma-2-2b-it/"
     
     /// Prompt.
     let _prompt = "What is the meaning of life?"
@@ -68,6 +69,8 @@ final class LLMExample: XCTestCase
     ///     - nbHeads:  Number of heads (groups) of neurons for queries.
     ///     - nbHeadsKV: Number of heads (groups) of neurons for keys and values.
     ///     - vocabularySize: Vocabulary size.
+    ///     - addUnitOffset: Whether to add unit offset or not in RMSNorm.
+    ///     - hiddentActivation: Activation function.
     /// - Returns: (The model built, The list of PyTorch keys for each layer that contains weights).
     ///
     func _buildModel(
@@ -78,7 +81,9 @@ final class LLMExample: XCTestCase
         mlpDim: Int,
         nbHeadsQuery: Int,
         nbHeadsKV: Int,
-        vocabularySize: Int) -> (Model, [String])
+        vocabularySize: Int,
+        addUnitOffset: Bool,
+        hiddenActivation: String) -> (Model, [String])
     {
         let context = ModelContext(name: "LLM", curID: 0)
         let params = GrAI.Model.Params(context: context)
@@ -98,6 +103,7 @@ final class LLMExample: XCTestCase
             layer = RMSNormSeq(
                 layerPrev: layer,
                 activation: nil,
+                addUnitOffset: addUnitOffset,
                 params: params
             )
             keys.append("layers.\(i).attention_norm.weight")
@@ -160,7 +166,7 @@ final class LLMExample: XCTestCase
             
             layer = FullyConnectedSeq(
                 layerPrev: layer,
-                nbNeurons: nbHeadsQuery * headDim,
+                nbNeurons: hiddenDim,
                 activation: nil,
                 biases: false,
                 params: params
@@ -174,6 +180,7 @@ final class LLMExample: XCTestCase
             layer = RMSNormSeq(
                 layerPrev: layer,
                 activation: nil,
+                addUnitOffset: addUnitOffset,
                 params: params
             )
             keys.append("layers.\(i).ffn_norm.weight")
@@ -181,7 +188,7 @@ final class LLMExample: XCTestCase
             let mult1: LayerSeq = FullyConnectedSeq(
                 layerPrev: layer,
                 nbNeurons: mlpDim,
-                activation: SiLU.str,
+                activation: hiddenActivation,
                 biases: false,
                 params: params
             )
@@ -213,6 +220,216 @@ final class LLMExample: XCTestCase
         layer = RMSNormSeq(
             layerPrev: layer,
             activation: nil,
+            addUnitOffset: addUnitOffset,
+            params: params
+        )
+        keys.append("norm.weight")
+        
+        layer = FullyConnectedSeq(
+            layerPrev: layer,
+            nbNeurons: vocabularySize,
+            activation: nil,
+            biases: false,
+            params: params
+        )
+        keys.append("output.weight")
+        
+        // Retrieve base model in the context and initialize a
+        // real model (with `layerPrev` links updated).
+        let model = Model(model: context.model, modelsPrev: [])
+        
+        return (model, keys)
+    }
+    
+    ///
+    /// Build Gemma2.
+    ///
+    /// - Parameters:
+    ///     - sequence: Length of the sequence.
+    ///     - nbBlocks: Number of transformer + MLP blocks.
+    ///     - hiddenDim: Dimension of neurons in the main branch.
+    ///     - headDim: Dimension of neurons in the transformer branches.
+    ///     - mlpDim: Dimension of neurons in the MLP branches.
+    ///     - nbHeads:  Number of heads (groups) of neurons for queries.
+    ///     - nbHeadsKV: Number of heads (groups) of neurons for keys and values.
+    ///     - vocabularySize: Vocabulary size.
+    ///     - addUnitOffset: Whether to add unit offset or not in RMSNorm.
+    ///     - hiddentActivation: Activation function.
+    /// - Returns: (The model built, The list of PyTorch keys for each layer that contains weights).
+    ///
+    func _buildGemma2(
+        sequence: Int,
+        nbBlocks: Int,
+        hiddenDim: Int,
+        headDim: Int,
+        mlpDim: Int,
+        nbHeadsQuery: Int,
+        nbHeadsKV: Int,
+        vocabularySize: Int,
+        addUnitOffset: Bool,
+        hiddenActivation: String) -> (Model, [String])
+    {
+        let context = ModelContext(name: "LLM", curID: 0)
+        let params = GrAI.Model.Params(context: context)
+        var keys = [String]()
+        
+        var layer: LayerSeq = EmbeddingSeq(
+            sequence: sequence,
+            vocabularySize: vocabularySize,
+            nbNeurons: hiddenDim, params: params
+        )
+        keys.append("embed_tokens.weight")
+        
+        let constant = Constant2Seq(
+            sequence: sequence, nbNeurons: hiddenDim, params: params
+        )
+        constant.weightsCPU = [Float](
+            repeating: sqrt(Float(hiddenDim)), count: hiddenDim
+        )
+        
+        layer = try! MultiplySeq(layersPrev: [layer, constant], params: params)
+        
+        for i in 0..<nbBlocks
+        {
+            var x: LayerSeq = layer
+            
+            layer = RMSNormSeq(
+                layerPrev: layer,
+                activation: nil,
+                addUnitOffset: addUnitOffset,
+                params: params
+            )
+            keys.append("layers.\(i).input_layernorm.weight")
+            
+            var query: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: nbHeadsQuery * headDim,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            keys.append("layers.\(i).self_attn.q_proj.weight")
+            query = try! RoPESeq(
+                layerPrev: query,
+                seqPositions: [Int](1...sequence),
+                nbHeads: nbHeadsQuery,
+                params: params
+            )
+            
+            var key: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: nbHeadsKV * headDim,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            keys.append("layers.\(i).self_attn.k_proj.weight")
+            key = try! RoPESeq(
+                layerPrev: key,
+                seqPositions: [Int](1...sequence),
+                nbHeads: nbHeadsKV,
+                params: params
+            )
+            
+            let value: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: nbHeadsKV * headDim,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            keys.append("layers.\(i).self_attn.v_proj.weight")
+            
+            layer = try! QueryCausalSeq(
+                query: query, key: key,
+                nbHeadsQuery: nbHeadsQuery, nbHeadsKey: nbHeadsKV,
+                params: params
+            )
+            layer = try! SoftmaxCausalSeq(
+                layerPrev: layer,
+                nbHeads: nbHeadsQuery,
+                params: params
+            )
+            
+            layer = try! ValueCausalSeq(
+                value: value, score: layer,
+                nbHeadsValue: nbHeadsKV, nbHeadsScore: nbHeadsQuery,
+                params: params
+            )
+            
+            layer = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: hiddenDim,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            keys.append("layers.\(i).self_attn.o_proj.weight")
+            
+            layer = RMSNormSeq(
+                layerPrev: layer,
+                activation: nil,
+                addUnitOffset: addUnitOffset,
+                params: params
+            )
+            keys.append("layers.\(i).post_attention_layernorm.weight")
+            
+            layer = try! SumSeq(layersPrev: [layer, x], params: params)
+            
+            x = layer
+            
+            layer = RMSNormSeq(
+                layerPrev: layer,
+                activation: nil,
+                addUnitOffset: addUnitOffset,
+                params: params
+            )
+            keys.append("layers.\(i).pre_feedforward_layernorm.weight")
+            
+            let mult1: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: mlpDim,
+                activation: hiddenActivation,
+                biases: false,
+                params: params
+            )
+            keys.append("layers.\(i).mlp.gate_proj.weight")
+            
+            let mult2: LayerSeq = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: mlpDim,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            keys.append("layers.\(i).mlp.up_proj.weight")
+            
+            layer = try! MultiplySeq(layersPrev: [mult1, mult2], params: params)
+            
+            layer = FullyConnectedSeq(
+                layerPrev: layer,
+                nbNeurons: hiddenDim,
+                activation: nil,
+                biases: false,
+                params: params
+            )
+            keys.append("layers.\(i).mlp.down_proj.weight")
+            
+            layer = RMSNormSeq(
+                layerPrev: layer,
+                activation: nil,
+                addUnitOffset: addUnitOffset,
+                params: params
+            )
+            keys.append("layers.\(i).post_feedforward_layernorm.weight")
+            
+            layer = try! SumSeq(layersPrev: [layer, x], params: params)
+        }
+        
+        layer = RMSNormSeq(
+            layerPrev: layer,
+            activation: nil,
+            addUnitOffset: addUnitOffset,
             params: params
         )
         keys.append("norm.weight")
@@ -313,6 +530,31 @@ final class LLMExample: XCTestCase
         // Load weights.
         _loadWeights(
             model: model, 
+            keys: keys,
+            weights: &weights,
+            pythonLib: pythonLib
+        )
+    }
+    
+    ///
+    /// Load Gemma2 weights.
+    ///
+    /// - Parameters:
+    ///     - model: Model.
+    ///     - keys: List of PyTorch keys for each layer that contains weights.
+    ///     - weightsPath: Weights path on the disk.
+    ///
+    func _loadGemmaWeights(
+        model: Model, keys: [String], weightsPath: String)
+    {
+        // Get weights from `PyTorch`.
+        let pythonLib = Python.import("python_lib")
+        let data = pythonLib.load_gemma_state(weightsPath)
+        var weights = [String: PythonObject](data)!
+        
+        // Load weights.
+        _loadWeights(
+            model: model,
             keys: keys,
             weights: &weights,
             pythonLib: pythonLib
@@ -465,6 +707,9 @@ final class LLMExample: XCTestCase
         model.initKernel(phase: .Inference)
         model.updateKernel(batchSize: 1)
         
+        let start = Date()
+        print("Start generating...")
+        
         // Forward.
         var firstLayer: EmbeddingSeq = model.layers.first as! EmbeddingSeq
         try! firstLayer.setDataGPU(
@@ -491,9 +736,6 @@ final class LLMExample: XCTestCase
         
         var lastToken = tokens.last!
         var nbTokens = tokens.count
-        
-        let start = Date()
-        print("Start generating...")
         
         // Prepare model for generation.
         let cache = _prepareForGeneration(
@@ -618,7 +860,9 @@ final class LLMExample: XCTestCase
             mlpDim: mlpDim,
             nbHeadsQuery: nbHeadsQuery,
             nbHeadsKV: nbHeadsKV,
-            vocabularySize: vocabularySize
+            vocabularySize: vocabularySize,
+            addUnitOffset: false,
+            hiddenActivation: SiLU.str
         )
         
         // Load pre trained weights.
@@ -686,7 +930,9 @@ final class LLMExample: XCTestCase
             mlpDim: mlpDim,
             nbHeadsQuery: nbHeadsQuery,
             nbHeadsKV: nbHeadsKV,
-            vocabularySize: vocabularySize
+            vocabularySize: vocabularySize,
+            addUnitOffset: false,
+            hiddenActivation: SiLU.str
         )
         
         // Load pre trained weights.
@@ -755,7 +1001,9 @@ final class LLMExample: XCTestCase
             mlpDim: mlpDim,
             nbHeadsQuery: nbHeadsQuery,
             nbHeadsKV: nbHeadsKV,
-            vocabularySize: vocabularySize
+            vocabularySize: vocabularySize,
+            addUnitOffset: false,
+            hiddenActivation: SiLU.str
         )
         
         // Load pre trained weights.
@@ -770,6 +1018,76 @@ final class LLMExample: XCTestCase
             prompt: prompt,
             maxTokens: maxTokens,
             specialLastToken: 128009,
+            model: model,
+            encoder: encoder,
+            decoder: decoder
+        )
+    }
+    
+    /// Generate text from prompt with Gemma2 2B Instruct.
+    func _testGenerateGemma2() throws
+    {
+        let prompt = _prompt
+        
+        let nbBlocks = 26
+        let hiddenDim = 2304
+        let headDim = 256
+        let mlpDim = 9216
+        let nbHeadsQuery = 8
+        let nbHeadsKV = 4
+        let vocabularySize = 256000
+        let maxTokens = 4096 // maximal number of tokens to generate
+        
+        // Load python objects.
+        let pythonLib = Python.import("python_lib")
+        let tokenizer = pythonLib.load_gemma2_tokenizer(_modelPathGemma2)
+        
+        // Create encoder.
+        let encoder = {
+            (prompt: String) in
+            
+            return [Int](pythonLib.encode_gemma2(
+                prompt,
+                tokenizer
+            ))!
+        }
+        // Create decoder.
+        let decoder = {
+            (tokens: [Int]) in
+            
+            return String(pythonLib.decode_gemma2(
+                tokens,
+                tokenizer
+            ))!
+        }
+        
+        // Build LLM.
+        let promptTmp = encoder(prompt)
+        let (model, keys) = _buildGemma2(
+            sequence: promptTmp.count,
+            nbBlocks: nbBlocks,
+            hiddenDim: hiddenDim,
+            headDim: headDim,
+            mlpDim: mlpDim,
+            nbHeadsQuery: nbHeadsQuery,
+            nbHeadsKV: nbHeadsKV,
+            vocabularySize: vocabularySize,
+            addUnitOffset: true,
+            hiddenActivation: GELUApprox.str
+        )
+        
+        // Load pre trained weights.
+        _loadGemmaWeights(
+            model: model,
+            keys: keys,
+            weightsPath: _modelPathGemma2
+        )
+        
+        // Generate.
+        try generate(
+            prompt: prompt,
+            maxTokens: maxTokens,
+            specialLastToken: 109,
             model: model,
             encoder: encoder,
             decoder: decoder

@@ -61,14 +61,20 @@ class Normalization
     /// - Parameters:
     ///     - outs: The data to normalize.
     ///     - Ɣ: The weights to scale the normalization result.
+    ///     - addUnitOffset: Whether to add unit offset or not.
     /// - Returns: The data normalized.
     ///
     static func forwardΣGC(outs: [Double],
-                          Ɣ: [Double]) -> [Double]
+                           Ɣ: [Double],
+                           addUnitOffset: Bool) -> [Double]
     {
         let σ2 = vDSP.meanSquare(outs)
         let xHat = vDSP.divide(outs, sqrt(σ2 + _Ɛ))
-        let outsNew = vDSP.multiply(Ɣ, xHat)
+        var outsNew = vDSP.multiply(Ɣ, xHat)
+        if addUnitOffset
+        {
+            outsNew = vDSP.add(xHat, outsNew)
+        }
         return outsNew
     }
 
@@ -142,18 +148,24 @@ class Normalization
     /// - Parameters:
     ///     - outs: The data to normalize.
     ///     - Ɣ: The weights to scale the normalization result.
+    ///     - addUnitOffset: Whether to add unit offset or not.
     /// - Returns: (The data normalized,
     ///            The data normalized without taking into account the bias and the weight,
     ///            The deviation of the data).
     ///
     static func forwardΣ(outs: [Double],
-                         Ɣ: [Double]) -> (outsNew: [Double],
-                                          xHat: [Double],
-                                          σ2: Double)
+                         Ɣ: [Double],
+                         addUnitOffset: Bool) -> (outsNew: [Double],
+                                                  xHat: [Double],
+                                                  σ2: Double)
     {
         let σ2 = vDSP.meanSquare(outs)
         let xHat = vDSP.divide(outs, sqrt(σ2 + _Ɛ))
-        let outsNew = vDSP.multiply(Ɣ, xHat)
+        var outsNew = vDSP.multiply(Ɣ, xHat)
+        if addUnitOffset
+        {
+            outsNew = vDSP.add(xHat, outsNew)
+        }
         
         return (outsNew: outsNew,
                 xHat: xHat,
@@ -263,17 +275,28 @@ class Normalization
     ///     - xHat: The data normalized without taking into account the bias and the weight.
     ///     - σ2: The deviation of the data.
     ///     - Ɣ: The weights that scaled the normalization result.
+    ///     - addUnitOffset: Whether to add unit offset or not.
     /// - Returns: The gradient taking into account the normalization.
     ///
     static func backwardΣ(delta: [Double],
                           xHat: [Double],
                           σ2: Double,
-                          Ɣ: [Double]) -> [Double]
+                          Ɣ: [Double],
+                          addUnitOffset: Bool) -> [Double]
     {
         let nbElems = delta.count
         let factor = 1.0 / (Double(nbElems) * sqrt(σ2 + _Ɛ))
         
-        let Ɣdelta = vDSP.multiply(Ɣ, delta)
+        let Ɣdelta: [Double]
+        if addUnitOffset
+        {
+            Ɣdelta = vDSP.multiply(vDSP.add(1, Ɣ), delta)
+        }
+        else
+        {
+            Ɣdelta = vDSP.multiply(Ɣ, delta)
+        }
+        
         let sum2 = vDSP.sum(vDSP.multiply(Ɣdelta, xHat))
         
         let tmp1 = vDSP.add(

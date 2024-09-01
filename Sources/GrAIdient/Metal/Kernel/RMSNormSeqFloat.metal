@@ -42,6 +42,7 @@ kernel void forwardRMSNormSeqFloat(
     constant uint & nbNeurons,
     constant uint & nbBatch,
     constant uint & sequence,
+    constant uint & addUnitOffset,
     device float * tmps,
     device float * xHat,
     uint2 id [[ thread_position_in_grid ]])
@@ -62,8 +63,16 @@ kernel void forwardRMSNormSeqFloat(
     float tmp1 = tmps[offset];
     float tmp2 = sqrt(σ2[seq + sequence * elem] + Ɛ);
     float xhat = tmp1 / tmp2;
+    
     xHat[offset] = xhat;
-    tmps[offset] = Ɣ[depth] * xhat;
+    if (addUnitOffset)
+    {
+        tmps[offset] = (1 + Ɣ[depth]) * xhat;
+    }
+    else
+    {
+        tmps[offset] = Ɣ[depth] * xhat;
+    }
 }
 
 kernel void backwardWeights1RMSNormSeqFloat(
@@ -73,6 +82,7 @@ kernel void backwardWeights1RMSNormSeqFloat(
     constant uint & nbNeurons,
     constant uint & nbBatch,
     constant uint & sequence,
+    constant uint & addUnitOffset,
     device float * sum2,
     uint2 id [[ thread_position_in_grid ]])
 {
@@ -92,7 +102,17 @@ kernel void backwardWeights1RMSNormSeqFloat(
         
         float deltaTmp = delta[offsetTmp];
         float xHatTmp = xHat[offsetTmp];
-        float dxHat = Ɣ[depth] * deltaTmp;
+        
+        float dxHat;
+        if (addUnitOffset)
+        {
+            dxHat = (1 + Ɣ[depth]) * deltaTmp;
+        }
+        else
+        {
+            dxHat = Ɣ[depth] * deltaTmp;
+        }
+        
         tmp += dxHat * xHatTmp;
     }
     sum2[seq + sequence * elem] = tmp;
@@ -147,6 +167,7 @@ kernel void backwardRMSNormSeqFloat(
     constant uint & nbNeurons,
     constant uint & nbBatch,
     constant uint & sequence,
+    constant uint & addUnitOffset,
     device float * delta,
     uint2 id [[ thread_position_in_grid ]])
 {
@@ -166,7 +187,17 @@ kernel void backwardRMSNormSeqFloat(
     
     float mult =
         1.0 / ((float)nbElems * sqrt(σ2[seq + sequence * elem] + Ɛ));
-    float dxHat = Ɣ[depth] * delta[offset];
+    
+    float dxHat;
+    if (addUnitOffset)
+    {
+        dxHat = (1 + Ɣ[depth]) * delta[offset];
+    }
+    else
+    {
+        dxHat = Ɣ[depth] * delta[offset];
+    }
+    
     float tmp1 = nbElems * dxHat;
     float tmp3 = xHat[offset] * sum2[seq + sequence * elem];
     

@@ -208,17 +208,15 @@ public class BaseModel: Codable
         let newModel = BaseModel(name: name)
         var newLayers = [Layer]()
         
-        var updatedSeq = false
         for layer in layers
         {
             let newLayer = layer.copy(mapping: mapping, inPlace: inPlace)
             newLayers.append(newLayer)
             mapping[layer.id] = newLayer
             
-            if let layerTmp = newLayer as? LayerSeq, !updatedSeq
+            if let layerTmp = newLayer as? LayerSeq
             {
                 layerTmp.sequence = sequence
-                updatedSeq = true
             }
         }
         

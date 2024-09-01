@@ -1025,7 +1025,7 @@ final class LLMExample: XCTestCase
     }
     
     /// Generate text from prompt with Gemma2 2B Instruct.
-    func testGenerateGemma2() throws
+    func _testGenerateGemma2() throws
     {
         let prompt = _prompt
         

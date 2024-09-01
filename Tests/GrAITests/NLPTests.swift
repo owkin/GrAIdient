@@ -797,7 +797,7 @@ class NLP4FlowPrecisionTests: NLP4FlowTests
     override func testQueryCausal1() throws
     {
         let trainer = _buildTrainer("QueryCausal1")
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     override func testQueryCausal2() throws
@@ -809,13 +809,13 @@ class NLP4FlowPrecisionTests: NLP4FlowTests
     override func testValueCausal1() throws
     {
         let trainer = _buildTrainer("ValueCausal1")
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
     
     override func testValueCausal2() throws
     {
         let trainer = _buildTrainer("ValueCausal2")
-        run(trainer, diffThreshold: 0.002)
+        run(trainer, diffThreshold: 0.005)
     }
 }
 

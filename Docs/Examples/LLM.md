@@ -16,14 +16,14 @@ pip install -e .
 ```
 
 Then: 
-- download weights from 
+- Download weights from 
 [MistralAI](https://docs.mistral.ai/getting-started/open_weight_models/) 
 (mistral-7B-Instruct-v0.3)
 and / or
 [Llama](https://llama.meta.com/llama-downloads/) 
 (llama-2-7b-chat or Meta-Llama-3-8B-Instruct) 
 and / or Gemma2 from [HuggingFace](https://huggingface.co/google/gemma-2-2b-it) 
-(Gemma-2-2b-it)
+(Gemma-2-2b-it).
 - Update `_modelPathMistral`, `_modelPathLlama2`, `_modelPathLlama3`, 
 `_modelPathGemma2` in the 
 [LLMExample](../../Tests/GrAIExamples/LLMExample.swift) file with the 

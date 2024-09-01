@@ -21,10 +21,10 @@ public class Constant1D: Layer1D, LayerUpdate
     var _wBuffers: IWeightBuffers! = nil
     
     ///
-    /// Buffer of gradients per sample for biases.
+    /// Buffer of gradients per sample.
     /// Shape ~ (batch, nbNeurons).
     ///
-    var _wDeltaWeights: MetalPrivateBuffer<Float>! = nil
+    var _wDeltaWeights: FloatBuffer! = nil
     
     /// Whether to compute weights' gradients or not.
     public var computeDeltaWeights: Bool = true
@@ -64,12 +64,7 @@ public class Constant1D: Layer1D, LayerUpdate
             {
                 return _weightsList
             }
-            
-            var weightsTmp = [Float]()
-            MetalKernel.get.download([_wBuffers.w_p!])
-            weightsTmp += _wBuffers.w_p!.shared.array
-        
-            return weightsTmp
+            return _wBuffers.w.download()
         }
         set {
             _weightsList = newValue
@@ -258,24 +253,16 @@ public class Constant1D: Layer1D, LayerUpdate
             deviceID: deviceID
         )
         
-        let weightsPtr = _wBuffers.w_p!.shared.buffer
-        if _weightsList.count == 0
+        if _weightsList.count != 0
         {
-            for depth in 0..<nbNeurons
-            {
-                weightsPtr[depth] = 0.0
-            }
+            _wBuffers.w.initialize(array: &_weightsList)
         }
         else
         {
-            for depth in 0..<nbNeurons
-            {
-                weightsPtr[depth] = _weightsList[depth]
-            }
-            _weightsList = []
+            _wBuffers.w.initialize()
         }
         
-        MetalKernel.get.upload([_wBuffers.w_p!])
+        _weightsList = []
         _wDeltaWeights = nil
     }
     
@@ -292,7 +279,7 @@ public class Constant1D: Layer1D, LayerUpdate
         if computeDeltaWeights &&
            GrAI.Gradient.sample && _wDeltaWeights == nil
         {
-            _wDeltaWeights = MetalPrivateBuffer<Float>(
+            _wDeltaWeights = FloatBuffer(nbElems: 
                 batchSize * nbNeurons, deviceID: deviceID
             )
         }
@@ -353,8 +340,7 @@ public class Constant1D: Layer1D, LayerUpdate
             neurons.get(depth)!.initGC(batchSize: batchSize, nbGC: newGC)
         }
         
-        MetalKernel.get.download([_wBuffers.w_p!])
-        let weightsPtr = _wBuffers.w_p!.shared.buffer
+        let weightsPtr = _wBuffers.w.download()
     
         for batch in 0..<batchSize {
         for DEPTH in 0..<nbNeurons {
@@ -553,8 +539,7 @@ public class Constant1D: Layer1D, LayerUpdate
         }
         
         var deltaWeights = [T]()
-        MetalKernel.get.download([_wDeltaWeights])
-        let deltaWeightsPtr = _wDeltaWeights.shared.buffer
+        let deltaWeightsPtr = _wDeltaWeights.download()
         
         for depth in 0..<nbNeurons
         {
@@ -600,8 +585,7 @@ public class Constant1D: Layer1D, LayerUpdate
         }
         
         var deltaWeights = [T]()
-        MetalKernel.get.download([_wBuffers.g_p!])
-        let deltaWeightsPtr = _wBuffers.g_p!.shared.buffer
+        let deltaWeightsPtr = _wBuffers.g.download()
         
         for i in 0..<_wBuffers.nbElems
         {

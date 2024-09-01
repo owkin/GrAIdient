@@ -1,13 +1,15 @@
 import torch
 import numpy as np
-from typing import List, Tuple
+from pathlib import Path
+from typing import List, Tuple, Dict
 
+from safetensors.torch import load_file
 from python_lib.model import SimpleAutoEncoder
 
 
 def _flatten_weights(
-        weights: np.ndarray
-) -> Tuple[List[float], List[int]]:
+    weights: np.ndarray
+) -> Tuple[np.ndarray, List[int]]:
     """
     Flatten weights and biases.
 
@@ -18,18 +20,100 @@ def _flatten_weights(
 
     Returns
     -------
-    (_, _): List[float], List[int]
+    (_, _): np.ndarray, List[int]
         The flattened weights, their shape.
     """
-    weights_list = weights.flatten().tolist()
+    weights_list = weights.flatten()
     dims_list = list(weights.shape)
 
     return weights_list, dims_list
 
 
+def _extract_weights(
+    state: Dict[str, torch.Tensor]
+) -> Tuple[List[np.ndarray], List[List[int]]]:
+    """
+    Get weights and biases.
+
+    Parameters
+    ----------
+    state: [str: torch.Tensor]
+        The module state, containing the weights and biases.
+
+    Returns
+    -------
+    (_, _): List[np.ndarray], List[List[int]]
+        The flattened weights, their shape.
+    """
+    layers_weights: List[np.ndarray] = []
+    layers_dims: List[List[int]] = []
+    for name, layer_weights in state.items():
+        print(f"Extracting weights {name}.")
+        weights_list, dims_list = _flatten_weights(
+            layer_weights.data.cpu().float().numpy()
+        )
+
+        layers_weights.append(weights_list)
+        layers_dims.append(dims_list)
+
+    return layers_weights, layers_dims
+
+
+def _extract_state(
+    state: Dict[str, torch.Tensor]
+) -> Dict[str, np.ndarray]:
+    """
+    Get weights and biases.
+
+    Parameters
+    ----------
+    state: [str: torch.Tensor]
+        The module state, containing the weights and biases.
+
+    Returns
+    -------
+    layer_weights: Dict[str, np.ndarray]
+        Dictionary of flattened weights.
+    """
+    layers_weights: Dict[str, np.ndarray] = {}
+    for name, layer_weights in state.items():
+        print(f"Extracting weights {name}.")
+        weights_list, _ = _flatten_weights(
+            layer_weights.data.cpu().float().numpy()
+        )
+        layers_weights[name] = weights_list
+    return layers_weights
+
+
+def extract_state_key(
+    key: str,
+    state: Dict[str, torch.Tensor]
+) -> np.ndarray:
+    """
+    Get weights and biases.
+
+    Parameters
+    ----------
+    key: str
+        Key to extract.
+    state: [str: torch.Tensor]
+        The module state, containing the weights and biases.
+
+    Returns
+    -------
+    weights_list: np.ndarray
+        Array of flattened weights.
+    """
+    print(f"Extracting weigths {key}.")
+    weights_list, _ = _flatten_weights(
+        state[key].data.cpu().float().numpy()
+    )
+    return weights_list
+
+
 def _extract_and_transpose_weights(
-        modules: [torch.nn.Module]
-) -> Tuple[List[List[float]], List[List[int]]]:
+    modules: [torch.nn.Module]
+) -> Tuple[List[np.ndarray], List[List[int]]]:
     """
     Get weights and biases.
     Transpose weights when they come from a
@@ -42,10 +126,10 @@ def _extract_and_transpose_weights(
 
     Returns
     -------
-    (_, _): List[List[float]], List[List[int]]
+    (_, _): List[np.ndarray], List[List[int]]
         The flattened weights, their shape.
     """
-    layers_weights: List[List[float]] = []
+    layers_weights: List[np.ndarray] = []
     layers_dims: List[List[int]] = []
     for module in modules:
         submodules = list(module.children())
@@ -82,15 +166,84 @@ def _extract_and_transpose_weights(
 
 
 def load_simple_auto_encoder_weights(
-) -> Tuple[List[List[float]], List[List[int]]]:
+) -> Tuple[List[np.ndarray], List[List[int]]]:
     """
     Get weights and biases for simple auto encoder model.
 
     Returns
     -------
-    (_, _): List[List[float]], List[List[int]]
+    (_, _): List[np.ndarray], List[List[int]]
         The flattened weights, their shape.
     """
     torch.manual_seed(42)
     model = SimpleAutoEncoder()
     return _extract_and_transpose_weights(list(model.children()))
+
+
+def load_gemma_state(
+    model_path: str
+) -> Dict[str, torch.Tensor]:
+    """
+    Get weights and biases for Gemma-2-2b-it LLM.
+
+    Returns
+    -------
+    _: Dict[str, np.ndarray]
+        Dictionary of weights.
+    """
+    state1 = load_file(
+        str(Path(model_path) / "model-00001-of-00002.safetensors"),
+        "cpu"
+    )
+    state2 = load_file(
+        str(Path(model_path) / "model-00002-of-00002.safetensors"),
+        "cpu"
+    )
+
+    state = state1
+    state.update(state2)
+    state["model.output.weight"] = state["model.embed_tokens.weight"]
+
+    state_copy = {}
+    for key, value in state.items():
+        new_key = key.replace("model.", "")
+        state_copy[new_key] = value
+    state = state_copy
+
+    return state
+
+
+def load_mistral_state(
+    model_path: str
+) -> Dict[str, torch.Tensor]:
+    """
+    Get weights and biases for Mistral-7B-Instruct-v0.3 LLM.
+
+    Returns
+    -------
+    _: Dict[str, np.ndarray]
+        Dictionary of weights.
+    """
+    state = load_file(
+        str(Path(model_path) / "consolidated.safetensors"),
+        "cpu"
+    )
+    return state
+
+
+def load_llama_state(
+    model_path: str
+) -> Dict[str, torch.Tensor]:
+    """
+    Get state for Llama-2-7B-Chat or Llama-3-8B-Instruct.
+
+    Returns
+    -------
+    _: Dict[str, np.ndarray]
+        Dictionary of weights.
+    """
+    state = torch.load(
+        str(Path(model_path) / "consolidated.00.pth"),
+        "cpu"
+    )
+    return state

@@ -10,7 +10,6 @@ import XCTest
 import GrAIdient
 
 /// Test operations on images.
-@available(macOS 13.0, *)
 class ImageTests: XCTestCase
 {
     /// Directory containing input images.
@@ -55,7 +54,9 @@ class ImageTests: XCTestCase
     override func setUp()
     {
         _ = MetalKernel.get
+        
         GrAI.Opti.GPU = true
+        GrAI.Precision.float = true
     }
     
     private func _buildModel(
@@ -360,8 +361,8 @@ class ImageTests: XCTestCase
         )
         
         let batchSize = imagesURL.count
-        let buffer = MetalPrivateBuffer<Float>(
-            batchSize * 3 * _size * _size, deviceID: 0
+        let buffer = FloatBuffer(nbElems: 
+            batchSize * 3 * _size * _size, deviceID: 0, shared: true
         )
         
         try! Image.loadImages(

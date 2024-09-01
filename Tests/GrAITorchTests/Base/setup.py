@@ -7,8 +7,8 @@ setup(
     author='Jean-François Reboud',
     license='MIT',
     install_requires=[
-        "torch==1.10.1",
-        "torchvision==0.11.2",
+        "torch==1.13.1",
+        "torchvision==0.14.1",
         "numpy==1.23.1",
         "pillow==9.2.0",
     ],

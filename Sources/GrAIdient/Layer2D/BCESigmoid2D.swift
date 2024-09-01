@@ -315,7 +315,7 @@ public class BCESigmoid2D: LayerOutput2D
     /// - Returns: The loss value.
     ///
     public func getLossGPU(
-        _ groundTruth: MetalBuffer<Float>,
+        _ groundTruth: FloatBuffer,
         batchSize: Int,
         nbChannels: Int, height: Int, width: Int) throws -> Float
     {
@@ -343,9 +343,8 @@ public class BCESigmoid2D: LayerOutput2D
         command.dispatchThreads(batchSize)
         command.enqueue()
         
-        MetalKernel.get.download([loss])
         var loss: Float = 0.0
-        let lossPtr = self.loss.buffer
+        let lossPtr = self.loss.download()
         for i in 0..<batchSize
         {
             loss += lossPtr[i]
@@ -526,7 +525,7 @@ public class BCESigmoid2D: LayerOutput2D
     ///     - width: Width of each channel.
     ///
     public func lossDerivativeGPU(
-        _ groundTruth: MetalBuffer<Float>,
+        _ groundTruth: FloatBuffer,
         batchSize: Int,
         nbChannels: Int, height: Int, width: Int) throws
     {

@@ -82,7 +82,7 @@ class InputArrays2D: InputArrays<Layer2D>, IWeightArrays
 class InputBuffers2D: InputBuffers<Layer2D>, IWeightBuffers
 {
     /// Inputs buffer: the buffer to be update.
-    var w: MetalBuffer<Float>
+    var w: FloatBuffer
     {
         get {
             return _layer.outs
@@ -90,7 +90,7 @@ class InputBuffers2D: InputBuffers<Layer2D>, IWeightBuffers
     }
     
     /// Gradients buffer.
-    var g: MetalBuffer<Float>
+    var g: FloatBuffer
     {
         get {
             return _layer.delta
@@ -230,6 +230,7 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
     ///     - mapping: Dictionary allowing to find the layer associated to some id.
     ///     This dictionary is particularly useful when the different layers cannot access
     ///     their `layerPrev`.
+    ///     - inPlace: Whether hard resources should be copied as is.
     ///
     /// - Returns: A new instance of `Layer`. When `inPlace` is false, `initKernel` is
     ///  necessary in order to recreate hard resources.
@@ -397,7 +398,7 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
     ///     - width: Width of each channel.
     ///
     public func setDataGPU(
-        _ data: MetalPrivateBuffer<Float>,
+        _ data: FloatBuffer,
         batchSize: Int,
         nbChannels: Int, height: Int, width: Int) throws
     {
@@ -449,14 +450,16 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
             let nbElems = outs.nbElems
             let pNbElems: [UInt32] = [UInt32(nbElems)]
             
+            let kernel = nbElems % 4 == 0 ? "sum14" : "sum1"
+            let coeff = nbElems % 4 == 0 ? 4 : 1
             let command = MetalKernel.get.createCommand(
-                "sum1", deviceID: deviceID
+                kernel, deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(pNbElems, atIndex: 1)
             command.setBuffer(outs.metal, atIndex: 2)
             
-            command.dispatchThreads(nbElems)
+            command.dispatchThreads(nbElems / coeff)
             command.enqueue()
         }
     }
@@ -504,25 +507,25 @@ public class Input2D: LayerInput2D, LayerResize, LayerUpdate
             let nbElems = delta.nbElems
             let pNbElems: [UInt32] = [UInt32(nbElems)]
             
-            let command: MetalCommand
+            let kernel: String
+            let coeff = nbElems % 4 == 0 ? 4 : 1
             if layerPrev.dirty
             {
-                command = MetalKernel.get.createCommand(
-                    "sum1", deviceID: deviceID
-                )
+                kernel = nbElems % 4 == 0 ? "sum14" : "sum1"
             }
             else
             {
-                command = MetalKernel.get.createCommand(
-                    "sum2", deviceID: deviceID
-                )
+                kernel = nbElems % 4 == 0 ? "sum24" : "sum2"
             }
+            let command = MetalKernel.get.createCommand(
+                kernel, deviceID: deviceID
+            )
             
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBytes(pNbElems, atIndex: 1)
             command.setBuffer(layerPrev.delta.metal, atIndex: 2)
             
-            command.dispatchThreads(nbElems)
+            command.dispatchThreads(nbElems / coeff)
             command.enqueue()
             
             propagateDirty()

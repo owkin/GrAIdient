@@ -29,7 +29,9 @@ final class VGGExample: XCTestCase
     {
         setPythonLib()
         _ = MetalKernel.get
+        
         GrAI.Opti.GPU = true
+        GrAI.Precision.float = true
     }
     
     ///
@@ -396,22 +398,24 @@ final class VGGExample: XCTestCase
         let lastLayer: MSE1D = vgg.layers.last as! MSE1D
         
         // Initialize the ground truth once and for all.
-        let groundTruth = MetalSharedBuffer<Float>(_batchSize, deviceID: 0)
-        let buffer = groundTruth.buffer
+        let groundTruth = FloatBuffer(
+            nbElems: _batchSize, deviceID: 0, shared: true
+        )
+        var gtBuffer = [Float](repeating: 0.0, count: _batchSize)
         for elem in 0..<_batchSize / 2
         {
-            buffer[elem] = 0.0
+            gtBuffer[elem] = 0.0
         }
         for elem in _batchSize / 2..<_batchSize
         {
-            buffer[elem] = 1.0
+            gtBuffer[elem] = 1.0
         }
-        MetalKernel.get.upload([groundTruth])
+        groundTruth.initialize(array: &gtBuffer)
         
         let nbEpochs = 5
         for epoch in 0..<nbEpochs
         {
-            print("EPOCH \(epoch)/\(nbEpochs-1).")
+            print("EPOCH \(epoch + 1)/\(nbEpochs).")
             cifar8.shuffle()
             cifar5.shuffle()
             
@@ -473,7 +477,7 @@ final class VGGExample: XCTestCase
                     batchSize: _batchSize,
                     nbNeurons: 1
                 )
-                print("Step \(step)/\(cifar8.nbLoops-1): \(sqrt(loss)).")
+                print("Step \(step + 1)/\(cifar8.nbLoops): \(sqrt(loss)).")
                 
                 // Update internal step.
                 // This is not mandatory except if we used another

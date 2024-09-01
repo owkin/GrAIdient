@@ -58,30 +58,6 @@ public protocol LayerWithActivation: Layer
     func removeActivation(params: GrAI.Model.Params) -> Layer
 }
 
-/// A layer that needs image size information.
-public protocol LayerResize: Layer
-{
-    ///
-    /// Resize this layer.
-    ///
-    /// - Parameters:
-    ///     - imageWidth: New size width.
-    ///     - imageHeight: New size height.
-    ///     - mapping: Dictionary allowing to find the layer associated to some id.
-    ///     This dictionary is particularly useful when the different layers cannot access
-    ///     their `layerPrev`.
-    ///
-    /// - Returns: A new layer. When `inPlace` is false, `initKernel` is
-    ///  necessary in order to recreate hard resources.
-    ///
-    func resize(
-        imageWidth: Int,
-        imageHeight: Int,
-        mapping: Dictionary<Int, Layer>,
-        inPlace: Bool
-    ) -> Layer
-}
-
 /// Abstract layer of a deep learning model.
 open class Layer: Codable
 {
@@ -270,6 +246,27 @@ open class Layer: Codable
     /// Note that the weights are not initialized here, they have a dedicated API (initWeightsGPU).
     ///
     open func initKernelGPU() {}
+    
+    ///
+    /// Initialize state resources in the CPU execution context.
+    ///
+    /// We initialize the neurons' state (forward and backward).
+    ///
+    open func checkStateCPU(batchSize: Int) throws {}
+    
+    ///
+    /// Initialize state resources in the GPU execution context.
+    ///
+    /// We initialize the neurons' forward state.
+    ///
+    open func checkStateForwardGPU(batchSize: Int) throws {}
+    
+    ///
+    /// Initialize state resources in the GPU execution context.
+    ///
+    /// We initialize the neurons' backward state.
+    ///
+    open func checkStateBackwardGPU(batchSize: Int) throws {}
     
     ///
     /// Update the backward dirty flag for `layerPrev` instance.

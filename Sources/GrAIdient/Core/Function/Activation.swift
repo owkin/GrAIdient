@@ -14,6 +14,8 @@ let ACTIVATION_REGISTRY: [String: Codable.Type] = buildRegistry(
     LeakyReLU.self,
     SoftReLU.self,
     Sigmoid.self,
+    SiLU.self,
+    GELUApprox.self,
     GELU.self
 ])
 
@@ -305,21 +307,46 @@ open class ActivationFunction: Codable
     ///     - tmp: Buffer containing forward values before activation.
     ///     - outs: Buffer containing forward values after activation.
     ///     - deviceID: GPU device where to execute the operation.
+    ///     - phase: Running phase: Training or Inference.
     ///
     private func _forwardGPU(
-        tmp: MetalBuffer<Float>,
-        outs: MetalBuffer<Float>,
-        deviceID: Int)
+        tmp: inout FloatBuffer?,
+        outs: FloatBuffer,
+        deviceID: Int,
+        phase: Phase?)
     {
         let nbElems = outs.nbElems
+        let backward = phase != nil &&
+            (phase == .Training || phase == .InferenceBackward)
+        
+        if backward && tmp == nil
+        {
+            tmp = FloatBuffer(
+                nbElems: nbElems, deviceID: deviceID
+            )
+        }
+        
         let pNbElems: [UInt32] = [UInt32(nbElems)]
         
+        var kernel = forwardKernel
+        if !backward
+        {
+            kernel += "Inference"
+        }
         let command = MetalKernel.get.createCommand(
-            forwardKernel, deviceID: deviceID
+            kernel, deviceID: deviceID
         )
+        
         command.setBytes(pNbElems, atIndex: 0)
-        command.setBuffer(tmp.metal, atIndex: 1)
-        command.setBuffer(outs.metal, atIndex: 2)
+        if backward
+        {
+            command.setBuffer(tmp!.metal, atIndex: 1)
+            command.setBuffer(outs.metal, atIndex: 2)
+        }
+        else
+        {
+            command.setBuffer(outs.metal, atIndex: 1)
+        }
         
         command.dispatchThreads(nbElems)
         command.enqueue()
@@ -332,16 +359,11 @@ open class ActivationFunction: Codable
     ///
     open func forwardGPU(_ layer: Activation1D)
     {
-        let nbElems = layer.outs.nbElems
-        if layer._tmp == nil
-        {
-            layer._tmp = MetalPrivateBuffer<Float>(
-                nbElems, deviceID: layer.deviceID)
-        }
         _forwardGPU(
-            tmp: layer._tmp,
+            tmp: &layer.tmp,
             outs: layer.outs,
-            deviceID: layer.deviceID
+            deviceID: layer.deviceID,
+            phase: layer.phase
         )
     }
     
@@ -352,16 +374,11 @@ open class ActivationFunction: Codable
     ///
     open func forwardGPU(_ layer: Activation2D)
     {
-        let nbElems = layer.outs.nbElems
-        if layer._tmp == nil
-        {
-            layer._tmp = MetalPrivateBuffer<Float>(
-                nbElems, deviceID: layer.deviceID)
-        }
         _forwardGPU(
-            tmp: layer._tmp,
+            tmp: &layer.tmp,
             outs: layer.outs,
-            deviceID: layer.deviceID
+            deviceID: layer.deviceID,
+            phase: layer.phase
         )
     }
     
@@ -372,16 +389,11 @@ open class ActivationFunction: Codable
     ///
     open func forwardGPU(_ layer: ActivationSeq)
     {
-        let nbElems = layer.outs.nbElems
-        if layer._tmp == nil
-        {
-            layer._tmp = MetalPrivateBuffer<Float>(
-                nbElems, deviceID: layer.deviceID)
-        }
         _forwardGPU(
-            tmp: layer._tmp,
+            tmp: &layer.tmp,
             outs: layer.outs,
-            deviceID: layer.deviceID
+            deviceID: layer.deviceID,
+            phase: layer.phase
         )
     }
     
@@ -394,8 +406,8 @@ open class ActivationFunction: Codable
     ///     - deviceID: GPU device where to execute the operation.
     ///
     private func _backwardGPU(
-        tmp: MetalBuffer<Float>,
-        delta: MetalBuffer<Float>,
+        tmp: FloatBuffer,
+        delta: FloatBuffer,
         deviceID: Int)
     {
         let nbElems = delta.nbElems
@@ -420,7 +432,7 @@ open class ActivationFunction: Codable
     open func backwardGPU(_ layer: Activation1D)
     {
         _backwardGPU(
-            tmp: layer._tmp,
+            tmp: layer.tmp,
             delta: layer.delta,
             deviceID: layer.deviceID
         )
@@ -434,7 +446,7 @@ open class ActivationFunction: Codable
     open func backwardGPU(_ layer: Activation2D)
     {
         _backwardGPU(
-            tmp: layer._tmp,
+            tmp: layer.tmp,
             delta: layer.delta,
             deviceID: layer.deviceID
         )
@@ -448,7 +460,7 @@ open class ActivationFunction: Codable
     open func backwardGPU(_ layer: ActivationSeq)
     {
         _backwardGPU(
-            tmp: layer._tmp,
+            tmp: layer.tmp,
             delta: layer.delta,
             deviceID: layer.deviceID
         )
@@ -767,23 +779,115 @@ public class Sigmoid: ActivationFunction
     }
 }
 
-/// GELU activation function.
-public class GELU: ActivationFunction
+/// SiLU activation function.
+public class SiLU: ActivationFunction
 {
-    public static let str = "GELU"
+    public static let str = "SiLU"
     
     /// Forward GPU kernel.
     public override var forwardKernel: String
     {
         get {
-            return "forwardGELU"
+            return "forwardSiLU"
         }
     }
     /// Backward GPU kernel.
     public override var backwardKernel: String
     {
         get {
-            return "backwardGELU"
+            return "backwardSiLU"
+        }
+    }
+    
+    /// Create a Sigmoid activation function.
+    init()
+    {
+        super.init(SiLU.str)
+    }
+    
+    ///
+    /// Decode from the disk.
+    ///
+    /// Throw an error if reading from the decoder fails, or
+    /// if the data read is corrupted or otherwise invalid.
+    ///
+    /// - Parameter decoder: The decoder to read data from.
+    ///
+    required public init(from decoder: Decoder) throws
+    {
+        try super.init(from: decoder)
+    }
+    
+    ///
+    /// Sigmoid function.
+    ///
+    /// - Parameter x: The input.
+    /// - Returns: The output.
+    ///
+    private func _sigmoid(_ x: Double) -> Double
+    {
+        if x >= 0
+        {
+            return 1 / (1 + exp(-x))
+        }
+        else
+        {
+            return exp(x) / (1 + exp(x))
+        }
+    }
+    
+    ///
+    /// Sigmoid derivative function.
+    ///
+    /// - Parameter x: The input.
+    /// - Returns: The output.
+    ///
+    private func _sigmoidDer(_ x: Double) -> Double
+    {
+        let fx = _sigmoid(x)
+        return fx * (1 - fx)
+    }
+    
+    ///
+    /// Forward CPU.
+    ///
+    /// - Parameter x: The input.
+    /// - Returns: The output.
+    ///
+    public override func apply(_ x: Double) -> Double
+    {
+        return x * _sigmoid(x)
+    }
+    
+    ///
+    /// Backward CPU.
+    ///
+    /// - Parameter x: The input.
+    /// - Returns: The output.
+    ///
+    public override func derivate(_ x: Double) -> Double
+    {
+        return _sigmoid(x) + x * _sigmoidDer(x)
+    }
+}
+
+/// GELU approximative activation function.
+public class GELUApprox: ActivationFunction
+{
+    public static let str = "GELUApprox"
+    
+    /// Forward GPU kernel.
+    public override var forwardKernel: String
+    {
+        get {
+            return "forwardGELUApprox"
+        }
+    }
+    /// Backward GPU kernel.
+    public override var backwardKernel: String
+    {
+        get {
+            return "backwardGELUApprox"
         }
     }
     
@@ -865,6 +969,83 @@ public class GELU: ActivationFunction
     }
 }
 
+/// GELU activation function.
+public class GELU: ActivationFunction
+{
+    public static let str = "GELU"
+    
+    /// Forward GPU kernel.
+    public override var forwardKernel: String
+    {
+        get {
+            return "forwardGELU"
+        }
+    }
+    /// Backward GPU kernel.
+    public override var backwardKernel: String
+    {
+        get {
+            return "backwardGELU"
+        }
+    }
+    
+    ///
+    /// Coefficient to apply during the weights initialization.
+    ///
+    /// - Returns: The coefficient.
+    ///
+    open override var coeffInitWeights: Float
+    {
+        get {
+            return Float(sqrt(2.0))
+        }
+    }
+    
+    /// Create a GELU activation function.
+    init()
+    {
+        super.init(GELU.str)
+    }
+    
+    ///
+    /// Decode from the disk.
+    ///
+    /// Throw an error if reading from the decoder fails, or
+    /// if the data read is corrupted or otherwise invalid.
+    ///
+    /// - Parameter decoder: The decoder to read data from.
+    ///
+    required public init(from decoder: Decoder) throws
+    {
+        try super.init(from: decoder)
+    }
+    
+    ///
+    /// Forward CPU.
+    ///
+    /// - Parameter x: The input.
+    /// - Returns: The output.
+    ///
+    public override func apply(_ x: Double) -> Double
+    {
+        return 0.5 * x * (1 + erf(x / sqrt(2.0)))
+    }
+    
+    ///
+    /// Backward CPU.
+    ///
+    /// - Parameter x: The input.
+    /// - Returns: The output.
+    ///
+    public override func derivate(_ x: Double) -> Double
+    {
+        let tmp1 = 0.5 * (1.0 + erf(x / sqrt(2.0)))
+        let tmp2 = x / sqrt(2.0 * Double.pi) * exp(-x * x / 2.0)
+        let derivative = tmp1 + tmp2
+        return derivative
+    }
+}
+
 /// Factory API to build an activation function.
 public protocol ActivationKernel
 {
@@ -886,6 +1067,8 @@ class ActivationKernelImpl: ActivationKernel
         LeakyReLU.str: LeakyReLUKernel(),
         SoftReLU.str: SoftReLUKernel(),
         Sigmoid.str: SigmoidKernel(),
+        SiLU.str: SiLUKernel(),
+        GELUApprox.str: GELUApproxKernel(),
         GELU.str: GELUKernel()
     ]
     
@@ -955,6 +1138,26 @@ private class SigmoidKernel: ActivationKernelImpl
 }
 
 /// Factory to build a Sigmoid function.
+private class SiLUKernel: ActivationKernelImpl
+{
+    /// Build a Sigmoid function.
+    override func build() -> ActivationFunction
+    {
+        return SiLU()
+    }
+}
+
+/// Factory to build a GELU approximative function.
+private class GELUApproxKernel: ActivationKernelImpl
+{
+    /// Build a Sigmoid function.
+    override func build() -> ActivationFunction
+    {
+        return GELUApprox()
+    }
+}
+
+/// Factory to build a GELU function.
 private class GELUKernel: ActivationKernelImpl
 {
     /// Build a Sigmoid function.

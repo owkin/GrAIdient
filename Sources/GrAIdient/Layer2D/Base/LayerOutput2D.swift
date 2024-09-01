@@ -15,13 +15,13 @@ open class LayerOutput2D: Layer2D
     /// Ground truth buffer in the GPU execution context.
     /// Shape ~ (batch, nbChannels, height, width).
     ///
-    public internal(set) var groundTruth: MetalSharedBuffer<Float>! = nil
+    public internal(set) var groundTruth: FloatBuffer! = nil
     
     ///
     /// Loss buffer in the GPU execution context.
     /// Shape ~ (batch,).
     ///
-    public internal(set) var loss: MetalSharedBuffer<Float>! = nil
+    public internal(set) var loss: FloatBuffer! = nil
     
     private enum Keys: String, CodingKey
     {
@@ -157,9 +157,10 @@ open class LayerOutput2D: Layer2D
         
         if self.groundTruth == nil
         {
-            self.groundTruth = MetalSharedBuffer<Float>(
-                batchSize * nbChannels * height * width,
-                deviceID: deviceID
+            self.groundTruth = FloatBuffer(
+                nbElems: batchSize * nbChannels * height * width,
+                deviceID: deviceID,
+                shared: true
             )
         }
         else if batchSize <= 0 ||
@@ -168,7 +169,10 @@ open class LayerOutput2D: Layer2D
             throw LayerError.BatchSize
         }
         
-        let bufferPtr = self.groundTruth.buffer
+        var buffer = [Float](
+            repeating: 0.0, count: batchSize * nbChannels * height * width
+        )
+        
         switch format
         {
         case .RGB:
@@ -184,7 +188,7 @@ open class LayerOutput2D: Layer2D
                     let offsetSet = j + (offsetStart + i) * width
                     
                     let gt = groundTruth[nbChannels * offsetGet + depth]
-                    bufferPtr[offsetSet] = Float(gt)
+                    buffer[offsetSet] = Float(gt)
                 }}
             }}
         case .Neuron:
@@ -199,11 +203,11 @@ open class LayerOutput2D: Layer2D
                     let offset = j + (offsetStart + i) * width
                     
                     let gt = groundTruth[offset]
-                    bufferPtr[offset] = Float(gt)
+                    buffer[offset] = Float(gt)
                 }}
             }}
         }
-        MetalKernel.get.upload([self.groundTruth])
+        self.groundTruth.initialize(array: &buffer)
     }
     
     ///
@@ -219,7 +223,7 @@ open class LayerOutput2D: Layer2D
     ///     - width: Width of each channel.
     ///
     public func checkGroundTruthGPU(
-        _ groundTruth: MetalBuffer<Float>,
+        _ groundTruth: FloatBuffer,
         batchSize: Int,
         nbChannels: Int, height: Int, width: Int) throws
     {
@@ -248,7 +252,9 @@ open class LayerOutput2D: Layer2D
     {
         if loss == nil
         {
-            loss = MetalSharedBuffer<Float>(batchSize, deviceID: deviceID)
+            loss = FloatBuffer(
+                nbElems: batchSize, deviceID: deviceID, shared: true
+            )
         }
         else if batchSize <= 0 || batchSize > loss.nbElems
         {
@@ -344,14 +350,16 @@ open class LayerOutput2D: Layer2D
             let nbElems = outs.nbElems
             let pNbElems: [UInt32] = [UInt32(nbElems)]
             
+            let kernel = nbElems % 4 == 0 ? "sum14" : "sum1"
+            let coeff = nbElems % 4 == 0 ? 4 : 1
             let command = MetalKernel.get.createCommand(
-                "sum1", deviceID: deviceID
+                kernel, deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(pNbElems, atIndex: 1)
             command.setBuffer(outs.metal, atIndex: 2)
             
-            command.dispatchThreads(nbElems)
+            command.dispatchThreads(nbElems / coeff)
             command.enqueue()
         }
     }
@@ -403,24 +411,25 @@ open class LayerOutput2D: Layer2D
             let nbElems = delta.nbElems
             let pNbElems: [UInt32] = [UInt32(nbElems)]
             
-            let command: MetalCommand
+            let kernel: String
+            let coeff = nbElems % 4 == 0 ? 4 : 1
             if layerPrev.dirty
             {
-                command = MetalKernel.get.createCommand(
-                    "sum1", deviceID: deviceID
-                )
+                kernel = nbElems % 4 == 0 ? "sum14" : "sum1"
             }
             else
             {
-                command = MetalKernel.get.createCommand(
-                    "sum2", deviceID: deviceID
-                )
+                kernel = nbElems % 4 == 0 ? "sum24" : "sum2"
             }
+            let command = MetalKernel.get.createCommand(
+                kernel, deviceID: deviceID
+            )
+            
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBytes(pNbElems, atIndex: 1)
             command.setBuffer(layerPrev.delta.metal, atIndex: 2)
             
-            command.dispatchThreads(nbElems)
+            command.dispatchThreads(nbElems / coeff)
             command.enqueue()
             
             propagateDirty()

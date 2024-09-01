@@ -21,7 +21,9 @@ final class GrAITorchTests: XCTestCase
     {
         setPythonLib()
         _ = MetalKernel.get
+        
         GrAI.Opti.GPU = true
+        GrAI.Precision.float = true
     }
     
     ///
@@ -51,7 +53,7 @@ final class GrAITorchTests: XCTestCase
         let finalModel = Model(model: context.model, modelsPrev: [])
         
         // Initialize for inference.
-        finalModel.initKernel(phase: .Inference)
+        finalModel.initKernel(phase: .InferenceBackward)
         // Avoid the compute of every gradients of weights.
         model.computeDeltaWeights = false
         
@@ -122,7 +124,7 @@ final class GrAITorchTests: XCTestCase
         let finalModel = Model(model: context.model, modelsPrev: [model])
         
         // Initialize for inference.
-        finalModel.initKernel(phase: .Inference)
+        finalModel.initKernel(phase: .InferenceBackward)
         // Avoid the compute of every gradients of weights.
         model.computeDeltaWeights = false
         
@@ -210,7 +212,7 @@ final class GrAITorchTests: XCTestCase
         let finalModel = Model(model: context.model, modelsPrev: [])
         
         // Initialize for inference.
-        finalModel.initKernel(phase: .Inference)
+        finalModel.initKernel(phase: .InferenceBackward)
         // Avoid the compute of every gradients of weights.
         model.computeDeltaWeights = false
         
@@ -319,7 +321,7 @@ final class GrAITorchTests: XCTestCase
         let finalModel = Model(model: context.model, modelsPrev: [])
         
         // Initialize for inference.
-        model.initKernel(phase: .Inference)
+        model.initKernel(phase: .InferenceBackward)
         // Avoid the compute of every gradients of weights.
         model.computeDeltaWeights = false
         
@@ -1292,11 +1294,57 @@ final class GrAITorchTests: XCTestCase
         XCTAssert(diffPercent < 1.0)
     }
     
+    /// 
+    /// Test that modelAttention1Bis backward pass returns the same gradient norm
+    /// in GrAIdient and PyTorch.
+    ///
+    func testModelAttention1Bis()
+    {
+        // Build model.
+        let model = ModelTestAttention1Bis.build(size: _size, patch: _patch)
+        
+        // Get the gradient norm on the first layer.
+        let expectedNorm: Double = Double(computeAttention1GradNorm(
+            size: _size, patch: _patch
+        ))
+        let gradNormOutput: Double = _getGradientNormMSE1D(
+            model: model, size: _size
+        )
+        
+        // Compare difference.
+        let diffPercent =
+            abs(gradNormOutput - expectedNorm) / expectedNorm * 100.0
+        XCTAssert(diffPercent < 1.0)
+    }
+    
     /// Test that modelAttention2 backward pass returns the same gradient norm in GrAIdient and PyTorch.
     func testModelAttention2()
     {
         // Build model.
         let model = ModelTestAttention2.build(size: _size, patch: _patch)
+        
+        // Get the gradient norm on the first layer.
+        let expectedNorm: Double = Double(computeAttention2GradNorm(
+            size: _size, patch: _patch
+        ))
+        let gradNormOutput: Double = _getGradientNormMSE1D(
+            model: model, size: _size
+        )
+        
+        // Compare difference.
+        let diffPercent =
+            abs(gradNormOutput - expectedNorm) / expectedNorm * 100.0
+        XCTAssert(diffPercent < 1.0)
+    }
+    
+    /// 
+    /// Test that modelAttention2Bis backward pass returns the same gradient norm
+    /// in GrAIdient and PyTorch.
+    /// 
+    func testModelAttention2Bis()
+    {
+        // Build model.
+        let model = ModelTestAttention2Bis.build(size: _size, patch: _patch)
         
         // Get the gradient norm on the first layer.
         let expectedNorm: Double = Double(computeAttention2GradNorm(

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Accelerate
 
 /// Error occuring in an output layer.
 public enum LossError: Error
@@ -29,7 +30,7 @@ extension LossError: CustomStringConvertible
 /// Running phase of a model.
 public enum Phase
 {
-    case Training, Inference
+    case Training, InferenceBackward, Inference
 }
 
 /// API for a layer that have learning weights.
@@ -73,15 +74,15 @@ public protocol IWeightBuffers
     var nbElems: Int { get }
     
     /// Weights buffer: the buffer to be update.
-    var w: MetalBuffer<Float> { get }
+    var w: FloatBuffer { get }
     /// Gradients buffer.
-    var g: MetalBuffer<Float> { get }
+    var g: FloatBuffer { get }
     /// Momentum buffer.
-    var m: MetalBuffer<Float> { get }
+    var m: FloatBuffer { get }
     /// Velocity buffer.
-    var v: MetalBuffer<Float> { get }
+    var v: FloatBuffer { get }
     /// Velocity normalized buffer.
-    var vHat: MetalBuffer<Float> { get }
+    var vHat: FloatBuffer { get }
     
     /// Clean the momentum..., preserving the weights.
     func reset()
@@ -89,50 +90,35 @@ public protocol IWeightBuffers
 
 extension IWeightBuffers
 {
-    /// Get the weights as a private buffer.
-    var w_p: MetalPrivateBuffer<Float>?
+    /// GPU device where the buffers are sent.
+    public var deviceID: Int
     {
         get {
-            return w as? MetalPrivateBuffer<Float>
+            return w.deviceID
         }
     }
-    /// Get the weights as a shared buffer.
-    var w_s: MetalSharedBuffer<Float>?
+    /// Number of elements in the different buffers.
+    public var nbElems: Int
     {
         get {
-            return w as? MetalSharedBuffer<Float>
-        }
-    }
-    
-    /// Get the gradient buffer as a private buffer.
-    var g_p: MetalPrivateBuffer<Float>?
-    {
-        get {
-            return g as? MetalPrivateBuffer<Float>
-        }
-    }
-    /// Get the gradient buffer as a shared buffer.
-    var g_s: MetalSharedBuffer<Float>?
-    {
-        get {
-            return g as? MetalSharedBuffer<Float>
+            return w.nbElems
         }
     }
 }
 
 /// GPU buffers needed to update the weights.
-class WeightBuffers: IWeightBuffers
+public class WeightBuffers: IWeightBuffers
 {
-    /// Number of elements in the different buffers.
-    let nbElems: Int
-    /// GPU device where the buffers are sent.
-    let deviceID: Int
-    
-    var _w: MetalBuffer<Float>! = nil
-    var _g: MetalBuffer<Float>! = nil
-    var _m: MetalBuffer<Float>! = nil
-    var _v: MetalBuffer<Float>! = nil
-    var _vHat: MetalBuffer<Float>! = nil
+    /// Weights buffer: the buffer to be update.
+    public let w: FloatBuffer
+    /// Gradients buffer.
+    public let g: FloatBuffer
+    /// Momentum buffer.
+    public let m: FloatBuffer
+    /// Velocity buffer.
+    public let v: FloatBuffer
+    /// Velocity normalized buffer.
+    public let vHat: FloatBuffer
     
     ///
     /// Create a container of buffers.
@@ -143,78 +129,25 @@ class WeightBuffers: IWeightBuffers
     ///
     init(nbElems: Int, deviceID: Int)
     {
-        self.nbElems = nbElems
-        self.deviceID = deviceID
+        w = FloatBuffer(nbElems: nbElems, deviceID: deviceID)
+        g = FloatBuffer(nbElems: nbElems, deviceID: deviceID)
+        m = FloatBuffer(nbElems: nbElems, deviceID: deviceID)
+        v = FloatBuffer(
+            nbElems: nbElems, deviceID: deviceID, forceFloat: true
+        )
+        vHat = FloatBuffer(
+            nbElems: nbElems, deviceID: deviceID, forceFloat: true
+        )
     }
     
-    /// Weights buffer: the buffer to be update.
-    var w: MetalBuffer<Float>
+    /// Clean the buffers.
+    public func reset()
     {
-        get {
-            if _w == nil
-            {
-                _w = MetalPrivateBuffer<Float>(nbElems, deviceID: deviceID)
-            }
-            return _w
-        }
-    }
-    
-    /// Gradients buffer.
-    var g: MetalBuffer<Float>
-    {
-        get {
-            if _g == nil
-            {
-                _g = MetalPrivateBuffer<Float>(nbElems, deviceID: deviceID)
-            }
-            return _g
-        }
-    }
-    
-    /// Momentum buffer.
-    var m: MetalBuffer<Float>
-    {
-        get {
-            if _m == nil
-            {
-                _m = MetalPrivateBuffer<Float>(nbElems, deviceID: deviceID)
-            }
-            return _m
-        }
-    }
-    
-    /// Velocity buffer.
-    var v: MetalBuffer<Float>
-    {
-        get {
-            if _v == nil
-            {
-                _v = MetalPrivateBuffer<Float>(nbElems, deviceID: deviceID)
-            }
-            return _v
-        }
-    }
-    
-    /// Velocity normalized buffer.
-    var vHat: MetalBuffer<Float>
-    {
-        get {
-            if _vHat == nil
-            {
-                _vHat = MetalPrivateBuffer<Float>(nbElems, deviceID: deviceID)
-            }
-            return _vHat
-        }
-    }
-    
-    /// Clean the momentum..., preserving the weights.
-    func reset()
-    {
-        // do not touch _w
-        _g = nil
-        _m = nil
-        _v = nil
-        _vHat = nil
+        // do not touch w
+        g.reset()
+        m.reset()
+        v.reset()
+        vHat.reset()
     }
 }
 
@@ -256,7 +189,11 @@ extension LayerWeightInit
         }
     }
     
+    /// 
     /// Generate list of weights values.
+    ///
+    /// - Returns: The generated list of values.
+    ///
     public func generateWeightsList() -> [Float]
     {
         let nbElems = weightListSize
@@ -289,6 +226,52 @@ extension LayerWeightInit
     }
     
     ///
+    /// Generate weights values.
+    ///
+    /// - Parameters:
+    ///     - out: The output buffer.
+    ///     - deviceID: GPU device.
+    ///
+    public func generateWeightsList(
+        out: FloatBuffer,
+        deviceID: Int)
+    {
+        let nbElems = weightListSize
+        switch weightInitClass {
+        case .XavierUniform:
+            Self.XavierUniform(
+                nbElems: nbElems,
+                connectivityIO: connectivityIO,
+                out: out,
+                deviceID: deviceID
+            )
+        case .XavierNormal:
+            Self.XavierNormal(
+                nbElems: nbElems,
+                connectivityIO: connectivityIO,
+                out: out,
+                deviceID: deviceID
+            )
+        case .KaimingUniform:
+            Self.KaimingUniform(
+                nbElems: nbElems,
+                coeff: coeffInitWeights,
+                connectivityIO: connectivityIO,
+                out: out,
+                deviceID: deviceID
+            )
+        case .KaimingNormal:
+            Self.KaimingNormal(
+                nbElems: nbElems,
+                coeff: coeffInitWeights,
+                connectivityIO: connectivityIO,
+                out: out,
+                deviceID: deviceID
+            )
+        }
+    }
+    
+    ///
     /// Xavier uniform initialization method.
     ///
     /// - Parameters:
@@ -307,6 +290,50 @@ extension LayerWeightInit
             values.append(Float.random(in: -bound..<bound))
         }
         return values
+    }
+    
+    ///
+    /// Xavier uniform initialization method.
+    ///
+    /// - Parameters:
+    ///     - nbElems: Number of weights to initialize.
+    ///     - connectivityIO: Number of input and output connections.
+    ///     - out: The output buffer.
+    ///     - deviceID: GPU device.
+    ///
+    static func XavierUniform(
+        nbElems: Int,
+        connectivityIO: (Int, Int),
+        out: FloatBuffer,
+        deviceID: Int)
+    {
+        var array = [Float](repeating: 0.0, count: nbElems)
+        array.withUnsafeMutableBufferPointer
+        {
+            ptr in
+            
+            let bound = 
+                sqrt(6) / sqrt(Float(connectivityIO.0 + connectivityIO.1))
+            guard var arrayDescriptor = BNNSNDArrayDescriptor(
+                data: ptr,
+                shape: .vector(nbElems)),
+            let randomNumberGenerator = BNNSCreateRandomGenerator(
+                BNNSRandomGeneratorMethodAES_CTR,
+                nil) else
+            {
+                fatalError()
+            }
+            
+            BNNSRandomFillUniformFloat(
+                randomNumberGenerator,
+                &arrayDescriptor,
+                -bound,
+                bound
+            )
+            
+            BNNSDestroyRandomGenerator(randomNumberGenerator)
+        }
+        out.initialize(array: &array)
     }
     
     ///
@@ -331,10 +358,54 @@ extension LayerWeightInit
     }
     
     ///
+    /// Xavier normal initialization method.
+    ///
+    /// - Parameters:
+    ///     - nbElems: Number of weights to initialize.
+    ///     - connectivityIO: Number of input and output connections.
+    ///     - out: The output buffer.
+    ///     - deviceID: GPU device.
+    ///
+    static func XavierNormal(
+        nbElems: Int,
+        connectivityIO: (Int, Int),
+        out: FloatBuffer,
+        deviceID: Int)
+    {
+        var array = [Float](repeating: 0.0, count: nbElems)
+        array.withUnsafeMutableBufferPointer
+        {
+            ptr in
+            
+            let std = sqrt(2) / sqrt(Float(connectivityIO.0 + connectivityIO.1))
+            guard var arrayDescriptor = BNNSNDArrayDescriptor(
+                data: ptr,
+                shape: .vector(nbElems)),
+            let randomNumberGenerator = BNNSCreateRandomGenerator(
+                BNNSRandomGeneratorMethodAES_CTR,
+                nil) else
+            {
+                fatalError()
+            }
+            
+            BNNSRandomFillNormalFloat(
+                randomNumberGenerator,
+                &arrayDescriptor,
+                0.0,
+                std
+            )
+            
+            BNNSDestroyRandomGenerator(randomNumberGenerator)
+        }
+        out.initialize(array: &array)
+    }
+    
+    ///
     /// Kaiming uniform initialization method.
     ///
     /// - Parameters:
     ///     - nbElems: Number of weights to initialize.
+    ///     - coeff: Multiplicative coefficient.
     ///     - connectivityIO: Number of input and output connections.
     /// - Returns: Weights values.
     ///
@@ -353,10 +424,56 @@ extension LayerWeightInit
     }
     
     ///
+    /// Kaiming uniform initialization method.
+    ///
+    /// - Parameters:
+    ///     - nbElems: Number of weights to initialize.
+    ///     - coeff: Multiplicative coefficient.
+    ///     - connectivityIO: Number of input and output connections.
+    ///     - out: The output buffer.
+    ///     - deviceID: GPU device.
+    ///
+    static func KaimingUniform(
+        nbElems: Int,
+        coeff: Float,
+        connectivityIO: (Int, Int),
+        out: FloatBuffer,
+        deviceID: Int)
+    {
+        var array = [Float](repeating: 0.0, count: nbElems)
+        array.withUnsafeMutableBufferPointer
+        {
+            ptr in
+            
+            let bound = sqrt(3) * coeff / sqrt(Float(connectivityIO.0))
+            guard var arrayDescriptor = BNNSNDArrayDescriptor(
+                data: ptr,
+                shape: .vector(nbElems)),
+            let randomNumberGenerator = BNNSCreateRandomGenerator(
+                BNNSRandomGeneratorMethodAES_CTR,
+                nil) else
+            {
+                fatalError()
+            }
+            
+            BNNSRandomFillUniformFloat(
+                randomNumberGenerator,
+                &arrayDescriptor,
+                -bound,
+                bound
+            )
+            
+            BNNSDestroyRandomGenerator(randomNumberGenerator)
+        }
+        out.initialize(array: &array)
+    }
+    
+    ///
     /// Xavier normal initialization method.
     ///
     /// - Parameters:
     ///     - nbElems: Number of weights to initialize.
+    ///     - coeff: Multiplicative coefficient.
     ///     - connectivityIO: Number of input and output connections.
     /// - Returns: Weights values.
     ///
@@ -372,6 +489,51 @@ extension LayerWeightInit
             values.append(randomNormal(mean: 0.0, standardDeviation: std))
         }
         return values
+    }
+    
+    ///
+    /// Kaiming normal initialization method.
+    ///
+    /// - Parameters:
+    ///     - nbElems: Number of weights to initialize.
+    ///     - coeff: Multiplicative coefficient.
+    ///     - connectivityIO: Number of input and output connections.
+    ///     - out: The output buffer.
+    ///     - deviceID: GPU device.
+    ///
+    static func KaimingNormal(
+        nbElems: Int,
+        coeff: Float,
+        connectivityIO: (Int, Int),
+        out: FloatBuffer,
+        deviceID: Int)
+    {
+        var array = [Float](repeating: 0.0, count: nbElems)
+        array.withUnsafeMutableBufferPointer
+        {
+            ptr in
+            
+            let std = coeff / sqrt(Float(connectivityIO.0))
+            guard var arrayDescriptor = BNNSNDArrayDescriptor(
+                data: ptr,
+                shape: .vector(nbElems)),
+            let randomNumberGenerator = BNNSCreateRandomGenerator(
+                BNNSRandomGeneratorMethodAES_CTR,
+                nil) else
+            {
+                fatalError()
+            }
+            
+            BNNSRandomFillNormalFloat(
+                randomNumberGenerator,
+                &arrayDescriptor,
+                0.0,
+                std
+            )
+            
+            BNNSDestroyRandomGenerator(randomNumberGenerator)
+        }
+        out.initialize(array: &array)
     }
 }
 

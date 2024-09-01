@@ -4,6 +4,40 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+## 0.4.0 (2024-09-01)
+
+### Features 
+
+🚀 **examples:** integrate Gemma2-2B ([#132](https://github.com/owkin/GrAIdient/pull/132))\
+✨ **layer_seq:** LLM sliding window ([#131](https://github.com/owkin/GrAIdient/pull/131))\
+🚀 **examples:** 3 LLMs examples ([#130](https://github.com/owkin/GrAIdient/pull/130))\
+✨ **layer_seq:** LLM generate ([128](https://github.com/owkin/GrAIdient/pull/128))\
+✨ **layer_seq:** MultiplySeq, SiLU & LLM test ([127](https://github.com/owkin/GrAIdient/pull/127))\
+✨ **layer_seq:** ValueCausalSeq ([126](https://github.com/owkin/GrAIdient/pull/126))\
+✨ **layer_seq:** QueryCausalSeq ([125](https://github.com/owkin/GrAIdient/pull/125))\
+✨ **layer_seq:** RoPESeq ([124](https://github.com/owkin/GrAIdient/pull/124))\
+✨ **layer_seq:** RMSNormSeq ([123](https://github.com/owkin/GrAIdient/pull/123))\
+✨ **layer_seq:** EmbeddingSeq ([122](https://github.com/owkin/GrAIdient/pull/122))\
+🪜 **feat:** LayerCAM2D -> VQGrad2D, LayerCAMSeq -> VQGradSeq ([#117](https://github.com/owkin/GrAIdient/pull/117))\
+⚙️ **core:** GELU vs GELUApprox ([113](https://github.com/owkin/GrAIdient/pull/113))\
+🚀 **perf:** QuerySelf & ValueSelf ([112](https://github.com/owkin/GrAIdient/pull/112))\
+🚀 **perf:** benchmark ViT base model ([111](https://github.com/owkin/GrAIdient/pull/111))\
+⚙️ **core:** initForward,Backward model API ([109](https://github.com/owkin/GrAIdient/pull/109))\
+🪜 **layer_1d:** Dropout1D ([#108](https://github.com/owkin/GrAIdient/pull/108))\
+🪜 **feat:** VQGrad, VQGradSeq ([#107](https://github.com/owkin/GrAIdient/pull/107))
+
+### Bug Fixes
+
+🐛 **fix:** run on Apple Silicon ([110](https://github.com/owkin/GrAIdient/pull/110))
+
+### Miscellaneous Tasks
+
+📚 **docs:** LLM doc & split tests ([129](https://github.com/owkin/GrAIdient/pull/129))\
+🚀 **perf:** use half in Metal kernels ([121](https://github.com/owkin/GrAIdient/pull/121))\
+🔨 **refactor:** handle float16 along float on GPU ([#120](https://github.com/owkin/GrAIdient/pull/120))\
+🚀 **perf:** copy & generate weights faster ([119](https://github.com/owkin/GrAIdient/pull/119))\
+🚀 **perf:** Convolution2D ([118](https://github.com/owkin/GrAIdient/pull/118))
+
 ## 0.3.1 (2023-08-09)
 
 ### Bug Fixes

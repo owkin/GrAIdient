@@ -5,6 +5,7 @@
 // Created by Jean-François Reboud on 10/10/2022.
 //
 
+import XCTest
 import GrAIdient
 import GrAITestsUtils
 
@@ -154,6 +155,12 @@ class Layer1DGradTests: Input1DMSE1DCase
         case "LayerOutput":
             layer = MSE1D(layerPrev: layer, params: params)
             
+        case "Dropout1":
+            layer = Dropout1D(layerPrev: layer, coeff: 0.0, params: params)
+            
+        case "Dropout2":
+            layer = Dropout1D(layerPrev: layer, coeff: 1.0, params: params)
+            
         default:
             fatalError("Unreachable.")
         }
@@ -295,6 +302,32 @@ class Layer1DGradTests: Input1DMSE1DCase
     func testLayerOutputGPU() throws
     {
         let trainer = _buildTrainer("LayerOutput")
+        run(trainer)
+    }
+    
+    func testDropout1CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("Dropout1")
+        run(trainer)
+    }
+    
+    func testDropout1GPU() throws
+    {
+        let trainer = _buildTrainer("Dropout1")
+        run(trainer)
+    }
+    
+    func testDropout2CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("Dropout2")
+        run(trainer)
+    }
+    
+    func testDropout2GPU() throws
+    {
+        let trainer = _buildTrainer("Dropout2")
         run(trainer)
     }
 }
@@ -439,6 +472,9 @@ class Layer1DFlowTests: Input1DMSE1DCase
         case "LayerOutput":
             layer = MSE1D(layerPrev: layer, params: params)
             
+        case "Dropout":
+            layer = Dropout1D(layerPrev: layer, coeff: 0.5, params: params)
+            
         default:
             fatalError("Unreachable.")
         }
@@ -515,6 +551,95 @@ class Layer1DFlowTests: Input1DMSE1DCase
     }
     
     func testLayerOutput() throws
+    {
+        let trainer = _buildTrainer("LayerOutput")
+        run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU gradients with Float precision versus Float16 precision.
+// We expect to see errors ~ 1e-4 and less.
+// -----------------------------------------------------------------------------
+class Layer1DFlowPrecisionTests: Layer1DFlowTests
+{
+    private func _buildTrainer(_ model: String) -> FlowPrecisionTrainer
+    {
+        let trainer = FlowPrecisionTrainer(
+            name: "Layer1D",
+            params: optimizerParams
+        )
+        trainer.build()
+        {
+            (context: ModelContext) in
+            buildModel(model: model, context: context)
+        }
+        return trainer
+    }
+    
+    override func testFL() throws
+    {
+        let trainer = _buildTrainer("FullyConnected")
+        run(trainer)
+    }
+    
+    override func testFLSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("FullyConnected")
+        run(trainer)
+    }
+    
+    override func testActivation() throws
+    {
+        let trainer = _buildTrainer("Activation")
+        run(trainer, diffThreshold: 0.002)
+    }
+    
+    override func testSelectNeurons() throws
+    {
+        let trainer = _buildTrainer("SelectNeurons")
+        run(trainer)
+    }
+    
+    override func testConcat() throws
+    {
+        let trainer = _buildTrainer("Concat")
+        run(trainer, diffThreshold: 0.002)
+    }
+    
+    override func testSum() throws
+    {
+        let trainer = _buildTrainer("Sum")
+        run(trainer, diffThreshold: 0.002)
+    }
+    
+    override func testSoftmax() throws
+    {
+        let trainer = _buildTrainer("Softmax")
+        run(trainer, diffThreshold: 0.002)
+    }
+    
+    override func testDotProduct() throws
+    {
+        let trainer = _buildTrainer("DotProduct")
+        run(trainer, diffThreshold: 0.002)
+    }
+    
+    override func testConstant() throws
+    {
+        let trainer = _buildTrainer("Constant")
+        run(trainer, diffThreshold: 0.002)
+    }
+    
+    override func testConstantSample() throws
+    {
+        GrAI.Gradient.sample = true
+        let trainer = _buildTrainer("Constant")
+        run(trainer)
+    }
+    
+    override func testLayerOutput() throws
     {
         let trainer = _buildTrainer("LayerOutput")
         run(trainer)
@@ -898,6 +1023,17 @@ class Layer1DInferenceTests: Layer1DFlowTests
         let trainer = _buildTrainer("LayerOutput")
         run(trainer)
     }
+    
+    // Test should be Ok:
+    // it is normal that the Flow part is Ko because CPU and GPU models
+    // do not share same dropout state.
+    // Anyway, the final check is done in inference, where both models
+    // should operate the same way.
+    func testDropout() throws
+    {
+        let trainer = _buildTrainer("Dropout")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -988,6 +1124,17 @@ class Layer1DLoadTests: Layer1DFlowTests
         let trainer = _buildTrainer("LayerOutput")
         run(trainer)
     }
+    
+    // Test should be Ok:
+    // it is normal that the Flow part is Ko because CPU and GPU models
+    // do not share same dropout state.
+    // Anyway, the final check is done in inference, where both models
+    // should operate the same way.
+    func testDropout() throws
+    {
+        let trainer = _buildTrainer("Dropout")
+        run(trainer)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -1076,6 +1223,17 @@ class Layer1DTransformTests: Layer1DFlowTests
     override func testLayerOutput() throws
     {
         let trainer = _buildTrainer("LayerOutput")
+        run(trainer)
+    }
+    
+    // Test should be Ok:
+    // it is normal that the Flow part is Ko because CPU and GPU models
+    // do not share same dropout state.
+    // Anyway, the final check is done in inference, where both models
+    // should operate the same way.
+    func testDropout() throws
+    {
+        let trainer = _buildTrainer("Dropout")
         run(trainer)
     }
 }
@@ -2277,5 +2435,127 @@ class BCESigmoid1DTransformTests: BCESigmoid1DFlowTests
     {
         let trainer = _buildTrainer("Activation")
         run(trainer)
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Compare GPU gradients with CPU ones through time.
+// We expect to see errors ~ 1e-7 and less.
+// -----------------------------------------------------------------------------
+class Dropout1DFlowTest: Input1DMSE1DCase
+{
+    override func setUp()
+    {
+        super.setUp()
+        GrAI.Loop.gradientChecking = true
+    }
+    
+    ///
+    /// Create the model.
+    ///
+    /// - Returns:
+    ///     The model created.
+    ///
+    func buildModel() -> Model
+    {
+        let context = ModelContext(name: "Dropout", curID: 0)
+        let params = GrAI.Model.Params(context: context)
+        
+        var layer: Layer1D = Input1D(nbNeurons: 1, params: params)
+        
+        layer = try! FullyConnected(
+            layerPrev: layer, nbNeurons: 5,
+            activation: SoftReLU.str, biases: true,
+            params: params
+        )
+        
+        layer = Dropout1D(layerPrev: layer, coeff: 0.5, params: params)
+        
+        layer = try! FullyConnected(
+            layerPrev: layer, nbNeurons: 1,
+            activation: SoftReLU.str, biases: true,
+            params: params
+        )
+        
+        layer = MSE1D(layerPrev: layer, params: params)
+        
+        return Model(model: context.model, modelsPrev: [])
+    }
+    
+    func testFlow()
+    {
+        let modelCPU = buildModel()
+        let modelGPU = buildModel()
+        
+        GrAI.Opti.CPU = true
+        randomSelectWeightsInitializationScheme(model: modelCPU)
+        
+        modelCPU.initialize(
+            params: optimizerParams,
+            phase: .InferenceBackward,
+            deviceID: DEVICE_ID
+        )
+        modelCPU.computeDeltaWeights = true
+        
+        modelGPU.weights = modelCPU.weights
+        
+        GrAI.Opti.GPU = true
+        modelGPU.initialize(
+            params: optimizerParams,
+            phase: .InferenceBackward,
+            deviceID: DEVICE_ID
+        )
+        modelGPU.computeDeltaWeights = true
+        
+        let firstLayerCPU = modelCPU.layers.first as! Input1D
+        let firstLayerGPU = modelGPU.layers.first as! Input1D
+        
+        firstLayerCPU.computeDeltaWeights = false
+        firstLayerGPU.computeDeltaWeights = false
+        
+        let lastLayerCPU = modelCPU.layers.last as! MSE1D
+        let lastLayerGPU = modelGPU.layers.last as! MSE1D
+        
+        lastLayerCPU.coeff = -1.0
+        lastLayerGPU.coeff = -1.0
+        
+        var numLoop = 0
+        while numLoop < optimizerParams.nbLoops
+        {
+            let resultsCPU: [Double]
+            GrAI.Opti.CPU = true
+            
+            var (inputs, batchSize) = setData(nil, modelCPU)
+            modelCPU.updateKernel(batchSize: batchSize)
+            try! modelCPU.forward()
+            
+            var gt = setLoss(nil, modelCPU)
+            try! modelCPU.backward()
+            try! modelCPU.update()
+            
+            resultsCPU = getGradients(model: modelCPU)
+            
+            let resultsGPU: [Double]
+            GrAI.Opti.GPU = true
+            
+            (inputs, batchSize) = setData(inputs, modelGPU)
+            modelGPU.updateKernel(batchSize: batchSize)
+            try! modelGPU.forward()
+            
+            gt = setLoss(gt, modelGPU)
+            try! modelGPU.backward()
+            try! modelGPU.update()
+            
+            resultsGPU = getGradients(model: modelGPU)
+            
+            if let gradDiff = checkFlow(resultsCPU, resultsGPU)
+            {
+                XCTAssert(gradDiff < 0.000001)
+            }
+            
+            modelCPU.incStep()
+            modelGPU.incStep()
+            numLoop += 1
+        }
     }
 }

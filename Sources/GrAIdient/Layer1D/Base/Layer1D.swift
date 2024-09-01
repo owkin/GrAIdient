@@ -15,12 +15,12 @@ open class Layer1D: Layer
     /// Output buffer (result of the forward pass) used in the GPU execution context.
     /// Shape ~ (batch, nbNeurons).
     ///
-    public var outs: MetalPrivateBuffer<Float>! = nil
+    public var outs: FloatBuffer! = nil
     ///
     /// Gradient buffer (result of the backward pass) used in the GPU execution context.
     /// Shape ~ (batch, nbNeurons).
     ///
-    public var delta: MetalPrivateBuffer<Float>! = nil
+    public var delta: FloatBuffer! = nil
     
     /// Number of neurons.
     public let nbNeurons: Int
@@ -113,7 +113,7 @@ open class Layer1D: Layer
     ///
     /// We initialize the neurons' state (forward and backward).
     ///
-    public func checkStateCPU(batchSize: Int) throws
+    public override func checkStateCPU(batchSize: Int) throws
     {
         if neurons.nbElems == 0
         {
@@ -134,12 +134,12 @@ open class Layer1D: Layer
     ///
     /// We initialize the neurons' forward state.
     ///
-    public func checkStateForwardGPU(batchSize: Int) throws
+    public override func checkStateForwardGPU(batchSize: Int) throws
     {
         if outs == nil
         {
-            outs = MetalPrivateBuffer<Float>(
-                batchSize * nbNeurons, deviceID: deviceID
+            outs = FloatBuffer(
+                nbElems: batchSize * nbNeurons, deviceID: deviceID
             )
         }
         else if batchSize <= 0 || batchSize > outs.nbElems / nbNeurons
@@ -153,17 +153,20 @@ open class Layer1D: Layer
     ///
     /// We initialize the neurons' backward state.
     ///
-    public func checkStateBackwardGPU(batchSize: Int) throws
+    public override func checkStateBackwardGPU(batchSize: Int) throws
     {
-        if delta == nil
+        if computeDelta
         {
-            delta = MetalPrivateBuffer<Float>(
-                batchSize * nbNeurons, deviceID: deviceID
-            )
-        }
-        else if batchSize <= 0 || batchSize > delta.nbElems / nbNeurons
-        {
-            throw LayerError.BatchSize
+            if delta == nil
+            {
+                delta = FloatBuffer(
+                    nbElems: batchSize * nbNeurons, deviceID: deviceID
+                )
+            }
+            else if batchSize <= 0 || batchSize > delta.nbElems / nbNeurons
+            {
+                throw LayerError.BatchSize
+            }
         }
     }
     
@@ -191,9 +194,8 @@ open class Layer1D: Layer
     public func getOutsGPU<T: BinaryFloatingPoint>(elem: Int) -> [T]
     {
         var outs = [T]()
-        MetalKernel.get.download([self.outs])
+        let outsPtr = self.outs.download()
         
-        let outsPtr = self.outs.shared.buffer
         for depth in 0..<nbNeurons
         {
             let offset = depth + nbNeurons * elem
@@ -240,9 +242,8 @@ open class Layer1D: Layer
         }
         
         var delta = [T]()
-        MetalKernel.get.download([self.delta])
+        let deltaPtr = self.delta.download()
         
-        let deltaPtr = self.delta.shared.buffer
         for depth in 0..<nbNeurons
         {
             let offset = depth + nbNeurons * elem

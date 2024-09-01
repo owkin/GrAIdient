@@ -320,12 +320,12 @@ public class Normalize122D: Layer2D
     /// Squared norm buffer used in the GPU execution context.
     /// Shape ~ (batch, nbThreadgroups).
     ///
-    private var _squaredNorm: MetalPrivateBuffer<Float>! = nil
+    private var _squaredNorm: FloatBuffer! = nil
     ///
     /// Temporary delta buffer used in the GPU execution context.
     /// Shape ~ (batch, nbThreadgroups).
     ///
-    private var _deltaTmp: MetalPrivateBuffer<Float>! = nil
+    private var _deltaTmp: FloatBuffer! = nil
     
     /// Number of thread groups in the GPU execution context.
     var nbThreadgroups: Int
@@ -404,7 +404,7 @@ public class Normalize122D: Layer2D
     {
         if _squaredNorm == nil
         {
-            _squaredNorm = MetalPrivateBuffer<Float>(
+            _squaredNorm = FloatBuffer(nbElems: 
                 batchSize * nbThreadgroups, deviceID: deviceID
             )
         }
@@ -418,13 +418,16 @@ public class Normalize122D: Layer2D
     ///
     public override func checkStateBackwardGPU(batchSize: Int) throws
     {
-        if _deltaTmp == nil
+        if computeDelta
         {
-            _deltaTmp = MetalPrivateBuffer<Float>(
-                batchSize * nbThreadgroups, deviceID: deviceID
-            )
+            if _deltaTmp == nil
+            {
+                _deltaTmp = FloatBuffer(nbElems: 
+                    batchSize * nbThreadgroups, deviceID: deviceID
+                )
+            }
+            try super.checkStateBackwardGPU(batchSize: batchSize)
         }
-        try super.checkStateBackwardGPU(batchSize: batchSize)
     }
     
     ///
@@ -570,7 +573,7 @@ public class Normalize122D: Layer2D
             command.enqueue()
             
             // Continue the reduction in a more generic way.
-            reduce(
+            reduceSum(
                 inBuffer: _squaredNorm.metal,
                 outBuffer: _squaredNorm.metal,
                 dim1: nbThreadgroups, dim2: batchSize,
@@ -725,7 +728,7 @@ public class Normalize122D: Layer2D
             command.enqueue()
             
             // Continue the reduction in a more generic way.
-            reduce(
+            reduceSum(
                 inBuffer: _deltaTmp.metal,
                 outBuffer: _deltaTmp.metal,
                 dim1: nbThreadgroups, dim2: batchSize,

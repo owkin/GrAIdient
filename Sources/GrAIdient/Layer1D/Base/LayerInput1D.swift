@@ -105,20 +105,20 @@ open class LayerInput1D: Layer1D
         try checkStateForwardGPU(batchSize: batchSize)
         
         // Wait for previous loop to end to avoid race condition with
-        // didModifyRange in the following example:
+        // download in the following example:
         // FullyConnected.backwardWeightsGPU accesses layerPrev.outs.
-        MetalKernel.get.download([outs])
+        _ = outs.download()
         
-        let outsPtr = outs.shared.buffer
+        var buffer = [Float](repeating: 0.0, count: batchSize * nbNeurons)
         for elem in 0..<batchSize
         {
             for depth in 0..<nbNeurons
             {
                 let offset = depth + nbNeurons * elem
-                outsPtr[offset] = Float(data[elem][depth])
+                buffer[offset] = Float(data[elem][depth])
             }
         }
-        MetalKernel.get.upload([outs])
+        outs.initialize(array: &buffer)
     }
     
     ///
@@ -132,7 +132,7 @@ open class LayerInput1D: Layer1D
     ///     - nbNeurons: Number of neurons.
     ///
     public func checkInputGPU(
-        _ data: MetalPrivateBuffer<Float>,
+        _ data: FloatBuffer,
         batchSize: Int,
         nbNeurons: Int) throws
     {

@@ -15,15 +15,15 @@ open class LayerSeq: Layer
     /// Output buffer (result of the forward pass) used in the GPU execution context.
     /// Shape ~ (batch, seq, nbNeurons).
     ///
-    public var outs: MetalPrivateBuffer<Float>! = nil
+    public var outs: FloatBuffer! = nil
     ///
     /// Gradient buffer (result of the backward pass) used in the GPU execution context.
     /// Shape ~ (batch, seq, nbNeurons).
     ///
-    public var delta: MetalPrivateBuffer<Float>! = nil
+    public var delta: FloatBuffer! = nil
     
     /// Length of the sequence.
-    public let sequence: Int
+    public internal(set) var sequence: Int
     /// Number of neurons.
     public let nbNeurons: Int
     
@@ -123,7 +123,7 @@ open class LayerSeq: Layer
     ///
     /// We initialize the neurons' state (forward and backward).
     ///
-    public func checkStateCPU(batchSize: Int) throws
+    public override func checkStateCPU(batchSize: Int) throws
     {
         if neurons == nil
         {
@@ -144,12 +144,13 @@ open class LayerSeq: Layer
     ///
     /// We initialize the neurons' forward state.
     ///
-    public func checkStateForwardGPU(batchSize: Int) throws
+    public override func checkStateForwardGPU(batchSize: Int) throws
     {
         if outs == nil
         {
-            outs = MetalPrivateBuffer<Float>(
-                batchSize * sequence * nbNeurons, deviceID: deviceID
+            outs = FloatBuffer(
+                nbElems: batchSize * sequence * nbNeurons,
+                deviceID: deviceID
             )
         }
         else if batchSize <= 0 || batchSize > outs.nbElems / nbNeurons
@@ -163,18 +164,87 @@ open class LayerSeq: Layer
     ///
     /// We initialize the neurons' backward state.
     ///
-    public func checkStateBackwardGPU(batchSize: Int) throws
+    public override func checkStateBackwardGPU(batchSize: Int) throws
     {
-        if delta == nil
+        if computeDelta
         {
-            delta = MetalPrivateBuffer<Float>(
-                batchSize * sequence * nbNeurons, deviceID: deviceID
-            )
+            if delta == nil
+            {
+                delta = FloatBuffer(
+                    nbElems: batchSize * sequence * nbNeurons,
+                    deviceID: deviceID
+                )
+            }
+            else if batchSize <= 0 ||
+                        batchSize > delta.nbElems / (sequence * nbNeurons)
+            {
+                throw LayerError.BatchSize
+            }
         }
-        else if batchSize <= 0 ||
-                batchSize > delta.nbElems / (sequence * nbNeurons)
+    }
+    
+    /// Get the outputs of this layer in the CPU execution context.
+    public func getOutsCPU<T: BinaryFloatingPoint>() -> [T]
+    {
+        var outs = [T]()
+        for elem in 0..<batchSize {
+        for seq in 0..<sequence {
+        for depth in 0..<nbNeurons
         {
-            throw LayerError.BatchSize
+            let out = T(neurons.get(seq, depth)!.v[elem].out)
+            outs.append(out)
+        }}}
+        return outs
+    }
+    
+    /// Get the outputs of this layer in the GPU execution context.
+    public func getOutsGPU<T: BinaryFloatingPoint>() -> [T]
+    {
+        return outs.download().map
+        {
+            T($0)
+        }
+    }
+    
+    ///
+    /// Get the delta of this layer in the CPU execution context.
+    ///
+    /// Throw an error when layer has not been updated through backward pass.
+    ///
+    public func getDeltaCPU<T: BinaryFloatingPoint>() throws -> [T]
+    {
+        if dirty
+        {
+            throw UpdateError.Dirty
+        }
+        
+        var delta = [T]()
+        for elem in 0..<batchSize {
+        for seq in 0..<sequence {
+        for depth in 0..<nbNeurons
+        {
+            let out = T(neurons.get(seq, depth)!.v[elem].delta)
+            delta.append(out)
+        }}}
+        return delta
+    }
+    
+    ///
+    /// Get the delta of this layer in the GPU execution context.
+    ///
+    /// Throw an error when layer has not been updated through backward pass.
+    ///
+    ///
+    public func getDeltaGPU<T: BinaryFloatingPoint>() throws -> [T]
+    {
+        if dirty
+        {
+            throw UpdateError.Dirty
+        }
+        
+        return delta.download().map
+        {
+            T($0)
         }
     }
 }

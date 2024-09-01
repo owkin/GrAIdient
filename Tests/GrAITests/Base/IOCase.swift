@@ -165,6 +165,44 @@ extension IOCase
     }
     
     ///
+    /// Run Flow Precision test.
+    ///
+    /// The goal is to compare the gradients of weights with Float precision context with
+    /// the gradients of weights computed with Float16 precision.
+    ///
+    /// - Parameters:
+    ///     - trainer: The testing pipeline to run.
+    ///     - nbRetry: The maximum number we can retry the test.
+    ///     - diffThreshold: The threshold above which the relative difference is too high.
+    ///
+    func run(
+        _ trainer: FlowPrecisionTrainer,
+        nbRetry: Int = NB_RETRY,
+        diffThreshold: Double = 0.001)
+    {
+        retryNumeric(
+            nbRetry: nbRetry,
+            {
+                () throws in
+                try trainer.run(
+                    setData: self.setData,
+                    setLoss: self.setLoss)
+                {
+                    (gradDiff: Double) in
+                    if gradDiff > diffThreshold
+                    {
+                        throw TestError.Numeric
+                    }
+                }
+            },
+            {
+                () in
+                XCTAssert(false)
+            }
+        )
+    }
+    
+    ///
     /// Run Flow Reset test.
     ///
     /// The goal is to compare the gradients of weights computed in the CPU execution context with
@@ -570,6 +608,115 @@ extension Input2DCase
     {
         get {
             return [copy, copyInPlace, resize, resizeInPlace]
+        }
+    }
+}
+
+/// Use case where first layer is a LayerSeq.
+protocol InputSeqCase
+{
+    /// Length of the sequence.
+    var sequence: Int { get }
+    
+    /// Optimizer parameters.
+    var optimizerParams: GrAI.Optimizer.Params { get }
+}
+
+extension InputSeqCase
+{
+    ///
+    /// Copy a model.
+    ///
+    /// We must call the `initKernel` API.
+    ///
+    /// - Parameter model: The model.
+    /// - Returns: The transformed model.
+    ///
+    func copy(_ model: Model) -> Model
+    {
+        let modelNew = Model.copy(models: [model], inPlace: false)[0]
+        modelNew.initialize(
+            params: optimizerParams,
+            phase: .Inference,
+            deviceID: DEVICE_ID
+        )
+        return modelNew
+    }
+    
+    ///
+    /// Copy a model in place.
+    ///
+    /// No need to call the `initKernel` API.
+    ///
+    /// - Parameter model: The model.
+    /// - Returns: The transformed model.
+    ///
+    func copyInPlace(_ model: Model) -> Model
+    {
+        let modelNew = Model.copy(models: [model], inPlace: true)[0]
+        modelNew.setupOptimizers(params: optimizerParams)
+        modelNew.phase = .Inference
+        return modelNew
+    }
+    
+    ///
+    /// Update sequence.
+    ///
+    /// We must call the `initKernel` API.
+    ///
+    /// - Parameter model: The model.
+    /// - Returns: The transformed model.
+    ///
+    func updateSeq(_ model: Model) -> Model
+    {
+        let modelsNew = Model.updateSeq(
+            models: [model],
+            sequence: sequence + 10,
+            inPlace: false
+        )
+        let modelNew = Model.updateSeq(
+            models: modelsNew,
+            sequence: sequence,
+            inPlace: false
+        )[0]
+        modelNew.initialize(
+            params: optimizerParams,
+            phase: .Inference,
+            deviceID: DEVICE_ID
+        )
+        return modelNew
+    }
+    
+    ///
+    /// Update sequence in place.
+    ///
+    /// No need to call the `initKernel` API.
+    ///
+    /// - Parameter model: The model.
+    /// - Returns: The transformed model.
+    ///
+    func updateSeqInPlace(_ model: Model) -> Model
+    {
+        let modelsNew = Model.updateSeq(
+            models: [model],
+            sequence: sequence + 10,
+            inPlace: true
+        )
+        let modelNew = Model.updateSeq(
+            models: modelsNew,
+            sequence: sequence,
+            inPlace: true
+        )[0]
+        modelNew.setupOptimizers(params: optimizerParams)
+        modelNew.phase = .Inference
+        return modelNew
+    }
+    
+    /// A list of functions that transform the model into another one.
+    var transforms: [(Model) -> Model]
+    {
+        get {
+            return [copy, copyInPlace, updateSeq, updateSeqInPlace]
         }
     }
 }

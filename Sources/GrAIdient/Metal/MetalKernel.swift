@@ -704,11 +704,31 @@ private class MetalDevice
     ///
     func createCommand(_ pipeline: String) -> MetalCommand
     {
-        if let pipelineTmp = _pipelines[pipeline]
+        var pipelineFullName = pipeline
+        if GrAI.Precision.float16
+        {
+            pipelineFullName += "Half"
+        }
+        else
+        {
+            pipelineFullName += "Float"
+        }
+        
+        if let pipelineTmp = _pipelines[pipelineFullName]
         {
             return MetalCommand(queue: _queue, pipeline: pipelineTmp)
         }
-        fatalError("Could not find pipeline: \(pipeline).")
+        else if let pipelineTmp = _pipelines[pipeline]
+        {
+            return MetalCommand(queue: _queue, pipeline: pipelineTmp)
+        }
+        else
+        {
+            fatalError(
+                "Could not find pipeline: " +
+                "\(pipelineFullName), nor \(pipeline)."
+            )
+        }
     }
     
     ///
@@ -969,7 +989,16 @@ public class MetalCommand
     public func setBytes<T>(_ data: [T], atIndex index: Int)
     {
         let byteLength = data.count * MemoryLayout<T>.size
-        _encoder.setBytes(data, length: byteLength, index: index)
+        data.withUnsafeBufferPointer
+        {
+            dataPtr in
+            
+            _encoder.setBytes(
+                UnsafeRawPointer(dataPtr.baseAddress)!,
+                length: byteLength,
+                index: index
+            )
+        }
     }
     
     ///
@@ -1003,7 +1032,7 @@ public class MetalCommand
     ///
     public func dispatchThreads(_ nbThreads: Int)
     {
-        let threads = threadExecutionWidth
+        let threads = maxThreadsPerThreadgroup
         let threadsPerThreadgroup = MTLSizeMake(threads, 1, 1)
         let threadsPerGrid = MTLSize(width: nbThreads, height: 1, depth: 1)
         dispatchThreads(
@@ -1027,7 +1056,7 @@ public class MetalCommand
         }
         else if width == 1
         {
-            let threads = threadExecutionWidth
+            let threads = maxThreadsPerThreadgroup
             let threadsPerThreadgroup = MTLSizeMake(1, threads, 1)
             let threadsPerGrid = MTLSize(width: 1, height: height, depth: 1)
             dispatchThreads(
@@ -1041,13 +1070,12 @@ public class MetalCommand
             let minDim = min(width, height)
             
             var ratio = Int(Double(maxDim) / Double(minDim))
-            let maxRatio = maxThreadsPerThreadgroup / 64
-            ratio = min(ratio, maxRatio, 4) // 4 is an hyper parameter
-            // to try to optimize between local and eGPU.
+            let maxRatio = maxThreadsPerThreadgroup / 256
+            ratio = min(ratio, maxRatio)
             
             let threadsPerThreadgroup = width == maxDim ?
-            MTLSizeMake(8 * ratio, 8, 1) :
-            MTLSizeMake(8, 8 * ratio, 1)
+                MTLSizeMake(16 * ratio, 16, 1) :
+                MTLSizeMake(16, 16 * ratio, 1)
             
             let threadsPerGrid = MTLSize(
                 width: width,

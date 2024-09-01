@@ -27,10 +27,10 @@ public protocol IWeightArrays
 }
 
 /// Arrays needed to update the weights.
-class WeightArrays: IWeightArrays
+public class WeightArrays: IWeightArrays
 {
     /// Number of elements in the different arrays.
-    let nbElems: Int
+    public let nbElems: Int
     
     var _w: [Double] = []
     var _g: [Double] = []
@@ -49,7 +49,7 @@ class WeightArrays: IWeightArrays
     }
     
     /// Weights array: the array to update.
-    var w: [Double]
+    public var w: [Double]
     {
         get {
             if _w.count == 0
@@ -69,7 +69,7 @@ class WeightArrays: IWeightArrays
         }
     }
     /// Gradients array.
-    var g: [Double]
+    public var g: [Double]
     {
         get {
             if _g.count == 0
@@ -89,7 +89,7 @@ class WeightArrays: IWeightArrays
         }
     }
     /// Momentum array.
-    var m: [Double]
+    public var m: [Double]
     {
         get {
             if _m.count == 0
@@ -109,7 +109,7 @@ class WeightArrays: IWeightArrays
         }
     }
     /// Velocity array.
-    var v: [Double]
+    public var v: [Double]
     {
         get {
             if _v.count == 0
@@ -129,7 +129,7 @@ class WeightArrays: IWeightArrays
         }
     }
     /// Veclocity normalized array.
-    var vHat: [Double]
+    public var vHat: [Double]
     {
         get {
             if _vHat.count == 0
@@ -150,7 +150,7 @@ class WeightArrays: IWeightArrays
     }
     
     /// Clean the momentum..., preserving the weights.
-    func reset()
+    public func reset()
     {
         _g = []
         _m = []

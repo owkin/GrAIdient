@@ -37,12 +37,12 @@ public class FullyConnectedSeq: ActivationSeq,
     /// Buffer of gradients per sample for weights.
     /// Shape ~ (batch, nbNeurons, nbNeuronsPrev).
     ///
-    var _wDeltaWeights: MetalPrivateBuffer<Float>! = nil
+    var _wDeltaWeights: FloatBuffer! = nil
     ///
-    /// Buffer of gradients per sample for biases.
+    /// Buffer of gradients per sample.
     /// Shape ~ (batch, nbNeurons).
     ///
-    var _bDeltaWeights: MetalPrivateBuffer<Float>! = nil
+    var _bDeltaWeights: FloatBuffer! = nil
     
     /// Whether to compute weights' gradients or not.
     public var computeDeltaWeights: Bool = true
@@ -98,14 +98,10 @@ public class FullyConnectedSeq: ActivationSeq,
                 return _weightsList
             }
             
-            var weightsTmp = [Float]()
-            MetalKernel.get.download([_wBuffers.w_p!])
-            weightsTmp += _wBuffers.w_p!.shared.array
-            
+            var weightsTmp = _wBuffers.w.download()
             if _updateBiases
             {
-                MetalKernel.get.download([_bBuffers.w_p!])
-                weightsTmp += _bBuffers.w_p!.shared.array
+                weightsTmp += _bBuffers.w.download()
             }
             return weightsTmp
         }
@@ -433,12 +429,6 @@ public class FullyConnectedSeq: ActivationSeq,
     ///
     public func initWeightsGPU()
     {
-        if _weightsList.count == 0
-        {
-            _weightsList = generateWeightsList()
-            _weightsList += [Float](repeating: 0.0, count: weightHeight)
-        }
-        
         _wBuffers = WeightBuffers(
             nbElems: weightHeight * weightWidth,
             deviceID: deviceID
@@ -448,34 +438,24 @@ public class FullyConnectedSeq: ActivationSeq,
             deviceID: deviceID
         )
         
-        let weightsPtr = _wBuffers.w_p!.shared.buffer
-        let biasesPtr = _bBuffers.w_p!.shared.buffer
-        
-        for elem in 0..<weightHeight * weightWidth
+        _bBuffers.w.initialize()
+        if _weightsList.count == 0
         {
-            weightsPtr[elem] = _weightsList[elem]
-        }
-        
-        // In both cases, biases may have been set by caller or by ourselves.
-        if _updateBiases
-        {
-            let offset = weightHeight * weightWidth
-            for depth in 0..<weightHeight
-            {
-                biasesPtr[depth] = _weightsList[offset + depth]
-            }
+            generateWeightsList(out: _wBuffers.w, deviceID: deviceID)
         }
         else
         {
-            for depth in 0..<weightHeight
+            _wBuffers.w.initialize(array: &_weightsList)
+            if _updateBiases
             {
-                biasesPtr[depth] = 0.0
+                _bBuffers.w.initialize(
+                    array: &_weightsList,
+                    start: weightHeight * weightWidth
+                )
             }
         }
+        
         _weightsList = []
-        
-        MetalKernel.get.upload([_wBuffers.w_p!, _bBuffers.w_p!])
-        
         _wDeltaWeights = nil
         _bDeltaWeights = nil
     }
@@ -493,14 +473,14 @@ public class FullyConnectedSeq: ActivationSeq,
         if computeDeltaWeights &&
            GrAI.Gradient.sample && _wDeltaWeights == nil
         {
-            _wDeltaWeights = MetalPrivateBuffer<Float>(
+            _wDeltaWeights = FloatBuffer(nbElems: 
                 batchSize * sequence * nbNeurons * weightWidth,
                 deviceID: deviceID
             )
             
             if _updateBiases
             {
-                _bDeltaWeights = MetalPrivateBuffer<Float>(
+                _bDeltaWeights = FloatBuffer(nbElems: 
                     batchSize * sequence * nbNeurons, deviceID: deviceID
                 )
             }
@@ -661,11 +641,8 @@ public class FullyConnectedSeq: ActivationSeq,
                 )
             }}
             
-            MetalKernel.get.download([_wBuffers.w_p!, _bBuffers.w_p!])
-            MetalKernel.get.download([layerPrev.outs])
-            
-            let weightsPtr = _wBuffers.w_p!.shared.buffer
-            let biasesPtr = _bBuffers.w_p!.shared.buffer
+            let weightsPtr = _wBuffers.w.download()
+            let biasesPtr = _bBuffers.w.download()
             
             let neuronsPrev = layerPrev.neurons!
             let nbNeuronsPrev = layerPrev.nbNeurons
@@ -690,7 +667,7 @@ public class FullyConnectedSeq: ActivationSeq,
                 }
             }}}
             
-            let outsPrevPtr = layerPrev.outs.shared.buffer
+            let outsPrevPtr = layerPrev.outs.download()
             
             for batch in 0..<batchSize {
             for seq in 0..<sequence
@@ -837,8 +814,26 @@ public class FullyConnectedSeq: ActivationSeq,
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pSequence: [UInt32] = [UInt32(sequence)]
             
+            let kernel: String
+            let coeff: Int
+            if layerPrev.nbNeurons % 4 == 0 && batchSize % 8 == 0
+            {
+                kernel = "flSeq48Forward"
+                coeff = 8
+            }
+            else if layerPrev.nbNeurons % 4 == 0
+            {
+                kernel = "flSeq4Forward"
+                coeff = 1
+            }
+            else
+            {
+                kernel = "flSeqForward"
+                coeff = 1
+            }
+            
             let command = MetalKernel.get.createCommand(
-                "flSeqForward", deviceID: deviceID
+                kernel, deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBuffer(_wBuffers.w.metal, atIndex: 1)
@@ -851,7 +846,7 @@ public class FullyConnectedSeq: ActivationSeq,
             
             command.dispatchThreads(
                 width: nbNeurons,
-                height: batchSize * sequence
+                height: (batchSize / coeff) * sequence
             )
             command.enqueue()
         }
@@ -976,8 +971,30 @@ public class FullyConnectedSeq: ActivationSeq,
             let pSequence: [UInt32] = [UInt32(sequence)]
             let pDirty: [UInt32] = layerPrev.dirty ? [1] : [0]
             
+            let kernel: String
+            let coeff1: Int
+            let coeff2: Int
+            if layerPrev.nbNeurons % 4 == 0 && batchSize % 8 == 0
+            {
+                kernel = "flSeq48Backward"
+                coeff1 = 4
+                coeff2 = 8
+            }
+            else if layerPrev.nbNeurons % 4 == 0
+            {
+                kernel = "flSeq4Backward"
+                coeff1 = 4
+                coeff2 = 1
+            }
+            else
+            {
+                kernel = "flSeqBackward"
+                coeff1 = 1
+                coeff2 = 1
+            }
+            
             let command = MetalKernel.get.createCommand(
-                "flSeqBackward", deviceID: deviceID
+                kernel, deviceID: deviceID
             )
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBuffer(_wBuffers.w.metal, atIndex: 1)
@@ -989,8 +1006,8 @@ public class FullyConnectedSeq: ActivationSeq,
             command.setBuffer(layerPrev.delta.metal, atIndex: 7)
             
             command.dispatchThreads(
-                width: weightWidth,
-                height: batchSize * sequence
+                width: weightWidth / coeff1,
+                height: (batchSize / coeff2) * sequence
             )
             command.enqueue()
             
@@ -1014,8 +1031,11 @@ public class FullyConnectedSeq: ActivationSeq,
                 // -------------------------------------------------------------
                 // Compute Gradients per batch
                 // -------------------------------------------------------------
+                let kernel = layerPrev.nbNeurons % 4 == 0 ?
+                    "flSeqBatch4DerWeights" : "flSeqBatchDerWeights"
+                let coeff = layerPrev.nbNeurons % 4 == 0 ? 4 : 1
                 command = MetalKernel.get.createCommand(
-                    "flSeqBatchDerWeights", deviceID: deviceID
+                    kernel, deviceID: deviceID
                 )
                 command.setBuffer(layerPrev.outs.metal, atIndex: 0)
                 command.setBuffer(delta.metal, atIndex: 1)
@@ -1028,14 +1048,16 @@ public class FullyConnectedSeq: ActivationSeq,
                 
                 command.dispatchThreads(
                     width: nbNeurons,
-                    height: weightWidth
+                    height: weightWidth / coeff
                 )
                 command.enqueue()
                 
                 if _updateBiases
                 {
+                    let kernel = layerPrev.nbNeurons % 4 == 0 ?
+                        "flPatchBatch4DerBiases" : "flPatchBatchDerBiases"
                     command = MetalKernel.get.createCommand(
-                        "flPatchBatchDerBiases", deviceID: deviceID
+                        kernel, deviceID: deviceID
                     )
                     command.setBuffer(delta.metal, atIndex: 0)
                     command.setBytes(pNbNeurons, atIndex: 1)
@@ -1044,7 +1066,7 @@ public class FullyConnectedSeq: ActivationSeq,
                     command.setBytes(pAccumulate, atIndex: 4)
                     command.setBuffer(_bBuffers.g.metal, atIndex: 5)
                     
-                    command.dispatchThreads(nbNeurons)
+                    command.dispatchThreads(nbNeurons / coeff)
                     command.enqueue()
                 }
             }
@@ -1128,7 +1150,7 @@ public class FullyConnectedSeq: ActivationSeq,
     /// Get the weights in the CPU execution context.
     public func collectWeightsCPU() -> [IWeightArrays]
     {
-        var weights = [IWeightArrays]()
+        var weights = [WeightArrays]()
         weights.append(_wArrays)
         if _updateBiases
         {
@@ -1170,8 +1192,7 @@ public class FullyConnectedSeq: ActivationSeq,
         }
         
         var deltaWeights = [T]()
-        MetalKernel.get.download([_wDeltaWeights])
-        var deltaWeightsPtr = _wDeltaWeights.shared.buffer
+        var deltaWeightsPtr = _wDeltaWeights.download()
         
         let offsetStart = elem * nbNeurons * weightWidth
         for depth in 0..<nbNeurons {
@@ -1186,8 +1207,7 @@ public class FullyConnectedSeq: ActivationSeq,
         
         if _updateBiases
         {
-            MetalKernel.get.download([_bDeltaWeights])
-            deltaWeightsPtr = _bDeltaWeights.shared.buffer
+            deltaWeightsPtr = _bDeltaWeights.download()
             
             for depth in 0..<nbNeurons
             {
@@ -1242,8 +1262,7 @@ public class FullyConnectedSeq: ActivationSeq,
         }
         
         var deltaWeights = [T]()
-        MetalKernel.get.download([_wBuffers.g_p!])
-        var deltaWeightsPtr = _wBuffers.g_p!.shared.buffer
+        var deltaWeightsPtr = _wBuffers.g.download()
         
         for i in 0..<_wBuffers.nbElems
         {
@@ -1251,8 +1270,7 @@ public class FullyConnectedSeq: ActivationSeq,
         }
         if _updateBiases
         {
-            MetalKernel.get.download([_bBuffers.g_p!])
-            deltaWeightsPtr = _bBuffers.g_p!.shared.buffer
+            deltaWeightsPtr = _bBuffers.g.download()
             
             for i in 0..<_bBuffers.nbElems
             {

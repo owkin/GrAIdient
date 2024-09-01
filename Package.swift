@@ -7,7 +7,7 @@ import PackageDescription
 let package = Package(
     name: "GrAIdient",
     platforms: [
-        .macOS(.v10_15)
+        .macOS(.v13)
     ],
     products: [
         .library(

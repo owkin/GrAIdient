@@ -137,11 +137,14 @@ open class LayerInput2D: Layer2D
         try checkStateForwardGPU(batchSize: batchSize)
         
         // Wait for previous loop to end to avoid race condition with
-        // didModifyRange in the following example:
+        // download in the following example:
         // Convolution.backwardWeightsGPU accesses layerPrev.outs.
-        MetalKernel.get.download([outs])
+        _ = outs.download()
         
-        let outsPtr = outs.shared.buffer
+        var buffer = [Float](
+            repeating: 0.0, count: batchSize * nbChannels * height * width
+        )
+        
         switch format
         {
         case .RGB:
@@ -157,7 +160,7 @@ open class LayerInput2D: Layer2D
                             (depth + nbChannels * elem) * height
                         let offsetSet = j + (offsetStartSet + i) * width
                         
-                        outsPtr[offsetSet] =
+                        buffer[offsetSet] =
                             Float(data[nbChannels * offsetGet + depth])
                     }
                 }}
@@ -173,12 +176,12 @@ open class LayerInput2D: Layer2D
                         let offsetStart = (depth + nbChannels * elem) * height
                         let offset = j + (offsetStart + i) * width
                         
-                        outsPtr[offset] = Float(data[offset])
+                        buffer[offset] = Float(data[offset])
                     }
                 }}
             }
         }
-        MetalKernel.get.upload([outs])
+        outs.initialize(array: &buffer)
     }
     
     ///
@@ -195,7 +198,7 @@ open class LayerInput2D: Layer2D
     ///     - format: The data format.
     ///
     public func checkInputGPU(
-        _ data: MetalPrivateBuffer<Float>,
+        _ data: FloatBuffer,
         batchSize: Int,
         nbChannels: Int, height: Int, width: Int) throws
     {

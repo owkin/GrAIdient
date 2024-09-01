@@ -91,3 +91,17 @@ conda env remove --name graiexamples
 1. Train a model on the training dataset.
 1. Evaluate the trained model on the testing dataset: 
    watch a better performance.
+   
+## Benchmarks
+
+To benchmark the time performance of the VGG model, look at 
+[VGGBenchmark](../../Tests/GrAIExamples/VGGBenchmark.swift) and rename 
+`_test_TrainVGG` and `_test_EvalVGG` into `test_TrainVGG` and `test_EvalVGG`.
+
+The test `test_TrainVGG` will measure the time spent for training the VGG 
+model for 20 steps.
+
+The test `test_EvalVGG` will measure the time spent for running the VGG model 
+in inference for 20 steps.
+
+Note that for both tests, the data is random and fixed once and for all.

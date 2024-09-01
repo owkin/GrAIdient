@@ -105,14 +105,13 @@ class InputBuffers<T: Layer>
 {
     /// The link to the layer.
     unowned let _layer: T
-    /// Number of elements in the different buffers.
-    let nbElems: Int
-    /// GPU device where the buffers are sent.
-    let deviceID: Int
     
-    var _m: MetalBuffer<Float>! = nil
-    var _v: MetalBuffer<Float>! = nil
-    var _vHat: MetalBuffer<Float>! = nil
+    /// Momentum buffer.
+    public let m: FloatBuffer
+    /// Velocity buffer.
+    public let v: FloatBuffer
+    /// Velocity normalized buffer.
+    public let vHat: FloatBuffer
     
     ///
     /// Create a container of buffers.
@@ -127,51 +126,16 @@ class InputBuffers<T: Layer>
          deviceID: Int)
     {
         _layer = layer
-        self.nbElems = nbElems
-        self.deviceID = deviceID
-    }
-    
-    /// Momentum buffer.
-    var m: MetalBuffer<Float>
-    {
-        get {
-            if _m == nil
-            {
-                _m = MetalPrivateBuffer<Float>(nbElems, deviceID: deviceID)
-            }
-            return _m
-        }
-    }
-    
-    /// Velocity buffer.
-    var v: MetalBuffer<Float>
-    {
-        get {
-            if _v == nil
-            {
-                _v = MetalPrivateBuffer<Float>(nbElems, deviceID: deviceID)
-            }
-            return _v
-        }
-    }
-    
-    /// Velocity normalized buffer.
-    var vHat: MetalBuffer<Float>
-    {
-        get {
-            if _vHat == nil
-            {
-                _vHat = MetalPrivateBuffer<Float>(nbElems, deviceID: deviceID)
-            }
-            return _vHat
-        }
+        m = FloatBuffer(nbElems: nbElems, deviceID: deviceID)
+        v = FloatBuffer(nbElems: nbElems, deviceID: deviceID)
+        vHat = FloatBuffer(nbElems: nbElems, deviceID: deviceID)
     }
     
     /// Clean the momentum..., preserving the weights.
     func reset()
     {
-        _m = nil
-        _v = nil
-        _vHat = nil
+        m.reset()
+        v.reset()
+        vHat.reset()
     }
 }

@@ -29,7 +29,9 @@ final class TransformerExample: XCTestCase
     {
         setPythonLib()
         _ = MetalKernel.get
+        
         GrAI.Opti.GPU = true
+        GrAI.Precision.float = true
     }
     
     ///
@@ -78,33 +80,24 @@ final class TransformerExample: XCTestCase
         hiddenDim: Int,
         params: GrAI.Model.Params) -> LayerSeq
     {
-        let query: LayerSeq = FullyConnectedSeq(
-            layerPrev: layerPrev, nbNeurons: hiddenDim,
-            activation: nil, biases: true,
-            params: params
-        )
-        let key: LayerSeq = FullyConnectedSeq(
-            layerPrev: layerPrev, nbNeurons: hiddenDim,
-            activation: nil, biases: true,
-            params: params
-        )
-        let value: LayerSeq = FullyConnectedSeq(
-            layerPrev: layerPrev, nbNeurons: hiddenDim,
+        let qkv: LayerSeq = FullyConnectedSeq(
+            layerPrev: layerPrev, nbNeurons: 3 * hiddenDim,
             activation: nil, biases: true,
             params: params
         )
         
-        var layerSeq: LayerSeq = try! QuerySeq(
-            query: query, key: key, nbHeads: nbHeads,
+        var layerSeq: LayerSeq = try! QuerySelfSeq(
+            layerPrev: qkv,
+            query: 0, key: 1, nbBlocksPrev: 3, nbHeads: nbHeads,
             params: params
         )
         layerSeq = try! SoftmaxSeq(
             layerPrev: layerSeq, nbHeads: nbHeads,
             params: params
         )
-            
-        layerSeq = try! ValueSeq(
-            value: value, score: layerSeq, nbHeads: nbHeads,
+        layerSeq = try! ValueSelfSeq(
+            value: qkv, score: layerSeq,
+            offset: 2, nbBlocksPrev: 3, nbHeads: nbHeads,
             params: params
         )
         
@@ -280,13 +273,13 @@ final class TransformerExample: XCTestCase
         
         // Build a model with randomly initialized weights.
         let transformer = _buildModel(
-            size: 32,
+            size: _size,
             patch: 16,
             nbLayers: 2,
             nbHeads: 2,
             hiddenDim: 16,
             mlpDim: 32,
-            mlpActivation: GELU.str
+            mlpActivation: ReLU.str
         )
         
         // Initialize for training.
@@ -296,22 +289,24 @@ final class TransformerExample: XCTestCase
         let lastLayer: MSE1D = transformer.layers.last as! MSE1D
         
         // Initialize the ground truth once and for all.
-        let groundTruth = MetalSharedBuffer<Float>(_batchSize, deviceID: 0)
-        let buffer = groundTruth.buffer
+        let groundTruth = FloatBuffer(
+            nbElems: _batchSize, deviceID: 0, shared: true
+        )
+        var gtBuffer = [Float](repeating: 0.0, count: _batchSize)
         for elem in 0..<_batchSize / 2
         {
-            buffer[elem] = 0.0
+            gtBuffer[elem] = 0.0
         }
         for elem in _batchSize / 2..<_batchSize
         {
-            buffer[elem] = 1.0
+            gtBuffer[elem] = 1.0
         }
-        MetalKernel.get.upload([groundTruth])
+        groundTruth.initialize(array: &gtBuffer)
         
         let nbEpochs = 2
         for epoch in 0..<nbEpochs
         {
-            print("EPOCH \(epoch)/\(nbEpochs-1).")
+            print("EPOCH \(epoch + 1)/\(nbEpochs).")
             cifar8.shuffle()
             cifar5.shuffle()
             
@@ -373,7 +368,7 @@ final class TransformerExample: XCTestCase
                     batchSize: _batchSize,
                     nbNeurons: 1
                 )
-                print("Step \(step)/\(cifar8.nbLoops-1): \(sqrt(loss)).")
+                print("Step \(step + 1)/\(cifar8.nbLoops): \(sqrt(loss)).")
                 
                 // Update internal step.
                 // This is not mandatory except if we used another

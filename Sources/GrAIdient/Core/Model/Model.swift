@@ -186,6 +186,43 @@ public class BaseModel: Codable
         newModel.layers = newLayers
         return newModel
     }
+    
+    ///
+    /// Update sequence of the model, creating a new one.
+    ///
+    /// - Parameters:
+    ///     - mapping: Dictionary allowing to find the layer associated to some id.
+    ///     This dictionary is particularly useful when the different layers cannot access
+    ///     their `layerPrev`.
+    ///     - inPlace: Whether hard resources should be copied as is.
+    ///     - sequence: Length of the sequence.
+    ///
+    /// - Returns: A new model. When `inPlace` is false, `initKernel` is
+    ///  necessary in order to recreate hard resources.
+    ///
+    func updateSeq(
+        mapping: inout Dictionary<Int, Layer>,
+        inPlace: Bool,
+        sequence: Int) -> BaseModel
+    {
+        let newModel = BaseModel(name: name)
+        var newLayers = [Layer]()
+        
+        for layer in layers
+        {
+            let newLayer = layer.copy(mapping: mapping, inPlace: inPlace)
+            newLayers.append(newLayer)
+            mapping[layer.id] = newLayer
+            
+            if let layerTmp = newLayer as? LayerSeq
+            {
+                layerTmp.sequence = sequence
+            }
+        }
+        
+        newModel.layers = newLayers
+        return newModel
+    }
 }
 
 ///
@@ -606,7 +643,8 @@ public class Model: BaseModel
     public func initKernel(phase: Phase? = nil, deviceID: Int = 0)
     {
         self.phase = phase
-        if phase != nil && phase! == .Inference
+        if phase != nil &&
+           (phase! == .Inference || phase! == .InferenceBackward)
         {
             self.computeDeltaWeights = false
         }
@@ -678,6 +716,45 @@ public class Model: BaseModel
                 {
                     layerUpdate.initWeightsCPU()
                 }
+            }
+        }
+    }
+    
+    ///
+    /// Initialize state resources.
+    ///
+    /// We initialize the neurons' forward's state.
+    ///
+    public func initForward(batchSize: Int) throws
+    {
+        if GrAI.Opti.GPU
+        {
+            for layer in layers
+            {
+                try layer.checkStateForwardGPU(batchSize: batchSize)
+            }
+        }
+        else
+        {
+            for layer in layers
+            {
+                try layer.checkStateCPU(batchSize: batchSize)
+            }
+        }
+    }
+    
+    ///
+    /// Initialize state resources.
+    ///
+    /// We initialize the neurons' backward's state.
+    ///
+    public func initBackward(batchSize: Int) throws
+    {
+        if GrAI.Opti.GPU
+        {
+            for layer in layers
+            {
+                try layer.checkStateBackwardGPU(batchSize: batchSize)
             }
         }
     }
@@ -772,6 +849,39 @@ public class Model: BaseModel
                 inPlace: inPlace,
                 imageWidth: imageWidth,
                 imageHeight: imageHeight
+            )
+            let newModel = Model(model: newBaseModel, modelsPrev: newModels)
+            newModels.append(newModel)
+        }
+        
+        return newModels
+    }
+    
+    ///
+    /// Return a list of models, updating the sequence.
+    ///
+    /// - Parameters:
+    ///     - models: The different models to resize.
+    ///     - sequence: Length of the sequence.
+    ///     - inPlace: Whether hard resources should be copied as is.
+    ///
+    /// - Returns: The list of created models. When `inPlace` is false, `initKernel` is
+    ///  necessary in order to recreate hard resources.
+    ///
+    public static func updateSeq(
+        models: [BaseModel],
+        sequence: Int,
+        inPlace: Bool) -> [Model]
+    {
+        var mapping = Dictionary<Int, Layer>()
+        
+        var newModels = [Model]()
+        for model in models
+        {
+            let newBaseModel = model.updateSeq(
+                mapping: &mapping,
+                inPlace: inPlace,
+                sequence: sequence
             )
             let newModel = Model(model: newBaseModel, modelsPrev: newModels)
             newModels.append(newModel)
@@ -909,7 +1019,7 @@ public class Model: BaseModel
         if GrAI.Opti.GPU
         {
             let gNorm: Float? = gradientNorm != nil ?
-                                Float(gradientNorm!) : nil
+                Float(gradientNorm!) : nil
             try _kernel.algo.udpateGPU(layers: myLayers,
                                        gradientNorm: gNorm)
         }

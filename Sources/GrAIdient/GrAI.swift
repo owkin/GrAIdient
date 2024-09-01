@@ -70,6 +70,68 @@ public class GrAI
         }
     }
     
+    /// Namespace for precision settings.
+    public class Precision
+    {
+        /// Get/Set double precision.
+        public static var double: Bool
+        {
+            get {
+                return getCtx.precision == PrecisionType.Double
+            }
+            set {
+                if newValue && GrAI.Opti.CPU
+                {
+                    getCtx.precision = PrecisionType.Double
+                }
+                else if newValue
+                {
+                    fatalError(
+                        "Cannot set double precision with GPU optimization."
+                    )
+                }
+            }
+        }
+        /// Get/Set float precision.
+        public static var float: Bool
+        {
+            get {
+                return getCtx.precision == PrecisionType.Float
+            }
+            set {
+                if newValue && GrAI.Opti.GPU
+                {
+                    getCtx.precision = PrecisionType.Float
+                }
+                else if newValue
+                {
+                    fatalError(
+                        "Cannot set float precision with CPU optimization."
+                    )
+                }
+            }
+        }
+        /// Get/Set float16 precision.
+        public static var float16: Bool
+        {
+            get {
+                return getCtx.precision == PrecisionType.Float16
+            }
+            set {
+                if newValue && GrAI.Opti.GPU
+                {
+                    getCtx.precision = PrecisionType.Float16
+                }
+                else if newValue
+                {
+                    fatalError(
+                        "Cannot set float precision with CPU optimization."
+                    )
+                }
+            }
+        }
+    }
+    
     /// Namespace for gradient settings.
     public class Gradient
     {
@@ -346,6 +408,14 @@ public class GrAI
     }
 }
 
+/// Precision mode.
+public enum PrecisionType
+{
+    case Double
+    case Float
+    case Float16
+}
+
 /// A global context with stored variables.
 fileprivate class GrAIContext
 {
@@ -370,7 +440,14 @@ fileprivate class GrAIContext
         case GPU
     }
     
+    /// Used to select GPU device.
     var gpuNamedPriority = [String]()
+    
+    //--------------------------------------------------------------------------
+    // PRECISION
+    //--------------------------------------------------------------------------
+    /// Precision type.
+    var precision = PrecisionType.Float
     
     //--------------------------------------------------------------------------
     // GRADIENT

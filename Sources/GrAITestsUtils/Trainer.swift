@@ -69,7 +69,7 @@ extension TestError: CustomStringConvertible
 ///
 /// - Parameter model: The model on which to select the initialization scheme.
 ///
-func randomSelectWeightsInitializationScheme(model: Model)
+public func randomSelectWeightsInitializationScheme(model: Model)
 {
     let choice = Int.random(in: 0...4)
     switch choice {
@@ -358,6 +358,153 @@ open class FlowTrainer: Trainer
                 
                 modelCPU.incStep()
                 modelGPU.incStep()
+                numLoop += 1
+            }
+            epoch += 1
+        }
+    }
+}
+
+/// Pipeline that compares gradients of weights computed in the CPU execution context againt the GPU one.
+open class FlowPrecisionTrainer: Trainer
+{
+    ///
+    /// The two models:
+    /// [model to execute with Float precision, same model to execute with Float16 precision].
+    ///
+    public var models: [Model] = []
+    
+    /// Get the model to execute with Float precision.
+    public var modelFloat: Model
+    {
+        get {
+            return models[0]
+        }
+    }
+    /// Get the model to execute with Float16 precision.
+    public var modelFloat16: Model
+    {
+        get {
+            return models[1]
+        }
+    }
+    
+    ///
+    /// Create a model in the two execution contexts: CPU and GPU.
+    ///
+    /// - Parameter buildFct: A Function that creates the different layers of the models.
+    ///
+    public func build(_ buildFct: (ModelContext)->())
+    {
+        var baseModels = [BaseModel]()
+        
+        let context = ModelContext(name: modelName + "Float", curID: 0)
+        buildFct(context)
+        baseModels.append(context.model)
+        
+        context.model = BaseModel(name: modelName + "Float16")
+        buildFct(context)
+        baseModels.append(context.model)
+        
+        var models = [Model]()
+        for baseModel in baseModels
+        {
+            models.append(Model(model: baseModel, modelsPrev: []))
+        }
+        self.models = models
+    }
+
+    /// Initialize the kernel of the models.
+    public func initialize()
+    {
+        for i in 0...1
+        {
+            if i == 0
+            {
+                GrAI.Precision.float = true
+                randomSelectWeightsInitializationScheme(model: modelFloat)
+            }
+            
+            if i > 0
+            {
+                models[i].weights = models[i-1].weights
+            }
+            
+            if i == 1
+            {
+                GrAI.Precision.float16 = true
+            }
+            
+            models[i].initialize(
+                params: optimizerParams,
+                phase: .Training,
+                deviceID: DEVICE_ID
+            )
+        }
+    }
+    
+    ///
+    /// Run the test.
+    ///
+    /// The goal is to compare the gradients of weights computed with Float precision with
+    /// the gradients of weights computed with Float16 precision.
+    ///
+    /// - Parameters:
+    ///     - setData: A function to create/set data to the model.
+    ///     - setLoss: A function to create/set ground truth to the model.
+    ///     - validate: A function that checks whether the relative difference is small enough.
+    ///
+    public func run<DataT, LossT>(
+        setData: (DataT?, Model)->(DataT, Int),
+        setLoss: (LossT?, Model)->(LossT),
+        validate: (Double) throws -> ()) throws
+    {
+        initialize()
+        
+        var epoch = 0
+        let nbEpochsMax = 1
+        while epoch < nbEpochsMax
+        {
+            var numLoop = 0
+            while numLoop < optimizerParams.nbLoops
+            {
+                let resultsFloat: [Double]
+                GrAI.Precision.float = true
+                
+                var (inputs, batchSize) = setData(nil, modelFloat)
+                modelFloat.updateKernel(batchSize: batchSize)
+                try! modelFloat.forward()
+                
+                var gt = setLoss(nil, modelFloat)
+                try! modelFloat.backward()
+                try! modelFloat.update()
+                
+                resultsFloat = getGradients(model: modelFloat)
+                
+                let resultsFloat16: [Double]
+                GrAI.Precision.float16 = true
+                
+                (inputs, batchSize) = setData(inputs, modelFloat16)
+                modelFloat16.updateKernel(batchSize: batchSize)
+                try! modelFloat16.forward()
+                
+                gt = setLoss(gt, modelFloat16)
+                try! modelFloat16.backward()
+                try! modelFloat16.update()
+                
+                resultsFloat16 = getGradients(model: modelFloat16)
+                
+                if let gradDiff = checkFlow(resultsFloat, resultsFloat16)
+                {
+                    if gradDiff.isNaN
+                    {
+                        fatalError("NaN")
+                    }
+                    try validate(gradDiff)
+                }
+                
+                modelFloat.incStep()
+                modelFloat16.incStep()
                 numLoop += 1
             }
             epoch += 1
@@ -831,18 +978,18 @@ open class TransformTrainer: FlowTrainer
             // 5. Compare results.
             
             let diffCPU =
-            (lossCPUNew - lossCPURef) * (lossCPUNew - lossCPURef) /
-            (lossCPUNew * lossCPUNew + lossCPURef * lossCPURef)
+                (lossCPUNew - lossCPURef) * (lossCPUNew - lossCPURef) /
+                (lossCPUNew * lossCPUNew + lossCPURef * lossCPURef)
             let diffGPU =
-            (lossGPUNew - lossGPURef) * (lossGPUNew - lossGPURef) /
-            (lossGPUNew * lossGPUNew + lossGPURef * lossGPURef)
+                (lossGPUNew - lossGPURef) * (lossGPUNew - lossGPURef) /
+                (lossGPUNew * lossGPUNew + lossGPURef * lossGPURef)
             
             var warning = ""
             let maxDiff = max(diffCPU, diffGPU)
             let maxIndex = diffCPU < diffGPU ? "GPU" : "CPU"
             if diffCPU > 0.0000001
             {
-                warning = "Load Check Warning " + maxIndex + " : "
+                warning = "Transform Check Warning " + maxIndex + " : "
             }
             let strDump = warning + String(maxDiff)
             print(strDump)

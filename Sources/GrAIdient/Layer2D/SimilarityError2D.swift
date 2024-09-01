@@ -20,14 +20,14 @@ public class SimilarityError2D: LayerMerge2D
     /// Loss buffer in the GPU execution context.
     /// Shape ~ (batch, batch).
     ///
-    public internal(set) var loss: MetalSharedBuffer<Float>! = nil
+    public internal(set) var loss: FloatBuffer! = nil
     
     /// Batch size sum in the previous layers.
     public var mergedBatchSize: Int
     {
         get {
             var sum = 0
-            for layerPrev in _layersPrev
+            for layerPrev in layersPrev
             {
                 sum += layerPrev.batchSize
             }
@@ -127,7 +127,7 @@ public class SimilarityError2D: LayerMerge2D
         params.context.curID = id
         
         var layersPrev = [Layer2D]()
-        for idPrev in _idsPrev
+        for idPrev in idsPrev
         {
             layersPrev.append(mapping[idPrev] as! Layer2D)
         }
@@ -151,9 +151,10 @@ public class SimilarityError2D: LayerMerge2D
     {
         if loss == nil
         {
-            loss = MetalSharedBuffer<Float>(
-                batchSize * batchSize,
-                deviceID: deviceID
+            loss = FloatBuffer(
+                nbElems: batchSize * batchSize,
+                deviceID: deviceID,
+                shared: true
             )
         }
         else if batchSize <= 0 || batchSize * batchSize > loss.nbElems
@@ -189,10 +190,10 @@ public class SimilarityError2D: LayerMerge2D
         }}
         
         var curElem = 0
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            let batchSize = _layersPrev[num].batchSize
-            let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
+            let batchSize = layersPrev[num].batchSize
+            let neuronsPrev = (layersPrev[num] as! Layer2D).neurons
             
             for batch in 0..<batchSize {
             for elem in 0..<nbSameElems
@@ -208,15 +209,15 @@ public class SimilarityError2D: LayerMerge2D
         }
         
         curElem = 0
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            let batchSize = _layersPrev[num].batchSize
-            let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
+            let batchSize = layersPrev[num].batchSize
+            let neuronsPrev = (layersPrev[num] as! Layer2D).neurons
             
             for batch in 0..<batchSize {
             var offset = nbSameElems
             var nbLastElems = [Int](repeating: nbSameElems,
-                                    count: _layersPrev.count)
+                                    count: layersPrev.count)
             for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
             for elem in 0..<nbElemsTmp
             {
@@ -255,9 +256,10 @@ public class SimilarityError2D: LayerMerge2D
     {
         try checkStateCPU(batchSize: mergedBatchSize)
         
-        for num in 0..<_layersPrev.count
+        var buffersPrev = [[Float]]()
+        for num in 0..<layersPrev.count
         {
-            MetalKernel.get.download([(_layersPrev[num] as! Layer2D).outs])
+            buffersPrev.append((layersPrev[num] as! Layer2D).outs.download())
         }
         
         let (nbSameElems, layersIndex, nbElems) = getMergedGraph()
@@ -278,10 +280,10 @@ public class SimilarityError2D: LayerMerge2D
         }}
         
         var curElem = 0
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            let batchSize = _layersPrev[num].batchSize
-            let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
+            let batchSize = layersPrev[num].batchSize
+            let neuronsPrev = (layersPrev[num] as! Layer2D).neurons
             
             for batch in 0..<batchSize {
             for elem in 0..<nbSameElems
@@ -297,16 +299,16 @@ public class SimilarityError2D: LayerMerge2D
         }
     
         curElem = 0
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            let batchSize = _layersPrev[num].batchSize
-            let outsPrevPtr = (_layersPrev[num] as! Layer2D).outs.shared.buffer
-            let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
+            let batchSize = layersPrev[num].batchSize
+            let outsPrevPtr = buffersPrev[num]
+            let neuronsPrev = (layersPrev[num] as! Layer2D).neurons
             
             for batch in 0..<batchSize {
             var offset = nbSameElems
             var nbLastElems = [Int](repeating: nbSameElems,
-                                    count: _layersPrev.count)
+                                    count: layersPrev.count)
             for (index, nbElemsTmp) in zip(layersIndex, nbElems) {
             for elem in 0..<nbElemsTmp
             {
@@ -349,10 +351,10 @@ public class SimilarityError2D: LayerMerge2D
         try checkStateCPU(batchSize: mergedBatchSize)
         
         var curElem = 0
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            let batchSize = _layersPrev[num].batchSize
-            let neuronsPrev = (_layersPrev[num] as! Layer2D).neurons
+            let batchSize = layersPrev[num].batchSize
+            let neuronsPrev = (layersPrev[num] as! Layer2D).neurons
             
             for elem in 0..<batchSize {
             for i in 0..<height {
@@ -381,9 +383,9 @@ public class SimilarityError2D: LayerMerge2D
         var command: MetalCommand
         
         var globalOffset = 0
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            let batchSize = _layersPrev[num].batchSize
+            let batchSize = layersPrev[num].batchSize
             let pNbBatch: [UInt32] = [UInt32(batchSize)]
             let pGlobalOffset: [UInt32] = [UInt32(globalOffset)]
             
@@ -391,7 +393,7 @@ public class SimilarityError2D: LayerMerge2D
                 "concat02DForward", deviceID: deviceID
             )
             command.setBuffer(
-                (_layersPrev[num] as! Layer2D).outs.metal, atIndex: 0
+                (layersPrev[num] as! Layer2D).outs.metal, atIndex: 0
             )
             command.setBytes(pGlobalOffset, atIndex: 1)
             command.setBytes(pNbChannels, atIndex: 2)
@@ -422,9 +424,9 @@ public class SimilarityError2D: LayerMerge2D
         }
         
         var curElem = 0
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            let layerPrev = _layersPrev[num] as! Layer2D
+            let layerPrev = layersPrev[num] as! Layer2D
             let batchSize = layerPrev.batchSize
             let neuronsPrev = layerPrev.neurons
             
@@ -477,9 +479,9 @@ public class SimilarityError2D: LayerMerge2D
         var command: MetalCommand
         
         var globalOffset = 0
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            let layerPrev = _layersPrev[num] as! Layer2D
+            let layerPrev = layersPrev[num] as! Layer2D
             let batchSize = layerPrev.batchSize
             
             if !layerPrev.computeDelta
@@ -623,9 +625,8 @@ public class SimilarityError2D: LayerMerge2D
         )
         command.enqueue()
         
-        MetalKernel.get.download([loss])
         var loss: Float = 0.0
-        let lossPtr = self.loss.buffer
+        let lossPtr = self.loss.download()
         for elem1 in 0..<mergedBatchSize {
         for elem2 in 0..<mergedBatchSize
         {
@@ -652,9 +653,9 @@ public class SimilarityError2D: LayerMerge2D
         }
         
         var curElem = 0
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            let layerPrev = _layersPrev[num] as! Layer2D
+            let layerPrev = layersPrev[num] as! Layer2D
             let batchSize = layerPrev.batchSize
             let neuronsPrev = layerPrev.neurons
             
@@ -718,9 +719,9 @@ public class SimilarityError2D: LayerMerge2D
         var command: MetalCommand
         
         var globalOffset = 0
-        for num in 0..<_layersPrev.count
+        for num in 0..<layersPrev.count
         {
-            let layerPrev = _layersPrev[num] as! Layer2D
+            let layerPrev = layersPrev[num] as! Layer2D
             let batchSize = layerPrev.batchSize
             
             if !layerPrev.computeDelta

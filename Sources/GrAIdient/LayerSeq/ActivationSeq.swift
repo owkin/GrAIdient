@@ -16,7 +16,7 @@ public class ActivationSeq: LayerSeq
     /// used in the GPU execution context.
     /// Shape ~ (batch, nbNeurons).
     ///
-    var _tmp: MetalPrivateBuffer<Float>! = nil
+    var tmp: FloatBuffer! = nil
     
     /// Get coefficient (depending on activation function) to apply during the weights initialization.
     public var coeffInitWeights: Float
@@ -160,7 +160,7 @@ public class ActivationSeq: LayerSeq
     public override func resetKernelGPU()
     {
         super.resetKernelGPU()
-        _tmp = nil
+        tmp = nil
     }
     
     ///
@@ -259,14 +259,16 @@ public class ActivationSeq: LayerSeq
             let nbElems = outs.nbElems
             let pNbElems: [UInt32] = [UInt32(nbElems)]
             
+            let kernel = nbElems % 4 == 0 ? "sum14" : "sum1"
+            let coeff = nbElems % 4 == 0 ? 4 : 1
             let command = MetalKernel.get.createCommand(
-                "sum1", deviceID: deviceID
+                kernel, deviceID: deviceID
             )
             command.setBuffer(layerPrev.outs.metal, atIndex: 0)
             command.setBytes(pNbElems, atIndex: 1)
             command.setBuffer(outs.metal, atIndex: 2)
             
-            command.dispatchThreads(nbElems)
+            command.dispatchThreads(nbElems / coeff)
             command.enqueue()
             
             _activation!.forwardGPU(self)
@@ -318,24 +320,25 @@ public class ActivationSeq: LayerSeq
             let nbElems = delta.nbElems
             let pNbElems: [UInt32] = [UInt32(nbElems)]
             
-            let command: MetalCommand
+            let kernel: String
+            let coeff = nbElems % 4 == 0 ? 4 : 1
             if layerPrev.dirty
             {
-                command = MetalKernel.get.createCommand(
-                    "sum1", deviceID: deviceID
-                )
+                kernel = nbElems % 4 == 0 ? "sum14" : "sum1"
             }
             else
             {
-                command = MetalKernel.get.createCommand(
-                    "sum2", deviceID: deviceID
-                )
+                kernel = nbElems % 4 == 0 ? "sum24" : "sum2"
             }
+            let command = MetalKernel.get.createCommand(
+                kernel, deviceID: deviceID
+            )
+            
             command.setBuffer(delta.metal, atIndex: 0)
             command.setBytes(pNbElems, atIndex: 1)
             command.setBuffer(layerPrev.delta.metal, atIndex: 2)
             
-            command.dispatchThreads(nbElems)
+            command.dispatchThreads(nbElems / coeff)
             command.enqueue()
             
             propagateDirty()

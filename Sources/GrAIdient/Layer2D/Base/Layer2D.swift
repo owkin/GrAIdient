@@ -5,6 +5,31 @@
 // Created by Jean-François Reboud on 09/10/2022.
 //
 
+/// A layer that needs image size information.
+public protocol LayerResize: Layer
+{
+    ///
+    /// Resize this layer.
+    ///
+    /// - Parameters:
+    ///     - imageWidth: New size width.
+    ///     - imageHeight: New size height.
+    ///     - mapping: Dictionary allowing to find the layer associated to some id.
+    ///     This dictionary is particularly useful when the different layers cannot access
+    ///     their `layerPrev`.
+    ///     - inPlace: Whether hard resources should be copied as is.
+    ///
+    /// - Returns: A new layer. When `inPlace` is false, `initKernel` is
+    ///  necessary in order to recreate hard resources.
+    ///
+    func resize(
+        imageWidth: Int,
+        imageHeight: Int,
+        mapping: Dictionary<Int, Layer>,
+        inPlace: Bool
+    ) -> Layer
+}
+
 /// Layer with a 2D shape neural structure.
 open class Layer2D: Layer
 {
@@ -15,12 +40,12 @@ open class Layer2D: Layer
     /// Output buffer (result of the forward pass) used in the GPU execution context.
     /// Shape ~ (batch, nbChannels, height, width).
     ///
-    public var outs: MetalPrivateBuffer<Float>! = nil
+    public var outs: FloatBuffer! = nil
     ///
     /// Gradient buffer (result of the backward pass) used in the GPU execution context.
     /// Shape ~ (batch, nbChannels, height, width).
     ///
-    public var delta: MetalPrivateBuffer<Float>! = nil
+    public var delta: FloatBuffer! = nil
     
     /// Number of channels.
     public let nbChannels: Int
@@ -162,7 +187,7 @@ open class Layer2D: Layer
     ///
     /// We initialize the neurons' state (forward and backward).
     ///
-    public func checkStateCPU(batchSize: Int) throws
+    public override func checkStateCPU(batchSize: Int) throws
     {
         if neurons.count == 0
         {
@@ -188,12 +213,13 @@ open class Layer2D: Layer
     ///
     /// We initialize the neurons' forward state.
     ///
-    public func checkStateForwardGPU(batchSize: Int) throws
+    public override func checkStateForwardGPU(batchSize: Int) throws
     {
         if outs == nil
         {
-            outs = MetalPrivateBuffer<Float>(
-                batchSize * nbChannels * width * height, deviceID: deviceID
+            outs = FloatBuffer(
+                nbElems: batchSize * nbChannels * width * height,
+                deviceID: deviceID
             )
         }
         else if batchSize <= 0 ||
@@ -208,18 +234,22 @@ open class Layer2D: Layer
     ///
     /// We initialize the neurons' backward state.
     ///
-    public func checkStateBackwardGPU(batchSize: Int) throws
+    public override func checkStateBackwardGPU(batchSize: Int) throws
     {
-        if delta == nil
+        if computeDelta
         {
-            delta = MetalPrivateBuffer<Float>(
-                batchSize * nbChannels * width * height, deviceID: deviceID
-            )
-        }
-        else if batchSize <= 0 ||
-                batchSize > delta.nbElems / (nbChannels * width * height)
-        {
-            throw LayerError.BatchSize
+            if delta == nil
+            {
+                delta = FloatBuffer(
+                    nbElems: batchSize * nbChannels * width * height,
+                    deviceID: deviceID
+                )
+            }
+            else if batchSize <= 0 ||
+                    batchSize > delta.nbElems / (nbChannels * width * height)
+            {
+                throw LayerError.BatchSize
+            }
         }
     }
     
@@ -248,9 +278,8 @@ open class Layer2D: Layer
     public func getOutsGPU<T: BinaryFloatingPoint>(elem: Int) -> [T]
     {
         var outs = [T]()
-        MetalKernel.get.download([self.outs])
+        let outsPtr = self.outs.download()
         
-        let outsPtr = self.outs.shared.buffer
         for depth in 0..<nbChannels
         {
             let offsetStart = (depth + nbChannels * elem) * height
@@ -304,9 +333,8 @@ open class Layer2D: Layer
         }
         
         var delta = [T]()
-        MetalKernel.get.download([self.delta])
+        let deltaPtr = self.delta.download()
         
-        let deltaPtr = self.delta.shared.buffer
         for depth in 0..<nbChannels
         {
             let offsetStart = (depth + nbChannels * elem) * height

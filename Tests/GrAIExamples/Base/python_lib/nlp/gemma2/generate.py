@@ -6,7 +6,7 @@ from pathlib import Path
 from safetensors.torch import load_file
 from python_lib.nlp.gemma2.tokenizer import Tokenizer
 from python_lib.nlp.generate import generate_with_cache
-from python_lib.nlp.gemma2.model import GemmaModel2, TransformerArgs
+from python_lib.nlp.gemma2.model import Transformer, TransformerArgs
 
 
 def generate(
@@ -29,11 +29,22 @@ def generate(
     max_tokens: int
         The maximal number of generated tokens.
     """
-    state1 = load_file(str(Path(model_path) / "model-00001-of-00002.safetensors"))
-    state2 = load_file(str(Path(model_path) / "model-00002-of-00002.safetensors"))
+    state1 = load_file(
+        str(Path(model_path) / "model-00001-of-00002.safetensors"),
+    )
+    state2 = load_file(
+        str(Path(model_path) / "model-00002-of-00002.safetensors"),
+    )
 
     state = state1
     state.update(state2)
+    state["model.output.weight"] = state["model.embed_tokens.weight"]
+
+    state_copy = {}
+    for key, value in state.items():
+        new_key = key.replace("model.", "")
+        state_copy[new_key] = value
+    state = state_copy
 
     tokenizer = Tokenizer(str(Path(model_path) / "tokenizer.model"))
 
@@ -61,7 +72,7 @@ def generate(
         rope_theta=10000
     )
 
-    model = GemmaModel2(model_args)
+    model = Transformer(model_args)
     model.load_state_dict(state)
     model.to("mps")
 

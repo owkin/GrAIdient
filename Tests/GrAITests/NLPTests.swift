@@ -1454,7 +1454,7 @@ class NLPGenerateTests: XCTestCase
             
             layer = FullyConnectedSeq(
                 layerPrev: layer,
-                nbNeurons: nbHeadsQuery * headDim,
+                nbNeurons: hiddenDim,
                 activation: nil,
                 biases: false,
                 params: params

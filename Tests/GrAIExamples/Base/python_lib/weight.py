@@ -180,6 +180,39 @@ def load_simple_auto_encoder_weights(
     return _extract_and_transpose_weights(list(model.children()))
 
 
+def load_gemma_state(
+    model_path: str
+) -> Dict[str, torch.Tensor]:
+    """
+    Get weights and biases for Gemma-2-2b-it LLM.
+
+    Returns
+    -------
+    _: Dict[str, np.ndarray]
+        Dictionary of weights.
+    """
+    state1 = load_file(
+        str(Path(model_path) / "model-00001-of-00002.safetensors"),
+        "cpu"
+    )
+    state2 = load_file(
+        str(Path(model_path) / "model-00002-of-00002.safetensors"),
+        "cpu"
+    )
+
+    state = state1
+    state.update(state2)
+    state["model.output.weight"] = state["model.embed_tokens.weight"]
+
+    state_copy = {}
+    for key, value in state.items():
+        new_key = key.replace("model.", "")
+        state_copy[new_key] = value
+    state = state_copy
+
+    return state
+
+
 def load_mistral_state(
     model_path: str
 ) -> Dict[str, torch.Tensor]:

@@ -284,7 +284,7 @@ class Normalization
         let Ɣdelta: [Double]
         if addUnitOffset
         {
-            Ɣdelta = vDSP.add(multiplication: (Ɣ, delta), 1)
+            Ɣdelta = vDSP.multiply(vDSP.add(1, Ɣ), delta)
         }
         else
         {

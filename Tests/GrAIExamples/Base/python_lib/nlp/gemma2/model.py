@@ -383,6 +383,7 @@ class Transformer(torch.nn.Module):
             TransformerBlock(args=args) for _ in range(args.n_layers)
         ])
         self.norm = RMSNorm(args.dim, eps=args.norm_eps)
+        self.output = torch.nn.Linear(args.dim, args.vocab_size, bias=False)
 
     def forward(
         self,
@@ -448,56 +449,10 @@ class Transformer(torch.nn.Module):
             )
 
         h = self.norm(h)
-        logits = h @ self.embed_tokens.weight.T
+        logits = self.output(h)
         """if self.args.final_logit_softcapping is not None:
             logits = logits / self.args.final_logit_softcapping
             logits = torch.tanh(logits)
             logits = logits * self.args.final_logit_softcapping"""
 
         return logits, cache
-
-
-class GemmaModel2(torch.nn.Module):
-    """
-    Gemma2 model.
-
-    Parameters
-    ----------
-    args: TransformerArgs
-        Model parameters.
-    """
-
-    def __init__(self, args: TransformerArgs):
-        super().__init__()
-        self.model = Transformer(args=args)
-
-    def forward(
-        self,
-        x: torch.Tensor,
-        cache=None,
-        n_layers=None
-    ) -> Tuple[torch.Tensor, Optional[list]]:
-        """
-        Forward pass.
-
-        Parameters
-        ----------
-        x: torch.Tensor
-            The input tensor.
-        cache: (key_cache, value_cache): (torch.Tensor, torch.Tensor)
-            cache for keys and values
-            for generating tokens with past context.
-        n_layers: Int
-            Modifier of the number of Transformer blocks.
-
-        Returns
-        -------
-        (output, cache): (torch.Tensor, list)
-            output: the output tensor
-            cache: cache for keys and values for each layer
-        """
-        return self.model(
-            x=x,
-            cache=cache,
-            n_layers=n_layers
-        )

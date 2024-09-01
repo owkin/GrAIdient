@@ -248,13 +248,14 @@ containing the commits to merge into the `main` branch.
       Do not delete the "Unreleased" section title: future PRs will insert 
       changelog items in this section.
     - Commit and push the changes.
-    - Squash and merge the new branch into `release_N`.
+    - Squash and merge the new branch into `release_N` with title \
+      🔧 chore: update changelog
       
 1. Create a Pull Request for `release_N` targeting the `main` branch.
 
 1. Review and Merge the Pull Request, change the commit 
    message \
-   🔧 chore: release X.Y.Z
+   🚀 Release X.Y.Z
 
 1. Create a GitHub release X.Y.Z from `main`: 
      - GitHub > Releases > Draft new Release

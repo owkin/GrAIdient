@@ -457,39 +457,47 @@ class Transformer(torch.nn.Module):
         return logits, cache
 
 
-class GemmaModel(torch.nn.Module):
+class GemmaModel2(torch.nn.Module):
+    """
+    Gemma2 model.
 
-   def __init__(self, args: TransformerArgs):
+    Parameters
+    ----------
+    args: TransformerArgs
+        Model parameters.
+    """
+
+    def __init__(self, args: TransformerArgs):
         super().__init__()
         self.model = Transformer(args=args)
 
-   def forward(
-       self,
-       x: torch.Tensor,
-       cache=None,
-       n_layers=None
-   ) -> Tuple[torch.Tensor, Optional[list]]:
-       """
-       Forward pass.
+    def forward(
+        self,
+        x: torch.Tensor,
+        cache=None,
+        n_layers=None
+    ) -> Tuple[torch.Tensor, Optional[list]]:
+        """
+        Forward pass.
 
-       Parameters
-       ----------
-       x: torch.Tensor
-           The input tensor.
-       cache: (key_cache, value_cache): (torch.Tensor, torch.Tensor)
-           cache for keys and values
-           for generating tokens with past context.
-       n_layers: Int
-           Modifier of the number of Transformer blocks.
+        Parameters
+        ----------
+        x: torch.Tensor
+            The input tensor.
+        cache: (key_cache, value_cache): (torch.Tensor, torch.Tensor)
+            cache for keys and values
+            for generating tokens with past context.
+        n_layers: Int
+            Modifier of the number of Transformer blocks.
 
-       Returns
-       -------
-       (output, cache): (torch.Tensor, list)
-           output: the output tensor
-           cache: cache for keys and values for each layer
-       """
-       return self.model(
-           x=x,
-           cache=cache,
-           n_layers=n_layers
-       )
+        Returns
+        -------
+        (output, cache): (torch.Tensor, list)
+            output: the output tensor
+            cache: cache for keys and values for each layer
+        """
+        return self.model(
+            x=x,
+            cache=cache,
+            n_layers=n_layers
+        )

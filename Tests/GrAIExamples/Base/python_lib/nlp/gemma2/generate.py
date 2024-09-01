@@ -4,9 +4,9 @@ from typing import List
 from pathlib import Path
 
 from safetensors.torch import load_file
-from python_lib.nlp.gemma.tokenizer import Tokenizer
+from python_lib.nlp.gemma2.tokenizer import Tokenizer
 from python_lib.nlp.generate import generate_with_cache
-from python_lib.nlp.gemma.model import GemmaModel, TransformerArgs
+from python_lib.nlp.gemma2.model import GemmaModel2, TransformerArgs
 
 
 def generate(
@@ -31,14 +31,10 @@ def generate(
     """
     state1 = load_file(str(Path(model_path) / "model-00001-of-00002.safetensors"))
     state2 = load_file(str(Path(model_path) / "model-00002-of-00002.safetensors"))
-    # state3 = load_file(str(Path(model_path) / "model-00003-of-00003.safetensors"))
 
     state = state1
     state.update(state2)
-    # state.update(state3)
 
-    # state = torch.load(str(Path(model_path) / "consolidated.00.pth"))
-    # state.pop("rope.freqs")
     tokenizer = Tokenizer(str(Path(model_path) / "tokenizer.model"))
 
     print(prompt)
@@ -65,7 +61,7 @@ def generate(
         rope_theta=10000
     )
 
-    model = GemmaModel(model_args)
+    model = GemmaModel2(model_args)
     model.load_state_dict(state)
     model.to("mps")
 
@@ -98,7 +94,7 @@ def generate(
     print(f"Generation took: {elapsed_time:.6f} seconds.")
 
 
-def load_gemma_tokenizer(model_path: str) -> Tokenizer:
+def load_gemma2_tokenizer(model_path: str) -> Tokenizer:
     """
     Load tokenizer from the disk.
 
@@ -116,7 +112,7 @@ def load_gemma_tokenizer(model_path: str) -> Tokenizer:
     return tokenizer
 
 
-def encode_gemma(
+def encode_gemma2(
     prompt: str,
     tokenizer: Tokenizer
 ) -> List[int]:
@@ -137,7 +133,7 @@ def encode_gemma(
     return tokenizer.encode(prompt)
 
 
-def decode_gemma(
+def decode_gemma2(
     prompt: List[int],
     tokenizer: Tokenizer
 ) -> str:
@@ -159,8 +155,8 @@ def decode_gemma(
 
 
 if __name__ == "__main__":
-    model_path = "/Users/jean-francoisreboud/DocumentsNonSync/Projet/Python/mistral/weights/gemma-2-2b-it/"
-    prompt = "Who are you?"
+    model_path = "/TO/UPDATE/gemma-2-2b-it/"
+    prompt = "What is the meaning of life?"
 
     generate(
         prompt=prompt,

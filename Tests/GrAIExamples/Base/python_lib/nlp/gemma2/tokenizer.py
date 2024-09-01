@@ -18,6 +18,14 @@ import sentencepiece
 
 
 class Tokenizer:
+    """
+    Tokenizer to encode / decode into tokens.
+
+    Parameters
+    ----------
+    model_path: str
+        The path to the weights of the tokenizer on the disk.
+    """
 
     def __init__(self, model_path: Optional[str]):
         # Reload tokenizer.
@@ -32,7 +40,19 @@ class Tokenizer:
         self.pad_id: int = self.sp_model.pad_id()
 
     def encode(self, s: str, bos: bool = True, eos: bool = False) -> List[int]:
-        """Converts a string into a list of tokens."""
+        """
+        Encode a prompt into a sequence of tokens.
+
+        Parameters
+        ----------
+        s: str
+            The input prompt.
+
+        Returns
+        -------
+        _: [int]
+            The output sequence of tokens.
+        """
         assert isinstance(s, str)
         t = self.sp_model.EncodeAsIds(s)
         if bos:
@@ -42,5 +62,17 @@ class Tokenizer:
         return t
 
     def decode(self, t: List[int]) -> str:
-        """Converts a list of tokens into a string."""
+        """
+        Decode a sequence of tokens into prompt.
+
+        Parameters
+        ----------
+        t: [int]
+            The input sequence of tokens.
+
+        Returns
+        -------
+        _: [int]
+            The output prompt.
+        """
         return self.sp_model.DecodeIds(t)

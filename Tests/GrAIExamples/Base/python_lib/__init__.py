@@ -14,6 +14,11 @@ from python_lib.trainer import (
     train_simple_auto_encoder,
     step_simple_auto_encoder,
 )
+from python_lib.nlp.gemma2.generate import (
+    load_gemma2_tokenizer,
+    encode_gemma2,
+    decode_gemma2
+)
 from python_lib.nlp.mistral.generate import (
     predict_mistral,
     load_mistral_tokenizer,
@@ -43,6 +48,9 @@ __all__ = [
     "load_llama_state",
     "train_simple_auto_encoder",
     "step_simple_auto_encoder",
+    "load_gemma2_tokenizer",
+    "encode_gemma2",
+    "decode_gemma2",
     "predict_mistral",
     "load_mistral_tokenizer",
     "encode_mistral",

@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+🚀 **examples:** integrate Gemma2-2B ([#132](https://github.com/owkin/GrAIdient/pull/132))\
 ✨ **layer_seq:** LLM sliding window ([#131](https://github.com/owkin/GrAIdient/pull/131))\
 🚀 **examples:** 3 LLMs examples ([#130](https://github.com/owkin/GrAIdient/pull/130))\
 📚 **docs:** LLM doc & split tests ([129](https://github.com/owkin/GrAIdient/pull/129))\

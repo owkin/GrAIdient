@@ -2847,7 +2847,8 @@ public class RMSNormalization: LayerWeightsNormalization
                     outs: layer.getOutsGC(
                         batch: batch, seq: seq, elem: elem
                     ),
-                    Ɣ: Ɣ
+                    Ɣ: Ɣ,
+                    addUnitOffset: layer.addUnitOffset
                 )
                 layer.setOutsGC(
                     batch: batch, seq: seq, elem: elem, outs: outs

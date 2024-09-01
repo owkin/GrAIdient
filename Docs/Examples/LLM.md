@@ -18,15 +18,22 @@ pip install -e .
 Then: 
 - download weights from 
 [MistralAI](https://docs.mistral.ai/getting-started/open_weight_models/) 
+(mistral-7B-Instruct-v0.3)
 and / or
 [Llama](https://llama.meta.com/llama-downloads/) 
-- Update `_modelPathMistral`, `_modelPathLlama2`, `_modelPathLlama3` in the 
+(llama-2-7b-chat or Meta-Llama-3-8B-Instruct) 
+and / or Gemma2 from [HuggingFace](https://huggingface.co/google/gemma-2-2b-it) 
+(Gemma-2-2b-it)
+- Update `_modelPathMistral`, `_modelPathLlama2`, `_modelPathLlama3`, 
+`_modelPathGemma2` in the 
 [LLMExample](../../Tests/GrAIExamples/LLMExample.swift) file with the 
 previous downloaded weights. 
 - Optionnally update `_prompt`.
-- Rename `_testGenerateMistral`, `_testGenerateLlama2` and `_testGenerateLlama3` 
+- Rename `_testGenerateMistral`, `_testGenerateLlama2`, `_testGenerateLlama3` 
+and `_testGenerateGemma2`
 into 
-`testGenerateMistral`, `testGenerateLlama2` and `testGenerateLlama3`. 
+`testGenerateMistral`, `testGenerateLlama2`, `testGenerateLlama3` and 
+`testGenerateGemma2`. 
 - Run the tests.
 
 It is finally possible to clean the environment 🌍
@@ -41,6 +48,7 @@ conda env remove --name graiexamples
 1. Generate text from a prompt with Mistral 7B Instruct model.
 1. Generate text from a prompt with Llama 2 7B Chat model.
 1. Generate text from a prompt with Llama 3 8B Instruct model.  
+1. Generata text from a prompt with Gemme 2 2B Instruct model.
 
 ## Further tests
 

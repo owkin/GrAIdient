@@ -61,14 +61,20 @@ class Normalization
     /// - Parameters:
     ///     - outs: The data to normalize.
     ///     - Ɣ: The weights to scale the normalization result.
+    ///     - addUnitOffset: Whether to add unit offset or not.
     /// - Returns: The data normalized.
     ///
     static func forwardΣGC(outs: [Double],
-                          Ɣ: [Double]) -> [Double]
+                           Ɣ: [Double],
+                           addUnitOffset: Bool) -> [Double]
     {
         let σ2 = vDSP.meanSquare(outs)
         let xHat = vDSP.divide(outs, sqrt(σ2 + _Ɛ))
-        let outsNew = vDSP.multiply(Ɣ, xHat)
+        var outsNew = vDSP.multiply(Ɣ, xHat)
+        if addUnitOffset
+        {
+            outsNew = vDSP.add(xHat, outsNew)
+        }
         return outsNew
     }
 

@@ -2894,7 +2894,8 @@ public class RMSNormalization: LayerWeightsNormalization
             {
                 let (outs, xHat, σ2) = Normalization.forwardΣ(
                     outs: layer.getOuts(batch: batch, seq: seq),
-                    Ɣ: Ɣ
+                    Ɣ: Ɣ,
+                    addUnitOffset: layer.addUnitOffset
                 )
                 layer.setOuts(batch: batch, seq: seq, outs: outs)
                 
@@ -2927,7 +2928,8 @@ public class RMSNormalization: LayerWeightsNormalization
                 delta: delta1,
                 xHat: _xHat[seq + sequence * batch],
                 σ2: _σ2[seq + sequence * batch],
-                Ɣ: Ɣ
+                Ɣ: Ɣ,
+                addUnitOffset: layer.addUnitOffset
             )
             layer.setDelta(batch: batch, seq: seq, delta: delta2)
             
@@ -3091,6 +3093,7 @@ class RMSNormalizationGPU: LayerWeightsNormalization
         let pNbNeurons: [UInt32] = [UInt32(_nbNeurons)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pSequence: [UInt32] = [UInt32(sequence)]
+        let pAddUnitOffset: [UInt32] = layer.addUnitOffset ? [1] : [0]
         
         if _xHat == nil
         {
@@ -3108,8 +3111,9 @@ class RMSNormalizationGPU: LayerWeightsNormalization
         command.setBytes(pNbNeurons, atIndex: 2)
         command.setBytes(pNbBatch, atIndex: 3)
         command.setBytes(pSequence, atIndex: 4)
-        command.setBuffer(layer.outs.metal, atIndex: 5)
-        command.setBuffer(_xHat.metal, atIndex: 6)
+        command.setBytes(pAddUnitOffset, atIndex: 5)
+        command.setBuffer(layer.outs.metal, atIndex: 6)
+        command.setBuffer(_xHat.metal, atIndex: 7)
         
         command.dispatchThreads(
             width: _nbNeurons,
@@ -3160,6 +3164,7 @@ class RMSNormalizationGPU: LayerWeightsNormalization
         let pNbNeurons: [UInt32] = [UInt32(_nbNeurons)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pSequence: [UInt32] = [UInt32(sequence)]
+        let pAddUnitOffset: [UInt32] = layer.addUnitOffset ? [1] : [0]
         
         let command = MetalKernel.get.createCommand(
             "backwardRMSNormSeq", deviceID: _deviceID
@@ -3171,7 +3176,8 @@ class RMSNormalizationGPU: LayerWeightsNormalization
         command.setBytes(pNbNeurons, atIndex: 4)
         command.setBytes(pNbBatch, atIndex: 5)
         command.setBytes(pSequence, atIndex: 6)
-        command.setBuffer(layer.delta.metal, atIndex: 7)
+        command.setBytes(pAddUnitOffset, atIndex: 7)
+        command.setBuffer(layer.delta.metal, atIndex: 8)
         
         command.dispatchThreads(
             width: _nbNeurons,
@@ -3189,6 +3195,7 @@ class RMSNormalizationGPU: LayerWeightsNormalization
         let pNbNeurons: [UInt32] = [UInt32(_nbNeurons)]
         let pNbBatch: [UInt32] = [UInt32(batchSize)]
         let pSequence: [UInt32] = [UInt32(sequence)]
+        let pAddUnitOffset: [UInt32] = layer.addUnitOffset ? [1] : [0]
         
         if _sum2 == nil
         {
@@ -3206,7 +3213,8 @@ class RMSNormalizationGPU: LayerWeightsNormalization
         command.setBytes(pNbNeurons, atIndex: 3)
         command.setBytes(pNbBatch, atIndex: 4)
         command.setBytes(pSequence, atIndex: 5)
-        command.setBuffer(_sum2.metal, atIndex: 6)
+        command.setBytes(pAddUnitOffset, atIndex: 6)
+        command.setBuffer(_sum2.metal, atIndex: 7)
         
         command.dispatchThreads(width: sequence, height: batchSize)
         command.enqueue()

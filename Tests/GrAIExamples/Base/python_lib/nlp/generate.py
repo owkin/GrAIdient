@@ -69,7 +69,7 @@ def generate_with_cache(
             if temp == 0
             else torch.multinomial(
                 torch.softmax(logits, dim=-1) * (1 / temp), 1
-            )
+            )[0]
         )
 
     y = prompt

@@ -13,6 +13,9 @@ public class RMSNormSeq: ActivationSeq, LayerUpdate, LayerWithActivation
     /// Instance normalization in the GPU execution context.
     var _normGPU: RMSNormalizationGPU? = nil
     
+    /// Whether to add unit offset or not.
+    var addUnitOffset: Bool
+    
     /// Whether to compute weights' gradients or not.
     public var computeDeltaWeights: Bool = true
     
@@ -84,6 +87,7 @@ public class RMSNormSeq: ActivationSeq, LayerUpdate, LayerWithActivation
     private enum Keys: String, CodingKey
     {
         case norm
+        case addUnitOffset
     }
     
     ///
@@ -92,11 +96,16 @@ public class RMSNormSeq: ActivationSeq, LayerUpdate, LayerWithActivation
     /// - Parameters:
     ///     - layerPrev: Previous layer that has been queued to the model.
     ///     - activation: The activation function.
+    ///     - addUnitOffset: Whether to add unit offset or not.
     ///     - params: Contextual parameters linking to the model.
     ///
-    public override init(layerPrev: LayerSeq, activation: String?,
-                         params: GrAI.Model.Params)
+    public init(layerPrev: LayerSeq,
+                activation: String?,
+                addUnitOffset: Bool,
+                params: GrAI.Model.Params)
     {
+        self.addUnitOffset = addUnitOffset
+        
         super.init(layerPrev: layerPrev,
                    sequence: layerPrev.sequence,
                    nbNeurons: layerPrev.nbNeurons,
@@ -117,6 +126,7 @@ public class RMSNormSeq: ActivationSeq, LayerUpdate, LayerWithActivation
     public required init(from decoder: Decoder) throws
     {
         let values = try decoder.container(keyedBy: Keys.self)
+        addUnitOffset = try values.decode(Bool.self, forKey: .addUnitOffset)
         _norm = try values.decodeIfPresent(
             LayerWeightsNormalization.self, forKey: .norm
         )
@@ -137,6 +147,7 @@ public class RMSNormSeq: ActivationSeq, LayerUpdate, LayerWithActivation
     public override func encode(to encoder: Encoder) throws
     {
         var container = encoder.container(keyedBy: Keys.self)
+        try container.encode(addUnitOffset, forKey: .addUnitOffset)
         if let norm = _normGPU
         {
             try container.encode(norm, forKey: Keys.norm)
@@ -173,6 +184,7 @@ public class RMSNormSeq: ActivationSeq, LayerUpdate, LayerWithActivation
         let layer = RMSNormSeq(
             layerPrev: layerPrev,
             activation: _activation?.name,
+            addUnitOffset: addUnitOffset,
             params: params
         )
         if inPlace
@@ -216,6 +228,7 @@ public class RMSNormSeq: ActivationSeq, LayerUpdate, LayerWithActivation
         let layer = RMSNormSeq(
             layerPrev: layerPrev,
             activation: nil,
+            addUnitOffset: addUnitOffset,
             params: params
         )
         if inPlace
@@ -252,6 +265,7 @@ public class RMSNormSeq: ActivationSeq, LayerUpdate, LayerWithActivation
         let layer = RMSNormSeq(
             layerPrev: layerPrev,
             activation: nil,
+            addUnitOffset: addUnitOffset,
             params: params
         )
         // only one of them should be cloned

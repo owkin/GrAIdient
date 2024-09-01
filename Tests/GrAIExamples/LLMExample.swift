@@ -68,6 +68,8 @@ final class LLMExample: XCTestCase
     ///     - nbHeads:  Number of heads (groups) of neurons for queries.
     ///     - nbHeadsKV: Number of heads (groups) of neurons for keys and values.
     ///     - vocabularySize: Vocabulary size.
+    ///     - addUnitOffset: Whether to add unit offset or not in RMSNorm.
+    ///     - hiddentActivation: Activation function.
     /// - Returns: (The model built, The list of PyTorch keys for each layer that contains weights).
     ///
     func _buildModel(
@@ -78,7 +80,9 @@ final class LLMExample: XCTestCase
         mlpDim: Int,
         nbHeadsQuery: Int,
         nbHeadsKV: Int,
-        vocabularySize: Int) -> (Model, [String])
+        vocabularySize: Int,
+        addUnitOffset: Bool,
+        hiddenActivation: String) -> (Model, [String])
     {
         let context = ModelContext(name: "LLM", curID: 0)
         let params = GrAI.Model.Params(context: context)
@@ -98,6 +102,7 @@ final class LLMExample: XCTestCase
             layer = RMSNormSeq(
                 layerPrev: layer,
                 activation: nil,
+                addUnitOffset: addUnitOffset,
                 params: params
             )
             keys.append("layers.\(i).attention_norm.weight")
@@ -174,6 +179,7 @@ final class LLMExample: XCTestCase
             layer = RMSNormSeq(
                 layerPrev: layer,
                 activation: nil,
+                addUnitOffset: addUnitOffset,
                 params: params
             )
             keys.append("layers.\(i).ffn_norm.weight")
@@ -181,7 +187,7 @@ final class LLMExample: XCTestCase
             let mult1: LayerSeq = FullyConnectedSeq(
                 layerPrev: layer,
                 nbNeurons: mlpDim,
-                activation: SiLU.str,
+                activation: hiddenActivation,
                 biases: false,
                 params: params
             )
@@ -213,6 +219,7 @@ final class LLMExample: XCTestCase
         layer = RMSNormSeq(
             layerPrev: layer,
             activation: nil,
+            addUnitOffset: addUnitOffset,
             params: params
         )
         keys.append("norm.weight")
@@ -618,7 +625,9 @@ final class LLMExample: XCTestCase
             mlpDim: mlpDim,
             nbHeadsQuery: nbHeadsQuery,
             nbHeadsKV: nbHeadsKV,
-            vocabularySize: vocabularySize
+            vocabularySize: vocabularySize,
+            addUnitOffset: false,
+            hiddenActivation: SiLU.str
         )
         
         // Load pre trained weights.
@@ -642,7 +651,7 @@ final class LLMExample: XCTestCase
     /// Generate text from prompt with Metal Llama 2 7B Chat.
     func _testGenerateLlama2() throws
     {
-        let prompt = "How do you do?"
+        let prompt = _prompt
         
         let nbBlocks = 32
         let hiddenDim = 4096
@@ -686,7 +695,9 @@ final class LLMExample: XCTestCase
             mlpDim: mlpDim,
             nbHeadsQuery: nbHeadsQuery,
             nbHeadsKV: nbHeadsKV,
-            vocabularySize: vocabularySize
+            vocabularySize: vocabularySize,
+            addUnitOffset: false,
+            hiddenActivation: SiLU.str
         )
         
         // Load pre trained weights.
@@ -755,7 +766,9 @@ final class LLMExample: XCTestCase
             mlpDim: mlpDim,
             nbHeadsQuery: nbHeadsQuery,
             nbHeadsKV: nbHeadsKV,
-            vocabularySize: vocabularySize
+            vocabularySize: vocabularySize,
+            addUnitOffset: false,
+            hiddenActivation: SiLU.str
         )
         
         // Load pre trained weights.

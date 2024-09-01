@@ -52,10 +52,19 @@ class NLPGradTests: EmbeddingSeqMSE1DCase
         case "Embedding":
             break
             
-        case "RMSNorm":
+        case "RMSNorm1":
             layer = RMSNormSeq(
                 layerPrev: layer,
                 activation: nil,
+                addUnitOffset: false,
+                params: params
+            )
+            
+        case "RMSNorm2":
+            layer = RMSNormSeq(
+                layerPrev: layer,
+                activation: nil,
+                addUnitOffset: true,
                 params: params
             )
             
@@ -202,16 +211,29 @@ class NLPGradTests: EmbeddingSeqMSE1DCase
         run(trainer)
     }
     
-    func testRMSNormCPU() throws
+    func testRMSNorm1CPU() throws
     {
         GrAI.Opti.CPU = true
-        let trainer = _buildTrainer("RMSNorm")
+        let trainer = _buildTrainer("RMSNorm1")
         run(trainer)
     }
     
-    func testRMSNormGPU() throws
+    func testRMSNorm1GPU() throws
     {
-        let trainer = _buildTrainer("RMSNorm")
+        let trainer = _buildTrainer("RMSNorm1")
+        run(trainer)
+    }
+    
+    func testRMSNorm2CPU() throws
+    {
+        GrAI.Opti.CPU = true
+        let trainer = _buildTrainer("RMSNorm2")
+        run(trainer)
+    }
+    
+    func testRMSNorm2GPU() throws
+    {
+        let trainer = _buildTrainer("RMSNorm2")
         run(trainer)
     }
     
@@ -316,10 +338,19 @@ class NLPFlowTests: EmbeddingSeqMSE1DCase
         case "Embedding":
             break
             
-        case "RMSNorm":
+        case "RMSNorm1":
             layer = RMSNormSeq(
                 layerPrev: layer,
                 activation: nil,
+                addUnitOffset: false,
+                params: params
+            )
+            
+        case "RMSNorm2":
+            layer = RMSNormSeq(
+                layerPrev: layer,
+                activation: nil,
+                addUnitOffset: true,
                 params: params
             )
             
@@ -459,9 +490,15 @@ class NLPFlowTests: EmbeddingSeqMSE1DCase
         run(trainer)
     }
     
-    func testRMSNorm() throws
+    func testRMSNorm1() throws
     {
-        let trainer = _buildTrainer("RMSNorm")
+        let trainer = _buildTrainer("RMSNorm1")
+        run(trainer)
+    }
+    
+    func testRMSNorm2() throws
+    {
+        let trainer = _buildTrainer("RMSNorm2")
         run(trainer)
     }
     
@@ -529,9 +566,15 @@ class NLPFlowPrecisionTests: NLPFlowTests
         run(trainer, diffThreshold: 0.002)
     }
     
-    override func testRMSNorm() throws
+    override func testRMSNorm1() throws
     {
-        let trainer = _buildTrainer("RMSNorm")
+        let trainer = _buildTrainer("RMSNorm1")
+        run(trainer, diffThreshold: 0.002)
+    }
+    
+    override func testRMSNorm2() throws
+    {
+        let trainer = _buildTrainer("RMSNorm2")
         run(trainer, diffThreshold: 0.002)
     }
     
@@ -817,9 +860,15 @@ class NLPFlowResetTests: NLPFlowTests
         run(trainer)
     }
     
-    override func testRMSNorm() throws
+    override func testRMSNorm1() throws
     {
-        let trainer = _buildTrainer("RMSNorm")
+        let trainer = _buildTrainer("RMSNorm1")
+        run(trainer)
+    }
+    
+    override func testRMSNorm2() throws
+    {
+        let trainer = _buildTrainer("RMSNorm2")
         run(trainer)
     }
     
@@ -895,9 +944,15 @@ class NLPFlowReverseTests: NLPFlowTests
         run(trainer)
     }
     
-    override func testRMSNorm() throws
+    override func testRMSNorm1() throws
     {
-        let trainer = _buildTrainer("RMSNorm")
+        let trainer = _buildTrainer("RMSNorm1")
+        run(trainer)
+    }
+    
+    override func testRMSNorm2() throws
+    {
+        let trainer = _buildTrainer("RMSNorm2")
         run(trainer)
     }
     
@@ -967,10 +1022,19 @@ class NLPFlowAccumulateTests: EmbeddingSeqMSE1DCase
         case "Embedding":
             break
             
-        case "RMSNorm":
+        case "RMSNorm1":
             layer = RMSNormSeq(
                 layerPrev: layer,
                 activation: nil,
+                addUnitOffset: false,
+                params: params
+            )
+            
+        case "RMSNorm2":
+            layer = RMSNormSeq(
+                layerPrev: layer,
+                activation: nil,
+                addUnitOffset: true,
                 params: params
             )
             
@@ -1001,9 +1065,15 @@ class NLPFlowAccumulateTests: EmbeddingSeqMSE1DCase
         run(trainer)
     }
     
-    func testRMSNorm() throws
+    func testRMSNorm1() throws
     {
-        let trainer = _buildTrainer("RMSNorm")
+        let trainer = _buildTrainer("RMSNorm1")
+        run(trainer)
+    }
+    
+    func testRMSNorm2() throws
+    {
+        let trainer = _buildTrainer("RMSNorm2")
         run(trainer)
     }
 }
@@ -1041,9 +1111,15 @@ class NLPInferenceTests: NLPFlowTests
         run(trainer)
     }
     
-    override func testRMSNorm() throws
+    override func testRMSNorm1() throws
     {
-        let trainer = _buildTrainer("RMSNorm")
+        let trainer = _buildTrainer("RMSNorm1")
+        run(trainer)
+    }
+    
+    override func testRMSNorm2() throws
+    {
+        let trainer = _buildTrainer("RMSNorm2")
         run(trainer)
     }
     
@@ -1112,9 +1188,15 @@ class NLPLoadTests: NLPFlowTests
         run(trainer)
     }
     
-    override func testRMSNorm() throws
+    override func testRMSNorm1() throws
     {
-        let trainer = _buildTrainer("RMSNorm")
+        let trainer = _buildTrainer("RMSNorm1")
+        run(trainer)
+    }
+    
+    override func testRMSNorm2() throws
+    {
+        let trainer = _buildTrainer("RMSNorm2")
         run(trainer)
     }
     
@@ -1183,9 +1265,15 @@ class NLPTransformTests: NLPFlowTests
         run(trainer)
     }
     
-    override func testRMSNorm() throws
+    override func testRMSNorm1() throws
     {
-        let trainer = _buildTrainer("RMSNorm")
+        let trainer = _buildTrainer("RMSNorm1")
+        run(trainer)
+    }
+    
+    override func testRMSNorm2() throws
+    {
+        let trainer = _buildTrainer("RMSNorm2")
         run(trainer)
     }
     
@@ -1275,6 +1363,8 @@ class NLPGenerateTests: XCTestCase
     ///     - nbHeads:  Number of heads (groups) of neurons for queries.
     ///     - nbHeadsKV: Number of heads (groups) of neurons for keys and values.
     ///     - vocabularySize: Vocabulary size.
+    ///     - addUnitOffset: Whether to add unit offset or not in RMSNorm.
+    ///     - hiddentActivation: Activation function.
     /// - Returns: The model built.
     ///
     func buildModel(
@@ -1285,7 +1375,9 @@ class NLPGenerateTests: XCTestCase
         mlpDim: Int,
         nbHeadsQuery: Int,
         nbHeadsKV: Int,
-        vocabularySize: Int) -> Model
+        vocabularySize: Int,
+        addUnitOffset: Bool,
+        hiddenActivation: String) -> Model
     {
         let context = ModelContext(name: "NLP", curID: 0)
         let params = GrAI.Model.Params(context: context)
@@ -1303,6 +1395,7 @@ class NLPGenerateTests: XCTestCase
             layer = RMSNormSeq(
                 layerPrev: layer,
                 activation: nil,
+                addUnitOffset: addUnitOffset,
                 params: params
             )
             
@@ -1374,13 +1467,14 @@ class NLPGenerateTests: XCTestCase
             layer = RMSNormSeq(
                 layerPrev: layer,
                 activation: nil,
+                addUnitOffset: addUnitOffset,
                 params: params
             )
             
             let mult1: LayerSeq = FullyConnectedSeq(
                 layerPrev: layer,
                 nbNeurons: mlpDim,
-                activation: SiLU.str,
+                activation: hiddenActivation,
                 biases: false,
                 params: params
             )
@@ -1409,6 +1503,7 @@ class NLPGenerateTests: XCTestCase
         layer = RMSNormSeq(
             layerPrev: layer,
             activation: nil,
+            addUnitOffset: addUnitOffset,
             params: params
         )
         
@@ -1515,7 +1610,9 @@ class NLPGenerateTests: XCTestCase
     /// 1. Use end to end forward pass.
     /// 2. Use partial end to end forward pass followed by generation one token at a time.
     ///
-    func runGenerate()
+    func runGenerate(
+        addUnitOffset: Bool,
+        hiddenActivation: String)
     {
         let nbBlocks = 1
         let hiddenDim = 8
@@ -1536,7 +1633,9 @@ class NLPGenerateTests: XCTestCase
             mlpDim: mlpDim,
             nbHeadsQuery: nbHeadsQuery,
             nbHeadsKV: nbHeadsKV,
-            vocabularySize: vocabularySize
+            vocabularySize: vocabularySize,
+            addUnitOffset: addUnitOffset,
+            hiddenActivation: hiddenActivation
         )
         var model2 = buildModel(
             sequence: tmpSeq,
@@ -1546,7 +1645,9 @@ class NLPGenerateTests: XCTestCase
             mlpDim: mlpDim,
             nbHeadsQuery: nbHeadsQuery,
             nbHeadsKV: nbHeadsKV,
-            vocabularySize: vocabularySize
+            vocabularySize: vocabularySize,
+            addUnitOffset: addUnitOffset,
+            hiddenActivation: hiddenActivation
         )
         
         // Initialize for inference.
@@ -1655,7 +1756,9 @@ class NLPGenerateTests: XCTestCase
     /// 1. Use end to end forward pass.
     /// 2. Use partial end to end forward pass followed by generation one token at a time.
     ///
-    func runGenerateBatchSize()
+    func runGenerateBatchSize(
+        addUnitOffset: Bool,
+        hiddenActivation: String)
     {
         let nbBlocks = 1
         let hiddenDim = 8
@@ -1676,7 +1779,9 @@ class NLPGenerateTests: XCTestCase
             mlpDim: mlpDim,
             nbHeadsQuery: nbHeadsQuery,
             nbHeadsKV: nbHeadsKV,
-            vocabularySize: vocabularySize
+            vocabularySize: vocabularySize,
+            addUnitOffset: addUnitOffset,
+            hiddenActivation: hiddenActivation
         )
         var model2 = buildModel(
             sequence: tmpSeq,
@@ -1686,7 +1791,9 @@ class NLPGenerateTests: XCTestCase
             mlpDim: mlpDim,
             nbHeadsQuery: nbHeadsQuery,
             nbHeadsKV: nbHeadsKV,
-            vocabularySize: vocabularySize
+            vocabularySize: vocabularySize,
+            addUnitOffset: addUnitOffset,
+            hiddenActivation: hiddenActivation
         )
         
         // Initialize for inference.
@@ -1808,7 +1915,9 @@ class NLPGenerateTests: XCTestCase
     }
     
     /// Predict tokens with sliding window.
-    func runGenerateSlidingWindow()
+    func runGenerateSlidingWindow(
+        addUnitOffset: Bool,
+        hiddenActivation: String)
     {
         let nbBlocks = 1
         let hiddenDim = 8
@@ -1829,7 +1938,9 @@ class NLPGenerateTests: XCTestCase
             mlpDim: mlpDim,
             nbHeadsQuery: nbHeadsQuery,
             nbHeadsKV: nbHeadsKV,
-            vocabularySize: vocabularySize
+            vocabularySize: vocabularySize,
+            addUnitOffset: addUnitOffset,
+            hiddenActivation: hiddenActivation
         )
         
         // Initialize for inference.
@@ -1951,7 +2062,9 @@ class NLPGenerateTests: XCTestCase
     }
     
     /// Predict tokens with sliding window and batch size greater than 1.
-    func runGenerateSlidingWindowBatchSize()
+    func runGenerateSlidingWindowBatchSize(
+        addUnitOffset: Bool,
+        hiddenActivation: String)
     {
         let nbBlocks = 1
         let hiddenDim = 8
@@ -1972,7 +2085,9 @@ class NLPGenerateTests: XCTestCase
             mlpDim: mlpDim,
             nbHeadsQuery: nbHeadsQuery,
             nbHeadsKV: nbHeadsKV,
-            vocabularySize: vocabularySize
+            vocabularySize: vocabularySize,
+            addUnitOffset: addUnitOffset,
+            hiddenActivation: hiddenActivation
         )
         
         // Initialize for inference.
@@ -2131,47 +2246,107 @@ class NLPGenerateTests: XCTestCase
         print("Tokens: \(tokens).")
     }
     
-    func testGenerateFloat()
+    func testGenerate1Float()
     {
-        runGenerate()
+        runGenerate(addUnitOffset: false, hiddenActivation: SiLU.str)
     }
     
-    func testGenerateFloat16() throws
+    func testGenerate2Float()
+    {
+        runGenerate(addUnitOffset: true, hiddenActivation: GELUApprox.str)
+    }
+    
+    func testGenerate1Float16() throws
     {
         GrAI.Precision.float16 = true
-        runGenerate()
+        runGenerate(addUnitOffset: false, hiddenActivation: SiLU.str)
     }
     
-    func testGenerateBatchSizeFloat()
-    {
-        runGenerateBatchSize()
-    }
-    
-    func testGenerateBatchSizeFloat16() throws
+    func testGenerate2Float16() throws
     {
         GrAI.Precision.float16 = true
-        runGenerateBatchSize()
+        runGenerate(addUnitOffset: true, hiddenActivation: GELUApprox.str)
     }
     
-    func testGenerateSlidingWindowFloat()
+    func testGenerateBatchSize1Float()
     {
-        runGenerateSlidingWindow()
+        runGenerateBatchSize(addUnitOffset: false, hiddenActivation: SiLU.str)
     }
     
-    func testGenerateSlidingWindowFloat16() throws
+    func testGenerateBatchSize2Float()
     {
-        GrAI.Precision.float16 = true
-        runGenerateSlidingWindow()
+        runGenerateBatchSize(
+            addUnitOffset: true, hiddenActivation: GELUApprox.str
+        )
     }
     
-    func testGenerateSlidingWindowBatchSizeFloat()
-    {
-        runGenerateSlidingWindowBatchSize()
-    }
-    
-    func testGenerateSlidingWindowBatchSizeFloat16() throws
+    func testGenerateBatchSize1Float16() throws
     {
         GrAI.Precision.float16 = true
-        runGenerateSlidingWindowBatchSize()
+        runGenerateBatchSize(addUnitOffset: false, hiddenActivation: SiLU.str)
+    }
+    
+    func testGenerateBatchSize2Float16() throws
+    {
+        GrAI.Precision.float16 = true
+        runGenerateBatchSize(
+            addUnitOffset: true, hiddenActivation: GELUApprox.str
+        )
+    }
+    
+    func testGenerateSlidingWindow1Float()
+    {
+        runGenerateSlidingWindow(addUnitOffset: false, hiddenActivation: SiLU.str)
+    }
+    
+    func testGenerateSlidingWindow2Float()
+    {
+        runGenerateSlidingWindow(
+            addUnitOffset: true, hiddenActivation: GELUApprox.str
+        )
+    }
+    
+    func testGenerateSlidingWindow1Float16() throws
+    {
+        GrAI.Precision.float16 = true
+        runGenerateSlidingWindow(addUnitOffset: false, hiddenActivation: SiLU.str)
+    }
+    
+    func testGenerateSlidingWindow2Float16() throws
+    {
+        GrAI.Precision.float16 = true
+        runGenerateSlidingWindow(
+            addUnitOffset: true, hiddenActivation: GELUApprox.str
+        )
+    }
+    
+    func testGenerateSlidingWindowBatchSize1Float()
+    {
+        runGenerateSlidingWindowBatchSize(
+            addUnitOffset: false, hiddenActivation: SiLU.str
+        )
+    }
+    
+    func testGenerateSlidingWindowBatchSize2Float()
+    {
+        runGenerateSlidingWindowBatchSize(
+            addUnitOffset: true, hiddenActivation: GELUApprox.str
+        )
+    }
+    
+    func testGenerateSlidingWindowBatchSize1Float16() throws
+    {
+        GrAI.Precision.float16 = true
+        runGenerateSlidingWindowBatchSize(
+            addUnitOffset: false, hiddenActivation: SiLU.str
+        )
+    }
+    
+    func testGenerateSlidingWindowBatchSize2Float16() throws
+    {
+        GrAI.Precision.float16 = true
+        runGenerateSlidingWindowBatchSize(
+            addUnitOffset: true, hiddenActivation: GELUApprox.str
+        )
     }
 }
